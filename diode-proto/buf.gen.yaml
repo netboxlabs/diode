@@ -3,6 +3,9 @@ plugins:
   - plugin: go
     out: ../diode-sdk-go/
     opt: module=github.com/netboxlabs/diode-internal/diode-sdk-go
+  - plugin: buf.build/grpc/go:v1.3.0
+    out: ../diode-sdk-go/
+    opt: module=github.com/netboxlabs/diode-internal/diode-sdk-go
   - plugin: buf.build/bufbuild/validate-go:v1.0.4
     out: ../diode-sdk-go/
     opt: module=github.com/netboxlabs/diode-internal/diode-sdk-go
