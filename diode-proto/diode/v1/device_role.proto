@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package diode.v1;
+
+import "validate/validate.proto";
+
+option go_package = "github.com/netboxlabs/diode-internal/diode-sdk-go/diode/v1/diodepb";
+
+// A device role
+message DeviceRole {
+  optional string name = 1 [(validate.rules).string = {
+    min_len: 1,
+    max_len: 100
+  }];
+  optional string slug = 2 [(validate.rules).string = {
+    min_len: 1,
+    max_len: 100,
+    pattern: "^[-a-zA-Z0-9_]+$"
+  }];
+  bool vm_role = 3;
+}
