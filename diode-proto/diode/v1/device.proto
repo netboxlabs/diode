@@ -10,16 +10,16 @@ option go_package = "github.com/netboxlabs/diode-internal/diode-sdk-go/diode/v1/
 // A device
 message Device {
   string name = 1 [(validate.rules).string = {max_len: 64}];
-  optional string device_fqdn = 2 [(validate.rules).string = {
+  string device_fqdn = 2 [(validate.rules).string = {
     min_len: 1,
     max_len: 255
   }];
-  optional google.protobuf.Any device_type = 3 [(validate.rules).any.required = true];
-  optional google.protobuf.Any role = 4 [(validate.rules).any.required = true];
-  optional google.protobuf.Any platform = 5;
-  optional string serial = 6 [(validate.rules).string = {max_len: 50}];
-  optional google.protobuf.Any site = 7 [(validate.rules).any.required = true];
-  optional int32 vc_position = 8 [(validate.rules).int32 = {
+  google.protobuf.Any device_type = 3 [(validate.rules).any.required = true];
+  google.protobuf.Any role = 4 [(validate.rules).any.required = true];
+  google.protobuf.Any platform = 5;
+  string serial = 6 [(validate.rules).string = {max_len: 50}];
+  google.protobuf.Any site = 7 [(validate.rules).any.required = true];
+  int32 vc_position = 8 [(validate.rules).int32 = {
     gte: 0,
     lte: 255
   }];

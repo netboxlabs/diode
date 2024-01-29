@@ -27,7 +27,7 @@ message IngestEntity {
   }
 
   // The timestamp of the data discovery at source
-  optional google.protobuf.Timestamp timestamp = 8 [
+  google.protobuf.Timestamp timestamp = 8 [
     (validate.rules).timestamp.required = true,
     (validate.rules).timestamp.lt_now = true
   ];
@@ -35,7 +35,7 @@ message IngestEntity {
 
 // The request to push data
 message PushRequest {
-  optional string stream = 1 [(validate.rules).string = {
+  string stream = 1 [(validate.rules).string = {
     min_len: 1,
     max_len: 255
   }];
@@ -44,20 +44,20 @@ message PushRequest {
     max_items: 1000
   }];
 
-  optional string id = 3 [(validate.rules).string.uuid = true];
-  optional string producer_app_name = 4 [(validate.rules).string = {
+  string id = 3 [(validate.rules).string.uuid = true];
+  string producer_app_name = 4 [(validate.rules).string = {
     min_len: 1,
     max_len: 255
   }];
-  optional string producer_app_version = 5 [(validate.rules).string = {
+  string producer_app_version = 5 [(validate.rules).string = {
     min_len: 1,
     max_len: 255
   }];
-  optional string sdk_name = 6 [(validate.rules).string = {
+  string sdk_name = 6 [(validate.rules).string = {
     min_len: 1,
     max_len: 255
   }];
-  optional string sdk_version = 7 [(validate.rules).string = {pattern: "^(\\d)+\\.(\\d)+\\.(\\d)+$"}];
+  string sdk_version = 7 [(validate.rules).string = {pattern: "^(\\d)+\\.(\\d)+\\.(\\d)+$"}];
 }
 
 // The response from the push request
