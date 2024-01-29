@@ -16,7 +16,7 @@ const (
 	DefaultGRPCPort = "8081"
 )
 
-type Server struct {
+type Component struct {
 	pb.UnimplementedDistributorServiceServer
 
 	logger       *slog.Logger
@@ -24,41 +24,41 @@ type Server struct {
 	grpcServer   *grpc.Server
 }
 
-func New(logger *slog.Logger) (*Server, error) {
+func New(logger *slog.Logger) (*Component, error) {
 	grpcListener, err := net.Listen("tcp", fmt.Sprintf(":%s", DefaultGRPCPort))
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("failed to listen on port %s: %v", DefaultGRPCPort, err))
 	}
 
 	grpcServer := grpc.NewServer()
-	server := &Server{
+	component := &Component{
 		logger:       logger,
 		grpcListener: grpcListener,
 		grpcServer:   grpcServer,
 	}
-	pb.RegisterDistributorServiceServer(grpcServer, server)
+	pb.RegisterDistributorServiceServer(grpcServer, component)
 	reflection.Register(grpcServer)
 
-	return server, nil
+	return component, nil
 }
 
-func (s *Server) Name() string {
+func (c *Component) Name() string {
 	return "distributor"
 }
 
-func (s *Server) Start(_ context.Context) error {
-	s.logger.Info("starting service", "name", s.Name())
+func (c *Component) Start(_ context.Context) error {
+	c.logger.Info("starting component", "name", c.Name())
 
-	return s.grpcServer.Serve(s.grpcListener)
+	return c.grpcServer.Serve(c.grpcListener)
 }
 
-func (s *Server) Stop() error {
-	s.logger.Info("stopping service", "name", s.Name())
-	s.grpcServer.GracefulStop()
+func (c *Component) Stop() error {
+	c.logger.Info("stopping component", "name", c.Name())
+	c.grpcServer.GracefulStop()
 	return nil
 }
 
-func (s *Server) Push(_ context.Context, in *pb.PushRequest) (*pb.PushResponse, error) {
-	s.logger.Info("diode.v1.DistributorService/Push called", "stream", in.Stream)
+func (c *Component) Push(_ context.Context, in *pb.PushRequest) (*pb.PushResponse, error) {
+	c.logger.Info("diode.v1.DistributorService/Push called", "stream", in.Stream)
 	return &pb.PushResponse{}, nil
 }

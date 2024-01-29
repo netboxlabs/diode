@@ -17,10 +17,10 @@ func main() {
 	ctx := context.Background()
 	s := server.New(ctx, "diode-ingester", logger)
 
-	ingesterSvc := ingester.New(logger)
+	ingesterComponent := ingester.New(logger)
 
-	if err := s.RegisterService(ingesterSvc); err != nil {
-		log.Fatalf("failed to register service: %v", err)
+	if err := s.RegisterComponent(ingesterComponent); err != nil {
+		log.Fatalf("failed to register ingerster component: %v", err)
 	}
 
 	if err := s.Run(); err != nil {

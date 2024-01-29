@@ -17,15 +17,13 @@ func main() {
 	ctx := context.Background()
 	s := server.New(ctx, "diode-reconciler", logger)
 
-	// instantiate a reconciler service
-	// with config instantiated here and passed to New()
-	reconcilerSvc, err := reconciler.New(logger)
+	reconcilerComponent, err := reconciler.New(logger)
 	if err != nil {
-		log.Fatalf("failed to instantiate reconciler service: %v", err)
+		log.Fatalf("failed to instantiate reconciler component: %v", err)
 	}
 
-	if err := s.RegisterService(reconcilerSvc); err != nil {
-		log.Fatalf("failed to register service: %v", err)
+	if err := s.RegisterComponent(reconcilerComponent); err != nil {
+		log.Fatalf("failed to register reconciler component: %v", err)
 	}
 
 	// instantiate a prom service for /metrics

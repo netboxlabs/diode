@@ -17,15 +17,13 @@ func main() {
 	ctx := context.Background()
 	s := server.New(ctx, "diode-distributor", logger)
 
-	// instantiate a gRPC distributor service
-	// with config instantiated here and passed to New()
-	distributorSvc, err := distributor.New(logger)
+	distributorComponent, err := distributor.New(logger)
 	if err != nil {
 		log.Fatalf("failed to instantiate distributor service: %v", err)
 	}
 
-	if err := s.RegisterService(distributorSvc); err != nil {
-		log.Fatalf("failed to register service: %v", err)
+	if err := s.RegisterComponent(distributorComponent); err != nil {
+		log.Fatalf("failed to register distributor component: %v", err)
 	}
 
 	// instantiate a prom service for /metrics

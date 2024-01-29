@@ -17,14 +17,14 @@ type Server struct {
 	name   string
 	logger *slog.Logger
 
-	mu       sync.Mutex
-	services map[string]Service
+	mu         sync.Mutex
+	components map[string]Component
 
-	serviceGroup run.Group
+	componentGroup run.Group
 }
 
-// Service is used for registering services managed by the diode Server
-type Service interface {
+// Component is used for registering components managed by the diode Server
+type Component interface {
 	Name() string
 	Start(ctx context.Context) error
 	Stop() error
@@ -33,11 +33,11 @@ type Service interface {
 // New returns a new Server
 func New(ctx context.Context, name string, logger *slog.Logger) *Server {
 	return &Server{
-		cxt:          ctx,
-		name:         name,
-		logger:       logger,
-		services:     make(map[string]Service),
-		serviceGroup: run.Group{},
+		cxt:            ctx,
+		name:           name,
+		logger:         logger,
+		components:     make(map[string]Component),
+		componentGroup: run.Group{},
 	}
 }
 
@@ -46,26 +46,26 @@ func (s *Server) Name() string {
 	return s.name
 }
 
-// RegisterService registers a Service with the Server
-func (s *Server) RegisterService(service Service) error {
+// RegisterComponent registers a Component with the Server
+func (s *Server) RegisterComponent(c Component) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if _, ok := s.services[service.Name()]; ok {
-		return errors.New(fmt.Sprintf("Server.RegisterService found duplicate service registration for %s", service.Name()))
+	if _, ok := s.components[c.Name()]; ok {
+		return errors.New(fmt.Sprintf("Server.RegisterComponent found duplicate component registration for %s", c.Name()))
 	}
 
-	s.services[service.Name()] = service
+	s.components[c.Name()] = c
 
 	ctx, cancel := context.WithCancel(s.cxt)
 
-	s.serviceGroup.Add(
+	s.componentGroup.Add(
 		func() error {
-			return service.Start(ctx)
+			return c.Start(ctx)
 		},
 		func(err error) {
-			if err := service.Stop(); err != nil {
-				s.logger.Error("failed to stop service", "serviceName", service.Name(), "error", err)
+			if err := c.Stop(); err != nil {
+				s.logger.Error("failed to stop component", "componentName", c.Name(), "error", err)
 			}
 			cancel()
 		},
@@ -77,7 +77,7 @@ func (s *Server) RegisterService(service Service) error {
 func (s *Server) Run() error {
 	s.logger.Info("starting server", "serverName", s.name)
 
-	s.serviceGroup.Add(run.SignalHandler(s.cxt, os.Interrupt, os.Kill))
+	s.componentGroup.Add(run.SignalHandler(s.cxt, os.Interrupt, os.Kill))
 
-	return s.serviceGroup.Run()
+	return s.componentGroup.Run()
 }
