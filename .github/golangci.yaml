@@ -1,0 +1,23 @@
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+
+output:
+  format: github-actions
+
+linters:
+  enable:
+    - revive
+    - errcheck
+    - unused
+    - staticcheck
+    - ineffassign
+    - govet
+    - gosimple
+    - bodyclose
+
+issues:
+  exclude-use-default: false
+
+severity:
+  default-severity: error
