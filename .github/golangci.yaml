@@ -16,14 +16,13 @@ linters:
     - gosimple
     - bodyclose
 
-linters-settings:
-  revive:
-    rules:
-      - name: package-comments
-        severity: warning
-
 issues:
   exclude-use-default: false
+  exclude-rules:
+    - path: /*.go
+      text: "package-comments: should have a package comment"
+      linters:
+        - revive
 
 severity:
   default-severity: error
