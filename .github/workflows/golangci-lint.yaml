@@ -28,6 +28,6 @@ jobs:
         with:
           version: v1.54
           working-directory: ${{ matrix.go }}
-          args: --config ../.github/golangci.yaml --issues-exit-code=0
+          args: --config ../.github/golangci.yaml
           skip-pkg-cache: true
           skip-build-cache: true
