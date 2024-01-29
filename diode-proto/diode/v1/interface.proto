@@ -9,12 +9,12 @@ option go_package = "github.com/netboxlabs/diode-internal/diode-sdk-go/diode/v1/
 
 // An interface
 message Interface {
-  optional google.protobuf.Any device = 1 [(validate.rules).any.required = true];
-  optional string name = 2 [(validate.rules).string = {
+  google.protobuf.Any device = 1 [(validate.rules).any.required = true];
+  string name = 2 [(validate.rules).string = {
     min_len: 1,
     max_len: 64
   }];
-  optional string type = 3 [(validate.rules).string = {
+  string type = 3 [(validate.rules).string = {
     in: [
       "virtual",
       "bridge",
@@ -134,10 +134,10 @@ message Interface {
     ]
   }];
   bool enabled = 4;
-  optional int32 mtu = 5 [(validate.rules).int32 = {
+  int32 mtu = 5 [(validate.rules).int32 = {
     gte: 1,
     lte: 65536
   }];
-  optional string mac_address = 6;
-  optional bool mgmt_only = 7;
+  string mac_address = 6;
+  bool mgmt_only = 7;
 }

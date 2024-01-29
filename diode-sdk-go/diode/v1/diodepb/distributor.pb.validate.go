@@ -60,6 +60,47 @@ func (m *IngestEntity) validate(all bool) error {
 
 	var errors []error
 
+	if m.GetTimestamp() == nil {
+		err := IngestEntityValidationError{
+			field:  "Timestamp",
+			reason: "value is required",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if t := m.GetTimestamp(); t != nil {
+		ts, err := t.AsTime(), t.CheckValid()
+		if err != nil {
+			err = IngestEntityValidationError{
+				field:  "Timestamp",
+				reason: "value is not a valid timestamp",
+				cause:  err,
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		} else {
+
+			now := time.Now()
+
+			if ts.Sub(now) >= 0 {
+				err := IngestEntityValidationError{
+					field:  "Timestamp",
+					reason: "value must be less than now",
+				}
+				if !all {
+					return err
+				}
+				errors = append(errors, err)
+			}
+
+		}
+	}
+
 	switch v := m.Data.(type) {
 	case *IngestEntity_Site:
 		if v == nil {
@@ -352,51 +393,6 @@ func (m *IngestEntity) validate(all bool) error {
 		_ = v // ensures v is used
 	}
 
-	if m.Timestamp != nil {
-
-		if m.GetTimestamp() == nil {
-			err := IngestEntityValidationError{
-				field:  "Timestamp",
-				reason: "value is required",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if t := m.GetTimestamp(); t != nil {
-			ts, err := t.AsTime(), t.CheckValid()
-			if err != nil {
-				err = IngestEntityValidationError{
-					field:  "Timestamp",
-					reason: "value is not a valid timestamp",
-					cause:  err,
-				}
-				if !all {
-					return err
-				}
-				errors = append(errors, err)
-			} else {
-
-				now := time.Now()
-
-				if ts.Sub(now) >= 0 {
-					err := IngestEntityValidationError{
-						field:  "Timestamp",
-						reason: "value must be less than now",
-					}
-					if !all {
-						return err
-					}
-					errors = append(errors, err)
-				}
-
-			}
-		}
-
-	}
-
 	if len(errors) > 0 {
 		return IngestEntityMultiError(errors)
 	}
@@ -496,6 +492,17 @@ func (m *PushRequest) validate(all bool) error {
 
 	var errors []error
 
+	if l := utf8.RuneCountInString(m.GetStream()); l < 1 || l > 255 {
+		err := PushRequestValidationError{
+			field:  "Stream",
+			reason: "value length must be between 1 and 255 runes, inclusive",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
 	if l := len(m.GetData()); l < 1 || l > 1000 {
 		err := PushRequestValidationError{
 			field:  "Data",
@@ -541,95 +548,60 @@ func (m *PushRequest) validate(all bool) error {
 
 	}
 
-	if m.Stream != nil {
-
-		if l := utf8.RuneCountInString(m.GetStream()); l < 1 || l > 255 {
-			err := PushRequestValidationError{
-				field:  "Stream",
-				reason: "value length must be between 1 and 255 runes, inclusive",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
+	if err := m._validateUuid(m.GetId()); err != nil {
+		err = PushRequestValidationError{
+			field:  "Id",
+			reason: "value must be a valid UUID",
+			cause:  err,
 		}
-
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
 	}
 
-	if m.Id != nil {
-
-		if err := m._validateUuid(m.GetId()); err != nil {
-			err = PushRequestValidationError{
-				field:  "Id",
-				reason: "value must be a valid UUID",
-				cause:  err,
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
+	if l := utf8.RuneCountInString(m.GetProducerAppName()); l < 1 || l > 255 {
+		err := PushRequestValidationError{
+			field:  "ProducerAppName",
+			reason: "value length must be between 1 and 255 runes, inclusive",
 		}
-
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
 	}
 
-	if m.ProducerAppName != nil {
-
-		if l := utf8.RuneCountInString(m.GetProducerAppName()); l < 1 || l > 255 {
-			err := PushRequestValidationError{
-				field:  "ProducerAppName",
-				reason: "value length must be between 1 and 255 runes, inclusive",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
+	if l := utf8.RuneCountInString(m.GetProducerAppVersion()); l < 1 || l > 255 {
+		err := PushRequestValidationError{
+			field:  "ProducerAppVersion",
+			reason: "value length must be between 1 and 255 runes, inclusive",
 		}
-
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
 	}
 
-	if m.ProducerAppVersion != nil {
-
-		if l := utf8.RuneCountInString(m.GetProducerAppVersion()); l < 1 || l > 255 {
-			err := PushRequestValidationError{
-				field:  "ProducerAppVersion",
-				reason: "value length must be between 1 and 255 runes, inclusive",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
+	if l := utf8.RuneCountInString(m.GetSdkName()); l < 1 || l > 255 {
+		err := PushRequestValidationError{
+			field:  "SdkName",
+			reason: "value length must be between 1 and 255 runes, inclusive",
 		}
-
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
 	}
 
-	if m.SdkName != nil {
-
-		if l := utf8.RuneCountInString(m.GetSdkName()); l < 1 || l > 255 {
-			err := PushRequestValidationError{
-				field:  "SdkName",
-				reason: "value length must be between 1 and 255 runes, inclusive",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
+	if !_PushRequest_SdkVersion_Pattern.MatchString(m.GetSdkVersion()) {
+		err := PushRequestValidationError{
+			field:  "SdkVersion",
+			reason: "value does not match regex pattern \"^(\\\\d)+\\\\.(\\\\d)+\\\\.(\\\\d)+$\"",
 		}
-
-	}
-
-	if m.SdkVersion != nil {
-
-		if !_PushRequest_SdkVersion_Pattern.MatchString(m.GetSdkVersion()) {
-			err := PushRequestValidationError{
-				field:  "SdkVersion",
-				reason: "value does not match regex pattern \"^(\\\\d)+\\\\.(\\\\d)+\\\\.(\\\\d)+$\"",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
+		if !all {
+			return err
 		}
-
+		errors = append(errors, err)
 	}
 
 	if len(errors) > 0 {

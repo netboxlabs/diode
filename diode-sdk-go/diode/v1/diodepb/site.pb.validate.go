@@ -56,45 +56,37 @@ func (m *Site) validate(all bool) error {
 
 	var errors []error
 
-	if m.Name != nil {
-
-		if l := utf8.RuneCountInString(m.GetName()); l < 1 || l > 100 {
-			err := SiteValidationError{
-				field:  "Name",
-				reason: "value length must be between 1 and 100 runes, inclusive",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
+	if l := utf8.RuneCountInString(m.GetName()); l < 1 || l > 100 {
+		err := SiteValidationError{
+			field:  "Name",
+			reason: "value length must be between 1 and 100 runes, inclusive",
 		}
-
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
 	}
 
-	if m.Slug != nil {
-
-		if l := utf8.RuneCountInString(m.GetSlug()); l < 1 || l > 100 {
-			err := SiteValidationError{
-				field:  "Slug",
-				reason: "value length must be between 1 and 100 runes, inclusive",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
+	if l := utf8.RuneCountInString(m.GetSlug()); l < 1 || l > 100 {
+		err := SiteValidationError{
+			field:  "Slug",
+			reason: "value length must be between 1 and 100 runes, inclusive",
 		}
-
-		if !_Site_Slug_Pattern.MatchString(m.GetSlug()) {
-			err := SiteValidationError{
-				field:  "Slug",
-				reason: "value does not match regex pattern \"^[-a-zA-Z0-9_]+$\"",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
+		if !all {
+			return err
 		}
+		errors = append(errors, err)
+	}
 
+	if !_Site_Slug_Pattern.MatchString(m.GetSlug()) {
+		err := SiteValidationError{
+			field:  "Slug",
+			reason: "value does not match regex pattern \"^[-a-zA-Z0-9_]+$\"",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
 	}
 
 	if len(errors) > 0 {
