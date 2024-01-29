@@ -15,7 +15,7 @@ func main() {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
 
 	ctx := context.Background()
-	s := server.New(ctx, "diode-distributor", logger)
+	s := server.New(ctx, "diode-reconciler", logger)
 
 	// instantiate a reconciler service
 	// with config instantiated here and passed to New()
