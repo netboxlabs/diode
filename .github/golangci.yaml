@@ -16,6 +16,12 @@ linters:
     - gosimple
     - bodyclose
 
+linters-settings:
+  revive:
+    rules:
+      - name: package-comments
+        severity: warning
+
 issues:
   exclude-use-default: false
 
