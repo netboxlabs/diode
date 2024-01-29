@@ -12,10 +12,8 @@ from google.protobuf.internal import builder as _builder
 
 _sym_db = _symbol_database.Default()
 
-from validate import validate_pb2 as validate_dot_validate__pb2
-
 DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(
-    b'\n\x17\x64iode/v1/platform.proto\x12\x08\x64iode.v1\x1a\x17validate/validate.proto\"d\n\x08Platform\x12\"\n\x04name\x18\x01 \x01(\tB\t\xfa\x42\x06r\x04\x10\x01\x18\x64H\x00R\x04name\x88\x01\x01\x12\"\n\x04slug\x18\x02 \x01(\tB\t\xfa\x42\x06r\x04\x10\x01\x18\x64H\x01R\x04slug\x88\x01\x01\x42\x07\n\x05_nameB\x07\n\x05_slugBDZBgithub.com/netboxlabs/diode-internal/diode-sdk-go/diode/v1/diodepbb\x06proto3')
+    b'\n\x17\x64iode/v1/platform.proto\x12\x08\x64iode.v1\x1a\x17validate/validate.proto\"H\n\x08Platform\x12\x1d\n\x04name\x18\x01 \x01(\tB\t\xfa\x42\x06r\x04\x10\x01\x18\x64R\x04name\x12\x1d\n\x04slug\x18\x02 \x01(\tB\t\xfa\x42\x06r\x04\x10\x01\x18\x64R\x04slugBDZBgithub.com/netboxlabs/diode-internal/diode-sdk-go/diode/v1/diodepbb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -28,5 +26,5 @@ if _descriptor._USE_C_DESCRIPTORS == False:
     _globals['_PLATFORM'].fields_by_name['slug']._options = None
     _globals['_PLATFORM'].fields_by_name['slug']._serialized_options = b'\372B\006r\004\020\001\030d'
     _globals['_PLATFORM']._serialized_start = 62
-    _globals['_PLATFORM']._serialized_end = 162
+    _globals['_PLATFORM']._serialized_end = 134
 # @@protoc_insertion_point(module_scope)
