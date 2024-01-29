@@ -91,3 +91,27 @@ diode-server:
       - any-glob-to-any-file:
           - 'diode-server/*'
           - 'diode-server/**/*'
+
+diode-distributor:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'diode-server/cmd/distributor/*'
+          - 'diode-server/cmd/distributor/**/*'
+          - 'diode-server/distributor/*'
+          - 'diode-server/distributor/**/*'
+
+diode-ingester:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'diode-server/cmd/ingester/*'
+          - 'diode-server/cmd/ingester/**/*'
+          - 'diode-server/ingester/*'
+          - 'diode-server/ingester/**/*'
+
+diode-reconciler:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'diode-server/cmd/reconciler/*'
+          - 'diode-server/cmd/reconciler/**/*'
+          - 'diode-server/reconciler/*'
+          - 'diode-server/reconciler/**/*'
