@@ -1,0 +1,93 @@
+documentation:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '**/docs/**/*'
+
+github-actions:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '**/.github/workflows/*'
+          - '**/.github/workflows/**/*'
+          - '**/.github/dependabot.yaml'
+          - '**/.github/pull_request_labeler.yaml'
+
+github-templates:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '**/.github/ISSUE_TEMPLATE/*'
+          - '**/.github/PULL_REQUEST_TEMPLATE.md'
+          - '**/.github/.chglog/*'
+          - '**/.github/.chglog/**/*'
+
+internal:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '**/.flake8'
+          - '**/.bandit.baseline'
+          - '**/.gitignore'
+          - '**/.pre-commit-config.yaml'
+          - '**/MANIFEST.in'
+          - '**/Makefile'
+          - '**/CONTRIBUTING.md'
+          - '**/MAINTAINERS.md'
+          - '**/CODE_OF_CONDUCT.md'
+          - '**/LICENSE'
+          - '**/THIRD-PARTY-LICENSES'
+          - '**/.dockerignore'
+          - '**/.editorconfig'
+          - '**/setup.cfg'
+
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file:
+          - '**/go.mod'
+          - '**/go.sum'
+          - '**/pyproject.toml'
+          - '**/poetry.lock'
+          - '**/requirements.txt'
+
+build:
+  - changed-files:
+      - any-glob-to-any-file: '**/Dockerfile'
+
+go:
+  - changed-files:
+      - any-glob-to-any-file: '**/*.go'
+
+markdown:
+  - changed-files:
+      - any-glob-to-any-file: '**/*.md'
+
+python:
+  - changed-files:
+      - any-glob-to-any-file: '**/*.py'
+
+diode-netbox-plugin:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'diode-netbox-plugin/*'
+          - 'diode-netbox-plugin/**/*'
+
+diode-proto:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'diode-proto/*'
+          - 'diode-proto/**/*'
+
+diode-sdk-go:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'diode-sdk-go/*'
+          - 'diode-sdk-go/**/*'
+
+diode-sdk-python:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'diode-sdk-python/*'
+          - 'diode-sdk-python/**/*'
+
+diode-server:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'diode-server/*'
+          - 'diode-server/**/*'
