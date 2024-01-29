@@ -1,0 +1,28 @@
+run:
+  timeout: 5m
+  modules-download-mode: readonly
+
+output:
+  format: github-actions
+
+linters:
+  enable:
+    - revive
+    - errcheck
+    - unused
+    - staticcheck
+    - ineffassign
+    - govet
+    - gosimple
+    - bodyclose
+
+issues:
+  exclude-use-default: false
+  exclude-rules:
+    - path: /*.go
+      text: "package-comments: should have a package comment"
+      linters:
+        - revive
+
+severity:
+  default-severity: error
