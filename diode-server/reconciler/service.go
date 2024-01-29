@@ -42,7 +42,7 @@ func (s *Server) Name() string {
 	return "reconciler"
 }
 
-func (s *Server) Start(ctx context.Context) error {
+func (s *Server) Start(_ context.Context) error {
 	s.logger.Info("starting service", "name", s.Name())
 
 	return s.grpcServer.Serve(s.grpcListener)
