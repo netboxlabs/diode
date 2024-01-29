@@ -67,139 +67,111 @@ func (m *Device) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
-	if m.DeviceFqdn != nil {
-
-		if l := utf8.RuneCountInString(m.GetDeviceFqdn()); l < 1 || l > 255 {
-			err := DeviceValidationError{
-				field:  "DeviceFqdn",
-				reason: "value length must be between 1 and 255 runes, inclusive",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
+	if l := utf8.RuneCountInString(m.GetDeviceFqdn()); l < 1 || l > 255 {
+		err := DeviceValidationError{
+			field:  "DeviceFqdn",
+			reason: "value length must be between 1 and 255 runes, inclusive",
 		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if m.GetDeviceType() == nil {
+		err := DeviceValidationError{
+			field:  "DeviceType",
+			reason: "value is required",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if a := m.GetDeviceType(); a != nil {
 
 	}
 
-	if m.DeviceType != nil {
-
-		if m.GetDeviceType() == nil {
-			err := DeviceValidationError{
-				field:  "DeviceType",
-				reason: "value is required",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
+	if m.GetRole() == nil {
+		err := DeviceValidationError{
+			field:  "Role",
+			reason: "value is required",
 		}
-
-		if a := m.GetDeviceType(); a != nil {
-
+		if !all {
+			return err
 		}
+		errors = append(errors, err)
+	}
+
+	if a := m.GetRole(); a != nil {
 
 	}
 
-	if m.Role != nil {
-
-		if m.GetRole() == nil {
-			err := DeviceValidationError{
-				field:  "Role",
-				reason: "value is required",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if a := m.GetRole(); a != nil {
-
-		}
-
-	}
-
-	if m.Platform != nil {
-
-		if all {
-			switch v := interface{}(m.GetPlatform()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, DeviceValidationError{
-						field:  "Platform",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, DeviceValidationError{
-						field:  "Platform",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetPlatform()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return DeviceValidationError{
+	if all {
+		switch v := interface{}(m.GetPlatform()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, DeviceValidationError{
 					field:  "Platform",
 					reason: "embedded message failed validation",
 					cause:  err,
-				}
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, DeviceValidationError{
+					field:  "Platform",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
 			}
 		}
+	} else if v, ok := interface{}(m.GetPlatform()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return DeviceValidationError{
+				field:  "Platform",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if utf8.RuneCountInString(m.GetSerial()) > 50 {
+		err := DeviceValidationError{
+			field:  "Serial",
+			reason: "value length must be at most 50 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if m.GetSite() == nil {
+		err := DeviceValidationError{
+			field:  "Site",
+			reason: "value is required",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if a := m.GetSite(); a != nil {
 
 	}
 
-	if m.Serial != nil {
-
-		if utf8.RuneCountInString(m.GetSerial()) > 50 {
-			err := DeviceValidationError{
-				field:  "Serial",
-				reason: "value length must be at most 50 runes",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
+	if val := m.GetVcPosition(); val < 0 || val > 255 {
+		err := DeviceValidationError{
+			field:  "VcPosition",
+			reason: "value must be inside range [0, 255]",
 		}
-
-	}
-
-	if m.Site != nil {
-
-		if m.GetSite() == nil {
-			err := DeviceValidationError{
-				field:  "Site",
-				reason: "value is required",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
+		if !all {
+			return err
 		}
-
-		if a := m.GetSite(); a != nil {
-
-		}
-
-	}
-
-	if m.VcPosition != nil {
-
-		if val := m.GetVcPosition(); val < 0 || val > 255 {
-			err := DeviceValidationError{
-				field:  "VcPosition",
-				reason: "value must be inside range [0, 255]",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
+		errors = append(errors, err)
 	}
 
 	if len(errors) > 0 {

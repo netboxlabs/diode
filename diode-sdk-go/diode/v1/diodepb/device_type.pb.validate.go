@@ -57,64 +57,52 @@ func (m *DeviceType) validate(all bool) error {
 
 	var errors []error
 
-	if m.Manufacturer != nil {
-
-		if m.GetManufacturer() == nil {
-			err := DeviceTypeValidationError{
-				field:  "Manufacturer",
-				reason: "value is required",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
+	if m.GetManufacturer() == nil {
+		err := DeviceTypeValidationError{
+			field:  "Manufacturer",
+			reason: "value is required",
 		}
-
-		if a := m.GetManufacturer(); a != nil {
-
+		if !all {
+			return err
 		}
+		errors = append(errors, err)
+	}
+
+	if a := m.GetManufacturer(); a != nil {
 
 	}
 
-	if m.Model != nil {
-
-		if l := utf8.RuneCountInString(m.GetModel()); l < 1 || l > 100 {
-			err := DeviceTypeValidationError{
-				field:  "Model",
-				reason: "value length must be between 1 and 100 runes, inclusive",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
+	if l := utf8.RuneCountInString(m.GetModel()); l < 1 || l > 100 {
+		err := DeviceTypeValidationError{
+			field:  "Model",
+			reason: "value length must be between 1 and 100 runes, inclusive",
 		}
-
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
 	}
 
-	if m.Slug != nil {
-
-		if l := utf8.RuneCountInString(m.GetSlug()); l < 1 || l > 100 {
-			err := DeviceTypeValidationError{
-				field:  "Slug",
-				reason: "value length must be between 1 and 100 runes, inclusive",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
+	if l := utf8.RuneCountInString(m.GetSlug()); l < 1 || l > 100 {
+		err := DeviceTypeValidationError{
+			field:  "Slug",
+			reason: "value length must be between 1 and 100 runes, inclusive",
 		}
-
-		if !_DeviceType_Slug_Pattern.MatchString(m.GetSlug()) {
-			err := DeviceTypeValidationError{
-				field:  "Slug",
-				reason: "value does not match regex pattern \"^[-a-zA-Z0-9_]+$\"",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
+		if !all {
+			return err
 		}
+		errors = append(errors, err)
+	}
 
+	if !_DeviceType_Slug_Pattern.MatchString(m.GetSlug()) {
+		err := DeviceTypeValidationError{
+			field:  "Slug",
+			reason: "value does not match regex pattern \"^[-a-zA-Z0-9_]+$\"",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
 	}
 
 	if len(errors) > 0 {
