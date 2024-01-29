@@ -19,7 +19,7 @@ func main() {
 
 	distributorComponent, err := distributor.New(logger)
 	if err != nil {
-		log.Fatalf("failed to instantiate distributor service: %v", err)
+		log.Fatalf("failed to instantiate distributor component: %v", err)
 	}
 
 	if err := s.RegisterComponent(distributorComponent); err != nil {
