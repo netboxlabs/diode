@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"os"
 
 	"github.com/netboxlabs/diode-internal/diode-server/ingester"
 	"github.com/netboxlabs/diode-internal/diode-server/server"
@@ -15,10 +15,12 @@ func main() {
 	ingesterComponent := ingester.New(s.Logger())
 
 	if err := s.RegisterComponent(ingesterComponent); err != nil {
-		log.Fatalf("failed to register ingerster component: %v", err)
+		s.Logger().Error("failed to register ingerster component: %v", err)
+		os.Exit(1)
 	}
 
 	if err := s.Run(); err != nil {
-		log.Fatalf("server %s failure: %v", s.Name(), err)
+		s.Logger().Error("server %s failure: %v", s.Name(), err)
+		os.Exit(1)
 	}
 }
