@@ -3,6 +3,7 @@ module github.com/netboxlabs/diode-internal/diode-server
 go 1.21
 
 require (
+	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/netboxlabs/diode-internal/diode-sdk-go v0.0.0
 	github.com/oklog/run v1.1.0
 	google.golang.org/grpc v1.61.0
