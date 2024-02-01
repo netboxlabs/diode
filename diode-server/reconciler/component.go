@@ -2,33 +2,34 @@ package reconciler
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"net"
 
+	"github.com/kelseyhightower/envconfig"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
 
-const (
-	DefaultGRPCPort = "8081"
-)
-
 type Component struct {
+	config       Config
 	logger       *slog.Logger
 	grpcListener net.Listener
 	grpcServer   *grpc.Server
 }
 
 func New(logger *slog.Logger) (*Component, error) {
-	grpcListener, err := net.Listen("tcp", fmt.Sprintf(":%s", DefaultGRPCPort))
+	var cfg Config
+	envconfig.MustProcess("", &cfg)
+
+	grpcListener, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.GRPCPort))
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("failed to listen on port %s: %v", DefaultGRPCPort, err))
+		return nil, fmt.Errorf("failed to listen on port %d: %v", cfg.GRPCPort, err)
 	}
 
 	grpcServer := grpc.NewServer()
 	component := &Component{
+		config:       cfg,
 		logger:       logger,
 		grpcListener: grpcListener,
 		grpcServer:   grpcServer,
@@ -43,8 +44,7 @@ func (c *Component) Name() string {
 }
 
 func (c *Component) Start(_ context.Context) error {
-	c.logger.Info("starting component", "name", c.Name())
-
+	c.logger.Info("starting component", "name", c.Name(), "port", c.config.GRPCPort)
 	return c.grpcServer.Serve(c.grpcListener)
 }
 

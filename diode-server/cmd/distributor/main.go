@@ -3,21 +3,16 @@ package main
 import (
 	"context"
 	"log"
-	"log/slog"
-	"os"
 
 	"github.com/netboxlabs/diode-internal/diode-server/distributor"
 	"github.com/netboxlabs/diode-internal/diode-server/server"
 )
 
 func main() {
-	// TODO(mfiedorowicz): make logger configurable (handler, level, etc.)
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
-
 	ctx := context.Background()
-	s := server.New(ctx, "diode-distributor", logger)
+	s := server.New(ctx, "diode-distributor")
 
-	distributorComponent, err := distributor.New(logger)
+	distributorComponent, err := distributor.New(s.Logger())
 	if err != nil {
 		log.Fatalf("failed to instantiate distributor component: %v", err)
 	}

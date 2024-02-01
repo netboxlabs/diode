@@ -4,14 +4,21 @@ import (
 	"context"
 	"log/slog"
 	"time"
+
+	"github.com/kelseyhightower/envconfig"
 )
 
 type Component struct {
+	config Config
 	logger *slog.Logger
 }
 
 func New(logger *slog.Logger) *Component {
+	var cfg Config
+	envconfig.MustProcess("", &cfg)
+
 	return &Component{
+		config: cfg,
 		logger: logger,
 	}
 }

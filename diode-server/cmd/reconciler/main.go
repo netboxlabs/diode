@@ -3,21 +3,16 @@ package main
 import (
 	"context"
 	"log"
-	"log/slog"
-	"os"
 
 	"github.com/netboxlabs/diode-internal/diode-server/reconciler"
 	"github.com/netboxlabs/diode-internal/diode-server/server"
 )
 
 func main() {
-	// TODO(mfiedorowicz): make logger configurable (handler, level, etc.)
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
-
 	ctx := context.Background()
-	s := server.New(ctx, "diode-reconciler", logger)
+	s := server.New(ctx, "diode-reconciler")
 
-	reconcilerComponent, err := reconciler.New(logger)
+	reconcilerComponent, err := reconciler.New(s.Logger())
 	if err != nil {
 		log.Fatalf("failed to instantiate reconciler component: %v", err)
 	}
