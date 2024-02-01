@@ -8,11 +8,13 @@ import (
 	"github.com/kelseyhightower/envconfig"
 )
 
+// Component asynchronously ingests data from the distributor
 type Component struct {
 	config Config
 	logger *slog.Logger
 }
 
+// New creates a new ingester component
 func New(logger *slog.Logger) *Component {
 	var cfg Config
 	envconfig.MustProcess("", &cfg)
@@ -23,10 +25,12 @@ func New(logger *slog.Logger) *Component {
 	}
 }
 
+// Name returns the name of the component
 func (c *Component) Name() string {
 	return "ingester"
 }
 
+// Start starts the component
 func (c *Component) Start(ctx context.Context) error {
 	c.logger.Info("starting component", "name", c.Name())
 
