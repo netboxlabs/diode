@@ -63,6 +63,7 @@ func (c *Component) Stop() error {
 	return nil
 }
 
+// Push handles a push request
 func (c *Component) Push(_ context.Context, in *pb.PushRequest) (*pb.PushResponse, error) {
 	c.logger.Info("diode.v1.DistributorService/Push called", "stream", in.Stream)
 	return &pb.PushResponse{}, nil

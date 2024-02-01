@@ -51,6 +51,7 @@ func (c *Component) ping(ctx context.Context) error {
 	}
 }
 
+// Stop stops the component
 func (c *Component) Stop() error {
 	c.logger.Info("stopping component", "name", c.Name())
 	return nil
