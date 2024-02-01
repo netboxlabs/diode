@@ -14,12 +14,12 @@ func main() {
 
 	reconcilerComponent, err := reconciler.New(s.Logger())
 	if err != nil {
-		s.Logger().Error("failed to instantiate reconciler component: %v", err)
+		s.Logger().Error("failed to instantiate reconciler component", "error", err)
 		os.Exit(1)
 	}
 
 	if err := s.RegisterComponent(reconcilerComponent); err != nil {
-		s.Logger().Error("failed to register reconciler component: %v", err)
+		s.Logger().Error("failed to register reconciler component", "error", err)
 		os.Exit(1)
 	}
 
@@ -27,7 +27,7 @@ func main() {
 	// prometheusSvc, err := prometheus.New()
 
 	if err := s.Run(); err != nil {
-		s.Logger().Error("server %s failure: %v", s.Name(), err)
+		s.Logger().Error("server failure", "serverName", s.Name(), "error", err)
 		os.Exit(1)
 	}
 }

@@ -19,7 +19,7 @@ func main() {
 	}
 
 	if err := s.RegisterComponent(distributorComponent); err != nil {
-		s.Logger().Error("failed to register distributor component: %v", err)
+		s.Logger().Error("failed to register distributor component", "error", err)
 		os.Exit(1)
 	}
 
@@ -27,7 +27,7 @@ func main() {
 	// prometheusSvc, err := prometheus.New()
 
 	if err := s.Run(); err != nil {
-		s.Logger().Error("server %s failure: %v", s.Name(), err)
+		s.Logger().Error("server failure", "serverName", s.Name(), "error", err)
 		os.Exit(1)
 	}
 }

@@ -15,12 +15,12 @@ func main() {
 	ingesterComponent := ingester.New(s.Logger())
 
 	if err := s.RegisterComponent(ingesterComponent); err != nil {
-		s.Logger().Error("failed to register ingerster component: %v", err)
+		s.Logger().Error("failed to register ingester component", "error", err)
 		os.Exit(1)
 	}
 
 	if err := s.Run(); err != nil {
-		s.Logger().Error("server %s failure: %v", s.Name(), err)
+		s.Logger().Error("server failure", "serverName", s.Name(), "error", err)
 		os.Exit(1)
 	}
 }
