@@ -12,7 +12,7 @@ func main() {
 	ctx := context.Background()
 	s := server.New(ctx, "diode-distributor")
 
-	distributorComponent, err := distributor.New(s.Logger())
+	distributorComponent, err := distributor.New(ctx, s.Logger())
 	if err != nil {
 		s.Logger().Error("failed to instantiate distributor component", "error", err)
 		os.Exit(1)
