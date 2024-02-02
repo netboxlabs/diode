@@ -5,12 +5,18 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"time"
 
 	"github.com/kelseyhightower/envconfig"
 	pb "github.com/netboxlabs/diode-internal/diode-sdk-go/diode/v1/diodepb"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/protobuf/proto"
+)
+
+const (
+	streamID = "diode.v1.ingest"
 )
 
 // Component is a gRPC server that handles data ingestion requests
@@ -81,7 +87,31 @@ func (c *Component) Stop() error {
 }
 
 // Push handles a push request
-func (c *Component) Push(_ context.Context, in *pb.PushRequest) (*pb.PushResponse, error) {
-	c.logger.Info("diode.v1.DistributorService/Push called", "stream", in.Stream)
+func (c *Component) Push(ctx context.Context, in *pb.PushRequest) (*pb.PushResponse, error) {
+	for _, v := range in.GetData() {
+		encodedEntity, err := proto.Marshal(v)
+		if err != nil {
+			c.logger.Error("failed to marshal", "error", err, "value", v)
+			continue
+		}
+		msg := map[string]interface{}{
+			"id":                   in.GetId(),
+			"stream":               in.GetStream(),
+			"producer_app_name":    in.GetProducerAppName(),
+			"producer_app_version": in.GetProducerAppVersion(),
+			"sdk_name":             in.GetSdkName(),
+			"sdk_version":          in.GetSdkVersion(),
+			"data":                 encodedEntity,
+			"ts":                   v.GetTimestamp().String(),
+			"ingestion_ts":         time.Now().UnixNano(),
+		}
+		if err := c.redisClient.XAdd(ctx, &redis.XAddArgs{
+			Stream: streamID,
+			Values: msg,
+		}).Err(); err != nil {
+			c.logger.Error("failed to add element to the stream", "error", err, "streamID", streamID, "value", msg)
+		}
+	}
+
 	return &pb.PushResponse{}, nil
 }
