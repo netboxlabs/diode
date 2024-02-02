@@ -14,7 +14,7 @@ import (
 
 // A Server is a diode Server
 type Server struct {
-	cxt    context.Context
+	ctx    context.Context
 	name   string
 	logger *slog.Logger
 
@@ -37,7 +37,7 @@ func New(ctx context.Context, name string) *Server {
 	envconfig.MustProcess("", &cfg)
 
 	return &Server{
-		cxt:            ctx,
+		ctx:            ctx,
 		name:           name,
 		logger:         newLogger(cfg),
 		components:     make(map[string]Component),
@@ -66,7 +66,7 @@ func (s *Server) RegisterComponent(c Component) error {
 
 	s.components[c.Name()] = c
 
-	ctx, cancel := context.WithCancel(s.cxt)
+	ctx, cancel := context.WithCancel(s.ctx)
 
 	s.componentGroup.Add(
 		func() error {
@@ -86,7 +86,7 @@ func (s *Server) RegisterComponent(c Component) error {
 func (s *Server) Run() error {
 	s.logger.Info("starting server", "serverName", s.name)
 
-	s.componentGroup.Add(run.SignalHandler(s.cxt, os.Interrupt, os.Kill))
+	s.componentGroup.Add(run.SignalHandler(s.ctx, os.Interrupt, os.Kill))
 
 	return s.componentGroup.Run()
 }

@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"os"
 
 	"github.com/netboxlabs/diode-internal/diode-server/distributor"
 	"github.com/netboxlabs/diode-internal/diode-server/server"
@@ -12,19 +12,22 @@ func main() {
 	ctx := context.Background()
 	s := server.New(ctx, "diode-distributor")
 
-	distributorComponent, err := distributor.New(s.Logger())
+	distributorComponent, err := distributor.New(ctx, s.Logger())
 	if err != nil {
-		log.Fatalf("failed to instantiate distributor component: %v", err)
+		s.Logger().Error("failed to instantiate distributor component", "error", err)
+		os.Exit(1)
 	}
 
 	if err := s.RegisterComponent(distributorComponent); err != nil {
-		log.Fatalf("failed to register distributor component: %v", err)
+		s.Logger().Error("failed to register distributor component", "error", err)
+		os.Exit(1)
 	}
 
 	// instantiate a prom service for /metrics
 	// prometheusSvc, err := prometheus.New()
 
 	if err := s.Run(); err != nil {
-		log.Fatalf("server %s failure: %v", s.Name(), err)
+		s.Logger().Error("server failure", "serverName", s.Name(), "error", err)
+		os.Exit(1)
 	}
 }

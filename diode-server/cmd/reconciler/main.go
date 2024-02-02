@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"os"
 
 	"github.com/netboxlabs/diode-internal/diode-server/reconciler"
 	"github.com/netboxlabs/diode-internal/diode-server/server"
@@ -14,17 +14,20 @@ func main() {
 
 	reconcilerComponent, err := reconciler.New(s.Logger())
 	if err != nil {
-		log.Fatalf("failed to instantiate reconciler component: %v", err)
+		s.Logger().Error("failed to instantiate reconciler component", "error", err)
+		os.Exit(1)
 	}
 
 	if err := s.RegisterComponent(reconcilerComponent); err != nil {
-		log.Fatalf("failed to register reconciler component: %v", err)
+		s.Logger().Error("failed to register reconciler component", "error", err)
+		os.Exit(1)
 	}
 
 	// instantiate a prom service for /metrics
 	// prometheusSvc, err := prometheus.New()
 
 	if err := s.Run(); err != nil {
-		log.Fatalf("server %s failure: %v", s.Name(), err)
+		s.Logger().Error("server failure", "serverName", s.Name(), "error", err)
+		os.Exit(1)
 	}
 }
