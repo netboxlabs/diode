@@ -83,10 +83,7 @@ func (c *Component) Start(_ context.Context) error {
 func (c *Component) Stop() error {
 	c.logger.Info("stopping component", "name", c.Name())
 	c.grpcServer.GracefulStop()
-	if err := c.redisClient.Close(); err != nil {
-		return err
-	}
-	return nil
+	return c.redisClient.Close()
 }
 
 // Push handles a push request
