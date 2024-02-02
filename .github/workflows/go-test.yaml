@@ -1,0 +1,28 @@
+name: go-test
+on:
+  push:
+    branches:
+      - "!release"
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go: [
+          "diode-sdk-go",
+          "diode-server",
+        ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21.x'
+          check-latest: true
+      - name: Run go build ${{ matrix.go }}
+        run: go build ./...
+      - name: Run go test ${{ matrix.go }}
+        run: go test ./...
