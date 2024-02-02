@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestNewServer tests the server.New function
 func TestNewServer(t *testing.T) {
 	tests := []struct {
 		desc          string
@@ -90,7 +89,6 @@ func TestNewServer(t *testing.T) {
 	}
 }
 
-// TestRegisterComponent tests the server.RegisterComponent function
 func TestRegisterComponent(t *testing.T) {
 	tests := []struct {
 		desc             string
@@ -127,7 +125,6 @@ func TestRegisterComponent(t *testing.T) {
 	}
 }
 
-// TestRun tests the server.Run function
 func TestRun(t *testing.T) {
 	tests := []struct {
 		desc      string
@@ -163,38 +160,30 @@ func TestRun(t *testing.T) {
 	}
 }
 
-// NoopComponent is a component that does nothing
 type NoopComponent struct{}
 
-// Name returns the name of the component
 func (c *NoopComponent) Name() string {
 	return "noop"
 }
 
-// Start starts the component
 func (c *NoopComponent) Start(_ context.Context) error {
 	return nil
 }
 
-// Stop stops the component
 func (c *NoopComponent) Stop() error {
 	return nil
 }
 
-// FailingComponent is a component that fails to start and stop
 type FailingComponent struct{}
 
-// Name returns the name of the component
 func (c *FailingComponent) Name() string {
 	return "failing"
 }
 
-// Start starts the component
 func (c *FailingComponent) Start(_ context.Context) error {
 	return errors.New("start failed")
 }
 
-// Stop stops the component
 func (c *FailingComponent) Stop() error {
 	return errors.New("stop failed")
 }
