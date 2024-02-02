@@ -91,38 +91,13 @@ func (c *Component) Stop() error {
 
 // Push handles a push request
 func (c *Component) Push(ctx context.Context, in *pb.PushRequest) (*pb.PushResponse, error) {
-	reqID := in.GetId()
-	if reqID == "" {
-		return nil, fmt.Errorf("id is empty")
+	if err := validatePushRequest(in); err != nil {
+		return nil, err
 	}
 
 	reqStream := in.GetStream()
 	if reqStream == "" {
 		reqStream = DefaultRequestStream
-	}
-
-	producerAppName := in.GetProducerAppName()
-	if producerAppName == "" {
-		return nil, fmt.Errorf("producer app name is empty")
-	}
-
-	producerAppVersion := in.GetProducerAppVersion()
-	if producerAppVersion == "" {
-		return nil, fmt.Errorf("producer app version is empty")
-	}
-
-	sdkName := in.GetSdkName()
-	if sdkName == "" {
-		return nil, fmt.Errorf("sdk name is empty")
-	}
-
-	sdkVersion := in.GetSdkVersion()
-	if sdkVersion == "" {
-		return nil, fmt.Errorf("sdk version is empty")
-	}
-
-	if len(in.GetData()) < 1 {
-		return nil, fmt.Errorf("data is empty")
 	}
 
 	errs := make([]string, 0)
@@ -139,12 +114,12 @@ func (c *Component) Push(ctx context.Context, in *pb.PushRequest) (*pb.PushRespo
 			continue
 		}
 		msg := map[string]interface{}{
-			"id":                   reqID,
+			"id":                   in.GetId(),
 			"stream":               reqStream,
-			"producer_app_name":    producerAppName,
-			"producer_app_version": producerAppVersion,
-			"sdk_name":             sdkName,
-			"sdk_version":          sdkVersion,
+			"producer_app_name":    in.GetProducerAppName(),
+			"producer_app_version": in.GetProducerAppVersion(),
+			"sdk_name":             in.GetSdkName(),
+			"sdk_version":          in.GetSdkVersion(),
 			"data":                 encodedEntity,
 			"ts":                   v.GetTimestamp().String(),
 			"ingestion_ts":         time.Now().UnixNano(),
@@ -158,4 +133,32 @@ func (c *Component) Push(ctx context.Context, in *pb.PushRequest) (*pb.PushRespo
 	}
 
 	return &pb.PushResponse{Errors: errs}, nil
+}
+
+func validatePushRequest(in *pb.PushRequest) error {
+	if in.GetId() == "" {
+		return fmt.Errorf("id is empty")
+	}
+
+	if in.GetProducerAppName() == "" {
+		return fmt.Errorf("producer app name is empty")
+	}
+
+	if in.GetProducerAppVersion() == "" {
+		return fmt.Errorf("producer app version is empty")
+	}
+
+	if in.GetSdkName() == "" {
+		return fmt.Errorf("sdk name is empty")
+	}
+
+	if in.GetSdkVersion() == "" {
+		return fmt.Errorf("sdk version is empty")
+	}
+
+	if len(in.GetData()) < 1 {
+		return fmt.Errorf("data is empty")
+	}
+
+	return nil
 }
