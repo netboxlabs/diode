@@ -16,6 +16,9 @@ import (
 )
 
 const (
+	// DefaultRequestStream is the default stream to use when none is provided
+	DefaultRequestStream = "latest"
+
 	streamID = "diode.v1.ingest"
 )
 
@@ -88,19 +91,60 @@ func (c *Component) Stop() error {
 
 // Push handles a push request
 func (c *Component) Push(ctx context.Context, in *pb.PushRequest) (*pb.PushResponse, error) {
-	for _, v := range in.GetData() {
+	reqID := in.GetId()
+	if reqID == "" {
+		return nil, fmt.Errorf("id is empty")
+	}
+
+	reqStream := in.GetStream()
+	if reqStream == "" {
+		reqStream = DefaultRequestStream
+	}
+
+	producerAppName := in.GetProducerAppName()
+	if producerAppName == "" {
+		return nil, fmt.Errorf("producer app name is empty")
+	}
+
+	producerAppVersion := in.GetProducerAppVersion()
+	if producerAppVersion == "" {
+		return nil, fmt.Errorf("producer app version is empty")
+	}
+
+	sdkName := in.GetSdkName()
+	if sdkName == "" {
+		return nil, fmt.Errorf("sdk name is empty")
+	}
+
+	sdkVersion := in.GetSdkVersion()
+	if sdkVersion == "" {
+		return nil, fmt.Errorf("sdk version is empty")
+	}
+
+	if len(in.GetData()) < 1 {
+		return nil, fmt.Errorf("data is empty")
+	}
+
+	errs := make([]string, 0)
+
+	for i, v := range in.GetData() {
+		if v.GetData() == nil {
+			errs = append(errs, fmt.Sprintf("data for index %d is nil", i))
+			continue
+		}
+
 		encodedEntity, err := proto.Marshal(v)
 		if err != nil {
 			c.logger.Error("failed to marshal", "error", err, "value", v)
 			continue
 		}
 		msg := map[string]interface{}{
-			"id":                   in.GetId(),
-			"stream":               in.GetStream(),
-			"producer_app_name":    in.GetProducerAppName(),
-			"producer_app_version": in.GetProducerAppVersion(),
-			"sdk_name":             in.GetSdkName(),
-			"sdk_version":          in.GetSdkVersion(),
+			"id":                   reqID,
+			"stream":               reqStream,
+			"producer_app_name":    producerAppName,
+			"producer_app_version": producerAppVersion,
+			"sdk_name":             sdkName,
+			"sdk_version":          sdkVersion,
 			"data":                 encodedEntity,
 			"ts":                   v.GetTimestamp().String(),
 			"ingestion_ts":         time.Now().UnixNano(),
@@ -113,5 +157,5 @@ func (c *Component) Push(ctx context.Context, in *pb.PushRequest) (*pb.PushRespo
 		}
 	}
 
-	return &pb.PushResponse{}, nil
+	return &pb.PushResponse{Errors: errs}, nil
 }
