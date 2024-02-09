@@ -1,5 +1,7 @@
 FROM gcr.io/distroless/base:latest
 
+USER nonroot
+
 ARG SVC
 
 LABEL maintainer="techops@netboxlabs.com"
