@@ -1,20 +1,20 @@
-package distributor_test
+package diode_test
 
 import (
 	"context"
 	"os"
 	"testing"
 
-	"github.com/netboxlabs/diode/diode-sdk-go/diode/v1/distributor"
+	"github.com/netboxlabs/diode/diode-sdk-go/diode/v1"
 	"github.com/stretchr/testify/require"
 )
 
 func TestNewClient(t *testing.T) {
 	cleanUpEnvVars()
 
-	_ = os.Setenv(distributor.DiodeAPIKeyEnvVarName, "nothingtoseehere")
+	_ = os.Setenv(diode.DiodeAPIKeyEnvVarName, "nothingtoseehere")
 
-	client, err := distributor.NewClient(context.Background())
+	client, err := diode.NewClient(context.Background())
 	require.NoError(t, err)
 	require.NotNil(t, client)
 	require.NoError(t, client.Close())
@@ -23,7 +23,7 @@ func TestNewClient(t *testing.T) {
 func TestNewClientWithMissingAPIKey(t *testing.T) {
 	cleanUpEnvVars()
 
-	client, err := distributor.NewClient(context.Background())
+	client, err := diode.NewClient(context.Background())
 	require.Nil(t, client)
 	require.EqualError(t, err, "environment variable DIODE_API_KEY not found")
 }
@@ -42,12 +42,12 @@ func TestNewClientWithTimeout(t *testing.T) {
 		{
 			desc:       "timeout with negative value",
 			timeoutStr: "-1",
-			err:        distributor.ErrInvalidTimeout,
+			err:        diode.ErrInvalidTimeout,
 		},
 		{
 			desc:       "timeout with non-parseable value",
 			timeoutStr: "10a",
-			err:        distributor.ErrInvalidTimeout,
+			err:        diode.ErrInvalidTimeout,
 		},
 	}
 
@@ -55,10 +55,10 @@ func TestNewClientWithTimeout(t *testing.T) {
 		t.Run(tt.desc, func(t *testing.T) {
 			cleanUpEnvVars()
 
-			_ = os.Setenv(distributor.DiodeAPIKeyEnvVarName, "nothingtoseehere")
-			_ = os.Setenv(distributor.DiodeGRPCTimeoutSecondsEnvVarName, tt.timeoutStr)
+			_ = os.Setenv(diode.DiodeAPIKeyEnvVarName, "nothingtoseehere")
+			_ = os.Setenv(diode.DiodeGRPCTimeoutSecondsEnvVarName, tt.timeoutStr)
 
-			client, err := distributor.NewClient(context.Background())
+			client, err := diode.NewClient(context.Background())
 			if tt.err == nil {
 				require.NoError(t, err)
 				require.NotNil(t, client)
@@ -94,10 +94,10 @@ func TestNewClientWithInsecureGRPC(t *testing.T) {
 		t.Run(tt.desc, func(t *testing.T) {
 			cleanUpEnvVars()
 
-			_ = os.Setenv(distributor.DiodeAPIKeyEnvVarName, "nothingtoseehere")
-			_ = os.Setenv(distributor.DiodeGRPCInsecureEnvVarName, tt.value)
+			_ = os.Setenv(diode.DiodeAPIKeyEnvVarName, "nothingtoseehere")
+			_ = os.Setenv(diode.DiodeGRPCInsecureEnvVarName, tt.value)
 
-			client, err := distributor.NewClient(context.Background())
+			client, err := diode.NewClient(context.Background())
 			require.NoError(t, err)
 			require.NotNil(t, client)
 		})
@@ -105,9 +105,9 @@ func TestNewClientWithInsecureGRPC(t *testing.T) {
 }
 
 func cleanUpEnvVars() {
-	_ = os.Unsetenv(distributor.DiodeAPIKeyEnvVarName)
-	_ = os.Unsetenv(distributor.DiodeGRPCHostEnvVarName)
-	_ = os.Unsetenv(distributor.DiodeGRPCPortEnvVarName)
-	_ = os.Unsetenv(distributor.DiodeGRPCTimeoutSecondsEnvVarName)
-	_ = os.Unsetenv(distributor.DiodeGRPCInsecureEnvVarName)
+	_ = os.Unsetenv(diode.DiodeAPIKeyEnvVarName)
+	_ = os.Unsetenv(diode.DiodeGRPCHostEnvVarName)
+	_ = os.Unsetenv(diode.DiodeGRPCPortEnvVarName)
+	_ = os.Unsetenv(diode.DiodeGRPCTimeoutSecondsEnvVarName)
+	_ = os.Unsetenv(diode.DiodeGRPCInsecureEnvVarName)
 }
