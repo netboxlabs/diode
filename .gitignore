@@ -20,3 +20,6 @@ venv.bak/
 
 # Go
 coverage.txt
+
+# diode-server
+diode-server/build/
