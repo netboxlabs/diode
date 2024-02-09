@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/kelseyhightower/envconfig"
-	pb "github.com/netboxlabs/diode-internal/diode-sdk-go/diode/v1/diodepb"
+	pb "github.com/netboxlabs/diode/diode-sdk-go/diode/v1/diodepb"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"

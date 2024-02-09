@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/netboxlabs/diode-internal/diode-sdk-go/diode/v1/diodepb"
+	"github.com/netboxlabs/diode/diode-sdk-go/diode/v1/diodepb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"

@@ -1,10 +1,10 @@
-module github.com/netboxlabs/diode-internal/diode-server
+module github.com/netboxlabs/diode/diode-server
 
 go 1.21
 
 require (
 	github.com/kelseyhightower/envconfig v1.4.0
-	github.com/netboxlabs/diode-internal/diode-sdk-go v0.0.0
+	github.com/netboxlabs/diode/diode-sdk-go v0.0.0
 	github.com/oklog/run v1.1.0
 	github.com/redis/go-redis/v9 v9.4.0
 	github.com/stretchr/testify v1.8.4
@@ -26,4 +26,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace github.com/netboxlabs/diode-internal/diode-sdk-go v0.0.0 => ../diode-sdk-go
+replace github.com/netboxlabs/diode/diode-sdk-go v0.0.0 => ../diode-sdk-go

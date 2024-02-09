@@ -1,1 +1,1 @@
-# diode-internal
+# diode
