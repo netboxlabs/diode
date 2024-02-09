@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/netboxlabs/diode-internal/diode-sdk-go/diode/v1/distributor"
+	"github.com/netboxlabs/diode/diode-sdk-go/diode/v1/distributor"
 	"github.com/stretchr/testify/require"
 )
 

@@ -4,7 +4,7 @@ package diode.v1;
 
 import "validate/validate.proto";
 
-option go_package = "github.com/netboxlabs/diode-internal/diode-sdk-go/diode/v1/diodepb";
+option go_package = "github.com/netboxlabs/diode/diode-sdk-go/diode/v1/diodepb";
 
 // A device role
 message DeviceRole {

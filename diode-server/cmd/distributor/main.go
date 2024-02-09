@@ -4,8 +4,8 @@ import (
 	"context"
 	"os"
 
-	"github.com/netboxlabs/diode-internal/diode-server/distributor"
-	"github.com/netboxlabs/diode-internal/diode-server/server"
+	"github.com/netboxlabs/diode/diode-server/distributor"
+	"github.com/netboxlabs/diode/diode-server/server"
 )
 
 func main() {

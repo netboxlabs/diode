@@ -1,5 +1,4 @@
 # Protocol Documentation
-
 <a name="top"></a>
 
 ## Table of Contents
@@ -42,19 +41,18 @@
 <a name="diode-v1-Device"></a>
 
 ### Device
-
 A device
 
-| Field       | Type                                        | Label | Description |
-|-------------|---------------------------------------------|-------|-------------|
-| name        | [string](#string)                           |       |             |
-| device_fqdn | [string](#string)                           |       |             |
-| device_type | [google.protobuf.Any](#google-protobuf-Any) |       |             |
-| role        | [google.protobuf.Any](#google-protobuf-Any) |       |             |
-| platform    | [google.protobuf.Any](#google-protobuf-Any) |       |             |
-| serial      | [string](#string)                           |       |             |
-| site        | [google.protobuf.Any](#google-protobuf-Any) |       |             |
-| vc_position | [int32](#int32)                             |       |             |
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [string](#string) |  |  |
+| device_fqdn | [string](#string) |  |  |
+| device_type | [google.protobuf.Any](#google-protobuf-Any) |  |  |
+| role | [google.protobuf.Any](#google-protobuf-Any) |  |  |
+| platform | [google.protobuf.Any](#google-protobuf-Any) |  |  |
+| serial | [string](#string) |  |  |
+| site | [google.protobuf.Any](#google-protobuf-Any) |  |  |
+| vc_position | [int32](#int32) |  |  |
 
 <a name="diode_v1_device_role-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
@@ -64,14 +62,13 @@ A device
 <a name="diode-v1-DeviceRole"></a>
 
 ### DeviceRole
-
 A device role
 
-| Field   | Type              | Label | Description |
-|---------|-------------------|-------|-------------|
-| name    | [string](#string) |       |             |
-| slug    | [string](#string) |       |             |
-| vm_role | [bool](#bool)     |       |             |
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [string](#string) |  |  |
+| slug | [string](#string) |  |  |
+| vm_role | [bool](#bool) |  |  |
 
 <a name="diode_v1_device_type-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
@@ -81,14 +78,13 @@ A device role
 <a name="diode-v1-DeviceType"></a>
 
 ### DeviceType
-
 A device type
 
-| Field        | Type                                        | Label | Description |
-|--------------|---------------------------------------------|-------|-------------|
-| manufacturer | [google.protobuf.Any](#google-protobuf-Any) |       |             |
-| model        | [string](#string)                           |       |             |
-| slug         | [string](#string)                           |       |             |
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| manufacturer | [google.protobuf.Any](#google-protobuf-Any) |  |  |
+| model | [string](#string) |  |  |
+| slug | [string](#string) |  |  |
 
 <a name="diode_v1_interface-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
@@ -98,18 +94,17 @@ A device type
 <a name="diode-v1-Interface"></a>
 
 ### Interface
-
 An interface
 
-| Field       | Type                                        | Label | Description |
-|-------------|---------------------------------------------|-------|-------------|
-| device      | [google.protobuf.Any](#google-protobuf-Any) |       |             |
-| name        | [string](#string)                           |       |             |
-| type        | [string](#string)                           |       |             |
-| enabled     | [bool](#bool)                               |       |             |
-| mtu         | [int32](#int32)                             |       |             |
-| mac_address | [string](#string)                           |       |             |
-| mgmt_only   | [bool](#bool)                               |       |             |
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| device | [google.protobuf.Any](#google-protobuf-Any) |  |  |
+| name | [string](#string) |  |  |
+| type | [string](#string) |  |  |
+| enabled | [bool](#bool) |  |  |
+| mtu | [int32](#int32) |  |  |
+| mac_address | [string](#string) |  |  |
+| mgmt_only | [bool](#bool) |  |  |
 
 <a name="diode_v1_manufacturer-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
@@ -119,13 +114,12 @@ An interface
 <a name="diode-v1-Manufacturer"></a>
 
 ### Manufacturer
-
 A manufacturer
 
-| Field | Type              | Label | Description |
-|-------|-------------------|-------|-------------|
-| name  | [string](#string) |       |             |
-| slug  | [string](#string) |       |             |
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [string](#string) |  |  |
+| slug | [string](#string) |  |  |
 
 <a name="diode_v1_platform-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
@@ -135,13 +129,12 @@ A manufacturer
 <a name="diode-v1-Platform"></a>
 
 ### Platform
-
 A platform
 
-| Field | Type              | Label | Description |
-|-------|-------------------|-------|-------------|
-| name  | [string](#string) |       |             |
-| slug  | [string](#string) |       |             |
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [string](#string) |  |  |
+| slug | [string](#string) |  |  |
 
 <a name="diode_v1_site-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
@@ -151,13 +144,12 @@ A platform
 <a name="diode-v1-Site"></a>
 
 ### Site
-
 A site
 
-| Field | Type              | Label | Description |
-|-------|-------------------|-------|-------------|
-| name  | [string](#string) |       |             |
-| slug  | [string](#string) |       |             |
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [string](#string) |  |  |
+| slug | [string](#string) |  |  |
 
 <a name="diode_v1_distributor-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
@@ -167,50 +159,46 @@ A site
 <a name="diode-v1-IngestEntity"></a>
 
 ### IngestEntity
-
 An ingest entity wrapper
 
-| Field        | Type                                                    | Label | Description                                   |
-|--------------|---------------------------------------------------------|-------|-----------------------------------------------|
-| site         | [Site](#diode-v1-Site)                                  |       |                                               |
-| platform     | [Platform](#diode-v1-Platform)                          |       |                                               |
-| manufacturer | [Manufacturer](#diode-v1-Manufacturer)                  |       |                                               |
-| device       | [Device](#diode-v1-Device)                              |       |                                               |
-| device_role  | [DeviceRole](#diode-v1-DeviceRole)                      |       |                                               |
-| device_type  | [DeviceType](#diode-v1-DeviceType)                      |       |                                               |
-| interface    | [Interface](#diode-v1-Interface)                        |       |                                               |
-| timestamp    | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |       | The timestamp of the data discovery at source |
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| site | [Site](#diode-v1-Site) |  |  |
+| platform | [Platform](#diode-v1-Platform) |  |  |
+| manufacturer | [Manufacturer](#diode-v1-Manufacturer) |  |  |
+| device | [Device](#diode-v1-Device) |  |  |
+| device_role | [DeviceRole](#diode-v1-DeviceRole) |  |  |
+| device_type | [DeviceType](#diode-v1-DeviceType) |  |  |
+| interface | [Interface](#diode-v1-Interface) |  |  |
+| timestamp | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  | The timestamp of the data discovery at source |
 
 <a name="diode-v1-PushRequest"></a>
 
 ### PushRequest
-
 The request to push data
 
-| Field                | Type                                   | Label    | Description |
-|----------------------|----------------------------------------|----------|-------------|
-| stream               | [string](#string)                      |          |             |
-| data                 | [IngestEntity](#diode-v1-IngestEntity) | repeated |             |
-| id                   | [string](#string)                      |          |             |
-| producer_app_name    | [string](#string)                      |          |             |
-| producer_app_version | [string](#string)                      |          |             |
-| sdk_name             | [string](#string)                      |          |             |
-| sdk_version          | [string](#string)                      |          |             |
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| stream | [string](#string) |  |  |
+| data | [IngestEntity](#diode-v1-IngestEntity) | repeated |  |
+| id | [string](#string) |  |  |
+| producer_app_name | [string](#string) |  |  |
+| producer_app_version | [string](#string) |  |  |
+| sdk_name | [string](#string) |  |  |
+| sdk_version | [string](#string) |  |  |
 
 <a name="diode-v1-PushResponse"></a>
 
 ### PushResponse
-
 The response from the push request
 
-| Field  | Type              | Label    | Description |
-|--------|-------------------|----------|-------------|
-| errors | [string](#string) | repeated |             |
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| errors | [string](#string) | repeated |  |
 
 <a name="diode-v1-DistributorService"></a>
 
 ### DistributorService
-
 Distributor API
 
 | Method Name | Request Type                         | Response Type                          | Description                  |

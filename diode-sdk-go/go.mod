@@ -1,4 +1,4 @@
-module github.com/netboxlabs/diode-internal/diode-sdk-go
+module github.com/netboxlabs/diode/diode-sdk-go
 
 go 1.21
 

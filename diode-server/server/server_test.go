@@ -8,7 +8,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/netboxlabs/diode-internal/diode-server/server"
+	"github.com/netboxlabs/diode/diode-server/server"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
