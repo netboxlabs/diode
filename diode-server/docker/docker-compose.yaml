@@ -1,13 +1,32 @@
 version: '3.8'
 name: diode
 services:
+  diode-distributor:
+    image: netboxlabs/diode-distributor:${DIODE_VERSION}-${COMMIT_SHA}
+    env_file: diode/env/distributor.env
+    ports:
+      - "8081:8081"
+    depends_on:
+      - diode-redis-streams
+  diode-ingester:
+    image: netboxlabs/diode-ingester:${DIODE_VERSION}-${COMMIT_SHA}
+    env_file: diode/env/ingester.env
+    depends_on:
+      - diode-redis-streams
+  diode-reconciler:
+    image: netboxlabs/diode-reconciler:${DIODE_VERSION}-${COMMIT_SHA}
+    env_file: diode/env/reconciler.env
+    ports:
+      - "8082:8081"
+    depends_on:
+      - diode-redis
   diode-redis:
     image: redis/redis-stack-server:latest
     command:
       - sh
       - -c
       - redis-server --appendonly yes --requirepass $$REDIS_PASSWORD --loadmodule /opt/redis-stack/lib/rejson.so --loadmodule /opt/redis-stack/lib/redisearch.so
-    env_file: docker/diode/env/redis.env
+    env_file: diode/env/redis.env
     ports:
       - "6380:6379"
     volumes:
@@ -18,7 +37,7 @@ services:
       - sh
       - -c
       - redis-server --appendonly yes --requirepass $$REDIS_STREAMS_PASSWORD
-    env_file: docker/diode/env/redis-streams.env
+    env_file: diode/env/redis-streams.env
     ports:
       - "6379:6379"
     volumes:
