@@ -9,9 +9,17 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+!diode-server/docker/diode/env/
+!diode-server/docker/netbox/env/
 
 # VS Code
 .vscode
 
 # macOS
 .DS_Store
+
+# Go
+coverage.txt
+
+# diode-server
+diode-server/build/
