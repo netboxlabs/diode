@@ -29,8 +29,8 @@ dependencies = [ # Optional
 ]
 
 [project.optional-dependencies] # Optional
-#dev = ["check-manifest"]
-#test = ["coverage"]
+dev = ["black", "check-manifest", "ruff"]
+test = ["coverage"]
 
 [project.urls]  # Optional
 "Homepage" = "https://netboxlabs.com/"

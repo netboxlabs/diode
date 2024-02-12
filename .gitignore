@@ -24,7 +24,11 @@ coverage.txt
 # diode-server
 diode-server/build/
 
-# Byte-compiled / optimized / DLL files
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
+.Python
+build/
+.eggs/
+*.egg-info

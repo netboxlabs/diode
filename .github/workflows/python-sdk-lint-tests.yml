@@ -22,8 +22,9 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r src/requirements.txt
-        pip install -r src/tests/requirements.txt
+        pip install .
+        pip install .[dev]
+        pip install .[test]
 
     - name: Run tests with coverage
       run: |
@@ -38,6 +39,5 @@ jobs:
 
     - name: Lint with Ruff
       run: |
-        pip install ruff
         ruff --output-format=github diode-sdk-python/netboxlabs/ diode-sdk-python/tests/
       continue-on-error: true
