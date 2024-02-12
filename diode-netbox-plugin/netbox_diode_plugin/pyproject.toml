@@ -1,0 +1,11 @@
+[tool.ruff]
+
+line-length = 140
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.ruff.lint]
+select = ["C", "D", "E", "F", "I", "R", "UP", "W"]
+ignore = ["F401", "D203", "D212", "D400", "D401", "D404", "RET504"]
