@@ -8,7 +8,7 @@ from .version import version_semver
 
 class NetBoxDiodePluginConfig(PluginConfig):
     name = "netbox_diode_plugin"
-    verbose_name = "NetBox Labs, Diode PLug-in"
+    verbose_name = "NetBox Labs, Diode Plugin"
     description = "Diode plugin for NetBox."
     version = version_semver()
     base_url = "diode"
