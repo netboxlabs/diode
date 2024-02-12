@@ -4,6 +4,7 @@
 
 from netboxlabs.diode.sdk import ClientConfiguration
 
+
 def test_init():
     """Ensure we can initiate a client configuration."""
     config = ClientConfiguration(name="my-producer", version="0.0.1")
