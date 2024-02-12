@@ -30,7 +30,7 @@ dependencies = [ # Optional
 
 [project.optional-dependencies] # Optional
 dev = ["black", "check-manifest", "ruff"]
-test = ["coverage"]
+test = ["coverage", "pytest"]
 
 [project.urls]  # Optional
 "Homepage" = "https://netboxlabs.com/"
