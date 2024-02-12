@@ -32,7 +32,7 @@ jobs:
     - name: Run tests with coverage
       run: |
         set -o pipefail
-        pytest --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=diode-sdk-python/netboxlabs/ | tee pytest-coverage.txt
+        pytest --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=netboxlabs/ | tee pytest-coverage.txt
 
     - name: Pytest coverage comment
       uses: MishaKav/pytest-coverage-comment@main
@@ -42,5 +42,5 @@ jobs:
 
     - name: Lint with Ruff
       run: |
-        ruff --output-format=github diode-sdk-python/netboxlabs/ diode-sdk-python/tests/
+        ruff --output-format=github netboxlabs/ tests/
       continue-on-error: true
