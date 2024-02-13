@@ -23,3 +23,4 @@ PLUGINS_CONFIG = {
     }
 }
 ```
+
