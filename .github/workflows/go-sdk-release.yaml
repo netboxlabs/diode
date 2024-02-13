@@ -31,7 +31,7 @@ jobs:
       BUILD_TRACK: release
       BUILD_COMMIT: ${{ needs.get-next-version.outputs.short-sha }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       #
       # do the build and inject versions here
       #
