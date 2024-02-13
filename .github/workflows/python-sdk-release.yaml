@@ -59,6 +59,11 @@ jobs:
           path: ${{ env.APP_DIR }}/dist/${{ env.OUTPUT_FILENAME }}
           retention-days: 30
           if-no-files-found: error
+      - name: Publish distribution 📦 to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_SDK_API_TOKEN }}
 
   semantic-release:
     uses: netboxlabs/diode/.github/workflows/reusable_semantic_release.yaml@develop
@@ -66,5 +71,3 @@ jobs:
     with:
       app_dir: diode-sdk-python
     secrets: inherit
-
-  # upload to Docker hub / GHCR / PyPi here
