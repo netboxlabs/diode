@@ -7,12 +7,12 @@ services:
     ports:
       - "8081:8081"
     depends_on:
-      - diode-redis-streams
+      - diode-redis
   diode-ingester:
     image: netboxlabs/diode-ingester:${DIODE_VERSION}-${COMMIT_SHA}
     env_file: diode/env/ingester.env
     depends_on:
-      - diode-redis-streams
+      - diode-redis
   diode-reconciler:
     image: netboxlabs/diode-reconciler:${DIODE_VERSION}-${COMMIT_SHA}
     env_file: diode/env/reconciler.env
@@ -28,23 +28,17 @@ services:
       - redis-server --appendonly yes --requirepass $$REDIS_PASSWORD --loadmodule /opt/redis-stack/lib/rejson.so --loadmodule /opt/redis-stack/lib/redisearch.so
     env_file: diode/env/redis.env
     ports:
-      - "6380:6379"
-    volumes:
-      - diode-redis-data:/data
-  diode-redis-streams:
-    image: redis/redis-stack-server:latest
-    command:
-      - sh
-      - -c
-      - redis-server --appendonly yes --requirepass $$REDIS_STREAMS_PASSWORD
-    env_file: diode/env/redis-streams.env
-    ports:
       - "6379:6379"
     volumes:
-      - diode-redis-streams-data:/data
-
+      - diode-redis-data:/data
+  diode-redis-cli:
+    image: redis/redis-stack-server:latest
+    links:
+      - diode-redis
+    command: ./home/redis/bootstrap.sh
+    env_file: diode/env/redis.env
+    volumes:
+      - ./diode/redis:/home/redis
 volumes:
   diode-redis-data:
-    driver: local
-  diode-redis-streams-data:
     driver: local

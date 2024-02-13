@@ -19,7 +19,7 @@ const (
 	// DefaultRequestStream is the default stream to use when none is provided
 	DefaultRequestStream = "latest"
 
-	streamID = "diode.v1.ingest"
+	streamID = "diode.v1.ingest-stream"
 )
 
 // Component is a gRPC server that handles data ingestion requests
@@ -47,6 +47,7 @@ func New(ctx context.Context, logger *slog.Logger) (*Component, error) {
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%s:%s", cfg.RedisHost, cfg.RedisPort),
 		Password: cfg.RedisPassword,
+		DB:       cfg.RedisStreamDB,
 	})
 
 	if _, err := redisClient.Ping(ctx).Result(); err != nil {
@@ -92,41 +93,30 @@ func (c *Component) Push(ctx context.Context, in *pb.PushRequest) (*pb.PushRespo
 		return nil, err
 	}
 
-	reqStream := in.GetStream()
-	if reqStream == "" {
-		reqStream = DefaultRequestStream
-	}
-
 	errs := make([]string, 0)
+
+	encodedRequest, err := proto.Marshal(in)
+	if err != nil {
+		c.logger.Error("failed to marshal request", "error", err, "request", in)
+	}
 
 	for i, v := range in.GetData() {
 		if v.GetData() == nil {
 			errs = append(errs, fmt.Sprintf("data for index %d is nil", i))
 			continue
 		}
+	}
 
-		encodedEntity, err := proto.Marshal(v)
-		if err != nil {
-			c.logger.Error("failed to marshal", "error", err, "value", v)
-			continue
-		}
-		msg := map[string]interface{}{
-			"id":                   in.GetId(),
-			"stream":               reqStream,
-			"producer_app_name":    in.GetProducerAppName(),
-			"producer_app_version": in.GetProducerAppVersion(),
-			"sdk_name":             in.GetSdkName(),
-			"sdk_version":          in.GetSdkVersion(),
-			"data":                 encodedEntity,
-			"ts":                   v.GetTimestamp().String(),
-			"ingestion_ts":         time.Now().UnixNano(),
-		}
-		if err := c.redisClient.XAdd(ctx, &redis.XAddArgs{
-			Stream: streamID,
-			Values: msg,
-		}).Err(); err != nil {
-			c.logger.Error("failed to add element to the stream", "error", err, "streamID", streamID, "value", msg)
-		}
+	msg := map[string]interface{}{
+		"request":      encodedRequest,
+		"ingestion_ts": time.Now().UnixNano(),
+	}
+
+	if err := c.redisClient.XAdd(ctx, &redis.XAddArgs{
+		Stream: streamID,
+		Values: msg,
+	}).Err(); err != nil {
+		c.logger.Error("failed to add element to the stream", "error", err, "streamID", streamID, "value", msg)
 	}
 
 	return &pb.PushResponse{Errors: errs}, nil

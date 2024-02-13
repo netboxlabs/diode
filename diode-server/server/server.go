@@ -73,8 +73,9 @@ func (s *Server) RegisterComponent(c Component) error {
 			return c.Start(ctx)
 		},
 		func(err error) {
-			if err := c.Stop(); err != nil {
-				s.logger.Error("failed to stop component", "componentName", c.Name(), "error", err)
+			s.logger.Debug("component interrupted", "componentName", c.Name(), "error", err)
+			if err2 := c.Stop(); err2 != nil {
+				s.logger.Error("failed to stop component", "componentName", c.Name(), "error", err2)
 			}
 			cancel()
 		},
