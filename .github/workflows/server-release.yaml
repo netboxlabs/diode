@@ -1,8 +1,9 @@
 name: Server - release
 on:
   workflow_dispatch:
+  pull_request:
   push:
-    #    branches: [ release ]
+    branches: [ release ]
     paths:
       - "diode-server/**"
 env:
