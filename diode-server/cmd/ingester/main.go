@@ -12,7 +12,11 @@ func main() {
 	ctx := context.Background()
 	s := server.New(ctx, "diode-ingester")
 
-	ingesterComponent := ingester.New(s.Logger())
+	ingesterComponent, err := ingester.New(ctx, s.Logger())
+	if err != nil {
+		s.Logger().Error("failed to instantiate ingester component", "error", err)
+		os.Exit(1)
+	}
 
 	if err := s.RegisterComponent(ingesterComponent); err != nil {
 		s.Logger().Error("failed to register ingester component", "error", err)
