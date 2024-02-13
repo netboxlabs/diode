@@ -1,4 +1,4 @@
-name: "Netbox plugin - lint"
+name: "Python Netbox plugin - lint"
 on:
   workflow_dispatch:
   push:

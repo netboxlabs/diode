@@ -1,0 +1,30 @@
+name: Reusable - Semantic Release - Release
+on:
+  workflow_call:
+    inputs:
+      app_dir:
+        type: string
+        required: true
+
+env:
+  GH_TOKEN: ${{ secrets.ORB_CI_GH_TOKEN }}
+  SLACK_SEMANTIC_RELEASE_WEBHOOK: ${{ secrets.SLACK_OBSERVABILITY_RELEASE_WEBHOOK }}
+
+jobs:
+  semantic-release:
+    name: Semantic release
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.app_dir }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "21.4.0"
+      - name: setup semantic-release
+        run: npm i
+      - name: Release
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_OBSERVABILITY_RELEASE_WEBHOOK }}
+        run: npx semantic-release -e semantic-release-monorepo --debug
