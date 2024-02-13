@@ -1,0 +1,36 @@
+{
+  "branches": "release",
+  "repositoryUrl": "https://github.com/netboxlabs/diode",
+  "debug": "true",
+  "extends": "semantic-release-monorepo",
+  "tagFormat": "diode-sdk-python/v${version}",
+  "plugins": [
+    ["semantic-release-export-data"],
+    ["@semantic-release/commit-analyzer", {
+      "releaseRules": [
+        { "message": "*", "release": "patch"},
+        { "message": "fix*", "release": "patch" },
+        { "message": "feat*", "release": "minor" },
+        { "message": "perf*",  "release": "major" }
+      ]
+    }],
+    "@semantic-release/release-notes-generator",
+    [
+      "@semantic-release/changelog",
+      {
+        "changelogFile": "CHANGELOG.md",
+        "changelogTitle": "# Semantic Versioning Changelog"
+      }
+    ],
+    [
+      "@semantic-release/github",
+      {
+        "assets": [
+          {
+            "path": "release/**"
+          }
+        ]
+      }
+    ]
+  ]
+}

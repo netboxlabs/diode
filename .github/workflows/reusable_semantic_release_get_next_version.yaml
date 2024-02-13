@@ -1,0 +1,61 @@
+name: Reusable - Semantic Release - Get Next Version
+on:
+  workflow_call:
+    inputs:
+      app_name: 
+        type: string
+        required: true
+      app_dir: 
+        type: string
+        required: true
+    outputs:
+      new-release-published: 
+        value: ${{ jobs.get-next-version.outputs.new-release-published }}
+      new-release-version: 
+        value: ${{ jobs.get-next-version.outputs.new-release-version }}
+      short-sha: 
+        value: ${{ jobs.get-next-version.outputs.short-sha }}
+
+env:
+  GH_TOKEN: ${{ secrets.ORB_CI_GH_TOKEN }}
+  SLACK_SEMANTIC_RELEASE_WEBHOOK: ${{ secrets.SLACK_OBSERVABILITY_RELEASE_WEBHOOK }}
+
+jobs:
+  get-next-version:
+    name: Semantic release get next version
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ inputs.app_dir }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "lts/*"
+      - name: setup semantic-release
+        run: npm i
+      - name: release dry-run
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_OBSERVABILITY_RELEASE_WEBHOOK }}
+        run: npx semantic-release -e semantic-release-monorepo --debug --dry-run
+        id: get-next-version
+      - name: Set short sha output
+        id: short-sha
+        run: echo "::set-output name=short-sha::${GITHUB_SHA::7}"
+      - name: Set release version
+        id: release-version
+        run: |
+          echo "::set-output name=release-version::`echo ${{ steps.get-next-version.outputs.new-release-version }} | sed 's/${{ inputs.app_name }}-v//g'`" 
+    outputs:
+      new-release-published: ${{ steps.get-next-version.outputs.new-release-published }}
+      new-release-version: ${{ steps.release-version.outputs.release-version }}
+      short-sha: ${{ steps.short-sha.outputs.short-sha }}
+
+  confirm-version:
+    name: Next version ${{ needs.get-next-version.outputs.new-release-version }}
+    runs-on: ubuntu-latest
+    needs: get-next-version
+    if: needs.get-next-version.outputs.new-release-published == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "The new release version is ${{ needs.get-next-version.outputs.new-release-version }} commit ${{ needs.get-next-version.outputs.short-sha }}"
