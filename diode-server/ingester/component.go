@@ -2,13 +2,20 @@ package ingester
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
+	"strings"
 
 	"github.com/kelseyhightower/envconfig"
+	pb "github.com/netboxlabs/diode/diode-sdk-go/diode/v1/diodepb"
 	"github.com/redis/go-redis/v9"
+	"google.golang.org/protobuf/proto"
 )
+
+type IngestEntityState int
 
 const (
 	streamID = "diode.v1.ingest-stream"
@@ -17,6 +24,9 @@ const (
 
 	// RedisConsumerGroupExistsErrMsg is the error message returned by the redis client when the consumer group already exists
 	RedisConsumerGroupExistsErrMsg = "BUSYGROUP Consumer Group name already exists"
+
+	// IngestEntityStateNew is the state of an entity after it has been ingested
+	IngestEntityStateNew IngestEntityState = iota
 )
 
 // Component asynchronously ingests data from the distributor
@@ -99,21 +109,79 @@ func (c *Component) consumeStream(ctx context.Context, stream, group, consumer s
 		}
 		for _, msg := range streams[0].Messages {
 			if err := c.handleStreamMessage(ctx, msg); err != nil {
-				return err
+				c.logger.Error("failed to handle stream message", "error", err, "message", msg)
 			}
 		}
 	}
 }
 
 func (c *Component) handleStreamMessage(ctx context.Context, msg redis.XMessage) error {
-	c.logger.Info("received message in stream", "message", msg.Values, "id", msg.ID)
+	c.logger.Info("received stream message", "message", msg.Values, "id", msg.ID)
+
+	pushReq := &pb.PushRequest{}
+	if err := proto.Unmarshal([]byte(msg.Values["request"].(string)), pushReq); err != nil {
+		return err
+	}
+
+	errs := make([]string, 0)
+
+	ingestionTs := msg.Values["ingestion_ts"]
+
+	c.logger.Info("handling push request", "request", pushReq)
+
+	for i, v := range pushReq.GetData() {
+		if v.GetData() == nil {
+			errs = append(errs, fmt.Sprintf("data for index %d is nil", i))
+			continue
+		}
+
+		var ingestDataType string
+		switch v.GetData().(type) {
+		case *pb.IngestEntity_Device:
+			ingestDataType = "device"
+		default:
+			errs = append(errs, fmt.Sprintf("unknown data type for index %d", i))
+			continue
+		}
+
+		key := fmt.Sprintf("ingest-entity:%s-%s", ingestDataType, ingestionTs)
+		val := map[string]interface{}{
+			"request_id":           pushReq.GetId(),
+			"producer_app_name":    pushReq.GetProducerAppName(),
+			"producer_app_version": pushReq.GetProducerAppVersion(),
+			"sdk_name":             pushReq.GetSdkName(),
+			"sdk_version":          pushReq.GetSdkVersion(),
+			"data_type":            ingestDataType,
+			"data":                 v.GetData(),
+			"ingestion_ts":         ingestionTs,
+			"state":                IngestEntityStateNew,
+		}
+		encodedValue, err := json.Marshal(val)
+		if err != nil {
+			c.logger.Error("failed to marshal JSON", "value", val, "error", err)
+			continue
+		}
+		if _, err = c.redisClient.Do(ctx, "JSON.SET", key, "$", encodedValue).Result(); err != nil {
+			c.logger.Error("failed to set JSON redis key", "key", key, "value", encodedValue, "error", err)
+			continue
+		}
+	}
+
+	if len(errs) > 0 {
+		c.logger.Error("failed to handle push request", "errors", strings.Join(errs, ", "))
+	}
 
 	c.redisStreamClient.XAck(ctx, streamID, consumerGroup, msg.ID)
+	c.redisStreamClient.XDel(ctx, streamID, msg.ID)
 	return nil
 }
 
 // Stop stops the component
 func (c *Component) Stop() error {
 	c.logger.Info("stopping component", "name", c.Name())
-	return c.redisClient.Close()
+
+	redisStreamErr := c.redisStreamClient.Close()
+	redisClientErr := c.redisClient.Close()
+
+	return errors.Join(redisStreamErr, redisClientErr)
 }
