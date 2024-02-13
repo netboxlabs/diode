@@ -30,4 +30,7 @@ jobs:
           echo "changed-dirs<<EOF" >> $GITHUB_OUTPUT
           echo "$(git diff --name-only --diff-filter=ACMRTUXB $(git merge-base origin/${{ github.base_ref }} ${{ steps.short-sha.outputs.short_sha }}) ${{ steps.short-sha.outputs.short_sha }} | xargs dirname | sort -u)" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-          echo "GITHUB_OUTPUT = $GITHUB_OUTPUT"
+            - name: Get changed dirs
+      - name: Echo changed dirs
+        run: |
+          echo "changed-dirs: ${{ steps.get-changed-dirs.outputs.changed-dirs }}"
