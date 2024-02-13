@@ -32,7 +32,6 @@ jobs:
       BUILD_VERSION: ${{ needs.get-next-version.outputs.new-release-version }}
       BUILD_TRACK: release
       BUILD_COMMIT: ${{ needs.get-next-version.outputs.short-sha }}
-      OUTPUT_FILENAME: ${{ env.PYTHON_PACKAGE_NAME }}-${{ needs.get-next-version.outputs.new-release-version }}.tar.gz
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v5
@@ -52,11 +51,11 @@ jobs:
           cat pyproject.toml | grep version
           python3 -m pip install --upgrade build
           python3 -m build --sdist --outdir dist/
-      - name: Upload artifact ${{ env.OUTPUT_FILENAME }}
+      - name: Upload artifact ${{ env.PYTHON_PACKAGE_NAME }}-${{ env.BUILD_VERSION }}.tar.gz
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.OUTPUT_FILENAME }}
-          path: ${{ env.APP_DIR }}/dist/${{ env.OUTPUT_FILENAME }}
+          name: ${{ env.PYTHON_PACKAGE_NAME }}-${{ env.BUILD_VERSION }}.tar.gz
+          path: ${{ env.APP_DIR }}/dist/${{ env.PYTHON_PACKAGE_NAME }}-${{ env.BUILD_VERSION }}.tar.gz
           retention-days: 30
           if-no-files-found: error
       - name: Publish distribution 📦 to PyPI
