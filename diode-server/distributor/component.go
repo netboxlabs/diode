@@ -47,6 +47,7 @@ func New(ctx context.Context, logger *slog.Logger) (*Component, error) {
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%s:%s", cfg.RedisHost, cfg.RedisPort),
 		Password: cfg.RedisPassword,
+		DB:       cfg.RedisStreamDB,
 	})
 
 	if _, err := redisClient.Ping(ctx).Result(); err != nil {
@@ -90,11 +91,6 @@ func (c *Component) Stop() error {
 func (c *Component) Push(ctx context.Context, in *pb.PushRequest) (*pb.PushResponse, error) {
 	if err := validatePushRequest(in); err != nil {
 		return nil, err
-	}
-
-	reqStream := in.GetStream()
-	if reqStream == "" {
-		reqStream = DefaultRequestStream
 	}
 
 	errs := make([]string, 0)
