@@ -1,0 +1,27 @@
+name: Server - release
+on:
+  workflow_dispatch:
+  push:
+    branches: [ release ]
+    paths:
+      - "diode-server/**"
+env:
+  GH_TOKEN: ${{ secrets.ORB_CI_GH_TOKEN }}
+  SEMANTIC_RELEASE_PACKAGE: ${{ github.repository }}
+  APP_DIR: diode-server
+
+jobs:
+  changed-dirs:
+    name: Changed dirs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set short SHA
+        id: short-sha
+        run: |
+          echo "short_sha=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+      - name: Get changed dirs
+        id: get-changed-dirs
+        run: |
+          echo "changed-dirs=$(git diff --name-only --diff-filter=ACMRTUXB $(git merge-base origin/release ${{ steps.short-sha.outputs.short_sha }}) ${{ steps.short-sha.outputs.short_sha }} | xargs dirname | sort -u)" >> $GITHUB_OUTPUT
