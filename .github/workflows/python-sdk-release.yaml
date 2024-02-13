@@ -9,6 +9,7 @@ env:
   GH_TOKEN: ${{ secrets.ORB_CI_GH_TOKEN }}
   SEMANTIC_RELEASE_PACKAGE: ${{ github.repository }}
   APP_DIR: diode-sdk-python
+  PYTHON_RUNTIME_VERSION: "3.11"
 
 jobs:
   get-next-version:
@@ -30,18 +31,33 @@ jobs:
       BUILD_VERSION: ${{ needs.get-next-version.outputs.new-release-version }}
       BUILD_TRACK: release
       BUILD_COMMIT: ${{ needs.get-next-version.outputs.short-sha }}
+      OUTPUT_FILENAME: ${{ needs.get-package-name.outputs.package-name }}-${{ needs.get-next-version.outputs.new-release-version }}.tar.gz
     steps:
-      - uses: actions/checkout@v4
-      #
-      # do the build and inject versions here
-      #
-      # - name: Upload Github build artifact
-      #  uses: actions/upload-artifact@v4
-      #  with:
-      #    name: build-production.zip
-      #    path: services/controlplane/signup-ui/build-production.zip
-      #    retention-days: 1
-      #    if-no-files-found: error
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_RUNTIME_VERSION }}
+      - name: Insert version variables into Python
+        run: |
+          sed -i "s/__commit_hash__ = .*/__commit_hash__ = \"${BUILD_COMMIT}\"/" netboxlabs/diode/sdk/version.py
+          sed -i "s/__track__ = .*/__track__ = \"${BUILD_TRACK}\"/" netboxlabs/diode/sdk/version.py
+          sed -i "s/__version__ = .*/__version__ = \"${BUILD_VERSION}\"/" netboxlabs/diode/sdk/version.py
+      - name: Display contents of version.py
+        run: cat netboxlabs/diode/sdk/version.py
+      - name: Build sdist package
+        run: |
+          pip install toml-cli
+          toml set --toml-path pyproject.toml project.version ${{ env.BUILD_VERSION }}
+          cat pyproject.toml | grep version
+          python3 -m pip install --upgrade build
+          python3 -m build --sdist --outdir dist/
+      - name: Upload artifact ${{ env.OUTPUT_FILENAME }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.OUTPUT_FILENAME }}
+          path: ${{ env.APP_DIR }}/dist/${{ env.OUTPUT_FILENAME }}
+          retention-days: 30
+          if-no-files-found: error
 
   semantic-release:
     uses: netboxlabs/diode/.github/workflows/reusable_semantic_release.yaml@develop
