@@ -31,7 +31,14 @@ services:
       - "6379:6379"
     volumes:
       - diode-redis-data:/data
-
+  diode-redis-cli:
+    image: redis/redis-stack-server:latest
+    links:
+      - diode-redis
+    command: ./home/redis/bootstrap.sh
+    env_file: diode/env/redis.env
+    volumes:
+      - ./diode/redis:/home/redis
 volumes:
   diode-redis-data:
     driver: local
