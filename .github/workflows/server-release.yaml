@@ -25,4 +25,4 @@ jobs:
       - name: Get changed dirs
         id: get-changed-dirs
         run: |
-          echo "changed-dirs=$(git diff --name-only --diff-filter=ACMRTUXB $(git merge-base $GITHUB_BASE_REF ${{ steps.short-sha.outputs.short_sha }}) ${{ steps.short-sha.outputs.short_sha }} | xargs dirname | sort -u)" >> $GITHUB_OUTPUT
+          echo "changed-dirs=$(git diff --name-only --diff-filter=ACMRTUXB $(git merge-base ${{ github.event.pull_request.base.ref }} ${{ steps.short-sha.outputs.short_sha }}) ${{ steps.short-sha.outputs.short_sha }} | xargs dirname | sort -u)" >> $GITHUB_OUTPUT
