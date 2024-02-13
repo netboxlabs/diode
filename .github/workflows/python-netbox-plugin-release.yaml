@@ -1,4 +1,4 @@
-name: "Python Netbox plugin - Release"
+name: Python Netbox plugin - release
 on:
   workflow_dispatch:
   push:

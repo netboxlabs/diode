@@ -1,4 +1,4 @@
-name: "Python SDK - Release"
+name: Python SDK - release
 on:
   workflow_dispatch:
   push:

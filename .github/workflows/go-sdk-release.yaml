@@ -1,4 +1,4 @@
-name: "Go SDK - Release"
+name: Go SDK - release
 on:
   workflow_dispatch:
   push:
