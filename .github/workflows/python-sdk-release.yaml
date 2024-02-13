@@ -10,6 +10,7 @@ env:
   SEMANTIC_RELEASE_PACKAGE: ${{ github.repository }}
   APP_DIR: diode-sdk-python
   PYTHON_RUNTIME_VERSION: "3.11"
+  PYTHON_PACKAGE_NAME: netboxlabs-diode-sdk
 
 jobs:
   get-next-version:
@@ -31,7 +32,7 @@ jobs:
       BUILD_VERSION: ${{ needs.get-next-version.outputs.new-release-version }}
       BUILD_TRACK: release
       BUILD_COMMIT: ${{ needs.get-next-version.outputs.short-sha }}
-      OUTPUT_FILENAME: ${{ needs.get-package-name.outputs.package-name }}-${{ needs.get-next-version.outputs.new-release-version }}.tar.gz
+      OUTPUT_FILENAME: ${{ env.PYTHON_PACKAGE_NAME }}-${{ needs.get-next-version.outputs.new-release-version }}.tar.gz
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v5
