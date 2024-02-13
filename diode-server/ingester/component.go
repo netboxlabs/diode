@@ -15,6 +15,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+// IngestEntityState represents the state of an ingested entity
 type IngestEntityState int
 
 const (
