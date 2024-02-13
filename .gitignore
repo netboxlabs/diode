@@ -30,5 +30,6 @@ __pycache__/
 *$py.class
 .Python
 build/
+dist/
 .eggs/
 *.egg-info
