@@ -1,0 +1,10 @@
+{
+  "name": "diode-reconciler",
+  "version": "0.1.0",
+  "extends": "semantic-release-monorepo",
+  "devDependencies": {
+    "semantic-release-monorepo": "^7.0.0",
+    "semantic-release-export-data": "^1.0.1",
+    "@semantic-release/changelog": "^6.0.3"
+  }
+}

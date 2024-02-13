@@ -1,0 +1,55 @@
+name: Distributor - release
+on:
+  workflow_dispatch:
+  push:
+    branches: [ release ]
+    paths:
+      - "diode-server/cmd/distributor/**"
+      - "diode-server/distributor/**"
+      - "diode-server/server/**"
+env:
+  GH_TOKEN: ${{ secrets.ORB_CI_GH_TOKEN }}
+  SEMANTIC_RELEASE_PACKAGE: ${{ github.repository }}
+  APP_DIR: diode-server/cmd/distributor
+
+jobs:
+  get-next-version:
+    uses: netboxlabs/diode/.github/workflows/reusable_semantic_release_get_next_version.yaml@develop
+    with:
+      # passed vars need hard coding - https://docs.github.com/en/actions/using-workflows/reusing-workflows#limitations
+      app_name: diode-distributor
+      app_dir: diode-server/cmd/distributor
+    secrets: inherit
+
+  build:
+    name: Build
+    needs: [ get-next-version ]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ env.APP_DIR }}
+    env:
+      BUILD_VERSION: ${{ needs.get-next-version.outputs.new-release-version }}
+      BUILD_TRACK: release
+      BUILD_COMMIT: ${{ needs.get-next-version.outputs.short-sha }}
+    steps:
+      - uses: actions/checkout@v3
+      #
+      # do the build and inject versions here
+      #
+      # - name: Upload Github build artifact
+      #  uses: actions/upload-artifact@v4
+      #  with:
+      #    name: build-production.zip
+      #    path: services/controlplane/signup-ui/build-production.zip
+      #    retention-days: 1
+      #    if-no-files-found: error
+
+  semantic-release:
+    uses: netboxlabs/diode/.github/workflows/reusable_semantic_release.yaml@develop
+    needs: [ build ]
+    with:
+      app_dir: diode-server/cmd/distributor
+    secrets: inherit
+
+  # upload to Docker hub / GHCR here
