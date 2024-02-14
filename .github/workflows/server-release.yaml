@@ -19,7 +19,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
       - name: Set short SHA
         id: short-sha
         run: |
@@ -28,7 +28,7 @@ jobs:
         id: get-changed-dirs
         run: |
           echo "changed-dirs<<EOF" >> $GITHUB_OUTPUT
-          echo "$(git diff --name-only --diff-filter=ACMRTUXB $(git merge-base origin/${{ github.base_ref }} ${{ steps.short-sha.outputs.short_sha }}) ${{ steps.short-sha.outputs.short_sha }} | xargs dirname | sort -u)" >> $GITHUB_OUTPUT
+          echo "$(git diff --name-only --diff-filter=ACMRTUXB origin/${{ github.base_ref }} ${{ steps.short-sha.outputs.short_sha }} | xargs dirname | sort -u)" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
       - name: Echo changed dirs
         run: |
