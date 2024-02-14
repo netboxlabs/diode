@@ -28,7 +28,7 @@ jobs:
       - name: Get changed dirs
         id: get-changed-dirs
         run: |
-          echo "changed-dirs=$(git diff --name-only origin/${{ github.base_ref }} ${{ steps.short-sha.outputs.short_sha }} | sort -u | tr '\n' ';')" >> $GITHUB_OUTPUT
+          echo "changed-dirs=$(git diff --name-only origin/${{ github.event.before }} ${{ steps.short-sha.outputs.short_sha }} | sort -u | tr '\n' ';')" >> $GITHUB_OUTPUT
       - name: Generate servers matrix
         id: generate-matrix
         run: .github/workflows/generate_changed_servers_matrix.sh "${{ steps.get-changed-dirs.outputs.changed-dirs }}"
