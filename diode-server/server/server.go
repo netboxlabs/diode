@@ -60,6 +60,8 @@ func (s *Server) RegisterComponent(c Component) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
+	s.Logger().Debug("registering component", "componentName", c.Name())
+
 	if _, ok := s.components[c.Name()]; ok {
 		return fmt.Errorf("Server.RegisterComponent found duplicate component registration for %s", c.Name())
 	}
