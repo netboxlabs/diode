@@ -25,9 +25,6 @@ jobs:
     name: Build
     needs: [get-next-version]
     runs-on: ubuntu-latest
-    environment:
-      name: pypi
-      url: https://pypi.org/p/netboxlabs-diode-sdk
     permissions:
       id-token: write
     defaults:
@@ -63,7 +60,7 @@ jobs:
           path: ${{ env.APP_DIR }}/dist/${{ env.PYTHON_PACKAGE_NAME }}-${{ env.BUILD_VERSION }}.tar.gz
           retention-days: 30
           if-no-files-found: error
-      - name: Publish distribution 📦 to PyPI
+      - name: Publish release distributions to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: ${{ env.APP_DIR }}/dist
