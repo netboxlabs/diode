@@ -9,6 +9,8 @@ env:
   GH_TOKEN: ${{ secrets.ORB_CI_GH_TOKEN }}
   SEMANTIC_RELEASE_PACKAGE: ${{ github.repository }}
   APP_DIR: diode-netbox-plugin
+  PYTHON_RUNTIME_VERSION: "3.11"
+  PYTHON_PACKAGE_NAME: netboxlabs-diode-netbox-plugin
 
 jobs:
   get-next-version:
@@ -23,6 +25,9 @@ jobs:
     name: Build
     needs: [get-next-version]
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     defaults:
       run:
         working-directory: ${{ env.APP_DIR }}
@@ -32,16 +37,34 @@ jobs:
       BUILD_COMMIT: ${{ needs.get-next-version.outputs.short-sha }}
     steps:
       - uses: actions/checkout@v3
-      #
-      # do the build and inject versions here
-      #
-      # - name: Upload Github build artifact
-      #  uses: actions/upload-artifact@v4
-      #  with:
-      #    name: build-production.zip
-      #    path: services/controlplane/signup-ui/build-production.zip
-      #    retention-days: 1
-      #    if-no-files-found: error
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_RUNTIME_VERSION }}
+      - name: Insert version variables into Python
+        run: |
+          sed -i "s/__commit_hash__ = .*/__commit_hash__ = \"${BUILD_COMMIT}\"/" netbox_diode_plugin/version.py
+          sed -i "s/__track__ = .*/__track__ = \"${BUILD_TRACK}\"/" netbox_diode_plugin/version.py
+          sed -i "s/__version__ = .*/__version__ = \"${BUILD_VERSION}\"/" netbox_diode_plugin/version.py
+      - name: Display contents of version.py
+        run: cat netbox_diode_plugin/version.py
+      - name: Build sdist package
+        run: |
+          pip install toml-cli
+          toml set --toml-path pyproject.toml project.version ${{ env.BUILD_VERSION }}
+          cat pyproject.toml | grep version
+          python3 -m pip install --upgrade build
+          python3 -m build --sdist --outdir dist/
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.PYTHON_PACKAGE_NAME }}-${{ env.BUILD_VERSION }}.tar.gz
+          path: ${{ env.APP_DIR }}/dist/${{ env.PYTHON_PACKAGE_NAME }}-${{ env.BUILD_VERSION }}.tar.gz
+          retention-days: 30
+          if-no-files-found: error
+      - name: Publish release distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: ${{ env.APP_DIR }}/dist
 
   semantic-release:
     uses: netboxlabs/diode/.github/workflows/reusable_semantic_release.yaml@develop
@@ -49,5 +72,3 @@ jobs:
     with:
       app_dir: diode-netbox-plugin
     secrets: inherit
-
-  # upload to Docker hub / GHCR / PyPi here
