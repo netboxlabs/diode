@@ -27,9 +27,7 @@ jobs:
       - name: Get changed dirs
         id: get-changed-dirs
         run: |
-          echo "changed-dirs<<EOF" >> $GITHUB_OUTPUT
-          echo "$(git diff --name-only --diff-filter=ACMRTUXB origin/${{ github.base_ref }} ${{ steps.short-sha.outputs.short_sha }} | xargs dirname | sort -u)" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "changed-dirs=$(git diff --name-only origin/${{ github.base_ref }} ${{ steps.short-sha.outputs.short_sha }} | xargs dirname | sort -u | tr '\n' ';')" >> $GITHUB_OUTPUT
       - name: Echo changed dirs
         run: |
           echo "changed-dirs: ${{ steps.get-changed-dirs.outputs.changed-dirs }}"
