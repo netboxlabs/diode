@@ -25,6 +25,11 @@ jobs:
     name: Build
     needs: [get-next-version]
     runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/netboxlabs-diode-sdk
+    permissions:
+      id-token: write
     defaults:
       run:
         working-directory: ${{ env.APP_DIR }}
@@ -51,7 +56,7 @@ jobs:
           cat pyproject.toml | grep version
           python3 -m pip install --upgrade build
           python3 -m build --sdist --outdir dist/
-      - name: Upload artifact ${{ env.PYTHON_PACKAGE_NAME }}-${{ env.BUILD_VERSION }}.tar.gz
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.PYTHON_PACKAGE_NAME }}-${{ env.BUILD_VERSION }}.tar.gz
@@ -61,8 +66,7 @@ jobs:
       - name: Publish distribution 📦 to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          user: __token__
-          password: ${{ secrets.PYPI_SDK_API_TOKEN }}
+          packages-dir: ${{ env.APP_DIR }}/dist
 
   semantic-release:
     uses: netboxlabs/diode/.github/workflows/reusable_semantic_release.yaml@develop
