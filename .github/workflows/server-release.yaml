@@ -33,7 +33,7 @@ jobs:
           echo "changed-dirs=$(git diff --name-only origin/${{ github.base_ref }} ${{ steps.short-sha.outputs.short_sha }} | sort -u | tr '\n' ';')" >> $GITHUB_OUTPUT
       - name: Generate servers matrix
         id: generate-matrix
-        run: ./github/workflows/generate_changed_servers_matrix.sh "${{ steps.get-changed-dirs.outputs.changed-dirs }}"
+        run: .github/workflows/generate_changed_servers_matrix.sh "${{ steps.get-changed-dirs.outputs.changed-dirs }}"
       - name: Echo test
         run: |
           echo "changed-dirs: ${{ steps.get-changed-dirs.outputs.changed-dirs }}"
