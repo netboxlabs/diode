@@ -27,6 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       id-token: write
+      contents: read
     defaults:
       run:
         working-directory: ${{ env.APP_DIR }}
