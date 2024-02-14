@@ -12,9 +12,12 @@ env:
   APP_DIR: diode-server
 
 jobs:
-  changed-dirs:
-    name: Changed dirs
+  setup:
+    name: Setup
     runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.generate-matrix.outputs.matrix }}
+      short_sha: ${{ steps.set-sha.outputs.short_sha }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,7 +30,11 @@ jobs:
       - name: Get changed dirs
         id: get-changed-dirs
         run: |
-          echo "changed-dirs=$(git diff --name-only origin/${{ github.base_ref }} ${{ steps.short-sha.outputs.short_sha }} | xargs dirname | sort -u | tr '\n' ';')" >> $GITHUB_OUTPUT
-      - name: Echo changed dirs
+          echo "changed-dirs=$(git diff --name-only origin/${{ github.base_ref }} ${{ steps.short-sha.outputs.short_sha }} | sort -u | tr '\n' ';')" >> $GITHUB_OUTPUT
+      - name: Generate servers matrix
+        id: generate-matrix
+        run: ./generate_changed_servers_matrix.sh "${{ steps.get-changed-dirs.outputs.changed-dirs }}"
+      - name: Echo test
         run: |
           echo "changed-dirs: ${{ steps.get-changed-dirs.outputs.changed-dirs }}"
+          echo "matrix: ${{ steps.generate-matrix.outputs.matrix }}"
