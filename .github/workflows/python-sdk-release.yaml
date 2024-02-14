@@ -10,6 +10,7 @@ env:
   SEMANTIC_RELEASE_PACKAGE: ${{ github.repository }}
   APP_DIR: diode-sdk-python
   PYTHON_RUNTIME_VERSION: "3.11"
+  PYTHON_PACKAGE_NAME: netboxlabs-diode-sdk
 
 jobs:
   get-next-version:
@@ -24,6 +25,9 @@ jobs:
     name: Build
     needs: [get-next-version]
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     defaults:
       run:
         working-directory: ${{ env.APP_DIR }}
@@ -31,7 +35,6 @@ jobs:
       BUILD_VERSION: ${{ needs.get-next-version.outputs.new-release-version }}
       BUILD_TRACK: release
       BUILD_COMMIT: ${{ needs.get-next-version.outputs.short-sha }}
-      OUTPUT_FILENAME: ${{ needs.get-package-name.outputs.package-name }}-${{ needs.get-next-version.outputs.new-release-version }}.tar.gz
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v5
@@ -51,13 +54,17 @@ jobs:
           cat pyproject.toml | grep version
           python3 -m pip install --upgrade build
           python3 -m build --sdist --outdir dist/
-      - name: Upload artifact ${{ env.OUTPUT_FILENAME }}
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ env.OUTPUT_FILENAME }}
-          path: ${{ env.APP_DIR }}/dist/${{ env.OUTPUT_FILENAME }}
+          name: ${{ env.PYTHON_PACKAGE_NAME }}-${{ env.BUILD_VERSION }}.tar.gz
+          path: ${{ env.APP_DIR }}/dist/${{ env.PYTHON_PACKAGE_NAME }}-${{ env.BUILD_VERSION }}.tar.gz
           retention-days: 30
           if-no-files-found: error
+      - name: Publish release distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: ${{ env.APP_DIR }}/dist
 
   semantic-release:
     uses: netboxlabs/diode/.github/workflows/reusable_semantic_release.yaml@develop
@@ -65,5 +72,3 @@ jobs:
     with:
       app_dir: diode-sdk-python
     secrets: inherit
-
-  # upload to Docker hub / GHCR / PyPi here
