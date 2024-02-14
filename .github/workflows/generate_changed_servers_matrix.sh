@@ -72,5 +72,4 @@ done
 
 matrix_json+="]}"
 
-echo "matrix_json=$matrix_json"
 echo "matrix=$matrix_json" >> $GITHUB_OUTPUT

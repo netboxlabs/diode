@@ -36,5 +36,4 @@ jobs:
         run: .github/workflows/generate_changed_servers_matrix.sh "${{ steps.get-changed-dirs.outputs.changed-dirs }}"
       - name: Echo test
         run: |
-          echo "changed-dirs: ${{ steps.get-changed-dirs.outputs.changed-dirs }}"
           echo "matrix: ${{ steps.generate-matrix.outputs.matrix }}"
