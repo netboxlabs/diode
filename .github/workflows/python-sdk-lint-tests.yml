@@ -1,4 +1,4 @@
-name: "Python SDK - lint and tests"
+name: Python SDK - lint and tests
 on:
   workflow_dispatch:
   push:

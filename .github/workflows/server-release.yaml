@@ -1,0 +1,79 @@
+name: Server - release
+on:
+  workflow_dispatch:
+  push:
+    branches: [ release ]
+    paths:
+      - "diode-server/**"
+env:
+  GH_TOKEN: ${{ secrets.ORB_CI_GH_TOKEN }}
+  SEMANTIC_RELEASE_PACKAGE: ${{ github.repository }}
+
+jobs:
+  setup:
+    name: Setup
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.generate-matrix.outputs.matrix }}
+      short_sha: ${{ steps.set-sha.outputs.short_sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set short SHA
+        id: short-sha
+        run: |
+          echo "short_sha=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+      - name: Get changed dirs
+        id: get-changed-dirs
+        run: |
+          echo "changed-dirs=$(git diff --name-only origin/${{ github.base_ref }} ${{ steps.short-sha.outputs.short_sha }} | sort -u | tr '\n' ';')" >> $GITHUB_OUTPUT
+      - name: Generate servers matrix
+        id: generate-matrix
+        run: .github/workflows/generate_changed_servers_matrix.sh "${{ steps.get-changed-dirs.outputs.changed-dirs }}"
+      - name: Echo test
+        run: |
+          echo "matrix: ${{ steps.generate-matrix.outputs.matrix }}"
+
+  get-next-version:
+    uses: netboxlabs/diode/.github/workflows/reusable_semantic_release_get_next_version.yaml@develop
+    needs: [ setup ]
+    with:
+      # passed vars need hard coding - https://docs.github.com/en/actions/using-workflows/reusing-workflows#limitations
+      app_name: ${{ matrix.server }}
+      app_dir: diode-server/cmd/${{ matrix.server }}
+    secrets: inherit
+
+  build:
+    name: Build ${{ matrix.server }}
+    needs: [ get-next-version ]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: diode-server/cmd/${{ matrix.server }}
+    env:
+      BUILD_VERSION: ${{ needs.get-next-version.outputs.new-release-version }}
+      BUILD_TRACK: release
+      BUILD_COMMIT: ${{ needs.get-next-version.outputs.short-sha }}
+    steps:
+      - uses: actions/checkout@v4
+      #
+      # do the build and inject versions here
+      #
+      # - name: Upload Github build artifact
+      #  uses: actions/upload-artifact@v4
+      #  with:
+      #    name: build-production.zip
+      #    path: services/controlplane/signup-ui/build-production.zip
+      #    retention-days: 1
+      #    if-no-files-found: error
+
+  semantic-release:
+    uses: netboxlabs/diode/.github/workflows/reusable_semantic_release.yaml@develop
+    needs: [ build ]
+    with:
+      app_dir: diode-server/cmd/${{ matrix.server }}
+    secrets: inherit
+
+  # upload to Docker hub / GHCR here
