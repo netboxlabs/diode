@@ -49,11 +49,11 @@ docker-all: $(DOCKER_SERVICES)
 
 docker-compose-up: docker-all
 	@DIODE_VERSION=$(DIODE_VERSION) COMMIT_SHA=$(COMMIT_SHA) \
-	docker-compose -f docker/docker-compose.yaml -f docker/docker-compose.netbox.yaml up -d
+	docker compose -f docker/docker-compose.yaml -f docker/docker-compose.netbox.yaml up -d
 
 docker-compose-down:
 	@DIODE_VERSION=$(DIODE_VERSION) COMMIT_SHA=$(COMMIT_SHA) \
-	docker-compose -f docker/docker-compose.yaml -f docker/docker-compose.netbox.yaml down
+	docker compose -f docker/docker-compose.yaml -f docker/docker-compose.netbox.yaml down
 
 clean:
 	@rm -rf $(BUILD_DIR)/*
