@@ -39,6 +39,10 @@ jobs:
   get-next-version:
     uses: netboxlabs/diode/.github/workflows/reusable_semantic_release_get_next_version.yaml@develop
     needs: [ setup ]
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
+    if: needs.setup.outputs.matrix != ''
     with:
       # passed vars need hard coding - https://docs.github.com/en/actions/using-workflows/reusing-workflows#limitations
       app_name: ${{ matrix.server }}
@@ -47,8 +51,12 @@ jobs:
 
   build:
     name: Build ${{ matrix.server }}
-    needs: [ get-next-version ]
+    needs: [ get-next-version, setup ]
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
     runs-on: ubuntu-latest
+    if: needs.setup.outputs.matrix != ''
     defaults:
       run:
         working-directory: diode-server/cmd/${{ matrix.server }}
@@ -71,7 +79,11 @@ jobs:
 
   semantic-release:
     uses: netboxlabs/diode/.github/workflows/reusable_semantic_release.yaml@develop
-    needs: [ build ]
+    needs: [ build, setup ]
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
+    if: needs.setup.outputs.matrix != ''
     with:
       app_dir: diode-server/cmd/${{ matrix.server }}
     secrets: inherit

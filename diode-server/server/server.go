@@ -55,7 +55,7 @@ func (s *Server) Logger() *slog.Logger {
 	return s.logger
 }
 
-// RegisterComponent registers a Component with the Server
+// RegisterComponent registers a Component with the Server.
 func (s *Server) RegisterComponent(c Component) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
