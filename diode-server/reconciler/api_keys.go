@@ -14,7 +14,7 @@ func (ak APIKeys) MarshalBinary() ([]byte, error) {
 	return json.Marshal(ak)
 }
 
-func storeAPIKeys(ctx context.Context, cfg Config, rc *redis.Client) (APIKeys, error) {
+func loadAPIKeys(ctx context.Context, cfg Config, rc *redis.Client) (APIKeys, error) {
 	apiKeys := map[string]string{
 		"DIODE_TO_NETBOX":     cfg.DiodeToNetBoxAPIKey,
 		"NETBOX_TO_DIODE":     cfg.NetBoxToDiodeAPIKey,

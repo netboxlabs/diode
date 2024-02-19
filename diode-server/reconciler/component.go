@@ -42,7 +42,7 @@ func New(ctx context.Context, logger *slog.Logger) (*Component, error) {
 		return nil, fmt.Errorf("failed to listen on port %d: %v", cfg.GRPCPort, err)
 	}
 
-	apiKeys, err := storeAPIKeys(ctx, cfg, redisClient)
+	apiKeys, err := loadAPIKeys(ctx, cfg, redisClient)
 	if err != nil {
 		return nil, fmt.Errorf("failed to configure data sources: %v", err)
 	}
