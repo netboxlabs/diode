@@ -3,6 +3,7 @@
 """Diode Netbox Plugin."""
 
 from extras.plugins import PluginConfig
+
 from .version import version_semver
 
 
