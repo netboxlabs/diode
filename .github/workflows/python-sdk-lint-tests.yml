@@ -1,6 +1,9 @@
 name: Python SDK - lint and tests
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - "diode-sdk-python/**"
   push:
     branches:
       - "!release"

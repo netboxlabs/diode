@@ -1,6 +1,4 @@
 from extras.plugins import PluginMenu, PluginMenuItem
-from django.conf import settings
-from packaging import version
 
 # default arguments for the PluginMenuItem class
 display_state = {
