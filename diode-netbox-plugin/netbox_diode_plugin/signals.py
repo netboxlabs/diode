@@ -4,5 +4,4 @@
 
 import logging
 
-
 logger = logging.getLogger("netbox.netbox_diode_plugin")

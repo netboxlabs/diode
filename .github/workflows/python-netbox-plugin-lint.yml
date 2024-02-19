@@ -1,6 +1,9 @@
 name: Python Netbox plugin - lint
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - "diode-netbox-plugin/**"
   push:
     branches:
       - "!release"
@@ -15,7 +18,7 @@ jobs:
         python-version: [ "3.7", "3.8", "3.9", "3.10", "3.11", "3.12" ]
     defaults:
       run:
-        working-directory: diode-sdk-python
+        working-directory: diode-netbox-plugin
     steps:
       - uses: actions/checkout@v4
       - name: Setup Python
@@ -31,5 +34,5 @@ jobs:
 
       - name: Lint with Ruff
         run: |
-          ruff --output-format=github diode-netbox-plugin/netbox_diode_plugin/ diode-netbox-plugin/tests/
+          ruff --output-format=github netbox_diode_plugin/ tests/
         continue-on-error: true
