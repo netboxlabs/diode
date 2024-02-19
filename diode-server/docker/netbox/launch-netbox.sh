@@ -51,7 +51,7 @@ reload_netbox() {
     while true; do
       new_md5=$(find /opt/netbox/netbox/netbox_diode_plugin -type f -name "*.py" -exec md5sum {} + | md5sum | awk '{print $1}')
       if [ "$netbox_diode_plugin_md5" != "$new_md5" ]; then
-        echo "🔄 Reloading Netbox"
+        echo "🔄 Reloading NetBox"
         curl --silent --output /dev/null --unix-socket /opt/unit/unit.sock -X GET http://localhost/control/applications/netbox/restart
         netbox_diode_plugin_md5=$new_md5
       fi
