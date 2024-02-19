@@ -16,6 +16,7 @@ services:
     volumes:
       - ./diode/netbox_diode_plugin:/opt/netbox/netbox/netbox_diode_plugin:rw
       - ./netbox/configuration:/etc/netbox/config:z,ro
+      - ./netbox/launch-netbox.sh:/opt/netbox/launch-netbox.sh:z,ro
       - netbox-media-files:/opt/netbox/netbox/media:rw
       - netbox-reports-files:/opt/netbox/netbox/reports:rw
       - netbox-scripts-files:/opt/netbox/netbox/scripts:rw
