@@ -8,6 +8,8 @@ from .version import version_semver
 
 
 class NetBoxDiodePluginConfig(PluginConfig):
+    """NetBox Diode plugin configuration."""
+
     name = "netbox_diode_plugin"
     verbose_name = "NetBox Labs, Diode Plugin"
     description = "Diode plugin for NetBox."
@@ -16,6 +18,7 @@ class NetBoxDiodePluginConfig(PluginConfig):
     min_version = "3.7.2"
 
     def ready(self):
+        """Registers plugin signals."""
         super().ready()
 
         from . import signals  # noqa: F401
