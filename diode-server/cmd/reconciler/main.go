@@ -12,7 +12,7 @@ func main() {
 	ctx := context.Background()
 	s := server.New(ctx, "diode-reconciler")
 
-	reconcilerComponent, err := reconciler.New(s.Logger())
+	reconcilerComponent, err := reconciler.New(ctx, s.Logger())
 	if err != nil {
 		s.Logger().Error("failed to instantiate reconciler component", "error", err)
 		os.Exit(1)
