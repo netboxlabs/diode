@@ -7,6 +7,7 @@ import (
 	"net"
 
 	"github.com/kelseyhightower/envconfig"
+	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
@@ -17,16 +18,33 @@ type Component struct {
 	logger       *slog.Logger
 	grpcListener net.Listener
 	grpcServer   *grpc.Server
+	redisClient  *redis.Client
+	apiKeys      map[string]string
 }
 
 // New creates a new reconciler component
-func New(logger *slog.Logger) (*Component, error) {
+func New(ctx context.Context, logger *slog.Logger) (*Component, error) {
 	var cfg Config
 	envconfig.MustProcess("", &cfg)
+
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     fmt.Sprintf("%s:%s", cfg.RedisHost, cfg.RedisPort),
+		Password: cfg.RedisPassword,
+		DB:       cfg.RedisDB,
+	})
+
+	if _, err := redisClient.Ping(ctx).Result(); err != nil {
+		return nil, fmt.Errorf("failed connection to %s: %v", redisClient.String(), err)
+	}
 
 	grpcListener, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.GRPCPort))
 	if err != nil {
 		return nil, fmt.Errorf("failed to listen on port %d: %v", cfg.GRPCPort, err)
+	}
+
+	apiKeys, err := storeAPIKeys(ctx, cfg, redisClient)
+	if err != nil {
+		return nil, fmt.Errorf("failed to configure data sources: %v", err)
 	}
 
 	grpcServer := grpc.NewServer()
@@ -35,6 +53,8 @@ func New(logger *slog.Logger) (*Component, error) {
 		logger:       logger,
 		grpcListener: grpcListener,
 		grpcServer:   grpcServer,
+		redisClient:  redisClient,
+		apiKeys:      apiKeys,
 	}
 	reflection.Register(grpcServer)
 
