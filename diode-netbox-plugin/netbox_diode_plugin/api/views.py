@@ -1,9 +1,9 @@
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import QuerySet
 from extras.models import CachedValue
 from netbox.search import LookupTypes
 from netbox.search.backends import search_backend
 from rest_framework import generics
+from rest_framework.exceptions import ValidationError
 
 from netbox_diode_plugin.api.serializers import CachedValueSerializer
 
@@ -16,38 +16,37 @@ class ObjectStateList(generics.ListAPIView):
 
     def get_queryset(self):
 
-        # Restrict results by object type
-        # object_types = []
-        # for obj_type in self.request.query_params.getlist('obj_types', []):
-        #     app_label, model_name = obj_type.split('.')
-        #     object_types.append(ContentType.objects.get_by_natural_key(app_label, model_name))
+        '''
+        Search for objects in the cache.
+        If obj_type parameter is not in the parameters, raise an ValidationError.
+        When object ID is provided in the request, make a search using it and object_type to retrieve only one object.
+        If ID is not provided, uses q parameter to find one or more objects.
+        The lookup is locked to use "iexact".
+        '''
 
-        # Restrict results by object type
-        # obj_type.split('.')[0] = app_label // obj_type.split('.')[1] = model_name
-        object_types = [ContentType.objects.get_by_natural_key(obj_type.split('.')[0], obj_type.split('.')[1]) for
-                        obj_type in self.request.query_params.getlist('obj_types', [])]
+        obj_type = self.request.query_params.get('obj_type', None)
 
-        print(object_types)
+        if not obj_type:
+            raise ValidationError('obj_type parameter is required')
 
-        lookup = self.request.query_params.get('lookup') or LookupTypes.PARTIAL
-        results = search_backend.search(
-            self.request.query_params.get('q'),
-            # user=self.request.user,
-            object_types=object_types,
-            lookup=lookup
-        )
-        print(len(results))
-        print(results)
+        app_label, model_name = obj_type.split('.')
+        object_types = [ContentType.objects.get_by_natural_key(app_label, model_name)]
+        object_id = self.request.query_params.get('id', None)
 
-        assert self.queryset is not None, (
-                "'%s' should either include a `queryset` attribute, "
-                "or override the `get_queryset()` method."
-                % self.__class__.__name__
-        )
+        if object_id:
+            # field is to avoid duplicated results.
+            queryset = CachedValue.objects.filter(object_id=object_id).filter(object_type__in=object_types).filter(
+                field="name")
+        else:
+            search_value = self.request.query_params.get('q', None)
+            if not search_value:
+                raise ValidationError('id or q parameter is required')
+            lookup = LookupTypes.EXACT
+            queryset = search_backend.search(
+                search_value,
+                # user=self.request.user,
+                object_types=object_types,
+                lookup=lookup
+            )
 
-        queryset = results
-
-        if isinstance(queryset, QuerySet):
-            # Ensure queryset is re-evaluated on each request.
-            queryset = queryset.all()
         return queryset
