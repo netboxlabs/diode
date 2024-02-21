@@ -26,7 +26,7 @@ class Command(BaseCommand):
 
     diode_to_netbox_username = "DIODE_TO_NETBOX"
     netbox_to_diode_username = "NETBOX_TO_DIODE"
-    datasource_to_diode_username = "DATASOURCE_TO_DIODE"
+    ingestion_username = "INGESTION"
 
     def add_arguments(self, parser):
         """Add command arguments."""
@@ -43,10 +43,10 @@ class Command(BaseCommand):
             help="NetBox Diode plugin to Diode API key"
         )
         parser.add_argument(
-            "--datasource-to-diode-api-key",
-            dest="datasource_to_diode_api_key",
+            "--ingestion-api-key",
+            dest="ingestion_api_key",
             required=True,
-            help="Datasource to Diode API key"
+            help="Ingestion API key"
         )
 
     def handle(self, *args, **options):
@@ -57,6 +57,6 @@ class Command(BaseCommand):
 
         _create_user_with_token(self.diode_to_netbox_username, options['diode_to_netbox_api_key'], group)
         _create_user_with_token(self.netbox_to_diode_username, options['netbox_to_diode_api_key'], group, True)
-        _create_user_with_token(self.datasource_to_diode_username, options['datasource_to_diode_api_key'], group)
+        _create_user_with_token(self.ingestion_username, options['ingestion_api_key'], group)
 
         self.stdout.write("Finished.")
