@@ -2,7 +2,6 @@ package reconciler
 
 import (
 	"context"
-	"crypto/tls"
 	"errors"
 	"fmt"
 	"os"
@@ -11,7 +10,7 @@ import (
 
 	pb "github.com/netboxlabs/diode/diode-server/reconciler/v1/reconcilerpb"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 const (
@@ -32,7 +31,7 @@ const (
 
 	defaultGRPCHost = "127.0.0.1"
 
-	defaultGRPCPort = "8082"
+	defaultGRPCPort = "8081"
 
 	defaultGRPCTimeoutSeconds = 5
 )
@@ -70,6 +69,8 @@ func (g *GRPCClient) Close() error {
 
 // RetrieveIngestionDataSources retrieves ingestion data sources
 func (g *GRPCClient) RetrieveIngestionDataSources(ctx context.Context, req *pb.RetrieveIngestionDataSourcesRequest, opt ...grpc.CallOption) (*pb.RetrieveIngestionDataSourcesResponse, error) {
+	req.SdkName = SDKName
+	req.SdkVersion = SDKVersion
 	return g.client.RetrieveIngestionDataSources(ctx, req, opt...)
 }
 
@@ -77,7 +78,7 @@ func (g *GRPCClient) RetrieveIngestionDataSources(ctx context.Context, req *pb.R
 func NewClient(ctx context.Context) (Client, error) {
 	dialOpts := []grpc.DialOption{
 		grpc.WithUserAgent(userAgent()),
-		grpc.WithTransportCredentials(credentials.NewTLS(new(tls.Config))),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	}
 
 	timeout, err := grpcTimeout()
