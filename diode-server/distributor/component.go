@@ -16,9 +16,6 @@ import (
 )
 
 const (
-	// DefaultRequestStream is the default stream to use when none is provided
-	DefaultRequestStream = "latest"
-
 	streamID = "diode.v1.ingest-stream"
 )
 
