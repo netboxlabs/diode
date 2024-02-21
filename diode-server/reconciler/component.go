@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"strings"
 
 	"github.com/kelseyhightower/envconfig"
 	pb "github.com/netboxlabs/diode/diode-server/reconciler/v1/reconcilerpb"
@@ -93,7 +94,7 @@ func (c *Component) RetrieveIngestionDataSources(_ context.Context, in *pb.Retri
 	filterByName := in.Name != ""
 
 	if filterByName {
-		if _, ok := c.apiKeys[in.Name]; !ok {
+		if _, ok := c.apiKeys[in.Name]; !ok || !strings.HasPrefix(in.Name, "INGESTION") {
 			return nil, fmt.Errorf("data source %s not found", in.Name)
 		}
 		dataSources = append(dataSources, &pb.IngestionDataSource{Name: in.Name, ApiKey: c.apiKeys[in.Name]})
@@ -101,7 +102,9 @@ func (c *Component) RetrieveIngestionDataSources(_ context.Context, in *pb.Retri
 	}
 
 	for name, key := range c.apiKeys {
-		dataSources = append(dataSources, &pb.IngestionDataSource{Name: name, ApiKey: key})
+		if strings.HasPrefix(name, "INGESTION") {
+			dataSources = append(dataSources, &pb.IngestionDataSource{Name: name, ApiKey: key})
+		}
 	}
 	return &pb.RetrieveIngestionDataSourcesResponse{IngestionDataSources: dataSources}, nil
 }

@@ -16,9 +16,9 @@ func (ak APIKeys) MarshalBinary() ([]byte, error) {
 
 func loadAPIKeys(ctx context.Context, cfg Config, rc *redis.Client) (APIKeys, error) {
 	apiKeys := map[string]string{
-		"DIODE_TO_NETBOX":     cfg.DiodeToNetBoxAPIKey,
-		"NETBOX_TO_DIODE":     cfg.NetBoxToDiodeAPIKey,
-		"DATASOURCE_TO_DIODE": cfg.DatasourceToDiodeAPIKey,
+		"DIODE_TO_NETBOX": cfg.DiodeToNetBoxAPIKey,
+		"NETBOX_TO_DIODE": cfg.NetBoxToDiodeAPIKey,
+		"INGESTION":       cfg.IngestionAPIKey,
 	}
 
 	if err := rc.HSet(ctx, "diode.api_keys", apiKeys).Err(); err != nil {
