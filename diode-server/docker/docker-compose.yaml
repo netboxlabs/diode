@@ -8,6 +8,7 @@ services:
       - "8081:8081"
     depends_on:
       - diode-redis
+      - diode-reconciler
   diode-ingester:
     image: netboxlabs/diode-ingester:${DIODE_VERSION}-${COMMIT_SHA}
     env_file: diode/env/ingester.env
