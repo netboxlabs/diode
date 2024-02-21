@@ -93,8 +93,6 @@ func New(ctx context.Context, logger *slog.Logger) (*Component, error) {
 	diodepb.RegisterDistributorServiceServer(grpcServer, component)
 	reflection.Register(grpcServer)
 
-	logger.Info("ingestion data sources", "sources", dataSources.GetIngestionDataSources())
-
 	return component, nil
 }
 
