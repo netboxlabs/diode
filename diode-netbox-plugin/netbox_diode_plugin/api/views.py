@@ -1,14 +1,12 @@
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Q, F
+from django.db.models import Q
 from extras.models import CachedValue
 from netbox.search import LookupTypes
-from netbox.search.backends import search_backend
-from rest_framework import generics, views
+from rest_framework import views
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 
 from netbox_diode_plugin.api.serializers import ObjectStateSerializer
-from utilities.api import get_serializer_for_model
 
 
 class ObjectStateList(views.APIView):
@@ -56,9 +54,11 @@ class ObjectStateList(views.APIView):
             queryset = object_type_model.objects.filter(id__in=object_id_in_cached_value)
 
         serializer = ObjectStateSerializer(queryset, many=True,
-                                           context={'request': request, 'object_type': f'{obj_type}'})
+                                           context={
+                                               'request': request,
+                                               'object_type': f'{obj_type}',
+                                           })
 
         if len(serializer.data) > 0:
             return Response(serializer.data[0])
         return Response(serializer.data)
-
