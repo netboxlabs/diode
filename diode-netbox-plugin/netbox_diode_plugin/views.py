@@ -11,5 +11,5 @@ class DisplayStateView(View):
 
     def get(self, request):
         """Render a display state template."""
-        return render(request, "netbox_diode_plugin/display_state.html")
+        return render(request, "diode/display_state.html")
 
