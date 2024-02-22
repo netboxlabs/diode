@@ -1,26 +1,29 @@
 from extras.models import CachedValue, ObjectChange
 from rest_framework import serializers
+from utilities.api import get_serializer_for_model
 
 
-class CachedValueSerializer(serializers.ModelSerializer):
-    # object_type = serializers.PrimaryKeyRelatedField(read_only=True)
-    object_change = serializers.SerializerMethodField()
-    object = serializers.SerializerMethodField()
+class ObjectStateSerializer(serializers.Serializer):
+    object_type = serializers.SerializerMethodField(read_only=True)
+    object_change_id = serializers.SerializerMethodField(read_only=True)
+    object = serializers.SerializerMethodField(read_only=True)
 
-    class Meta:
-        model = CachedValue
-        fields = ['id', 'object_change', 'object']
+    # class Meta:
+    #     model = CachedValue
+    #     fields = ['object_type', 'object_change', 'object']
+
+    def get_object_type(self, instance):
+        return self.context.get('object_type')
+
+    def get_object_change_id(self, instance):
+        object_changed = ObjectChange.objects.filter(changed_object_id=instance.id).values_list('id', flat=True).latest('id')
+        return object_changed
 
     def get_object(self, instance):
-        try:
-            object_type_model = instance.object_type.model_class()
-            object = object_type_model.objects.filter(id=instance.object_id).values()
-            return object
-        except:
-            return None
+        serializer = get_serializer_for_model(instance)
 
-    def get_object_change(self, instance):
-        object_changed = ObjectChange.objects.filter(changed_object_id=instance.object_id).values('id').latest('id')
-        if object_changed:
-            return object_changed
-        return None
+        object_data = instance.__class__.objects.filter(id=instance.id)
+        print(object_data)
+
+        context = {'request': self.context.get('request')}
+        return serializer(object_data, context=context, many=True).data[0]
