@@ -2,36 +2,46 @@ package distributor
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net"
 	"time"
 
 	"github.com/kelseyhightower/envconfig"
-	pb "github.com/netboxlabs/diode/diode-sdk-go/diode/v1/diodepb"
+	"github.com/netboxlabs/diode/diode-sdk-go/diode/v1/diodepb"
+	"github.com/netboxlabs/diode/diode-server/reconciler"
+	"github.com/netboxlabs/diode/diode-server/reconciler/v1/reconcilerpb"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/proto"
 )
 
 const (
-	// DefaultRequestStream is the default stream to use when none is provided
-	DefaultRequestStream = "latest"
-
 	streamID = "diode.v1.ingest-stream"
+)
+
+var (
+	errMetadataNotFound = errors.New("no request metadata found")
+
+	// ErrUnauthorized is an error for unauthorized requests
+	ErrUnauthorized = errors.New("missing or invalid authorization header")
 )
 
 // Component is a gRPC server that handles data ingestion requests
 type Component struct {
-	pb.UnimplementedDistributorServiceServer
+	diodepb.UnimplementedDistributorServiceServer
 
-	ctx          context.Context
-	config       Config
-	logger       *slog.Logger
-	grpcListener net.Listener
-	grpcServer   *grpc.Server
-	redisClient  *redis.Client
+	ctx                  context.Context
+	config               Config
+	logger               *slog.Logger
+	grpcListener         net.Listener
+	grpcServer           *grpc.Server
+	redisClient          *redis.Client
+	reconcilerClient     reconciler.Client
+	ingestionDataSources []*reconcilerpb.IngestionDataSource
 }
 
 // New creates a new distributor component
@@ -54,19 +64,50 @@ func New(ctx context.Context, logger *slog.Logger) (*Component, error) {
 		return nil, fmt.Errorf("failed connection to %s: %v", redisClient.String(), err)
 	}
 
-	grpcServer := grpc.NewServer()
-	component := &Component{
-		ctx:          ctx,
-		config:       cfg,
-		logger:       logger,
-		grpcListener: grpcListener,
-		grpcServer:   grpcServer,
-		redisClient:  redisClient,
+	reconcilerClient, err := reconciler.NewClient(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("failed to create reconciler client: %v", err)
 	}
-	pb.RegisterDistributorServiceServer(grpcServer, component)
+
+	dataSources, err := reconcilerClient.RetrieveIngestionDataSources(ctx, &reconcilerpb.RetrieveIngestionDataSourcesRequest{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve ingestion data sources: %v", err)
+	}
+
+	ingestionDataSources := dataSources.GetIngestionDataSources()
+	//auth := grpc.UnaryServerInterceptor(authUnaryInterceptor)
+
+	auth := newAuthUnaryInterceptor(ingestionDataSources)
+
+	grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(auth))
+	component := &Component{
+		ctx:                  ctx,
+		config:               cfg,
+		logger:               logger,
+		grpcListener:         grpcListener,
+		grpcServer:           grpcServer,
+		redisClient:          redisClient,
+		reconcilerClient:     reconcilerClient,
+		ingestionDataSources: ingestionDataSources,
+	}
+	diodepb.RegisterDistributorServiceServer(grpcServer, component)
 	reflection.Register(grpcServer)
 
 	return component, nil
+}
+
+func newAuthUnaryInterceptor(dataSources []*reconcilerpb.IngestionDataSource) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return nil, errMetadataNotFound
+		}
+		if !authorized(dataSources, md["diode-api-key"]) {
+			return nil, ErrUnauthorized
+		}
+		return handler(ctx, req)
+	}
+
 }
 
 // Name returns the name of the component
@@ -88,7 +129,7 @@ func (c *Component) Stop() error {
 }
 
 // Push handles a push request
-func (c *Component) Push(ctx context.Context, in *pb.PushRequest) (*pb.PushResponse, error) {
+func (c *Component) Push(ctx context.Context, in *diodepb.PushRequest) (*diodepb.PushResponse, error) {
 	if err := validatePushRequest(in); err != nil {
 		return nil, err
 	}
@@ -119,10 +160,10 @@ func (c *Component) Push(ctx context.Context, in *pb.PushRequest) (*pb.PushRespo
 		c.logger.Error("failed to add element to the stream", "error", err, "streamID", streamID, "value", msg)
 	}
 
-	return &pb.PushResponse{Errors: errs}, nil
+	return &diodepb.PushResponse{Errors: errs}, nil
 }
 
-func validatePushRequest(in *pb.PushRequest) error {
+func validatePushRequest(in *diodepb.PushRequest) error {
 	if in.GetId() == "" {
 		return fmt.Errorf("id is empty")
 	}
@@ -148,4 +189,17 @@ func validatePushRequest(in *pb.PushRequest) error {
 	}
 
 	return nil
+}
+
+func authorized(dataSources []*reconcilerpb.IngestionDataSource, authorization []string) bool {
+	if len(dataSources) < 1 || len(authorization) != 1 {
+		return false
+	}
+
+	for _, v := range dataSources {
+		if v.GetApiKey() == authorization[0] {
+			return true
+		}
+	}
+	return false
 }

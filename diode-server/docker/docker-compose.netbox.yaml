@@ -50,7 +50,7 @@ services:
       - configurediodeplugin
       - --diode-to-netbox-api-key=${DIODE_TO_NETBOX_API_KEY}
       - --netbox-to-diode-api-key=${NETBOX_TO_DIODE_API_KEY}
-      - --datasource-to-diode-api-key=${DATASOURCE_TO_DIODE_API_KEY}
+      - --ingestion-api-key=${INGESTION_API_KEY}
   # postgres
   netbox-postgres:
     image: docker.io/postgres:16-alpine
