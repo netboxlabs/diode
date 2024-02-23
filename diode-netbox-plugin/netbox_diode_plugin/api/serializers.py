@@ -4,6 +4,15 @@ from utilities.api import get_serializer_for_model
 
 
 class ObjectStateSerializer(serializers.Serializer):
+
+    '''
+    Serializer for the Object State:
+    object_Type: Return a string with the format app.model.
+    object_change_id: Return the ID of last change.
+    object: return the object according to serializer defined in the Netbox.
+    '''
+
+
     object_type = serializers.SerializerMethodField(read_only=True)
     object_change_id = serializers.SerializerMethodField(read_only=True)
     object = serializers.SerializerMethodField(read_only=True)
