@@ -13,7 +13,7 @@ from rest_framework.response import Response
 from netbox_diode_plugin.api.serializers import ObjectStateSerializer
 
 
-class ObjectStateList(views.APIView):
+class ObjectStateView(views.APIView):
     """ObjectState view."""
 
     authentication_classes = []  # disables authentication

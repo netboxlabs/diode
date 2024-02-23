@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Copyright 2024 NetBox Labs Inc
-"""Diode Netbox Plugin - Tests for ObjectStateList View."""
+"""Diode Netbox Plugin - Tests for ObjectStateView."""
 
 from dcim.models import Site
 from django.core.management import call_command
@@ -8,7 +8,7 @@ from rest_framework import status
 from utilities.testing import APITestCase
 
 
-class ObjectStateListTestCase(APITestCase):
+class ObjectStateTestCase(APITestCase):
     """ObjectState test cases."""
 
     def setUp(self):

@@ -39,6 +39,6 @@ docker exec -it diode-netbox-1 /bin/bash
 
 c) Execute the tests:
 ```bash
-./manage.py test --keepdb netbox_diode_plugin.tests.test_object_state.ObjectStateListTestCase
+./manage.py test --keepdb netbox_diode_plugin.tests.test_object_state.ObjectStateTestCase
 ```
 

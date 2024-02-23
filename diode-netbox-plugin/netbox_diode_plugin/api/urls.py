@@ -5,11 +5,11 @@
 from django.urls import include, path
 from netbox.api.routers import NetBoxRouter
 
-from .views import ObjectStateList
+from .views import ObjectStateView
 
 router = NetBoxRouter()
 
 urlpatterns = [
-    path("object-state/", ObjectStateList.as_view()),
+    path("object-state/", ObjectStateView.as_view()),
     path("", include(router.urls)),
 ]
