@@ -16,18 +16,16 @@ class ObjectStateSerializer(serializers.Serializer):
 
     def get_object_type(self, instance):
         """
-        get_object_type method.
-
         Get the object type from context sent from view.
+
         Return a string with the format "app.model".
         """
         return self.context.get("object_type")
 
     def get_object_change_id(self, instance):
         """
-        get_object_change_id method.
-
         Get the object changed based on instance ID.
+
         Return the ID of last change.
         """
         object_changed = (
@@ -39,9 +37,8 @@ class ObjectStateSerializer(serializers.Serializer):
 
     def get_object(self, instance):
         """
-        get_object method.
-
         Get the serializer based on instance model.
+
         Get the data from the model according to its ID.
         Return the object according to serializer defined in the Netbox.
         """
