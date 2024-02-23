@@ -21,9 +21,8 @@ class ObjectStateList(views.APIView):
 
     def get(self, request, *args, **kwargs):
         """
-        Get method.
-
         Return a JSON with object_type, object_change_id, and object.
+
         Search for objects according to object type.
         If the obj_type parameter is not in the parameters, raise a ValidationError.
         When object ID is provided in the request, search using it in the model specified by object type.
