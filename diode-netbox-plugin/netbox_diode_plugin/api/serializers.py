@@ -12,11 +12,9 @@ class ObjectStateSerializer(serializers.Serializer):
         return self.context.get('object_type')
 
     def get_object_change_id(self, instance):
-        try:
-            object_changed = ObjectChange.objects.filter(changed_object_id=instance.id).values_list('id', flat=True)[0]
-        except IndexError:
-            object_changed = None
-        return object_changed
+        object_changed = ObjectChange.objects.filter(changed_object_id=instance.id).order_by('-id').values_list('id',
+                                                                                                                flat=True)
+        return object_changed[0] if len(object_changed) > 0 else None
 
     def get_object(self, instance):
         serializer = get_serializer_for_model(instance)

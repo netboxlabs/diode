@@ -1,14 +1,11 @@
 from dcim.models import Site
-from django.contrib.contenttypes.models import ContentType
-from extras.models import ObjectChange
+from django.core.management import call_command
 from rest_framework import status
 from utilities.testing import APITestCase
 
 
 class ObjectStateListTestCase(APITestCase):
-
-    @classmethod
-    def setUpTestData(cls):
+    def setUp(self):
         # Create sites with a value for each cacheable field defined on SiteIndex
         sites = (
             Site(
@@ -44,23 +41,59 @@ class ObjectStateListTestCase(APITestCase):
         )
         Site.objects.bulk_create(sites)
 
-        site2_change = Site.objects.filter(id=2).update(name='Site 20')
+        # call_command is because the searching using q parameter uses CachedValue to get the object ID
+        call_command('reindex')
 
-        print(site2_change)
+        self.url = '/api/plugins/diode/object-state/'
 
     def test_return_object_state_using_id(self):
-        url = '/api/plugins/diode/object-state/?id=1&obj_type=dcim.site'
-        response = self.client.get(url)
-        self.assertEqual(response.json().get('object').get('name'), 'Site 1')
+        query_parameters = {
+            "id": 1,
+            "obj_type": "dcim.site"
+        }
+
+        response = self.client.get(self.url, query_parameters)
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json().get('object').get('name'), 'Site 1')
 
     def test_return_object_state_using_q(self):
         query_parameters = {
             "q": "Site 2",
             "obj_type": "dcim.site"
         }
-        url = '/api/plugins/diode/object-state/?q=Site%202&obj_type=dcim.site'
-        response = self.client.get(url)
-        print(response.json())
-        # self.assertEqual(response.json().get('object').get('name'), 'Site 2')
+
+        response = self.client.get(self.url, query_parameters)
+
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json().get('object').get('name'), 'Site 2')
+
+    def test_object_not_found_return_empty(self):
+        query_parameters = {
+            "q": "Site 10",
+            "obj_type": "dcim.site"
+        }
+
+        response = self.client.get(self.url, query_parameters)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json(), [])
+
+    def test_missing_obj_type_return_400(self):
+        query_parameters = {
+            "q": "Site 10",
+            "obj_type": ""
+        }
+
+        response = self.client.get(self.url, query_parameters)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_missing_q_and_id_parameters_return_400(self):
+        query_parameters = {
+            "obj_type": "dcim.site"
+        }
+
+        response = self.client.get(self.url, query_parameters)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
