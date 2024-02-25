@@ -76,7 +76,6 @@ func TestNewServer(t *testing.T) {
 
 			assert.Equal(t, tt.serverName, s.Name())
 			require.NotNil(t, s.Logger())
-			//assert.True(t, s.Logger().Enabled(ctx, slog.LevelDebug))
 
 			handlerOK := false
 			if tt.loggingFormat == "text" {
