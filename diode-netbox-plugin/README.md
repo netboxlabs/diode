@@ -31,14 +31,7 @@ a) Start the container in diode/diode-server:
 make docker-compose-up
 ```
 
-b) Enter in the Diode-Netbox container:
-
+b) Run the tests:
 ```bash
-docker exec -it diode-netbox-1 /bin/bash
+docker exec -it diode-netbox-1 ./manage.py test --keepdb netbox_diode_plugin
 ```
-
-c) Execute the tests:
-```bash
-./manage.py test --keepdb netbox_diode_plugin.tests.test_object_state.ObjectStateTestCase
-```
-

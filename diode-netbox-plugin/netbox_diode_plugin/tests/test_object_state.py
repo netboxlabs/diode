@@ -54,7 +54,7 @@ class ObjectStateTestCase(APITestCase):
 
     def test_return_object_state_using_id(self):
         """Test searching using id parameter."""
-        query_parameters = {"id": 1, "obj_type": "dcim.site"}
+        query_parameters = {"id": 1, "object_type": "dcim.site"}
 
         response = self.client.get(self.url, query_parameters)
 
@@ -63,7 +63,7 @@ class ObjectStateTestCase(APITestCase):
 
     def test_return_object_state_using_q(self):
         """Test searching using q parameter."""
-        query_parameters = {"q": "Site 2", "obj_type": "dcim.site"}
+        query_parameters = {"q": "Site 2", "object_type": "dcim.site"}
 
         response = self.client.get(self.url, query_parameters)
 
@@ -72,16 +72,16 @@ class ObjectStateTestCase(APITestCase):
 
     def test_object_not_found_return_empty(self):
         """Test empty searching."""
-        query_parameters = {"q": "Site 10", "obj_type": "dcim.site"}
+        query_parameters = {"q": "Site 10", "object_type": "dcim.site"}
 
         response = self.client.get(self.url, query_parameters)
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.json(), [])
+        self.assertEqual(response.json(), {})
 
-    def test_missing_obj_type_return_400(self):
+    def test_missing_object_type_return_400(self):
         """Test API behavior with missing object type."""
-        query_parameters = {"q": "Site 10", "obj_type": ""}
+        query_parameters = {"q": "Site 10", "object_type": ""}
 
         response = self.client.get(self.url, query_parameters)
 
@@ -89,7 +89,7 @@ class ObjectStateTestCase(APITestCase):
 
     def test_missing_q_and_id_parameters_return_400(self):
         """Test API behavior with missing q and ID parameters."""
-        query_parameters = {"obj_type": "dcim.site"}
+        query_parameters = {"object_type": "dcim.site"}
 
         response = self.client.get(self.url, query_parameters)
 

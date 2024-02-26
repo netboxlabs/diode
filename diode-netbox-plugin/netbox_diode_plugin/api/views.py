@@ -29,14 +29,14 @@ class ObjectStateView(views.APIView):
         If ID is not provided, use the q parameter for searching.
         Lookup is iexact
         """
-        obj_type = self.request.query_params.get("obj_type", None)
+        object_type = self.request.query_params.get("object_type", None)
 
-        if not obj_type:
-            raise ValidationError("obj_type parameter is required")
+        if not object_type:
+            raise ValidationError("object_type parameter is required")
 
-        app_label, model_name = obj_type.split(".")
-        object_type = ContentType.objects.get_by_natural_key(app_label, model_name)
-        object_type_model = object_type.model_class()
+        app_label, model_name = object_type.split(".")
+        object_content_type = ContentType.objects.get_by_natural_key(app_label, model_name)
+        object_type_model = object_content_type.model_class()
 
         object_id = self.request.query_params.get("id", None)
 
@@ -49,7 +49,7 @@ class ObjectStateView(views.APIView):
                 raise ValidationError("id or q parameter is required")
 
             query_filter = Q(**{f"value__{lookup}": search_value})
-            query_filter &= Q(object_type__in=[object_type])
+            query_filter &= Q(object_type__in=[object_content_type])
 
             object_id_in_cached_value = CachedValue.objects.filter(
                 query_filter
@@ -64,10 +64,10 @@ class ObjectStateView(views.APIView):
             many=True,
             context={
                 "request": request,
-                "object_type": f"{obj_type}",
+                "object_type": f"{object_type}",
             },
         )
 
         if len(serializer.data) > 0:
             return Response(serializer.data[0])
-        return Response(serializer.data)
+        return Response({})
