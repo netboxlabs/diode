@@ -23,3 +23,15 @@ PLUGINS_CONFIG = {
     }
 }
 ```
+
+## Running Tests
+
+a) Start the container in diode/diode-server:
+```bash
+make docker-compose-up
+```
+
+b) Run the tests:
+```bash
+docker exec -it diode-netbox-1 ./manage.py test --keepdb netbox_diode_plugin
+```
