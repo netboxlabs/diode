@@ -62,7 +62,7 @@ class ObjectStateView(views.APIView):
                 id__in=object_id_in_cached_value
             )
 
-        self.check_object_permissions(request, object_type)
+        self.check_object_permissions(request, queryset)
 
         serializer = ObjectStateSerializer(
             queryset,
