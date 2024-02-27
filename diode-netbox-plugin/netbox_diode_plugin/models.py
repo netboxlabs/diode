@@ -6,11 +6,11 @@ from django.db import models
 
 
 class ObjectState(models.Model):
-    """
-    Dummy model used to generate permissions for Diode NetBox Plugin. Does not exist in the database.
-    """
+    """Dummy model used to generate permissions for Diode NetBox Plugin. Does not exist in the database."""
 
     class Meta:
+        """Meta class."""
+
         managed = False
 
         default_permissions = ()
