@@ -17,17 +17,26 @@ class ObjectStateTestCase(APITestCase):
 
     def setUp(self):
         """Set up test."""
-        # Create the test user and assign permissions
         self.root_user = User.objects.create_user(
             username="root_user", is_staff=True, is_superuser=True
         )
         self.root_token = Token.objects.create(user=self.root_user)
 
         self.user = User.objects.create_user(username="testcommonuser")
-        self.user_permissions = ("dcim.view_site", "dcim.view_platform")
-        self.add_permissions(*self.user_permissions)
-
+        self.add_permissions("netbox_diode_plugin.view_objectstate")
         self.user_token = Token.objects.create(user=self.user)
+
+        # another_user does not have permission.
+        self.another_user = User.objects.create_user(username="another_user")
+        self.another_user_token = Token.objects.create(user=self.another_user)
+
+        self.root_header = {"HTTP_AUTHORIZATION": f"Token {self.root_token.key}"}
+        self.user_header = {"HTTP_AUTHORIZATION": f"Token {self.user_token.key}"}
+        self.another_user_header = {
+            "HTTP_AUTHORIZATION": f"Token {self.another_user_token.key}"
+        }
+
+        self.url = "/api/plugins/diode/object-state/"
 
         sites = (
             Site(
@@ -66,10 +75,6 @@ class ObjectStateTestCase(APITestCase):
         # call_command is because the searching using q parameter uses CachedValue to get the object ID
         call_command("reindex")
 
-        self.url = "/api/plugins/diode/object-state/"
-        self.root_header = {"HTTP_AUTHORIZATION": f"Token {self.root_token.key}"}
-        self.user_header = {"HTTP_AUTHORIZATION": f"Token {self.user_token.key}"}
-
     def test_return_object_state_using_id(self):
         """Test searching using id parameter - Root User."""
         query_parameters = {"id": 1, "object_type": "dcim.site"}
@@ -94,7 +99,6 @@ class ObjectStateTestCase(APITestCase):
 
         response = self.client.get(self.url, query_parameters, **self.root_header)
 
-        print(response.content)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.json(), {})
 
@@ -135,10 +139,12 @@ class ObjectStateTestCase(APITestCase):
         """
         Test searching using id parameter for Common User without permission.
 
-        User has permissions: "dcim.view_site" and "dcim.view_platform".
+        User has no permissions.
         """
         query_parameters = {"id": 1, "object_type": "dcim.device"}
 
-        response = self.client.get(self.url, query_parameters, **self.user_header)
+        response = self.client.get(
+            self.url, query_parameters, **self.another_user_header
+        )
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
