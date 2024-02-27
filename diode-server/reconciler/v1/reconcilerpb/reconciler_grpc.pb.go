@@ -20,6 +20,7 @@ const _ = grpc.SupportPackageIsVersion7
 
 const (
 	ReconcilerService_RetrieveIngestionDataSources_FullMethodName = "/reconciler.v1.ReconcilerService/RetrieveIngestionDataSources"
+	ReconcilerService_V_FullMethodName                            = "/reconciler.v1.ReconcilerService/v"
 )
 
 // ReconcilerServiceClient is the client API for ReconcilerService service.
@@ -28,6 +29,8 @@ const (
 type ReconcilerServiceClient interface {
 	// Retrieves ingestion data sources
 	RetrieveIngestionDataSources(ctx context.Context, in *RetrieveIngestionDataSourcesRequest, opts ...grpc.CallOption) (*RetrieveIngestionDataSourcesResponse, error)
+	// Adds an object state
+	V(ctx context.Context, in *AddObjectStateRequest, opts ...grpc.CallOption) (*AddObjectStateResponse, error)
 }
 
 type reconcilerServiceClient struct {
@@ -47,12 +50,23 @@ func (c *reconcilerServiceClient) RetrieveIngestionDataSources(ctx context.Conte
 	return out, nil
 }
 
+func (c *reconcilerServiceClient) V(ctx context.Context, in *AddObjectStateRequest, opts ...grpc.CallOption) (*AddObjectStateResponse, error) {
+	out := new(AddObjectStateResponse)
+	err := c.cc.Invoke(ctx, ReconcilerService_V_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ReconcilerServiceServer is the server API for ReconcilerService service.
 // All implementations must embed UnimplementedReconcilerServiceServer
 // for forward compatibility
 type ReconcilerServiceServer interface {
 	// Retrieves ingestion data sources
 	RetrieveIngestionDataSources(context.Context, *RetrieveIngestionDataSourcesRequest) (*RetrieveIngestionDataSourcesResponse, error)
+	// Adds an object state
+	V(context.Context, *AddObjectStateRequest) (*AddObjectStateResponse, error)
 	mustEmbedUnimplementedReconcilerServiceServer()
 }
 
@@ -62,6 +76,9 @@ type UnimplementedReconcilerServiceServer struct {
 
 func (UnimplementedReconcilerServiceServer) RetrieveIngestionDataSources(context.Context, *RetrieveIngestionDataSourcesRequest) (*RetrieveIngestionDataSourcesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RetrieveIngestionDataSources not implemented")
+}
+func (UnimplementedReconcilerServiceServer) V(context.Context, *AddObjectStateRequest) (*AddObjectStateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method V not implemented")
 }
 func (UnimplementedReconcilerServiceServer) mustEmbedUnimplementedReconcilerServiceServer() {}
 
@@ -94,6 +111,24 @@ func _ReconcilerService_RetrieveIngestionDataSources_Handler(srv interface{}, ct
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ReconcilerService_V_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddObjectStateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReconcilerServiceServer).V(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReconcilerService_V_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReconcilerServiceServer).V(ctx, req.(*AddObjectStateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ReconcilerService_ServiceDesc is the grpc.ServiceDesc for ReconcilerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -104,6 +139,10 @@ var ReconcilerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RetrieveIngestionDataSources",
 			Handler:    _ReconcilerService_RetrieveIngestionDataSources_Handler,
+		},
+		{
+			MethodName: "v",
+			Handler:    _ReconcilerService_V_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
