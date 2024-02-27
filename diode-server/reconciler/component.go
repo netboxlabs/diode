@@ -2,6 +2,7 @@ package reconciler
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net"
@@ -117,4 +118,30 @@ func validateRetrieveIngestionDataSourcesRequest(in *pb.RetrieveIngestionDataSou
 		return fmt.Errorf("sdk version is empty")
 	}
 	return nil
+}
+
+// AddObjectState adds an object state
+func (c *Component) AddObjectState(ctx context.Context, in *pb.AddObjectStateRequest) (*pb.AddObjectStateResponse, error) {
+	if err := in.ValidateAll(); err != nil {
+		return nil, err
+	}
+
+	key := fmt.Sprintf("netbox-object-state.%s:%d", in.GetObjectType(), in.GetObjectId())
+	val := map[string]interface{}{
+		"object_id":        in.GetObjectId(),
+		"object_type":      in.GetObjectType(),
+		"object_change_id": in.GetObjectChangeId(),
+		"object":           in.GetObject().GetObject(),
+	}
+	encodedValue, err := json.Marshal(val)
+	if err != nil {
+		c.logger.Error("failed to marshal JSON", "value", val, "error", err)
+		return nil, fmt.Errorf("failed to marshal JSON: %v", err)
+	}
+	if _, err = c.redisClient.Do(ctx, "JSON.SET", key, "$", encodedValue).Result(); err != nil {
+		c.logger.Error("failed to set JSON redis key", "key", key, "value", encodedValue, "error", err)
+		return nil, fmt.Errorf("failed to set JSON redis key: %v", err)
+	}
+
+	return &pb.AddObjectStateResponse{}, nil
 }
