@@ -15,7 +15,8 @@ message Platform {
   }];
   string slug = 3 [(validate.rules).string = {
     min_len: 1,
-    max_len: 100
+    max_len: 100,
+    pattern: "^[-a-zA-Z0-9_]+$"
   }];
   string display = 4;
   string url = 5 [(validate.rules).string.uri = true];

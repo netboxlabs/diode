@@ -20,7 +20,7 @@ const _ = grpc.SupportPackageIsVersion7
 
 const (
 	ReconcilerService_RetrieveIngestionDataSources_FullMethodName = "/reconciler.v1.ReconcilerService/RetrieveIngestionDataSources"
-	ReconcilerService_V_FullMethodName                            = "/reconciler.v1.ReconcilerService/v"
+	ReconcilerService_AddObjectState_FullMethodName               = "/reconciler.v1.ReconcilerService/AddObjectState"
 )
 
 // ReconcilerServiceClient is the client API for ReconcilerService service.
@@ -30,7 +30,7 @@ type ReconcilerServiceClient interface {
 	// Retrieves ingestion data sources
 	RetrieveIngestionDataSources(ctx context.Context, in *RetrieveIngestionDataSourcesRequest, opts ...grpc.CallOption) (*RetrieveIngestionDataSourcesResponse, error)
 	// Adds an object state
-	V(ctx context.Context, in *AddObjectStateRequest, opts ...grpc.CallOption) (*AddObjectStateResponse, error)
+	AddObjectState(ctx context.Context, in *AddObjectStateRequest, opts ...grpc.CallOption) (*AddObjectStateResponse, error)
 }
 
 type reconcilerServiceClient struct {
@@ -50,9 +50,9 @@ func (c *reconcilerServiceClient) RetrieveIngestionDataSources(ctx context.Conte
 	return out, nil
 }
 
-func (c *reconcilerServiceClient) V(ctx context.Context, in *AddObjectStateRequest, opts ...grpc.CallOption) (*AddObjectStateResponse, error) {
+func (c *reconcilerServiceClient) AddObjectState(ctx context.Context, in *AddObjectStateRequest, opts ...grpc.CallOption) (*AddObjectStateResponse, error) {
 	out := new(AddObjectStateResponse)
-	err := c.cc.Invoke(ctx, ReconcilerService_V_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, ReconcilerService_AddObjectState_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +66,7 @@ type ReconcilerServiceServer interface {
 	// Retrieves ingestion data sources
 	RetrieveIngestionDataSources(context.Context, *RetrieveIngestionDataSourcesRequest) (*RetrieveIngestionDataSourcesResponse, error)
 	// Adds an object state
-	V(context.Context, *AddObjectStateRequest) (*AddObjectStateResponse, error)
+	AddObjectState(context.Context, *AddObjectStateRequest) (*AddObjectStateResponse, error)
 	mustEmbedUnimplementedReconcilerServiceServer()
 }
 
@@ -77,8 +77,8 @@ type UnimplementedReconcilerServiceServer struct {
 func (UnimplementedReconcilerServiceServer) RetrieveIngestionDataSources(context.Context, *RetrieveIngestionDataSourcesRequest) (*RetrieveIngestionDataSourcesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RetrieveIngestionDataSources not implemented")
 }
-func (UnimplementedReconcilerServiceServer) V(context.Context, *AddObjectStateRequest) (*AddObjectStateResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method V not implemented")
+func (UnimplementedReconcilerServiceServer) AddObjectState(context.Context, *AddObjectStateRequest) (*AddObjectStateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddObjectState not implemented")
 }
 func (UnimplementedReconcilerServiceServer) mustEmbedUnimplementedReconcilerServiceServer() {}
 
@@ -111,20 +111,20 @@ func _ReconcilerService_RetrieveIngestionDataSources_Handler(srv interface{}, ct
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ReconcilerService_V_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _ReconcilerService_AddObjectState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AddObjectStateRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ReconcilerServiceServer).V(ctx, in)
+		return srv.(ReconcilerServiceServer).AddObjectState(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ReconcilerService_V_FullMethodName,
+		FullMethod: ReconcilerService_AddObjectState_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ReconcilerServiceServer).V(ctx, req.(*AddObjectStateRequest))
+		return srv.(ReconcilerServiceServer).AddObjectState(ctx, req.(*AddObjectStateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -141,8 +141,8 @@ var ReconcilerService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _ReconcilerService_RetrieveIngestionDataSources_Handler,
 		},
 		{
-			MethodName: "v",
-			Handler:    _ReconcilerService_V_Handler,
+			MethodName: "AddObjectState",
+			Handler:    _ReconcilerService_AddObjectState_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

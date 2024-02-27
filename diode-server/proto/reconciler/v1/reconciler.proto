@@ -71,5 +71,5 @@ service ReconcilerService {
   rpc RetrieveIngestionDataSources(RetrieveIngestionDataSourcesRequest) returns (RetrieveIngestionDataSourcesResponse) {}
 
   // Adds an object state
-  rpc v(AddObjectStateRequest) returns (AddObjectStateResponse) {}
+  rpc AddObjectState(AddObjectStateRequest) returns (AddObjectStateResponse) {}
 }

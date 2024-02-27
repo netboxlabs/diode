@@ -90,6 +90,17 @@ func (m *Platform) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
+	if !_Platform_Slug_Pattern.MatchString(m.GetSlug()) {
+		err := PlatformValidationError{
+			field:  "Slug",
+			reason: "value does not match regex pattern \"^[-a-zA-Z0-9_]+$\"",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
 	// no validation rules for Display
 
 	if uri, err := url.Parse(m.GetUrl()); err != nil {
@@ -189,3 +200,5 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = PlatformValidationError{}
+
+var _Platform_Slug_Pattern = regexp.MustCompile("^[-a-zA-Z0-9_]+$")
