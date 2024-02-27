@@ -494,6 +494,28 @@ func (m *AddObjectStateRequest) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
+	if l := utf8.RuneCountInString(m.GetSdkName()); l < 1 || l > 255 {
+		err := AddObjectStateRequestValidationError{
+			field:  "SdkName",
+			reason: "value length must be between 1 and 255 runes, inclusive",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if !_AddObjectStateRequest_SdkVersion_Pattern.MatchString(m.GetSdkVersion()) {
+		err := AddObjectStateRequestValidationError{
+			field:  "SdkVersion",
+			reason: "value does not match regex pattern \"^(\\\\d)+\\\\.(\\\\d)+\\\\.(\\\\d)+$\"",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
 	switch v := m.Object.(type) {
 	case *AddObjectStateRequest_Site:
 		if v == nil {
@@ -824,6 +846,8 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = AddObjectStateRequestValidationError{}
+
+var _AddObjectStateRequest_SdkVersion_Pattern = regexp.MustCompile("^(\\d)+\\.(\\d)+\\.(\\d)+$")
 
 // Validate checks the field values on AddObjectStateResponse with the rules
 // defined in the proto definition for this message. If any rules are

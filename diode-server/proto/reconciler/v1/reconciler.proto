@@ -58,6 +58,11 @@ message AddObjectStateRequest {
     DeviceRole device_role = 8;
     DeviceType device_type = 9;
   }
+  string sdk_name = 10 [(validate.rules).string = {
+    min_len: 1,
+    max_len: 255
+  }];
+  string sdk_version = 11 [(validate.rules).string = {pattern: "^(\\d)+\\.(\\d)+\\.(\\d)+$"}];
 }
 
 // The response from the add object state request
