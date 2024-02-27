@@ -8,16 +8,17 @@ from extras.models import CachedValue
 from netbox.search import LookupTypes
 from rest_framework import views
 from rest_framework.exceptions import ValidationError
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from netbox_diode_plugin.api.permissions import IsDiodeViewer
 from netbox_diode_plugin.api.serializers import ObjectStateSerializer
 
 
 class ObjectStateView(views.APIView):
     """ObjectState view."""
 
-    authentication_classes = []  # disables authentication
-    permission_classes = []
+    permission_classes = [IsAuthenticated, IsDiodeViewer]
 
     def get(self, request, *args, **kwargs):
         """
@@ -35,7 +36,9 @@ class ObjectStateView(views.APIView):
             raise ValidationError("object_type parameter is required")
 
         app_label, model_name = object_type.split(".")
-        object_content_type = ContentType.objects.get_by_natural_key(app_label, model_name)
+        object_content_type = ContentType.objects.get_by_natural_key(
+            app_label, model_name
+        )
         object_type_model = object_content_type.model_class()
 
         object_id = self.request.query_params.get("id", None)
@@ -58,6 +61,8 @@ class ObjectStateView(views.APIView):
             queryset = object_type_model.objects.filter(
                 id__in=object_id_in_cached_value
             )
+
+        self.check_object_permissions(request, queryset)
 
         serializer = ObjectStateSerializer(
             queryset,
