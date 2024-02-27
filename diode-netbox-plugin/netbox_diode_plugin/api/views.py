@@ -6,10 +6,11 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from extras.models import CachedValue
 from netbox.search import LookupTypes
-from rest_framework import views
+from rest_framework import views, generics, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from utilities.api import get_serializer_for_model
 
 from netbox_diode_plugin.api.permissions import IsDiodeViewer
 from netbox_diode_plugin.api.serializers import ObjectStateSerializer
@@ -76,3 +77,62 @@ class ObjectStateView(views.APIView):
         if len(serializer.data) > 0:
             return Response(serializer.data[0])
         return Response({})
+
+
+class ApplyChangeSetView(views.APIView):
+    """ApplyChangeSet view."""
+
+    authentication_classes = []
+    permission_classes = []
+
+    # def get_serializer(self, *args, **kwargs):
+    #     """
+    #     Return the serializer instance that should be used for validating and
+    #     deserializing input, and for serializing output.
+    #     """
+    #     print(self.request.data)
+    #     serializer_class = self.get_serializer_class()
+    #     kwargs.setdefault("context", self.get_serializer_context())
+    #     return serializer_class(*args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        """
+        Create a new change set and apply it to the current state.
+
+        The request body should contain a list of changes to be applied.
+        """
+        change_set = self.request.data.get("change_set", None)
+        if not change_set:
+            raise ValidationError("change_set parameter is required")
+
+        for change in change_set:
+            change_type = change.get("change_type", None)
+
+            object_type = change.get("object_type", None)
+            if not object_type:
+                raise ValidationError("object_type parameter is required")
+            app_label, model_name = object_type.split(".")
+            object_content_type = ContentType.objects.get_by_natural_key(
+                app_label, model_name
+            )
+            object_type_model = object_content_type.model_class()
+
+            if change_type == "create":
+                object_data = change.get("data", None)
+                if not object_data:
+                    raise ValidationError("data parameter is required")
+
+                serializer = get_serializer_for_model(object_type_model)(
+                    data=object_data, context={"request": request}
+                )
+
+                serializer.is_valid(raise_exception=True)
+
+                serializer.save()
+
+                return Response(
+                    serializer.data,
+                    status=status.HTTP_201_CREATED,
+                )
+
+        return Response({"status": "success"})
