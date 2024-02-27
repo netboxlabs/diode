@@ -12,7 +12,7 @@ option go_package = "github.com/netboxlabs/diode/diode-server/reconciler/v1/reco
 
 // A device
 message Device {
-  uint64 id = 1 [(validate.rules).uint64.gt = 1];
+  uint64 id = 1 [(validate.rules).uint64.gte = 1];
   string name = 2 [(validate.rules).string = {max_len: 64}];
   DeviceType device_type = 3 [(validate.rules).any.required = true];
   DeviceRole role = 4 [(validate.rules).any.required = true];

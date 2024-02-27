@@ -56,10 +56,10 @@ func (m *Site) validate(all bool) error {
 
 	var errors []error
 
-	if m.GetId() <= 1 {
+	if m.GetId() < 1 {
 		err := SiteValidationError{
 			field:  "Id",
-			reason: "value must be greater than 1",
+			reason: "value must be greater than or equal to 1",
 		}
 		if !all {
 			return err

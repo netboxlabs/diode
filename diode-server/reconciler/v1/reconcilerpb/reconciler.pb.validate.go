@@ -439,6 +439,355 @@ var _ interface {
 	ErrorName() string
 } = RetrieveIngestionDataSourcesResponseValidationError{}
 
+// Validate checks the field values on Object with the rules defined in the
+// proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *Object) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on Object with the rules defined in the
+// proto definition for this message. If any rules are violated, the result is
+// a list of violation errors wrapped in ObjectMultiError, or nil if none found.
+func (m *Object) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *Object) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	switch v := m.Object.(type) {
+	case *Object_Device:
+		if v == nil {
+			err := ObjectValidationError{
+				field:  "Object",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetDevice()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ObjectValidationError{
+						field:  "Device",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ObjectValidationError{
+						field:  "Device",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetDevice()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ObjectValidationError{
+					field:  "Device",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *Object_DeviceRole:
+		if v == nil {
+			err := ObjectValidationError{
+				field:  "Object",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetDeviceRole()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ObjectValidationError{
+						field:  "DeviceRole",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ObjectValidationError{
+						field:  "DeviceRole",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetDeviceRole()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ObjectValidationError{
+					field:  "DeviceRole",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *Object_DeviceType:
+		if v == nil {
+			err := ObjectValidationError{
+				field:  "Object",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetDeviceType()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ObjectValidationError{
+						field:  "DeviceType",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ObjectValidationError{
+						field:  "DeviceType",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetDeviceType()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ObjectValidationError{
+					field:  "DeviceType",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *Object_Manufacturer:
+		if v == nil {
+			err := ObjectValidationError{
+				field:  "Object",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetManufacturer()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ObjectValidationError{
+						field:  "Manufacturer",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ObjectValidationError{
+						field:  "Manufacturer",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetManufacturer()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ObjectValidationError{
+					field:  "Manufacturer",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *Object_Platform:
+		if v == nil {
+			err := ObjectValidationError{
+				field:  "Object",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetPlatform()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ObjectValidationError{
+						field:  "Platform",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ObjectValidationError{
+						field:  "Platform",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetPlatform()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ObjectValidationError{
+					field:  "Platform",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *Object_Site:
+		if v == nil {
+			err := ObjectValidationError{
+				field:  "Object",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetSite()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ObjectValidationError{
+						field:  "Site",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ObjectValidationError{
+						field:  "Site",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetSite()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ObjectValidationError{
+					field:  "Site",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	default:
+		_ = v // ensures v is used
+	}
+
+	if len(errors) > 0 {
+		return ObjectMultiError(errors)
+	}
+
+	return nil
+}
+
+// ObjectMultiError is an error wrapping multiple validation errors returned by
+// Object.ValidateAll() if the designated constraints aren't met.
+type ObjectMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ObjectMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ObjectMultiError) AllErrors() []error { return m }
+
+// ObjectValidationError is the validation error returned by Object.Validate if
+// the designated constraints aren't met.
+type ObjectValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ObjectValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ObjectValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ObjectValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ObjectValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ObjectValidationError) ErrorName() string { return "ObjectValidationError" }
+
+// Error satisfies the builtin error interface
+func (e ObjectValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sObject.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ObjectValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ObjectValidationError{}
+
 // Validate checks the field values on AddObjectStateRequest with the rules
 // defined in the proto definition for this message. If any rules are
 // violated, the first error encountered is returned, or nil if there are no violations.
@@ -461,10 +810,10 @@ func (m *AddObjectStateRequest) validate(all bool) error {
 
 	var errors []error
 
-	if m.GetObjectId() <= 1 {
+	if m.GetObjectId() < 1 {
 		err := AddObjectStateRequestValidationError{
 			field:  "ObjectId",
-			reason: "value must be greater than 1",
+			reason: "value must be greater than or equal to 1",
 		}
 		if !all {
 			return err
@@ -472,10 +821,10 @@ func (m *AddObjectStateRequest) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
-	if m.GetObjectChangeId() <= 1 {
+	if m.GetObjectChangeId() < 1 {
 		err := AddObjectStateRequestValidationError{
 			field:  "ObjectChangeId",
-			reason: "value must be greater than 1",
+			reason: "value must be greater than or equal to 1",
 		}
 		if !all {
 			return err
@@ -492,6 +841,35 @@ func (m *AddObjectStateRequest) validate(all bool) error {
 			return err
 		}
 		errors = append(errors, err)
+	}
+
+	if all {
+		switch v := interface{}(m.GetObject()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, AddObjectStateRequestValidationError{
+					field:  "Object",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, AddObjectStateRequestValidationError{
+					field:  "Object",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetObject()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return AddObjectStateRequestValidationError{
+				field:  "Object",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
 	}
 
 	if l := utf8.RuneCountInString(m.GetSdkName()); l < 1 || l > 255 {
@@ -514,257 +892,6 @@ func (m *AddObjectStateRequest) validate(all bool) error {
 			return err
 		}
 		errors = append(errors, err)
-	}
-
-	switch v := m.Object.(type) {
-	case *AddObjectStateRequest_Site:
-		if v == nil {
-			err := AddObjectStateRequestValidationError{
-				field:  "Object",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetSite()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, AddObjectStateRequestValidationError{
-						field:  "Site",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, AddObjectStateRequestValidationError{
-						field:  "Site",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetSite()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return AddObjectStateRequestValidationError{
-					field:  "Site",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
-	case *AddObjectStateRequest_Platform:
-		if v == nil {
-			err := AddObjectStateRequestValidationError{
-				field:  "Object",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetPlatform()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, AddObjectStateRequestValidationError{
-						field:  "Platform",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, AddObjectStateRequestValidationError{
-						field:  "Platform",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetPlatform()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return AddObjectStateRequestValidationError{
-					field:  "Platform",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
-	case *AddObjectStateRequest_Manufacturer:
-		if v == nil {
-			err := AddObjectStateRequestValidationError{
-				field:  "Object",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetManufacturer()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, AddObjectStateRequestValidationError{
-						field:  "Manufacturer",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, AddObjectStateRequestValidationError{
-						field:  "Manufacturer",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetManufacturer()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return AddObjectStateRequestValidationError{
-					field:  "Manufacturer",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
-	case *AddObjectStateRequest_Device:
-		if v == nil {
-			err := AddObjectStateRequestValidationError{
-				field:  "Object",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetDevice()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, AddObjectStateRequestValidationError{
-						field:  "Device",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, AddObjectStateRequestValidationError{
-						field:  "Device",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetDevice()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return AddObjectStateRequestValidationError{
-					field:  "Device",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
-	case *AddObjectStateRequest_DeviceRole:
-		if v == nil {
-			err := AddObjectStateRequestValidationError{
-				field:  "Object",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetDeviceRole()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, AddObjectStateRequestValidationError{
-						field:  "DeviceRole",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, AddObjectStateRequestValidationError{
-						field:  "DeviceRole",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetDeviceRole()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return AddObjectStateRequestValidationError{
-					field:  "DeviceRole",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
-	case *AddObjectStateRequest_DeviceType:
-		if v == nil {
-			err := AddObjectStateRequestValidationError{
-				field:  "Object",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetDeviceType()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, AddObjectStateRequestValidationError{
-						field:  "DeviceType",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, AddObjectStateRequestValidationError{
-						field:  "DeviceType",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetDeviceType()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return AddObjectStateRequestValidationError{
-					field:  "DeviceType",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
-	default:
-		_ = v // ensures v is used
 	}
 
 	if len(errors) > 0 {
