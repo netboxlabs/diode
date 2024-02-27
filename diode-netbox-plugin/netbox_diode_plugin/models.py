@@ -2,10 +2,10 @@
 # Copyright 2024 NetBox Labs Inc
 """Diode Netbox Plugin - Models."""
 
-from netbox.models import NetBoxModel
+from django.db import models
 
 
-class ObjectState(NetBoxModel):
+class ObjectState(models.Model):
     """
     Dummy model used to generate permissions for Diode NetBox Plugin. Does not exist in the database.
     """
