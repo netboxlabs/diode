@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package reconciler.v1;
+
+import "reconciler/v1/manufacturer.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/netboxlabs/diode/diode-server/reconciler/v1/reconcilerpb";
+
+// A device type
+message DeviceType {
+  uint64 id = 1 [(validate.rules).uint64.gt = 1];
+  string model = 2 [(validate.rules).string = {
+    min_len: 1,
+    max_len: 100
+  }];
+  string slug = 3 [(validate.rules).string = {
+    min_len: 1,
+    max_len: 100,
+    pattern: "^[-a-zA-Z0-9_]+$"
+  }];
+  string display = 4;
+  Manufacturer manufacturer = 5 [(validate.rules).any.required = true];
+  string url = 6 [(validate.rules).string.uri = true];
+}

@@ -2,7 +2,12 @@ syntax = "proto3";
 
 package reconciler.v1;
 
-import "google/protobuf/timestamp.proto";
+import "reconciler/v1/device.proto";
+import "reconciler/v1/device_role.proto";
+import "reconciler/v1/device_type.proto";
+import "reconciler/v1/manufacturer.proto";
+import "reconciler/v1/platform.proto";
+import "reconciler/v1/site.proto";
 import "validate/validate.proto";
 
 option go_package = "github.com/netboxlabs/diode/diode-server/reconciler/v1/reconcilerpb";
@@ -37,8 +42,34 @@ message RetrieveIngestionDataSourcesResponse {
   repeated IngestionDataSource ingestion_data_sources = 1;
 }
 
+// The request to add an object state
+message AddObjectStateRequest {
+  uint64 object_id = 1 [(validate.rules).uint64.gt = 1];
+  uint64 object_change_id = 2 [(validate.rules).uint64.gt = 1];
+  string object_type = 3 [(validate.rules).string = {
+    min_len: 1,
+    max_len: 255
+  }];
+  oneof object {
+    Site site = 4;
+    Platform platform = 5;
+    Manufacturer manufacturer = 6;
+    Device device = 7;
+    DeviceRole device_role = 8;
+    DeviceType device_type = 9;
+  }
+}
+
+// The response from the add object state request
+message AddObjectStateResponse {
+  repeated string errors = 1;
+}
+
 // Reconciler service API
 service ReconcilerService {
   // Retrieves ingestion data sources
   rpc RetrieveIngestionDataSources(RetrieveIngestionDataSourcesRequest) returns (RetrieveIngestionDataSourcesResponse) {}
+
+  // Adds an object state
+  rpc v(AddObjectStateRequest) returns (AddObjectStateResponse) {}
 }
