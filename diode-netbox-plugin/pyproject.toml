@@ -27,7 +27,6 @@ classifiers = [  # Optional
 
 dependencies = [
     "grpcio==1.62.0",
-    "protoc-gen-validate==1.0.4",
 ]
 
 [project.optional-dependencies] # Optional
