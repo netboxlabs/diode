@@ -85,6 +85,62 @@ class ApplyChangeSetView(views.APIView):
 
     permission_classes = [IsAuthenticated, IsDiodePost]
 
+    @staticmethod
+    def _get_object_type_model(object_type):
+        """Get the object type model from object_type."""
+        app_label, model_name = object_type.split(".")
+        object_content_type = ContentType.objects.get_by_natural_key(
+            app_label, model_name
+        )
+        object_type_model = object_content_type.model_class()
+        return object_type_model
+
+    @staticmethod
+    @transaction.atomic
+    def _perform_save(serializer):
+        """Try to save an object amd return None if successful and the error if not."""
+        try:
+            with transaction.atomic():
+                serializer.save()
+        except Exception as e:
+            transaction.set_rollback(True)
+            return str(e)
+
+        return None
+
+    def _create(self, object_type_model, object_data):
+        """Create a new object."""
+        serializer = get_serializer_for_model(object_type_model)(
+            data=object_data, context={"request": self.request}
+        )
+
+        if serializer.is_valid():
+            self.check_object_permissions(self.request, serializer)
+            error = self._perform_save(serializer)
+            if error:
+                return "failed", error
+        else:
+            return "failed", serializer.errors
+
+        return "success", None
+
+    def _update(self, object_type_model, object_id, object_data):
+        """Update an object."""
+        instance = object_type_model.objects.get(id=object_id)
+        serializer = get_serializer_for_model(object_type_model)(
+            instance, data=object_data, context={"request": self.request}
+        )
+
+        if serializer.is_valid():
+            self.check_object_permissions(self.request, serializer)
+            error = self._perform_save(serializer)
+            if error:
+                return "failed", error
+        else:
+            return "failed", serializer.errors
+
+        return "success", None
+
     def post(self, request, *args, **kwargs):
         """
         Create a new change set and apply it to the current state.
@@ -102,43 +158,22 @@ class ApplyChangeSetView(views.APIView):
             object_type = change.get("object_type", None)
             if not object_type:
                 raise ValidationError("object_type parameter is required")
-            app_label, model_name = object_type.split(".")
-            object_content_type = ContentType.objects.get_by_natural_key(
-                app_label, model_name
-            )
-            object_type_model = object_content_type.model_class()
+
+            object_type_model = self._get_object_type_model(object_type)
+
+            object_data = change.get("data", None)
+            if not object_data:
+                raise ValidationError("data parameter is required")
 
             if change_type == "create":
-                object_data = change.get("data", None)
-                if not object_data:
-                    raise ValidationError("data parameter is required")
+                result, error = self._create(object_type_model, object_data)
 
-                serializer = get_serializer_for_model(object_type_model)(
-                    data=object_data, context={"request": request}
-                )
-
-                if serializer.is_valid():
-
-                    self.check_object_permissions(request, serializer)
-
-                    try:
-                        with transaction.atomic():
-                            serializer.save()
-                    except Exception as e:
-                        return Response(
-                            {
-                                "change_set_id": change_set_id,
-                                "result": "failed",
-                                "error": str(e),
-                            },
-                            status=status.HTTP_400_BAD_REQUEST,
-                        )
-                else:
+                if result == "failed":
                     return Response(
                         {
                             "change_set_id": change_set_id,
                             "result": "failed",
-                            "error": serializer.errors,
+                            "error": error,
                         },
                         status=status.HTTP_400_BAD_REQUEST,
                     )
@@ -148,35 +183,14 @@ class ApplyChangeSetView(views.APIView):
                 if not object_id:
                     raise ValidationError("object_id parameter is required")
 
-                object_data = change.get("data", None)
-                if not object_data:
-                    raise ValidationError("data parameter is required")
+                result, error = self._update(object_type_model, object_id, object_data)
 
-                instance = object_type_model.objects.get(id=object_id)
-                serializer = get_serializer_for_model(object_type_model)(
-                    instance, data=object_data, context={"request": request}
-                )
-
-                if serializer.is_valid():
-                    self.check_object_permissions(request, serializer)
-                    try:
-                        with transaction.atomic():
-                            serializer.save()
-                    except Exception as e:
-                        return Response(
-                            {
-                                "change_set_id": change_set_id,
-                                "result": "failed",
-                                "error": str(e),
-                            },
-                            status=status.HTTP_400_BAD_REQUEST,
-                        )
-                else:
+                if result == "failed":
                     return Response(
                         {
                             "change_set_id": change_set_id,
                             "result": "failed",
-                            "error": serializer.errors,
+                            "error": error,
                         },
                         status=status.HTTP_400_BAD_REQUEST,
                     )
