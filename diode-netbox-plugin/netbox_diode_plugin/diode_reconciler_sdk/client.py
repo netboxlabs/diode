@@ -16,10 +16,12 @@ class DiodeReconcilerClient:
     _channel = None
     _stub = None
 
-    def __init__(self, name: str, version: str, target: str) -> None:
+    def __init__(self, name: str, version: str, target: str, api_key: str) -> None:
         """Initiate a new client configuration."""
         self._name = name
         self._version = version
+        # TODO(mfiedorowicz): configure secure channel with auth metatada callback
+        self._auth_metadata = (("diode-api-key", api_key),)
         self._channel = grpc.insecure_channel(target)
         self._stub = reconciler_pb2_grpc.ReconcilerServiceStub(self._channel)
 
@@ -50,4 +52,4 @@ class DiodeReconcilerClient:
                                                        object_change_id=object_change_id, object=object,
                                                        sdk_name=self.name, sdk_version=self.version)
 
-        return self._stub.AddObjectState(request)
+        return self._stub.AddObjectState(request, metadata=self._auth_metadata)
