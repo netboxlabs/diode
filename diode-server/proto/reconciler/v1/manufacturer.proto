@@ -20,5 +20,4 @@ message Manufacturer {
   }];
   string display = 4;
   string url = 5 [(validate.rules).string.uri = true];
-
 }

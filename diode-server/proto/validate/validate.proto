@@ -1,12 +1,12 @@
 syntax = "proto2";
 package validate;
 
-option go_package = "github.com/netboxlabs/diode/diode-server/validate";
-option java_package = "io.envoyproxy.pgv.validate";
-
 import "google/protobuf/descriptor.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/netboxlabs/diode/diode-server/validate";
+option java_package = "io.envoyproxy.pgv.validate";
 
 // Validation rules applied at the message level
 extend google.protobuf.MessageOptions {
@@ -37,30 +37,30 @@ message FieldRules {
   optional MessageRules message = 17;
   oneof type {
     // Scalar Field Types
-    FloatRules    float = 1;
-    DoubleRules   double = 2;
-    Int32Rules    int32 = 3;
-    Int64Rules    int64 = 4;
-    UInt32Rules   uint32 = 5;
-    UInt64Rules   uint64 = 6;
-    SInt32Rules   sint32 = 7;
-    SInt64Rules   sint64 = 8;
-    Fixed32Rules  fixed32 = 9;
-    Fixed64Rules  fixed64 = 10;
+    FloatRules float = 1;
+    DoubleRules double = 2;
+    Int32Rules int32 = 3;
+    Int64Rules int64 = 4;
+    UInt32Rules uint32 = 5;
+    UInt64Rules uint64 = 6;
+    SInt32Rules sint32 = 7;
+    SInt64Rules sint64 = 8;
+    Fixed32Rules fixed32 = 9;
+    Fixed64Rules fixed64 = 10;
     SFixed32Rules sfixed32 = 11;
     SFixed64Rules sfixed64 = 12;
-    BoolRules     bool = 13;
-    StringRules   string = 14;
-    BytesRules    bytes = 15;
+    BoolRules bool = 13;
+    StringRules string = 14;
+    BytesRules bytes = 15;
 
     // Complex Field Types
-    EnumRules     enum = 16;
+    EnumRules enum = 16;
     RepeatedRules repeated = 18;
-    MapRules      map = 19;
+    MapRules map = 19;
 
     // Well-Known Field Types
-    AnyRules       any = 20;
-    DurationRules  duration = 21;
+    AnyRules any = 20;
+    DurationRules duration = 21;
     TimestampRules timestamp = 22;
   }
 }
@@ -653,15 +653,15 @@ message BytesRules {
 
   // Prefix specifies that this field must have the specified bytes at the
   // beginning of the string.
-  optional bytes  prefix = 5;
+  optional bytes prefix = 5;
 
   // Suffix specifies that this field must have the specified bytes at the
   // end of the string.
-  optional bytes  suffix = 6;
+  optional bytes suffix = 6;
 
   // Contains specifies that this field must have the specified bytes
   // anywhere in the string.
-  optional bytes  contains = 7;
+  optional bytes contains = 7;
 
   // In specifies that this field must be equal to one of the specified
   // values
@@ -699,7 +699,7 @@ message EnumRules {
 
   // DefinedOnly specifies that this field must be only one of the defined
   // values for this enum, failing on any undefined value.
-  optional bool  defined_only = 2;
+  optional bool defined_only = 2;
 
   // In specifies that this field must be equal to one of the specified
   // values
@@ -734,7 +734,7 @@ message RepeatedRules {
   // Unique specifies that all elements in this field must be unique. This
   // constraint is only applicable to scalar and enum types (messages are not
   // supported).
-  optional bool   unique = 3;
+  optional bool unique = 3;
 
   // Items specifies the constraints to be applied to each item in the field.
   // Repeated message fields will still execute validation against each item
