@@ -3,16 +3,17 @@
 """Diode Netbox Plugin - API Views."""
 
 from django.contrib.contenttypes.models import ContentType
+from django.db import transaction
 from django.db.models import Q
 from extras.models import CachedValue
 from netbox.search import LookupTypes
-from rest_framework import views, generics, status
+from rest_framework import status, views
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from utilities.api import get_serializer_for_model
 
-from netbox_diode_plugin.api.permissions import IsDiodeViewer
+from netbox_diode_plugin.api.permissions import IsDiodePost, IsDiodeViewer
 from netbox_diode_plugin.api.serializers import ObjectStateSerializer
 
 
@@ -82,18 +83,7 @@ class ObjectStateView(views.APIView):
 class ApplyChangeSetView(views.APIView):
     """ApplyChangeSet view."""
 
-    authentication_classes = []
-    permission_classes = []
-
-    # def get_serializer(self, *args, **kwargs):
-    #     """
-    #     Return the serializer instance that should be used for validating and
-    #     deserializing input, and for serializing output.
-    #     """
-    #     print(self.request.data)
-    #     serializer_class = self.get_serializer_class()
-    #     kwargs.setdefault("context", self.get_serializer_context())
-    #     return serializer_class(*args, **kwargs)
+    permission_classes = [IsAuthenticated, IsDiodePost]
 
     def post(self, request, *args, **kwargs):
         """
@@ -101,6 +91,7 @@ class ApplyChangeSetView(views.APIView):
 
         The request body should contain a list of changes to be applied.
         """
+        change_set_id = self.request.data.get("change_set_id", None)
         change_set = self.request.data.get("change_set", None)
         if not change_set:
             raise ValidationError("change_set parameter is required")
@@ -126,13 +117,69 @@ class ApplyChangeSetView(views.APIView):
                     data=object_data, context={"request": request}
                 )
 
-                serializer.is_valid(raise_exception=True)
+                if serializer.is_valid():
 
-                serializer.save()
+                    self.check_object_permissions(request, serializer)
 
-                return Response(
-                    serializer.data,
-                    status=status.HTTP_201_CREATED,
+                    try:
+                        with transaction.atomic():
+                            serializer.save()
+                    except Exception as e:
+                        return Response(
+                            {
+                                "change_set_id": change_set_id,
+                                "result": "failed",
+                                "error": str(e),
+                            },
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                else:
+                    return Response(
+                        {
+                            "change_set_id": change_set_id,
+                            "result": "failed",
+                            "error": serializer.errors,
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+            elif change_type == "update":
+                object_id = change.get("object_id", None)
+                if not object_id:
+                    raise ValidationError("object_id parameter is required")
+
+                object_data = change.get("data", None)
+                if not object_data:
+                    raise ValidationError("data parameter is required")
+
+                instance = object_type_model.objects.get(id=object_id)
+                serializer = get_serializer_for_model(object_type_model)(
+                    instance, data=object_data, context={"request": request}
                 )
 
-        return Response({"status": "success"})
+                if serializer.is_valid():
+                    self.check_object_permissions(request, serializer)
+                    try:
+                        with transaction.atomic():
+                            serializer.save()
+                    except Exception as e:
+                        return Response(
+                            {
+                                "change_set_id": change_set_id,
+                                "result": "failed",
+                                "error": str(e),
+                            },
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                else:
+                    return Response(
+                        {
+                            "change_set_id": change_set_id,
+                            "result": "failed",
+                            "error": serializer.errors,
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+        data = {"change_set_id": change_set_id, "result": "success"}
+        return Response(data, status=status.HTTP_200_OK)
