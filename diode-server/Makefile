@@ -66,6 +66,6 @@ reconciler-proto-gen:
 	@cp $(VALIDATE_PKG_DIR)/validate/validate.proto proto/validate/validate.proto
 	@sed -i '' 's/^option go_package = "github.com\/envoyproxy\/protoc-gen-validate\/validate";/option go_package = "github.com\/netboxlabs\/diode\/diode-server\/validate";/' proto/validate/validate.proto
 	@chmod u+rw proto/validate/validate.proto
-	@cd proto/ && buf generate
+	@cd proto/ && buf format -w && buf generate
 	@find ../diode-netbox-plugin/netbox_diode_plugin/diode_reconciler_sdk/reconciler -name '*.py' \
 	-exec sed -i '' 's/^from reconciler.v1/from netbox_diode_plugin.diode_reconciler_sdk.reconciler.v1/; s/^from validate/from netbox_diode_plugin.diode_reconciler_sdk.validate/' {} \;
