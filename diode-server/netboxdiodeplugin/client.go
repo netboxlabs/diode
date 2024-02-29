@@ -1,6 +1,7 @@
 package netboxdiodeplugin
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -201,6 +202,74 @@ func (c *Client) RetrieveDcimDeviceState(ctx context.Context, objectID int, quer
 		ObjectChangeID: resp.ObjectChangeID,
 		Object:         *dcimDevice,
 	}, nil
+}
+
+// ApplyChangeSet applies a change set
+func (c *Client) ApplyChangeSet(ctx context.Context, changeSet ChangeSetRequest) (*ChangeSetResponse, error) {
+	endpointURL, err := url.Parse(fmt.Sprintf("%s/apply-change-set", c.baseURL.String()))
+	if err != nil {
+		return nil, err
+	}
+
+	reqBody, err := json.Marshal(changeSet)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpointURL.String(), bytes.NewBuffer(reqBody))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			c.logger.Warn("failed to close response body", "error", closeErr)
+		}
+	}()
+
+	respBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body %w", err)
+	}
+
+	var changeSetResponse ChangeSetResponse
+	if err = json.Unmarshal(respBytes, &changeSetResponse); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response body %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		c.logger.Debug(fmt.Sprintf("request POST %s failed", req.URL.String()), "statusCode", resp.StatusCode, "response", changeSetResponse)
+		return &changeSetResponse, fmt.Errorf("request POST %s failed - %q", req.URL.String(), resp.Status)
+	}
+	return &changeSetResponse, nil
+}
+
+// ChangeSetRequest represents a apply change set request
+type ChangeSetRequest struct {
+	ChangeSetID string   `json:"change_set_id"`
+	ChangeSet   []Change `json:"change_set"`
+}
+
+// Change represents a change to apply
+type Change struct {
+	ChangeID      string `json:"change_id"`
+	ChangeType    string `json:"change_type"`
+	ObjectType    string `json:"object_type"`
+	ObjectID      *int   `json:"object_id,omitempty"`
+	ObjectVersion *int   `json:"object_version,omitempty"`
+	Data          any    `json:"data"`
+}
+
+// ChangeSetResponse represents an apply change set response
+type ChangeSetResponse struct {
+	ChangeSetID string   `json:"change_set_id"`
+	Result      string   `json:"result"`
+	Errors      []string `json:"errors"`
 }
 
 // DcimDevice represents a DCIM device

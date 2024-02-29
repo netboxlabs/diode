@@ -133,7 +133,7 @@ func TestRetrieveDcimDeviceState(t *testing.T) {
 		{
 			name:               "invalid server response",
 			objectID:           100,
-			apiKey:             "bardfoo",
+			apiKey:             "barfoo",
 			mockServerResponse: ``,
 			shouldError:        true,
 		},
@@ -174,7 +174,115 @@ func TestRetrieveDcimDeviceState(t *testing.T) {
 	}
 }
 
+func TestApplyChangeSet(t *testing.T) {
+	tests := []struct {
+		name               string
+		apiKey             string
+		changeSetRequest   netboxdiodeplugin.ChangeSetRequest
+		mockServerResponse string
+		mockStatusCode     int
+		response           any
+		shouldError        bool
+	}{
+		{
+			name:   "valid apply change set response",
+			apiKey: "foobar",
+			changeSetRequest: netboxdiodeplugin.ChangeSetRequest{
+				ChangeSetID: "00000000-0000-0000-0000-000000000000",
+				ChangeSet: []netboxdiodeplugin.Change{
+					{
+						ChangeID:      "00000000-0000-0000-0000-000000000001",
+						ChangeType:    "create",
+						ObjectType:    "dcim.device",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netboxdiodeplugin.DcimDevice{
+							Name: "test",
+						},
+					},
+					{
+						ChangeID:      "00000000-0000-0000-0000-000000000002",
+						ChangeType:    "update",
+						ObjectType:    "dcim.device",
+						ObjectID:      ptrInt(1),
+						ObjectVersion: ptrInt(2),
+						Data: &netboxdiodeplugin.DcimDevice{
+							Name: "test",
+						},
+					},
+				},
+			},
+			mockServerResponse: `{"change_set_id":"00000000-0000-0000-0000-000000000000","result":"success"}`,
+			mockStatusCode:     http.StatusOK,
+			response: &netboxdiodeplugin.ChangeSetResponse{
+				ChangeSetID: "00000000-0000-0000-0000-000000000000",
+				Result:      "success",
+			},
+			shouldError: false,
+		},
+		{
+			name:   "invalid request",
+			apiKey: "foobar",
+			changeSetRequest: netboxdiodeplugin.ChangeSetRequest{
+				ChangeSetID: "00000000-0000-0000-0000-000000000000",
+				ChangeSet: []netboxdiodeplugin.Change{
+					{
+						ChangeID:      "00000000-0000-0000-0000-000000000001",
+						ChangeType:    "create",
+						ObjectType:    "",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data:          nil,
+					},
+				},
+			},
+			mockServerResponse: `{"change_set_id":"00000000-0000-0000-0000-000000000000","result":"failure","errors":["invalid object type"]}`,
+			mockStatusCode:     http.StatusBadRequest,
+			shouldError:        true,
+		},
+	}
+
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cleanUpEnvVars()
+
+			handler := func(w http.ResponseWriter, r *http.Request) {
+				assert.Equal(t, r.Method, http.MethodPost)
+				assert.Equal(t, r.URL.Path, "/api/diode/apply-change-set")
+				assert.Equal(t, r.Header.Get("Authorization"), fmt.Sprintf("Token %s", tt.apiKey))
+				assert.Equal(t, r.Header.Get("User-Agent"), fmt.Sprintf("%s/%s", netboxdiodeplugin.SDKName, netboxdiodeplugin.SDKVersion))
+				assert.Equal(t, r.Header.Get("Content-Type"), "application/json")
+				w.WriteHeader(tt.mockStatusCode)
+				_, _ = w.Write([]byte(tt.mockServerResponse))
+			}
+			mux := http.NewServeMux()
+			mux.HandleFunc("/api/diode/apply-change-set", handler)
+			ts := httptest.NewServer(mux)
+			defer ts.Close()
+
+			_ = os.Setenv(netboxdiodeplugin.BaseURLEnvVarName, fmt.Sprintf("%s/api/diode", ts.URL))
+
+			client, err := netboxdiodeplugin.NewClient(tt.apiKey, logger)
+			require.NoError(t, err)
+			resp, err := client.ApplyChangeSet(context.Background(), tt.changeSetRequest)
+			if tt.shouldError {
+				require.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tt.response, resp)
+			assert.Equal(t, tt.mockStatusCode, http.StatusOK)
+		})
+	}
+}
+
 func cleanUpEnvVars() {
 	_ = os.Unsetenv(netboxdiodeplugin.BaseURLEnvVarName)
 	_ = os.Unsetenv(netboxdiodeplugin.TimeoutSecondsEnvVarName)
+}
+
+func ptrInt(i int) *int {
+	return &i
 }
