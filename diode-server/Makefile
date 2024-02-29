@@ -1,17 +1,20 @@
-.PHONY: deps lint test build-all docker-all docker-compose-up docker-compose-down clean
+.PHONY: deps lint test build-all docker-all docker-compose-up docker-compose-down clean reconciler-proto-gen
 
-SERVICES        := $(shell find ./cmd/* -type d -exec basename {} \;)
-BUILD_SERVICES  = $(addprefix build-,$(SERVICES))
-DOCKER_SERVICES = $(addprefix docker-,$(SERVICES))
-BUILD_DIR       ?= ./build
-LD_FLAGS        ?= -w -s
-CGO_ENABLED     ?= 0
-GOARCH          ?= $(shell go env GOARCH)
-GOOS            = linux
-ORG_NAME        = netboxlabs
-REPO_NAME       = diode
-DIODE_VERSION   = $(shell cat version/VERSION.txt)
-COMMIT_SHA      = $(shell git rev-parse --short HEAD)
+SERVICES         := $(shell find ./cmd/* -type d -exec basename {} \;)
+BUILD_SERVICES   = $(addprefix build-,$(SERVICES))
+DOCKER_SERVICES  = $(addprefix docker-,$(SERVICES))
+BUILD_DIR        ?= ./build
+LD_FLAGS         ?= -w -s
+CGO_ENABLED      ?= 0
+GOPATH           ?= $(shell go env GOPATH)
+GOARCH           ?= $(shell go env GOARCH)
+GOOS             = linux
+ORG_NAME         = netboxlabs
+REPO_NAME        = diode
+DIODE_VERSION    := $(shell cat version/VERSION.txt)
+COMMIT_SHA       := $(shell git rev-parse --short HEAD)
+ROOT_DIR         := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+VALIDATE_PKG_DIR := $(shell find $(GOPATH)/pkg/mod/github.com/envoyproxy/protoc-gen-validate@* -type d -prune | sort | tail -1)
 
 deps:
 	@go mod tidy
@@ -49,7 +52,7 @@ docker-all: $(DOCKER_SERVICES)
 
 docker-compose-up: docker-all
 	@DIODE_VERSION=$(DIODE_VERSION) COMMIT_SHA=$(COMMIT_SHA) \
-	docker compose -f docker/docker-compose.yaml -f docker/docker-compose.netbox.yaml up -d
+	docker compose -f docker/docker-compose.yaml -f docker/docker-compose.netbox.yaml up -d --build
 
 docker-compose-down:
 	@DIODE_VERSION=$(DIODE_VERSION) COMMIT_SHA=$(COMMIT_SHA) \
@@ -57,3 +60,12 @@ docker-compose-down:
 
 clean:
 	@rm -rf $(BUILD_DIR)/*
+
+reconciler-proto-gen:
+	@mkdir -p proto/validate
+	@cp $(VALIDATE_PKG_DIR)/validate/validate.proto proto/validate/validate.proto
+	@sed -i '' 's/^option go_package = "github.com\/envoyproxy\/protoc-gen-validate\/validate";/option go_package = "github.com\/netboxlabs\/diode\/diode-server\/validate";/' proto/validate/validate.proto
+	@chmod u+rw proto/validate/validate.proto
+	@cd proto/ && buf format -w && buf generate
+	@find ../diode-netbox-plugin/netbox_diode_plugin/diode_reconciler_sdk/reconciler -name '*.py' \
+	-exec sed -i '' 's/^from reconciler.v1/from netbox_diode_plugin.diode_reconciler_sdk.reconciler.v1/; s/^from validate/from netbox_diode_plugin.diode_reconciler_sdk.validate/' {} \;
