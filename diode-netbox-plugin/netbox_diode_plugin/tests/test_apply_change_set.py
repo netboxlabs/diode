@@ -36,7 +36,7 @@ class BaseApplyChangeSet(APITestCase):
 
         self.sites = (
             Site(
-                id=1,
+                id=10,
                 name="Site 1",
                 slug="site-1",
                 facility="Alpha",
@@ -46,7 +46,7 @@ class BaseApplyChangeSet(APITestCase):
                 comments="Lorem ipsum etcetera",
             ),
             Site(
-                id=2,
+                id=20,
                 name="Site 2",
                 slug="site-2",
                 facility="Bravo",
@@ -99,7 +99,7 @@ class BaseApplyChangeSet(APITestCase):
 
         devices = (
             Device(
-                id=1,
+                id=10,
                 device_type=self.device_types[0],
                 role=self.roles[0],
                 name="Device 1",
@@ -109,7 +109,7 @@ class BaseApplyChangeSet(APITestCase):
                 local_context_data={"A": 1},
             ),
             Device(
-                id=2,
+                id=20,
                 device_type=self.device_types[0],
                 role=self.roles[0],
                 name="Device 2",
@@ -155,9 +155,8 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
         response = self.client.post(
             self.url, payload, format="json", **self.user_header
         )
-
-        self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json().get("result"), "success")
+        self.assertEqual(response.status_code, 200)
 
     def test_change_type_update_return_200(self):
         """Test update change_type with successful."""
@@ -169,7 +168,7 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
                     "change_type": "update",
                     "object_version": None,
                     "object_type": "dcim.site",
-                    "object_id": 2,
+                    "object_id": 20,
                     "data": {
                         "name": "Site A",
                         "slug": "site-a",
@@ -188,7 +187,7 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
             self.url, payload, format="json", **self.user_header
         )
 
-        site_updated = Site.objects.get(id=2)
+        site_updated = Site.objects.get(id=20)
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json().get("result"), "success")
@@ -240,7 +239,7 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
                     "change_type": "update",
                     "object_version": None,
                     "object_type": "dcim.site",
-                    "object_id": 2,
+                    "object_id": 20,
                     "data": {
                         "name": "Site A",
                         "slug": "site-a",
@@ -259,7 +258,7 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
             self.url, payload, format="json", **self.user_header
         )
 
-        site_updated = Site.objects.get(id=2)
+        site_updated = Site.objects.get(id=20)
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json().get("result"), "failed")
@@ -309,8 +308,8 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
         response = self.client.post(
             self.url, payload, format="json", **self.user_header
         )
-
         self.assertEqual(response.status_code, 200)
+
         self.assertEqual(response.json().get("result"), "success")
 
     def test_change_type_update_with_multiples_objects_return_200(self):
@@ -323,7 +322,7 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
                     "change_type": "update",
                     "object_version": None,
                     "object_type": "dcim.site",
-                    "object_id": 2,
+                    "object_id": 20,
                     "data": {
                         "name": "Site A",
                         "slug": "site-a",
@@ -340,7 +339,7 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
                     "change_type": "update",
                     "object_version": None,
                     "object_type": "dcim.device",
-                    "object_id": 1,
+                    "object_id": 10,
                     "data": {
                         "device_type": self.device_types[1].pk,
                         "role": self.roles[1].pk,
@@ -357,8 +356,8 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
             self.url, payload, format="json", **self.user_header
         )
 
-        site_updated = Site.objects.get(id=2)
-        devide_updated = Device.objects.get(id=1)
+        site_updated = Site.objects.get(id=20)
+        devide_updated = Device.objects.get(id=10)
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json().get("result"), "success")
@@ -481,7 +480,7 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
                     "change_type": "update",
                     "object_version": None,
                     "object_type": "dcim.site",
-                    "object_id": 3,
+                    "object_id": 30,
                     "data": {
                         "name": "Site A",
                         "slug": "site-a",
@@ -500,7 +499,7 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
             self.url, payload, format="json", **self.user_header
         )
 
-        site_updated = Site.objects.get(id=2)
+        site_updated = Site.objects.get(id=20)
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json().get("result"), "failed")
         self.assertEqual(response.json().get("change_id"), "<UUID-0>")
