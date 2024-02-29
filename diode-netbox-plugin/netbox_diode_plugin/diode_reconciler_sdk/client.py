@@ -5,21 +5,20 @@
 import grpc
 
 from netbox_diode_plugin.diode_reconciler_sdk.reconciler.v1 import reconciler_pb2, reconciler_pb2_grpc
+from netbox_diode_plugin.diode_reconciler_sdk.version import version_display
 
 
 class DiodeReconcilerClient:
     """Diode Reconciler client."""
 
-    _name = None
-    _version = None
+    _name = "diode-reconciler-sdk-python"
+    _version = version_display()
     _target = None
     _channel = None
     _stub = None
 
-    def __init__(self, name: str, version: str, target: str, api_key: str):
+    def __init__(self, target: str, api_key: str):
         """Initiate a new client configuration."""
-        self._name = name
-        self._version = version
         self._target = target
         # TODO(mfiedorowicz): configure secure channel with auth metatada callback
         self._auth_metadata = (("diode-api-key", api_key),)
