@@ -16,10 +16,11 @@ class DiodeReconcilerClient:
     _channel = None
     _stub = None
 
-    def __init__(self, name: str, version: str, target: str, api_key: str) -> None:
+    def __init__(self, name: str, version: str, target: str, api_key: str):
         """Initiate a new client configuration."""
         self._name = name
         self._version = version
+        self._target = target
         # TODO(mfiedorowicz): configure secure channel with auth metatada callback
         self._auth_metadata = (("diode-api-key", api_key),)
         self._channel = grpc.insecure_channel(target)
