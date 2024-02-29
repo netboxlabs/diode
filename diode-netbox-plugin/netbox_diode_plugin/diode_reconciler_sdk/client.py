@@ -10,6 +10,7 @@ from netbox_diode_plugin.diode_reconciler_sdk.version import version_display
 
 class DiodeReconcilerClient:
     """Diode Reconciler client."""
+
     _name = "diode-reconciler-sdk-python"
     _version = version_display()
     _target = None
