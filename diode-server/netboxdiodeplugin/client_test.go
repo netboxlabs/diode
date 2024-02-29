@@ -200,6 +200,16 @@ func TestApplyChangeSet(t *testing.T) {
 							Name: "test",
 						},
 					},
+					{
+						ChangeID:      "00000000-0000-0000-0000-000000000002",
+						ChangeType:    "update",
+						ObjectType:    "dcim.device",
+						ObjectID:      ptrInt(1),
+						ObjectVersion: ptrInt(2),
+						Data: &netboxdiodeplugin.DcimDevice{
+							Name: "test",
+						},
+					},
 				},
 			},
 			mockServerResponse: `{"change_set_id":"00000000-0000-0000-0000-000000000000","result":"success"}`,
@@ -271,4 +281,8 @@ func TestApplyChangeSet(t *testing.T) {
 func cleanUpEnvVars() {
 	_ = os.Unsetenv(netboxdiodeplugin.BaseURLEnvVarName)
 	_ = os.Unsetenv(netboxdiodeplugin.TimeoutSecondsEnvVarName)
+}
+
+func ptrInt(i int) *int {
+	return &i
 }
