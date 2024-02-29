@@ -25,7 +25,8 @@ classifiers = [  # Optional
     'Programming Language :: Python :: 3.11',
 ]
 
-dependencies = [ # Optional
+dependencies = [
+    "grpcio==1.62.0",
 ]
 
 [project.optional-dependencies] # Optional

@@ -1,7 +1,10 @@
 version: '3.8'
 services:
   netbox: &netbox
-    image: docker.io/netboxcommunity/netbox:${VERSION-v3.7-2.8.0}
+    image: netboxcommunity/netbox:v3.7-2.8.0-diode
+    build:
+      context: .
+      dockerfile: netbox/Dockerfile-diode
     depends_on:
       - netbox-postgres
       - netbox-redis

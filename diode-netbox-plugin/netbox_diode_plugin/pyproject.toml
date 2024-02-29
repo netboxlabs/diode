@@ -1,4 +1,8 @@
 [tool.ruff]
+exclude = [
+    "diode_reconciler_sdk/reconciler",
+    "diode_reconciler_sdk/validate",
+]
 
 line-length = 140
 
