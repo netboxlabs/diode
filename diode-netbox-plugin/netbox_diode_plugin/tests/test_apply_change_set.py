@@ -4,8 +4,8 @@
 
 from dcim.models import (
     Device,
-    DeviceType,
     DeviceRole,
+    DeviceType,
     Manufacturer,
     Rack,
     Site,
@@ -20,6 +20,8 @@ User = get_user_model()
 
 
 class BaseApplyChangeSet(APITestCase):
+    """Base ApplyChangeSet test case."""
+
     def setUp(self):
         """Set up test."""
         self.user = User.objects.create_user(username="testcommonuser")
@@ -125,8 +127,8 @@ class BaseApplyChangeSet(APITestCase):
 class ApplyChangeSetTestCase(BaseApplyChangeSet):
     """ApplyChangeSet test cases."""
 
-    def test_apply_change_set_create_return_200(self):
-        """Test apply change set to create."""
+    def test_change_type_create_return_200(self):
+        """Test create change_type with successful."""
         payload = {
             "change_set_id": "<UUID-0>",
             "change_set": [
@@ -157,8 +159,8 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json().get("result"), "success")
 
-    def test_apply_change_set_update_return_200(self):
-        """Test apply change set to update."""
+    def test_change_type_update_return_200(self):
+        """Test update change_type with successful."""
         payload = {
             "change_set_id": "<UUID-0>",
             "change_set": [
@@ -190,11 +192,10 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json().get("result"), "success")
-        print(response.content)
         self.assertEqual(site_updated.name, "Site A")
 
-    def test_apply_change_set_create_with_error_return_400(self):
-        """Test apply change set to update."""
+    def test_change_type_create_with_error_return_400(self):
+        """Test create change_type with wrong payload."""
         payload = {
             "change_set_id": "<UUID-0>",
             "change_set": [
@@ -226,10 +227,11 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json().get("result"), "failed")
+        self.assertEqual(response.json().get("change_id"), "<UUID-0>")
         self.assertFalse(site_created.exists())
 
-    def test_apply_change_set_update_with_error_return_400(self):
-        """Test apply change set to update."""
+    def test_change_type_update_with_error_return_400(self):
+        """Test update change_type with wrong payload."""
         payload = {
             "change_set_id": "<UUID-0>",
             "change_set": [
@@ -261,10 +263,11 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json().get("result"), "failed")
+        self.assertEqual(response.json().get("change_id"), "<UUID-0>")
         self.assertEqual(site_updated.name, "Site 2")
 
-    def test_apply_change_set_create_multiples_return_200(self):
-        """Test apply change set to create."""
+    def test_change_type_create_with_multiples_objects_return_200(self):
+        """Test create change type with two objects."""
         payload = {
             "change_set_id": "<UUID-0>",
             "change_set": [
@@ -310,9 +313,8 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json().get("result"), "success")
 
-    def test_apply_change_set_update_multiples_return_200(self):
-        """Test apply change set to update."""
-
+    def test_change_type_update_with_multiples_objects_return_200(self):
+        """Test update change type with two objects."""
         payload = {
             "change_set_id": "<UUID-0>",
             "change_set": [
@@ -363,7 +365,61 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
         self.assertEqual(site_updated.name, "Site A")
         self.assertEqual(devide_updated.name, "Test Device 3")
 
-    def test_apply_create_set_update_with_error_return_400(self):
+    def test_change_type_create_and_update_with_error_in_one_object_return_400(self):
+        """Test create and update change type with one object with error."""
+        payload = {
+            "change_set_id": "<UUID-0>",
+            "change_set": [
+                {
+                    "change_id": "<UUID-0>",
+                    "change_type": "create",
+                    "object_version": None,
+                    "object_type": "dcim.site",
+                    "object_id": None,
+                    "data": {
+                        "name": "Site Z",
+                        "slug": "site-z",
+                        "facility": "Alpha",
+                        "description": "",
+                        "physical_address": "123 Fake St Lincoln NE 68588",
+                        "shipping_address": "123 Fake St Lincoln NE 68588",
+                        "comments": "Lorem ipsum etcetera",
+                        "asns": [self.asns[0].pk, self.asns[1].pk],
+                    },
+                },
+                {
+                    "change_id": "<UUID-1>",
+                    "change_type": "update",
+                    "object_version": None,
+                    "object_type": "dcim.device",
+                    "object_id": 1,
+                    "data": {
+                        "device_type": 3,
+                        "role": self.roles[1].pk,
+                        "name": "Test Device 4",
+                        "site": self.sites[1].pk,
+                        "rack": self.racks[1].pk,
+                        "cluster": self.clusters[1].pk,
+                    },
+                },
+            ],
+        }
+
+        response = self.client.post(
+            self.url, payload, format="json", **self.user_header
+        )
+
+        site_created = Site.objects.filter(name="Site Z")
+        device_created = Device.objects.filter(name="Test Device 4")
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json().get("result"), "failed")
+        self.assertEqual(response.json().get("change_id"), "<UUID-1>")
+        self.assertFalse(site_created.exists())
+        self.assertFalse(device_created.exists())
+
+    def test_multiples_change_type_create_with_error_in_one_object_return_400(self):
+        """Test create change_type with error in one object."""
         payload = {
             "change_set_id": "<UUID-0>",
             "change_set": [
@@ -411,5 +467,41 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json().get("result"), "failed")
+        self.assertEqual(response.json().get("change_id"), "<UUID-1>")
         self.assertFalse(site_created.exists())
         self.assertFalse(device_created.exists())
+
+    def test_change_type_update_with_object_id_not_exist_return_400(self):
+        """Test update object with nonexistent object_id."""
+        payload = {
+            "change_set_id": "<UUID-0>",
+            "change_set": [
+                {
+                    "change_id": "<UUID-0>",
+                    "change_type": "update",
+                    "object_version": None,
+                    "object_type": "dcim.site",
+                    "object_id": 3,
+                    "data": {
+                        "name": "Site A",
+                        "slug": "site-a",
+                        "facility": "Alpha",
+                        "description": "",
+                        "physical_address": "123 Fake St Lincoln NE 68588",
+                        "shipping_address": "123 Fake St Lincoln NE 68588",
+                        "comments": "Lorem ipsum etcetera",
+                        "asns": 1,
+                    },
+                },
+            ],
+        }
+
+        response = self.client.post(
+            self.url, payload, format="json", **self.user_header
+        )
+
+        site_updated = Site.objects.get(id=2)
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json().get("result"), "failed")
+        self.assertEqual(response.json().get("change_id"), "<UUID-0>")
+        self.assertEqual(site_updated.name, "Site 2")

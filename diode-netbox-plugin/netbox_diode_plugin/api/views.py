@@ -96,50 +96,40 @@ class ApplyChangeSetView(views.APIView):
         return object_type_model
 
     @staticmethod
-    @transaction.atomic
+    @transaction.atomic()
     def _perform_save(serializer):
-        """Try to save an object amd return None if successful and the error if not."""
-        try:
-            with transaction.atomic():
-                serializer.save()
-        except Exception as e:
-            transaction.set_rollback(True)
-            return str(e)
+        """Save an object and rollback if any problem."""
+        serializer.save()
 
-        return None
+    @transaction.atomic(savepoint=True)
+    def _validate_serializer(
+        self, change_type, object_id, object_type_model, object_data
+    ):
+        """Validate the serializer."""
+        if change_type == "create":
+            serializer = get_serializer_for_model(object_type_model)(
+                data=object_data, context={"request": self.request}
+            )
+        elif change_type == "update":
+            if not object_id:
+                raise ValidationError("object_id parameter is required")
+            try:
+                instance = object_type_model.objects.get(id=object_id)
+            except object_type_model.DoesNotExist:
+                return "failed", f"Object with id {object_id} does not exist"
 
-    def _create(self, object_type_model, object_data):
-        """Create a new object."""
-        serializer = get_serializer_for_model(object_type_model)(
-            data=object_data, context={"request": self.request}
-        )
-
-        if serializer.is_valid():
-            self.check_object_permissions(self.request, serializer)
-            error = self._perform_save(serializer)
-            if error:
-                return "failed", error
+            serializer = get_serializer_for_model(object_type_model)(
+                instance, data=object_data, context={"request": self.request}
+            )
         else:
+            return "failed", "Invalid change_type"
+
+        if not serializer.is_valid():
             return "failed", serializer.errors
 
-        return "success", None
+        self.check_object_permissions(self.request, serializer)
 
-    def _update(self, object_type_model, object_id, object_data):
-        """Update an object."""
-        instance = object_type_model.objects.get(id=object_id)
-        serializer = get_serializer_for_model(object_type_model)(
-            instance, data=object_data, context={"request": self.request}
-        )
-
-        if serializer.is_valid():
-            self.check_object_permissions(self.request, serializer)
-            error = self._perform_save(serializer)
-            if error:
-                return "failed", error
-        else:
-            return "failed", serializer.errors
-
-        return "success", None
+        return "success", serializer
 
     def post(self, request, *args, **kwargs):
         """
@@ -152,7 +142,11 @@ class ApplyChangeSetView(views.APIView):
         if not change_set:
             raise ValidationError("change_set parameter is required")
 
+        serializer_list = []
+
         for change in change_set:
+
+            change_id = change.get("change_id", None)
             change_type = change.get("change_type", None)
 
             object_type = change.get("object_type", None)
@@ -165,35 +159,26 @@ class ApplyChangeSetView(views.APIView):
             if not object_data:
                 raise ValidationError("data parameter is required")
 
-            if change_type == "create":
-                result, error = self._create(object_type_model, object_data)
+            object_id = change.get("object_id", None)
 
-                if result == "failed":
-                    return Response(
-                        {
-                            "change_set_id": change_set_id,
-                            "result": "failed",
-                            "error": error,
-                        },
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
+            result, serializer_result = self._validate_serializer(
+                change_type, object_id, object_type_model, object_data
+            )
 
-            elif change_type == "update":
-                object_id = change.get("object_id", None)
-                if not object_id:
-                    raise ValidationError("object_id parameter is required")
+            if result == "failed":
+                return Response(
+                    {
+                        "change_set_id": change_set_id,
+                        "change_id": change_id,
+                        "result": "failed",
+                        "error": serializer_result,
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
-                result, error = self._update(object_type_model, object_id, object_data)
+            serializer_list.append(serializer_result)
 
-                if result == "failed":
-                    return Response(
-                        {
-                            "change_set_id": change_set_id,
-                            "result": "failed",
-                            "error": error,
-                        },
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
+        [self._perform_save(serializer) for serializer in serializer_list]
 
         data = {"change_set_id": change_set_id, "result": "success"}
         return Response(data, status=status.HTTP_200_OK)
