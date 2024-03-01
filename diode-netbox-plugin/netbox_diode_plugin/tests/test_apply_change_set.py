@@ -26,7 +26,7 @@ class BaseApplyChangeSet(APITestCase):
     def setUp(self):
         """Set up test."""
         self.user = User.objects.create_user(username="testcommonuser")
-        self.add_permissions("netbox_diode_plugin.add_objectstate")
+        self.add_permissions("netbox_diode_plugin.add_diode")
         self.user_token = Token.objects.create(user=self.user)
 
         self.user_header = {"HTTP_AUTHORIZATION": f"Token {self.user_token.key}"}
