@@ -8,7 +8,6 @@ from netbox.api.routers import NetBoxRouter
 from .views import ApplyChangeSetView, ObjectStateView
 
 router = NetBoxRouter()
-# router.register("apply-change-set", ApplyChangeSetView, basename="apply-change-set")
 
 urlpatterns = [
     path("object-state/", ObjectStateView.as_view()),
