@@ -5,7 +5,7 @@
 from rest_framework.permissions import SAFE_METHODS, BasePermission
 
 
-class IsDiodeViewer(BasePermission):
+class IsDiodeReader(BasePermission):
     """Custom permission to allow users that has permission "netbox_diode_plugin.view_objectstate" to view the object type."""
 
     def has_permission(self, request, view):
@@ -15,7 +15,7 @@ class IsDiodeViewer(BasePermission):
         )
 
 
-class IsDiodePost(BasePermission):
+class IsDiodeWriter(BasePermission):
     """Custom permission to allow users that has permission "netbox_diode_plugin.add_diode" and POST requests."""
 
     def has_permission(self, request, view):

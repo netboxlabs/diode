@@ -13,14 +13,14 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from utilities.api import get_serializer_for_model
 
-from netbox_diode_plugin.api.permissions import IsDiodePost, IsDiodeViewer
+from netbox_diode_plugin.api.permissions import IsDiodeReader, IsDiodeWriter
 from netbox_diode_plugin.api.serializers import ObjectStateSerializer
 
 
 class ObjectStateView(views.APIView):
     """ObjectState view."""
 
-    permission_classes = [IsAuthenticated, IsDiodeViewer]
+    permission_classes = [IsAuthenticated, IsDiodeReader]
 
     def get(self, request, *args, **kwargs):
         """
@@ -83,7 +83,7 @@ class ObjectStateView(views.APIView):
 class ApplyChangeSetView(views.APIView):
     """ApplyChangeSet view."""
 
-    permission_classes = [IsAuthenticated, IsDiodePost]
+    permission_classes = [IsAuthenticated, IsDiodeWriter]
 
     @staticmethod
     def _get_object_type_model(object_type: str):
@@ -92,8 +92,7 @@ class ApplyChangeSetView(views.APIView):
         object_content_type = ContentType.objects.get_by_natural_key(
             app_label, model_name
         )
-        object_type_model = object_content_type.model_class()
-        return object_type_model
+        return object_content_type.model_class()
 
     def _get_serializer(
         self,
@@ -139,12 +138,17 @@ class ApplyChangeSetView(views.APIView):
             raise ValidationError("change_set parameter is required")
 
         serializer_list = []
+        validation_errors = []
 
         for change in change_set:
 
             change_id = change.get("change_id", None)
+            if not change_id:
+                raise ValidationError("change_id parameter is required")
 
             change_type = change.get("change_type", None)
+            if not change_type:
+                raise ValidationError("change_type parameter is required")
 
             object_type = change.get("object_type", None)
             if not object_type:
@@ -163,15 +167,21 @@ class ApplyChangeSetView(views.APIView):
             if serializer.is_valid():
                 serializer_list.append(serializer)
             else:
-                return Response(
-                    {
-                        "change_set_id": change_set_id,
-                        "change_id": change_id,
-                        "result": "failed",
-                        "error": serializer.errors,
-                    },
-                    status=status.HTTP_400_BAD_REQUEST,
+                error_key = list(serializer.errors.keys())[0]
+                error_value = list(serializer.errors.values())[0][0]
+                validation_errors.append(
+                    {"change_id": change_id, f"{error_key}": f"{error_value}"}
                 )
+
+        if validation_errors:
+            return Response(
+                {
+                    "change_set_id": change_set_id,
+                    "result": "failed",
+                    "errors": validation_errors,
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         with transaction.atomic():
             [serializer.save() for serializer in serializer_list]

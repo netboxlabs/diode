@@ -229,7 +229,7 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
         self.assertEqual(response.json().get("result"), "failed")
         self.assertIn(
             'Expected a list of items but got type "int".',
-            response.json().get("error").get("asns"),
+            response.json().get("errors")[0].get("asns"),
         )
         self.assertFalse(site_created.exists())
 
@@ -268,7 +268,7 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
         self.assertEqual(response.json().get("result"), "failed")
         self.assertIn(
             'Expected a list of items but got type "int".',
-            response.json().get("error").get("asns"),
+            response.json().get("errors")[0].get("asns"),
         )
         self.assertEqual(site_updated.name, "Site 2")
 
@@ -422,12 +422,12 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
         self.assertEqual(response.json().get("result"), "failed")
         self.assertIn(
             "Related object not found using the provided numeric ID",
-            response.json().get("error").get("device_type")[0],
+            response.json().get("errors")[0].get("device_type"),
         )
         self.assertFalse(site_created.exists())
         self.assertFalse(device_created.exists())
 
-    def test_multiples_change_type_create_with_error_in_one_object_return_400(self):
+    def test_multiples_change_type_create_with_error_in_two_objects_return_400(self):
         """Test create change_type with error in one object."""
         payload = {
             "change_set_id": str(uuid.uuid4()),
@@ -464,6 +464,21 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
                         "cluster": self.clusters[1].pk,
                     },
                 },
+                {
+                    "change_id": str(uuid.uuid4()),
+                    "change_type": "create",
+                    "object_version": None,
+                    "object_type": "dcim.device",
+                    "object_id": None,
+                    "data": {
+                        "device_type": 4,
+                        "role": self.roles[1].pk,
+                        "name": "Test Device 4",
+                        "site": self.sites[1].pk,
+                        "rack": self.racks[1].pk,
+                        "cluster": self.clusters[1].pk,
+                    },
+                },
             ],
         }
 
@@ -478,7 +493,11 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
         self.assertEqual(response.json().get("result"), "failed")
         self.assertIn(
             "Related object not found using the provided numeric ID",
-            response.json().get("error").get("device_type")[0],
+            response.json().get("errors")[0].get("device_type"),
+        )
+        self.assertIn(
+            "Related object not found using the provided numeric ID",
+            response.json().get("errors")[1].get("device_type"),
         )
         self.assertFalse(site_created.exists())
         self.assertFalse(device_created.exists())
