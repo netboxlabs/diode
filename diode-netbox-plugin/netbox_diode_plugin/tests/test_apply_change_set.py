@@ -471,9 +471,9 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
                     "object_type": "dcim.device",
                     "object_id": None,
                     "data": {
-                        "device_type": 4,
-                        "role": self.roles[1].pk,
-                        "name": "Test Device 4",
+                        "device_type": 100,
+                        "role": 10,
+                        "name": "Test Device 40",
                         "site": self.sites[1].pk,
                         "rack": self.racks[1].pk,
                         "cluster": self.clusters[1].pk,
@@ -535,3 +535,88 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json()[0], "Object with id 30 does not exist")
         self.assertEqual(site_updated.name, "Site 2")
+
+    def test_change_set_id_field_not_provided_return_400(self):
+        """Test update object with nonexistent object_id."""
+        payload = {
+            "change_set_id": None,
+            "change_set": [
+                {
+                    "change_id": str(uuid.uuid4()),
+                    "change_type": "update",
+                    "object_version": None,
+                    "object_type": "dcim.site",
+                    "object_id": 30,
+                    "data": {
+                        "name": "Site A",
+                        "slug": "site-a",
+                        "facility": "Alpha",
+                        "description": "",
+                        "physical_address": "123 Fake St Lincoln NE 68588",
+                        "shipping_address": "123 Fake St Lincoln NE 68588",
+                        "comments": "Lorem ipsum etcetera",
+                        "asns": 1,
+                    },
+                },
+            ],
+        }
+
+        response = self.client.post(
+            self.url, payload, format="json", **self.user_header
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.json().get("errors")[0], "change_set_id parameter is required"
+        )
+
+    def test_change_type_field_not_provided_return_400(self):
+        """Test update object with nonexistent object_id."""
+        payload = {
+            "change_set_id": str(uuid.uuid4()),
+            "change_set": [
+                {
+                    "change_id": str(uuid.uuid4()),
+                    "change_type": None,
+                    "object_version": None,
+                    "object_type": "dcim.site",
+                    "object_id": 30,
+                    "data": {
+                        "name": "Site A",
+                        "slug": "site-a",
+                        "facility": "Alpha",
+                        "description": "",
+                        "physical_address": "123 Fake St Lincoln NE 68588",
+                        "shipping_address": "123 Fake St Lincoln NE 68588",
+                        "comments": "Lorem ipsum etcetera",
+                        "asns": 1,
+                    },
+                },
+            ],
+        }
+
+        response = self.client.post(
+            self.url, payload, format="json", **self.user_header
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.json().get("errors")[0], "change_type parameter is required"
+        )
+
+    def test_change_set_id_field_and_change_set_not_provided_return_400(self):
+        """Test update object with nonexistent object_id."""
+        payload = {
+            "change_set_id": None,
+            "change_set": [],
+        }
+
+        response = self.client.post(
+            self.url, payload, format="json", **self.user_header
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.json().get("errors")[0], "change_set_id parameter is required"
+        )
+        self.assertEqual(
+            response.json().get("errors")[1], "change_set parameter is required"
+        )

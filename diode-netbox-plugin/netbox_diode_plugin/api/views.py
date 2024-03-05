@@ -100,6 +100,7 @@ class ApplyChangeSetView(views.APIView):
         object_id: int,
         object_type: str,
         object_data: dict,
+        change_set_id: str,
     ):
         """Get the serializer for the object type."""
         object_type_model = self._get_object_type_model(object_type)
@@ -109,7 +110,9 @@ class ApplyChangeSetView(views.APIView):
             )
         elif change_type == "update":
             if not object_id:
-                raise ValidationError("object_id parameter is required")
+                return self._get_error_response(
+                    change_set_id, ["object_id parameter is required"]
+                )
 
             try:
                 instance = object_type_model.objects.get(id=object_id)
@@ -123,65 +126,79 @@ class ApplyChangeSetView(views.APIView):
             raise ValidationError("Invalid change_type")
         return serializer
 
+    @staticmethod
+    def _get_error_response(change_set_id: str = None, error: list = None):
+        return Response(
+            {
+                "change_set_id": change_set_id,
+                "result": "failed",
+                "errors": error,
+            },
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
     def post(self, request, *args, **kwargs):
         """
         Create a new change set and apply it to the current state.
 
         The request body should contain a list of changes to be applied.
         """
+        errors = []
+        serializer_list = []
+        validation_errors = []
+
         change_set_id = self.request.data.get("change_set_id", None)
         if not change_set_id:
-            raise ValidationError("change_set_id parameter is required")
+            errors.append("change_set_id parameter is required")
 
         change_set = self.request.data.get("change_set", None)
         if not change_set:
-            raise ValidationError("change_set parameter is required")
+            errors.append("change_set parameter is required")
 
-        serializer_list = []
-        validation_errors = []
+        # Return error response if any errors are found
+        if errors:
+            return self._get_error_response(change_set_id, errors)
 
         for change in change_set:
 
             change_id = change.get("change_id", None)
             if not change_id:
-                raise ValidationError("change_id parameter is required")
+                errors.append("change_id parameter is required")
 
             change_type = change.get("change_type", None)
             if not change_type:
-                raise ValidationError("change_type parameter is required")
+                errors.append("change_type parameter is required")
 
             object_type = change.get("object_type", None)
             if not object_type:
-                raise ValidationError("object_type parameter is required")
+                errors.append("object_type parameter is required")
 
             object_data = change.get("data", None)
             if not object_data:
-                raise ValidationError("data parameter is required")
+                errors.append("data parameter is required")
+
+            # Return error response if any errors are found
+            if errors:
+                return self._get_error_response(change_set_id, errors)
 
             object_id = change.get("object_id", None)
 
             serializer = self._get_serializer(
-                change_type, object_id, object_type, object_data
+                change_type, object_id, object_type, object_data, change_set_id
             )
 
             if serializer.is_valid():
                 serializer_list.append(serializer)
             else:
-                error_key = list(serializer.errors.keys())[0]
-                error_value = list(serializer.errors.values())[0][0]
-                validation_errors.append(
-                    {"change_id": change_id, f"{error_key}": f"{error_value}"}
-                )
+                errors_dict = {
+                    field_name: f"{field_name}: {str(field_errors[0])}"
+                    for field_name, field_errors in serializer.errors.items()
+                }
+
+                validation_errors.append({"change_id": change_id, **errors_dict})
 
         if validation_errors:
-            return Response(
-                {
-                    "change_set_id": change_set_id,
-                    "result": "failed",
-                    "errors": validation_errors,
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            return self._get_error_response(change_set_id, validation_errors)
 
         with transaction.atomic():
             [serializer.save() for serializer in serializer_list]
