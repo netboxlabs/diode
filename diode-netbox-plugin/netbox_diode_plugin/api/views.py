@@ -14,7 +14,10 @@ from rest_framework.response import Response
 from utilities.api import get_serializer_for_model
 
 from netbox_diode_plugin.api.permissions import IsDiodeReader, IsDiodeWriter
-from netbox_diode_plugin.api.serializers import ObjectStateSerializer
+from netbox_diode_plugin.api.serializers import (
+    ApplyChangeSetRequestSerializer,
+    ObjectStateSerializer,
+)
 
 
 class ObjectStateView(views.APIView):
@@ -127,7 +130,7 @@ class ApplyChangeSetView(views.APIView):
         return serializer
 
     @staticmethod
-    def _get_error_response(change_set_id: str = None, error: list = None):
+    def _get_error_response(change_set_id, error):
         return Response(
             {
                 "change_set_id": change_set_id,
@@ -143,44 +146,38 @@ class ApplyChangeSetView(views.APIView):
 
         The request body should contain a list of changes to be applied.
         """
-        errors = []
         serializer_list = []
-        validation_errors = []
+        serializer_errors = []
+
+        serializer = ApplyChangeSetRequestSerializer(data=request.data)
 
         change_set_id = self.request.data.get("change_set_id", None)
-        if not change_set_id:
-            errors.append("change_set_id parameter is required")
+
+        if not serializer.is_valid():
+            for error in serializer.errors:
+                if isinstance(serializer.errors[error], dict):
+                    for _, error_values in serializer.errors[error].items():
+                        for field_name, field_errors in error_values.items():
+                            serializer_errors.append(
+                                {field_name: f"{str(field_errors[0])}"}
+                            )
+                else:
+                    errors_dict = {
+                        error: f"{str(field_errors)}"
+                        for field_errors in serializer.errors[error]
+                    }
+
+                    serializer_errors.append(errors_dict)
+
+            return self._get_error_response(change_set_id, serializer_errors)
 
         change_set = self.request.data.get("change_set", None)
-        if not change_set:
-            errors.append("change_set parameter is required")
-
-        # Return error response if any errors are found
-        if errors:
-            return self._get_error_response(change_set_id, errors)
 
         for change in change_set:
-
             change_id = change.get("change_id", None)
-            if not change_id:
-                errors.append("change_id parameter is required")
-
             change_type = change.get("change_type", None)
-            if not change_type:
-                errors.append("change_type parameter is required")
-
             object_type = change.get("object_type", None)
-            if not object_type:
-                errors.append("object_type parameter is required")
-
             object_data = change.get("data", None)
-            if not object_data:
-                errors.append("data parameter is required")
-
-            # Return error response if any errors are found
-            if errors:
-                return self._get_error_response(change_set_id, errors)
-
             object_id = change.get("object_id", None)
 
             serializer = self._get_serializer(
@@ -195,10 +192,10 @@ class ApplyChangeSetView(views.APIView):
                     for field_name, field_errors in serializer.errors.items()
                 }
 
-                validation_errors.append({"change_id": change_id, **errors_dict})
+                serializer_errors.append({"change_id": change_id, **errors_dict})
 
-        if validation_errors:
-            return self._get_error_response(change_set_id, validation_errors)
+        if serializer_errors:
+            return self._get_error_response(change_set_id, serializer_errors)
 
         with transaction.atomic():
             [serializer.save() for serializer in serializer_list]

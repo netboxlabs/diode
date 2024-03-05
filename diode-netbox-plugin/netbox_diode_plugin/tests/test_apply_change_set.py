@@ -428,7 +428,7 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
         self.assertFalse(device_created.exists())
 
     def test_multiples_change_type_create_with_error_in_two_objects_return_400(self):
-        """Test create change_type with error in one object."""
+        """Test create change_type with error in two object."""
         payload = {
             "change_set_id": str(uuid.uuid4()),
             "change_set": [
@@ -485,7 +485,6 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
         response = self.client.post(
             self.url, payload, format="json", **self.user_header
         )
-
         site_created = Site.objects.filter(name="Site Z")
         device_created = Device.objects.filter(name="Test Device 4")
 
@@ -537,7 +536,7 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
         self.assertEqual(site_updated.name, "Site 2")
 
     def test_change_set_id_field_not_provided_return_400(self):
-        """Test update object with nonexistent object_id."""
+        """Test update object with change_set_id incorrect."""
         payload = {
             "change_set_id": None,
             "change_set": [
@@ -546,7 +545,7 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
                     "change_type": "update",
                     "object_version": None,
                     "object_type": "dcim.site",
-                    "object_id": 30,
+                    "object_id": 20,
                     "data": {
                         "name": "Site A",
                         "slug": "site-a",
@@ -566,20 +565,23 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
         )
         self.assertEqual(response.status_code, 400)
         self.assertEqual(
-            response.json().get("errors")[0], "change_set_id parameter is required"
+            response.json().get("errors")[0].get("change_set_id"),
+            "This field may not be null.",
         )
 
-    def test_change_type_field_not_provided_return_400(self):
-        """Test update object with nonexistent object_id."""
+    def test_change_set_id_change_id_and_change_type_field_not_provided_return_400(
+        self,
+    ):
+        """Test update object with change_set_id, change_id, and change_type incorrect."""
         payload = {
-            "change_set_id": str(uuid.uuid4()),
+            "change_set_id": "",
             "change_set": [
                 {
-                    "change_id": str(uuid.uuid4()),
-                    "change_type": None,
+                    "change_id": "",
+                    "change_type": "",
                     "object_version": None,
                     "object_type": "dcim.site",
-                    "object_id": 30,
+                    "object_id": 20,
                     "data": {
                         "name": "Site A",
                         "slug": "site-a",
@@ -599,24 +601,34 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
         )
         self.assertEqual(response.status_code, 400)
         self.assertEqual(
-            response.json().get("errors")[0], "change_type parameter is required"
+            response.json().get("errors")[0].get("change_set_id"),
+            "Must be a valid UUID.",
+        )
+        self.assertEqual(
+            response.json().get("errors")[1].get("change_id"),
+            "Must be a valid UUID.",
+        )
+        self.assertEqual(
+            response.json().get("errors")[2].get("change_type"),
+            "This field may not be blank.",
         )
 
     def test_change_set_id_field_and_change_set_not_provided_return_400(self):
-        """Test update object with nonexistent object_id."""
+        """Test update object with change_set_id and change_set incorrect."""
         payload = {
-            "change_set_id": None,
+            "change_set_id": "",
             "change_set": [],
         }
 
         response = self.client.post(
             self.url, payload, format="json", **self.user_header
         )
-
         self.assertEqual(response.status_code, 400)
         self.assertEqual(
-            response.json().get("errors")[0], "change_set_id parameter is required"
+            response.json().get("errors")[0].get("change_set_id"),
+            "Must be a valid UUID.",
         )
         self.assertEqual(
-            response.json().get("errors")[1], "change_set parameter is required"
+            response.json().get("errors")[1].get("change_set"),
+            "This list may not be empty.",
         )

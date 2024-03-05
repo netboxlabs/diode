@@ -48,3 +48,23 @@ class ObjectStateSerializer(serializers.Serializer):
 
         context = {"request": self.context.get("request")}
         return serializer(object_data, context=context, many=True).data[0]
+
+
+class ChangeSetSerializer(serializers.Serializer):
+    """ChangeSet Serializer."""
+
+    change_id = serializers.UUIDField(required=True)
+    change_type = serializers.CharField(required=True)
+    object_version = serializers.IntegerField(required=False, allow_null=True)
+    object_type = serializers.CharField(required=True)
+    object_id = serializers.IntegerField(required=False, allow_null=True)
+    data = serializers.DictField(required=True)
+
+
+class ApplyChangeSetRequestSerializer(serializers.Serializer):
+    """ApplyChangeSet request Serializer."""
+
+    change_set_id = serializers.UUIDField(required=True)
+    change_set = serializers.ListField(
+        child=ChangeSetSerializer(), required=True, allow_empty=False
+    )
