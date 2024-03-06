@@ -149,29 +149,31 @@ class ApplyChangeSetView(views.APIView):
         serializer_list = []
         serializer_errors = []
 
-        serializer = ApplyChangeSetRequestSerializer(data=request.data)
+        request_serializer = ApplyChangeSetRequestSerializer(data=request.data)
 
         change_set_id = self.request.data.get("change_set_id", None)
 
-        if not serializer.is_valid():
-            for error in serializer.errors:
-                if isinstance(serializer.errors[error], dict):
-                    for _, error_values in serializer.errors[error].items():
+        if not request_serializer.is_valid():
+            for field_error_name in request_serializer.errors:
+                if isinstance(request_serializer.errors[field_error_name], dict):
+                    for _, error_values in request_serializer.errors[
+                        field_error_name
+                    ].items():
                         for field_name, field_errors in error_values.items():
                             serializer_errors.append(
                                 {field_name: f"{str(field_errors[0])}"}
                             )
                 else:
                     errors_dict = {
-                        error: f"{str(field_errors)}"
-                        for field_errors in serializer.errors[error]
+                        field_error_name: f"{str(field_errors)}"
+                        for field_errors in request_serializer.errors[field_error_name]
                     }
 
                     serializer_errors.append(errors_dict)
 
             return self._get_error_response(change_set_id, serializer_errors)
 
-        change_set = self.request.data.get("change_set", None)
+        change_set = request_serializer.data.get("change_set", None)
 
         for change in change_set:
             change_id = change.get("change_id", None)

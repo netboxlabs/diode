@@ -50,7 +50,7 @@ class ObjectStateSerializer(serializers.Serializer):
         return serializer(object_data, context=context, many=True).data[0]
 
 
-class ChangeSetSerializer(serializers.Serializer):
+class ChangeSerialiazer(serializers.Serializer):
     """ChangeSet Serializer."""
 
     change_id = serializers.UUIDField(required=True)
@@ -66,5 +66,5 @@ class ApplyChangeSetRequestSerializer(serializers.Serializer):
 
     change_set_id = serializers.UUIDField(required=True)
     change_set = serializers.ListField(
-        child=ChangeSetSerializer(), required=True, allow_empty=False
+        child=ChangeSerialiazer(), required=True, allow_empty=False
     )
