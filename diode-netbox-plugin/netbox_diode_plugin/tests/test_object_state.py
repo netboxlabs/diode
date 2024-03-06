@@ -23,7 +23,7 @@ class ObjectStateTestCase(APITestCase):
         self.root_token = Token.objects.create(user=self.root_user)
 
         self.user = User.objects.create_user(username="testcommonuser")
-        self.add_permissions("netbox_diode_plugin.view_objectstate")
+        self.add_permissions("netbox_diode_plugin.view_diode")
         self.user_token = Token.objects.create(user=self.user)
 
         # another_user does not have permission.

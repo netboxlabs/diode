@@ -5,7 +5,7 @@
 from django.db import models
 
 
-class ObjectState(models.Model):
+class Diode(models.Model):
     """Dummy model used to generate permissions for Diode NetBox Plugin. Does not exist in the database."""
 
     class Meta:
@@ -16,5 +16,6 @@ class ObjectState(models.Model):
         default_permissions = ()
 
         permissions = (
-            ("view_objectstate", "Can view ObjectState"),
+            ("view_diode", "Can view Diode"),
+            ("add_diode", "Can apply change sets from Diode"),
         )
