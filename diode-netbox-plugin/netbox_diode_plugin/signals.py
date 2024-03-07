@@ -40,20 +40,27 @@ def handle_notify_diode(instance, created, sender, update_fields, **kwargs):
             ObjectChange.objects.filter(changed_object_id=instance.id)
             .order_by("id")
             .last()
-        )  # noqa
+        )
         object_id = instance.id  # noqa
         object_type = f"{app_label}.{model_name}"  # noqa
-        object_changed_id = object_changed.id  # noqa
+        object_changed_id = object_changed if object_changed else None  # noqa
         object = {model_name: model_to_dict(instance)}  # noqa
 
-        # Comment out because the DiodeReconcilerClient need some adjustments.
+        try:
+            sdk = DiodeReconcilerClient(  # noqa
+                "diode-reconciler:8081", get_netbox_to_diode_token()
+            )
 
-        # sdk = DiodeReconcilerClient(
-        #     "diode-reconciler:8081", get_netbox_to_diode_token()
-        # )
-        # sdk.add_object_state(
-        #     object_id=object_id,
-        #     object_type=object_type,
-        #     object_change_id=object_changed_id,
-        #     object=object,
-        # )
+            # Comment out because the DiodeReconcilerClient need some adjustments.
+
+            # sdk.add_object_state(
+            #     object_id=object_id,
+            #     object_type=object_type,
+            #     object_change_id=object_changed_id,
+            #     object=object,
+            # )
+        except Exception as e:
+            logger.error(e)
+            return False
+
+        return True

@@ -25,6 +25,10 @@ class BaseApplyChangeSet(APITestCase):
 
     def setUp(self):
         """Set up test."""
+        # Necessary to use with signals.
+        self.user_netbox_to_diode = User.objects.create_user(username="NETBOX_TO_DIODE")
+        Token.objects.create(user=self.user_netbox_to_diode)
+
         self.user = User.objects.create_user(username="testcommonuser")
         self.add_permissions("netbox_diode_plugin.add_diode")
         self.user_token = Token.objects.create(user=self.user)
