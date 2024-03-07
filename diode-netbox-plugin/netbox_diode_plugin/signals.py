@@ -23,19 +23,11 @@ def handle_notifify_reconciliation(instance, created, sender, update_fields, **k
     """Handle notify reconciliation."""
     logger.debug("Handling notify reconciliation.")
 
-    # print(created)
-    # print(instance.id)
-    # print(sender)
-    # print(update_fields)
-
     content_type = ContentType.objects.get_for_model(sender, for_concrete_model=False)
     app_label = content_type.app_label
     model_name = content_type.model
 
-    # print(f"{app_label=}")
-    # print(f"{model_name=}")
-
-    if app_label == "dcim":
+    if app_label in ["dcim", "ipam"]:
         object_changed = (
             ObjectChange.objects.filter(changed_object_id=instance.id)
             .order_by("id")
@@ -46,10 +38,12 @@ def handle_notifify_reconciliation(instance, created, sender, update_fields, **k
         object_changed_id = object_changed.id
         object = model_to_dict(instance)
 
+        # print(object_id, object_type, object_changed_id, object)
+
         sdk = DiodeReconcilerClient("localhost:50051", "foobar")
         sdk.add_object_state(
             object_id=object_id,
             object_type=object_type,
             object_change_id=object_changed_id,
-            object=object,
+            # object=object,
         )
