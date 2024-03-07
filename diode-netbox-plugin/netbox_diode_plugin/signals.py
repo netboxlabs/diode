@@ -2,19 +2,27 @@
 # Copyright 2024 NetBox Labs Inc
 """Diode Netbox Plugin - Signals."""
 
-
-import json
 import logging
 
+from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.forms import model_to_dict
 from extras.models import ObjectChange
+from users.models import Token
 
 from netbox_diode_plugin.diode_reconciler_sdk.client import DiodeReconcilerClient
 
 logger = logging.getLogger("netbox.netbox_diode_plugin")
+
+User = get_user_model()
+
+
+def get_netbox_to_diode_token():
+    """Get token for NETBOX_TO_DIODE."""
+    user = get_user_model().objects.get(username="NETBOX_TO_DIODE")
+    return Token.objects.get(user=user)
 
 
 @receiver(post_save)
@@ -27,6 +35,7 @@ def handle_notify_diode(instance, created, sender, update_fields, **kwargs):
     model_name = content_type.model  # noqa
 
     if app_label in ["dcim", "ipam"]:
+
         object_changed = (
             ObjectChange.objects.filter(changed_object_id=instance.id)
             .order_by("id")
@@ -40,9 +49,7 @@ def handle_notify_diode(instance, created, sender, update_fields, **kwargs):
         # Comment out because the DiodeReconcilerClient need some adjustments.
 
         # sdk = DiodeReconcilerClient(
-        #     # "0.0.0.0:8082",
-        #     "diode-reconciler:8081",
-        #     "api-key" "1e99338b8cab5fc637bc55f390bda1446f619c42",
+        #     "diode-reconciler:8081", get_netbox_to_diode_token()
         # )
         # sdk.add_object_state(
         #     object_id=object_id,
