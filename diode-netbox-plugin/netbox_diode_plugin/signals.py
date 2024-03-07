@@ -24,18 +24,18 @@ def handle_notify_diode(instance, created, sender, update_fields, **kwargs):
 
     content_type = ContentType.objects.get_for_model(sender, for_concrete_model=False)
     app_label = content_type.app_label
-    model_name = content_type.model
+    model_name = content_type.model  # noqa
 
     if app_label in ["dcim", "ipam"]:
         object_changed = (
             ObjectChange.objects.filter(changed_object_id=instance.id)
             .order_by("id")
             .last()
-        )
-        object_id = instance.id
-        object_type = f"{app_label}.{model_name}"
-        object_changed_id = object_changed.id
-        object = {model_name: model_to_dict(instance)}
+        )  # noqa
+        object_id = instance.id  # noqa
+        object_type = f"{app_label}.{model_name}"  # noqa
+        object_changed_id = object_changed.id  # noqa
+        object = {model_name: model_to_dict(instance)}  # noqa
 
         # Comment out because the DiodeReconcilerClient need some adjustments.
 
