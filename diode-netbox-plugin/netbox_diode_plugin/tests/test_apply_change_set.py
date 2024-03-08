@@ -156,6 +156,7 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
         response = self.client.post(
             self.url, payload, format="json", **self.user_header
         )
+
         self.assertEqual(response.json().get("result"), "success")
         self.assertEqual(response.status_code, 200)
 
@@ -315,8 +316,8 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
         response = self.client.post(
             self.url, payload, format="json", **self.user_header
         )
-        self.assertEqual(response.status_code, 200)
 
+        self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json().get("result"), "success")
 
     def test_change_type_update_with_multiples_objects_return_200(self):
@@ -427,8 +428,8 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
         self.assertFalse(site_created.exists())
         self.assertFalse(device_created.exists())
 
-    def test_multiples_change_type_create_with_error_in_two_objects_return_400(self):
-        """Test create change_type with error in two object."""
+    def test_multiples_create_type_error_in_two_objects_return_400(self):
+        """Test create with error in two objects."""
         payload = {
             "change_set_id": str(uuid.uuid4()),
             "change_set": [
@@ -485,6 +486,7 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
         response = self.client.post(
             self.url, payload, format="json", **self.user_header
         )
+
         site_created = Site.objects.filter(name="Site Z")
         device_created = Device.objects.filter(name="Test Device 4")
 
@@ -531,6 +533,7 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
         )
 
         site_updated = Site.objects.get(id=20)
+
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json()[0], "Object with id 30 does not exist")
         self.assertEqual(site_updated.name, "Site 2")
@@ -563,6 +566,7 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
         response = self.client.post(
             self.url, payload, format="json", **self.user_header
         )
+
         self.assertEqual(response.status_code, 400)
         self.assertEqual(
             response.json().get("errors")[0].get("change_set_id"),
@@ -599,6 +603,7 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
         response = self.client.post(
             self.url, payload, format="json", **self.user_header
         )
+
         self.assertEqual(response.status_code, 400)
         self.assertEqual(
             response.json().get("errors")[0].get("change_set_id"),
@@ -609,7 +614,7 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
             "Must be a valid UUID.",
         )
         self.assertEqual(
-            response.json().get("errors")[2].get("change_type"),
+            response.json().get("errors")[1].get("change_type"),
             "This field may not be blank.",
         )
 
@@ -623,6 +628,7 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
         response = self.client.post(
             self.url, payload, format="json", **self.user_header
         )
+
         self.assertEqual(response.status_code, 400)
         self.assertEqual(
             response.json().get("errors")[0].get("change_set_id"),
@@ -631,4 +637,64 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
         self.assertEqual(
             response.json().get("errors")[1].get("change_set"),
             "This list may not be empty.",
+        )
+
+    def test_change_type_and_object_type_provided_return_400(
+        self,
+    ):
+        """Test change_type and object_type incorrect."""
+        payload = {
+            "change_set_id": str(uuid.uuid4()),
+            "change_set": [
+                {
+                    "change_id": str(uuid.uuid4()),
+                    "change_type": None,
+                    "object_version": None,
+                    "object_type": "",
+                    "object_id": None,
+                    "data": {
+                        "name": "Site A",
+                        "slug": "site-a",
+                        "facility": "Alpha",
+                        "description": "",
+                        "physical_address": "123 Fake St Lincoln NE 68588",
+                        "shipping_address": "123 Fake St Lincoln NE 68588",
+                        "comments": "Lorem ipsum etcetera",
+                    },
+                },
+                {
+                    "change_id": str(uuid.uuid4()),
+                    "change_type": "",
+                    "object_version": None,
+                    "object_type": "dcim.site",
+                    "object_id": None,
+                    "data": {
+                        "name": "Site Z",
+                        "slug": "site-z",
+                        "facility": "Betha",
+                        "description": "",
+                        "physical_address": "123 Fake St Lincoln NE 68588",
+                        "shipping_address": "123 Fake St Lincoln NE 68588",
+                        "comments": "Lorem ipsum etcetera",
+                    },
+                },
+            ],
+        }
+
+        response = self.client.post(
+            self.url, payload, format="json", **self.user_header
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(
+            response.json().get("errors")[0].get("change_type"),
+            "This field may not be null.",
+        )
+        self.assertEqual(
+            response.json().get("errors")[0].get("object_type"),
+            "This field may not be blank.",
+        )
+        self.assertEqual(
+            response.json().get("errors")[1].get("change_type"),
+            "This field may not be blank.",
         )
