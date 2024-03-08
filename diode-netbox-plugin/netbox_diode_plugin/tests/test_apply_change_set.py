@@ -125,7 +125,8 @@ class BaseApplyChangeSet(APITestCase):
 
         self.url = "/api/plugins/diode/apply-change-set/"
 
-    def act(self, payload, status_code=status.HTTP_200_OK):
+    def send_request(self, payload, status_code=status.HTTP_200_OK):
+        """Post the payload to the url and return the response."""
         response = self.client.post(
             self.url, data=payload, format="json", **self.user_header
         )
@@ -138,6 +139,7 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
 
     @staticmethod
     def get_change_id(payload, index):
+        """Get change_id from payload."""
         return payload.get("change_set")[index].get("change_id")
 
     def test_change_type_create_return_200(self):
@@ -165,7 +167,7 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
             ],
         }
 
-        response = self.act(payload)
+        response = self.send_request(payload)
 
         self.assertEqual(response.json().get("result"), "success")
 
@@ -228,7 +230,7 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
             ],
         }
 
-        response = self.act(payload, status_code=status.HTTP_400_BAD_REQUEST)
+        response = self.send_request(payload, status_code=status.HTTP_400_BAD_REQUEST)
 
         site_created = Site.objects.filter(name="Site A")
 
@@ -264,7 +266,7 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
             ],
         }
 
-        response = self.act(payload, status_code=status.HTTP_400_BAD_REQUEST)
+        response = self.send_request(payload, status_code=status.HTTP_400_BAD_REQUEST)
 
         site_updated = Site.objects.get(id=20)
 
@@ -315,7 +317,7 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
             ],
         }
 
-        response = self.act(payload)
+        response = self.send_request(payload)
 
         self.assertEqual(response.json().get("result"), "success")
 
@@ -359,7 +361,7 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
             ],
         }
 
-        response = self.act(payload)
+        response = self.send_request(payload)
 
         site_updated = Site.objects.get(id=20)
         device_updated = Device.objects.get(id=10)
@@ -408,7 +410,7 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
             ],
         }
 
-        response = self.act(payload, status_code=status.HTTP_400_BAD_REQUEST)
+        response = self.send_request(payload, status_code=status.HTTP_400_BAD_REQUEST)
 
         site_created = Site.objects.filter(name="Site Z")
         device_created = Device.objects.filter(name="Test Device 4")
@@ -476,7 +478,7 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
             ],
         }
 
-        response = self.act(payload, status_code=status.HTTP_400_BAD_REQUEST)
+        response = self.send_request(payload, status_code=status.HTTP_400_BAD_REQUEST)
 
         site_created = Site.objects.filter(name="Site Z")
         device_created = Device.objects.filter(name="Test Device 4")
@@ -552,7 +554,7 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
             ],
         }
 
-        response = self.act(payload, status_code=status.HTTP_400_BAD_REQUEST)
+        response = self.send_request(payload, status_code=status.HTTP_400_BAD_REQUEST)
 
         self.assertEqual(
             response.json().get("errors")[0].get("change_set_id"),
@@ -586,7 +588,7 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
             ],
         }
 
-        response = self.act(payload, status_code=status.HTTP_400_BAD_REQUEST)
+        response = self.send_request(payload, status_code=status.HTTP_400_BAD_REQUEST)
 
         self.assertEqual(
             response.json().get("errors")[0].get("change_set_id"),
@@ -608,7 +610,7 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
             "change_set": [],
         }
 
-        response = self.act(payload, status_code=status.HTTP_400_BAD_REQUEST)
+        response = self.send_request(payload, status_code=status.HTTP_400_BAD_REQUEST)
 
         self.assertEqual(
             response.json().get("errors")[0].get("change_set_id"),
@@ -661,7 +663,7 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
             ],
         }
 
-        response = self.act(payload, status_code=status.HTTP_400_BAD_REQUEST)
+        response = self.send_request(payload, status_code=status.HTTP_400_BAD_REQUEST)
 
         # First item of change_set
         self.assertEqual(
