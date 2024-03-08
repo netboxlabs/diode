@@ -13,6 +13,7 @@ from dcim.models import (
 )
 from django.contrib.auth import get_user_model
 from ipam.models import ASN, RIR
+from rest_framework import status
 from users.models import Token
 from utilities.testing import APITestCase
 from virtualization.models import Cluster, ClusterType
@@ -124,9 +125,22 @@ class BaseApplyChangeSet(APITestCase):
 
         self.url = "/api/plugins/diode/apply-change-set/"
 
+    def send_request(self, payload, status_code=status.HTTP_200_OK):
+        """Post the payload to the url and return the response."""
+        response = self.client.post(
+            self.url, data=payload, format="json", **self.user_header
+        )
+        self.assertEqual(response.status_code, status_code)
+        return response
+
 
 class ApplyChangeSetTestCase(BaseApplyChangeSet):
     """ApplyChangeSet test cases."""
+
+    @staticmethod
+    def get_change_id(payload, index):
+        """Get change_id from payload."""
+        return payload.get("change_set")[index].get("change_id")
 
     def test_change_type_create_return_200(self):
         """Test create change_type with successful."""
@@ -153,11 +167,9 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
             ],
         }
 
-        response = self.client.post(
-            self.url, payload, format="json", **self.user_header
-        )
+        response = self.send_request(payload)
+
         self.assertEqual(response.json().get("result"), "success")
-        self.assertEqual(response.status_code, 200)
 
     def test_change_type_update_return_200(self):
         """Test update change_type with successful."""
@@ -190,7 +202,6 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
 
         site_updated = Site.objects.get(id=20)
 
-        self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json().get("result"), "success")
         self.assertEqual(site_updated.name, "Site A")
 
@@ -219,14 +230,15 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
             ],
         }
 
-        response = self.client.post(
-            self.url, payload, format="json", **self.user_header
-        )
+        response = self.send_request(payload, status_code=status.HTTP_400_BAD_REQUEST)
 
         site_created = Site.objects.filter(name="Site A")
 
-        self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json().get("result"), "failed")
+        self.assertEqual(
+            response.json().get("errors")[0].get("change_id"),
+            self.get_change_id(payload, 0),
+        )
         self.assertIn(
             'Expected a list of items but got type "int".',
             response.json().get("errors")[0].get("asns"),
@@ -258,14 +270,15 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
             ],
         }
 
-        response = self.client.post(
-            self.url, payload, format="json", **self.user_header
-        )
+        response = self.send_request(payload, status_code=status.HTTP_400_BAD_REQUEST)
 
         site_updated = Site.objects.get(id=20)
 
-        self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json().get("result"), "failed")
+        self.assertEqual(
+            response.json().get("errors")[0].get("change_id"),
+            self.get_change_id(payload, 0),
+        )
         self.assertIn(
             'Expected a list of items but got type "int".',
             response.json().get("errors")[0].get("asns"),
@@ -312,10 +325,7 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
             ],
         }
 
-        response = self.client.post(
-            self.url, payload, format="json", **self.user_header
-        )
-        self.assertEqual(response.status_code, 200)
+        response = self.send_request(payload)
 
         self.assertEqual(response.json().get("result"), "success")
 
@@ -359,14 +369,11 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
             ],
         }
 
-        response = self.client.post(
-            self.url, payload, format="json", **self.user_header
-        )
+        response = self.send_request(payload)
 
         site_updated = Site.objects.get(id=20)
         device_updated = Device.objects.get(id=10)
 
-        self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json().get("result"), "success")
         self.assertEqual(site_updated.name, "Site A")
         self.assertEqual(device_updated.name, "Test Device 3")
@@ -411,15 +418,16 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
             ],
         }
 
-        response = self.client.post(
-            self.url, payload, format="json", **self.user_header
-        )
+        response = self.send_request(payload, status_code=status.HTTP_400_BAD_REQUEST)
 
         site_created = Site.objects.filter(name="Site Z")
         device_created = Device.objects.filter(name="Test Device 4")
 
-        self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json().get("result"), "failed")
+        self.assertEqual(
+            response.json().get("errors")[0].get("change_id"),
+            self.get_change_id(payload, 1),
+        )
         self.assertIn(
             "Related object not found using the provided numeric ID",
             response.json().get("errors")[0].get("device_type"),
@@ -427,8 +435,8 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
         self.assertFalse(site_created.exists())
         self.assertFalse(device_created.exists())
 
-    def test_multiples_change_type_create_with_error_in_two_objects_return_400(self):
-        """Test create change_type with error in two object."""
+    def test_multiples_create_type_error_in_two_objects_return_400(self):
+        """Test create with error in two objects."""
         payload = {
             "change_set_id": str(uuid.uuid4()),
             "change_set": [
@@ -482,22 +490,31 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
             ],
         }
 
-        response = self.client.post(
-            self.url, payload, format="json", **self.user_header
-        )
+        response = self.send_request(payload, status_code=status.HTTP_400_BAD_REQUEST)
+
         site_created = Site.objects.filter(name="Site Z")
         device_created = Device.objects.filter(name="Test Device 4")
 
-        self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json().get("result"), "failed")
+
+        self.assertEqual(
+            response.json().get("errors")[0].get("change_id"),
+            self.get_change_id(payload, 1),
+        )
         self.assertIn(
             "Related object not found using the provided numeric ID",
             response.json().get("errors")[0].get("device_type"),
+        )
+
+        self.assertEqual(
+            response.json().get("errors")[1].get("change_id"),
+            self.get_change_id(payload, 2),
         )
         self.assertIn(
             "Related object not found using the provided numeric ID",
             response.json().get("errors")[1].get("device_type"),
         )
+
         self.assertFalse(site_created.exists())
         self.assertFalse(device_created.exists())
 
@@ -531,7 +548,7 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
         )
 
         site_updated = Site.objects.get(id=20)
-        self.assertEqual(response.status_code, 400)
+
         self.assertEqual(response.json()[0], "Object with id 30 does not exist")
         self.assertEqual(site_updated.name, "Site 2")
 
@@ -560,10 +577,9 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
             ],
         }
 
-        response = self.client.post(
-            self.url, payload, format="json", **self.user_header
-        )
-        self.assertEqual(response.status_code, 400)
+        response = self.send_request(payload, status_code=status.HTTP_400_BAD_REQUEST)
+
+        self.assertIsNone(response.json().get("errors")[0].get("change_id"))
         self.assertEqual(
             response.json().get("errors")[0].get("change_set_id"),
             "This field may not be null.",
@@ -596,10 +612,8 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
             ],
         }
 
-        response = self.client.post(
-            self.url, payload, format="json", **self.user_header
-        )
-        self.assertEqual(response.status_code, 400)
+        response = self.send_request(payload, status_code=status.HTTP_400_BAD_REQUEST)
+
         self.assertEqual(
             response.json().get("errors")[0].get("change_set_id"),
             "Must be a valid UUID.",
@@ -609,7 +623,7 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
             "Must be a valid UUID.",
         )
         self.assertEqual(
-            response.json().get("errors")[2].get("change_type"),
+            response.json().get("errors")[1].get("change_type"),
             "This field may not be blank.",
         )
 
@@ -620,10 +634,8 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
             "change_set": [],
         }
 
-        response = self.client.post(
-            self.url, payload, format="json", **self.user_header
-        )
-        self.assertEqual(response.status_code, 400)
+        response = self.send_request(payload, status_code=status.HTTP_400_BAD_REQUEST)
+
         self.assertEqual(
             response.json().get("errors")[0].get("change_set_id"),
             "Must be a valid UUID.",
@@ -631,4 +643,72 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
         self.assertEqual(
             response.json().get("errors")[1].get("change_set"),
             "This list may not be empty.",
+        )
+
+    def test_change_type_and_object_type_provided_return_400(
+        self,
+    ):
+        """Test change_type and object_type incorrect."""
+        payload = {
+            "change_set_id": str(uuid.uuid4()),
+            "change_set": [
+                {
+                    "change_id": str(uuid.uuid4()),
+                    "change_type": None,
+                    "object_version": None,
+                    "object_type": "",
+                    "object_id": None,
+                    "data": {
+                        "name": "Site A",
+                        "slug": "site-a",
+                        "facility": "Alpha",
+                        "description": "",
+                        "physical_address": "123 Fake St Lincoln NE 68588",
+                        "shipping_address": "123 Fake St Lincoln NE 68588",
+                        "comments": "Lorem ipsum etcetera",
+                    },
+                },
+                {
+                    "change_id": str(uuid.uuid4()),
+                    "change_type": "",
+                    "object_version": None,
+                    "object_type": "dcim.site",
+                    "object_id": None,
+                    "data": {
+                        "name": "Site Z",
+                        "slug": "site-z",
+                        "facility": "Betha",
+                        "description": "",
+                        "physical_address": "123 Fake St Lincoln NE 68588",
+                        "shipping_address": "123 Fake St Lincoln NE 68588",
+                        "comments": "Lorem ipsum etcetera",
+                    },
+                },
+            ],
+        }
+
+        response = self.send_request(payload, status_code=status.HTTP_400_BAD_REQUEST)
+
+        # First item of change_set
+        self.assertEqual(
+            response.json().get("errors")[0].get("change_id"),
+            self.get_change_id(payload, 0),
+        )
+        self.assertEqual(
+            response.json().get("errors")[0].get("change_type"),
+            "This field may not be null.",
+        )
+        self.assertEqual(
+            response.json().get("errors")[0].get("object_type"),
+            "This field may not be blank.",
+        )
+
+        # Second item of change_set
+        self.assertEqual(
+            response.json().get("errors")[1].get("change_id"),
+            self.get_change_id(payload, 1),
+        )
+        self.assertEqual(
+            response.json().get("errors")[1].get("change_type"),
+            "This field may not be blank.",
         )
