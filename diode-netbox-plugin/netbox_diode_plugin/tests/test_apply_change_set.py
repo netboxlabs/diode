@@ -235,6 +235,10 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
         site_created = Site.objects.filter(name="Site A")
 
         self.assertEqual(response.json().get("result"), "failed")
+        self.assertEqual(
+            response.json().get("errors")[0].get("change_id"),
+            self.get_change_id(payload, 0),
+        )
         self.assertIn(
             'Expected a list of items but got type "int".',
             response.json().get("errors")[0].get("asns"),
@@ -271,6 +275,10 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
         site_updated = Site.objects.get(id=20)
 
         self.assertEqual(response.json().get("result"), "failed")
+        self.assertEqual(
+            response.json().get("errors")[0].get("change_id"),
+            self.get_change_id(payload, 0),
+        )
         self.assertIn(
             'Expected a list of items but got type "int".',
             response.json().get("errors")[0].get("asns"),
@@ -416,6 +424,10 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
         device_created = Device.objects.filter(name="Test Device 4")
 
         self.assertEqual(response.json().get("result"), "failed")
+        self.assertEqual(
+            response.json().get("errors")[0].get("change_id"),
+            self.get_change_id(payload, 1),
+        )
         self.assertIn(
             "Related object not found using the provided numeric ID",
             response.json().get("errors")[0].get("device_type"),
@@ -484,14 +496,25 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
         device_created = Device.objects.filter(name="Test Device 4")
 
         self.assertEqual(response.json().get("result"), "failed")
+
+        self.assertEqual(
+            response.json().get("errors")[0].get("change_id"),
+            self.get_change_id(payload, 1),
+        )
         self.assertIn(
             "Related object not found using the provided numeric ID",
             response.json().get("errors")[0].get("device_type"),
+        )
+
+        self.assertEqual(
+            response.json().get("errors")[1].get("change_id"),
+            self.get_change_id(payload, 2),
         )
         self.assertIn(
             "Related object not found using the provided numeric ID",
             response.json().get("errors")[1].get("device_type"),
         )
+
         self.assertFalse(site_created.exists())
         self.assertFalse(device_created.exists())
 
@@ -556,6 +579,7 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
 
         response = self.send_request(payload, status_code=status.HTTP_400_BAD_REQUEST)
 
+        self.assertIsNone(response.json().get("errors")[0].get("change_id"))
         self.assertEqual(
             response.json().get("errors")[0].get("change_set_id"),
             "This field may not be null.",
