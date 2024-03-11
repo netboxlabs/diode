@@ -5,7 +5,6 @@
 import logging
 
 from django.contrib.auth import get_user_model
-from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.forms import model_to_dict
@@ -13,6 +12,7 @@ from extras.models import ObjectChange
 from users.models import Token
 
 from netbox_diode_plugin.diode_reconciler_sdk.client import DiodeReconcilerClient
+from netbox_diode_plugin.utils import get_supported_object_types
 
 logger = logging.getLogger("netbox.netbox_diode_plugin")
 
@@ -30,11 +30,11 @@ def handle_notify_diode(instance, created, sender, update_fields, **kwargs):
     """Handle notify reconciliation."""
     logger.debug("Handling notify reconciliation.")
 
-    content_type = ContentType.objects.get_for_model(sender, for_concrete_model=False)
-    app_label = content_type.app_label
-    model_name = content_type.model  # noqa
+    supported_object_type = get_supported_object_types(sender)  # noqa
 
-    if app_label in ["dcim", "ipam"]:
+    if supported_object_type:
+
+        model_name = supported_object_type.split(".")[1]  # noqa
 
         object_changed = (
             ObjectChange.objects.filter(changed_object_id=instance.id)
@@ -42,7 +42,7 @@ def handle_notify_diode(instance, created, sender, update_fields, **kwargs):
             .last()
         )
         object_id = instance.id  # noqa
-        object_type = f"{app_label}.{model_name}"  # noqa
+        object_type = supported_object_type  # noqa
         object_changed_id = object_changed if object_changed else None  # noqa
         object = {model_name: model_to_dict(instance)}  # noqa
 
