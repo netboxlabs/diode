@@ -9,14 +9,14 @@ import (
 	"os"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/kelseyhightower/envconfig"
-	pb "github.com/netboxlabs/diode/diode-sdk-go/diode/v1/diodepb"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/protobuf/proto"
-)
 
-// IngestEntityState represents the state of an ingested entity
-type IngestEntityState int
+	pb "github.com/netboxlabs/diode/diode-sdk-go/diode/v1/diodepb"
+	"github.com/netboxlabs/diode/diode-server/netbox"
+)
 
 const (
 	streamID = "diode.v1.ingest-stream"
@@ -25,7 +25,12 @@ const (
 
 	// RedisConsumerGroupExistsErrMsg is the error message returned by the redis client when the consumer group already exists
 	RedisConsumerGroupExistsErrMsg = "BUSYGROUP Consumer Group name already exists"
+)
 
+// IngestEntityState represents the state of an ingested entity
+type IngestEntityState int
+
+const (
 	// IngestEntityStateNew is the state of an entity after it has been ingested
 	IngestEntityStateNew IngestEntityState = iota
 )
@@ -136,23 +141,22 @@ func (c *Component) handleStreamMessage(ctx context.Context, msg redis.XMessage)
 			continue
 		}
 
-		var ingestDataType string
-		switch v.GetData().(type) {
-		case *pb.IngestEntity_Device:
-			ingestDataType = "device"
-		default:
-			errs = append(errs, fmt.Sprintf("unknown data type for index %d", i))
+		objectType, err := extractObjectType(v)
+		if err != nil {
+			errs = append(errs, fmt.Sprintf("failed to extract data type for index %d: %v", i, err))
 			continue
 		}
 
-		key := fmt.Sprintf("ingest-entity:%s-%s", ingestDataType, ingestionTs)
+		key := fmt.Sprintf("ingest-entity:%s-%s-%s", objectType, ingestionTs, uuid.NewString())
+		c.logger.Info("ingest entity key", "key", key)
+
 		val := map[string]interface{}{
 			"request_id":           pushReq.GetId(),
 			"producer_app_name":    pushReq.GetProducerAppName(),
 			"producer_app_version": pushReq.GetProducerAppVersion(),
 			"sdk_name":             pushReq.GetSdkName(),
 			"sdk_version":          pushReq.GetSdkVersion(),
-			"data_type":            ingestDataType,
+			"data_type":            objectType,
 			"data":                 v.GetData(),
 			"ingestion_ts":         ingestionTs,
 			"state":                IngestEntityStateNew,
@@ -185,4 +189,25 @@ func (c *Component) Stop() error {
 	redisClientErr := c.redisClient.Close()
 
 	return errors.Join(redisStreamErr, redisClientErr)
+}
+
+func extractObjectType(in *pb.IngestEntity) (string, error) {
+	switch in.GetData().(type) {
+	case *pb.IngestEntity_Device:
+		return netbox.DcimDeviceTypeObjectType, nil
+	case *pb.IngestEntity_DeviceRole:
+		return netbox.DcimDeviceRoleObjectType, nil
+	case *pb.IngestEntity_DeviceType:
+		return netbox.DcimDeviceTypeObjectType, nil
+	case *pb.IngestEntity_Interface:
+		return netbox.DcimInterfaceObjectType, nil
+	case *pb.IngestEntity_Manufacturer:
+		return netbox.DcimManufacturerObjectType, nil
+	case *pb.IngestEntity_Platform:
+		return netbox.DcimPlatformObjectType, nil
+	case *pb.IngestEntity_Site:
+		return netbox.DcimSiteObjectType, nil
+	default:
+		return "", fmt.Errorf("unknown data type")
+	}
 }
