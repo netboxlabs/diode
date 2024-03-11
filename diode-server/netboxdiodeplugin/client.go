@@ -13,6 +13,11 @@ import (
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/mitchellh/mapstructure"
+
+	"github.com/netboxlabs/diode/diode-server/netbox"
+	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
 )
 
 const (
@@ -136,14 +141,21 @@ func httpTimeout() (time.Duration, error) {
 	return time.Duration(timeout) * time.Second, nil
 }
 
-type rawObjectStateResponse struct {
-	ObjectType     string          `json:"object_type"`
-	ObjectChangeID int             `json:"object_change_id"`
-	Object         json.RawMessage `json:"object"`
+type objectStateRaw struct {
+	ObjectType     string `json:"object_type"`
+	ObjectChangeID int    `json:"object_change_id"`
+	Object         any    `json:"object"`
 }
 
-func (c *Client) retrieveRawObjectState(ctx context.Context, objectType string, objectID int, query string) (*rawObjectStateResponse, error) {
-	endpointURL, err := url.Parse(fmt.Sprintf("%s/object-state", c.baseURL.String()))
+// ObjectState represents the NetBox object state
+type ObjectState struct {
+	ObjectType     string                `json:"object_type"`
+	ObjectChangeID int                   `json:"object_change_id"`
+	Object         netbox.ComparableData `json:"object"`
+}
+
+func (c *Client) RetrieveObjectState(ctx context.Context, objectType string, objectID int, query string) (*ObjectState, error) {
+	endpointURL, err := url.Parse(fmt.Sprintf("%s/object-state/", c.baseURL.String()))
 	if err != nil {
 		return nil, err
 	}
@@ -178,40 +190,64 @@ func (c *Client) retrieveRawObjectState(ctx context.Context, objectType string, 
 		return nil, err
 	}
 
-	var rawResp rawObjectStateResponse
-	if err := json.Unmarshal(respBodyBytes, &rawResp); err != nil {
+	var objStateRaw objectStateRaw
+	if err := json.Unmarshal(respBodyBytes, &objStateRaw); err != nil {
 		return nil, err
 	}
 
-	return &rawResp, nil
-}
-
-// RetrieveDcimDeviceState retrieves the state of a DCIM device
-func (c *Client) RetrieveDcimDeviceState(ctx context.Context, objectID int, query string) (*DcimDeviceState, error) {
-	resp, err := c.retrieveRawObjectState(ctx, "dcim.device", objectID, query)
+	objState, err := extractObjectState(&objStateRaw, objectType)
 	if err != nil {
 		return nil, err
 	}
 
-	dcimDevice := &DcimDevice{}
-	if err := json.Unmarshal(resp.Object, dcimDevice); err != nil {
-		return nil, err
-	}
-
-	return &DcimDeviceState{
-		ObjectChangeID: resp.ObjectChangeID,
-		Object:         *dcimDevice,
+	return &ObjectState{
+		ObjectType:     objStateRaw.ObjectType,
+		ObjectChangeID: objStateRaw.ObjectChangeID,
+		Object:         objState,
 	}, nil
 }
 
-// ApplyChangeSet applies a change set
-func (c *Client) ApplyChangeSet(ctx context.Context, changeSet ChangeSetRequest) (*ChangeSetResponse, error) {
-	endpointURL, err := url.Parse(fmt.Sprintf("%s/apply-change-set", c.baseURL.String()))
+func extractObjectState(objState *objectStateRaw, objectType string) (netbox.ComparableData, error) {
+	if objState == nil {
+		return nil, fmt.Errorf("raw object state response is nil")
+	}
+
+	dw, err := netbox.NewDataWrapper(objectType)
 	if err != nil {
 		return nil, err
 	}
 
-	reqBody, err := json.Marshal(changeSet)
+	if err := mapstructure.Decode(objState.Object, &dw); err != nil {
+		return nil, fmt.Errorf("failed to decode ingest entity data %w", err)
+	}
+
+	if !dw.IsValid() {
+		return nil, fmt.Errorf("invalid object state data")
+	}
+
+	fmt.Printf("dw.Data(): %#v, nil: %t\n", dw.Data(), dw.Data() == nil)
+
+	return dw, nil
+}
+
+// ChangeSetRequest represents a apply change set request
+type ChangeSetRequest changeset.ChangeSet
+
+// ChangeSetResponse represents an apply change set response
+type ChangeSetResponse struct {
+	ChangeSetID string `json:"change_set_id"`
+	Result      string `json:"result"`
+	Errors      any    `json:"errors"`
+}
+
+// ApplyChangeSet applies a change set
+func (c *Client) ApplyChangeSet(ctx context.Context, payload ChangeSetRequest) (*ChangeSetResponse, error) {
+	endpointURL, err := url.Parse(fmt.Sprintf("%s/apply-change-set/", c.baseURL.String()))
+	if err != nil {
+		return nil, err
+	}
+
+	reqBody, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
 	}
@@ -247,39 +283,4 @@ func (c *Client) ApplyChangeSet(ctx context.Context, changeSet ChangeSetRequest)
 		return &changeSetResponse, fmt.Errorf("request POST %s failed - %q", req.URL.String(), resp.Status)
 	}
 	return &changeSetResponse, nil
-}
-
-// ChangeSetRequest represents a apply change set request
-type ChangeSetRequest struct {
-	ChangeSetID string   `json:"change_set_id"`
-	ChangeSet   []Change `json:"change_set"`
-}
-
-// Change represents a change to apply
-type Change struct {
-	ChangeID      string `json:"change_id"`
-	ChangeType    string `json:"change_type"`
-	ObjectType    string `json:"object_type"`
-	ObjectID      *int   `json:"object_id,omitempty"`
-	ObjectVersion *int   `json:"object_version,omitempty"`
-	Data          any    `json:"data"`
-}
-
-// ChangeSetResponse represents an apply change set response
-type ChangeSetResponse struct {
-	ChangeSetID string   `json:"change_set_id"`
-	Result      string   `json:"result"`
-	Errors      []string `json:"errors"`
-}
-
-// DcimDevice represents a DCIM device
-type DcimDevice struct {
-	ID   int    `json:"id"`
-	Name string `json:"name"`
-}
-
-// DcimDeviceState represents the state of a DCIM device
-type DcimDeviceState struct {
-	ObjectChangeID int        `json:"object_change_id"`
-	Object         DcimDevice `json:"object"`
 }
