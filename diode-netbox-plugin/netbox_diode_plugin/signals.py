@@ -64,3 +64,5 @@ def handle_notify_diode(instance, created, sender, update_fields, **kwargs):
             return False
 
         return True
+
+    return None
