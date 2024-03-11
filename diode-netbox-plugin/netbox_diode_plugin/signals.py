@@ -22,7 +22,10 @@ User = get_user_model()
 def get_netbox_to_diode_token():
     """Get token for NETBOX_TO_DIODE."""
     user = get_user_model().objects.get(username="NETBOX_TO_DIODE")
-    return Token.objects.get(user=user)
+    if user:
+        token = Token.objects.get(user=user)
+        return token if token else None
+    return None
 
 
 @receiver(post_save)
