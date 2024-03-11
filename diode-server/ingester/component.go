@@ -16,8 +16,6 @@ import (
 
 	pb "github.com/netboxlabs/diode/diode-sdk-go/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/netbox"
-	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
-	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
 )
 
 const (
