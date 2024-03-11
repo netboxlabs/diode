@@ -20,6 +20,7 @@ const (
 	UpdateChangeType = "update"
 )
 
+// IngestEntity represents an ingest entity
 type IngestEntity struct {
 	RequestID string `json:"request_id"`
 	DataType  string `json:"data_type"`
@@ -27,6 +28,7 @@ type IngestEntity struct {
 	State     int    `json:"state"`
 }
 
+// ObjectState represents an object state
 type ObjectState struct {
 	ObjectID       int    `json:"object_id"`
 	ObjectType     string `json:"object_type"`

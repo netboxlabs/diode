@@ -154,6 +154,7 @@ type ObjectState struct {
 	Object         netbox.ComparableData `json:"object"`
 }
 
+// RetrieveObjectState retrieves the object state
 func (c *Client) RetrieveObjectState(ctx context.Context, objectType string, objectID int, query string) (*ObjectState, error) {
 	endpointURL, err := url.Parse(fmt.Sprintf("%s/object-state/", c.baseURL.String()))
 	if err != nil {
