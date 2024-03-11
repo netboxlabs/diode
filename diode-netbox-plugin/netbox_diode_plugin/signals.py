@@ -22,10 +22,7 @@ User = get_user_model()
 def get_netbox_to_diode_token():
     """Get token for NETBOX_TO_DIODE."""
     user = get_user_model().objects.get(username="NETBOX_TO_DIODE")
-    if user:
-        token = Token.objects.get(user=user)
-        return token if token else None
-    return None
+    return Token.objects.get(user=user)
 
 
 @receiver(post_save)
@@ -64,6 +61,7 @@ def handle_notify_diode(instance, created, sender, update_fields, **kwargs):
             # )
         except Exception as e:
             logger.error(e)
+
             return False
 
         return True
