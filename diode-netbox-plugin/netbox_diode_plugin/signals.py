@@ -12,7 +12,7 @@ from extras.models import ObjectChange
 from users.models import Token
 
 from netbox_diode_plugin.diode_reconciler_sdk.client import DiodeReconcilerClient
-from netbox_diode_plugin.object_type import SupportedObjectType
+from netbox_diode_plugin.utils import get_supported_object_types
 
 logger = logging.getLogger("netbox.netbox_diode_plugin")
 
@@ -30,9 +30,7 @@ def handle_notify_diode(instance, created, sender, update_fields, **kwargs):
     """Handle notify reconciliation."""
     logger.debug("Handling notify reconciliation.")
 
-    supported_object_type = SupportedObjectType().get_supported_object_types(
-        sender
-    )  # noqa
+    supported_object_type = get_supported_object_types(sender)  # noqa
 
     if supported_object_type:
 
