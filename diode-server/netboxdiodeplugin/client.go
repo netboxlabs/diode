@@ -226,8 +226,6 @@ func extractObjectState(objState *objectStateRaw, objectType string) (netbox.Com
 		return nil, fmt.Errorf("invalid object state data")
 	}
 
-	fmt.Printf("dw.Data(): %#v, nil: %t\n", dw.Data(), dw.Data() == nil)
-
 	return dw, nil
 }
 
