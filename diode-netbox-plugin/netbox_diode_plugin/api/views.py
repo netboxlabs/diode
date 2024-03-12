@@ -145,7 +145,6 @@ class ApplyChangeSetView(views.APIView):
 
         The request body should contain a list of changes to be applied.
         """
-        serializer_list = []
         serializer_errors = []
 
         request_serializer = ApplyChangeSetRequestSerializer(data=request.data)
@@ -210,4 +209,6 @@ class ApplyChangeSetView(views.APIView):
 
 
 class ApplyChangeSetException(Exception):
+    """ApplyChangeSetException used to cause atomic transaction rollback."""
+
     pass
