@@ -146,7 +146,6 @@ class ApplyChangeSetView(views.APIView):
 
         The request body should contain a list of changes to be applied.
         """
-        serializer_list = []
         serializer_errors = []
 
         request_serializer = ApplyChangeSetRequestSerializer(data=request.data)
@@ -159,11 +158,9 @@ class ApplyChangeSetView(views.APIView):
                     for error_index, error_values in request_serializer.errors[
                         field_error_name
                     ].items():
-                        errors_dict = {}
-
-                        errors_dict["change_id"] = request_serializer.data.get(
+                        errors_dict = {"change_id": request_serializer.data.get(
                             "change_set"
-                        )[error_index].get("change_id")
+                        )[error_index].get("change_id")}
 
                         for field_name, field_errors in error_values.items():
                             errors_dict[field_name] = f"{str(field_errors[0])}"
@@ -181,32 +178,38 @@ class ApplyChangeSetView(views.APIView):
 
         change_set = request_serializer.data.get("change_set", None)
 
-        for change in change_set:
-            change_id = change.get("change_id", None)
-            change_type = change.get("change_type", None)
-            object_type = change.get("object_type", None)
-            object_data = change.get("data", None)
-            object_id = change.get("object_id", None)
+        try:
+            with transaction.atomic():
+                for change in change_set:
+                    change_id = change.get("change_id", None)
+                    change_type = change.get("change_type", None)
+                    object_type = change.get("object_type", None)
+                    object_data = change.get("data", None)
+                    object_id = change.get("object_id", None)
 
-            serializer = self._get_serializer(
-                change_type, object_id, object_type, object_data, change_set_id
-            )
+                    serializer = self._get_serializer(
+                        change_type, object_id, object_type, object_data, change_set_id
+                    )
 
-            if serializer.is_valid():
-                serializer_list.append(serializer)
-            else:
-                errors_dict = {
-                    field_name: f"{field_name}: {str(field_errors[0])}"
-                    for field_name, field_errors in serializer.errors.items()
-                }
+                    if serializer.is_valid():
+                        serializer.save()
+                    else:
+                        errors_dict = {
+                            field_name: f"{field_name}: {str(field_errors[0])}"
+                            for field_name, field_errors in serializer.errors.items()
+                        }
 
-                serializer_errors.append({"change_id": change_id, **errors_dict})
+                        serializer_errors.append({"change_id": change_id, **errors_dict})
+                        raise ApplyChangeSetException
 
-        if serializer_errors:
+        except ApplyChangeSetException:
             return self._get_error_response(change_set_id, serializer_errors)
-
-        with transaction.atomic():
-            [serializer.save() for serializer in serializer_list]
 
         data = {"change_set_id": change_set_id, "result": "success"}
         return Response(data, status=status.HTTP_200_OK)
+
+
+class ApplyChangeSetException(Exception):
+    """ApplyChangeSetException used to cause atomic transaction rollback."""
+
+    pass
