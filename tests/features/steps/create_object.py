@@ -28,13 +28,11 @@ def step_set_correct_payload(context):
             },
         ],
     }
-    context.sites_to_be_cleaned_up = [
-        "Site-Test",
-    ]
 
 
 @when("I send a POST request to the endpoint")
-def send_request_endpoint(context):
+def get_response(context):
+    """Send a POST request to the endpoint with the payload"""
     context.response = send_post_request(context.body)
 
 

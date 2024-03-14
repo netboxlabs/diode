@@ -12,12 +12,11 @@ headers = {
 }
 
 
-def send_post_request(payload):
+def send_post_request(payload, endpoint="plugins/diode/apply-change-set/"):
     """Send a request to the API with the given payload and headers. Return the response."""
-    endpoint = "plugins/diode/apply-change-set/"
     try:
         response = requests.post(
-            f"{api_root_path}/{endpoint}", json=(payload), headers=headers
+            f"{api_root_path}/{endpoint}", json=payload, headers=headers
         )
     except Exception as e:
         print("Error:", str(e))
