@@ -1,6 +1,4 @@
 import configparser
-import os
-
 
 namespace_endpoint = "namespace/"
 netbox_endpoint = "netbox/"
@@ -14,6 +12,8 @@ organization_endpoint = "organization/"
 
 
 class TestConfig:
+    """A class to read the test configurations from the configs.ini file"""
+
     _configs = None
 
     def __init__(self):
@@ -27,6 +27,7 @@ class TestConfig:
 
 
 def _read_configs():
+    """Read the test configurations from the configs.ini file"""
     parser = configparser.ConfigParser()
     parser.read("./features/configs.ini")
     configs = parser["tests_config"]
