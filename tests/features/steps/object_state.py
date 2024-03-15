@@ -1,5 +1,5 @@
-from steps.utils import send_post_request, send_get_request, get_site_id
 from behave import given, then
+from steps.utils import send_get_request, get_site_id
 
 
 @given('the site id "{site_name}" and object_type "{object_type}"')
@@ -27,11 +27,11 @@ def get_object_state_using_name(context, site_name, object_type=None):
 
 
 @then("endpoint return 200 and empty response")
-def check_object_state_response(context):
+def check_object_state_empty_response(context):
     assert context.response.status_code == 200
     assert context.response.json() == {}
 
 
 @then("endpoint return 400")
-def check_object_state_response(context):
+def check_object_state_response_400(context):
     assert context.response.status_code == 400
