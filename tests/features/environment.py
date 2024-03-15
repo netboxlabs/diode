@@ -4,41 +4,40 @@ from steps.utils import send_get_request, send_delete_request, send_post_request
 
 
 def setup_context_with_global_params_test(context):
-    context.sites_to_be_cleaned_up = ["Site-Test", "Site-Test-2"]
+    context.sites_to_be_cleaned_up = []
 
 
-def delete_site_entry(site_name):
+def create_site_entry(context, sites_names):
     endpoint = "dcim/sites/"
-    site_id = (
-        send_get_request(endpoint, {"name__ic": site_name})
-        .json()
-        .get("results")[0]
-        .get("id")
-    )
-    response = send_delete_request(endpoint, site_id)
-    return response
-
-
-@fixture()
-def create_site_entry(site_name):
-    endpoint = "dcim/sites/"
-    payload = {
-        "name": site_name,
-        "slug": site_name.lower(),
-        "facility": "Omega",
-        "description": "",
-        "physical_address": "123 Fake St Lincoln NE 68588",
-        "shipping_address": "123 Fake St Lincoln NE 68588",
-        "comments": "Lorem ipsum etcetera",
-    }
-    response = send_post_request(payload, endpoint)
-    return response
+    for site in sites_names:
+        payload = {
+            "name": site,
+            "slug": site.lower().replace(" ", "-"),
+            "facility": "Omega",
+            "description": "",
+            "physical_address": "123 Fake St Lincoln NE 68588",
+            "shipping_address": "123 Fake St Lincoln NE 68588",
+            "comments": "Lorem ipsum etcetera",
+        }
+        send_post_request(payload, endpoint)
+        context.sites_to_be_cleaned_up.append(site)
 
 
 @fixture()
 def site_cleanup(context):
-    for site_name in context.sites_to_be_cleaned_up:
-        delete_site_entry(site_name)
+    endpoint = "dcim/sites/"
+    for site_name_index in range(len(context.sites_to_be_cleaned_up)):
+
+        site_id = (
+            send_get_request(
+                endpoint, {"name__ic": context.sites_to_be_cleaned_up[site_name_index]}
+            )
+            .json()
+            .get("results")[0]
+            .get("id")
+        )
+        send_delete_request(endpoint, site_id)
+    context.sites_to_be_cleaned_up = []
 
 
 def before_all(context):
@@ -46,10 +45,12 @@ def before_all(context):
 
 
 def before_feature(context, feature):
-    if "fixture.site.update" in feature.tags:
-        create_site_entry("Site-Test-2")
+    if "fixture.create.site" in feature.tags:
+        create_site_entry(context, ["Site-Test-2", "Site Z", "Site X"])
 
 
 def after_feature(context, feature):
     if "fixture.site.cleanup" in feature.tags:
+        if "fixture.create.site" in feature.tags:
+            context.sites_to_be_cleaned_up.append("Site-Test")
         use_fixture(site_cleanup, context)

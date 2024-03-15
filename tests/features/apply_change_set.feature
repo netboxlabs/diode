@@ -1,5 +1,6 @@
+@fixture.create.site
 @fixture.site.cleanup
-@fixture.site.update
+@fixture.create.object
 Feature: Apply Change Set endpoint tests
   Validate the behaviors expected for the endpoint apply-change-set
 

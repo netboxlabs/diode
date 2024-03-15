@@ -47,3 +47,14 @@ def send_delete_request(endpoint, id):
         print("Error:", str(e))
         return ValueError(e), None
     return response
+
+
+def get_site_id(site_name):
+    endpoint = "dcim/sites/"
+    site_id = (
+        send_get_request(endpoint, {"name__ic": site_name})
+        .json()
+        .get("results")[0]
+        .get("id")
+    )
+    return site_id
