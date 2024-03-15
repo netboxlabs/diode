@@ -1,5 +1,3 @@
-from behave import fixture, use_fixture
-
 from steps.utils import send_get_request, send_delete_request, send_post_request
 
 
@@ -7,7 +5,7 @@ def setup_context_with_global_params_test(context):
     context.sites_to_be_cleaned_up = []
 
 
-def create_site_entry(context, sites_names):
+def create_site_entry(sites_names):
     endpoint = "dcim/sites/"
     for site in sites_names:
         payload = {
@@ -20,37 +18,37 @@ def create_site_entry(context, sites_names):
             "comments": "Lorem ipsum etcetera",
         }
         send_post_request(payload, endpoint)
-        context.sites_to_be_cleaned_up.append(site)
 
 
-@fixture()
-def site_cleanup(context):
+def remove_sites_entry(sites_names):
     endpoint = "dcim/sites/"
-    for site_name_index in range(len(context.sites_to_be_cleaned_up)):
-
+    for site in sites_names:
         site_id = (
-            send_get_request(
-                endpoint, {"name__ic": context.sites_to_be_cleaned_up[site_name_index]}
-            )
+            send_get_request(endpoint, {"name__ic": site})
             .json()
             .get("results")[0]
             .get("id")
         )
         send_delete_request(endpoint, site_id)
-    context.sites_to_be_cleaned_up = []
 
 
 def before_all(context):
     setup_context_with_global_params_test(context)
 
 
-def before_feature(context, feature):
-    if "fixture.create.site" in feature.tags:
-        create_site_entry(context, ["Site-Test-2", "Site Z", "Site X"])
+def before_tag(context, tag):
+    if tag == "update.object":
+        create_site_entry(["Site-Test-2"])
+    if tag == "object.state":
+        create_site_entry(["Site Z", "Site X"])
 
 
-def after_feature(context, feature):
-    if "fixture.site.cleanup" in feature.tags:
-        if "fixture.create.site" in feature.tags:
-            context.sites_to_be_cleaned_up.append("Site-Test")
-        use_fixture(site_cleanup, context)
+def after_tag(context, tag):
+    sites_names = []
+    if tag == "create.object":
+        sites_names = ["Site-Test"]
+    if tag == "update.object":
+        sites_names = ["Site-Test-2"]
+    if tag == "object.state":
+        sites_names = ["Site Z", "Site X"]
+    remove_sites_entry(sites_names)
