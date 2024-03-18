@@ -1,15 +1,5 @@
 import configparser
 
-namespace_endpoint = "namespace/"
-netbox_endpoint = "netbox/"
-storage_endpoint = "storage/"
-ingress_endpoint = "ingress/"
-postgres_endpoint = "postgres/"
-postgres_database_endpoint = "database/"
-redis_endpoint = "redis/"
-redis_db_endpoint = "database/"
-organization_endpoint = "organization/"
-
 
 class TestConfig:
     """A class to read the test configurations from the configs.ini file"""
