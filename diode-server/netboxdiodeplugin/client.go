@@ -17,7 +17,6 @@ import (
 	"github.com/mitchellh/mapstructure"
 
 	"github.com/netboxlabs/diode/diode-server/netbox"
-	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
 )
 
 const (
@@ -76,6 +75,15 @@ func (rt *apiRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) 
 	req2.Header.Set("Content-Type", "application/json")
 
 	return rt.transport.RoundTrip(req2)
+}
+
+// NetBoxAPI is the interface for the NetBox Diode plugin API
+type NetBoxAPI interface {
+	// RetrieveObjectState retrieves the object state
+	RetrieveObjectState(context.Context, string, int, string) (*ObjectState, error)
+
+	// ApplyChangeSet applies a change set
+	ApplyChangeSet(context.Context, ChangeSetRequest) (*ChangeSetResponse, error)
 }
 
 // Client is a NetBox Diode plugin client
@@ -142,6 +150,7 @@ func httpTimeout() (time.Duration, error) {
 }
 
 type objectStateRaw struct {
+	ObjectID       int    `json:"object_id"`
 	ObjectType     string `json:"object_type"`
 	ObjectChangeID int    `json:"object_change_id"`
 	Object         any    `json:"object"`
@@ -149,6 +158,7 @@ type objectStateRaw struct {
 
 // ObjectState represents the NetBox object state
 type ObjectState struct {
+	ObjectID       int                   `json:"object_id"`
 	ObjectType     string                `json:"object_type"`
 	ObjectChangeID int                   `json:"object_change_id"`
 	Object         netbox.ComparableData `json:"object"`
@@ -202,6 +212,7 @@ func (c *Client) RetrieveObjectState(ctx context.Context, objectType string, obj
 	}
 
 	return &ObjectState{
+		ObjectID:       objStateRaw.ObjectID,
 		ObjectType:     objStateRaw.ObjectType,
 		ObjectChangeID: objStateRaw.ObjectChangeID,
 		Object:         objState,
@@ -218,19 +229,34 @@ func extractObjectState(objState *objectStateRaw, objectType string) (netbox.Com
 		return nil, err
 	}
 
-	if err := mapstructure.Decode(objState.Object, &dw); err != nil {
-		return nil, fmt.Errorf("failed to decode ingest entity data %w", err)
+	wrappedData, err := wrapObjectState(objectType, objState.Object)
+	if err != nil {
+		return nil, err
 	}
 
-	if !dw.IsValid() {
-		return nil, fmt.Errorf("invalid object state data")
+	if err := mapstructure.Decode(wrappedData, &dw); err != nil {
+		return nil, fmt.Errorf("failed to decode ingest entity data %w", err)
 	}
 
 	return dw, nil
 }
 
 // ChangeSetRequest represents a apply change set request
-type ChangeSetRequest changeset.ChangeSet
+// type ChangeSetRequest changeset.ChangeSet
+type ChangeSetRequest struct {
+	ChangeSetID string   `json:"change_set_id"`
+	ChangeSet   []Change `json:"change_set"`
+}
+
+// Change represents a change
+type Change struct {
+	ChangeID      string `json:"change_id"`
+	ChangeType    string `json:"change_type"`
+	ObjectType    string `json:"object_type"`
+	ObjectID      *int   `json:"object_id,omitempty"`
+	ObjectVersion *int   `json:"object_version,omitempty"`
+	Data          any    `json:"data"`
+}
 
 // ChangeSetResponse represents an apply change set response
 type ChangeSetResponse struct {
@@ -250,6 +276,8 @@ func (c *Client) ApplyChangeSet(ctx context.Context, payload ChangeSetRequest) (
 	if err != nil {
 		return nil, err
 	}
+
+	c.logger.Info("apply change set", "payload", string(reqBody))
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpointURL.String(), bytes.NewBuffer(reqBody))
 	if err != nil {
@@ -272,14 +300,65 @@ func (c *Client) ApplyChangeSet(ctx context.Context, payload ChangeSetRequest) (
 		return nil, fmt.Errorf("failed to read response body %w", err)
 	}
 
+	c.logger.Info("apply change set", "response", string(respBytes))
+
 	var changeSetResponse ChangeSetResponse
 	if err = json.Unmarshal(respBytes, &changeSetResponse); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal response body %w", err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		c.logger.Debug(fmt.Sprintf("request POST %s failed", req.URL.String()), "statusCode", resp.StatusCode, "response", changeSetResponse)
+		c.logger.Info(fmt.Sprintf("request POST %s failed", req.URL.String()), "statusCode", resp.StatusCode, "response", changeSetResponse)
 		return &changeSetResponse, fmt.Errorf("request POST %s failed - %q", req.URL.String(), resp.Status)
 	}
 	return &changeSetResponse, nil
+}
+
+func wrapObjectState(dataType string, object any) (any, error) {
+	switch dataType {
+	case netbox.DcimDeviceObjectType:
+		return struct {
+			Device any
+		}{
+			Device: object,
+		}, nil
+	case netbox.DcimDeviceRoleObjectType:
+		return struct {
+			DeviceRole any
+		}{
+			DeviceRole: object,
+		}, nil
+	case netbox.DcimDeviceTypeObjectType:
+		return struct {
+			DeviceType any
+		}{
+			DeviceType: object,
+		}, nil
+	case netbox.DcimInterfaceObjectType:
+		return struct {
+			Interface any
+		}{
+			Interface: object,
+		}, nil
+	case netbox.DcimManufacturerObjectType:
+		return struct {
+			Manufacturer any
+		}{
+			Manufacturer: object,
+		}, nil
+	case netbox.DcimPlatformObjectType:
+		return struct {
+			Platform any
+		}{
+			Platform: object,
+		}, nil
+	case netbox.DcimSiteObjectType:
+		return struct {
+			Site any
+		}{
+			Site: object,
+		}, nil
+	default:
+		return nil, fmt.Errorf("unsupported data type %s", dataType)
+	}
 }
