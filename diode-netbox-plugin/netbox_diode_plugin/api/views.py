@@ -4,7 +4,7 @@
 
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
-from django.db.models import Q, ForeignKey
+from django.db.models import Q, ForeignKey, ManyToManyField
 from extras.models import CachedValue
 from netbox.search import LookupTypes
 from rest_framework import status, views
@@ -76,10 +76,16 @@ class ObjectStateView(views.APIView):
 
                 if isinstance(
                     object_type_model._meta.get_field(f"{attr_name}"), ForeignKey
+                ) or isinstance(
+                    object_type_model._meta.get_field(f"{attr_name}"), ManyToManyField
                 ):
-                    print(object_type_model._meta.get_field(f"{attr_name}"))
-
-                queryset = queryset.filter(**query_filter)
+                    queryset = [
+                        item
+                        for item in queryset.prefetch_related(f"{attr_name}")
+                        if str(getattr(item, attr_name)) == str(attr_value)
+                    ]
+                else:
+                    queryset = queryset.filter(**query_filter)
 
         self.check_object_permissions(request, queryset)
 
