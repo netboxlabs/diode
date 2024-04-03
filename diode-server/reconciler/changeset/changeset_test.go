@@ -62,8 +62,9 @@ func TestPrepare(t *testing.T) {
 						ObjectID:      nil,
 						ObjectVersion: nil,
 						Data: &netbox.DcimSite{
-							Name: "Site A",
-							Slug: "site-a",
+							Name:   "Site A",
+							Slug:   "site-a",
+							Status: netbox.DcimSiteStatusActive,
 						},
 					},
 				},
@@ -90,9 +91,10 @@ func TestPrepare(t *testing.T) {
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
 						Site: &netbox.DcimSite{
-							ID:   1,
-							Name: "Site A",
-							Slug: "site-a",
+							ID:     1,
+							Name:   "Site A",
+							Slug:   "site-a",
+							Status: netbox.DcimSiteStatusActive,
 						},
 					},
 				},

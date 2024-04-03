@@ -73,10 +73,31 @@ type DcimPlatform struct {
 
 // DcimSite represents a DCIM site
 type DcimSite struct {
-	ID   int    `json:"id,omitempty"`
-	Name string `json:"name,omitempty"`
-	Slug string `json:"slug,omitempty"`
+	ID     int            `json:"id,omitempty"`
+	Name   string         `json:"name,omitempty"`
+	Slug   string         `json:"slug,omitempty"`
+	Status DcimSiteStatus `json:"status,omitempty"`
 }
+
+// DcimSiteStatus represents a DCIM site status
+type DcimSiteStatus string
+
+const (
+	// DcimSiteStatusPlanned represents the planned DCIM site status
+	DcimSiteStatusPlanned DcimSiteStatus = "planned"
+
+	// DcimSiteStatusStaging represents the staging DCIM site status
+	DcimSiteStatusStaging DcimSiteStatus = "staging"
+
+	// DcimSiteStatusActive represents the active DCIM site status
+	DcimSiteStatusActive DcimSiteStatus = "active"
+
+	// DcimSiteStatusDecommissioning represents the decommissioning DCIM site status
+	DcimSiteStatusDecommissioning DcimSiteStatus = "decommissioning"
+
+	// DcimSiteStatusRetired represents the retired DCIM site status
+	DcimSiteStatusRetired DcimSiteStatus = "retired"
+)
 
 // NewDcimSite creates a new DCIM site placeholder
 func NewDcimSite() *DcimSite {

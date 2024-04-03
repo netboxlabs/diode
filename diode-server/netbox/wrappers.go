@@ -496,6 +496,10 @@ func (d *DcimSiteDataWrapper) AllData() []ComparableData {
 		d.Site.Slug = slug.Make(d.Site.Name)
 	}
 
+	if d.Site.Status == "" {
+		d.Site.Status = DcimSiteStatusActive
+	}
+
 	result = append(result, d)
 
 	return result
