@@ -9,7 +9,6 @@ from rest_framework import status
 from users.models import Token
 from utilities.testing import APITestCase
 
-
 User = get_user_model()
 
 

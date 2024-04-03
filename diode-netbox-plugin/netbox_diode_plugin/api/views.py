@@ -4,7 +4,7 @@
 
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
-from django.db.models import Q, ForeignKey, ManyToManyField
+from django.db.models import ForeignKey, ManyToManyField, Q
 from extras.models import CachedValue
 from netbox.search import LookupTypes
 from rest_framework import status, views
