@@ -2,7 +2,7 @@
 # Copyright 2024 NetBox Labs Inc
 """Diode Netbox Plugin - Tests for ObjectStateView."""
 
-from dcim.models import Site
+from dcim.models import DeviceType, Manufacturer, Site
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from rest_framework import status
@@ -14,6 +14,72 @@ User = get_user_model()
 
 class ObjectStateTestCase(APITestCase):
     """ObjectState test cases."""
+
+    @classmethod
+    def setUpClass(cls):
+        """Set up class."""
+        super().setUpClass()
+
+        cls.sites = (
+            Site(
+                name="Site 1",
+                slug="site-1",
+                facility="Alpha",
+                description="First test site",
+                physical_address="123 Fake St Lincoln NE 68588",
+                shipping_address="123 Fake St Lincoln NE 68588",
+                comments="Lorem ipsum etcetera",
+            ),
+            Site(
+                name="Site 2",
+                slug="site-2",
+                facility="Bravo",
+                description="Second test site",
+                physical_address="725 Cyrus Valleys Suite 761 Douglasfort NE 57761",
+                shipping_address="725 Cyrus Valleys Suite 761 Douglasfort NE 57761",
+                comments="Lorem ipsum etcetera",
+            ),
+            Site(
+                name="Site 3",
+                slug="site-3",
+                facility="Charlie",
+                description="Third test site",
+                physical_address="2321 Dovie Dale East Cristobal AK 71959",
+                shipping_address="2321 Dovie Dale East Cristobal AK 71959",
+                comments="Lorem ipsum etcetera",
+            ),
+        )
+        Site.objects.bulk_create(cls.sites)
+
+        cls.manufacturer = (
+            Manufacturer(name="Cisco", slug="cisco"),
+            Manufacturer(name="Manufacturer 2", slug="manufacturer-2"),
+        )
+
+        Manufacturer.objects.bulk_create(cls.manufacturer)
+
+        cls.device_types = (
+            DeviceType(
+                manufacturer=cls.manufacturer[0],
+                model="ISR4321",
+                slug="isr4321",
+            ),
+            DeviceType(
+                manufacturer=cls.manufacturer[1],
+                model="ISR4321",
+                slug="isr4321",
+            ),
+            DeviceType(
+                manufacturer=cls.manufacturer[1],
+                model="Device Type 2",
+                slug="device-type-2",
+                u_height=2,
+            ),
+        )
+        DeviceType.objects.bulk_create(cls.device_types)
+
+        # call_command is because the searching using q parameter uses CachedValue to get the object ID
+        call_command("reindex")
 
     def setUp(self):
         """Set up test."""
@@ -38,46 +104,10 @@ class ObjectStateTestCase(APITestCase):
 
         self.url = "/api/plugins/diode/object-state/"
 
-        sites = (
-            Site(
-                id=1,
-                name="Site 1",
-                slug="site-1",
-                facility="Alpha",
-                description="First test site",
-                physical_address="123 Fake St Lincoln NE 68588",
-                shipping_address="123 Fake St Lincoln NE 68588",
-                comments="Lorem ipsum etcetera",
-            ),
-            Site(
-                id=2,
-                name="Site 2",
-                slug="site-2",
-                facility="Bravo",
-                description="Second test site",
-                physical_address="725 Cyrus Valleys Suite 761 Douglasfort NE 57761",
-                shipping_address="725 Cyrus Valleys Suite 761 Douglasfort NE 57761",
-                comments="Lorem ipsum etcetera",
-            ),
-            Site(
-                id=3,
-                name="Site 3",
-                slug="site-3",
-                facility="Charlie",
-                description="Third test site",
-                physical_address="2321 Dovie Dale East Cristobal AK 71959",
-                shipping_address="2321 Dovie Dale East Cristobal AK 71959",
-                comments="Lorem ipsum etcetera",
-            ),
-        )
-        Site.objects.bulk_create(sites)
-
-        # call_command is because the searching using q parameter uses CachedValue to get the object ID
-        call_command("reindex")
-
     def test_return_object_state_using_id(self):
         """Test searching using id parameter - Root User."""
-        query_parameters = {"id": 1, "object_type": "dcim.site"}
+        site_id = Site.objects.get(name=self.sites[0]).id
+        query_parameters = {"id": site_id, "object_type": "dcim.site"}
 
         response = self.client.get(self.url, query_parameters, **self.root_header)
 
@@ -128,7 +158,8 @@ class ObjectStateTestCase(APITestCase):
 
     def test_common_user_with_permissions_get_object_state_using_id(self):
         """Test searching using id parameter for Common User with permission."""
-        query_parameters = {"id": 1, "object_type": "dcim.site"}
+        site_id = Site.objects.get(name=self.sites[0]).id
+        query_parameters = {"id": site_id, "object_type": "dcim.site"}
 
         response = self.client.get(self.url, query_parameters, **self.user_header)
 
@@ -148,3 +179,22 @@ class ObjectStateTestCase(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_return_object_state_using_q_objects_with_different_manufacturer_return_cisco_manufacturer(
+        self,
+    ):
+        """Test searching using q parameter - DevicesTypes with different manufacturer."""
+        query_parameters = {
+            "q": "ISR4321",
+            "object_type": "dcim.devicetype",
+            "attr_name": "manufacturer",
+            "attr_value": "Cisco",
+        }
+
+        response = self.client.get(self.url, query_parameters, **self.root_header)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json().get("object").get("model"), "ISR4321")
+        self.assertEqual(
+            response.json().get("object").get("manufacturer").get("name"), "Cisco"
+        )

@@ -4,7 +4,7 @@
 
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import ForeignKey, ManyToManyField, Q
 from extras.models import CachedValue
 from netbox.search import LookupTypes
 from rest_framework import status, views
@@ -37,6 +37,9 @@ class ObjectStateView(views.APIView):
         """
         object_type = self.request.query_params.get("object_type", None)
 
+        attr_name = self.request.query_params.get("attr_name", None)
+        attr_value = self.request.query_params.get("attr_value", None)
+
         if not object_type:
             raise ValidationError("object_type parameter is required")
 
@@ -66,6 +69,23 @@ class ObjectStateView(views.APIView):
             queryset = object_type_model.objects.filter(
                 id__in=object_id_in_cached_value
             )
+
+            if attr_name and attr_value:
+
+                query_filter = {f"{attr_name}__{lookup}": attr_value}
+
+                if isinstance(
+                    object_type_model._meta.get_field(f"{attr_name}"), ForeignKey
+                ) or isinstance(
+                    object_type_model._meta.get_field(f"{attr_name}"), ManyToManyField
+                ):
+                    queryset = [
+                        item
+                        for item in queryset.prefetch_related(f"{attr_name}")
+                        if str(getattr(item, attr_name)) == str(attr_value)
+                    ]
+                else:
+                    queryset = queryset.filter(**query_filter)
 
         self.check_object_permissions(request, queryset)
 
@@ -158,9 +178,11 @@ class ApplyChangeSetView(views.APIView):
                     for error_index, error_values in request_serializer.errors[
                         field_error_name
                     ].items():
-                        errors_dict = {"change_id": request_serializer.data.get(
-                            "change_set"
-                        )[error_index].get("change_id")}
+                        errors_dict = {
+                            "change_id": request_serializer.data.get("change_set")[
+                                error_index
+                            ].get("change_id")
+                        }
 
                         for field_name, field_errors in error_values.items():
                             errors_dict[field_name] = f"{str(field_errors[0])}"
@@ -199,7 +221,9 @@ class ApplyChangeSetView(views.APIView):
                             for field_name, field_errors in serializer.errors.items()
                         }
 
-                        serializer_errors.append({"change_id": change_id, **errors_dict})
+                        serializer_errors.append(
+                            {"change_id": change_id, **errors_dict}
+                        )
                         raise ApplyChangeSetException
 
         except ApplyChangeSetException:
