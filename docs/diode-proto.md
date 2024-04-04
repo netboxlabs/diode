@@ -4,26 +4,26 @@
 
 ## Table of Contents
 
-- [diode/v1/device.proto](#diode_v1_device-proto)
-    - [Device](#diode-v1-Device)
-
-- [diode/v1/device_role.proto](#diode_v1_device_role-proto)
-    - [DeviceRole](#diode-v1-DeviceRole)
+- [diode/v1/manufacturer.proto](#diode_v1_manufacturer-proto)
+    - [Manufacturer](#diode-v1-Manufacturer)
 
 - [diode/v1/device_type.proto](#diode_v1_device_type-proto)
     - [DeviceType](#diode-v1-DeviceType)
 
-- [diode/v1/interface.proto](#diode_v1_interface-proto)
-    - [Interface](#diode-v1-Interface)
-
-- [diode/v1/manufacturer.proto](#diode_v1_manufacturer-proto)
-    - [Manufacturer](#diode-v1-Manufacturer)
-
 - [diode/v1/platform.proto](#diode_v1_platform-proto)
     - [Platform](#diode-v1-Platform)
 
+- [diode/v1/role.proto](#diode_v1_role-proto)
+    - [Role](#diode-v1-Role)
+
 - [diode/v1/site.proto](#diode_v1_site-proto)
     - [Site](#diode-v1-Site)
+
+- [diode/v1/device.proto](#diode_v1_device-proto)
+    - [Device](#diode-v1-Device)
+
+- [diode/v1/interface.proto](#diode_v1_interface-proto)
+    - [Interface](#diode-v1-Interface)
 
 - [diode/v1/distributor.proto](#diode_v1_distributor-proto)
     - [IngestEntity](#diode-v1-IngestEntity)
@@ -34,44 +34,21 @@
 
 - [Scalar Value Types](#scalar-value-types)
 
-<a name="diode_v1_device-proto"></a>
+<a name="diode_v1_manufacturer-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## diode/v1/device.proto
+## diode/v1/manufacturer.proto
 
-<a name="diode-v1-Device"></a>
+<a name="diode-v1-Manufacturer"></a>
 
-### Device
+### Manufacturer
 
-A device
+A manufacturer
 
-| Field       | Type                                        | Label | Description |
-|-------------|---------------------------------------------|-------|-------------|
-| name        | [string](#string)                           |       |             |
-| device_fqdn | [string](#string)                           |       |             |
-| device_type | [google.protobuf.Any](#google-protobuf-Any) |       |             |
-| role        | [google.protobuf.Any](#google-protobuf-Any) |       |             |
-| platform    | [google.protobuf.Any](#google-protobuf-Any) |       |             |
-| serial      | [string](#string)                           |       |             |
-| site        | [google.protobuf.Any](#google-protobuf-Any) |       |             |
-| vc_position | [int32](#int32)                             |       |             |
-
-<a name="diode_v1_device_role-proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## diode/v1/device_role.proto
-
-<a name="diode-v1-DeviceRole"></a>
-
-### DeviceRole
-
-A device role
-
-| Field   | Type              | Label | Description |
-|---------|-------------------|-------|-------------|
-| name    | [string](#string) |       |             |
-| slug    | [string](#string) |       |             |
-| vm_role | [bool](#bool)     |       |             |
+| Field | Type              | Label | Description |
+|-------|-------------------|-------|-------------|
+| name  | [string](#string) |       |             |
+| slug  | [string](#string) |       |             |
 
 <a name="diode_v1_device_type-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
@@ -84,11 +61,82 @@ A device role
 
 A device type
 
-| Field        | Type                                        | Label | Description |
-|--------------|---------------------------------------------|-------|-------------|
-| manufacturer | [google.protobuf.Any](#google-protobuf-Any) |       |             |
-| model        | [string](#string)                           |       |             |
-| slug         | [string](#string)                           |       |             |
+| Field        | Type                                   | Label | Description |
+|--------------|----------------------------------------|-------|-------------|
+| manufacturer | [Manufacturer](#diode-v1-Manufacturer) |       |             |
+| model        | [string](#string)                      |       |             |
+| slug         | [string](#string)                      |       |             |
+
+<a name="diode_v1_platform-proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## diode/v1/platform.proto
+
+<a name="diode-v1-Platform"></a>
+
+### Platform
+
+A platform
+
+| Field | Type              | Label | Description |
+|-------|-------------------|-------|-------------|
+| id    | [uint64](#uint64) |       |             |
+| name  | [string](#string) |       |             |
+
+<a name="diode_v1_role-proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## diode/v1/role.proto
+
+<a name="diode-v1-Role"></a>
+
+### Role
+
+A role
+
+| Field   | Type              | Label | Description |
+|---------|-------------------|-------|-------------|
+| name    | [string](#string) |       |             |
+| slug    | [string](#string) |       |             |
+| vm_role | [bool](#bool)     |       |             |
+
+<a name="diode_v1_site-proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## diode/v1/site.proto
+
+<a name="diode-v1-Site"></a>
+
+### Site
+
+A site
+
+| Field | Type              | Label | Description |
+|-------|-------------------|-------|-------------|
+| name  | [string](#string) |       |             |
+| slug  | [string](#string) |       |             |
+
+<a name="diode_v1_device-proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## diode/v1/device.proto
+
+<a name="diode-v1-Device"></a>
+
+### Device
+
+A device
+
+| Field       | Type                               | Label | Description |
+|-------------|------------------------------------|-------|-------------|
+| name        | [string](#string)                  |       |             |
+| device_fqdn | [string](#string)                  |       |             |
+| device_type | [DeviceType](#diode-v1-DeviceType) |       |             |
+| role        | [Role](#diode-v1-Role)             |       |             |
+| platform    | [Platform](#diode-v1-Platform)     |       |             |
+| serial      | [string](#string)                  |       |             |
+| site        | [Site](#diode-v1-Site)             |       |             |
+| vc_position | [int32](#int32)                    |       |             |
 
 <a name="diode_v1_interface-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
@@ -111,54 +159,6 @@ An interface
 | mac_address | [string](#string)                           |       |             |
 | mgmt_only   | [bool](#bool)                               |       |             |
 
-<a name="diode_v1_manufacturer-proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## diode/v1/manufacturer.proto
-
-<a name="diode-v1-Manufacturer"></a>
-
-### Manufacturer
-
-A manufacturer
-
-| Field | Type              | Label | Description |
-|-------|-------------------|-------|-------------|
-| name  | [string](#string) |       |             |
-| slug  | [string](#string) |       |             |
-
-<a name="diode_v1_platform-proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## diode/v1/platform.proto
-
-<a name="diode-v1-Platform"></a>
-
-### Platform
-
-A platform
-
-| Field | Type              | Label | Description |
-|-------|-------------------|-------|-------------|
-| name  | [string](#string) |       |             |
-| slug  | [string](#string) |       |             |
-
-<a name="diode_v1_site-proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## diode/v1/site.proto
-
-<a name="diode-v1-Site"></a>
-
-### Site
-
-A site
-
-| Field | Type              | Label | Description |
-|-------|-------------------|-------|-------------|
-| name  | [string](#string) |       |             |
-| slug  | [string](#string) |       |             |
-
 <a name="diode_v1_distributor-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -176,7 +176,7 @@ An ingest entity wrapper
 | platform     | [Platform](#diode-v1-Platform)                          |       |                                               |
 | manufacturer | [Manufacturer](#diode-v1-Manufacturer)                  |       |                                               |
 | device       | [Device](#diode-v1-Device)                              |       |                                               |
-| device_role  | [DeviceRole](#diode-v1-DeviceRole)                      |       |                                               |
+| device_role  | [Role](#diode-v1-Role)                                  |       |                                               |
 | device_type  | [DeviceType](#diode-v1-DeviceType)                      |       |                                               |
 | interface    | [Interface](#diode-v1-Interface)                        |       |                                               |
 | timestamp    | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |       | The timestamp of the data discovery at source |

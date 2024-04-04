@@ -57,10 +57,10 @@ func (m *Platform) validate(all bool) error {
 
 	var errors []error
 
-	if l := utf8.RuneCountInString(m.GetName()); l < 1 || l > 100 {
+	if m.GetId() < 1 {
 		err := PlatformValidationError{
-			field:  "Name",
-			reason: "value length must be between 1 and 100 runes, inclusive",
+			field:  "Id",
+			reason: "value must be greater than or equal to 1",
 		}
 		if !all {
 			return err
@@ -68,9 +68,9 @@ func (m *Platform) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
-	if l := utf8.RuneCountInString(m.GetSlug()); l < 1 || l > 100 {
+	if l := utf8.RuneCountInString(m.GetName()); l < 1 || l > 100 {
 		err := PlatformValidationError{
-			field:  "Slug",
+			field:  "Name",
 			reason: "value length must be between 1 and 100 runes, inclusive",
 		}
 		if !all {
