@@ -9,14 +9,15 @@ import (
 	"time"
 
 	"github.com/kelseyhightower/envconfig"
-	"github.com/netboxlabs/diode/diode-sdk-go/diode/v1/diodepb"
-	"github.com/netboxlabs/diode/diode-server/reconciler"
-	"github.com/netboxlabs/diode/diode-server/reconciler/v1/reconcilerpb"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/proto"
+
+	"github.com/netboxlabs/diode/diode-sdk-go/diode/v1/diodepb"
+	"github.com/netboxlabs/diode/diode-server/reconciler"
+	"github.com/netboxlabs/diode/diode-server/reconciler/v1/reconcilerpb"
 )
 
 const (
@@ -64,7 +65,7 @@ func New(ctx context.Context, logger *slog.Logger) (*Component, error) {
 		return nil, fmt.Errorf("failed connection to %s: %v", redisClient.String(), err)
 	}
 
-	reconcilerClient, err := reconciler.NewClient(context.Background())
+	reconcilerClient, err := reconciler.NewClient()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create reconciler client: %v", err)
 	}
