@@ -3,11 +3,11 @@ syntax = "proto3";
 package diode.v1;
 
 import "diode/v1/device.proto";
-import "diode/v1/device_role.proto";
 import "diode/v1/device_type.proto";
 import "diode/v1/interface.proto";
 import "diode/v1/manufacturer.proto";
 import "diode/v1/platform.proto";
+import "diode/v1/role.proto";
 import "diode/v1/site.proto";
 import "google/protobuf/timestamp.proto";
 import "validate/validate.proto";
@@ -21,7 +21,7 @@ message IngestEntity {
     Platform platform = 2;
     Manufacturer manufacturer = 3;
     Device device = 4;
-    DeviceRole device_role = 5;
+    Role device_role = 5;
     DeviceType device_type = 6;
     Interface interface = 7;
   }

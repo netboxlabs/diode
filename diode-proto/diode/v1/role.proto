@@ -6,8 +6,8 @@ import "validate/validate.proto";
 
 option go_package = "github.com/netboxlabs/diode/diode-sdk-go/diode/v1/diodepb";
 
-// A device role
-message DeviceRole {
+// A role
+message Role {
   string name = 1 [(validate.rules).string = {
     min_len: 1,
     max_len: 100

@@ -8,11 +8,8 @@ option go_package = "github.com/netboxlabs/diode/diode-sdk-go/diode/v1/diodepb";
 
 // A platform
 message Platform {
-  string name = 1 [(validate.rules).string = {
-    min_len: 1,
-    max_len: 100
-  }];
-  string slug = 2 [(validate.rules).string = {
+  uint64 id = 1 [(validate.rules).uint64.gte = 1];
+  string name = 2 [(validate.rules).string = {
     min_len: 1,
     max_len: 100
   }];
