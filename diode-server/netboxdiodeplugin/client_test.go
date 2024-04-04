@@ -15,7 +15,6 @@ import (
 
 	"github.com/netboxlabs/diode/diode-server/netbox"
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
-	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
 )
 
 func TestNewClient(t *testing.T) {
@@ -112,6 +111,7 @@ func TestNewClient(t *testing.T) {
 func TestRetrieveObjectState(t *testing.T) {
 	tests := []struct {
 		name               string
+		objectType         string
 		objectID           int
 		query              string
 		apiKey             string
@@ -121,32 +121,60 @@ func TestRetrieveObjectState(t *testing.T) {
 	}{
 		{
 			name:               "valid response for DCIM device",
+			objectType:         netbox.DcimDeviceObjectType,
 			objectID:           1,
-			mockServerResponse: `{"object_type":"dcim.device","object_change_id":1,"object":{"Device": {"id":1,"name":"test", "slug": "test"}}}`,
+			mockServerResponse: `{"object_type":"dcim.device","object_change_id":1,"object":{"id":1,"name":"test"}}`,
 			apiKey:             "foobar",
 			response: &netboxdiodeplugin.ObjectState{
 				ObjectType:     netbox.DcimDeviceObjectType,
 				ObjectChangeID: 1,
-				Object: netbox.DcimDeviceDataWrapper{
+				Object: &netbox.DcimDeviceDataWrapper{
 					Device: &netbox.DcimDevice{
 						ID:   1,
 						Name: "test",
-						Slug: "test",
 					},
 				},
 			},
 			shouldError: false,
 		},
 		{
-			name:               "response for invalid object",
-			objectID:           1,
-			mockServerResponse: `{"object_type":"dcim.device","object_change_id":1,"object":{"InvalidObjectType": {"id":1,"name":"test", "slug": "test"}}}`,
+			name:               "valid response for DCIM site with query",
+			objectType:         netbox.DcimSiteObjectType,
+			objectID:           0,
+			query:              "site 01",
+			mockServerResponse: `{"object_type":"dcim.site","object_change_id":1,"object":{"id":1,"name":"site 01", "slug": "site-01"}}`,
 			apiKey:             "foobar",
-			response:           ``,
-			shouldError:        true,
+			response: &netboxdiodeplugin.ObjectState{
+				ObjectType:     netbox.DcimSiteObjectType,
+				ObjectChangeID: 1,
+				Object: &netbox.DcimSiteDataWrapper{
+					Site: &netbox.DcimSite{
+						ID:   1,
+						Name: "site 01",
+						Slug: "site-01",
+					},
+				},
+			},
+			shouldError: false,
+		},
+		{
+			name:               "response for invalid object - empty object",
+			objectType:         netbox.DcimDeviceObjectType,
+			objectID:           1,
+			mockServerResponse: `{"object_type":"dcim.device","object_change_id":1,"object":{"InvalidObjectType": {"id":1,"name":"test"}}}`,
+			apiKey:             "foobar",
+			response: &netboxdiodeplugin.ObjectState{
+				ObjectType:     netbox.DcimDeviceObjectType,
+				ObjectChangeID: 1,
+				Object: &netbox.DcimDeviceDataWrapper{
+					Device: &netbox.DcimDevice{},
+				},
+			},
+			shouldError: false,
 		},
 		{
 			name:               "invalid server response",
+			objectType:         netbox.DcimDeviceObjectType,
 			objectID:           100,
 			apiKey:             "barfoo",
 			mockServerResponse: ``,
@@ -163,8 +191,12 @@ func TestRetrieveObjectState(t *testing.T) {
 			handler := func(w http.ResponseWriter, r *http.Request) {
 				assert.Equal(t, r.Method, http.MethodGet)
 				assert.Equal(t, r.URL.Path, "/api/diode/object-state/")
-				assert.Equal(t, r.URL.Query().Get("object_type"), netbox.DcimDeviceObjectType)
-				assert.Equal(t, r.URL.Query().Get("object_id"), strconv.Itoa(tt.objectID))
+				assert.Equal(t, r.URL.Query().Get("object_type"), tt.objectType)
+				var objectID string
+				if tt.objectID > 0 {
+					objectID = strconv.Itoa(tt.objectID)
+				}
+				assert.Equal(t, r.URL.Query().Get("object_id"), objectID)
 				assert.Equal(t, r.Header.Get("Authorization"), fmt.Sprintf("Token %s", tt.apiKey))
 				assert.Equal(t, r.Header.Get("User-Agent"), fmt.Sprintf("%s/%s", netboxdiodeplugin.SDKName, netboxdiodeplugin.SDKVersion))
 				_, _ = w.Write([]byte(tt.mockServerResponse))
@@ -178,7 +210,7 @@ func TestRetrieveObjectState(t *testing.T) {
 
 			client, err := netboxdiodeplugin.NewClient(tt.apiKey, logger)
 			require.NoError(t, err)
-			resp, err := client.RetrieveObjectState(context.Background(), netbox.DcimDeviceObjectType, tt.objectID, tt.query)
+			resp, err := client.RetrieveObjectState(context.Background(), tt.objectType, tt.objectID, tt.query)
 			if tt.shouldError {
 				require.Error(t, err)
 				return
@@ -204,7 +236,7 @@ func TestApplyChangeSet(t *testing.T) {
 			apiKey: "foobar",
 			changeSetRequest: netboxdiodeplugin.ChangeSetRequest{
 				ChangeSetID: "00000000-0000-0000-0000-000000000000",
-				ChangeSet: []changeset.Change{
+				ChangeSet: []netboxdiodeplugin.Change{
 					{
 						ChangeID:      "00000000-0000-0000-0000-000000000001",
 						ChangeType:    "create",
@@ -240,7 +272,7 @@ func TestApplyChangeSet(t *testing.T) {
 			apiKey: "foobar",
 			changeSetRequest: netboxdiodeplugin.ChangeSetRequest{
 				ChangeSetID: "00000000-0000-0000-0000-000000000000",
-				ChangeSet: []changeset.Change{
+				ChangeSet: []netboxdiodeplugin.Change{
 					{
 						ChangeID:      "00000000-0000-0000-0000-000000000001",
 						ChangeType:    "create",

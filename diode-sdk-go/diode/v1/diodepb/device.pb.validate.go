@@ -78,34 +78,62 @@ func (m *Device) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
-	if m.GetDeviceType() == nil {
-		err := DeviceValidationError{
-			field:  "DeviceType",
-			reason: "value is required",
+	if all {
+		switch v := interface{}(m.GetDeviceType()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, DeviceValidationError{
+					field:  "DeviceType",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, DeviceValidationError{
+					field:  "DeviceType",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
 		}
-		if !all {
-			return err
+	} else if v, ok := interface{}(m.GetDeviceType()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return DeviceValidationError{
+				field:  "DeviceType",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
 		}
-		errors = append(errors, err)
 	}
 
-	if a := m.GetDeviceType(); a != nil {
-
-	}
-
-	if m.GetRole() == nil {
-		err := DeviceValidationError{
-			field:  "Role",
-			reason: "value is required",
+	if all {
+		switch v := interface{}(m.GetRole()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, DeviceValidationError{
+					field:  "Role",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, DeviceValidationError{
+					field:  "Role",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
 		}
-		if !all {
-			return err
+	} else if v, ok := interface{}(m.GetRole()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return DeviceValidationError{
+				field:  "Role",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
 		}
-		errors = append(errors, err)
-	}
-
-	if a := m.GetRole(); a != nil {
-
 	}
 
 	if all {
@@ -148,19 +176,33 @@ func (m *Device) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
-	if m.GetSite() == nil {
-		err := DeviceValidationError{
-			field:  "Site",
-			reason: "value is required",
+	if all {
+		switch v := interface{}(m.GetSite()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, DeviceValidationError{
+					field:  "Site",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, DeviceValidationError{
+					field:  "Site",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
 		}
-		if !all {
-			return err
+	} else if v, ok := interface{}(m.GetSite()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return DeviceValidationError{
+				field:  "Site",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
 		}
-		errors = append(errors, err)
-	}
-
-	if a := m.GetSite(); a != nil {
-
 	}
 
 	if val := m.GetVcPosition(); val < 0 || val > 255 {

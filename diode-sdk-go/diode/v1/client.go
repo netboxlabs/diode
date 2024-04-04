@@ -3,17 +3,16 @@ package diode
 import (
 	"context"
 	"crypto/tls"
-	"errors"
 	"fmt"
 	"os"
 	"strconv"
-	"time"
 
-	"github.com/netboxlabs/diode/diode-sdk-go/diode/v1/diodepb"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/metadata"
+
+	"github.com/netboxlabs/diode/diode-sdk-go/diode/v1/diodepb"
 )
 
 const (
@@ -35,21 +34,11 @@ const (
 	// DiodeGRPCPortEnvVarName is the environment variable name for the Diode gRPC port
 	DiodeGRPCPortEnvVarName = "DIODE_GRPC_PORT"
 
-	// DiodeGRPCTimeoutSecondsEnvVarName is the environment variable name for the Diode gRPC timeout in seconds
-	DiodeGRPCTimeoutSecondsEnvVarName = "DIODE_GRPC_TIMEOUT_SECONDS"
-
 	authAPIKeyName = "diode-api-key"
 
 	defaultGRPCHost = "127.0.0.1"
 
 	defaultGRPCPort = "8081"
-
-	defaultGRPCTimeoutSeconds = 5
-)
-
-var (
-	// ErrInvalidTimeout is an error for invalid timeout value
-	ErrInvalidTimeout = errors.New("invalid timeout value")
 )
 
 // Client is an interface that defines the methods available from Diode API
@@ -96,7 +85,7 @@ func authUnaryInterceptor(apiKey string) grpc.DialOption {
 }
 
 // NewClient creates a new distributor client based on gRPC
-func NewClient(ctx context.Context) (Client, error) {
+func NewClient() (Client, error) {
 	apiKey, ok := os.LookupEnv(DiodeAPIKeyEnvVarName)
 	if !ok {
 		return nil, fmt.Errorf("environment variable %s not found", DiodeAPIKeyEnvVarName)
@@ -113,17 +102,9 @@ func NewClient(ctx context.Context) (Client, error) {
 		dialOpts = append(dialOpts, grpc.WithTransportCredentials(credentials.NewTLS(new(tls.Config))))
 	}
 
-	timeout, err := grpcTimeout()
-	if err != nil {
-		return nil, err
-	}
-
-	ctx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-
 	target := grpcTarget()
 
-	conn, err := grpc.DialContext(ctx, target, dialOpts...)
+	conn, err := grpc.NewClient(target, dialOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -153,19 +134,6 @@ func grpcTarget() string {
 	}
 
 	return fmt.Sprintf("%s:%s", host, port)
-}
-
-func grpcTimeout() (time.Duration, error) {
-	timeoutSecondsStr, ok := os.LookupEnv(DiodeGRPCTimeoutSecondsEnvVarName)
-	if !ok || len(timeoutSecondsStr) == 0 {
-		return defaultGRPCTimeoutSeconds * time.Second, nil
-	}
-
-	timeout, err := strconv.Atoi(timeoutSecondsStr)
-	if err != nil || timeout <= 0 {
-		return 0, ErrInvalidTimeout
-	}
-	return time.Duration(timeout) * time.Second, nil
 }
 
 func grpcInsecure() bool {

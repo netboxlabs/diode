@@ -2,7 +2,10 @@ syntax = "proto3";
 
 package diode.v1;
 
-import "google/protobuf/any.proto";
+import "diode/v1/device_type.proto";
+import "diode/v1/platform.proto";
+import "diode/v1/role.proto";
+import "diode/v1/site.proto";
 import "validate/validate.proto";
 
 option go_package = "github.com/netboxlabs/diode/diode-sdk-go/diode/v1/diodepb";
@@ -14,11 +17,11 @@ message Device {
     min_len: 1,
     max_len: 255
   }];
-  google.protobuf.Any device_type = 3 [(validate.rules).any.required = true];
-  google.protobuf.Any role = 4 [(validate.rules).any.required = true];
-  google.protobuf.Any platform = 5;
+  DeviceType device_type = 3;
+  Role role = 4;
+  Platform platform = 5;
   string serial = 6 [(validate.rules).string = {max_len: 50}];
-  google.protobuf.Any site = 7 [(validate.rules).any.required = true];
+  Site site = 7;
   int32 vc_position = 8 [(validate.rules).int32 = {
     gte: 0,
     lte: 255
