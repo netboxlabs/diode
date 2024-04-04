@@ -33,6 +33,9 @@ type ComparableData interface {
 
 	// IsPlaceholder returns true if the data is a placeholder
 	IsPlaceholder() bool
+
+	// SetDefaults sets the default values for the data
+	SetDefaults()
 }
 
 // DcimDeviceDataWrapper represents a DCIM device data wrapper
@@ -128,6 +131,14 @@ func (d *DcimDeviceDataWrapper) IsPlaceholder() bool {
 	return d.placeholder
 }
 
+// SetDefaults sets the default values for the device
+func (d *DcimDeviceDataWrapper) SetDefaults() {
+	if d.Device.Status == nil {
+		status := DcimDeviceStatusActive
+		d.Device.Status = &status
+	}
+}
+
 // DcimDeviceRoleDataWrapper represents a DCIM device role data wrapper
 type DcimDeviceRoleDataWrapper struct {
 	DeviceRole *DcimDeviceRole
@@ -161,10 +172,6 @@ func (d *DcimDeviceRoleDataWrapper) AllData() []ComparableData {
 		d.DeviceRole.Slug = slug.Make(d.DeviceRole.Name)
 	}
 
-	if d.DeviceRole.Color == "" {
-		d.DeviceRole.Color = "000000"
-	}
-
 	result = append(result, d)
 
 	return result
@@ -195,6 +202,14 @@ func (d *DcimDeviceRoleDataWrapper) ReplaceData(data ComparableData) {
 // IsPlaceholder returns true if the data is a placeholder
 func (d *DcimDeviceRoleDataWrapper) IsPlaceholder() bool {
 	return d.placeholder
+}
+
+// SetDefaults sets the default values for the device role
+func (d *DcimDeviceRoleDataWrapper) SetDefaults() {
+	if d.DeviceRole.Color == nil {
+		color := "000000"
+		d.DeviceRole.Color = &color
+	}
 }
 
 // DcimDeviceTypeDataWrapper represents a DCIM device type data wrapper
@@ -276,6 +291,9 @@ func (d *DcimDeviceTypeDataWrapper) IsPlaceholder() bool {
 	return d.placeholder
 }
 
+// SetDefaults sets the default values for the device type
+func (d *DcimDeviceTypeDataWrapper) SetDefaults() {}
+
 // DcimInterfaceDataWrapper represents a DCIM interface data wrapper
 type DcimInterfaceDataWrapper struct {
 	Interface *DcimInterface
@@ -332,6 +350,9 @@ func (d *DcimInterfaceDataWrapper) ReplaceData(data ComparableData) {
 func (d *DcimInterfaceDataWrapper) IsPlaceholder() bool {
 	return d.placeholder
 }
+
+// SetDefaults sets the default values for the interface
+func (d *DcimInterfaceDataWrapper) SetDefaults() {}
 
 // DcimManufacturerDataWrapper represents a DCIM manufacturer data wrapper
 type DcimManufacturerDataWrapper struct {
@@ -398,6 +419,9 @@ func (d *DcimManufacturerDataWrapper) IsPlaceholder() bool {
 	return d.placeholder
 }
 
+// SetDefaults sets the default values for the manufacturer
+func (d *DcimManufacturerDataWrapper) SetDefaults() {}
+
 // DcimPlatformDataWrapper represents a DCIM platform data wrapper
 type DcimPlatformDataWrapper struct {
 	Platform *DcimPlatform
@@ -463,6 +487,9 @@ func (d *DcimPlatformDataWrapper) IsPlaceholder() bool {
 	return d.placeholder
 }
 
+// SetDefaults sets the default values for the platform
+func (d *DcimPlatformDataWrapper) SetDefaults() {}
+
 // DcimSiteDataWrapper represents a DCIM site data wrapper
 type DcimSiteDataWrapper struct {
 	Site *DcimSite
@@ -496,10 +523,6 @@ func (d *DcimSiteDataWrapper) AllData() []ComparableData {
 		d.Site.Slug = slug.Make(d.Site.Name)
 	}
 
-	if d.Site.Status == "" {
-		d.Site.Status = DcimSiteStatusActive
-	}
-
 	result = append(result, d)
 
 	return result
@@ -530,6 +553,14 @@ func (d *DcimSiteDataWrapper) ReplaceData(data ComparableData) {
 // IsPlaceholder returns true if the data is a placeholder
 func (d *DcimSiteDataWrapper) IsPlaceholder() bool {
 	return d.placeholder
+}
+
+// SetDefaults sets the default values for the site
+func (d *DcimSiteDataWrapper) SetDefaults() {
+	if d.Site.Status == nil {
+		status := DcimSiteStatusActive
+		d.Site.Status = &status
+	}
 }
 
 // NewDataWrapper creates a new data wrapper for the given data type
