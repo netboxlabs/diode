@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"reflect"
 	"strconv"
 	"time"
 
@@ -234,11 +235,49 @@ func extractObjectState(objState *objectStateRaw, objectType string) (netbox.Com
 		return nil, err
 	}
 
-	if err := mapstructure.Decode(wrappedData, &dw); err != nil {
+	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+		Result: &dw,
+		DecodeHook: mapstructure.ComposeDecodeHookFunc(
+			statusMapToStringHookFunc(),
+		),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if err := decoder.Decode(wrappedData); err != nil {
 		return nil, fmt.Errorf("failed to decode ingest entity data %w", err)
 	}
 
 	return dw, nil
+}
+
+func statusMapToStringHookFunc() mapstructure.DecodeHookFunc {
+	return func(
+		f reflect.Kind,
+		t reflect.Kind,
+		data interface{}) (interface{}, error) {
+
+		if f != reflect.Map {
+			return data, nil
+		}
+
+		raw := data.(map[string]any)
+
+		if len(raw) == 0 {
+			return data, nil
+		}
+
+		if t == reflect.String && f == reflect.Map {
+			val, ok := raw["value"]
+			if !ok {
+				return data, nil
+			}
+			return val, nil
+		}
+
+		return data, nil
+	}
 }
 
 // ChangeSetRequest represents a apply change set request
