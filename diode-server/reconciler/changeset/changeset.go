@@ -15,11 +15,11 @@ import (
 )
 
 const (
-	// CreateChangeType is the change type for a creation
-	CreateChangeType = "create"
+	// ChangeTypeCreate is the change type for a creation
+	ChangeTypeCreate = "create"
 
-	// UpdateChangeType is the change type for an update
-	UpdateChangeType = "update"
+	// ChangeTypeUpdate is the change type for an update
+	ChangeTypeUpdate = "update"
 )
 
 // IngestEntity represents an ingest entity
@@ -106,16 +106,13 @@ func Prepare(entity IngestEntity, netboxAPI netboxdiodeplugin.NetBoxAPI) (*Chang
 
 	for _, obj := range objectsToReconcile {
 
-		operation := CreateChangeType
+		operation := ChangeTypeCreate
 		var objectID *int
 
 		id := obj.ID()
 		if id > 0 {
 			objectID = &id
-		}
-
-		if objectID != nil {
-			operation = UpdateChangeType
+			operation = ChangeTypeUpdate
 		}
 
 		changesList = append(changesList, Change{
@@ -155,6 +152,8 @@ func objectToCreate(ingested netbox.ComparableData, createObjectsMap map[string]
 				actualObject.ReplaceData(intendedObject)
 				continue
 			}
+		} else {
+			actualObject.SetDefaults()
 		}
 
 		objectsToReconcile = append(objectsToReconcile, actualObject)
@@ -178,6 +177,10 @@ func objectToUpdate(ingested netbox.ComparableData, createObjectsMap map[string]
 			actualObject.ReplaceData(currentObject)
 			intendedObject.ReplaceData(currentObject)
 			continue
+		}
+
+		if intendedObject == nil {
+			actualObject.SetDefaults()
 		}
 
 		if !isPlaceholder && !isRootObject {
@@ -215,6 +218,7 @@ func objectToUpdate(ingested netbox.ComparableData, createObjectsMap map[string]
 			continue
 		}
 	}
+
 	return objectsToReconcile, nil
 }
 
@@ -291,7 +295,7 @@ func createPatch(original, modified netbox.ComparableData) (netbox.ComparableDat
 		return nil, err
 	}
 
-	patchJSON, err := jsonpatch.CreateMergePatch(originalJSON, modifiedJSON)
+	patchJSON, err := jsonpatch.MergeMergePatches(originalJSON, modifiedJSON)
 	if err != nil {
 		return nil, err
 	}
