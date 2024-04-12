@@ -27,6 +27,7 @@ classifiers = [  # Optional
 
 dependencies = [
     "grpcio==1.62.1",
+    "grpcio-status==1.62.1",
 ]
 
 [project.optional-dependencies] # Optional
