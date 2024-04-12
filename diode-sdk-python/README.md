@@ -29,9 +29,7 @@ from netboxlabs.diode.sdk.diode.v1.device_type_pb2 import DeviceType
 from netboxlabs.diode.sdk.diode.v1.distributor_pb2 import IngestEntity
 from netboxlabs.diode.sdk.diode.v1.manufacturer_pb2 import Manufacturer
 from netboxlabs.diode.sdk.diode.v1.site_pb2 import Site
-...
 
-...
 
 def main():
     with DiodeClient(target="localhost:8081", app_name="my-test-app", app_version="0.0.1") as client:
