@@ -2,7 +2,7 @@
 """Client and server classes corresponding to protobuf-defined services."""
 import grpc
 
-from diode.v1 import distributor_pb2 as diode_dot_v1_dot_distributor__pb2
+from netboxlabs.diode.sdk.diode.v1 import distributor_pb2 as diode_dot_v1_dot_distributor__pb2
 
 
 class DistributorServiceStub(object):
