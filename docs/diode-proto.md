@@ -190,7 +190,7 @@ The request to ingest the data
 | Field                | Type                       | Label    | Description |
 |----------------------|----------------------------|----------|-------------|
 | stream               | [string](#string)          |          |             |
-| entity               | [Entity](#diode-v1-Entity) | repeated |             |
+| entities             | [Entity](#diode-v1-Entity) | repeated |             |
 | id                   | [string](#string)          |          |             |
 | producer_app_name    | [string](#string)          |          |             |
 | producer_app_version | [string](#string)          |          |             |
