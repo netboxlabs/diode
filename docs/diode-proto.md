@@ -25,12 +25,12 @@
 - [diode/v1/interface.proto](#diode_v1_interface-proto)
     - [Interface](#diode-v1-Interface)
 
-- [diode/v1/distributor.proto](#diode_v1_distributor-proto)
-    - [IngestEntity](#diode-v1-IngestEntity)
-    - [PushRequest](#diode-v1-PushRequest)
-    - [PushResponse](#diode-v1-PushResponse)
+- [diode/v1/ingester.proto](#diode_v1_ingester-proto)
+    - [Entity](#diode-v1-Entity)
+    - [IngestRequest](#diode-v1-IngestRequest)
+    - [IngestResponse](#diode-v1-IngestResponse)
 
-    - [DistributorService](#diode-v1-DistributorService)
+    - [IngesterService](#diode-v1-IngesterService)
 
 - [Scalar Value Types](#scalar-value-types)
 
@@ -159,14 +159,14 @@ An interface
 | mac_address | [string](#string)                           |       |             |
 | mgmt_only   | [bool](#bool)                               |       |             |
 
-<a name="diode_v1_distributor-proto"></a>
+<a name="diode_v1_ingester-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
-## diode/v1/distributor.proto
+## diode/v1/ingester.proto
 
-<a name="diode-v1-IngestEntity"></a>
+<a name="diode-v1-Entity"></a>
 
-### IngestEntity
+### Entity
 
 An ingest entity wrapper
 
@@ -181,41 +181,41 @@ An ingest entity wrapper
 | interface    | [Interface](#diode-v1-Interface)                        |       |                                               |
 | timestamp    | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |       | The timestamp of the data discovery at source |
 
-<a name="diode-v1-PushRequest"></a>
+<a name="diode-v1-IngestRequest"></a>
 
-### PushRequest
+### IngestRequest
 
-The request to push data
+The request to ingest the data
 
-| Field                | Type                                   | Label    | Description |
-|----------------------|----------------------------------------|----------|-------------|
-| stream               | [string](#string)                      |          |             |
-| data                 | [IngestEntity](#diode-v1-IngestEntity) | repeated |             |
-| id                   | [string](#string)                      |          |             |
-| producer_app_name    | [string](#string)                      |          |             |
-| producer_app_version | [string](#string)                      |          |             |
-| sdk_name             | [string](#string)                      |          |             |
-| sdk_version          | [string](#string)                      |          |             |
+| Field                | Type                       | Label    | Description |
+|----------------------|----------------------------|----------|-------------|
+| stream               | [string](#string)          |          |             |
+| entity               | [Entity](#diode-v1-Entity) | repeated |             |
+| id                   | [string](#string)          |          |             |
+| producer_app_name    | [string](#string)          |          |             |
+| producer_app_version | [string](#string)          |          |             |
+| sdk_name             | [string](#string)          |          |             |
+| sdk_version          | [string](#string)          |          |             |
 
-<a name="diode-v1-PushResponse"></a>
+<a name="diode-v1-IngestResponse"></a>
 
-### PushResponse
+### IngestResponse
 
-The response from the push request
+The response from the ingest request
 
 | Field  | Type              | Label    | Description |
 |--------|-------------------|----------|-------------|
 | errors | [string](#string) | repeated |             |
 
-<a name="diode-v1-DistributorService"></a>
+<a name="diode-v1-IngesterService"></a>
 
-### DistributorService
+### IngesterService
 
-Distributor API
+Ingestion API
 
-| Method Name | Request Type                         | Response Type                          | Description                  |
-|-------------|--------------------------------------|----------------------------------------|------------------------------|
-| Push        | [PushRequest](#diode-v1-PushRequest) | [PushResponse](#diode-v1-PushResponse) | Ingests data into the system |
+| Method Name | Request Type                             | Response Type                              | Description                  |
+|-------------|------------------------------------------|--------------------------------------------|------------------------------|
+| Ingest      | [IngestRequest](#diode-v1-IngestRequest) | [IngestResponse](#diode-v1-IngestResponse) | Ingests data into the system |
 
 ## Scalar Value Types
 
