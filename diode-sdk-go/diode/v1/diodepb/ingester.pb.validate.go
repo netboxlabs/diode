@@ -502,9 +502,9 @@ func (m *IngestRequest) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
-	if l := len(m.GetEntity()); l < 1 || l > 1000 {
+	if l := len(m.GetEntities()); l < 1 || l > 1000 {
 		err := IngestRequestValidationError{
-			field:  "Entity",
+			field:  "Entities",
 			reason: "value must contain between 1 and 1000 items, inclusive",
 		}
 		if !all {
@@ -513,7 +513,7 @@ func (m *IngestRequest) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
-	for idx, item := range m.GetEntity() {
+	for idx, item := range m.GetEntities() {
 		_, _ = idx, item
 
 		if all {
@@ -521,7 +521,7 @@ func (m *IngestRequest) validate(all bool) error {
 			case interface{ ValidateAll() error }:
 				if err := v.ValidateAll(); err != nil {
 					errors = append(errors, IngestRequestValidationError{
-						field:  fmt.Sprintf("Entity[%v]", idx),
+						field:  fmt.Sprintf("Entities[%v]", idx),
 						reason: "embedded message failed validation",
 						cause:  err,
 					})
@@ -529,7 +529,7 @@ func (m *IngestRequest) validate(all bool) error {
 			case interface{ Validate() error }:
 				if err := v.Validate(); err != nil {
 					errors = append(errors, IngestRequestValidationError{
-						field:  fmt.Sprintf("Entity[%v]", idx),
+						field:  fmt.Sprintf("Entities[%v]", idx),
 						reason: "embedded message failed validation",
 						cause:  err,
 					})
@@ -538,7 +538,7 @@ func (m *IngestRequest) validate(all bool) error {
 		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
 			if err := v.Validate(); err != nil {
 				return IngestRequestValidationError{
-					field:  fmt.Sprintf("Entity[%v]", idx),
+					field:  fmt.Sprintf("Entities[%v]", idx),
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
