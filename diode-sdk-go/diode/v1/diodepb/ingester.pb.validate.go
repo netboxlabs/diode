@@ -100,11 +100,11 @@ func (m *Entity) validate(all bool) error {
 		}
 	}
 
-	switch v := m.Data.(type) {
+	switch v := m.Entity.(type) {
 	case *Entity_Site:
 		if v == nil {
 			err := EntityValidationError{
-				field:  "Data",
+				field:  "Entity",
 				reason: "oneof value cannot be a typed-nil",
 			}
 			if !all {
@@ -145,7 +145,7 @@ func (m *Entity) validate(all bool) error {
 	case *Entity_Platform:
 		if v == nil {
 			err := EntityValidationError{
-				field:  "Data",
+				field:  "Entity",
 				reason: "oneof value cannot be a typed-nil",
 			}
 			if !all {
@@ -186,7 +186,7 @@ func (m *Entity) validate(all bool) error {
 	case *Entity_Manufacturer:
 		if v == nil {
 			err := EntityValidationError{
-				field:  "Data",
+				field:  "Entity",
 				reason: "oneof value cannot be a typed-nil",
 			}
 			if !all {
@@ -227,7 +227,7 @@ func (m *Entity) validate(all bool) error {
 	case *Entity_Device:
 		if v == nil {
 			err := EntityValidationError{
-				field:  "Data",
+				field:  "Entity",
 				reason: "oneof value cannot be a typed-nil",
 			}
 			if !all {
@@ -268,7 +268,7 @@ func (m *Entity) validate(all bool) error {
 	case *Entity_DeviceRole:
 		if v == nil {
 			err := EntityValidationError{
-				field:  "Data",
+				field:  "Entity",
 				reason: "oneof value cannot be a typed-nil",
 			}
 			if !all {
@@ -309,7 +309,7 @@ func (m *Entity) validate(all bool) error {
 	case *Entity_DeviceType:
 		if v == nil {
 			err := EntityValidationError{
-				field:  "Data",
+				field:  "Entity",
 				reason: "oneof value cannot be a typed-nil",
 			}
 			if !all {
@@ -350,7 +350,7 @@ func (m *Entity) validate(all bool) error {
 	case *Entity_Interface:
 		if v == nil {
 			err := EntityValidationError{
-				field:  "Data",
+				field:  "Entity",
 				reason: "oneof value cannot be a typed-nil",
 			}
 			if !all {

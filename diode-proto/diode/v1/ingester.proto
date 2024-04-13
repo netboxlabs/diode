@@ -16,7 +16,7 @@ option go_package = "github.com/netboxlabs/diode/diode-sdk-go/diode/v1/diodepb";
 
 // An ingest entity wrapper
 message Entity {
-  oneof data {
+  oneof entity {
     Site site = 1;
     Platform platform = 2;
     Manufacturer manufacturer = 3;
