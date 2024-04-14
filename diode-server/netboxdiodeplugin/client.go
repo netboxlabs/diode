@@ -95,7 +95,7 @@ type Client struct {
 }
 
 // NewClient creates a new NetBox Diode plugin client
-func NewClient(apiKey string, logger *slog.Logger) (*Client, error) {
+func NewClient(logger *slog.Logger, apiKey string) (*Client, error) {
 	rt, err := newAPIRoundTripper(apiKey, http.DefaultTransport)
 	if err != nil {
 		return nil, err
