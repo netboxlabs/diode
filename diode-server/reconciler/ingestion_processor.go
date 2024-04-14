@@ -205,6 +205,7 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 
 		if changeSet != nil {
 			val["state"] = IngestEntityStateReconciled
+			val["change_set"] = changeSet
 			_, err = p.writeJSON(ctx, key, val)
 			if err != nil {
 				errs = append(errs, fmt.Sprintf("failed to write JSON: %v", err))
