@@ -9,15 +9,16 @@ import (
 	"strings"
 
 	"github.com/kelseyhightower/envconfig"
-	pb "github.com/netboxlabs/diode/diode-server/reconciler/v1/reconcilerpb"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
+
+	"github.com/netboxlabs/diode/diode-server/reconciler/v1/reconcilerpb"
 )
 
-// Component reconciles ingested data
-type Component struct {
-	pb.UnimplementedReconcilerServiceServer
+// Server is a reconciler Server
+type Server struct {
+	reconcilerpb.UnimplementedReconcilerServiceServer
 
 	config       Config
 	logger       *slog.Logger
@@ -27,8 +28,8 @@ type Component struct {
 	apiKeys      map[string]string
 }
 
-// New creates a new reconciler component
-func New(ctx context.Context, logger *slog.Logger) (*Component, error) {
+// NewServer creates a new reconciler server
+func NewServer(ctx context.Context, logger *slog.Logger) (*Server, error) {
 	var cfg Config
 	envconfig.MustProcess("", &cfg)
 
@@ -53,7 +54,7 @@ func New(ctx context.Context, logger *slog.Logger) (*Component, error) {
 	}
 
 	grpcServer := grpc.NewServer()
-	component := &Component{
+	component := &Server{
 		config:       cfg,
 		logger:       logger,
 		grpcListener: grpcListener,
@@ -61,56 +62,56 @@ func New(ctx context.Context, logger *slog.Logger) (*Component, error) {
 		redisClient:  redisClient,
 		apiKeys:      apiKeys,
 	}
-	pb.RegisterReconcilerServiceServer(grpcServer, component)
+	reconcilerpb.RegisterReconcilerServiceServer(grpcServer, component)
 	reflection.Register(grpcServer)
 
 	return component, nil
 }
 
-// Name returns the name of the component
-func (c *Component) Name() string {
-	return "reconciler"
+// Name returns the name of the server
+func (s *Server) Name() string {
+	return "reconciler-grpc-server"
 }
 
-// Start starts the component
-func (c *Component) Start(_ context.Context) error {
-	c.logger.Info("starting component", "name", c.Name(), "port", c.config.GRPCPort)
-	return c.grpcServer.Serve(c.grpcListener)
+// Start starts the server
+func (s *Server) Start(_ context.Context) error {
+	s.logger.Info("starting component", "name", s.Name(), "port", s.config.GRPCPort)
+	return s.grpcServer.Serve(s.grpcListener)
 }
 
-// Stop stops the component
-func (c *Component) Stop() error {
-	c.logger.Info("stopping component", "name", c.Name())
-	c.grpcServer.GracefulStop()
-	return c.redisClient.Close()
+// Stop stops the server
+func (s *Server) Stop() error {
+	s.logger.Info("stopping component", "name", s.Name())
+	s.grpcServer.GracefulStop()
+	return s.redisClient.Close()
 }
 
 // RetrieveIngestionDataSources retrieves ingestion data sources
-func (c *Component) RetrieveIngestionDataSources(_ context.Context, in *pb.RetrieveIngestionDataSourcesRequest) (*pb.RetrieveIngestionDataSourcesResponse, error) {
+func (s *Server) RetrieveIngestionDataSources(_ context.Context, in *reconcilerpb.RetrieveIngestionDataSourcesRequest) (*reconcilerpb.RetrieveIngestionDataSourcesResponse, error) {
 	if err := validateRetrieveIngestionDataSourcesRequest(in); err != nil {
 		return nil, err
 	}
 
-	dataSources := make([]*pb.IngestionDataSource, 0)
+	dataSources := make([]*reconcilerpb.IngestionDataSource, 0)
 	filterByName := in.Name != ""
 
 	if filterByName {
-		if _, ok := c.apiKeys[in.Name]; !ok || !strings.HasPrefix(in.Name, "INGESTION") {
+		if _, ok := s.apiKeys[in.Name]; !ok || !strings.HasPrefix(in.Name, "INGESTION") {
 			return nil, fmt.Errorf("data source %s not found", in.Name)
 		}
-		dataSources = append(dataSources, &pb.IngestionDataSource{Name: in.Name, ApiKey: c.apiKeys[in.Name]})
-		return &pb.RetrieveIngestionDataSourcesResponse{IngestionDataSources: dataSources}, nil
+		dataSources = append(dataSources, &reconcilerpb.IngestionDataSource{Name: in.Name, ApiKey: s.apiKeys[in.Name]})
+		return &reconcilerpb.RetrieveIngestionDataSourcesResponse{IngestionDataSources: dataSources}, nil
 	}
 
-	for name, key := range c.apiKeys {
+	for name, key := range s.apiKeys {
 		if strings.HasPrefix(name, "INGESTION") {
-			dataSources = append(dataSources, &pb.IngestionDataSource{Name: name, ApiKey: key})
+			dataSources = append(dataSources, &reconcilerpb.IngestionDataSource{Name: name, ApiKey: key})
 		}
 	}
-	return &pb.RetrieveIngestionDataSourcesResponse{IngestionDataSources: dataSources}, nil
+	return &reconcilerpb.RetrieveIngestionDataSourcesResponse{IngestionDataSources: dataSources}, nil
 }
 
-func validateRetrieveIngestionDataSourcesRequest(in *pb.RetrieveIngestionDataSourcesRequest) error {
+func validateRetrieveIngestionDataSourcesRequest(in *reconcilerpb.RetrieveIngestionDataSourcesRequest) error {
 	if in.GetSdkName() == "" {
 		return fmt.Errorf("sdk name is empty")
 	}
@@ -121,7 +122,7 @@ func validateRetrieveIngestionDataSourcesRequest(in *pb.RetrieveIngestionDataSou
 }
 
 // AddObjectState adds an object state
-func (c *Component) AddObjectState(ctx context.Context, in *pb.AddObjectStateRequest) (*pb.AddObjectStateResponse, error) {
+func (s *Server) AddObjectState(ctx context.Context, in *reconcilerpb.AddObjectStateRequest) (*reconcilerpb.AddObjectStateResponse, error) {
 	if err := in.ValidateAll(); err != nil {
 		return nil, err
 	}
@@ -135,13 +136,13 @@ func (c *Component) AddObjectState(ctx context.Context, in *pb.AddObjectStateReq
 	}
 	encodedValue, err := json.Marshal(val)
 	if err != nil {
-		c.logger.Error("failed to marshal JSON", "value", val, "error", err)
+		s.logger.Error("failed to marshal JSON", "value", val, "error", err)
 		return nil, fmt.Errorf("failed to marshal JSON: %v", err)
 	}
-	if _, err = c.redisClient.Do(ctx, "JSON.SET", key, "$", encodedValue).Result(); err != nil {
-		c.logger.Error("failed to set JSON redis key", "key", key, "value", encodedValue, "error", err)
+	if _, err = s.redisClient.Do(ctx, "JSON.SET", key, "$", encodedValue).Result(); err != nil {
+		s.logger.Error("failed to set JSON redis key", "key", key, "value", encodedValue, "error", err)
 		return nil, fmt.Errorf("failed to set JSON redis key: %v", err)
 	}
 
-	return &pb.AddObjectStateResponse{}, nil
+	return &reconcilerpb.AddObjectStateResponse{}, nil
 }
