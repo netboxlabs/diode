@@ -23,6 +23,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	//TODO: instantiate a prom service for /metrics
+
 	if err := s.Run(); err != nil {
 		s.Logger().Error("server failure", "serverName", s.Name(), "error", err)
 		os.Exit(1)
