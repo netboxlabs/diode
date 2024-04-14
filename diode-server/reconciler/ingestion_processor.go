@@ -194,7 +194,7 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 func extractObjectType(in *diodepb.Entity) (string, error) {
 	switch in.GetEntity().(type) {
 	case *diodepb.Entity_Device:
-		return netbox.DcimDeviceTypeObjectType, nil
+		return netbox.DcimDeviceObjectType, nil
 	case *diodepb.Entity_DeviceRole:
 		return netbox.DcimDeviceRoleObjectType, nil
 	case *diodepb.Entity_DeviceType:
