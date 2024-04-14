@@ -34,7 +34,7 @@ func TestPrepare(t *testing.T) {
 			rawIngestEntity: []byte(`{
 				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				"data_type": "dcim.site",
-				"data": {
+				"entity": {
 					"Site": {
 						"name": "Site A"
 					}
@@ -76,7 +76,7 @@ func TestPrepare(t *testing.T) {
 			rawIngestEntity: []byte(`{
 				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				"data_type": "dcim.site",
-				"data": {
+				"entity": {
 					"Site": {
 						"name": "Site A"
 					}
@@ -110,7 +110,7 @@ func TestPrepare(t *testing.T) {
 			rawIngestEntity: []byte(`{
 				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				"data_type": "dcim.devicerole",
-				"data": {
+				"entity": {
 					"DeviceRole": {
 						"name": "WAN Router"
 					}
@@ -152,7 +152,7 @@ func TestPrepare(t *testing.T) {
 			rawIngestEntity: []byte(`{
 				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				"data_type": "dcim.devicerole",
-				"data": {
+				"entity": {
 					"DeviceRole": {
 						"name": "WAN Router"
 					}
@@ -186,7 +186,7 @@ func TestPrepare(t *testing.T) {
 			rawIngestEntity: []byte(`{
 				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				"data_type": "dcim.devicerole",
-				"data": {
+				"entity": {
 					"DeviceRole": {
 						"name": "WAN Router",
 						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
@@ -237,7 +237,7 @@ func TestPrepare(t *testing.T) {
 			rawIngestEntity: []byte(`{
 				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				"data_type": "dcim.manufacturer",
-				"data": {
+				"entity": {
 					"Manufacturer": {
 						"name": "Cisco"
 					}
@@ -278,7 +278,7 @@ func TestPrepare(t *testing.T) {
 			rawIngestEntity: []byte(`{
 				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				"data_type": "dcim.manufacturer",
-				"data": {
+				"entity": {
 					"Manufacturer": {
 						"name": "Cisco"
 					}
@@ -311,7 +311,7 @@ func TestPrepare(t *testing.T) {
 			rawIngestEntity: []byte(`{
 				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				"data_type": "dcim.devicetype",
-				"data": {
+				"entity": {
 					"DeviceType": {
 						"model": "ISR4321"
 					}
@@ -376,7 +376,7 @@ func TestPrepare(t *testing.T) {
 			rawIngestEntity: []byte(`{
 				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				"data_type": "dcim.devicetype",
-				"data": {
+				"entity": {
 					"DeviceType": {
 						"model": "ISR4321"
 					}
@@ -427,7 +427,7 @@ func TestPrepare(t *testing.T) {
 			rawIngestEntity: []byte(`{
 				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				"data_type": "dcim.devicetype",
-				"data": {
+				"entity": {
 					"DeviceType": {
 						"model": "ISR4321",
 						"manufacturer": {
@@ -499,7 +499,7 @@ func TestPrepare(t *testing.T) {
 			rawIngestEntity: []byte(`{
 				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				"data_type": "dcim.devicetype",
-				"data": {
+				"entity": {
 					"DeviceType": {
 						"model": "ISR4321",
 						"manufacturer": {
@@ -583,7 +583,7 @@ func TestPrepare(t *testing.T) {
 			rawIngestEntity: []byte(`{
 				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				"data_type": "dcim.device",
-				"data": {
+				"entity": {
 					"Device": {
 						"name": "router01"
 					}
@@ -752,7 +752,7 @@ func TestPrepare(t *testing.T) {
 			rawIngestEntity: []byte(`{
 				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				"data_type": "dcim.device",
-				"data": {
+				"entity": {
 					"Device": {
 						"name": "router01"
 					}
@@ -884,7 +884,7 @@ func TestPrepare(t *testing.T) {
 			rawIngestEntity: []byte(`{
 				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				"data_type": "dcim.device",
-				"data": {
+				"entity": {
 					"Device": {
 						"name": "router01",
 						"device_type": {
@@ -1067,7 +1067,7 @@ func TestPrepare(t *testing.T) {
 			rawIngestEntity: []byte(`{
 				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				"data_type": "dcim.device",
-				"data": {
+				"entity": {
 					"Device": {
 						"name": "router01",
 						"device_type": {
@@ -1273,7 +1273,7 @@ func TestPrepare(t *testing.T) {
 			rawIngestEntity: []byte(`{
 				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				"data_type": "dcim.device",
-				"data": {
+				"entity": {
 					"Device": {
 						"name": "router01",
 						"device_type": {
@@ -1459,7 +1459,7 @@ func TestPrepare(t *testing.T) {
 			rawIngestEntity: []byte(`{
 				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				"data_type": "dcim.device",
-				"data": {
+				"entity": {
 					"Device": {
 						"name": "router01",
 						"device_type": {
@@ -1668,7 +1668,7 @@ func TestPrepare(t *testing.T) {
 			rawIngestEntity: []byte(`{
 				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				"data_type": "dcim.device",
-				"data": {
+				"entity": {
 					"Device": {
 						"name": "router01",
 						"device_type": {
@@ -1859,7 +1859,7 @@ func TestPrepare(t *testing.T) {
 			rawIngestEntity: []byte(`{
 				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				"data_type": "dcim.site",
-				"data": {
+				"entity": {
 					"Site": {
 						"name": "Site A",
 						"status": "active",
@@ -1904,7 +1904,7 @@ func TestPrepare(t *testing.T) {
 			rawIngestEntity: []byte(`{
 				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				"data_type": "dcim.site",
-				"data": {
+				"entity": {
 					"Site": {
 						"name": "Site A",
 						"status": "active",
@@ -1956,7 +1956,7 @@ func TestPrepare(t *testing.T) {
 			rawIngestEntity: []byte(`{
 				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				"data_type": "dcim.manufacturer",
-				"data": {
+				"entity": {
 					"Manufacturer": {
 						"name": "Cisco",
 						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
@@ -1999,7 +1999,7 @@ func TestPrepare(t *testing.T) {
 			rawIngestEntity: []byte(`{
 				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				"data_type": "dcim.manufacturer",
-				"data": {
+				"entity": {
 					"Manufacturer": {
 						"name": "Cisco",
 						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean sed molestie felis."
@@ -2048,7 +2048,7 @@ func TestPrepare(t *testing.T) {
 			rawIngestEntity: []byte(`{
 				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				"data_type": "dcim.devicerole",
-				"data": {
+				"entity": {
 					"DeviceRole": {
 						"name": "WAN Router",
 						"color": "509415",
@@ -2093,7 +2093,7 @@ func TestPrepare(t *testing.T) {
 			rawIngestEntity: []byte(`{
 				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				"data_type": "dcim.devicerole",
-				"data": {
+				"entity": {
 					"DeviceRole": {
 						"name": "WAN Router",
 						"color": "ffffff",

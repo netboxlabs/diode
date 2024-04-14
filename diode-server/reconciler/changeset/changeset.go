@@ -26,7 +26,7 @@ const (
 type IngestEntity struct {
 	RequestID string `json:"request_id"`
 	DataType  string `json:"data_type"`
-	Data      any    `json:"data"`
+	Entity    any    `json:"entity"`
 	State     int    `json:"state"`
 }
 
@@ -243,8 +243,8 @@ func retrieveObjectState(netboxAPI netboxdiodeplugin.NetBoxAPI, change netbox.Co
 }
 
 func extractIngestEntityData(ingestEntity IngestEntity) (netbox.ComparableData, error) {
-	if ingestEntity.Data == nil {
-		return nil, fmt.Errorf("ingest entity data is nil")
+	if ingestEntity.Entity == nil {
+		return nil, fmt.Errorf("ingest entity is nil")
 	}
 
 	dw, err := netbox.NewDataWrapper(ingestEntity.DataType)
@@ -252,12 +252,12 @@ func extractIngestEntityData(ingestEntity IngestEntity) (netbox.ComparableData, 
 		return nil, err
 	}
 
-	if err := mapstructure.Decode(ingestEntity.Data, &dw); err != nil {
-		return nil, fmt.Errorf("failed to decode ingest entity data %w", err)
+	if err := mapstructure.Decode(ingestEntity.Entity, &dw); err != nil {
+		return nil, fmt.Errorf("failed to decode ingest entity %w", err)
 	}
 
 	if !dw.IsValid() {
-		return nil, fmt.Errorf("invalid ingest entity data")
+		return nil, fmt.Errorf("invalid ingest entity")
 	}
 
 	return dw, nil
@@ -265,7 +265,7 @@ func extractIngestEntityData(ingestEntity IngestEntity) (netbox.ComparableData, 
 
 func extractNetBoxObjectStateData(obj ObjectState) (netbox.ComparableData, error) {
 	if obj.Object == nil {
-		return nil, fmt.Errorf("object state data is nil")
+		return nil, fmt.Errorf("object state is nil")
 	}
 
 	dw, err := netbox.NewDataWrapper(obj.ObjectType)
@@ -274,11 +274,11 @@ func extractNetBoxObjectStateData(obj ObjectState) (netbox.ComparableData, error
 	}
 
 	if err := mapstructure.Decode(obj.Object, &dw); err != nil {
-		return nil, fmt.Errorf("failed to decode object state data %w", err)
+		return nil, fmt.Errorf("failed to decode object state %w", err)
 	}
 
 	if !dw.IsValid() {
-		return nil, fmt.Errorf("invalid object state data")
+		return nil, fmt.Errorf("invalid object state")
 	}
 
 	return dw, nil
