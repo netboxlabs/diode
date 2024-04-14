@@ -9,7 +9,7 @@ from typing import Iterable, Optional
 
 import grpc
 
-from netboxlabs.diode.sdk.diode.v1 import distributor_pb2, distributor_pb2_grpc
+from netboxlabs.diode.sdk.diode.v1 import ingester_pb2, ingester_pb2_grpc
 from netboxlabs.diode.sdk.exceptions import DiodeClientError, DiodeConfigError
 
 _DIODE_API_KEY_ENVVAR_NAME = "DIODE_API_KEY"
@@ -53,7 +53,7 @@ class DiodeClient:
         self._auth_metadata = (("diode-api-key", api_key),)
         # TODO: add support for secure channel (TLS verify flag and cert)
         self._channel = grpc.insecure_channel(target)
-        self._stub = distributor_pb2_grpc.DistributorServiceStub(self._channel)
+        self._stub = ingester_pb2_grpc.IngesterServiceStub(self._channel)
         # TODO: obtain meta data about the environment; Python version, CPU arch, OS
 
     @property
@@ -100,21 +100,21 @@ class DiodeClient:
 
     def ingest(
         self,
-        entities: Iterable[distributor_pb2.IngestEntity],
+        entities: Iterable[ingester_pb2.Entity],
         stream: Optional[str] = _DEFAULT_STREAM,
-    ) -> distributor_pb2.PushResponse:
+    ) -> ingester_pb2.IngestResponse:
         """Push a message."""
         try:
-            request = distributor_pb2.PushRequest(
+            request = ingester_pb2.IngestRequest(
                 stream=stream,
                 id=str(uuid.uuid4()),
-                data=entities,
+                entities=entities,
                 sdk_name=self.name,
                 sdk_version=self.version,
                 producer_app_name=self.app_name,
                 producer_app_version=self.app_version,
             )
 
-            return self._stub.Push(request, metadata=self._auth_metadata)
+            return self._stub.Ingest(request, metadata=self._auth_metadata)
         except grpc.RpcError as err:
             raise DiodeClientError(err) from err

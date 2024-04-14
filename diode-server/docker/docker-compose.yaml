@@ -1,19 +1,14 @@
 version: '3.8'
 name: diode
 services:
-  diode-distributor:
-    image: netboxlabs/diode-distributor:${DIODE_VERSION}-${COMMIT_SHA}
-    env_file: diode/env/distributor.env
+  diode-ingester:
+    image: netboxlabs/diode-ingester:${DIODE_VERSION}-${COMMIT_SHA}
+    env_file: diode/env/ingester.env
     ports:
       - "8081:8081"
     depends_on:
       - diode-redis
       - diode-reconciler
-  diode-ingester:
-    image: netboxlabs/diode-ingester:${DIODE_VERSION}-${COMMIT_SHA}
-    env_file: diode/env/ingester.env
-    depends_on:
-      - diode-redis
   diode-reconciler:
     image: netboxlabs/diode-reconciler:${DIODE_VERSION}-${COMMIT_SHA}
     env_file: diode/env/reconciler.env

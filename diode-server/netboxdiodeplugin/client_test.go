@@ -96,7 +96,7 @@ func TestNewClient(t *testing.T) {
 				_ = os.Setenv(netboxdiodeplugin.TimeoutSecondsEnvVarName, tt.timeout)
 			}
 
-			client, err := netboxdiodeplugin.NewClient(tt.apiKey, logger)
+			client, err := netboxdiodeplugin.NewClient(logger, tt.apiKey)
 			if tt.shouldError {
 				require.Error(t, err)
 				return
@@ -208,7 +208,7 @@ func TestRetrieveObjectState(t *testing.T) {
 
 			_ = os.Setenv(netboxdiodeplugin.BaseURLEnvVarName, fmt.Sprintf("%s/api/diode", ts.URL))
 
-			client, err := netboxdiodeplugin.NewClient(tt.apiKey, logger)
+			client, err := netboxdiodeplugin.NewClient(logger, tt.apiKey)
 			require.NoError(t, err)
 			resp, err := client.RetrieveObjectState(context.Background(), tt.objectType, tt.objectID, tt.query)
 			if tt.shouldError {
@@ -311,7 +311,7 @@ func TestApplyChangeSet(t *testing.T) {
 
 			_ = os.Setenv(netboxdiodeplugin.BaseURLEnvVarName, fmt.Sprintf("%s/api/diode", ts.URL))
 
-			client, err := netboxdiodeplugin.NewClient(tt.apiKey, logger)
+			client, err := netboxdiodeplugin.NewClient(logger, tt.apiKey)
 			require.NoError(t, err)
 			resp, err := client.ApplyChangeSet(context.Background(), tt.changeSetRequest)
 			if tt.shouldError {

@@ -15,8 +15,8 @@ import "validate/validate.proto";
 option go_package = "github.com/netboxlabs/diode/diode-sdk-go/diode/v1/diodepb";
 
 // An ingest entity wrapper
-message IngestEntity {
-  oneof data {
+message Entity {
+  oneof entity {
     Site site = 1;
     Platform platform = 2;
     Manufacturer manufacturer = 3;
@@ -33,13 +33,13 @@ message IngestEntity {
   ];
 }
 
-// The request to push data
-message PushRequest {
+// The request to ingest the data
+message IngestRequest {
   string stream = 1 [(validate.rules).string = {
     min_len: 1,
     max_len: 255
   }];
-  repeated IngestEntity data = 2 [(validate.rules).repeated = {
+  repeated Entity entities = 2 [(validate.rules).repeated = {
     min_items: 1,
     max_items: 1000
   }];
@@ -60,13 +60,13 @@ message PushRequest {
   string sdk_version = 7 [(validate.rules).string = {pattern: "^(\\d)+\\.(\\d)+\\.(\\d)+$"}];
 }
 
-// The response from the push request
-message PushResponse {
+// The response from the ingest request
+message IngestResponse {
   repeated string errors = 1;
 }
 
-// Distributor API
-service DistributorService {
+// Ingestion API
+service IngesterService {
   // Ingests data into the system
-  rpc Push(PushRequest) returns (PushResponse) {}
+  rpc Ingest(IngestRequest) returns (IngestResponse) {}
 }

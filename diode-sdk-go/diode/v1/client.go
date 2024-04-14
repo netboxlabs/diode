@@ -46,17 +46,17 @@ type Client interface {
 	// Close closes the connection to the API service
 	Close() error
 
-	// Push sends a push request to the distributor service
-	Push(context.Context, *diodepb.PushRequest, ...grpc.CallOption) (*diodepb.PushResponse, error)
+	// Ingest sends an ingest request to the ingester service
+	Ingest(context.Context, *diodepb.IngestRequest, ...grpc.CallOption) (*diodepb.IngestResponse, error)
 }
 
-// GRPCClient is a gRPC implementation of the distributor service
+// GRPCClient is a gRPC implementation of the ingester service
 type GRPCClient struct {
 	// gRPC virtual connection
 	conn *grpc.ClientConn
 
 	// The gRPC API client
-	client diodepb.DistributorServiceClient
+	client diodepb.IngesterServiceClient
 
 	// An API key for the Diode API
 	apiKey *string
@@ -70,9 +70,9 @@ func (g *GRPCClient) Close() error {
 	return nil
 }
 
-// Push sends a push request to the distributor service
-func (g *GRPCClient) Push(ctx context.Context, req *diodepb.PushRequest, opt ...grpc.CallOption) (*diodepb.PushResponse, error) {
-	return g.client.Push(ctx, req, opt...)
+// Ingest sends an ingest request to the ingester service
+func (g *GRPCClient) Ingest(ctx context.Context, req *diodepb.IngestRequest, opt ...grpc.CallOption) (*diodepb.IngestResponse, error) {
+	return g.client.Ingest(ctx, req, opt...)
 }
 
 func authUnaryInterceptor(apiKey string) grpc.DialOption {
@@ -84,7 +84,7 @@ func authUnaryInterceptor(apiKey string) grpc.DialOption {
 	})
 }
 
-// NewClient creates a new distributor client based on gRPC
+// NewClient creates a new ingester client based on gRPC
 func NewClient() (Client, error) {
 	apiKey, ok := os.LookupEnv(DiodeAPIKeyEnvVarName)
 	if !ok {
@@ -111,7 +111,7 @@ func NewClient() (Client, error) {
 
 	c := &GRPCClient{
 		conn:   conn,
-		client: diodepb.NewDistributorServiceClient(conn),
+		client: diodepb.NewIngesterServiceClient(conn),
 		apiKey: &apiKey,
 	}
 
