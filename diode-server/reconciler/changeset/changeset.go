@@ -105,7 +105,6 @@ func Prepare(entity IngestEntity, netboxAPI netboxdiodeplugin.NetBoxAPI) (*Chang
 	changesList := make([]Change, 0)
 
 	for _, obj := range objectsToReconcile {
-
 		operation := ChangeTypeCreate
 		var objectID *int
 
