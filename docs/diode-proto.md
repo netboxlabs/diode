@@ -4,6 +4,9 @@
 
 ## Table of Contents
 
+- [diode/v1/tag.proto](#diode_v1_tag-proto)
+    - [Tag](#diode-v1-Tag)
+
 - [diode/v1/manufacturer.proto](#diode_v1_manufacturer-proto)
     - [Manufacturer](#diode-v1-Manufacturer)
 
@@ -34,6 +37,23 @@
 
 - [Scalar Value Types](#scalar-value-types)
 
+<a name="diode_v1_tag-proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## diode/v1/tag.proto
+
+<a name="diode-v1-Tag"></a>
+
+### Tag
+
+A tag
+
+| Field | Type              | Label | Description |
+|-------|-------------------|-------|-------------|
+| name  | [string](#string) |       |             |
+| slug  | [string](#string) |       |             |
+| color | [string](#string) |       |             |
+
 <a name="diode_v1_manufacturer-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -45,10 +65,12 @@
 
 A manufacturer
 
-| Field | Type              | Label | Description |
-|-------|-------------------|-------|-------------|
-| name  | [string](#string) |       |             |
-| slug  | [string](#string) |       |             |
+| Field       | Type                 | Label    | Description |
+|-------------|----------------------|----------|-------------|
+| name        | [string](#string)    |          |             |
+| slug        | [string](#string)    |          |             |
+| description | [string](#string)    |          |             |
+| tags        | [Tag](#diode-v1-Tag) | repeated |             |
 
 <a name="diode_v1_device_type-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
@@ -61,11 +83,15 @@ A manufacturer
 
 A device type
 
-| Field        | Type                                   | Label | Description |
-|--------------|----------------------------------------|-------|-------------|
-| manufacturer | [Manufacturer](#diode-v1-Manufacturer) |       |             |
-| model        | [string](#string)                      |       |             |
-| slug         | [string](#string)                      |       |             |
+| Field        | Type                                   | Label    | Description |
+|--------------|----------------------------------------|----------|-------------|
+| model        | [string](#string)                      |          |             |
+| slug         | [string](#string)                      |          |             |
+| manufacturer | [Manufacturer](#diode-v1-Manufacturer) |          |             |
+| description  | [string](#string)                      |          |             |
+| comments     | [string](#string)                      |          |             |
+| part_number  | [string](#string)                      |          |             |
+| tags         | [Tag](#diode-v1-Tag)                   | repeated |             |
 
 <a name="diode_v1_platform-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
@@ -78,10 +104,13 @@ A device type
 
 A platform
 
-| Field | Type              | Label | Description |
-|-------|-------------------|-------|-------------|
-| id    | [uint64](#uint64) |       |             |
-| name  | [string](#string) |       |             |
+| Field        | Type                                   | Label    | Description |
+|--------------|----------------------------------------|----------|-------------|
+| name         | [string](#string)                      |          |             |
+| slug         | [string](#string)                      |          |             |
+| manufacturer | [Manufacturer](#diode-v1-Manufacturer) |          |             |
+| description  | [string](#string)                      |          |             |
+| tags         | [Tag](#diode-v1-Tag)                   | repeated |             |
 
 <a name="diode_v1_role-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
@@ -94,11 +123,13 @@ A platform
 
 A role
 
-| Field   | Type              | Label | Description |
-|---------|-------------------|-------|-------------|
-| name    | [string](#string) |       |             |
-| slug    | [string](#string) |       |             |
-| vm_role | [bool](#bool)     |       |             |
+| Field       | Type                 | Label    | Description |
+|-------------|----------------------|----------|-------------|
+| name        | [string](#string)    |          |             |
+| slug        | [string](#string)    |          |             |
+| color       | [string](#string)    |          |             |
+| description | [string](#string)    |          |             |
+| tags        | [Tag](#diode-v1-Tag) | repeated |             |
 
 <a name="diode_v1_site-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
@@ -111,10 +142,16 @@ A role
 
 A site
 
-| Field | Type              | Label | Description |
-|-------|-------------------|-------|-------------|
-| name  | [string](#string) |       |             |
-| slug  | [string](#string) |       |             |
+| Field       | Type                 | Label    | Description |
+|-------------|----------------------|----------|-------------|
+| name        | [string](#string)    |          |             |
+| slug        | [string](#string)    |          |             |
+| status      | [string](#string)    |          |             |
+| facility    | [string](#string)    |          |             |
+| time_zone   | [string](#string)    |          |             |
+| description | [string](#string)    |          |             |
+| comments    | [string](#string)    |          |             |
+| tags        | [Tag](#diode-v1-Tag) | repeated |             |
 
 <a name="diode_v1_device-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
@@ -127,16 +164,20 @@ A site
 
 A device
 
-| Field       | Type                               | Label | Description |
-|-------------|------------------------------------|-------|-------------|
-| name        | [string](#string)                  |       |             |
-| device_fqdn | [string](#string)                  |       |             |
-| device_type | [DeviceType](#diode-v1-DeviceType) |       |             |
-| role        | [Role](#diode-v1-Role)             |       |             |
-| platform    | [Platform](#diode-v1-Platform)     |       |             |
-| serial      | [string](#string)                  |       |             |
-| site        | [Site](#diode-v1-Site)             |       |             |
-| vc_position | [int32](#int32)                    |       |             |
+| Field       | Type                               | Label    | Description                                |
+|-------------|------------------------------------|----------|--------------------------------------------|
+| name        | [string](#string)                  |          |                                            |
+| device_fqdn | [string](#string)                  |          |                                            |
+| device_type | [DeviceType](#diode-v1-DeviceType) |          |                                            |
+| role        | [Role](#diode-v1-Role)             |          |                                            |
+| platform    | [Platform](#diode-v1-Platform)     |          |                                            |
+| serial      | [string](#string)                  |          |                                            |
+| site        | [Site](#diode-v1-Site)             |          |                                            |
+| asset_tag   | [string](#string)                  |          |                                            |
+| status      | [string](#string)                  |          |                                            |
+| description | [string](#string)                  |          |                                            |
+| comments    | [string](#string)                  |          |                                            |
+| tags        | [Tag](#diode-v1-Tag)               | repeated | TODO: primary_ip, primary_ip4, primary_ip6 |
 
 <a name="diode_v1_interface-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
