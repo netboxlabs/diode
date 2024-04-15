@@ -1,9 +1,0 @@
-version: '3.8'
-services:
-  netbox:
-    environment:
-      SKIP_SUPERUSER: "false"
-      SUPERUSER_API_TOKEN: ""
-      SUPERUSER_EMAIL: ""
-      SUPERUSER_NAME: "admin"
-      SUPERUSER_PASSWORD: "admin"
