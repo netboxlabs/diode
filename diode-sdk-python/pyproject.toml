@@ -25,7 +25,9 @@ classifiers = [  # Optional
     'Programming Language :: Python :: 3.11',
 ]
 
-dependencies = [ # Optional
+dependencies = [
+    "grpcio==1.62.1",
+    "grpcio-status==1.62.1",
 ]
 
 [project.optional-dependencies] # Optional
@@ -38,7 +40,12 @@ test = ["coverage", "pytest", "pytest-cov"]
 [project.scripts]  # Optional
 
 [tool.setuptools]
-packages = ["netboxlabs.diode.sdk"]
+packages = [
+    "netboxlabs.diode.sdk",
+    "netboxlabs.diode.sdk.diode",
+    "netboxlabs.diode.sdk.diode.v1",
+    "netboxlabs.diode.sdk.validate",
+]
 
 [build-system]
 requires = ["setuptools>=43.0.0", "wheel"]
@@ -47,6 +54,10 @@ build-backend = "setuptools.build_meta"
 
 [tool.ruff]
 line-length = 140
+exclude = [
+    "netboxlabs/diode/sdk/diode/*",
+    "netboxlabs/diode/sdk/validate/*",
+]
 
 [tool.ruff.format]
 quote-style = "double"

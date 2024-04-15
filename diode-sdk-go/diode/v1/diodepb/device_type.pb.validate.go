@@ -57,19 +57,33 @@ func (m *DeviceType) validate(all bool) error {
 
 	var errors []error
 
-	if m.GetManufacturer() == nil {
-		err := DeviceTypeValidationError{
-			field:  "Manufacturer",
-			reason: "value is required",
+	if all {
+		switch v := interface{}(m.GetManufacturer()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, DeviceTypeValidationError{
+					field:  "Manufacturer",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, DeviceTypeValidationError{
+					field:  "Manufacturer",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
 		}
-		if !all {
-			return err
+	} else if v, ok := interface{}(m.GetManufacturer()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return DeviceTypeValidationError{
+				field:  "Manufacturer",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
 		}
-		errors = append(errors, err)
-	}
-
-	if a := m.GetManufacturer(); a != nil {
-
 	}
 
 	if l := utf8.RuneCountInString(m.GetModel()); l < 1 || l > 100 {

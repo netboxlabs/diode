@@ -1,6 +1,7 @@
 package changeset_test
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 
@@ -8,139 +9,2136 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/netboxlabs/diode/diode-server/netbox"
+	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
+	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin/mocks"
 	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
 )
 
-func TestPrepareChange(t *testing.T) {
+func TestPrepare(t *testing.T) {
+	type mockRetrieveObjectState struct {
+		objectType     string
+		objectID       int
+		query          string
+		objectChangeID int
+		object         netbox.ComparableData
+	}
 	tests := []struct {
-		name            string
-		rawIngestEntity []byte
-		rawObjectState  []byte
-		wantChange      changeset.Change
-		wantErr         bool
+		name                 string
+		rawIngestEntity      []byte
+		retrieveObjectStates []mockRetrieveObjectState
+		wantChangeSet        changeset.ChangeSet
+		wantErr              bool
 	}{
 		{
-			name: "Create dcim.site",
+			name: "[P1] ingest dcim.site with name only - existing object not found - create",
 			rawIngestEntity: []byte(`{
 				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				"data_type": "dcim.site",
-				"data": {
+				"entity": {
 					"Site": {
-						"name": "test",	
-						"slug": "test"
+						"name": "Site A"
 					}
 				},
 				"state": 0
 			}`),
-			rawObjectState: nil,
-			wantChange: changeset.Change{
-				ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
-				ChangeType:    "create",
-				ObjectType:    "dcim.site",
-				ObjectID:      nil,
-				ObjectVersion: nil,
-				Data: &netbox.DcimSite{
-					Name: "test",
-					Slug: "test",
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "dcim.site",
+					objectID:       0,
+					query:          "Site A",
+					objectChangeID: 0,
+					object: &netbox.DcimSiteDataWrapper{
+						Site: nil,
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet: []changeset.Change{
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.site",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimSite{
+							Name:   "Site A",
+							Slug:   "site-a",
+							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						},
+					},
 				},
 			},
 			wantErr: false,
 		},
 		{
-			name: "Update dcim.site",
+			name: "[P1] ingest dcim.site with name only - existing object found - do nothing",
 			rawIngestEntity: []byte(`{
 				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				"data_type": "dcim.site",
-				"data": {
+				"entity": {
 					"Site": {
-						"name": "test 2",	
-						"slug": "test"
+						"name": "Site A"
 					}
 				},
 				"state": 0
 			}`),
-			rawObjectState: []byte(`{
-			  "object": {
-				"Site": {
-				  "id": 1,
-				  "name": "test",
-				  "slug": "test",
-				  "url": "http://localhost:8000/api/dcim/sites/1/"
-				}
-			  },
-			  "object_change_id": 1,
-			  "object_id": 1,
-			  "object_type": "dcim.site"
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "dcim.site",
+					objectID:       0,
+					query:          "Site A",
+					objectChangeID: 0,
+					object: &netbox.DcimSiteDataWrapper{
+						Site: &netbox.DcimSite{
+							ID:     1,
+							Name:   "Site A",
+							Slug:   "site-a",
+							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						},
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet:   []changeset.Change{},
+			},
+			wantErr: false,
+		},
+		{
+			name: "[P2] ingest dcim.devicerole with name only - existing object not found - create",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "dcim.devicerole",
+				"entity": {
+					"DeviceRole": {
+						"name": "WAN Router"
+					}
+				},
+				"state": 0
 			}`),
-			wantChange: changeset.Change{
-				ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
-				ChangeType:    "update",
-				ObjectType:    "dcim.site",
-				ObjectID:      ptrInt(1),
-				ObjectVersion: ptrInt(1),
-				Data: &netbox.DcimSite{
-					Name: "test 2",
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "dcim.devicerole",
+					objectID:       0,
+					query:          "WAN Router",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceRoleDataWrapper{
+						DeviceRole: nil,
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet: []changeset.Change{
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.devicerole",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimDeviceRole{
+							Name:  "WAN Router",
+							Slug:  "wan-router",
+							Color: strPtr("000000"),
+						},
+					},
 				},
 			},
 			wantErr: false,
 		},
 		{
-			name: "Invalid ingest entity",
+			name: "[P2] ingest dcim.devicerole with name only - existing object found - do nothing",
 			rawIngestEntity: []byte(`{
 				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.site",
-				"data": {
-					"Site1": {
-						"name": "test 2",	
-						"slug": "test"
+				"data_type": "dcim.devicerole",
+				"entity": {
+					"DeviceRole": {
+						"name": "WAN Router"
 					}
 				},
 				"state": 0
 			}`),
-			rawObjectState: []byte(`{
-			  "object": {
-				"Site": {
-				  "id": 1,
-				  "name": "test",
-				  "slug": "test",
-				  "url": "http://localhost:8000/api/dcim/sites/1/"
-				}
-			  },
-			  "object_change_id": 1,
-			  "object_id": 1,
-			  "object_type": "dcim.site"
-			}`),
-			wantChange: changeset.Change{},
-			wantErr:    true,
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "dcim.devicerole",
+					objectID:       0,
+					query:          "WAN Router",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceRoleDataWrapper{
+						DeviceRole: &netbox.DcimDeviceRole{
+							ID:    1,
+							Name:  "WAN Router",
+							Slug:  "wan-router",
+							Color: strPtr("000000"),
+						},
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet:   []changeset.Change{},
+			},
+			wantErr: false,
 		},
 		{
-			name: "Invalid object state",
+			name: "[P2] ingest dcim.devicerole with name and new description - existing object found - update",
 			rawIngestEntity: []byte(`{
 				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.site",
-				"data": {
-					"Site": {
-						"name": "test 2",	
-						"slug": "test"
+				"data_type": "dcim.devicerole",
+				"entity": {
+					"DeviceRole": {
+						"name": "WAN Router",
+						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
 					}
 				},
 				"state": 0
 			}`),
-			rawObjectState: []byte(`{
-			  "object": {
-				"Site1": {
-				  "id": 1,
-				  "name": "test",
-				  "slug": "test",
-				  "url": "http://localhost:8000/api/dcim/sites/1/"
-				}
-			  },
-			  "object_change_id": 1,
-			  "object_id": 1,
-			  "object_type": "dcim.site"
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "dcim.devicerole",
+					objectID:       0,
+					query:          "WAN Router",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceRoleDataWrapper{
+						DeviceRole: &netbox.DcimDeviceRole{
+							ID:          1,
+							Name:        "WAN Router",
+							Slug:        "wan-router",
+							Color:       strPtr("111222"),
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean sed molestie felis."),
+						},
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet: []changeset.Change{
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeUpdate,
+						ObjectType:    "dcim.devicerole",
+						ObjectID:      intPtr(1),
+						ObjectVersion: nil,
+						Data: &netbox.DcimDeviceRole{
+							ID:          1,
+							Name:        "WAN Router",
+							Slug:        "wan-router",
+							Color:       strPtr("111222"),
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "[P3] ingest dcim.manufacturer with name only - existing object not found - create",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "dcim.manufacturer",
+				"entity": {
+					"Manufacturer": {
+						"name": "Cisco"
+					}
+				},
+				"state": 0
 			}`),
-			wantChange: changeset.Change{},
-			wantErr:    true,
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "dcim.manufacturer",
+					objectID:       0,
+					query:          "Cisco",
+					objectChangeID: 0,
+					object: &netbox.DcimManufacturerDataWrapper{
+						Manufacturer: nil,
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet: []changeset.Change{
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.manufacturer",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimManufacturer{
+							Name: "Cisco",
+							Slug: "cisco",
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "[P3] ingest dcim.manufacturer with name only - existing object found - do nothing",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "dcim.manufacturer",
+				"entity": {
+					"Manufacturer": {
+						"name": "Cisco"
+					}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "dcim.manufacturer",
+					objectID:       0,
+					query:          "Cisco",
+					objectChangeID: 0,
+					object: &netbox.DcimManufacturerDataWrapper{
+						Manufacturer: &netbox.DcimManufacturer{
+							ID:   1,
+							Name: "Cisco",
+							Slug: "cisco",
+						},
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet:   []changeset.Change{},
+			},
+			wantErr: false,
+		},
+		{
+			name: "[P4] ingest dcim.devicetype with model only - existing object not found - create",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "dcim.devicetype",
+				"entity": {
+					"DeviceType": {
+						"model": "ISR4321"
+					}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "dcim.manufacturer",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimManufacturerDataWrapper{
+						Manufacturer: nil,
+					},
+				},
+				{
+					objectType:     "dcim.devicetype",
+					objectID:       0,
+					query:          "ISR4321",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceTypeDataWrapper{
+						DeviceType: nil,
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet: []changeset.Change{
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.manufacturer",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimManufacturer{
+							Name: "undefined",
+							Slug: "undefined",
+						},
+					},
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.devicetype",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimDeviceType{
+							Model: "ISR4321",
+							Slug:  "isr4321",
+							Manufacturer: &netbox.DcimManufacturer{
+								Name: "undefined",
+								Slug: "undefined",
+							},
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "[P4] ingest dcim.devicetype with model only - existing object found - do nothing",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "dcim.devicetype",
+				"entity": {
+					"DeviceType": {
+						"model": "ISR4321"
+					}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "dcim.manufacturer",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimManufacturerDataWrapper{
+						Manufacturer: &netbox.DcimManufacturer{
+							ID:   1,
+							Name: "undefined",
+							Slug: "undefined",
+						},
+					},
+				},
+				{
+					objectType:     "dcim.devicetype",
+					objectID:       0,
+					query:          "ISR4321",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceTypeDataWrapper{
+						DeviceType: &netbox.DcimDeviceType{
+							ID:    1,
+							Model: "ISR4321",
+							Slug:  "isr4321",
+							Manufacturer: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+							},
+						},
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet:   []changeset.Change{},
+			},
+			wantErr: false,
+		},
+		{
+			name: "[P5] ingest dcim.devicetype with manufacturer - existing object not found - create manufacturer and devicetype",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "dcim.devicetype",
+				"entity": {
+					"DeviceType": {
+						"model": "ISR4321",
+						"manufacturer": {
+							"name": "Cisco"
+						},
+						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+						"part_number": "xyz123"
+					}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "dcim.manufacturer",
+					objectID:       0,
+					query:          "Cisco",
+					objectChangeID: 0,
+					object: &netbox.DcimManufacturerDataWrapper{
+						Manufacturer: nil,
+					},
+				},
+				{
+					objectType:     "dcim.devicetype",
+					objectID:       0,
+					query:          "ISR4321",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceTypeDataWrapper{
+						DeviceType: nil,
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet: []changeset.Change{
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.manufacturer",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimManufacturer{
+							Name: "Cisco",
+							Slug: "cisco",
+						},
+					},
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.devicetype",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimDeviceType{
+							Model: "ISR4321",
+							Slug:  "isr4321",
+							Manufacturer: &netbox.DcimManufacturer{
+								Name: "Cisco",
+								Slug: "cisco",
+							},
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+							PartNumber:  strPtr("xyz123"),
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "[P5] ingest dcim.devicetype with new manufacturer - existing object found - create manufacturer and update devicetype",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "dcim.devicetype",
+				"entity": {
+					"DeviceType": {
+						"model": "ISR4321",
+						"manufacturer": {
+							"name": "Cisco"
+						},
+						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+						"part_number": "xyz123"
+					}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "dcim.manufacturer",
+					objectID:       0,
+					query:          "Cisco",
+					objectChangeID: 0,
+					object: &netbox.DcimManufacturerDataWrapper{
+						Manufacturer: nil,
+					},
+				},
+				{
+					objectType:     "dcim.devicetype",
+					objectID:       0,
+					query:          "ISR4321",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceTypeDataWrapper{
+						DeviceType: &netbox.DcimDeviceType{
+							ID:    1,
+							Model: "ISR4321",
+							Slug:  "isr4321",
+							Manufacturer: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+							},
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+							PartNumber:  strPtr("xyz123"),
+						},
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet: []changeset.Change{
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.manufacturer",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimManufacturer{
+							Name: "Cisco",
+							Slug: "cisco",
+						},
+					},
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeUpdate,
+						ObjectType:    "dcim.devicetype",
+						ObjectID:      intPtr(1),
+						ObjectVersion: nil,
+						Data: &netbox.DcimDeviceType{
+							ID:    1,
+							Model: "ISR4321",
+							Slug:  "isr4321",
+							Manufacturer: &netbox.DcimManufacturer{
+								Name: "Cisco",
+								Slug: "cisco",
+							},
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+							PartNumber:  strPtr("xyz123"),
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "[P6] ingest dcim.device with name only - existing object not found - create device and all related objects (using placeholders)",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "dcim.device",
+				"entity": {
+					"Device": {
+						"name": "router01"
+					}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "dcim.site",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimSiteDataWrapper{
+						Site: nil,
+					},
+				},
+				{
+					objectType:     "dcim.manufacturer",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimManufacturerDataWrapper{
+						Manufacturer: nil,
+					},
+				},
+				{
+					objectType:     "dcim.devicetype",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceTypeDataWrapper{
+						DeviceType: nil,
+					},
+				},
+				{
+					objectType:     "dcim.devicerole",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceRoleDataWrapper{
+						DeviceRole: nil,
+					},
+				},
+				{
+					objectType:     "dcim.platform",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimPlatformDataWrapper{
+						Platform: nil,
+					},
+				},
+				{
+					objectType:     "dcim.device",
+					objectID:       0,
+					query:          "router01",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceDataWrapper{
+						Device: nil,
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet: []changeset.Change{
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.site",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimSite{
+							Name:   "undefined",
+							Slug:   "undefined",
+							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						},
+					},
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.manufacturer",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimManufacturer{
+							Name: "undefined",
+							Slug: "undefined",
+						},
+					},
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.devicetype",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimDeviceType{
+							Model: "undefined",
+							Slug:  "undefined",
+							Manufacturer: &netbox.DcimManufacturer{
+								Name: "undefined",
+								Slug: "undefined",
+							},
+						},
+					},
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.devicerole",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimDeviceRole{
+							Name:  "undefined",
+							Slug:  "undefined",
+							Color: strPtr("000000"),
+						},
+					},
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.platform",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimPlatform{
+							Name: "undefined",
+							Slug: "undefined",
+						},
+					},
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.device",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimDevice{
+							Name: "router01",
+							Site: &netbox.DcimSite{
+								Name:   "undefined",
+								Slug:   "undefined",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
+							DeviceType: &netbox.DcimDeviceType{
+								Model: "undefined",
+								Slug:  "undefined",
+								Manufacturer: &netbox.DcimManufacturer{
+									Name: "undefined",
+									Slug: "undefined",
+								},
+							},
+							Role: &netbox.DcimDeviceRole{
+								Name:  "undefined",
+								Slug:  "undefined",
+								Color: strPtr("000000"),
+							},
+							Platform: &netbox.DcimPlatform{
+								Name: "undefined",
+								Slug: "undefined",
+							},
+							Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "[P6] ingest dcim.device with name only - existing object and its related objects found - do nothing",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "dcim.device",
+				"entity": {
+					"Device": {
+						"name": "router01"
+					}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "dcim.site",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimSiteDataWrapper{
+						Site: &netbox.DcimSite{
+							ID:     1,
+							Name:   "undefined",
+							Slug:   "undefined",
+							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						},
+					},
+				},
+				{
+					objectType:     "dcim.manufacturer",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimManufacturerDataWrapper{
+						Manufacturer: &netbox.DcimManufacturer{
+							ID:   1,
+							Name: "undefined",
+							Slug: "undefined",
+						},
+					},
+				},
+				{
+					objectType:     "dcim.devicetype",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceTypeDataWrapper{
+						DeviceType: &netbox.DcimDeviceType{
+							ID:    1,
+							Model: "undefined",
+							Slug:  "undefined",
+							Manufacturer: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+							},
+						},
+					},
+				},
+				{
+					objectType:     "dcim.devicerole",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceRoleDataWrapper{
+						DeviceRole: &netbox.DcimDeviceRole{
+							ID:    1,
+							Name:  "undefined",
+							Slug:  "undefined",
+							Color: strPtr("000000"),
+						},
+					},
+				},
+				{
+					objectType:     "dcim.platform",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimPlatformDataWrapper{
+						Platform: &netbox.DcimPlatform{
+							ID:   1,
+							Name: "undefined",
+							Slug: "undefined",
+						},
+					},
+				},
+				{
+					objectType:     "dcim.device",
+					objectID:       0,
+					query:          "router01",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceDataWrapper{
+						Device: &netbox.DcimDevice{
+							ID:   1,
+							Name: "router01",
+							Site: &netbox.DcimSite{
+								ID:     1,
+								Name:   "undefined",
+								Slug:   "undefined",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
+							DeviceType: &netbox.DcimDeviceType{
+								ID:    1,
+								Model: "undefined",
+								Slug:  "undefined",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
+							},
+							Role: &netbox.DcimDeviceRole{
+								ID:    1,
+								Name:  "undefined",
+								Slug:  "undefined",
+								Color: strPtr("000000"),
+							},
+							Platform: &netbox.DcimPlatform{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+							},
+							Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+						},
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet:   []changeset.Change{},
+			},
+			wantErr: false,
+		},
+		{
+			name: "[P7] ingest dcim.device - existing object not found - create device and all related objects",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "dcim.device",
+				"entity": {
+					"Device": {
+						"name": "router01",
+						"device_type": {
+							"model": "ISR4321"
+						},
+						"role": {
+							"name": "WAN Router"
+						},
+						"site": {
+							"name": "Site A"
+						},
+						"status": "active",
+						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+						"serial": "123456"
+					}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "dcim.site",
+					objectID:       0,
+					query:          "Site A",
+					objectChangeID: 0,
+					object: &netbox.DcimSiteDataWrapper{
+						Site: nil,
+					},
+				},
+				{
+					objectType:     "dcim.manufacturer",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimManufacturerDataWrapper{
+						Manufacturer: nil,
+					},
+				},
+				{
+					objectType:     "dcim.devicetype",
+					objectID:       0,
+					query:          "ISR4321",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceTypeDataWrapper{
+						DeviceType: nil,
+					},
+				},
+				{
+					objectType:     "dcim.devicerole",
+					objectID:       0,
+					query:          "WAN Router",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceRoleDataWrapper{
+						DeviceRole: nil,
+					},
+				},
+				{
+					objectType:     "dcim.platform",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimPlatformDataWrapper{
+						Platform: nil,
+					},
+				},
+				{
+					objectType:     "dcim.device",
+					objectID:       0,
+					query:          "router01",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceDataWrapper{
+						Device: nil,
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet: []changeset.Change{
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.site",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimSite{
+							Name:   "Site A",
+							Slug:   "site-a",
+							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						},
+					},
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.manufacturer",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimManufacturer{
+							Name: "undefined",
+							Slug: "undefined",
+						},
+					},
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.devicetype",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimDeviceType{
+							Model: "ISR4321",
+							Slug:  "isr4321",
+							Manufacturer: &netbox.DcimManufacturer{
+								Name: "undefined",
+								Slug: "undefined",
+							},
+						},
+					},
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.devicerole",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimDeviceRole{
+							Name:  "WAN Router",
+							Slug:  "wan-router",
+							Color: strPtr("000000"),
+						},
+					},
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.platform",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimPlatform{
+							Name: "undefined",
+							Slug: "undefined",
+						},
+					},
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.device",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimDevice{
+							Name: "router01",
+							Site: &netbox.DcimSite{
+								Name:   "Site A",
+								Slug:   "site-a",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
+							DeviceType: &netbox.DcimDeviceType{
+								Model: "ISR4321",
+								Slug:  "isr4321",
+								Manufacturer: &netbox.DcimManufacturer{
+									Name: "undefined",
+									Slug: "undefined",
+								},
+							},
+							Role: &netbox.DcimDeviceRole{
+								Name:  "WAN Router",
+								Slug:  "wan-router",
+								Color: strPtr("000000"),
+							},
+							Platform: &netbox.DcimPlatform{
+								Name: "undefined",
+								Slug: "undefined",
+							},
+							Status:      (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+							Serial:      strPtr("123456"),
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "[P7] ingest dcim.device - existing object found - create missing related objects and update device",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "dcim.device",
+				"entity": {
+					"Device": {
+						"name": "router01",
+						"device_type": {
+							"model": "ISR4321"
+						},
+						"role": {
+							"name": "WAN Router"
+						},
+						"site": {
+							"name": "Site A"
+						},
+						"status": "active",
+						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+						"serial": "123456"
+					}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "dcim.site",
+					objectID:       0,
+					query:          "Site A",
+					objectChangeID: 0,
+					object: &netbox.DcimSiteDataWrapper{
+						Site: nil,
+					},
+				},
+				{
+					objectType:     "dcim.manufacturer",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimManufacturerDataWrapper{
+						Manufacturer: &netbox.DcimManufacturer{
+							ID:   1,
+							Name: "undefined",
+							Slug: "undefined",
+						},
+					},
+				},
+				{
+					objectType:     "dcim.devicetype",
+					objectID:       0,
+					query:          "ISR4321",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceTypeDataWrapper{
+						DeviceType: nil,
+					},
+				},
+				{
+					objectType:     "dcim.devicerole",
+					objectID:       0,
+					query:          "WAN Router",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceRoleDataWrapper{
+						DeviceRole: nil,
+					},
+				},
+				{
+					objectType:     "dcim.platform",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimPlatformDataWrapper{
+						Platform: &netbox.DcimPlatform{
+							ID:   1,
+							Name: "undefined",
+							Slug: "undefined",
+						},
+					},
+				},
+				{
+					objectType:     "dcim.device",
+					objectID:       0,
+					query:          "router01",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceDataWrapper{
+						Device: &netbox.DcimDevice{
+							ID:   1,
+							Name: "router01",
+							Site: &netbox.DcimSite{
+								ID:     1,
+								Name:   "Site B",
+								Slug:   "site-B",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
+							DeviceType: &netbox.DcimDeviceType{
+								ID:    1,
+								Model: "ISR4322",
+								Slug:  "isr4322",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
+							},
+							Role: &netbox.DcimDeviceRole{
+								ID:    1,
+								Name:  "undefined",
+								Slug:  "undefined",
+								Color: strPtr("000000"),
+							},
+							Platform: &netbox.DcimPlatform{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+							},
+							Status:      (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+							Serial:      strPtr("123456"),
+						},
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet: []changeset.Change{
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.site",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimSite{
+							Name:   "Site A",
+							Slug:   "site-a",
+							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						},
+					},
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.devicetype",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimDeviceType{
+							Model: "ISR4321",
+							Slug:  "isr4321",
+							Manufacturer: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+							},
+						},
+					},
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.devicerole",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimDeviceRole{
+							Name:  "WAN Router",
+							Slug:  "wan-router",
+							Color: strPtr("000000"),
+						},
+					},
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeUpdate,
+						ObjectType:    "dcim.device",
+						ObjectID:      intPtr(1),
+						ObjectVersion: nil,
+						Data: &netbox.DcimDevice{
+							ID:   1,
+							Name: "router01",
+							Site: &netbox.DcimSite{
+								Name:   "Site A",
+								Slug:   "site-a",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
+							DeviceType: &netbox.DcimDeviceType{
+								Model: "ISR4321",
+								Slug:  "isr4321",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
+							},
+							Role: &netbox.DcimDeviceRole{
+								Name:  "WAN Router",
+								Slug:  "wan-router",
+								Color: strPtr("000000"),
+							},
+							Platform: &netbox.DcimPlatform{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+							},
+							Status:      (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+							Serial:      strPtr("123456"),
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "[P8] ingest dcim.device - existing object not found - create device and all related objects",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "dcim.device",
+				"entity": {
+					"Device": {
+						"name": "router01",
+						"device_type": {
+							"model": "ISR4321"
+						},
+						"role": {
+							"name": "WAN Router"
+						},
+						"site": {
+							"name": "Site A"
+						},
+						"platform": {
+							"name": "Cisco IOS 15.6"
+						},
+						"status": "active",
+						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+						"serial": "123456"
+					}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "dcim.site",
+					objectID:       0,
+					query:          "Site A",
+					objectChangeID: 0,
+					object: &netbox.DcimSiteDataWrapper{
+						Site: nil,
+					},
+				},
+				{
+					objectType:     "dcim.manufacturer",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimManufacturerDataWrapper{
+						Manufacturer: nil,
+					},
+				},
+				{
+					objectType:     "dcim.devicetype",
+					objectID:       0,
+					query:          "ISR4321",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceTypeDataWrapper{
+						DeviceType: nil,
+					},
+				},
+				{
+					objectType:     "dcim.devicerole",
+					objectID:       0,
+					query:          "WAN Router",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceRoleDataWrapper{
+						DeviceRole: nil,
+					},
+				},
+				{
+					objectType:     "dcim.platform",
+					objectID:       0,
+					query:          "Cisco IOS 15.6",
+					objectChangeID: 0,
+					object: &netbox.DcimPlatformDataWrapper{
+						Platform: nil,
+					},
+				},
+				{
+					objectType:     "dcim.device",
+					objectID:       0,
+					query:          "router01",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceDataWrapper{
+						Device: nil,
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet: []changeset.Change{
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.site",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimSite{
+							Name:   "Site A",
+							Slug:   "site-a",
+							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						},
+					},
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.manufacturer",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimManufacturer{
+							Name: "undefined",
+							Slug: "undefined",
+						},
+					},
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.devicetype",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimDeviceType{
+							Model: "ISR4321",
+							Slug:  "isr4321",
+							Manufacturer: &netbox.DcimManufacturer{
+								Name: "undefined",
+								Slug: "undefined",
+							},
+						},
+					},
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.devicerole",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimDeviceRole{
+							Name:  "WAN Router",
+							Slug:  "wan-router",
+							Color: strPtr("000000"),
+						},
+					},
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.platform",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimPlatform{
+							Name: "Cisco IOS 15.6",
+							Slug: "cisco-ios-15-6",
+						},
+					},
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.device",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimDevice{
+							Name: "router01",
+							Site: &netbox.DcimSite{
+								Name:   "Site A",
+								Slug:   "site-a",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
+							DeviceType: &netbox.DcimDeviceType{
+								Model: "ISR4321",
+								Slug:  "isr4321",
+								Manufacturer: &netbox.DcimManufacturer{
+									Name: "undefined",
+									Slug: "undefined",
+								},
+							},
+							Role: &netbox.DcimDeviceRole{
+								Name:  "WAN Router",
+								Slug:  "wan-router",
+								Color: strPtr("000000"),
+							},
+							Platform: &netbox.DcimPlatform{
+								Name: "Cisco IOS 15.6",
+								Slug: "cisco-ios-15-6",
+							},
+							Status:      (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+							Serial:      strPtr("123456"),
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "[P8] ingest dcim.device - existing object found - create missing related objects and update device",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "dcim.device",
+				"entity": {
+					"Device": {
+						"name": "router01",
+						"device_type": {
+							"model": "ISR4321"
+						},
+						"role": {
+							"name": "WAN Router"
+						},
+						"site": {
+							"name": "Site A"
+						},
+						"platform": {
+							"name": "Cisco IOS 15.6"
+						},
+						"status": "active",
+						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+						"serial": "123456"
+					}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "dcim.site",
+					objectID:       0,
+					query:          "Site A",
+					objectChangeID: 0,
+					object: &netbox.DcimSiteDataWrapper{
+						Site: nil,
+					},
+				},
+				{
+					objectType:     "dcim.manufacturer",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimManufacturerDataWrapper{
+						Manufacturer: &netbox.DcimManufacturer{
+							ID:   1,
+							Name: "undefined",
+							Slug: "undefined",
+						},
+					},
+				},
+				{
+					objectType:     "dcim.devicetype",
+					objectID:       0,
+					query:          "ISR4321",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceTypeDataWrapper{
+						DeviceType: nil,
+					},
+				},
+				{
+					objectType:     "dcim.devicerole",
+					objectID:       0,
+					query:          "WAN Router",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceRoleDataWrapper{
+						DeviceRole: nil,
+					},
+				},
+				{
+					objectType:     "dcim.platform",
+					objectID:       0,
+					query:          "Cisco IOS 15.6",
+					objectChangeID: 0,
+					object: &netbox.DcimPlatformDataWrapper{
+						Platform: &netbox.DcimPlatform{
+							ID:   1,
+							Name: "Cisco IOS 15.6",
+							Slug: "cisco-ios-15-6",
+						},
+					},
+				},
+				{
+					objectType:     "dcim.device",
+					objectID:       0,
+					query:          "router01",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceDataWrapper{
+						Device: &netbox.DcimDevice{
+							ID:   1,
+							Name: "router01",
+							Site: &netbox.DcimSite{
+								ID:     1,
+								Name:   "Site B",
+								Slug:   "site-B",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
+							DeviceType: &netbox.DcimDeviceType{
+								ID:    1,
+								Model: "ISR4322",
+								Slug:  "isr4322",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
+							},
+							Role: &netbox.DcimDeviceRole{
+								ID:    1,
+								Name:  "undefined",
+								Slug:  "undefined",
+								Color: strPtr("000000"),
+							},
+							Platform: &netbox.DcimPlatform{
+								ID:   1,
+								Name: "Cisco IOS 15.6",
+								Slug: "cisco-ios-15-6",
+							},
+							Status:      (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+							Serial:      strPtr("123456"),
+						},
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet: []changeset.Change{
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.site",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimSite{
+							Name:   "Site A",
+							Slug:   "site-a",
+							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						},
+					},
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.devicetype",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimDeviceType{
+							Model: "ISR4321",
+							Slug:  "isr4321",
+							Manufacturer: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+							},
+						},
+					},
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.devicerole",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimDeviceRole{
+							Name:  "WAN Router",
+							Slug:  "wan-router",
+							Color: strPtr("000000"),
+						},
+					},
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeUpdate,
+						ObjectType:    "dcim.device",
+						ObjectID:      intPtr(1),
+						ObjectVersion: nil,
+						Data: &netbox.DcimDevice{
+							ID:   1,
+							Name: "router01",
+							Site: &netbox.DcimSite{
+								Name:   "Site A",
+								Slug:   "site-a",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
+							DeviceType: &netbox.DcimDeviceType{
+								Model: "ISR4321",
+								Slug:  "isr4321",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
+							},
+							Role: &netbox.DcimDeviceRole{
+								Name:  "WAN Router",
+								Slug:  "wan-router",
+								Color: strPtr("000000"),
+							},
+							Platform: &netbox.DcimPlatform{
+								ID:   1,
+								Name: "Cisco IOS 15.6",
+								Slug: "cisco-ios-15-6",
+							},
+							Status:      (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+							Serial:      strPtr("123456"),
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "[P8] ingest dcim.device - existing object found - create some missing related objects, use other existing one and update device",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "dcim.device",
+				"entity": {
+					"Device": {
+						"name": "router01",
+						"device_type": {
+							"model": "ISR4321"
+						},
+						"role": {
+							"name": "WAN Router"
+						},
+						"site": {
+							"name": "Site A"
+						},
+						"platform": {
+							"name": "Cisco IOS 15.6"
+						},
+						"status": "active",
+						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+						"serial": "123456-2"
+					}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "dcim.site",
+					objectID:       0,
+					query:          "Site A",
+					objectChangeID: 0,
+					object: &netbox.DcimSiteDataWrapper{
+						Site: &netbox.DcimSite{
+							ID:     1,
+							Name:   "Site A",
+							Slug:   "site-a",
+							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						},
+					},
+				},
+				{
+					objectType:     "dcim.manufacturer",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimManufacturerDataWrapper{
+						Manufacturer: &netbox.DcimManufacturer{
+							ID:   1,
+							Name: "undefined",
+							Slug: "undefined",
+						},
+					},
+				},
+				{
+					objectType:     "dcim.devicetype",
+					objectID:       0,
+					query:          "ISR4321",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceTypeDataWrapper{
+						DeviceType: &netbox.DcimDeviceType{
+							ID:    1,
+							Model: "ISR4321",
+							Slug:  "isr4321",
+							Manufacturer: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+							},
+						},
+					},
+				},
+				{
+					objectType:     "dcim.devicerole",
+					objectID:       0,
+					query:          "WAN Router",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceRoleDataWrapper{
+						DeviceRole: &netbox.DcimDeviceRole{
+							ID:    1,
+							Name:  "WAN Router",
+							Slug:  "wan-router",
+							Color: strPtr("111111"),
+						},
+					},
+				},
+				{
+					objectType:     "dcim.platform",
+					objectID:       0,
+					query:          "Cisco IOS 15.6",
+					objectChangeID: 0,
+					object: &netbox.DcimPlatformDataWrapper{
+						Platform: &netbox.DcimPlatform{
+							ID:   1,
+							Name: "Cisco IOS 15.6",
+							Slug: "cisco-ios-15-6",
+						},
+					},
+				},
+				{
+					objectType:     "dcim.device",
+					objectID:       0,
+					query:          "router01",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceDataWrapper{
+						Device: &netbox.DcimDevice{
+							ID:   1,
+							Name: "router01",
+							Site: &netbox.DcimSite{
+								ID:     1,
+								Name:   "Site B",
+								Slug:   "site-B",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
+							DeviceType: &netbox.DcimDeviceType{
+								ID:    1,
+								Model: "ISR4322",
+								Slug:  "isr4322",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
+							},
+							Role: &netbox.DcimDeviceRole{
+								ID:    1,
+								Name:  "undefined",
+								Slug:  "undefined",
+								Color: strPtr("111111"),
+							},
+							Platform: &netbox.DcimPlatform{
+								ID:   1,
+								Name: "Cisco IOS 15.6",
+								Slug: "cisco-ios-15-6",
+							},
+							Status:      (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+							Serial:      strPtr("123456"),
+						},
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet: []changeset.Change{
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeUpdate,
+						ObjectType:    "dcim.device",
+						ObjectID:      intPtr(1),
+						ObjectVersion: nil,
+						Data: &netbox.DcimDevice{
+							ID:   1,
+							Name: "router01",
+							Site: &netbox.DcimSite{
+								ID:     1,
+								Name:   "Site A",
+								Slug:   "site-a",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
+							DeviceType: &netbox.DcimDeviceType{
+								ID:    1,
+								Model: "ISR4321",
+								Slug:  "isr4321",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
+							},
+							Role: &netbox.DcimDeviceRole{
+								ID:    1,
+								Name:  "WAN Router",
+								Slug:  "wan-router",
+								Color: strPtr("111111"),
+							},
+							Platform: &netbox.DcimPlatform{
+								ID:   1,
+								Name: "Cisco IOS 15.6",
+								Slug: "cisco-ios-15-6",
+							},
+							Status:      (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+							Serial:      strPtr("123456-2"),
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "[P9] ingest dcim.site with name, status and description - existing object not found - create",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "dcim.site",
+				"entity": {
+					"Site": {
+						"name": "Site A",
+						"status": "active",
+						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+					}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "dcim.site",
+					objectID:       0,
+					query:          "Site A",
+					objectChangeID: 0,
+					object: &netbox.DcimSiteDataWrapper{
+						Site: nil,
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet: []changeset.Change{
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.site",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimSite{
+							Name:        "Site A",
+							Slug:        "site-a",
+							Status:      (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "[P9] ingest dcim.site with name, status and new description - existing object found - update",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "dcim.site",
+				"entity": {
+					"Site": {
+						"name": "Site A",
+						"status": "active",
+						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean sed molestie felis."
+					}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "dcim.site",
+					objectID:       0,
+					query:          "Site A",
+					objectChangeID: 0,
+					object: &netbox.DcimSiteDataWrapper{
+						Site: &netbox.DcimSite{
+							ID:          1,
+							Name:        "Site A",
+							Slug:        "site-a",
+							Status:      (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+						},
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet: []changeset.Change{
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeUpdate,
+						ObjectType:    "dcim.site",
+						ObjectID:      intPtr(1),
+						ObjectVersion: nil,
+						Data: &netbox.DcimSite{
+							ID:          1,
+							Name:        "Site A",
+							Slug:        "site-a",
+							Status:      (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean sed molestie felis."),
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "[P10] ingest dcim.manufacturer with name and description - existing object not found - create",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "dcim.manufacturer",
+				"entity": {
+					"Manufacturer": {
+						"name": "Cisco",
+						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+					}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "dcim.manufacturer",
+					objectID:       0,
+					query:          "Cisco",
+					objectChangeID: 0,
+					object: &netbox.DcimManufacturerDataWrapper{
+						Manufacturer: nil,
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet: []changeset.Change{
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.manufacturer",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimManufacturer{
+							Name:        "Cisco",
+							Slug:        "cisco",
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "[P10] ingest dcim.manufacturer with name and new description - existing object found - update",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "dcim.manufacturer",
+				"entity": {
+					"Manufacturer": {
+						"name": "Cisco",
+						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean sed molestie felis."
+					}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "dcim.manufacturer",
+					objectID:       0,
+					query:          "Cisco",
+					objectChangeID: 0,
+					object: &netbox.DcimManufacturerDataWrapper{
+						Manufacturer: &netbox.DcimManufacturer{
+							ID:          1,
+							Name:        "Cisco",
+							Slug:        "cisco",
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+						},
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet: []changeset.Change{
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeUpdate,
+						ObjectType:    "dcim.manufacturer",
+						ObjectID:      intPtr(1),
+						ObjectVersion: nil,
+						Data: &netbox.DcimManufacturer{
+							ID:          1,
+							Name:        "Cisco",
+							Slug:        "cisco",
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean sed molestie felis."),
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "[P11] ingest dcim.devicerole with name and additional attributes - existing object not found - create",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "dcim.devicerole",
+				"entity": {
+					"DeviceRole": {
+						"name": "WAN Router",
+						"color": "509415",
+						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+					}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "dcim.devicerole",
+					objectID:       0,
+					query:          "WAN Router",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceRoleDataWrapper{
+						DeviceRole: nil,
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet: []changeset.Change{
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.devicerole",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimDeviceRole{
+							Name:        "WAN Router",
+							Slug:        "wan-router",
+							Color:       strPtr("509415"),
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "[P11] ingest dcim.devicerole with name and new additional attributes - existing object found - update",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "dcim.devicerole",
+				"entity": {
+					"DeviceRole": {
+						"name": "WAN Router",
+						"color": "ffffff",
+						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean sed molestie felis."
+					}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "dcim.devicerole",
+					objectID:       0,
+					query:          "WAN Router",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceRoleDataWrapper{
+						DeviceRole: &netbox.DcimDeviceRole{
+							ID:          1,
+							Name:        "WAN Router",
+							Slug:        "wan-router",
+							Color:       strPtr("509415"),
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+						},
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet: []changeset.Change{
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeUpdate,
+						ObjectType:    "dcim.devicerole",
+						ObjectID:      intPtr(1),
+						ObjectVersion: nil,
+						Data: &netbox.DcimDeviceRole{
+							ID:          1,
+							Name:        "WAN Router",
+							Slug:        "wan-router",
+							Color:       strPtr("ffffff"),
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean sed molestie felis."),
+						},
+					},
+				},
+			},
+			wantErr: false,
 		},
 	}
 
@@ -150,28 +2148,34 @@ func TestPrepareChange(t *testing.T) {
 			err := json.Unmarshal(tt.rawIngestEntity, &ingestEntity)
 			require.NoError(t, err)
 
-			var objectState *changeset.ObjectState
-			if tt.rawObjectState != nil {
-				err = json.Unmarshal(tt.rawObjectState, &objectState)
-				require.NoError(t, err)
+			mockClient := mocks.NewNetBoxAPI(t)
+
+			for _, m := range tt.retrieveObjectStates {
+				mockClient.EXPECT().RetrieveObjectState(context.Background(), m.objectType, m.objectID, m.query).Return(&netboxdiodeplugin.ObjectState{
+					ObjectID:       m.objectID,
+					ObjectType:     m.objectType,
+					ObjectChangeID: m.objectChangeID,
+					Object:         m.object,
+				}, nil)
 			}
 
-			change, err := changeset.PrepareChange(ingestEntity, objectState)
+			cs, err := changeset.Prepare(ingestEntity, mockClient)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
 			}
 
 			require.NoError(t, err)
-			assert.Equal(t, tt.wantChange.ChangeType, change.ChangeType)
-			assert.Equal(t, tt.wantChange.ObjectType, change.ObjectType)
-			assert.Equal(t, tt.wantChange.ObjectID, change.ObjectID)
-			assert.Equal(t, tt.wantChange.ObjectVersion, change.ObjectVersion)
-			assert.Equal(t, tt.wantChange.Data, change.Data)
+			require.Equal(t, len(tt.wantChangeSet.ChangeSet), len(cs.ChangeSet))
+
+			for i := range tt.wantChangeSet.ChangeSet {
+				assert.Equal(t, tt.wantChangeSet.ChangeSet[i].ChangeType, cs.ChangeSet[i].ChangeType)
+				assert.Equal(t, tt.wantChangeSet.ChangeSet[i].ObjectType, cs.ChangeSet[i].ObjectType)
+				assert.Equal(t, tt.wantChangeSet.ChangeSet[i].Data, cs.ChangeSet[i].Data)
+			}
 		})
 	}
 }
 
-func ptrInt(i int) *int {
-	return &i
-}
+func strPtr(s string) *string { return &s }
+func intPtr(d int) *int       { return &d }

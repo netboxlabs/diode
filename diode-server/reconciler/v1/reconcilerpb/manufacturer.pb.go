@@ -7,7 +7,7 @@
 package reconcilerpb
 
 import (
-	_ "github.com/netboxlabs/diode/diode-server/validate"
+	_ "github.com/envoyproxy/protoc-gen-validate/validate"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
