@@ -57,17 +57,6 @@ func (m *Platform) validate(all bool) error {
 
 	var errors []error
 
-	if m.GetId() < 1 {
-		err := PlatformValidationError{
-			field:  "Id",
-			reason: "value must be greater than or equal to 1",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
 	if l := utf8.RuneCountInString(m.GetName()); l < 1 || l > 100 {
 		err := PlatformValidationError{
 			field:  "Name",
@@ -77,6 +66,102 @@ func (m *Platform) validate(all bool) error {
 			return err
 		}
 		errors = append(errors, err)
+	}
+
+	if l := utf8.RuneCountInString(m.GetSlug()); l < 1 || l > 100 {
+		err := PlatformValidationError{
+			field:  "Slug",
+			reason: "value length must be between 1 and 100 runes, inclusive",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if !_Platform_Slug_Pattern.MatchString(m.GetSlug()) {
+		err := PlatformValidationError{
+			field:  "Slug",
+			reason: "value does not match regex pattern \"^[-a-zA-Z0-9_]+$\"",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if all {
+		switch v := interface{}(m.GetManufacturer()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, PlatformValidationError{
+					field:  "Manufacturer",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, PlatformValidationError{
+					field:  "Manufacturer",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetManufacturer()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return PlatformValidationError{
+				field:  "Manufacturer",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if utf8.RuneCountInString(m.GetDescription()) > 200 {
+		err := PlatformValidationError{
+			field:  "Description",
+			reason: "value length must be at most 200 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	for idx, item := range m.GetTags() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, PlatformValidationError{
+						field:  fmt.Sprintf("Tags[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, PlatformValidationError{
+						field:  fmt.Sprintf("Tags[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return PlatformValidationError{
+					field:  fmt.Sprintf("Tags[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	}
 
 	if len(errors) > 0 {
@@ -155,3 +240,5 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = PlatformValidationError{}
+
+var _Platform_Slug_Pattern = regexp.MustCompile("^[-a-zA-Z0-9_]+$")
