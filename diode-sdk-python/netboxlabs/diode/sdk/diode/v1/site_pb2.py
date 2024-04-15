@@ -12,10 +12,11 @@ from google.protobuf.internal import builder as _builder
 _sym_db = _symbol_database.Default()
 
 
+from netboxlabs.diode.sdk.diode.v1 import tag_pb2 as diode_dot_v1_dot_tag__pb2
 from netboxlabs.diode.sdk.validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13\x64iode/v1/site.proto\x12\x08\x64iode.v1\x1a\x17validate/validate.proto\"V\n\x04Site\x12\x1d\n\x04name\x18\x01 \x01(\tB\t\xfa\x42\x06r\x04\x10\x01\x18\x64R\x04name\x12/\n\x04slug\x18\x02 \x01(\tB\x1b\xfa\x42\x18r\x16\x10\x01\x18\x64\x32\x10^[-a-zA-Z0-9_]+$R\x04slugB;Z9github.com/netboxlabs/diode/diode-sdk-go/diode/v1/diodepbb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13\x64iode/v1/site.proto\x12\x08\x64iode.v1\x1a\x12\x64iode/v1/tag.proto\x1a\x17validate/validate.proto\"\xd6\x02\n\x04Site\x12\x1d\n\x04name\x18\x01 \x01(\tB\t\xfa\x42\x06r\x04\x10\x01\x18\x64R\x04name\x12/\n\x04slug\x18\x02 \x01(\tB\x1b\xfa\x42\x18r\x16\x10\x01\x18\x64\x32\x10^[-a-zA-Z0-9_]+$R\x04slug\x12Q\n\x06status\x18\x03 \x01(\tB9\xfa\x42\x36r4R\x07plannedR\x07stagingR\x06\x61\x63tiveR\x0f\x64\x65\x63ommissioningR\x07retiredR\x06status\x12#\n\x08\x66\x61\x63ility\x18\x04 \x01(\tB\x07\xfa\x42\x04r\x02\x18\x32R\x08\x66\x61\x63ility\x12\x1b\n\ttime_zone\x18\x05 \x01(\tR\x08timeZone\x12*\n\x0b\x64\x65scription\x18\x06 \x01(\tB\x08\xfa\x42\x05r\x03\x18\xc8\x01R\x0b\x64\x65scription\x12\x1a\n\x08\x63omments\x18\x07 \x01(\tR\x08\x63omments\x12!\n\x04tags\x18\x08 \x03(\x0b\x32\r.diode.v1.TagR\x04tagsB;Z9github.com/netboxlabs/diode/diode-sdk-go/diode/v1/diodepbb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -27,6 +28,12 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_SITE'].fields_by_name['name']._serialized_options = b'\372B\006r\004\020\001\030d'
   _globals['_SITE'].fields_by_name['slug']._loaded_options = None
   _globals['_SITE'].fields_by_name['slug']._serialized_options = b'\372B\030r\026\020\001\030d2\020^[-a-zA-Z0-9_]+$'
-  _globals['_SITE']._serialized_start=58
-  _globals['_SITE']._serialized_end=144
+  _globals['_SITE'].fields_by_name['status']._loaded_options = None
+  _globals['_SITE'].fields_by_name['status']._serialized_options = b'\372B6r4R\007plannedR\007stagingR\006activeR\017decommissioningR\007retired'
+  _globals['_SITE'].fields_by_name['facility']._loaded_options = None
+  _globals['_SITE'].fields_by_name['facility']._serialized_options = b'\372B\004r\002\0302'
+  _globals['_SITE'].fields_by_name['description']._loaded_options = None
+  _globals['_SITE'].fields_by_name['description']._serialized_options = b'\372B\005r\003\030\310\001'
+  _globals['_SITE']._serialized_start=79
+  _globals['_SITE']._serialized_end=421
 # @@protoc_insertion_point(module_scope)
