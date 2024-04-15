@@ -3,20 +3,25 @@ syntax = "proto3";
 package diode.v1;
 
 import "diode/v1/manufacturer.proto";
+import "diode/v1/tag.proto";
 import "validate/validate.proto";
 
 option go_package = "github.com/netboxlabs/diode/diode-sdk-go/diode/v1/diodepb";
 
 // A device type
 message DeviceType {
-  Manufacturer manufacturer = 1;
-  string model = 2 [(validate.rules).string = {
+  string model = 1 [(validate.rules).string = {
     min_len: 1,
     max_len: 100
   }];
-  string slug = 3 [(validate.rules).string = {
+  string slug = 2 [(validate.rules).string = {
     min_len: 1,
     max_len: 100,
     pattern: "^[-a-zA-Z0-9_]+$"
   }];
+  Manufacturer manufacturer = 3;
+  string description = 4 [(validate.rules).string = {max_len: 200}];
+  string comments = 5;
+  string part_number = 6 [(validate.rules).string = {max_len: 50}];
+  repeated Tag tags = 7;
 }

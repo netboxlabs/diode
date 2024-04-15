@@ -2,13 +2,12 @@ syntax = "proto3";
 
 package diode.v1;
 
-import "diode/v1/tag.proto";
 import "validate/validate.proto";
 
 option go_package = "github.com/netboxlabs/diode/diode-sdk-go/diode/v1/diodepb";
 
-// A role
-message Role {
+// A tag
+message Tag {
   string name = 1 [(validate.rules).string = {
     min_len: 1,
     max_len: 100
@@ -23,6 +22,4 @@ message Role {
     max_len: 6,
     pattern: "^[0-9a-f]{6}$"
   }];
-  string description = 4 [(validate.rules).string = {max_len: 200}];
-  repeated Tag tags = 5;
 }
