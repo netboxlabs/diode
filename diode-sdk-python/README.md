@@ -26,7 +26,7 @@ black netboxlabs/
 
 from netboxlabs.diode.sdk import DiodeClient
 from netboxlabs.diode.sdk.diode.v1.device_type_pb2 import DeviceType
-from netboxlabs.diode.sdk.diode.v1.distributor_pb2 import IngestEntity
+from netboxlabs.diode.sdk.diode.v1.ingester_pb2 import Entity
 from netboxlabs.diode.sdk.diode.v1.manufacturer_pb2 import Manufacturer
 from netboxlabs.diode.sdk.diode.v1.site_pb2 import Site
 
@@ -34,8 +34,8 @@ from netboxlabs.diode.sdk.diode.v1.site_pb2 import Site
 def main():
     with DiodeClient(target="localhost:8081", app_name="my-test-app", app_version="0.0.1") as client:
         entities = [
-            IngestEntity(site=Site(name="Site 1")),
-            IngestEntity(
+            Entity(site=Site(name="Site 1")),
+            Entity(
                 device_type=DeviceType(
                     model="ISR4321",
                     manufacturer=Manufacturer(name="Cisco"),
