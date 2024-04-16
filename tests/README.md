@@ -43,6 +43,11 @@ Then fill in the correct values:
   - string
   - netbox API URL, e.g. http://0.0.0.0:8000/api
 
+- **api_key**:
+  - Mandatory!
+  - string
+  - INGESTION_API_KEY
+
 
 ## Run behave using parallel process
 

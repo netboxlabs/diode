@@ -8,10 +8,11 @@ from netboxlabs.diode.sdk.diode.v1.site_pb2 import Site
 
 from steps.config import configs
 
-from steps.utils import get_site, send_delete_request
+from steps.utils import get_object_by_name, send_delete_request
 
 
 api_key = str(configs["api_key"])
+endpoint = "dcim/sites/"
 
 
 @given('a new site "{site_name}" object')
@@ -38,13 +39,13 @@ def ingest_site_object(context):
 
 
 @then("the site object is created in the database")
-@then("do nothing")
+@then("the site object remains the same")
 def check_site_object(context):
     """Check if the response status code is 200 and the result is success"""
     assert context.response is not None
     # Wait for the site object to be added to the cache
     time.sleep(3)
-    site = get_site(context.site_name)
+    site = get_object_by_name(context.site_name, endpoint)
     assert site.get("name") == context.site_name
     assert site.get("status").get("value") == "active"
 
@@ -53,7 +54,7 @@ def check_site_object(context):
 def retrieve_existing_site_object(context):
     """Retrieve the site object from the database"""
     context.site_name = "Site A"
-    context.site = get_site(context.site_name)
+    context.site = get_object_by_name(context.site_name, endpoint)
     context.site_name = context.site.get("name")
 
 
@@ -92,7 +93,7 @@ def update_site_object(context):
 def check_site_object_updated(context):
     """Check if the response status code is 200 and the result is success"""
     assert context.response is not None
-    site = get_site(context.site_name)
+    site = get_object_by_name(context.site_name, endpoint)
     assert site.get("name") == context.site_name
     assert site.get("status").get("value") == context.status
     assert site.get("description") == context.description

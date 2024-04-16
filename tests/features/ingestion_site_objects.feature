@@ -13,7 +13,7 @@ Scenario: Ingestion of new site object
 Scenario: Ingestion of existing site object
     Given site object already exists in the database
     When the site object is ingested
-    Then do nothing
+    Then the site object remains the same
 
 
 @smoke

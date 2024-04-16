@@ -61,9 +61,8 @@ def get_site_id(site_name):
     return site_id
 
 
-def get_site(name):
-    endpoint = "dcim/sites/"
-    site = send_get_request(endpoint, {"name__ic": name}).json().get("results")
-    if site:
-        return site[0]
-    return site
+def get_object_by_name(name, endpoint):
+    response = send_get_request(endpoint, {"name__ic": name}).json().get("results")
+    if response:
+        return response[0]
+    return response
