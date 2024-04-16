@@ -5,6 +5,7 @@ services:
     build:
       context: .
       dockerfile: netbox/Dockerfile-diode
+      pull: true
     depends_on:
       - netbox-postgres
       - netbox-redis
