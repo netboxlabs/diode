@@ -26,6 +26,7 @@ def _read_configs():
     configs["user_token"] = configs.get(
         "user_token",
     )
+    configs["api_key"] = configs.get("api_key")
 
     return configs
 

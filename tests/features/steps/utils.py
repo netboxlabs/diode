@@ -2,6 +2,7 @@ import requests
 
 from steps.config import TestConfig
 
+
 configs = TestConfig.configs()
 api_root_path = str(configs["api_root_path"])
 token = str(configs["user_token"])
@@ -58,3 +59,11 @@ def get_site_id(site_name):
         .get("id")
     )
     return site_id
+
+
+def get_site(name):
+    endpoint = "dcim/sites/"
+    site = send_get_request(endpoint, {"name__ic": name}).json().get("results")
+    if site:
+        return site[0]
+    return site

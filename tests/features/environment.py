@@ -44,11 +44,9 @@ def before_tag(context, tag):
 
 
 def after_tag(context, tag):
-    sites_names = []
-    if tag == "create.object":
-        sites_names = ["Site-Test"]
-    if tag == "update.object":
-        sites_names = ["Site-Test-2"]
-    if tag == "object.state":
-        sites_names = ["Site Z", "Site X"]
-    remove_sites_entry(sites_names)
+    switcher = {
+        "create.object": ["Site-Test"],
+        "update.object": ["Site-Test-2"],
+        "object.state": ["Site Z", "Site X"],
+    }
+    remove_sites_entry(switcher.get(tag, []))
