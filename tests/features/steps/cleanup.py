@@ -2,7 +2,7 @@ import time
 
 from behave import given, when, then
 
-from steps.utils import get_object_by_name, send_delete_request
+from steps.utils import get_object_by_name, send_delete_request, get_object_by_model
 
 
 @given('the site object "{site_name}" is deleted')
@@ -57,3 +57,21 @@ def check_manufacturer_object_deleted(context):
     endpoint = "dcim/manufacturers"
     manufacturer = get_object_by_name(context.manufacturer_name, endpoint)
     assert manufacturer is None
+
+
+@given('the device type object "{device_type_model}" is deleted')
+def delete_device_type_object(context, device_type_model):
+    """Delete the device type object with the given model."""
+    context.device_type_model = device_type_model
+    endpoint = "dcim/device-types"
+    device_type = get_object_by_model(context.device_type_model, endpoint)
+    if device_type:
+        send_delete_request(endpoint, device_type.get("id"))
+
+
+@then("the device type object is removed from the database")
+def check_device_type_object_deleted(context):
+    """Check if the device type object is removed from the database."""
+    endpoint = "dcim/device-types"
+    device_type = get_object_by_model(context.device_type_model, endpoint)
+    assert device_type is None

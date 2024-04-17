@@ -51,6 +51,7 @@ def send_delete_request(endpoint, id):
 
 
 def get_site_id(site_name):
+    """Get the site ID by name."""
     endpoint = "dcim/sites/"
     site_id = (
         send_get_request(endpoint, {"name__ic": site_name})
@@ -62,7 +63,16 @@ def get_site_id(site_name):
 
 
 def get_object_by_name(name, endpoint):
+    """Get the object by name."""
     response = send_get_request(endpoint, {"name__ic": name}).json().get("results")
+    if response:
+        return response[0]
+    return None
+
+
+def get_object_by_model(model, endpoint):
+    """Get the object by model."""
+    response = send_get_request(endpoint, {"model__ic": model}).json().get("results")
     if response:
         return response[0]
     return None
