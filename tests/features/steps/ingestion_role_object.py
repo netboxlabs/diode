@@ -93,7 +93,7 @@ def update_role_object(context):
 
 @then("the device role object is updated in the database")
 def check_role_object_updated(context):
-    """Check if the response status code is 200 and the result is success"""
+    """Check if the role object is updated in the database"""
     assert context.response is not None
     role = get_object_by_name(context.device_role_name, endpoint)
     assert role.get("name") == context.device_role_name

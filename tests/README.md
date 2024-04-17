@@ -55,13 +55,13 @@ You can use [behavex](https://github.com/hrcorval/behavex) to run the scenarios 
 
 Examples:
 
-> behavex -t @\<TAG\> --parallel-processes=2 --parallel-schema=scenario
+> behavex -t @\<TAG\> --parallel-processes=2 --parallel-schema=feature
 
 > behavex -t @\<TAG\> --parallel-processes=2 --parallel-schema=feature
 
 Running smoke tests:
 
-> behavex -t=@smoke --parallel-processes=2 --parallel-scheme=scenario
+> behavex -t=@smoke --parallel-processes=2 --parallel-scheme=feature
 
 
 ## Test execution reports
