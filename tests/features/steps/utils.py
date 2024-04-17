@@ -65,6 +65,7 @@ def get_site_id(site_name):
 def get_object_by_name(name, endpoint):
     """Get the object by name."""
     response = send_get_request(endpoint, {"name__ic": name}).json().get("results")
+    print(send_get_request(endpoint, {"name__ic": name}).json())
     if response:
         return response[0]
     return None
