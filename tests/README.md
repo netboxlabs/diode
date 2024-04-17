@@ -61,7 +61,7 @@ Examples:
 
 Running smoke tests:
 
-> behavex -t=@smoke --parallel-processes=2 --parallel-scheme=feature
+> behavex -t=@smoke --parallel-processes=2 --parallel-scheme=scenario
 
 
 ## Test execution reports

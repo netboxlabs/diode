@@ -50,18 +50,18 @@ def check_site_object(context):
     assert site.get("status").get("value") == "active"
 
 
-@given("site object already exists in the database")
-def retrieve_existing_site_object(context):
+@given('site "{site_name}" already exists in the database')
+def retrieve_existing_site_object(context, site_name):
     """Retrieve the site object from the database"""
-    context.site_name = "Site A"
+    context.site_name = site_name
     context.site = get_object_by_name(context.site_name, endpoint)
     context.site_name = context.site.get("name")
 
 
-@given('site object with status "{status}" and description "{description}"')
-def create_site_object_to_update(context, status, description):
+@given('site {site_name} with status "{status}" and description "{description}"')
+def create_site_object_to_update(context, site_name, status, description):
     """Create a site object with a status and description to update"""
-    context.site_name = "Site A"
+    context.site_name = site_name
     context.status = status
     context.description = description
 
