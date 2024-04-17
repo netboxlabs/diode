@@ -2,6 +2,10 @@ import requests
 
 from steps.config import TestConfig
 
+from netboxlabs.diode.sdk import DiodeClient
+from netboxlabs.diode.sdk.diode.v1.ingester_pb2 import Entity
+from netboxlabs.diode.sdk.diode.v1.site_pb2 import Site
+
 
 configs = TestConfig.configs()
 api_root_path = str(configs["api_root_path"])
@@ -65,7 +69,6 @@ def get_site_id(site_name):
 def get_object_by_name(name, endpoint):
     """Get the object by name."""
     response = send_get_request(endpoint, {"name__ic": name}).json().get("results")
-    print(send_get_request(endpoint, {"name__ic": name}).json())
     if response:
         return response[0]
     return None
@@ -77,3 +80,17 @@ def get_object_by_model(model, endpoint):
     if response:
         return response[0]
     return None
+
+
+def ingester(entities):
+    """Ingest the site object using the Diode SDK"""
+    api_key = str(configs["api_key"])
+    with DiodeClient(
+        target="localhost:8081",
+        app_name="my-test-app",
+        app_version="0.0.1",
+        api_key=api_key,
+    ) as client:
+        entities = entities
+        response = client.ingest(entities=entities)
+        return response
