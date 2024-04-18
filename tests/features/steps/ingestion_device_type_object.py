@@ -1,18 +1,14 @@
 import time
 
 from behave import given, when, then
-
-from netboxlabs.diode.sdk import DiodeClient
-from netboxlabs.diode.sdk.diode.v1.ingester_pb2 import Entity
 from netboxlabs.diode.sdk.diode.v1.device_type_pb2 import DeviceType
-
+from netboxlabs.diode.sdk.diode.v1.ingester_pb2 import Entity
 from steps.utils import (
     get_object_by_name,
     send_delete_request,
     get_object_by_model,
     ingester,
 )
-
 
 endpoint = "dcim/device-types/"
 

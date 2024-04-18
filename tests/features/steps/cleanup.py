@@ -1,6 +1,4 @@
-import time
-
-from behave import given, when, then
+from behave import given
 
 from steps.utils import get_object_by_name, send_delete_request, get_object_by_model
 

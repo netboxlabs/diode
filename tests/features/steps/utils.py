@@ -1,11 +1,6 @@
 import requests
-
-from steps.config import TestConfig
-
 from netboxlabs.diode.sdk import DiodeClient
-from netboxlabs.diode.sdk.diode.v1.ingester_pb2 import Entity
-from netboxlabs.diode.sdk.diode.v1.site_pb2 import Site
-
+from steps.config import TestConfig
 
 configs = TestConfig.configs()
 api_root_path = str(configs["api_root_path"])
