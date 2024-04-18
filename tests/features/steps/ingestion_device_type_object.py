@@ -6,12 +6,14 @@ from netboxlabs.diode.sdk import DiodeClient
 from netboxlabs.diode.sdk.diode.v1.ingester_pb2 import Entity
 from netboxlabs.diode.sdk.diode.v1.device_type_pb2 import DeviceType
 
-from steps.config import configs
+from steps.utils import (
+    get_object_by_name,
+    send_delete_request,
+    get_object_by_model,
+    ingester,
+)
 
-from steps.utils import get_object_by_name, send_delete_request, get_object_by_model
 
-
-api_key = str(configs["api_key"])
 endpoint = "dcim/device-types/"
 
 
@@ -24,18 +26,13 @@ def step_create_new_manufacturer_object(context, device_type_model):
 @when("the device type object is ingested")
 def ingest_device_type_object(context):
     """Ingest the device type object using the Diode SDK"""
-    with DiodeClient(
-        target="localhost:8081",
-        app_name="my-test-app",
-        app_version="0.0.1",
-        api_key=api_key,
-    ) as client:
-        entities = [
-            Entity(device_type=DeviceType(model=context.device_type_model)),
-        ]
 
-        context.response = client.ingest(entities=entities)
-        return context.response
+    entities = [
+        Entity(device_type=DeviceType(model=context.device_type_model)),
+    ]
+
+    context.response = ingester(entities)
+    return context.response
 
 
 @then(
@@ -93,25 +90,20 @@ def remove_manufacturer(context, manufacturer_name):
 @when("the device type object is ingested with the updates")
 def update_device_type_object(context):
     """Update the object using the Diode SDK"""
-    with DiodeClient(
-        target="localhost:8081",
-        app_name="my-test-app",
-        app_version="0.0.1",
-        api_key=api_key,
-    ) as client:
-        entities = [
-            Entity(
-                device_type=DeviceType(
-                    model=context.device_type_model,
-                    manufacturer=context.manufacturer_name,
-                    description=context.description,
-                    part_number=context.part_number,
-                )
-            ),
-        ]
 
-        context.response = client.ingest(entities=entities)
-        return context.response
+    entities = [
+        Entity(
+            device_type=DeviceType(
+                model=context.device_type_model,
+                manufacturer=context.manufacturer_name,
+                description=context.description,
+                part_number=context.part_number,
+            )
+        ),
+    ]
+
+    context.response = ingester(entities)
+    return context.response
 
 
 @then(

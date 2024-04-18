@@ -1,17 +1,14 @@
 import time
 
 from behave import given, when, then
-from netboxlabs.diode.sdk import DiodeClient
 from netboxlabs.diode.sdk.diode.v1.device_pb2 import Device
 from netboxlabs.diode.sdk.diode.v1.device_type_pb2 import DeviceType
 from netboxlabs.diode.sdk.diode.v1.ingester_pb2 import Entity
 from netboxlabs.diode.sdk.diode.v1.platform_pb2 import Platform
 from netboxlabs.diode.sdk.diode.v1.role_pb2 import Role
 from netboxlabs.diode.sdk.diode.v1.site_pb2 import Site
-from steps.config import configs
-from steps.utils import get_object_by_name, send_delete_request, get_object_by_model
+from steps.utils import get_object_by_name, get_object_by_model, ingester
 
-api_key = str(configs["api_key"])
 endpoint = "dcim/devices/"
 
 
@@ -24,18 +21,13 @@ def create_new_device_object(context, device_name):
 @when("the device object is ingested")
 def ingest_device_object(context):
     """Ingest the device object using the Diode SDK"""
-    with DiodeClient(
-        target="localhost:8081",
-        app_name="my-test-app",
-        app_version="0.0.1",
-        api_key=api_key,
-    ) as client:
-        entities = [
-            Entity(device=Device(name=context.device_name)),
-        ]
 
-        context.response = client.ingest(entities=entities)
-        return context.response
+    entities = [
+        Entity(device=Device(name=context.device_name)),
+    ]
+
+    context.response = ingester(entities)
+    return context.response
 
 
 @then(
@@ -80,25 +72,20 @@ def create_device_objects_to_update(
 @when("the device object is ingested with the updates")
 def ingest_device_object_with_updates(context):
     """Ingest the device object using the Diode SDK."""
-    with DiodeClient(
-        target="localhost:8081",
-        app_name="my-test-app",
-        app_version="0.0.1",
-        api_key=api_key,
-    ) as client:
-        entities = [
-            Entity(
-                device=Device(
-                    name=context.device_name,
-                    device_type=DeviceType(model=context.device_type_model),
-                    role=Role(name=context.device_role_name),
-                    site=Site(name=context.site_name),
-                )
-            ),
-        ]
 
-        context.response = client.ingest(entities=entities)
-        return context.response
+    entities = [
+        Entity(
+            device=Device(
+                name=context.device_name,
+                device_type=DeviceType(model=context.device_type_model),
+                role=Role(name=context.device_role_name),
+                site=Site(name=context.site_name),
+            )
+        ),
+    ]
+
+    context.response = ingester(entities)
+    return context.response
 
 
 @then("device type, role and site are created")
@@ -147,26 +134,21 @@ def create_device_context_to_update(
 @when("the device object is ingested with the platform update")
 def ingest_device_object_with_platform_update(context):
     """Ingest the device object using the Diode SDK."""
-    with DiodeClient(
-        target="localhost:8081",
-        app_name="my-test-app",
-        app_version="0.0.1",
-        api_key=api_key,
-    ) as client:
-        entities = [
-            Entity(
-                device=Device(
-                    name=context.device_name,
-                    device_type=DeviceType(model=context.device_type_model),
-                    role=Role(name=context.device_role_name),
-                    site=Site(name=context.site_name),
-                    platform=Platform(name=context.platform_name),
-                )
-            ),
-        ]
 
-        context.response = client.ingest(entities=entities)
-        return context.response
+    entities = [
+        Entity(
+            device=Device(
+                name=context.device_name,
+                device_type=DeviceType(model=context.device_type_model),
+                role=Role(name=context.device_role_name),
+                site=Site(name=context.site_name),
+                platform=Platform(name=context.platform_name),
+            )
+        ),
+    ]
+
+    context.response = ingester(entities)
+    return context.response
 
 
 @then("the device is updated and platform is created")

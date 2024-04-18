@@ -1,13 +1,9 @@
 import time
 
 from behave import given, when, then
-
 from netboxlabs.diode.sdk.diode.v1.ingester_pb2 import Entity
 from netboxlabs.diode.sdk.diode.v1.site_pb2 import Site
-
-from steps.config import configs
-
-from steps.utils import get_object_by_name, send_delete_request, ingester
+from steps.utils import get_object_by_name, ingester
 
 endpoint = "dcim/sites/"
 

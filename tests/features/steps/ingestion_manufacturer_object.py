@@ -1,17 +1,10 @@
 import time
 
 from behave import given, when, then
-
-from netboxlabs.diode.sdk import DiodeClient
 from netboxlabs.diode.sdk.diode.v1.ingester_pb2 import Entity
 from netboxlabs.diode.sdk.diode.v1.manufacturer_pb2 import Manufacturer
+from steps.utils import get_object_by_name, ingester
 
-from steps.config import configs
-
-from steps.utils import get_object_by_name, send_delete_request
-
-
-api_key = str(configs["api_key"])
 endpoint = "dcim/manufacturers/"
 
 
@@ -24,18 +17,13 @@ def step_create_new_manufacturer_object(context, manufacturer_name):
 @when("the manufacturer object is ingested")
 def ingest_manufacturer_object(context):
     """Ingest the manufacturer object using the Diode SDK"""
-    with DiodeClient(
-        target="localhost:8081",
-        app_name="my-test-app",
-        app_version="0.0.1",
-        api_key=api_key,
-    ) as client:
-        entities = [
-            Entity(manufacturer=Manufacturer(name=context.manufacturer_name)),
-        ]
 
-        context.response = client.ingest(entities=entities)
-        return context.response
+    entities = [
+        Entity(manufacturer=Manufacturer(name=context.manufacturer_name)),
+    ]
+
+    context.response = ingester(entities)
+    return context.response
 
 
 @then("the manufacturer object is created in the database")
@@ -67,23 +55,18 @@ def create_manufacturer_object_to_update(context, manufacturer_name, description
 @when("the manufacturer object is ingested with the updates")
 def update_manufacturer_object(context):
     """Update the object using the Diode SDK"""
-    with DiodeClient(
-        target="localhost:8081",
-        app_name="my-test-app",
-        app_version="0.0.1",
-        api_key=api_key,
-    ) as client:
-        entities = [
-            Entity(
-                manufacturer=Manufacturer(
-                    name=context.manufacturer_name,
-                    description=context.description,
-                )
-            ),
-        ]
 
-        context.response = client.ingest(entities=entities)
-        return context.response
+    entities = [
+        Entity(
+            manufacturer=Manufacturer(
+                name=context.manufacturer_name,
+                description=context.description,
+            )
+        ),
+    ]
+
+    context.response = ingester(entities)
+    return context.response
 
 
 @then("the manufacturer object is updated in the database")

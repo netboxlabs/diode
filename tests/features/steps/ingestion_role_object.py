@@ -1,17 +1,10 @@
 import time
 
 from behave import given, when, then
-
-from netboxlabs.diode.sdk import DiodeClient
 from netboxlabs.diode.sdk.diode.v1.ingester_pb2 import Entity
 from netboxlabs.diode.sdk.diode.v1.role_pb2 import Role
+from steps.utils import get_object_by_name, ingester
 
-from steps.config import configs
-
-from steps.utils import get_object_by_name, send_delete_request
-
-
-api_key = str(configs["api_key"])
 endpoint = "dcim/device-roles"
 
 
@@ -24,18 +17,12 @@ def step_create_new_role_object(context, device_role_name):
 @when("the device role object is ingested")
 def ingest_role_object(context):
     """Ingest the device role object using the Diode SDK"""
-    with DiodeClient(
-        target="localhost:8081",
-        app_name="my-test-app",
-        app_version="0.0.1",
-        api_key=api_key,
-    ) as client:
-        entities = [
-            Entity(device_role=Role(name=context.device_role_name)),
-        ]
+    entities = [
+        Entity(device_role=Role(name=context.device_role_name)),
+    ]
 
-        context.response = client.ingest(entities=entities)
-        return context.response
+    context.response = ingester(entities)
+    return context.response
 
 
 @then("the device role object is created in the database")
@@ -71,24 +58,19 @@ def create_role_object_to_update(context, device_role_name, color, description):
 @when("the device role object is ingested with the updates")
 def update_role_object(context):
     """Update the role object using the Diode SDK"""
-    with DiodeClient(
-        target="localhost:8081",
-        app_name="my-test-app",
-        app_version="0.0.1",
-        api_key=api_key,
-    ) as client:
-        entities = [
-            Entity(
-                device_role=Role(
-                    name=context.device_role_name,
-                    color=context.color,
-                    description=context.description,
-                )
-            ),
-        ]
 
-        context.response = client.ingest(entities=entities)
-        return context.response
+    entities = [
+        Entity(
+            device_role=Role(
+                name=context.device_role_name,
+                color=context.color,
+                description=context.description,
+            )
+        ),
+    ]
+
+    context.response = ingester(entities)
+    return context.response
 
 
 @then("the device role object is updated in the database")
