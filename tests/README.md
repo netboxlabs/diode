@@ -73,4 +73,6 @@ It should be available at the following path:
 
 ## Clean your environment
 
-The tests clean up the environment after running, you do not need any manual intervention to clean up the environment.
+After running the tests, clean up your environment by running the command:
+
+> behavex -t=@cleanup --parallel-processes=2 --parallel-scheme=feature
