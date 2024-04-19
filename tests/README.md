@@ -3,7 +3,7 @@ This directory contains integrations tests that can be run against the Diode Plu
 
 
 Here's what you'll need to do in order to run these tests:
-- Start the Docker container for Diode Plugin and Nextbox
+- Start docker containers stack (diode and NetBox)
 - Check the users and their tokens
 - Configure the test settings
 - Run behave
@@ -11,13 +11,13 @@ Here's what you'll need to do in order to run these tests:
 
 ## Start the Docker container for Netbox with Diode Plugin
 
-To run the tests, you must have the diode plugin directory, and execute the following command in **diode/diode-server** folder.
+To run the tests, you must have the diode plugin directory, and execute the following commands in the **diode-server** folder.
 
 ```bash
 pip install netboxlabs-diode-sdk 
 ```
 
-If this command fails, you can install the diode-sdk by running the following command:
+if you prefer to run the tests using diode-sdk-python local version, you can do it by running the following command:
 
 ```bash
 pip install ../diode-netbox-plugin
