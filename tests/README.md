@@ -3,30 +3,45 @@ This directory contains integrations tests that can be run against the Diode Plu
 
 
 Here's what you'll need to do in order to run these tests:
-- Start the Docker container for Diode Plugin
-- Create the user and his token
+- Start the Docker container for Diode Plugin and Nextbox
+- Check the users and their tokens
 - Configure the test settings
 - Run behave
 
 
-## Start the Docker container for Diode Plugin
+## Start the Docker container for Netbox with Diode Plugin
 
-To run the tests, you must have the diode plugin directory and execute the following command in diode/diode-server folder:
+To run the tests, you must have the diode plugin directory, and execute the following command in **diode/diode-server** folder.
+
+```bash
+pip install netboxlabs-diode-sdk 
+```
+
+If this command fails, you can install the diode-sdk by running the following command:
+
+```bash
+pip install ../diode-netbox-plugin
+```
+
+After that, you can start the docker container by running the following command:
 
 ```bash
 make docker-compose-up
 ```
 
-## Create the user and his token
+## Users and tokens
 
-To create the user, execute:
+The command above will create all users necessary to run the tests.
 
-```bash
-docker exec -it diode-netbox-1 /opt/netbox/netbox/manage.py createsuperuser
-```
-Fill the username and password for the superuser as requested.
+Using the Admin user, you can access the Netbox at http://0.0.0.0:8000/.
 
-With this user, you can access the Netbox at http://0.0.0.0:8000/ and using the menu Admin -> API Token, you can create the token for this user.
+- username: admin
+- password: admin
+
+To check the tokens of the users, navigate to the "Admin" menu and select "API Token". This will display a list of all the tokens associated with the users.
+
+
+Please, pay attention to the token for user "INGESTION", it will be used in the next section.
 
 ## Test settings
 Create the test config file from the template: `cp config.ini.tpl config.ini`.
@@ -36,7 +51,7 @@ Then fill in the correct values:
 - **user_token**:
   - Mandatory!
   - string
-  - user token created in the previous step
+  - **ADMIN** token created in the previous step
 
 - **api_root_path**:
   - Mandatory!
@@ -46,7 +61,7 @@ Then fill in the correct values:
 - **api_key**:
   - Mandatory!
   - string
-  - INGESTION_API_KEY
+  - **INGESTION** user token created in the previous step
 
 
 ## Run behave using parallel process

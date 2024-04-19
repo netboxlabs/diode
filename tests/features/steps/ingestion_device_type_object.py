@@ -3,6 +3,7 @@ import time
 from behave import given, when, then
 from netboxlabs.diode.sdk.diode.v1.device_type_pb2 import DeviceType
 from netboxlabs.diode.sdk.diode.v1.ingester_pb2 import Entity
+from netboxlabs.diode.sdk.diode.v1.manufacturer_pb2 import Manufacturer
 from steps.utils import (
     get_object_by_name,
     send_delete_request,
@@ -91,7 +92,7 @@ def update_device_type_object(context):
         Entity(
             device_type=DeviceType(
                 model=context.device_type_model,
-                manufacturer=context.manufacturer_name,
+                manufacturer=Manufacturer(context.manufacturer_name),
                 description=context.description,
                 part_number=context.part_number,
             )
