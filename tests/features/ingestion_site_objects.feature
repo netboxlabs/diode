@@ -1,26 +1,26 @@
-Feature: Tests for ingestion of site objects
-    Validate the behavior of the ingestion of site objects
+Feature: Tests for ingestion of site
+    Validate the behavior of the ingestion of site
 
 @smoke
 @ingestion.site
-Scenario: Ingestion of new site object
-    Given a new site "Site A" object
-    When the site object is ingested
-    Then the site object is created in the database
+Scenario: Ingestion of new site
+    Given a new site "Site A"
+    When the site is ingested
+    Then the site is created in the database
 
 @smoke
 @ingestion.site
-Scenario: Ingestion of existing site object
+Scenario: Ingestion of existing site
     Given site "Site A" already exists in the database
-    When the site object is ingested
-    Then the site object remains the same
+    When the site is ingested
+    Then the site remains the same
 
 
 @smoke
 @ingestion.site
-Scenario: Ingestion of site object to change existing site object
+Scenario: Ingestion of site to update status and description
     Given site "Site A" with status "planned" and description "some string"
-    When the site object is ingested with the updates
-    Then the site object is updated in the database
+    When the site is ingested with the updates
+    Then the site is updated in the database
 
 

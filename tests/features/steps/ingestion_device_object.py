@@ -12,15 +12,15 @@ from steps.utils import get_object_by_name, get_object_by_model, ingester
 endpoint = "dcim/devices/"
 
 
-@given('a new device "{device_name}" object')
-def create_new_device_object(context, device_name):
+@given('a new device "{device_name}"')
+def create_new_device(context, device_name):
     """Set the body of the request to create a new device."""
     context.device_name = device_name
 
 
-@when("the device object is ingested")
-def ingest_device_object(context):
-    """Ingest the device object using the Diode SDK"""
+@when("the device is ingested")
+def ingest_device(context):
+    """Ingest the device using the Diode SDK"""
 
     entities = [
         Entity(device=Device(name=context.device_name)),
@@ -33,10 +33,8 @@ def ingest_device_object(context):
 @then(
     'the device, device type "{device_type_model}" , role "{device_role_name}", and site "{site_name}" are created'
 )
-def verify_device_object_created(
-    context, device_type_model, device_role_name, site_name
-):
-    """Verify that the device object was created."""
+def verify_device_created(context, device_type_model, device_role_name, site_name):
+    """Verify that the device was created."""
     time.sleep(3)
     assert context.response is not None
 
@@ -59,7 +57,7 @@ def verify_device_object_created(
 @given(
     'device type "{device_type_model}", role "{device_role_name}", and site "{site_name}" for device "{device_name}"'
 )
-def create_device_objects_to_update(
+def create_device_to_update(
     context, device_type_model, device_role_name, site_name, device_name
 ):
     """Create device type, device role, site, and device_name context."""
@@ -69,9 +67,9 @@ def create_device_objects_to_update(
     context.device_name = device_name
 
 
-@when("the device object is ingested with the updates")
-def ingest_device_object_with_updates(context):
-    """Ingest the device object using the Diode SDK."""
+@when("the device is ingested with the updates")
+def ingest_device_with_updates(context):
+    """Ingest the device using the Diode SDK."""
 
     entities = [
         Entity(
@@ -90,7 +88,7 @@ def ingest_device_object_with_updates(context):
 
 @then("device type, role and site are created")
 def verify_device_type_role_site_created(context):
-    """Verify that the device object was created."""
+    """Verify that the device was created."""
     time.sleep(3)
     assert context.response is not None
 
@@ -104,8 +102,8 @@ def verify_device_type_role_site_created(context):
 
 
 @then("the device is updated")
-def verify_device_object_updated(context):
-    """Verify that the device object was created."""
+def verify_device_updated(context):
+    """Verify that the device was created."""
     time.sleep(3)
     assert context.response is not None
 
@@ -131,9 +129,9 @@ def create_device_context_to_update(
     context.device_name = device_name
 
 
-@when("the device object is ingested with the platform update")
-def ingest_device_object_with_platform_update(context):
-    """Ingest the device object using the Diode SDK."""
+@when("the device is ingested with the platform update")
+def ingest_device_with_platform_update(context):
+    """Ingest the device using the Diode SDK."""
 
     entities = [
         Entity(

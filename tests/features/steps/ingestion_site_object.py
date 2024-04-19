@@ -8,15 +8,15 @@ from steps.utils import get_object_by_name, ingester
 endpoint = "dcim/sites/"
 
 
-@given('a new site "{site_name}" object')
-def step_create_new_site_object(context, site_name):
+@given('a new site "{site_name}"')
+def step_create_new_site(context, site_name):
     """Set the body of the request to create a new site."""
     context.site_name = site_name
 
 
-@when("the site object is ingested")
-def ingest_site_object(context):
-    """Ingest the site object using the Diode SDK"""
+@when("the site is ingested")
+def ingest_site(context):
+    """Ingest the site using the Diode SDK"""
     entities = [
         Entity(site=Site(name=context.site_name)),
     ]
@@ -24,10 +24,10 @@ def ingest_site_object(context):
     return context.response
 
 
-@then("the site object is created in the database")
-@then("the site object remains the same")
-def check_site_object(context):
-    """Check if the response is not None and the object is created in the database."""
+@then("the site is created in the database")
+@then("the site remains the same")
+def check_site(context):
+    """Check if the response is not None and the is created in the database."""
     time.sleep(3)
     assert context.response is not None
     site = get_object_by_name(context.site_name, endpoint)
@@ -36,24 +36,24 @@ def check_site_object(context):
 
 
 @given('site "{site_name}" already exists in the database')
-def retrieve_existing_site_object(context, site_name):
-    """Retrieve the site object from the database"""
+def retrieve_existing_site(context, site_name):
+    """Retrieve the site from the database"""
     context.site_name = site_name
     context.site = get_object_by_name(context.site_name, endpoint)
     context.site_name = context.site.get("name")
 
 
 @given('site {site_name} with status "{status}" and description "{description}"')
-def create_site_object_to_update(context, site_name, status, description):
-    """Create a site object with a status and description to update"""
+def create_site_to_update(context, site_name, status, description):
+    """Create a site with a status and description to update"""
     context.site_name = site_name
     context.status = status
     context.description = description
 
 
-@when("the site object is ingested with the updates")
-def update_site_object(context):
-    """Update the site object using the Diode SDK"""
+@when("the site is ingested with the updates")
+def ingest_to_update_site(context):
+    """Update the site using the Diode SDK"""
     entities = [
         Entity(
             site=Site(
@@ -68,9 +68,9 @@ def update_site_object(context):
     return context.response
 
 
-@then("the site object is updated in the database")
-def check_site_object_updated(context):
-    """Check if the object is updated in the database."""
+@then("the site is updated in the database")
+def check_site_updated(context):
+    """Check if the is updated in the database."""
     assert context.response is not None
     site = get_object_by_name(context.site_name, endpoint)
     assert site.get("name") == context.site_name

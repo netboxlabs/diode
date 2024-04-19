@@ -14,14 +14,14 @@ from steps.utils import (
 endpoint = "dcim/device-types/"
 
 
-@given('a new device type "{device_type_model}" object')
-def step_create_new_manufacturer_object(context, device_type_model):
+@given('a new device type "{device_type_model}"')
+def step_create_new_manufacturer(context, device_type_model):
     """Set the body of the request to create a new device type."""
     context.device_type_model = device_type_model
 
 
-@when("the device type object is ingested")
-def ingest_device_type_object(context):
+@when("the device type is ingested")
+def ingest_device_type(context):
     """Ingest the device type object using the Diode SDK"""
 
     entities = [
@@ -33,9 +33,9 @@ def ingest_device_type_object(context):
 
 
 @then(
-    'the device type object and "{manufacturer_name}" manufacturer are created in the database'
+    'the device type and "{manufacturer_name}" manufacturer are created in the database'
 )
-def check_device_type_and_manufacturers_objects(context, manufacturer_name):
+def check_device_type_and_manufacturers(context, manufacturer_name):
     """Check if the response is not None and the object is created in the database."""
     time.sleep(3)
     assert context.response is not None
@@ -45,7 +45,7 @@ def check_device_type_and_manufacturers_objects(context, manufacturer_name):
     assert manufacturer.get("name") == manufacturer_name
 
 
-@then("the device type object remains the same")
+@then("the device type remains the same")
 def check_device_type_object(context):
     """Check if the response is not None and the object is created in the database."""
     time.sleep(3)
@@ -55,7 +55,7 @@ def check_device_type_object(context):
 
 
 @given('device type "{device_type_model}" already exists in the database')
-def retrieve_existing_manufacturer_object(context, device_type_model):
+def retrieve_existing_manufacturer(context, device_type_model):
     """Retrieve the device type object from the database"""
     context.device_type_model = device_type_model
     device_type = get_object_by_model(context.device_type_model, endpoint)
@@ -65,7 +65,7 @@ def retrieve_existing_manufacturer_object(context, device_type_model):
 @given(
     'device type "{device_type_model}" with manufacturer "{manufacturer_name}", description "{description}", and part number "{part_number}"'
 )
-def create_device_type_object_to_update(
+def create_device_type_to_update(
     context, device_type_model, manufacturer_name, description, part_number
 ):
     """Create a device type object with a description to update"""
@@ -85,7 +85,7 @@ def remove_manufacturer(context, manufacturer_name):
 
 
 @when("the device type object is ingested with the updates")
-def update_device_type_object(context):
+def ingest_to_update_device_type(context):
     """Update the object using the Diode SDK"""
 
     entities = [
