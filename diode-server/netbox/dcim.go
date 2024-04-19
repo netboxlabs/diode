@@ -31,7 +31,7 @@ type DcimDevice struct {
 	Role        *DcimDeviceRole   `json:"role,omitempty" mapstructure:"role"`
 	DeviceType  *DcimDeviceType   `json:"device_type,omitempty" mapstructure:"device_type"`
 	Platform    *DcimPlatform     `json:"platform,omitempty"`
-	Serial      *string           `json:"serial"`
+	Serial      *string           `json:"serial,omitempty"`
 	Description *string           `json:"description,omitempty"`
 	Status      *DcimDeviceStatus `json:"status,omitempty"`
 }
