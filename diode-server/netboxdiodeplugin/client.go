@@ -397,6 +397,12 @@ func wrapObjectState(dataType string, object any) (any, error) {
 		}{
 			Site: object,
 		}, nil
+	case netbox.ExtrasTagObjectType:
+		return struct {
+			Tag any
+		}{
+			Tag: object,
+		}, nil
 	default:
 		return nil, fmt.Errorf("unsupported data type %s", dataType)
 	}

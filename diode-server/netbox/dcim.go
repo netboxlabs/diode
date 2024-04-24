@@ -31,9 +31,12 @@ type DcimDevice struct {
 	Role        *DcimDeviceRole   `json:"role,omitempty" mapstructure:"role"`
 	DeviceType  *DcimDeviceType   `json:"device_type,omitempty" mapstructure:"device_type"`
 	Platform    *DcimPlatform     `json:"platform,omitempty"`
-	Serial      *string           `json:"serial"`
+	Serial      *string           `json:"serial,omitempty"`
 	Description *string           `json:"description,omitempty"`
 	Status      *DcimDeviceStatus `json:"status,omitempty"`
+	AssetTag    *string           `json:"asset_tag,omitempty" mapstructure:"asset_tag"`
+	Comments    *string           `json:"comments,omitempty"`
+	Tags        []*Tag            `json:"tags,omitempty"`
 }
 
 // DcimDeviceStatus represents a DCIM device status
@@ -69,6 +72,7 @@ type DcimDeviceRole struct {
 	Slug        string  `json:"slug,omitempty"`
 	Color       *string `json:"color,omitempty"`
 	Description *string `json:"description,omitempty"`
+	Tags        []*Tag  `json:"tags,omitempty"`
 }
 
 // DcimDeviceType represents a DCIM device type
@@ -78,7 +82,9 @@ type DcimDeviceType struct {
 	Slug         string            `json:"slug,omitempty"`
 	Manufacturer *DcimManufacturer `json:"manufacturer,omitempty"`
 	Description  *string           `json:"description,omitempty"`
-	PartNumber   *string           `json:"part_number,omitempty"  mapstructure:"part_number"`
+	Comments     *string           `json:"comments,omitempty"`
+	PartNumber   *string           `json:"part_number,omitempty" mapstructure:"part_number"`
+	Tags         []*Tag            `json:"tags,omitempty"`
 }
 
 // DcimInterface represents a DCIM interface
@@ -94,13 +100,17 @@ type DcimManufacturer struct {
 	Name        string  `json:"name,omitempty"`
 	Slug        string  `json:"slug,omitempty"`
 	Description *string `json:"description,omitempty"`
+	Tags        []*Tag  `json:"tags,omitempty"`
 }
 
 // DcimPlatform represents a DCIM platform
 type DcimPlatform struct {
-	ID   int    `json:"id,omitempty"`
-	Name string `json:"name,omitempty"`
-	Slug string `json:"slug,omitempty"`
+	ID           int               `json:"id,omitempty"`
+	Name         string            `json:"name,omitempty"`
+	Slug         string            `json:"slug,omitempty"`
+	Manufacturer *DcimManufacturer `json:"manufacturer,omitempty"`
+	Description  *string           `json:"description,omitempty"`
+	Tags         []*Tag            `json:"tags,omitempty"`
 }
 
 // DcimSite represents a DCIM site
@@ -109,7 +119,11 @@ type DcimSite struct {
 	Name        string          `json:"name,omitempty"`
 	Slug        string          `json:"slug,omitempty"`
 	Status      *DcimSiteStatus `json:"status,omitempty"`
+	Facility    *string         `json:"facility,omitempty"`
+	TimeZone    *string         `json:"time_zone,omitempty" mapstructure:"time_zone"`
 	Description *string         `json:"description,omitempty"`
+	Comments    *string         `json:"comments,omitempty"`
+	Tags        []*Tag          `json:"tags,omitempty"`
 }
 
 // DcimSiteStatus represents a DCIM site status
@@ -160,11 +174,10 @@ func NewDcimManufacturer() *DcimManufacturer {
 
 // NewDcimDeviceType creates a new DCIM device type placeholder
 func NewDcimDeviceType() *DcimDeviceType {
-	manufacturer := NewDcimManufacturer()
 	return &DcimDeviceType{
 		Model:        "undefined",
 		Slug:         "undefined",
-		Manufacturer: manufacturer,
+		Manufacturer: NewDcimManufacturer(),
 	}
 }
 
@@ -175,5 +188,18 @@ func NewDcimDeviceRole() *DcimDeviceRole {
 		Name:  "undefined",
 		Slug:  "undefined",
 		Color: &color,
+	}
+}
+
+// NewDcimDevice creates a new DCIM device placeholder
+func NewDcimDevice() *DcimDevice {
+	status := DcimDeviceStatusActive
+	return &DcimDevice{
+		Name:       "undefined",
+		Site:       NewDcimSite(),
+		Role:       NewDcimDeviceRole(),
+		DeviceType: NewDcimDeviceType(),
+		Platform:   NewDcimPlatform(),
+		Status:     &status,
 	}
 }
