@@ -1,9 +1,13 @@
 package netbox
 
 import (
+	"errors"
 	"fmt"
+	"reflect"
+	"slices"
 
 	"github.com/gosimple/slug"
+	"github.com/mitchellh/hashstructure/v2"
 )
 
 // ComparableData is an interface for NetBox comparable data
@@ -16,8 +20,8 @@ type ComparableData interface {
 	// IsValid checks if the data is not nil
 	IsValid() bool
 
-	// AllData returns all the data
-	AllData() []ComparableData
+	// NestedObjects returns all nested objects
+	NestedObjects() ([]ComparableData, error)
 
 	// DataType returns the data type
 	DataType() string
@@ -28,114 +32,277 @@ type ComparableData interface {
 	// ID returns the ID of the data
 	ID() int
 
-	// ReplaceData replaces the data with the given data
-	ReplaceData(data ComparableData)
-
 	// IsPlaceholder returns true if the data is a placeholder
 	IsPlaceholder() bool
 
 	// SetDefaults sets the default values for the data
 	SetDefaults()
+
+	// Patch creates patches between the actual, intended and current data
+	Patch(ComparableData, map[string]ComparableData) ([]ComparableData, error)
 }
 
 // DcimDeviceDataWrapper represents a DCIM device data wrapper
 type DcimDeviceDataWrapper struct {
 	Device *DcimDevice
 
-	placeholder bool
+	placeholder        bool
+	hasParent          bool
+	nestedObjects      []ComparableData
+	objectsToReconcile []ComparableData
 }
 
 func (*DcimDeviceDataWrapper) comparableData() {}
 
 // Data returns the Device
-func (d *DcimDeviceDataWrapper) Data() any {
-	return d.Device
+func (actual *DcimDeviceDataWrapper) Data() any {
+	return actual.Device
 }
 
 // IsValid returns true if the Device is not nil
-func (d *DcimDeviceDataWrapper) IsValid() bool {
-	return d.Device != nil
+func (actual *DcimDeviceDataWrapper) IsValid() bool {
+	return actual.Device != nil
 }
 
-// AllData returns all the data
-func (d *DcimDeviceDataWrapper) AllData() []ComparableData {
-	result := make([]ComparableData, 0)
+// NestedObjects returns all nested objects
+func (actual *DcimDeviceDataWrapper) NestedObjects() ([]ComparableData, error) {
+	if len(actual.nestedObjects) > 0 {
+		return actual.nestedObjects, nil
+	}
 
-	for _, t := range NestedTypes(d.DataType()) {
-		switch t {
-		case DcimSiteObjectType:
-			site := DcimSiteDataWrapper{Site: d.Device.Site, hasParent: true}
+	objects := make([]ComparableData, 0)
 
-			siteData := site.AllData()
+	if actual.Device == nil && actual.hasParent {
+		actual.Device = NewDcimDevice()
+		actual.placeholder = true
+	}
 
-			d.Device.Site = site.Site
+	site := DcimSiteDataWrapper{Site: actual.Device.Site, placeholder: actual.placeholder, hasParent: true}
 
-			result = append(result, siteData...)
-		case DcimPlatformObjectType:
-			platform := DcimPlatformDataWrapper{Platform: d.Device.Platform, hasParent: true}
+	so, err := site.NestedObjects()
+	if err != nil {
+		return nil, err
+	}
 
-			platformData := platform.AllData()
+	objects = append(objects, so...)
 
-			d.Device.Platform = platform.Platform
+	actual.Device.Site = site.Site
 
-			result = append(result, platformData...)
-		case DcimDeviceTypeObjectType:
-			deviceType := DcimDeviceTypeDataWrapper{DeviceType: d.Device.DeviceType, hasParent: true}
+	platform := DcimPlatformDataWrapper{Platform: actual.Device.Platform, placeholder: actual.placeholder, hasParent: true}
 
-			deviceTypeData := deviceType.AllData()
+	po, err := platform.NestedObjects()
+	if err != nil {
+		return nil, err
+	}
 
-			d.Device.DeviceType = deviceType.DeviceType
+	objects = append(objects, po...)
 
-			result = append(result, deviceTypeData...)
+	actual.Device.Platform = platform.Platform
 
-		case DcimDeviceRoleObjectType:
-			deviceRole := DcimDeviceRoleDataWrapper{DeviceRole: d.Device.Role, hasParent: true}
+	deviceType := DcimDeviceTypeDataWrapper{DeviceType: actual.Device.DeviceType, placeholder: actual.placeholder, hasParent: true}
 
-			deviceRoleData := deviceRole.AllData()
+	dto, err := deviceType.NestedObjects()
+	if err != nil {
+		return nil, err
+	}
 
-			d.Device.Role = deviceRole.DeviceRole
+	objects = append(objects, dto...)
 
-			result = append(result, deviceRoleData...)
+	actual.Device.DeviceType = deviceType.DeviceType
+
+	deviceRole := DcimDeviceRoleDataWrapper{DeviceRole: actual.Device.Role, placeholder: actual.placeholder, hasParent: true}
+
+	dro, err := deviceRole.NestedObjects()
+	if err != nil {
+		return nil, err
+	}
+
+	objects = append(objects, dro...)
+
+	actual.Device.Role = deviceRole.DeviceRole
+
+	if actual.Device.Tags != nil {
+		for _, t := range actual.Device.Tags {
+			if t.Slug == "" {
+				t.Slug = slug.Make(t.Name)
+			}
+			objects = append(objects, &TagDataWrapper{Tag: t, hasParent: true})
 		}
 	}
 
-	result = append(result, d)
+	actual.nestedObjects = objects
 
-	return result
+	objects = append(objects, actual)
+
+	return objects, nil
 }
 
 // DataType returns the data type
-func (d *DcimDeviceDataWrapper) DataType() string {
+func (actual *DcimDeviceDataWrapper) DataType() string {
 	return DcimDeviceObjectType
 }
 
 // QueryString returns the query string needed to retrieve its object state
-func (d *DcimDeviceDataWrapper) QueryString() string {
-	return d.Device.Name
+func (actual *DcimDeviceDataWrapper) QueryString() string {
+	return actual.Device.Name
 }
 
 // ID returns the ID of the data
-func (d *DcimDeviceDataWrapper) ID() int {
-	return d.Device.ID
-}
-
-// ReplaceData replaces the data with the given data
-func (d *DcimDeviceDataWrapper) ReplaceData(data ComparableData) {
-	if d2, ok := data.(*DcimDeviceDataWrapper); ok {
-		*d.Device = *d2.Device
-	}
+func (actual *DcimDeviceDataWrapper) ID() int {
+	return actual.Device.ID
 }
 
 // IsPlaceholder returns true if the data is a placeholder
-func (d *DcimDeviceDataWrapper) IsPlaceholder() bool {
-	return d.placeholder
+func (actual *DcimDeviceDataWrapper) IsPlaceholder() bool {
+	return actual.placeholder
+}
+
+// Patch creates patches between the actual, intended and current data
+func (actual *DcimDeviceDataWrapper) Patch(cmp ComparableData, intendedNestedObjects map[string]ComparableData) ([]ComparableData, error) {
+	intended, ok := cmp.(*DcimDeviceDataWrapper)
+	if !ok && intended != nil {
+		return nil, errors.New("invalid data type")
+	}
+
+	actualNestedObjectsMap := make(map[string]ComparableData)
+	for _, obj := range actual.nestedObjects {
+		actualNestedObjectsMap[fmt.Sprintf("%p", obj.Data())] = obj
+	}
+
+	actualSite := extractFromObjectsMap(actualNestedObjectsMap, fmt.Sprintf("%p", actual.Device.Site))
+	intendedSite := extractFromObjectsMap(intendedNestedObjects, fmt.Sprintf("%p", actual.Device.Site))
+
+	actualPlatform := extractFromObjectsMap(actualNestedObjectsMap, fmt.Sprintf("%p", actual.Device.Platform))
+	intendedPlatform := extractFromObjectsMap(intendedNestedObjects, fmt.Sprintf("%p", actual.Device.Platform))
+
+	actualDeviceType := extractFromObjectsMap(actualNestedObjectsMap, fmt.Sprintf("%p", actual.Device.DeviceType))
+	intendedDeviceType := extractFromObjectsMap(intendedNestedObjects, fmt.Sprintf("%p", actual.Device.DeviceType))
+
+	actualRole := extractFromObjectsMap(actualNestedObjectsMap, fmt.Sprintf("%p", actual.Device.Role))
+	intendedRole := extractFromObjectsMap(intendedNestedObjects, fmt.Sprintf("%p", actual.Device.Role))
+
+	reconciliationRequired := true
+
+	if intended != nil {
+		currentNestedObjectsMap := make(map[string]ComparableData)
+		currentNestedObjects, err := intended.NestedObjects()
+		if err != nil {
+			return nil, err
+		}
+		for _, obj := range currentNestedObjects {
+			currentNestedObjectsMap[fmt.Sprintf("%p", obj.Data())] = obj
+		}
+
+		actual.Device.ID = intended.Device.ID
+		actual.Device.Name = intended.Device.Name
+
+		if actual.Device.Status == nil {
+			actual.Device.Status = intended.Device.Status
+		}
+
+		if actualSite.IsPlaceholder() && intended.Device.Site != nil {
+			intendedSite = extractFromObjectsMap(currentNestedObjectsMap, fmt.Sprintf("%p", intended.Device.Site))
+		}
+
+		siteObjectsToReconcile, siteErr := actualSite.Patch(intendedSite, intendedNestedObjects)
+		if siteErr != nil {
+			return nil, siteErr
+		}
+		actual.Device.Site = actualSite.Data().(*DcimSite)
+
+		actual.objectsToReconcile = append(actual.objectsToReconcile, siteObjectsToReconcile...)
+
+		if actualPlatform.IsPlaceholder() && intended.Device.Platform != nil {
+			intendedPlatform = extractFromObjectsMap(currentNestedObjectsMap, fmt.Sprintf("%p", intended.Device.Platform))
+		}
+
+		platformObjectsToReconcile, platformErr := actualPlatform.Patch(intendedPlatform, intendedNestedObjects)
+		if platformErr != nil {
+			return nil, platformErr
+		}
+		actual.Device.Platform = actualPlatform.Data().(*DcimPlatform)
+
+		actual.objectsToReconcile = append(actual.objectsToReconcile, platformObjectsToReconcile...)
+
+		if actualDeviceType.IsPlaceholder() && intended.Device.DeviceType != nil {
+			intendedDeviceType = extractFromObjectsMap(currentNestedObjectsMap, fmt.Sprintf("%p", intended.Device.DeviceType))
+		}
+
+		deviceTypeObjectsToReconcile, deviceTypeErr := actualDeviceType.Patch(intendedDeviceType, intendedNestedObjects)
+		if deviceTypeErr != nil {
+			return nil, deviceTypeErr
+		}
+		actual.Device.DeviceType = actualDeviceType.Data().(*DcimDeviceType)
+
+		actual.objectsToReconcile = append(actual.objectsToReconcile, deviceTypeObjectsToReconcile...)
+
+		if actualRole.IsPlaceholder() && intended.Device.Role != nil {
+			intendedRole = extractFromObjectsMap(currentNestedObjectsMap, fmt.Sprintf("%p", intended.Device.Role))
+		}
+
+		roleObjectsToReconcile, roleErr := actualRole.Patch(intendedRole, intendedNestedObjects)
+		if roleErr != nil {
+			return nil, roleErr
+		}
+		actual.Device.Role = actualRole.Data().(*DcimDeviceRole)
+
+		actual.objectsToReconcile = append(actual.objectsToReconcile, roleObjectsToReconcile...)
+
+		reconciliationRequired = !reflect.DeepEqual(intended.Data(), actual.Data())
+	} else {
+		actual.SetDefaults()
+
+		siteObjectsToReconcile, siteErr := actualSite.Patch(intendedSite, intendedNestedObjects)
+		if siteErr != nil {
+			return nil, siteErr
+		}
+		actual.Device.Site = actualSite.Data().(*DcimSite)
+
+		actual.objectsToReconcile = append(actual.objectsToReconcile, siteObjectsToReconcile...)
+
+		platformObjectsToReconcile, platformErr := actualPlatform.Patch(intendedPlatform, intendedNestedObjects)
+		if platformErr != nil {
+			return nil, platformErr
+		}
+		actual.Device.Platform = actualPlatform.Data().(*DcimPlatform)
+
+		actual.objectsToReconcile = append(actual.objectsToReconcile, platformObjectsToReconcile...)
+
+		deviceTypeObjectsToReconcile, deviceTypeErr := actualDeviceType.Patch(intendedDeviceType, intendedNestedObjects)
+		if deviceTypeErr != nil {
+			return nil, deviceTypeErr
+		}
+		actual.Device.DeviceType = actualDeviceType.Data().(*DcimDeviceType)
+
+		actual.objectsToReconcile = append(actual.objectsToReconcile, deviceTypeObjectsToReconcile...)
+
+		roleObjectsToReconcile, roleErr := actualRole.Patch(intendedRole, intendedNestedObjects)
+		if roleErr != nil {
+			return nil, roleErr
+		}
+		actual.Device.Role = actualRole.Data().(*DcimDeviceRole)
+
+		actual.objectsToReconcile = append(actual.objectsToReconcile, roleObjectsToReconcile...)
+	}
+
+	if reconciliationRequired {
+		actual.objectsToReconcile = append(actual.objectsToReconcile, actual)
+	}
+
+	dedupObjectsToReconcile, err := dedupObjectsToReconcile(actual.objectsToReconcile)
+	if err != nil {
+		return nil, err
+	}
+	actual.objectsToReconcile = dedupObjectsToReconcile
+
+	return actual.objectsToReconcile, nil
 }
 
 // SetDefaults sets the default values for the device
-func (d *DcimDeviceDataWrapper) SetDefaults() {
-	if d.Device.Status == nil {
+func (actual *DcimDeviceDataWrapper) SetDefaults() {
+	if actual.Device.Status == nil {
 		status := DcimDeviceStatusActive
-		d.Device.Status = &status
+		actual.Device.Status = &status
 	}
 }
 
@@ -143,72 +310,145 @@ func (d *DcimDeviceDataWrapper) SetDefaults() {
 type DcimDeviceRoleDataWrapper struct {
 	DeviceRole *DcimDeviceRole
 
-	placeholder bool
-	hasParent   bool
+	placeholder        bool
+	hasParent          bool
+	nestedObjects      []ComparableData
+	objectsToReconcile []ComparableData
 }
 
 func (*DcimDeviceRoleDataWrapper) comparableData() {}
 
 // Data returns the DeviceRole
-func (d *DcimDeviceRoleDataWrapper) Data() any {
-	return d.DeviceRole
+func (actual *DcimDeviceRoleDataWrapper) Data() any {
+	return actual.DeviceRole
 }
 
 // IsValid returns true if the DeviceRole is not nil
-func (d *DcimDeviceRoleDataWrapper) IsValid() bool {
-	return d.DeviceRole != nil
+func (actual *DcimDeviceRoleDataWrapper) IsValid() bool {
+	return actual.DeviceRole != nil
 }
 
-// AllData returns all the data
-func (d *DcimDeviceRoleDataWrapper) AllData() []ComparableData {
-	result := make([]ComparableData, 0)
-
-	if d.DeviceRole == nil && d.hasParent {
-		d.DeviceRole = NewDcimDeviceRole()
-		d.placeholder = true
+// NestedObjects returns all nested objects
+func (actual *DcimDeviceRoleDataWrapper) NestedObjects() ([]ComparableData, error) {
+	if len(actual.nestedObjects) > 0 {
+		return actual.nestedObjects, nil
 	}
 
-	if d.DeviceRole.Slug == "" {
-		d.DeviceRole.Slug = slug.Make(d.DeviceRole.Name)
+	objects := make([]ComparableData, 0)
+
+	if actual.DeviceRole == nil && actual.hasParent {
+		actual.DeviceRole = NewDcimDeviceRole()
+		actual.placeholder = true
 	}
 
-	result = append(result, d)
+	if actual.DeviceRole.Slug == "" {
+		actual.DeviceRole.Slug = slug.Make(actual.DeviceRole.Name)
+	}
 
-	return result
+	if actual.DeviceRole.Tags != nil {
+		for _, t := range actual.DeviceRole.Tags {
+			if t.Slug == "" {
+				t.Slug = slug.Make(t.Name)
+			}
+			objects = append(objects, &TagDataWrapper{Tag: t, hasParent: true})
+		}
+	}
+
+	actual.nestedObjects = objects
+
+	objects = append(objects, actual)
+
+	return objects, nil
 }
 
 // DataType returns the data type
-func (d *DcimDeviceRoleDataWrapper) DataType() string {
+func (actual *DcimDeviceRoleDataWrapper) DataType() string {
 	return DcimDeviceRoleObjectType
 }
 
 // QueryString returns the query string needed to retrieve its object state
-func (d *DcimDeviceRoleDataWrapper) QueryString() string {
-	return d.DeviceRole.Name
+func (actual *DcimDeviceRoleDataWrapper) QueryString() string {
+	return actual.DeviceRole.Name
 }
 
 // ID returns the ID of the data
-func (d *DcimDeviceRoleDataWrapper) ID() int {
-	return d.DeviceRole.ID
-}
-
-// ReplaceData replaces the data with the given data
-func (d *DcimDeviceRoleDataWrapper) ReplaceData(data ComparableData) {
-	if d2, ok := data.(*DcimDeviceRoleDataWrapper); ok {
-		*d.DeviceRole = *d2.DeviceRole
-	}
+func (actual *DcimDeviceRoleDataWrapper) ID() int {
+	return actual.DeviceRole.ID
 }
 
 // IsPlaceholder returns true if the data is a placeholder
-func (d *DcimDeviceRoleDataWrapper) IsPlaceholder() bool {
-	return d.placeholder
+func (actual *DcimDeviceRoleDataWrapper) IsPlaceholder() bool {
+	return actual.placeholder
+}
+
+// Patch creates patches between the actual, intended and current data
+func (actual *DcimDeviceRoleDataWrapper) Patch(cmp ComparableData, intendedNestedObjects map[string]ComparableData) ([]ComparableData, error) {
+	intended, ok := cmp.(*DcimDeviceRoleDataWrapper)
+	if !ok && intended != nil {
+		return nil, errors.New("invalid data type")
+	}
+
+	actualNestedObjectsMap := make(map[string]ComparableData)
+	for _, obj := range actual.nestedObjects {
+		actualNestedObjectsMap[fmt.Sprintf("%p", obj.Data())] = obj
+	}
+
+	reconciliationRequired := true
+
+	if intended != nil {
+		actual.DeviceRole.ID = intended.DeviceRole.ID
+		actual.DeviceRole.Name = intended.DeviceRole.Name
+		actual.DeviceRole.Slug = intended.DeviceRole.Slug
+
+		if actual.DeviceRole.Color == nil {
+			actual.DeviceRole.Color = intended.DeviceRole.Color
+		}
+
+		if actual.DeviceRole.Description == nil {
+			actual.DeviceRole.Description = intended.DeviceRole.Description
+		}
+
+		tagsToMerge := mergeTags(actual.DeviceRole.Tags, intended.DeviceRole.Tags, intendedNestedObjects)
+
+		if len(tagsToMerge) > 0 {
+			actual.DeviceRole.Tags = tagsToMerge
+		}
+
+		for _, t := range actual.DeviceRole.Tags {
+			if t.ID == 0 {
+				actual.objectsToReconcile = append(actual.objectsToReconcile, &TagDataWrapper{Tag: t, hasParent: true})
+			}
+		}
+
+		reconciliationRequired = !reflect.DeepEqual(intended.Data(), actual.Data())
+	} else {
+		actual.SetDefaults()
+
+		tagsToMerge := mergeTags(actual.DeviceRole.Tags, nil, intendedNestedObjects)
+
+		if len(tagsToMerge) > 0 {
+			actual.DeviceRole.Tags = tagsToMerge
+		}
+
+		for _, t := range actual.DeviceRole.Tags {
+			if t.ID == 0 {
+				actual.objectsToReconcile = append(actual.objectsToReconcile, &TagDataWrapper{Tag: t, hasParent: true})
+			}
+		}
+	}
+
+	if reconciliationRequired {
+		actual.objectsToReconcile = append(actual.objectsToReconcile, actual)
+	}
+
+	return actual.objectsToReconcile, nil
 }
 
 // SetDefaults sets the default values for the device role
-func (d *DcimDeviceRoleDataWrapper) SetDefaults() {
-	if d.DeviceRole.Color == nil {
+func (actual *DcimDeviceRoleDataWrapper) SetDefaults() {
+	if actual.DeviceRole.Color == nil {
 		color := "000000"
-		d.DeviceRole.Color = &color
+		actual.DeviceRole.Color = &color
 	}
 }
 
@@ -216,89 +456,197 @@ func (d *DcimDeviceRoleDataWrapper) SetDefaults() {
 type DcimDeviceTypeDataWrapper struct {
 	DeviceType *DcimDeviceType
 
-	placeholder bool
-	hasParent   bool
+	placeholder        bool
+	hasParent          bool
+	nestedObjects      []ComparableData
+	objectsToReconcile []ComparableData
 }
 
 func (*DcimDeviceTypeDataWrapper) comparableData() {}
 
 // Data returns the DeviceType
-func (d *DcimDeviceTypeDataWrapper) Data() any {
-	return d.DeviceType
+func (actual *DcimDeviceTypeDataWrapper) Data() any {
+	return actual.DeviceType
 }
 
 // IsValid returns true if the DeviceType is not nil
-func (d *DcimDeviceTypeDataWrapper) IsValid() bool {
-	return d.DeviceType != nil
-}
-
-// AllData returns all the data
-func (d *DcimDeviceTypeDataWrapper) AllData() []ComparableData {
-	result := make([]ComparableData, 0)
-
-	if d.DeviceType == nil && d.hasParent {
-		d.DeviceType = NewDcimDeviceType()
-		d.placeholder = true
-	}
-
-	if d.DeviceType.Slug == "" {
-		d.DeviceType.Slug = slug.Make(d.DeviceType.Model)
-	}
-
-	for _, t := range NestedTypes(d.DataType()) {
-		switch t {
-		case DcimManufacturerObjectType:
-			manufacturer := DcimManufacturerDataWrapper{Manufacturer: d.DeviceType.Manufacturer, hasParent: true}
-			manufacturer.placeholder = d.placeholder
-
-			manufacturerData := manufacturer.AllData()
-
-			d.DeviceType.Manufacturer = manufacturer.Manufacturer
-
-			result = append(result, manufacturerData...)
-		}
-	}
-
-	result = append(result, d)
-
-	return result
+func (actual *DcimDeviceTypeDataWrapper) IsValid() bool {
+	return actual.DeviceType != nil
 }
 
 // DataType returns the data type
-func (d *DcimDeviceTypeDataWrapper) DataType() string {
+func (actual *DcimDeviceTypeDataWrapper) DataType() string {
 	return DcimDeviceTypeObjectType
 }
 
 // QueryString returns the query string needed to retrieve its object state
-func (d *DcimDeviceTypeDataWrapper) QueryString() string {
-	return d.DeviceType.Model
+func (actual *DcimDeviceTypeDataWrapper) QueryString() string {
+	return actual.DeviceType.Model
 }
 
 // ID returns the ID of the data
-func (d *DcimDeviceTypeDataWrapper) ID() int {
-	return d.DeviceType.ID
-}
-
-// ReplaceData replaces the data with the given data
-func (d *DcimDeviceTypeDataWrapper) ReplaceData(data ComparableData) {
-	if d2, ok := data.(*DcimDeviceTypeDataWrapper); ok {
-		*d.DeviceType = *d2.DeviceType
-	}
+func (actual *DcimDeviceTypeDataWrapper) ID() int {
+	return actual.DeviceType.ID
 }
 
 // IsPlaceholder returns true if the data is a placeholder
-func (d *DcimDeviceTypeDataWrapper) IsPlaceholder() bool {
-	return d.placeholder
+func (actual *DcimDeviceTypeDataWrapper) IsPlaceholder() bool {
+	return actual.placeholder
+}
+
+// NestedObjects returns all nested objects
+func (actual *DcimDeviceTypeDataWrapper) NestedObjects() ([]ComparableData, error) {
+	if len(actual.nestedObjects) > 0 {
+		return actual.nestedObjects, nil
+	}
+
+	objects := make([]ComparableData, 0)
+
+	if actual.DeviceType == nil && actual.hasParent {
+		actual.DeviceType = NewDcimDeviceType()
+		actual.placeholder = true
+	}
+
+	if actual.DeviceType.Slug == "" {
+		actual.DeviceType.Slug = slug.Make(actual.DeviceType.Model)
+	}
+
+	manufacturer := DcimManufacturerDataWrapper{Manufacturer: actual.DeviceType.Manufacturer, placeholder: actual.placeholder, hasParent: true}
+
+	mo, err := manufacturer.NestedObjects()
+	if err != nil {
+		return nil, err
+	}
+
+	objects = append(objects, mo...)
+
+	actual.DeviceType.Manufacturer = manufacturer.Manufacturer
+
+	if actual.DeviceType.Tags != nil {
+		for _, t := range actual.DeviceType.Tags {
+			if t.Slug == "" {
+				t.Slug = slug.Make(t.Name)
+			}
+			objects = append(objects, &TagDataWrapper{Tag: t, hasParent: true})
+		}
+	}
+
+	actual.nestedObjects = objects
+
+	objects = append(objects, actual)
+
+	return objects, nil
+}
+
+// Patch creates patches between the actual, intended and current data
+func (actual *DcimDeviceTypeDataWrapper) Patch(cmp ComparableData, intendedNestedObjects map[string]ComparableData) ([]ComparableData, error) {
+	intended, ok := cmp.(*DcimDeviceTypeDataWrapper)
+	if !ok && intended != nil {
+		return nil, errors.New("invalid data type")
+	}
+
+	actualNestedObjectsMap := make(map[string]ComparableData)
+	for _, obj := range actual.nestedObjects {
+		actualNestedObjectsMap[fmt.Sprintf("%p", obj.Data())] = obj
+	}
+
+	actualManufacturerKey := fmt.Sprintf("%p", actual.DeviceType.Manufacturer)
+	actualManufacturer := extractFromObjectsMap(actualNestedObjectsMap, actualManufacturerKey)
+	intendedManufacturer := extractFromObjectsMap(intendedNestedObjects, actualManufacturerKey)
+
+	reconciliationRequired := true
+
+	if intended != nil {
+		currentNestedObjectsMap := make(map[string]ComparableData)
+		currentNestedObjects, err := intended.NestedObjects()
+		if err != nil {
+			return nil, err
+		}
+		for _, obj := range currentNestedObjects {
+			currentNestedObjectsMap[fmt.Sprintf("%p", obj.Data())] = obj
+		}
+
+		actual.DeviceType.ID = intended.DeviceType.ID
+		actual.DeviceType.Model = intended.DeviceType.Model
+		actual.DeviceType.Slug = intended.DeviceType.Slug
+
+		if actual.DeviceType.Description == nil {
+			actual.DeviceType.Description = intended.DeviceType.Description
+		}
+
+		if actual.DeviceType.Comments == nil {
+			actual.DeviceType.Comments = intended.DeviceType.Comments
+		}
+
+		if actual.DeviceType.PartNumber == nil {
+			actual.DeviceType.PartNumber = intended.DeviceType.PartNumber
+		}
+
+		if actualManufacturer.IsPlaceholder() && intended.DeviceType.Manufacturer != nil {
+			intendedManufacturer = extractFromObjectsMap(currentNestedObjectsMap, fmt.Sprintf("%p", intended.DeviceType.Manufacturer))
+		}
+
+		manufacturerObjectsToReconcile, manufacturerErr := actualManufacturer.Patch(intendedManufacturer, intendedNestedObjects)
+		if manufacturerErr != nil {
+			return nil, manufacturerErr
+		}
+		actual.DeviceType.Manufacturer = actualManufacturer.Data().(*DcimManufacturer)
+
+		tagsToMerge := mergeTags(actual.DeviceType.Tags, intended.DeviceType.Tags, intendedNestedObjects)
+
+		if len(tagsToMerge) > 0 {
+			actual.DeviceType.Tags = tagsToMerge
+		}
+
+		for _, t := range actual.DeviceType.Tags {
+			if t.ID == 0 {
+				actual.objectsToReconcile = append(actual.objectsToReconcile, &TagDataWrapper{Tag: t, hasParent: true})
+			}
+		}
+
+		actual.objectsToReconcile = append(actual.objectsToReconcile, manufacturerObjectsToReconcile...)
+
+		reconciliationRequired = !reflect.DeepEqual(intended.Data(), actual.Data())
+	} else {
+		manufacturerObjectsToReconcile, manufacturerErr := actualManufacturer.Patch(intendedManufacturer, intendedNestedObjects)
+		if manufacturerErr != nil {
+			return nil, manufacturerErr
+		}
+		actual.DeviceType.Manufacturer = actualManufacturer.Data().(*DcimManufacturer)
+
+		tagsToMerge := mergeTags(actual.DeviceType.Tags, nil, intendedNestedObjects)
+
+		if len(tagsToMerge) > 0 {
+			actual.DeviceType.Tags = tagsToMerge
+		}
+
+		for _, t := range actual.DeviceType.Tags {
+			if t.ID == 0 {
+				actual.objectsToReconcile = append(actual.objectsToReconcile, &TagDataWrapper{Tag: t, hasParent: true})
+			}
+		}
+
+		actual.objectsToReconcile = append(actual.objectsToReconcile, manufacturerObjectsToReconcile...)
+	}
+
+	if reconciliationRequired {
+		actual.objectsToReconcile = append(actual.objectsToReconcile, actual)
+	}
+
+	return actual.objectsToReconcile, nil
 }
 
 // SetDefaults sets the default values for the device type
-func (d *DcimDeviceTypeDataWrapper) SetDefaults() {}
+func (actual *DcimDeviceTypeDataWrapper) SetDefaults() {}
 
 // DcimInterfaceDataWrapper represents a DCIM interface data wrapper
 type DcimInterfaceDataWrapper struct {
 	Interface *DcimInterface
 
 	placeholder bool
+	//hasParent   bool
+	//nestedObjects []ComparableData
+	//objectsToReconcile []ComparableData
 }
 
 func (*DcimInterfaceDataWrapper) comparableData() {}
@@ -313,15 +661,9 @@ func (d *DcimInterfaceDataWrapper) IsValid() bool {
 	return d.Interface != nil
 }
 
-// AllData returns all the data
-func (d *DcimInterfaceDataWrapper) AllData() []ComparableData {
-	result := make([]ComparableData, 0)
-
-	fmt.Printf("not implemented, data type: %s, required types: %#v\n", d.DataType(), NestedTypes(d.DataType()))
-
-	result = append(result, d)
-
-	return result
+// NestedObjects returns all nested objects
+func (d *DcimInterfaceDataWrapper) NestedObjects() ([]ComparableData, error) {
+	return nil, nil
 }
 
 // DataType returns the data type
@@ -339,16 +681,22 @@ func (d *DcimInterfaceDataWrapper) ID() int {
 	return d.Interface.ID
 }
 
-// ReplaceData replaces the data with the given data
-func (d *DcimInterfaceDataWrapper) ReplaceData(data ComparableData) {
-	if d2, ok := data.(*DcimInterfaceDataWrapper); ok {
-		*d.Interface = *d2.Interface
-	}
-}
-
 // IsPlaceholder returns true if the data is a placeholder
 func (d *DcimInterfaceDataWrapper) IsPlaceholder() bool {
 	return d.placeholder
+}
+
+// Patch creates patches between the actual, intended and current data
+func (d *DcimInterfaceDataWrapper) Patch(cmp ComparableData, _ map[string]ComparableData) ([]ComparableData, error) {
+	d2, ok := cmp.(*DcimInterfaceDataWrapper)
+	if !ok && d2 != nil {
+		return nil, errors.New("invalid data type")
+	}
+
+	fmt.Printf("d: %#v\n", d)
+	fmt.Printf("d2: %#v\n", d2)
+
+	return nil, nil
 }
 
 // SetDefaults sets the default values for the interface
@@ -358,210 +706,564 @@ func (d *DcimInterfaceDataWrapper) SetDefaults() {}
 type DcimManufacturerDataWrapper struct {
 	Manufacturer *DcimManufacturer
 
-	placeholder bool
-	hasParent   bool
+	placeholder        bool
+	hasParent          bool
+	nestedObjects      []ComparableData
+	objectsToReconcile []ComparableData
 }
 
 func (*DcimManufacturerDataWrapper) comparableData() {}
 
 // Data returns the Manufacturer
-func (d *DcimManufacturerDataWrapper) Data() any {
-	return d.Manufacturer
+func (actual *DcimManufacturerDataWrapper) Data() any {
+	return actual.Manufacturer
 }
 
 // IsValid returns true if the Manufacturer is not nil
-func (d *DcimManufacturerDataWrapper) IsValid() bool {
-	return d.Manufacturer != nil
+func (actual *DcimManufacturerDataWrapper) IsValid() bool {
+	return actual.Manufacturer != nil
 }
 
-// AllData returns all the data
-func (d *DcimManufacturerDataWrapper) AllData() []ComparableData {
-	result := make([]ComparableData, 0)
+// NestedObjects returns all nested objects
+func (actual *DcimManufacturerDataWrapper) NestedObjects() ([]ComparableData, error) {
+	if len(actual.nestedObjects) > 0 {
+		return actual.nestedObjects, nil
+	}
+	objects := make([]ComparableData, 0)
 
-	if d.Manufacturer == nil && d.hasParent {
-		d.Manufacturer = NewDcimManufacturer()
-		d.placeholder = true
+	if actual.Manufacturer == nil && actual.hasParent {
+		actual.Manufacturer = NewDcimManufacturer()
+		actual.placeholder = true
 	}
 
-	if d.Manufacturer.Slug == "" {
-		d.Manufacturer.Slug = slug.Make(d.Manufacturer.Name)
+	if actual.Manufacturer.Slug == "" {
+		actual.Manufacturer.Slug = slug.Make(actual.Manufacturer.Name)
 	}
 
-	result = append(result, d)
+	if actual.Manufacturer.Tags != nil {
+		for _, t := range actual.Manufacturer.Tags {
+			if t.Slug == "" {
+				t.Slug = slug.Make(t.Name)
+			}
+			objects = append(objects, &TagDataWrapper{Tag: t, hasParent: true})
+		}
+	}
 
-	return result
+	actual.nestedObjects = objects
+
+	objects = append(objects, actual)
+
+	return objects, nil
 }
 
 // DataType returns the data type
-func (d *DcimManufacturerDataWrapper) DataType() string {
+func (actual *DcimManufacturerDataWrapper) DataType() string {
 	return DcimManufacturerObjectType
 }
 
 // QueryString returns the query string needed to retrieve its object state
-func (d *DcimManufacturerDataWrapper) QueryString() string {
-	return d.Manufacturer.Name
+func (actual *DcimManufacturerDataWrapper) QueryString() string {
+	return actual.Manufacturer.Name
 }
 
 // ID returns the ID of the data
-func (d *DcimManufacturerDataWrapper) ID() int {
-	return d.Manufacturer.ID
-}
-
-// ReplaceData replaces the data with the given data
-func (d *DcimManufacturerDataWrapper) ReplaceData(data ComparableData) {
-	if d2, ok := data.(*DcimManufacturerDataWrapper); ok {
-		*d.Manufacturer = *d2.Manufacturer
-	}
+func (actual *DcimManufacturerDataWrapper) ID() int {
+	return actual.Manufacturer.ID
 }
 
 // IsPlaceholder returns true if the data is a placeholder
-func (d *DcimManufacturerDataWrapper) IsPlaceholder() bool {
-	return d.placeholder
+func (actual *DcimManufacturerDataWrapper) IsPlaceholder() bool {
+	return actual.placeholder
+}
+
+// Patch creates patches between the actual, intended and current data
+func (actual *DcimManufacturerDataWrapper) Patch(cmp ComparableData, intendedNestedObjects map[string]ComparableData) ([]ComparableData, error) {
+	intended, ok := cmp.(*DcimManufacturerDataWrapper)
+	if !ok && intended != nil {
+		return nil, errors.New("invalid data type")
+	}
+
+	reconciliationRequired := true
+
+	if intended != nil {
+		actual.Manufacturer.ID = intended.Manufacturer.ID
+		actual.Manufacturer.Name = intended.Manufacturer.Name
+		actual.Manufacturer.Slug = intended.Manufacturer.Slug
+
+		if actual.Manufacturer.Description == nil {
+			actual.Manufacturer.Description = intended.Manufacturer.Description
+		}
+
+		tagsToMerge := mergeTags(actual.Manufacturer.Tags, intended.Manufacturer.Tags, intendedNestedObjects)
+
+		if len(tagsToMerge) > 0 {
+			actual.Manufacturer.Tags = tagsToMerge
+		}
+
+		reconciliationRequired = !reflect.DeepEqual(intended.Data(), actual.Data())
+	} else {
+		// create new one?
+
+		tagsToMerge := mergeTags(actual.Manufacturer.Tags, nil, intendedNestedObjects)
+
+		if len(tagsToMerge) > 0 {
+			actual.Manufacturer.Tags = tagsToMerge
+		}
+	}
+
+	for _, t := range actual.Manufacturer.Tags {
+		if t.ID == 0 {
+			actual.objectsToReconcile = append(actual.objectsToReconcile, &TagDataWrapper{Tag: t, hasParent: true})
+		}
+	}
+
+	//fmt.Printf("[DcimManufacturerDataWrapper] reconciliationRequired: %t\n", reconciliationRequired)
+	if reconciliationRequired {
+		actual.objectsToReconcile = append(actual.objectsToReconcile, actual)
+	}
+
+	return actual.objectsToReconcile, nil
+}
+
+func mergeTags(actualTags []*Tag, intendedTags []*Tag, intendedNestedObjects map[string]ComparableData) []*Tag {
+	tagsToMerge := make([]*Tag, 0)
+	tagsToCreate := make([]*Tag, 0)
+
+	tagNamesToMerge := make([]string, 0)
+	tagNamesToCreate := make([]string, 0)
+
+	for _, t := range intendedTags {
+		if !slices.Contains(tagNamesToMerge, t.Name) {
+			tagNamesToMerge = append(tagNamesToMerge, t.Name)
+			tagsToMerge = append(tagsToMerge, t)
+		}
+	}
+
+	for _, t := range actualTags {
+		tagKey := fmt.Sprintf("%p", t)
+		tagWrapper := extractFromObjectsMap(intendedNestedObjects, tagKey)
+
+		if !slices.Contains(tagNamesToMerge, t.Name) && tagWrapper != nil {
+			tagNamesToMerge = append(tagNamesToMerge, t.Name)
+			tagsToMerge = append(tagsToMerge, tagWrapper.Data().(*Tag))
+			continue
+		}
+
+		if tagWrapper == nil {
+			if !slices.Contains(tagNamesToCreate, t.Name) {
+				tagNamesToCreate = append(tagNamesToCreate, t.Name)
+				tagsToCreate = append(tagsToCreate, t)
+			}
+		}
+	}
+
+	return append(tagsToMerge, tagsToCreate...)
 }
 
 // SetDefaults sets the default values for the manufacturer
-func (d *DcimManufacturerDataWrapper) SetDefaults() {}
+func (actual *DcimManufacturerDataWrapper) SetDefaults() {}
 
 // DcimPlatformDataWrapper represents a DCIM platform data wrapper
 type DcimPlatformDataWrapper struct {
 	Platform *DcimPlatform
 
-	placeholder bool
-	hasParent   bool
+	placeholder        bool
+	hasParent          bool
+	nestedObjects      []ComparableData
+	objectsToReconcile []ComparableData
 }
 
 func (*DcimPlatformDataWrapper) comparableData() {}
 
 // Data returns the Platform
-func (d *DcimPlatformDataWrapper) Data() any {
-	return d.Platform
+func (actual *DcimPlatformDataWrapper) Data() any {
+	return actual.Platform
 }
 
 // IsValid returns true if the Platform is not nil
-func (d *DcimPlatformDataWrapper) IsValid() bool {
-	return d.Platform != nil
+func (actual *DcimPlatformDataWrapper) IsValid() bool {
+	return actual.Platform != nil
 }
 
-// AllData returns all the data
-func (d *DcimPlatformDataWrapper) AllData() []ComparableData {
-	result := make([]ComparableData, 0)
-
-	if d.Platform == nil && d.hasParent {
-		d.Platform = NewDcimPlatform()
-		d.placeholder = true
+// NestedObjects returns all nested objects
+func (actual *DcimPlatformDataWrapper) NestedObjects() ([]ComparableData, error) {
+	if len(actual.nestedObjects) > 0 {
+		return actual.nestedObjects, nil
 	}
 
-	if d.Platform.Slug == "" {
-		d.Platform.Slug = slug.Make(d.Platform.Name)
+	objects := make([]ComparableData, 0)
+
+	if actual.Platform == nil && actual.hasParent {
+		actual.Platform = NewDcimPlatform()
+		actual.placeholder = true
 	}
 
-	result = append(result, d)
+	if actual.Platform.Slug == "" {
+		actual.Platform.Slug = slug.Make(actual.Platform.Name)
+	}
 
-	return result
+	manufacturer := DcimManufacturerDataWrapper{Manufacturer: actual.Platform.Manufacturer, placeholder: actual.placeholder, hasParent: true}
+
+	mo, err := manufacturer.NestedObjects()
+	if err != nil {
+		return nil, err
+	}
+
+	objects = append(objects, mo...)
+
+	actual.Platform.Manufacturer = manufacturer.Manufacturer
+
+	if actual.Platform.Tags != nil {
+		for _, t := range actual.Platform.Tags {
+			if t.Slug == "" {
+				t.Slug = slug.Make(t.Name)
+			}
+			objects = append(objects, &TagDataWrapper{Tag: t, hasParent: true})
+		}
+	}
+
+	actual.nestedObjects = objects
+
+	objects = append(objects, actual)
+
+	return objects, nil
 }
 
 // DataType returns the data type
-func (d *DcimPlatformDataWrapper) DataType() string {
+func (actual *DcimPlatformDataWrapper) DataType() string {
 	return DcimPlatformObjectType
 }
 
 // QueryString returns the query string needed to retrieve its object state
-func (d *DcimPlatformDataWrapper) QueryString() string {
-	return d.Platform.Name
+func (actual *DcimPlatformDataWrapper) QueryString() string {
+	return actual.Platform.Name
 }
 
 // ID returns the ID of the data
-func (d *DcimPlatformDataWrapper) ID() int {
-	return d.Platform.ID
-}
-
-// ReplaceData replaces the data with the given data
-func (d *DcimPlatformDataWrapper) ReplaceData(data ComparableData) {
-	if d2, ok := data.(*DcimPlatformDataWrapper); ok {
-		*d.Platform = *d2.Platform
-	}
+func (actual *DcimPlatformDataWrapper) ID() int {
+	return actual.Platform.ID
 }
 
 // IsPlaceholder returns true if the data is a placeholder
-func (d *DcimPlatformDataWrapper) IsPlaceholder() bool {
-	return d.placeholder
+func (actual *DcimPlatformDataWrapper) IsPlaceholder() bool {
+	return actual.placeholder
+}
+
+// Patch creates patches between the actual, intended and current data
+func (actual *DcimPlatformDataWrapper) Patch(cmp ComparableData, intendedNestedObjects map[string]ComparableData) ([]ComparableData, error) {
+	intended, ok := cmp.(*DcimPlatformDataWrapper)
+	if !ok && intended != nil {
+		return nil, errors.New("invalid data type")
+	}
+
+	actualNestedObjectsMap := make(map[string]ComparableData)
+	for _, obj := range actual.nestedObjects {
+		actualNestedObjectsMap[fmt.Sprintf("%p", obj.Data())] = obj
+	}
+
+	actualManufacturerKey := fmt.Sprintf("%p", actual.Platform.Manufacturer)
+	actualManufacturer := extractFromObjectsMap(actualNestedObjectsMap, actualManufacturerKey)
+	intendedManufacturer := extractFromObjectsMap(intendedNestedObjects, actualManufacturerKey)
+
+	reconciliationRequired := true
+
+	if intended != nil {
+		currentNestedObjectsMap := make(map[string]ComparableData)
+		currentNestedObjects, err := intended.NestedObjects()
+		if err != nil {
+			return nil, err
+		}
+		for _, obj := range currentNestedObjects {
+			currentNestedObjectsMap[fmt.Sprintf("%p", obj.Data())] = obj
+		}
+
+		actual.Platform.ID = intended.Platform.ID
+		actual.Platform.Name = intended.Platform.Name
+		actual.Platform.Slug = intended.Platform.Slug
+
+		if actualManufacturer.IsPlaceholder() && intended.Platform.Manufacturer != nil {
+			intendedManufacturer = extractFromObjectsMap(currentNestedObjectsMap, fmt.Sprintf("%p", intended.Platform.Manufacturer))
+		}
+
+		manufacturerObjectsToReconcile, manufacturerErr := actualManufacturer.Patch(intendedManufacturer, intendedNestedObjects)
+		if manufacturerErr != nil {
+			return nil, manufacturerErr
+		}
+		actual.Platform.Manufacturer = actualManufacturer.Data().(*DcimManufacturer)
+
+		actual.objectsToReconcile = append(actual.objectsToReconcile, manufacturerObjectsToReconcile...)
+
+		if actual.Platform.Description == nil {
+			actual.Platform.Description = intended.Platform.Description
+		}
+
+		tagsToMerge := mergeTags(actual.Platform.Tags, intended.Platform.Tags, intendedNestedObjects)
+
+		if len(tagsToMerge) > 0 {
+			actual.Platform.Tags = tagsToMerge
+		}
+
+		for _, t := range actual.Platform.Tags {
+			if t.ID == 0 {
+				actual.objectsToReconcile = append(actual.objectsToReconcile, &TagDataWrapper{Tag: t, hasParent: true})
+			}
+		}
+
+		reconciliationRequired = !reflect.DeepEqual(intended.Data(), actual.Data())
+	} else {
+		manufacturerObjectsToReconcile, manufacturerErr := actualManufacturer.Patch(intendedManufacturer, intendedNestedObjects)
+		if manufacturerErr != nil {
+			return nil, manufacturerErr
+		}
+		actual.Platform.Manufacturer = actualManufacturer.Data().(*DcimManufacturer)
+
+		tagsToMerge := mergeTags(actual.Platform.Tags, nil, intendedNestedObjects)
+
+		if len(tagsToMerge) > 0 {
+			actual.Platform.Tags = tagsToMerge
+		}
+
+		for _, t := range actual.Platform.Tags {
+			if t.ID == 0 {
+				actual.objectsToReconcile = append(actual.objectsToReconcile, &TagDataWrapper{Tag: t, hasParent: true})
+			}
+		}
+
+		actual.objectsToReconcile = append(actual.objectsToReconcile, manufacturerObjectsToReconcile...)
+
+		fmt.Printf("actual.objectsToReconcile: %#v\n", actual.objectsToReconcile)
+	}
+
+	if reconciliationRequired {
+		actual.objectsToReconcile = append(actual.objectsToReconcile, actual)
+	}
+
+	return actual.objectsToReconcile, nil
 }
 
 // SetDefaults sets the default values for the platform
-func (d *DcimPlatformDataWrapper) SetDefaults() {}
+func (actual *DcimPlatformDataWrapper) SetDefaults() {}
 
 // DcimSiteDataWrapper represents a DCIM site data wrapper
 type DcimSiteDataWrapper struct {
 	Site *DcimSite
 
-	placeholder bool
-	hasParent   bool
+	placeholder        bool
+	hasParent          bool
+	nestedObjects      []ComparableData
+	objectsToReconcile []ComparableData
 }
 
 func (*DcimSiteDataWrapper) comparableData() {}
 
 // Data returns the Site
-func (d *DcimSiteDataWrapper) Data() any {
-	return d.Site
+func (actual *DcimSiteDataWrapper) Data() any {
+	return actual.Site
 }
 
 // IsValid returns true if the Site is not nil
-func (d *DcimSiteDataWrapper) IsValid() bool {
-	return d.Site != nil
+func (actual *DcimSiteDataWrapper) IsValid() bool {
+	return actual.Site != nil
 }
 
-// AllData returns all the data
-func (d *DcimSiteDataWrapper) AllData() []ComparableData {
-	result := make([]ComparableData, 0)
-
-	if d.Site == nil && d.hasParent {
-		d.Site = NewDcimSite()
-		d.placeholder = true
+// NestedObjects returns all nested objects
+func (actual *DcimSiteDataWrapper) NestedObjects() ([]ComparableData, error) {
+	if len(actual.nestedObjects) > 0 {
+		return actual.nestedObjects, nil
 	}
 
-	if d.Site.Slug == "" {
-		d.Site.Slug = slug.Make(d.Site.Name)
+	objects := make([]ComparableData, 0)
+
+	if actual.Site == nil && actual.hasParent {
+		actual.Site = NewDcimSite()
+		actual.placeholder = true
 	}
 
-	result = append(result, d)
+	if actual.Site.Slug == "" {
+		actual.Site.Slug = slug.Make(actual.Site.Name)
+	}
 
-	return result
+	if actual.Site.Tags != nil {
+		for _, t := range actual.Site.Tags {
+			if t.Slug == "" {
+				t.Slug = slug.Make(t.Name)
+			}
+			objects = append(objects, &TagDataWrapper{Tag: t, hasParent: true})
+		}
+	}
+
+	actual.nestedObjects = objects
+
+	objects = append(objects, actual)
+
+	return objects, nil
 }
 
 // DataType returns the data type
-func (d *DcimSiteDataWrapper) DataType() string {
+func (actual *DcimSiteDataWrapper) DataType() string {
 	return DcimSiteObjectType
 }
 
 // QueryString returns the query string needed to retrieve its object state
-func (d *DcimSiteDataWrapper) QueryString() string {
-	return d.Site.Name
+func (actual *DcimSiteDataWrapper) QueryString() string {
+	return actual.Site.Name
 }
 
 // ID returns the ID of the data
-func (d *DcimSiteDataWrapper) ID() int {
-	return d.Site.ID
-}
-
-// ReplaceData replaces the data with the given data
-func (d *DcimSiteDataWrapper) ReplaceData(data ComparableData) {
-	if d2, ok := data.(*DcimSiteDataWrapper); ok {
-		*d.Site = *d2.Site
-	}
+func (actual *DcimSiteDataWrapper) ID() int {
+	return actual.Site.ID
 }
 
 // IsPlaceholder returns true if the data is a placeholder
-func (d *DcimSiteDataWrapper) IsPlaceholder() bool {
-	return d.placeholder
+func (actual *DcimSiteDataWrapper) IsPlaceholder() bool {
+	return actual.placeholder
+}
+
+// Patch creates patches between the actual, intended and current data
+func (actual *DcimSiteDataWrapper) Patch(cmp ComparableData, intendedNestedObjects map[string]ComparableData) ([]ComparableData, error) {
+	intended, ok := cmp.(*DcimSiteDataWrapper)
+	if !ok && intended != nil {
+		return nil, errors.New("invalid data type")
+	}
+
+	actualNestedObjectsMap := make(map[string]ComparableData)
+	for _, obj := range actual.nestedObjects {
+		actualNestedObjectsMap[fmt.Sprintf("%p", obj.Data())] = obj
+	}
+
+	reconciliationRequired := true
+
+	if intended != nil {
+		actual.Site.ID = intended.Site.ID
+		actual.Site.Name = intended.Site.Name
+		actual.Site.Slug = intended.Site.Slug
+
+		if actual.Site.Status == nil {
+			actual.Site.Status = intended.Site.Status
+		}
+
+		if actual.Site.Facility == nil {
+			actual.Site.Facility = intended.Site.Facility
+		}
+
+		if actual.Site.TimeZone == nil {
+			actual.Site.TimeZone = intended.Site.TimeZone
+		}
+
+		if actual.Site.Description == nil {
+			actual.Site.Description = intended.Site.Description
+		}
+
+		if actual.Site.Comments == nil {
+			actual.Site.Comments = intended.Site.Comments
+		}
+
+		tagsToMerge := mergeTags(actual.Site.Tags, intended.Site.Tags, intendedNestedObjects)
+
+		if len(tagsToMerge) > 0 {
+			actual.Site.Tags = tagsToMerge
+		}
+
+		for _, t := range actual.Site.Tags {
+			if t.ID == 0 {
+				actual.objectsToReconcile = append(actual.objectsToReconcile, &TagDataWrapper{Tag: t, hasParent: true})
+			}
+		}
+
+		reconciliationRequired = !reflect.DeepEqual(intended.Data(), actual.Data())
+	} else {
+		actual.SetDefaults()
+
+		tagsToMerge := mergeTags(actual.Site.Tags, nil, intendedNestedObjects)
+
+		if len(tagsToMerge) > 0 {
+			actual.Site.Tags = tagsToMerge
+		}
+
+		for _, t := range actual.Site.Tags {
+			if t.ID == 0 {
+				actual.objectsToReconcile = append(actual.objectsToReconcile, &TagDataWrapper{Tag: t, hasParent: true})
+			}
+		}
+	}
+
+	if reconciliationRequired {
+		actual.objectsToReconcile = append(actual.objectsToReconcile, actual)
+	}
+
+	return actual.objectsToReconcile, nil
 }
 
 // SetDefaults sets the default values for the site
-func (d *DcimSiteDataWrapper) SetDefaults() {
-	if d.Site.Status == nil {
+func (actual *DcimSiteDataWrapper) SetDefaults() {
+	if actual.Site.Status == nil {
 		status := DcimSiteStatusActive
-		d.Site.Status = &status
+		actual.Site.Status = &status
 	}
 }
+
+// TagDataWrapper represents a tag data wrapper
+type TagDataWrapper struct {
+	Tag *Tag
+
+	placeholder bool
+	hasParent   bool
+	//nestedObjects      []ComparableData
+	//objectsToReconcile []ComparableData
+}
+
+func (*TagDataWrapper) comparableData() {}
+
+// Data returns the Tag
+func (d *TagDataWrapper) Data() any {
+	return d.Tag
+}
+
+// IsValid returns true if the Tag is not nil
+func (d *TagDataWrapper) IsValid() bool {
+	return d.Tag != nil
+}
+
+// NestedObjects returns all nested objects
+func (d *TagDataWrapper) NestedObjects() ([]ComparableData, error) {
+	return nil, nil
+}
+
+// DataType returns the data type
+func (d *TagDataWrapper) DataType() string {
+	return ExtrasTagObjectType
+}
+
+// QueryString returns the query string needed to retrieve its object state
+func (d *TagDataWrapper) QueryString() string {
+	return d.Tag.Name
+}
+
+// ID returns the ID of the data
+func (d *TagDataWrapper) ID() int {
+	return d.Tag.ID
+}
+
+// IsPlaceholder returns true if the data is a placeholder
+func (d *TagDataWrapper) IsPlaceholder() bool {
+	return d.placeholder
+}
+
+// Patch creates patches between the actual, intended and current data
+func (d *TagDataWrapper) Patch(cmp ComparableData, _ map[string]ComparableData) ([]ComparableData, error) {
+	d2, ok := cmp.(*TagDataWrapper)
+	if !ok && d2 != nil {
+		return nil, errors.New("invalid data type")
+	}
+
+	fmt.Printf("d: %#v\n", d)
+	fmt.Printf("d2: %#v\n", d2)
+
+	return nil, nil
+}
+
+// SetDefaults sets the default values for the platform
+func (d *TagDataWrapper) SetDefaults() {}
 
 // NewDataWrapper creates a new data wrapper for the given data type
 func NewDataWrapper(dataType string) (ComparableData, error) {
@@ -580,7 +1282,34 @@ func NewDataWrapper(dataType string) (ComparableData, error) {
 		return &DcimPlatformDataWrapper{}, nil
 	case DcimSiteObjectType:
 		return &DcimSiteDataWrapper{}, nil
+	case ExtrasTagObjectType:
+		return &TagDataWrapper{}, nil
 	default:
 		return nil, fmt.Errorf("unsupported data type %s", dataType)
 	}
+}
+
+func extractFromObjectsMap(objectsMap map[string]ComparableData, key string) ComparableData {
+	if obj, ok := objectsMap[key]; ok {
+		return obj
+	}
+	return nil
+}
+
+func dedupObjectsToReconcile(objects []ComparableData) ([]ComparableData, error) {
+	hashes := make(map[uint64]struct{})
+	dedupedObjectsToReconcile := make([]ComparableData, 0)
+	for _, o := range objects {
+		hash, err := hashstructure.Hash(o.Data(), hashstructure.FormatV2, nil)
+		if err != nil {
+			return nil, err
+		}
+		if _, ok := hashes[hash]; ok {
+			continue
+		}
+		hashes[hash] = struct{}{}
+		dedupedObjectsToReconcile = append(dedupedObjectsToReconcile, o)
+	}
+
+	return dedupedObjectsToReconcile, nil
 }
