@@ -1,2 +1,2 @@
 pytest==8.0.2
-grpcio==1.62.0
+grpcio==1.62.1
