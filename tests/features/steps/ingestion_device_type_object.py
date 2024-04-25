@@ -64,10 +64,11 @@ def retrieve_existing_manufacturer(context, device_type_model):
 
 
 @given(
-    'device type "{device_type_model}" with manufacturer "{manufacturer_name}", description "{description}", and part number "{part_number}"'
+    'device type "{device_type_model}" with manufacturer "{manufacturer_name}", description "{description}" '
+    'and part number "{part_number}"'
 )
 def create_device_type_to_update(
-        context, device_type_model, manufacturer_name, description, part_number
+    context, device_type_model, manufacturer_name, description, part_number
 ):
     """Create a device type object with a description to update"""
     context.device_type_model = device_type_model
@@ -82,8 +83,9 @@ def create_device_type_to_update(
 def remove_manufacturer(context, manufacturer_name):
     time.sleep(3)
     manufacturer = get_object_by_name(manufacturer_name, "dcim/manufacturers/")
-    assert manufacturer.get("name") == manufacturer_name
-    send_delete_request(manufacturer)
+    if manufacturer is not None:
+        assert manufacturer.get("name") == manufacturer_name
+        send_delete_request("dcim/manufacturers/", manufacturer.get("id"))
 
 
 @when("the device type object is ingested with the updates")
@@ -94,10 +96,10 @@ def ingest_to_update_device_type(context):
         Entity(
             device_type=DeviceType(
                 model=context.device_type_model,
-                manufacturer=Manufacturer(context.manufacturer_name),
+                manufacturer=Manufacturer(name=context.manufacturer_name),
                 description=context.description,
                 part_number=context.part_number,
-            )
+            ),
         ),
     ]
 
@@ -105,17 +107,17 @@ def ingest_to_update_device_type(context):
     return context.response
 
 
-@then(
-    'the device type object is updated and the manufacturer "{manufacturer_name}" is created'
-)
+@then('the manufacturer "{manufacturer_name}" is created and the device updated')
 def check_updated_device_type_object(context, manufacturer_name):
     """Check if the response is not None and the object is updated in the database and manufacturer created."""
     time.sleep(3)
     assert context.response is not None
-    device_type = get_object_by_model(context.device_type_model, endpoint)
+
     manufacturer = get_object_by_name(manufacturer_name, "dcim/manufacturers/")
+    assert manufacturer.get("name") == manufacturer_name
+
+    device_type = get_object_by_model(context.device_type_model, endpoint)
     assert device_type.get("model") == context.device_type_model
-    assert device_type.get("manufacturer") == manufacturer.get("name")
+    assert device_type.get("manufacturer").get("name") == manufacturer.get("name")
     assert device_type.get("description") == context.description
     assert device_type.get("part_number") == context.part_number
-    assert manufacturer.get("name") == manufacturer_name
