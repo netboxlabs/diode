@@ -180,5 +180,7 @@ func extractNetBoxObjectStateData(obj ObjectState) (netbox.ComparableData, error
 		return nil, fmt.Errorf("invalid object state")
 	}
 
+	dw.Normalise()
+
 	return dw, nil
 }

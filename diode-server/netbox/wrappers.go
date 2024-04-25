@@ -20,6 +20,9 @@ type ComparableData interface {
 	// IsValid checks if the data is not nil
 	IsValid() bool
 
+	// Normalise normalises the data
+	Normalise()
+
 	// NestedObjects returns all nested objects
 	NestedObjects() ([]ComparableData, error)
 
@@ -62,6 +65,13 @@ func (actual *DcimDeviceDataWrapper) Data() any {
 // IsValid returns true if the Device is not nil
 func (actual *DcimDeviceDataWrapper) IsValid() bool {
 	return actual.Device != nil
+}
+
+// Normalise normalises the data
+func (actual *DcimDeviceDataWrapper) Normalise() {
+	if actual.IsValid() && actual.Device.Tags != nil && len(actual.Device.Tags) == 0 {
+		actual.Device.Tags = nil
+	}
 }
 
 // NestedObjects returns all nested objects
@@ -328,6 +338,13 @@ func (actual *DcimDeviceRoleDataWrapper) IsValid() bool {
 	return actual.DeviceRole != nil
 }
 
+// Normalise normalises the data
+func (actual *DcimDeviceRoleDataWrapper) Normalise() {
+	if actual.IsValid() && actual.DeviceRole.Tags != nil && len(actual.DeviceRole.Tags) == 0 {
+		actual.DeviceRole.Tags = nil
+	}
+}
+
 // NestedObjects returns all nested objects
 func (actual *DcimDeviceRoleDataWrapper) NestedObjects() ([]ComparableData, error) {
 	if len(actual.nestedObjects) > 0 {
@@ -474,6 +491,13 @@ func (actual *DcimDeviceTypeDataWrapper) IsValid() bool {
 	return actual.DeviceType != nil
 }
 
+// Normalise normalises the data
+func (actual *DcimDeviceTypeDataWrapper) Normalise() {
+	if actual.IsValid() && actual.DeviceType.Tags != nil && len(actual.DeviceType.Tags) == 0 {
+		actual.DeviceType.Tags = nil
+	}
+}
+
 // DataType returns the data type
 func (actual *DcimDeviceTypeDataWrapper) DataType() string {
 	return DcimDeviceTypeObjectType
@@ -521,6 +545,10 @@ func (actual *DcimDeviceTypeDataWrapper) NestedObjects() ([]ComparableData, erro
 	objects = append(objects, mo...)
 
 	actual.DeviceType.Manufacturer = manufacturer.Manufacturer
+
+	if actual.DeviceType.Tags != nil && len(actual.DeviceType.Tags) == 0 {
+		actual.DeviceType.Tags = nil
+	}
 
 	if actual.DeviceType.Tags != nil {
 		for _, t := range actual.DeviceType.Tags {
@@ -661,6 +689,9 @@ func (d *DcimInterfaceDataWrapper) IsValid() bool {
 	return d.Interface != nil
 }
 
+// Normalise normalises the data
+func (d *DcimInterfaceDataWrapper) Normalise() {}
+
 // NestedObjects returns all nested objects
 func (d *DcimInterfaceDataWrapper) NestedObjects() ([]ComparableData, error) {
 	return nil, nil
@@ -722,6 +753,13 @@ func (actual *DcimManufacturerDataWrapper) Data() any {
 // IsValid returns true if the Manufacturer is not nil
 func (actual *DcimManufacturerDataWrapper) IsValid() bool {
 	return actual.Manufacturer != nil
+}
+
+// Normalise normalises the data
+func (actual *DcimManufacturerDataWrapper) Normalise() {
+	if actual.IsValid() && actual.Manufacturer.Tags != nil && len(actual.Manufacturer.Tags) == 0 {
+		actual.Manufacturer.Tags = nil
+	}
 }
 
 // NestedObjects returns all nested objects
@@ -817,7 +855,6 @@ func (actual *DcimManufacturerDataWrapper) Patch(cmp ComparableData, intendedNes
 		}
 	}
 
-	//fmt.Printf("[DcimManufacturerDataWrapper] reconciliationRequired: %t\n", reconciliationRequired)
 	if reconciliationRequired {
 		actual.objectsToReconcile = append(actual.objectsToReconcile, actual)
 	}
@@ -883,6 +920,13 @@ func (actual *DcimPlatformDataWrapper) Data() any {
 // IsValid returns true if the Platform is not nil
 func (actual *DcimPlatformDataWrapper) IsValid() bool {
 	return actual.Platform != nil
+}
+
+// Normalise normalises the data
+func (actual *DcimPlatformDataWrapper) Normalise() {
+	if actual.IsValid() && actual.Platform.Tags != nil && len(actual.Platform.Tags) == 0 {
+		actual.Platform.Tags = nil
+	}
 }
 
 // NestedObjects returns all nested objects
@@ -1030,8 +1074,6 @@ func (actual *DcimPlatformDataWrapper) Patch(cmp ComparableData, intendedNestedO
 		}
 
 		actual.objectsToReconcile = append(actual.objectsToReconcile, manufacturerObjectsToReconcile...)
-
-		fmt.Printf("actual.objectsToReconcile: %#v\n", actual.objectsToReconcile)
 	}
 
 	if reconciliationRequired {
@@ -1064,6 +1106,13 @@ func (actual *DcimSiteDataWrapper) Data() any {
 // IsValid returns true if the Site is not nil
 func (actual *DcimSiteDataWrapper) IsValid() bool {
 	return actual.Site != nil
+}
+
+// Normalise normalises the data
+func (actual *DcimSiteDataWrapper) Normalise() {
+	if actual.IsValid() && actual.Site.Tags != nil && len(actual.Site.Tags) == 0 {
+		actual.Site.Tags = nil
+	}
 }
 
 // NestedObjects returns all nested objects
@@ -1223,6 +1272,9 @@ func (d *TagDataWrapper) Data() any {
 func (d *TagDataWrapper) IsValid() bool {
 	return d.Tag != nil
 }
+
+// Normalise normalises the data
+func (d *TagDataWrapper) Normalise() {}
 
 // NestedObjects returns all nested objects
 func (d *TagDataWrapper) NestedObjects() ([]ComparableData, error) {

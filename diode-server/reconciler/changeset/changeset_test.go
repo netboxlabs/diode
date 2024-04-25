@@ -529,6 +529,7 @@ func TestPrepare(t *testing.T) {
 								Name: "undefined",
 								Slug: "undefined",
 							},
+							Tags: []*netbox.Tag{},
 						},
 					},
 				},
