@@ -68,7 +68,7 @@ def retrieve_existing_manufacturer(context, device_type_model):
     'and part number "{part_number}"'
 )
 def create_device_type_to_update(
-        context, device_type_model, manufacturer_name, description, part_number
+    context, device_type_model, manufacturer_name, description, part_number
 ):
     """Create a device type object with a description to update"""
     context.device_type_model = device_type_model
