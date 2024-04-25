@@ -3,7 +3,6 @@ package netbox
 import (
 	"errors"
 	"fmt"
-	"reflect"
 	"slices"
 
 	"github.com/gosimple/slug"
@@ -210,6 +209,18 @@ func (actual *DcimDeviceDataWrapper) Patch(cmp ComparableData, intendedNestedObj
 			actual.Device.Status = intended.Device.Status
 		}
 
+		if actual.Device.Description == nil {
+			actual.Device.Description = intended.Device.Description
+		}
+
+		if actual.Device.Comments == nil {
+			actual.Device.Comments = intended.Device.Comments
+		}
+
+		if actual.Device.AssetTag == nil {
+			actual.Device.AssetTag = intended.Device.AssetTag
+		}
+
 		if actualSite.IsPlaceholder() && intended.Device.Site != nil {
 			intendedSite = extractFromObjectsMap(currentNestedObjectsMap, fmt.Sprintf("%p", intended.Device.Site))
 		}
@@ -258,7 +269,10 @@ func (actual *DcimDeviceDataWrapper) Patch(cmp ComparableData, intendedNestedObj
 
 		actual.objectsToReconcile = append(actual.objectsToReconcile, roleObjectsToReconcile...)
 
-		reconciliationRequired = !reflect.DeepEqual(intended.Data(), actual.Data())
+		actualHash, _ := hashstructure.Hash(actual.Data(), hashstructure.FormatV2, nil)
+		intendedHash, _ := hashstructure.Hash(intended.Data(), hashstructure.FormatV2, nil)
+
+		reconciliationRequired = actualHash != intendedHash
 	} else {
 		actual.SetDefaults()
 
@@ -417,7 +431,7 @@ func (actual *DcimDeviceRoleDataWrapper) Patch(cmp ComparableData, intendedNeste
 		actual.DeviceRole.Name = intended.DeviceRole.Name
 		actual.DeviceRole.Slug = intended.DeviceRole.Slug
 
-		if actual.DeviceRole.Color == nil {
+		if actual.IsPlaceholder() || actual.DeviceRole.Color == nil {
 			actual.DeviceRole.Color = intended.DeviceRole.Color
 		}
 
@@ -437,7 +451,10 @@ func (actual *DcimDeviceRoleDataWrapper) Patch(cmp ComparableData, intendedNeste
 			}
 		}
 
-		reconciliationRequired = !reflect.DeepEqual(intended.Data(), actual.Data())
+		actualHash, _ := hashstructure.Hash(actual.Data(), hashstructure.FormatV2, nil)
+		intendedHash, _ := hashstructure.Hash(intended.Data(), hashstructure.FormatV2, nil)
+
+		reconciliationRequired = actualHash != intendedHash
 	} else {
 		actual.SetDefaults()
 
@@ -634,7 +651,10 @@ func (actual *DcimDeviceTypeDataWrapper) Patch(cmp ComparableData, intendedNeste
 
 		actual.objectsToReconcile = append(actual.objectsToReconcile, manufacturerObjectsToReconcile...)
 
-		reconciliationRequired = !reflect.DeepEqual(intended.Data(), actual.Data())
+		actualHash, _ := hashstructure.Hash(actual.Data(), hashstructure.FormatV2, nil)
+		intendedHash, _ := hashstructure.Hash(intended.Data(), hashstructure.FormatV2, nil)
+
+		reconciliationRequired = actualHash != intendedHash
 	} else {
 		manufacturerObjectsToReconcile, manufacturerErr := actualManufacturer.Patch(intendedManufacturer, intendedNestedObjects)
 		if manufacturerErr != nil {
@@ -672,9 +692,6 @@ type DcimInterfaceDataWrapper struct {
 	Interface *DcimInterface
 
 	placeholder bool
-	//hasParent   bool
-	//nestedObjects []ComparableData
-	//objectsToReconcile []ComparableData
 }
 
 func (*DcimInterfaceDataWrapper) comparableData() {}
@@ -838,10 +855,11 @@ func (actual *DcimManufacturerDataWrapper) Patch(cmp ComparableData, intendedNes
 			actual.Manufacturer.Tags = tagsToMerge
 		}
 
-		reconciliationRequired = !reflect.DeepEqual(intended.Data(), actual.Data())
-	} else {
-		// create new one?
+		actualHash, _ := hashstructure.Hash(actual.Data(), hashstructure.FormatV2, nil)
+		intendedHash, _ := hashstructure.Hash(intended.Data(), hashstructure.FormatV2, nil)
 
+		reconciliationRequired = actualHash != intendedHash
+	} else {
 		tagsToMerge := mergeTags(actual.Manufacturer.Tags, nil, intendedNestedObjects)
 
 		if len(tagsToMerge) > 0 {
@@ -1053,7 +1071,10 @@ func (actual *DcimPlatformDataWrapper) Patch(cmp ComparableData, intendedNestedO
 			}
 		}
 
-		reconciliationRequired = !reflect.DeepEqual(intended.Data(), actual.Data())
+		actualHash, _ := hashstructure.Hash(actual.Data(), hashstructure.FormatV2, nil)
+		intendedHash, _ := hashstructure.Hash(intended.Data(), hashstructure.FormatV2, nil)
+
+		reconciliationRequired = actualHash != intendedHash
 	} else {
 		manufacturerObjectsToReconcile, manufacturerErr := actualManufacturer.Patch(intendedManufacturer, intendedNestedObjects)
 		if manufacturerErr != nil {
@@ -1219,7 +1240,10 @@ func (actual *DcimSiteDataWrapper) Patch(cmp ComparableData, intendedNestedObjec
 			}
 		}
 
-		reconciliationRequired = !reflect.DeepEqual(intended.Data(), actual.Data())
+		actualHash, _ := hashstructure.Hash(actual.Data(), hashstructure.FormatV2, nil)
+		intendedHash, _ := hashstructure.Hash(intended.Data(), hashstructure.FormatV2, nil)
+
+		reconciliationRequired = actualHash != intendedHash
 	} else {
 		actual.SetDefaults()
 
@@ -1257,8 +1281,6 @@ type TagDataWrapper struct {
 
 	placeholder bool
 	hasParent   bool
-	//nestedObjects      []ComparableData
-	//objectsToReconcile []ComparableData
 }
 
 func (*TagDataWrapper) comparableData() {}
