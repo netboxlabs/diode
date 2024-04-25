@@ -89,6 +89,77 @@ func (m *Site) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
+	if _, ok := _Site_Status_InLookup[m.GetStatus()]; !ok {
+		err := SiteValidationError{
+			field:  "Status",
+			reason: "value must be in list [planned staging active decommissioning retired]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if utf8.RuneCountInString(m.GetFacility()) > 50 {
+		err := SiteValidationError{
+			field:  "Facility",
+			reason: "value length must be at most 50 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	// no validation rules for TimeZone
+
+	if utf8.RuneCountInString(m.GetDescription()) > 200 {
+		err := SiteValidationError{
+			field:  "Description",
+			reason: "value length must be at most 200 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	// no validation rules for Comments
+
+	for idx, item := range m.GetTags() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, SiteValidationError{
+						field:  fmt.Sprintf("Tags[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, SiteValidationError{
+						field:  fmt.Sprintf("Tags[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return SiteValidationError{
+					field:  fmt.Sprintf("Tags[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
 	if len(errors) > 0 {
 		return SiteMultiError(errors)
 	}
@@ -167,3 +238,11 @@ var _ interface {
 } = SiteValidationError{}
 
 var _Site_Slug_Pattern = regexp.MustCompile("^[-a-zA-Z0-9_]+$")
+
+var _Site_Status_InLookup = map[string]struct{}{
+	"planned":         {},
+	"staging":         {},
+	"active":          {},
+	"decommissioning": {},
+	"retired":         {},
+}

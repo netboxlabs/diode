@@ -12,10 +12,11 @@ from google.protobuf.internal import builder as _builder
 _sym_db = _symbol_database.Default()
 
 
+from netboxlabs.diode.sdk.diode.v1 import tag_pb2 as diode_dot_v1_dot_tag__pb2
 from netboxlabs.diode.sdk.validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13\x64iode/v1/role.proto\x12\x08\x64iode.v1\x1a\x17validate/validate.proto\"o\n\x04Role\x12\x1d\n\x04name\x18\x01 \x01(\tB\t\xfa\x42\x06r\x04\x10\x01\x18\x64R\x04name\x12/\n\x04slug\x18\x02 \x01(\tB\x1b\xfa\x42\x18r\x16\x10\x01\x18\x64\x32\x10^[-a-zA-Z0-9_]+$R\x04slug\x12\x17\n\x07vm_role\x18\x03 \x01(\x08R\x06vmRoleB;Z9github.com/netboxlabs/diode/diode-sdk-go/diode/v1/diodepbb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13\x64iode/v1/role.proto\x12\x08\x64iode.v1\x1a\x12\x64iode/v1/tag.proto\x1a\x17validate/validate.proto\"\xd5\x01\n\x04Role\x12\x1d\n\x04name\x18\x01 \x01(\tB\t\xfa\x42\x06r\x04\x10\x01\x18\x64R\x04name\x12/\n\x04slug\x18\x02 \x01(\tB\x1b\xfa\x42\x18r\x16\x10\x01\x18\x64\x32\x10^[-a-zA-Z0-9_]+$R\x04slug\x12.\n\x05\x63olor\x18\x03 \x01(\tB\x18\xfa\x42\x15r\x13\x10\x06\x18\x06\x32\r^[0-9a-f]{6}$R\x05\x63olor\x12*\n\x0b\x64\x65scription\x18\x04 \x01(\tB\x08\xfa\x42\x05r\x03\x18\xc8\x01R\x0b\x64\x65scription\x12!\n\x04tags\x18\x05 \x03(\x0b\x32\r.diode.v1.TagR\x04tagsB;Z9github.com/netboxlabs/diode/diode-sdk-go/diode/v1/diodepbb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -27,6 +28,10 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_ROLE'].fields_by_name['name']._serialized_options = b'\372B\006r\004\020\001\030d'
   _globals['_ROLE'].fields_by_name['slug']._loaded_options = None
   _globals['_ROLE'].fields_by_name['slug']._serialized_options = b'\372B\030r\026\020\001\030d2\020^[-a-zA-Z0-9_]+$'
-  _globals['_ROLE']._serialized_start=58
-  _globals['_ROLE']._serialized_end=169
+  _globals['_ROLE'].fields_by_name['color']._loaded_options = None
+  _globals['_ROLE'].fields_by_name['color']._serialized_options = b'\372B\025r\023\020\006\030\0062\r^[0-9a-f]{6}$'
+  _globals['_ROLE'].fields_by_name['description']._loaded_options = None
+  _globals['_ROLE'].fields_by_name['description']._serialized_options = b'\372B\005r\003\030\310\001'
+  _globals['_ROLE']._serialized_start=79
+  _globals['_ROLE']._serialized_end=292
 # @@protoc_insertion_point(module_scope)

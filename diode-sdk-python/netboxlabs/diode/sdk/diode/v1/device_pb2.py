@@ -16,10 +16,11 @@ from netboxlabs.diode.sdk.diode.v1 import device_type_pb2 as diode_dot_v1_dot_de
 from netboxlabs.diode.sdk.diode.v1 import platform_pb2 as diode_dot_v1_dot_platform__pb2
 from netboxlabs.diode.sdk.diode.v1 import role_pb2 as diode_dot_v1_dot_role__pb2
 from netboxlabs.diode.sdk.diode.v1 import site_pb2 as diode_dot_v1_dot_site__pb2
+from netboxlabs.diode.sdk.diode.v1 import tag_pb2 as diode_dot_v1_dot_tag__pb2
 from netboxlabs.diode.sdk.validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x15\x64iode/v1/device.proto\x12\x08\x64iode.v1\x1a\x1a\x64iode/v1/device_type.proto\x1a\x17\x64iode/v1/platform.proto\x1a\x13\x64iode/v1/role.proto\x1a\x13\x64iode/v1/site.proto\x1a\x17validate/validate.proto\"\xcf\x02\n\x06\x44\x65vice\x12\x1b\n\x04name\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x18@R\x04name\x12+\n\x0b\x64\x65vice_fqdn\x18\x02 \x01(\tB\n\xfa\x42\x07r\x05\x10\x01\x18\xff\x01R\ndeviceFqdn\x12\x35\n\x0b\x64\x65vice_type\x18\x03 \x01(\x0b\x32\x14.diode.v1.DeviceTypeR\ndeviceType\x12\"\n\x04role\x18\x04 \x01(\x0b\x32\x0e.diode.v1.RoleR\x04role\x12.\n\x08platform\x18\x05 \x01(\x0b\x32\x12.diode.v1.PlatformR\x08platform\x12\x1f\n\x06serial\x18\x06 \x01(\tB\x07\xfa\x42\x04r\x02\x18\x32R\x06serial\x12\"\n\x04site\x18\x07 \x01(\x0b\x32\x0e.diode.v1.SiteR\x04site\x12+\n\x0bvc_position\x18\x08 \x01(\x05\x42\n\xfa\x42\x07\x1a\x05\x18\xff\x01(\x00R\nvcPositionB;Z9github.com/netboxlabs/diode/diode-sdk-go/diode/v1/diodepbb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x15\x64iode/v1/device.proto\x12\x08\x64iode.v1\x1a\x1a\x64iode/v1/device_type.proto\x1a\x17\x64iode/v1/platform.proto\x1a\x13\x64iode/v1/role.proto\x1a\x13\x64iode/v1/site.proto\x1a\x12\x64iode/v1/tag.proto\x1a\x17validate/validate.proto\"\x99\x04\n\x06\x44\x65vice\x12\x1b\n\x04name\x18\x01 \x01(\tB\x07\xfa\x42\x04r\x02\x18@R\x04name\x12+\n\x0b\x64\x65vice_fqdn\x18\x02 \x01(\tB\n\xfa\x42\x07r\x05\x10\x01\x18\xff\x01R\ndeviceFqdn\x12\x35\n\x0b\x64\x65vice_type\x18\x03 \x01(\x0b\x32\x14.diode.v1.DeviceTypeR\ndeviceType\x12\"\n\x04role\x18\x04 \x01(\x0b\x32\x0e.diode.v1.RoleR\x04role\x12.\n\x08platform\x18\x05 \x01(\x0b\x32\x12.diode.v1.PlatformR\x08platform\x12\x1f\n\x06serial\x18\x06 \x01(\tB\x07\xfa\x42\x04r\x02\x18\x32R\x06serial\x12\"\n\x04site\x18\x07 \x01(\x0b\x32\x0e.diode.v1.SiteR\x04site\x12%\n\tasset_tag\x18\x08 \x01(\tB\x08\xfa\x42\x05r\x03\x18\xc8\x01R\x08\x61ssetTag\x12\x63\n\x06status\x18\t \x01(\tBK\xfa\x42HrFR\x07offlineR\x06\x61\x63tiveR\x07plannedR\x06stagedR\x06\x66\x61iledR\tinventoryR\x0f\x64\x65\x63ommissioningR\x06status\x12*\n\x0b\x64\x65scription\x18\n \x01(\tB\x08\xfa\x42\x05r\x03\x18\xc8\x01R\x0b\x64\x65scription\x12\x1a\n\x08\x63omments\x18\x0b \x01(\tR\x08\x63omments\x12!\n\x04tags\x18\x0c \x03(\x0b\x32\r.diode.v1.TagR\x04tagsB;Z9github.com/netboxlabs/diode/diode-sdk-go/diode/v1/diodepbb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -33,8 +34,12 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_DEVICE'].fields_by_name['device_fqdn']._serialized_options = b'\372B\007r\005\020\001\030\377\001'
   _globals['_DEVICE'].fields_by_name['serial']._loaded_options = None
   _globals['_DEVICE'].fields_by_name['serial']._serialized_options = b'\372B\004r\002\0302'
-  _globals['_DEVICE'].fields_by_name['vc_position']._loaded_options = None
-  _globals['_DEVICE'].fields_by_name['vc_position']._serialized_options = b'\372B\007\032\005\030\377\001(\000'
-  _globals['_DEVICE']._serialized_start=156
-  _globals['_DEVICE']._serialized_end=491
+  _globals['_DEVICE'].fields_by_name['asset_tag']._loaded_options = None
+  _globals['_DEVICE'].fields_by_name['asset_tag']._serialized_options = b'\372B\005r\003\030\310\001'
+  _globals['_DEVICE'].fields_by_name['status']._loaded_options = None
+  _globals['_DEVICE'].fields_by_name['status']._serialized_options = b'\372BHrFR\007offlineR\006activeR\007plannedR\006stagedR\006failedR\tinventoryR\017decommissioning'
+  _globals['_DEVICE'].fields_by_name['description']._loaded_options = None
+  _globals['_DEVICE'].fields_by_name['description']._serialized_options = b'\372B\005r\003\030\310\001'
+  _globals['_DEVICE']._serialized_start=176
+  _globals['_DEVICE']._serialized_end=713
 # @@protoc_insertion_point(module_scope)

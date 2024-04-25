@@ -43,7 +43,7 @@ def retrieve_existing_site(context, site_name):
     context.site_name = context.site.get("name")
 
 
-@given('site {site_name} with status "{status}" and description "{description}"')
+@given('site "{site_name}" with status "{status}" and description "{description}"')
 def create_site_to_update(context, site_name, status, description):
     """Create a site with a status and description to update"""
     context.site_name = site_name
@@ -71,6 +71,7 @@ def ingest_to_update_site(context):
 @then("the site is updated in the database")
 def check_site_updated(context):
     """Check if the is updated in the database."""
+    time.sleep(3)
     assert context.response is not None
     site = get_object_by_name(context.site_name, endpoint)
     assert site.get("name") == context.site_name

@@ -2,11 +2,8 @@ package changeset
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"reflect"
 
-	jsonpatch "github.com/evanphx/json-patch/v5"
 	"github.com/google/uuid"
 	"github.com/mitchellh/mapstructure"
 
@@ -56,53 +53,50 @@ type Change struct {
 
 // Prepare prepares a change set
 func Prepare(entity IngestEntity, netboxAPI netboxdiodeplugin.NetBoxAPI) (*ChangeSet, error) {
-	ingested, err := extractIngestEntityData(entity)
+	// extract ingested entity (actual)
+	actual, err := extractIngestEntityData(entity)
 	if err != nil {
 		return nil, err
 	}
 
-	createObjectsMap := make(map[string]map[string]netbox.ComparableData)
+	// get root object and all its nested objects (actual)
+	actualNestedObjects, err := actual.NestedObjects()
+	if err != nil {
+		return nil, err
+	}
 
-	for _, ingestedObject := range ingested.AllData() {
-		existingObject, err := retrieveObjectState(netboxAPI, ingestedObject)
+	// map out root object and all its nested objects (actual)
+	actualNestedObjectsMap := make(map[string]netbox.ComparableData)
+	for _, obj := range actualNestedObjects {
+		actualNestedObjectsMap[fmt.Sprintf("%p", obj.Data())] = obj
+	}
+
+	// retrieve root object all its nested objects from NetBox (intended)
+	intendedNestedObjectsMap := make(map[string]netbox.ComparableData)
+	for _, obj := range actualNestedObjects {
+		intended, err := retrieveObjectState(netboxAPI, obj)
 		if err != nil {
 			return nil, err
 		}
-
-		changesMap := make(map[string]netbox.ComparableData)
-		changesMap["actual"] = ingestedObject
-		changesMap["intended"] = existingObject
-
-		createObjectsMap[ingestedObject.DataType()] = changesMap
+		intendedNestedObjectsMap[fmt.Sprintf("%p", obj.Data())] = intended
 	}
 
-	updateObjectsMap := make(map[string]netbox.ComparableData)
-
-	if createObjectsMap[entity.DataType]["intended"] != nil {
-		for _, obj := range createObjectsMap[entity.DataType]["intended"].AllData() {
-			updateObjectsMap[obj.DataType()] = obj
+	// map out retrieved root object and all its nested objects (current)
+	var current netbox.ComparableData
+	for _, obj := range actualNestedObjects {
+		if obj.DataType() == entity.DataType {
+			current = intendedNestedObjectsMap[fmt.Sprintf("%p", obj.Data())]
+			break
 		}
 	}
 
-	var objectsToReconcile []netbox.ComparableData
-
-	if len(updateObjectsMap) > 0 {
-		// update existing object
-		objectsToReconcileUpdate, err := objectToUpdate(ingested, createObjectsMap, updateObjectsMap)
-		if err != nil {
-			return nil, err
-		}
-		objectsToReconcile = objectsToReconcileUpdate
-	} else {
-		// create new object
-		objectsToReconcileCreate, err := objectToCreate(ingested, createObjectsMap)
-		if err != nil {
-			return nil, err
-		}
-		objectsToReconcile = objectsToReconcileCreate
+	objectsToReconcile, err := actual.Patch(current, intendedNestedObjectsMap)
+	if err != nil {
+		return nil, err
 	}
 
-	changesList := make([]Change, 0)
+	// process objectsToReconcile and prepare changeset to return
+	changes := make([]Change, 0)
 
 	for _, obj := range objectsToReconcile {
 		operation := ChangeTypeCreate
@@ -114,7 +108,7 @@ func Prepare(entity IngestEntity, netboxAPI netboxdiodeplugin.NetBoxAPI) (*Chang
 			operation = ChangeTypeUpdate
 		}
 
-		changesList = append(changesList, Change{
+		changes = append(changes, Change{
 			ChangeID:      uuid.NewString(),
 			ChangeType:    operation,
 			ObjectType:    obj.DataType(),
@@ -124,101 +118,7 @@ func Prepare(entity IngestEntity, netboxAPI netboxdiodeplugin.NetBoxAPI) (*Chang
 		})
 	}
 
-	return &ChangeSet{ChangeSetID: uuid.NewString(), ChangeSet: changesList}, nil
-}
-
-func objectToCreate(ingested netbox.ComparableData, createObjectsMap map[string]map[string]netbox.ComparableData) ([]netbox.ComparableData, error) {
-	objectsToReconcile := make([]netbox.ComparableData, 0)
-
-	for _, ingestedObject := range ingested.AllData() {
-		isRootObject := ingestedObject.DataType() == ingested.DataType()
-
-		actualObject := createObjectsMap[ingestedObject.DataType()]["actual"]
-		intendedObject := createObjectsMap[ingestedObject.DataType()]["intended"]
-
-		if intendedObject != nil {
-			if !isRootObject {
-				actualObject.ReplaceData(intendedObject)
-				continue
-			}
-
-			patch, err := createPatch(intendedObject, actualObject)
-			if err != nil {
-				return nil, err
-			}
-
-			if reflect.DeepEqual(patch.Data(), intendedObject.Data()) {
-				actualObject.ReplaceData(intendedObject)
-				continue
-			}
-		} else {
-			actualObject.SetDefaults()
-		}
-
-		objectsToReconcile = append(objectsToReconcile, actualObject)
-	}
-	return objectsToReconcile, nil
-}
-
-func objectToUpdate(ingested netbox.ComparableData, createObjectsMap map[string]map[string]netbox.ComparableData, updateObjectsMap map[string]netbox.ComparableData) ([]netbox.ComparableData, error) {
-	objectsToReconcile := make([]netbox.ComparableData, 0)
-
-	for _, ingestedObject := range ingested.AllData() {
-		isRootObject := ingestedObject.DataType() == ingested.DataType()
-
-		actualObject := createObjectsMap[ingestedObject.DataType()]["actual"]
-		intendedObject := createObjectsMap[ingestedObject.DataType()]["intended"]
-		currentObject := updateObjectsMap[ingestedObject.DataType()]
-
-		isPlaceholder := actualObject.IsPlaceholder()
-
-		if isPlaceholder {
-			actualObject.ReplaceData(currentObject)
-			intendedObject.ReplaceData(currentObject)
-			continue
-		}
-
-		if intendedObject == nil {
-			actualObject.SetDefaults()
-		}
-
-		if !isPlaceholder && !isRootObject {
-			if intendedObject == nil {
-				currentObject.ReplaceData(actualObject)
-			} else {
-				actualObject.ReplaceData(intendedObject)
-				currentObject.ReplaceData(intendedObject)
-			}
-		}
-
-		patch, err := createPatch(currentObject, actualObject)
-		if err != nil {
-			return nil, err
-		}
-
-		comparePatchWith := actualObject
-		if isRootObject {
-			comparePatchWith = intendedObject
-		}
-		updateRequired := !reflect.DeepEqual(patch.Data(), comparePatchWith.Data())
-
-		if updateRequired {
-			objectsToReconcile = append(objectsToReconcile, patch)
-			continue
-		}
-
-		if isRootObject && !updateRequired && len(objectsToReconcile) > 0 {
-			objectsToReconcile = append(objectsToReconcile, currentObject)
-			continue
-		}
-
-		if !updateRequired && intendedObject == nil {
-			objectsToReconcile = append(objectsToReconcile, currentObject)
-			continue
-		}
-	}
-
-	return objectsToReconcile, nil
+	return &ChangeSet{ChangeSetID: uuid.NewString(), ChangeSet: changes}, nil
 }
 
 func retrieveObjectState(netboxAPI netboxdiodeplugin.NetBoxAPI, change netbox.ComparableData) (netbox.ComparableData, error) {
@@ -280,48 +180,7 @@ func extractNetBoxObjectStateData(obj ObjectState) (netbox.ComparableData, error
 		return nil, fmt.Errorf("invalid object state")
 	}
 
+	dw.Normalise()
+
 	return dw, nil
-}
-
-func createPatch(original, modified netbox.ComparableData) (netbox.ComparableData, error) {
-	originalJSON, err := json.Marshal(original)
-	if err != nil {
-		return nil, err
-	}
-
-	modifiedJSON, err := json.Marshal(modified)
-	if err != nil {
-		return nil, err
-	}
-
-	patchJSON, err := jsonpatch.MergeMergePatches(originalJSON, modifiedJSON)
-	if err != nil {
-		return nil, err
-	}
-
-	patch, err := cloneObject(original)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := json.Unmarshal(patchJSON, &patch); err != nil {
-		return nil, err
-	}
-
-	return patch, nil
-}
-
-func cloneObject(obj netbox.ComparableData) (netbox.ComparableData, error) {
-	j, _ := json.Marshal(obj)
-
-	clone, err := netbox.NewDataWrapper(obj.DataType())
-	if err != nil {
-		return nil, err
-	}
-
-	if err := json.Unmarshal(j, &clone); err != nil {
-		return nil, err
-	}
-
-	return clone, nil
 }

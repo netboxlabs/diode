@@ -205,15 +205,73 @@ func (m *Device) validate(all bool) error {
 		}
 	}
 
-	if val := m.GetVcPosition(); val < 0 || val > 255 {
+	if utf8.RuneCountInString(m.GetAssetTag()) > 200 {
 		err := DeviceValidationError{
-			field:  "VcPosition",
-			reason: "value must be inside range [0, 255]",
+			field:  "AssetTag",
+			reason: "value length must be at most 200 runes",
 		}
 		if !all {
 			return err
 		}
 		errors = append(errors, err)
+	}
+
+	if _, ok := _Device_Status_InLookup[m.GetStatus()]; !ok {
+		err := DeviceValidationError{
+			field:  "Status",
+			reason: "value must be in list [offline active planned staged failed inventory decommissioning]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if utf8.RuneCountInString(m.GetDescription()) > 200 {
+		err := DeviceValidationError{
+			field:  "Description",
+			reason: "value length must be at most 200 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	// no validation rules for Comments
+
+	for idx, item := range m.GetTags() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, DeviceValidationError{
+						field:  fmt.Sprintf("Tags[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, DeviceValidationError{
+						field:  fmt.Sprintf("Tags[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return DeviceValidationError{
+					field:  fmt.Sprintf("Tags[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	}
 
 	if len(errors) > 0 {
@@ -292,3 +350,13 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = DeviceValidationError{}
+
+var _Device_Status_InLookup = map[string]struct{}{
+	"offline":         {},
+	"active":          {},
+	"planned":         {},
+	"staged":          {},
+	"failed":          {},
+	"inventory":       {},
+	"decommissioning": {},
+}

@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package diode.v1;
 
+import "diode/v1/tag.proto";
 import "validate/validate.proto";
 
 option go_package = "github.com/netboxlabs/diode/diode-sdk-go/diode/v1/diodepb";
@@ -17,4 +18,18 @@ message Site {
     max_len: 100,
     pattern: "^[-a-zA-Z0-9_]+$"
   }];
+  string status = 3 [(validate.rules).string = {
+    in: [
+      "planned",
+      "staging",
+      "active",
+      "decommissioning",
+      "retired"
+    ]
+  }];
+  string facility = 4 [(validate.rules).string = {max_len: 50}];
+  string time_zone = 5;
+  string description = 6 [(validate.rules).string = {max_len: 200}];
+  string comments = 7;
+  repeated Tag tags = 8;
 }

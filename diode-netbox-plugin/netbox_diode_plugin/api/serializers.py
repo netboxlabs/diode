@@ -1,10 +1,35 @@
 #!/usr/bin/env python
 # Copyright 2024 NetBox Labs Inc
 """Diode Netbox Plugin - Serializer."""
+from collections import OrderedDict
 
+from django.core.exceptions import FieldDoesNotExist
 from extras.models import ObjectChange
 from rest_framework import serializers
 from utilities.api import get_serializer_for_model
+
+
+def nested_to_model_serializers_converter(context, data, model):
+    """Converts nested serializers to model serializers recursively."""
+    for key, value in data.items():
+        if isinstance(value, OrderedDict):
+            try:
+                field = model._meta.get_field(key)
+                related_model = field.related_model
+
+                field_serializer = get_serializer_for_model(related_model)
+                field_data = related_model.objects.filter(id=value.get("id"))
+
+                serialized_data = field_serializer(
+                    field_data, context=context, many=True
+                ).data[0]
+
+                nested_to_model_serializers_converter(
+                    context, serialized_data, related_model
+                )
+                data[key] = serialized_data
+            except FieldDoesNotExist:
+                continue
 
 
 class ObjectStateSerializer(serializers.Serializer):
@@ -47,7 +72,12 @@ class ObjectStateSerializer(serializers.Serializer):
         object_data = instance.__class__.objects.filter(id=instance.id)
 
         context = {"request": self.context.get("request")}
-        return serializer(object_data, context=context, many=True).data[0]
+
+        data = serializer(object_data, context=context, many=True).data[0]
+
+        nested_to_model_serializers_converter(context, data, instance._meta.model)
+
+        return data
 
 
 class ChangeSerialiazer(serializers.Serializer):

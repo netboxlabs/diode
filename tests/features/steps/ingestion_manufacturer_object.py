@@ -45,7 +45,7 @@ def retrieve_existing_manufacturer(context, manufacturer_name):
     context.manufacturer_name = manufacturer.get("name")
 
 
-@given('manufacturer {manufacturer_name} with description "{description}"')
+@given('manufacturer "{manufacturer_name}" with description "{description}"')
 def create_manufacturer_to_update(context, manufacturer_name, description):
     """Create a manufacturer with a description to update"""
     context.manufacturer_name = manufacturer_name
@@ -72,6 +72,7 @@ def ingest_to_update_manufacturer(context):
 @then("the manufacturer is updated in the database")
 def check_manufacturer_updated(context):
     """Check if the response is not None and the is updated in the database."""
+    time.sleep(3)
     assert context.response is not None
     manufacturer = get_object_by_name(context.manufacturer_name, endpoint)
     assert manufacturer.get("name") == context.manufacturer_name

@@ -6,6 +6,7 @@ import "diode/v1/device_type.proto";
 import "diode/v1/platform.proto";
 import "diode/v1/role.proto";
 import "diode/v1/site.proto";
+import "diode/v1/tag.proto";
 import "validate/validate.proto";
 
 option go_package = "github.com/netboxlabs/diode/diode-sdk-go/diode/v1/diodepb";
@@ -22,8 +23,20 @@ message Device {
   Platform platform = 5;
   string serial = 6 [(validate.rules).string = {max_len: 50}];
   Site site = 7;
-  int32 vc_position = 8 [(validate.rules).int32 = {
-    gte: 0,
-    lte: 255
+  string asset_tag = 8 [(validate.rules).string = {max_len: 200}];
+  string status = 9 [(validate.rules).string = {
+    in: [
+      "offline",
+      "active",
+      "planned",
+      "staged",
+      "failed",
+      "inventory",
+      "decommissioning"
+    ]
   }];
+  string description = 10 [(validate.rules).string = {max_len: 200}];
+  string comments = 11;
+  repeated Tag tags = 12;
+  //  TODO: primary_ip, primary_ip4, primary_ip6
 }
