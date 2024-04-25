@@ -5,7 +5,7 @@ from netboxlabs.diode.sdk.diode.v1.ingester_pb2 import Entity
 from netboxlabs.diode.sdk.diode.v1.role_pb2 import Role
 from steps.utils import get_object_by_name, ingester
 
-endpoint = "dcim/device-roles"
+endpoint = "dcim/device-roles/"
 
 
 @given('a new device role "{device_role_name}"')
@@ -29,9 +29,9 @@ def ingest_role(context):
 @then("the device role remains the same")
 def check_device_role(context):
     """Check if the response is not None and the device role is created in the database."""
-    assert context.response is not None
     # Wait for the device role to be added to the cache
     time.sleep(3)
+    assert context.response is not None
     device_role = get_object_by_name(context.device_role_name, endpoint)
     assert device_role.get("name") == context.device_role_name
     assert device_role.get("color") == "000000"
@@ -76,8 +76,9 @@ def ingest_to_update_device_role(context):
 @then("the device role is updated in the database")
 def check_role_updated(context):
     """Check if the role is updated in the database"""
+    time.sleep(3)
     assert context.response is not None
     role = get_object_by_name(context.device_role_name, endpoint)
     assert role.get("name") == context.device_role_name
-    assert role.get("status").get("value") == context.status
+    assert role.get("color") == context.color
     assert role.get("description") == context.description

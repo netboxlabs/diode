@@ -57,6 +57,7 @@ def check_device_type_object(context):
 @given('device type "{device_type_model}" already exists in the database')
 def retrieve_existing_manufacturer(context, device_type_model):
     """Retrieve the device type object from the database"""
+    time.sleep(3)
     context.device_type_model = device_type_model
     device_type = get_object_by_model(context.device_type_model, endpoint)
     context.device_type_model = device_type.get("model")
@@ -66,7 +67,7 @@ def retrieve_existing_manufacturer(context, device_type_model):
     'device type "{device_type_model}" with manufacturer "{manufacturer_name}", description "{description}", and part number "{part_number}"'
 )
 def create_device_type_to_update(
-    context, device_type_model, manufacturer_name, description, part_number
+        context, device_type_model, manufacturer_name, description, part_number
 ):
     """Create a device type object with a description to update"""
     context.device_type_model = device_type_model
@@ -79,6 +80,7 @@ def create_device_type_to_update(
     'check if the manufacturer "{manufacturer_name}" exists in the database and remove it'
 )
 def remove_manufacturer(context, manufacturer_name):
+    time.sleep(3)
     manufacturer = get_object_by_name(manufacturer_name, "dcim/manufacturers/")
     assert manufacturer.get("name") == manufacturer_name
     send_delete_request(manufacturer)
