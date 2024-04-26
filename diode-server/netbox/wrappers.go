@@ -63,6 +63,9 @@ func (actual *DcimDeviceDataWrapper) Data() any {
 
 // IsValid returns true if the Device is not nil
 func (actual *DcimDeviceDataWrapper) IsValid() bool {
+	if actual.Device != nil && !actual.hasParent && actual.Device.Name == "" {
+		actual.Device = nil
+	}
 	return actual.Device != nil
 }
 
@@ -77,6 +80,10 @@ func (actual *DcimDeviceDataWrapper) Normalise() {
 func (actual *DcimDeviceDataWrapper) NestedObjects() ([]ComparableData, error) {
 	if len(actual.nestedObjects) > 0 {
 		return actual.nestedObjects, nil
+	}
+
+	if actual.Device != nil && actual.hasParent && actual.Device.Name == "" {
+		actual.Device = nil
 	}
 
 	objects := make([]ComparableData, 0)
@@ -349,6 +356,9 @@ func (actual *DcimDeviceRoleDataWrapper) Data() any {
 
 // IsValid returns true if the DeviceRole is not nil
 func (actual *DcimDeviceRoleDataWrapper) IsValid() bool {
+	if actual.DeviceRole != nil && !actual.hasParent && actual.DeviceRole.Name == "" {
+		actual.DeviceRole = nil
+	}
 	return actual.DeviceRole != nil
 }
 
@@ -363,6 +373,10 @@ func (actual *DcimDeviceRoleDataWrapper) Normalise() {
 func (actual *DcimDeviceRoleDataWrapper) NestedObjects() ([]ComparableData, error) {
 	if len(actual.nestedObjects) > 0 {
 		return actual.nestedObjects, nil
+	}
+
+	if actual.DeviceRole != nil && actual.hasParent && actual.DeviceRole.Name == "" {
+		actual.DeviceRole = nil
 	}
 
 	objects := make([]ComparableData, 0)
@@ -505,6 +519,9 @@ func (actual *DcimDeviceTypeDataWrapper) Data() any {
 
 // IsValid returns true if the DeviceType is not nil
 func (actual *DcimDeviceTypeDataWrapper) IsValid() bool {
+	if actual.DeviceType != nil && !actual.hasParent && actual.DeviceType.Model == "" {
+		actual.DeviceType = nil
+	}
 	return actual.DeviceType != nil
 }
 
@@ -539,6 +556,10 @@ func (actual *DcimDeviceTypeDataWrapper) IsPlaceholder() bool {
 func (actual *DcimDeviceTypeDataWrapper) NestedObjects() ([]ComparableData, error) {
 	if len(actual.nestedObjects) > 0 {
 		return actual.nestedObjects, nil
+	}
+
+	if actual.DeviceType != nil && actual.hasParent && actual.DeviceType.Model == "" {
+		actual.DeviceType = nil
 	}
 
 	objects := make([]ComparableData, 0)
@@ -769,6 +790,9 @@ func (actual *DcimManufacturerDataWrapper) Data() any {
 
 // IsValid returns true if the Manufacturer is not nil
 func (actual *DcimManufacturerDataWrapper) IsValid() bool {
+	if actual.Manufacturer != nil && !actual.hasParent && actual.Manufacturer.Name == "" {
+		actual.Manufacturer = nil
+	}
 	return actual.Manufacturer != nil
 }
 
@@ -784,6 +808,11 @@ func (actual *DcimManufacturerDataWrapper) NestedObjects() ([]ComparableData, er
 	if len(actual.nestedObjects) > 0 {
 		return actual.nestedObjects, nil
 	}
+
+	if actual.Manufacturer != nil && actual.hasParent && actual.Manufacturer.Name == "" {
+		actual.Manufacturer = nil
+	}
+
 	objects := make([]ComparableData, 0)
 
 	if actual.Manufacturer == nil && actual.hasParent {
@@ -834,6 +863,7 @@ func (actual *DcimManufacturerDataWrapper) IsPlaceholder() bool {
 // Patch creates patches between the actual, intended and current data
 func (actual *DcimManufacturerDataWrapper) Patch(cmp ComparableData, intendedNestedObjects map[string]ComparableData) ([]ComparableData, error) {
 	intended, ok := cmp.(*DcimManufacturerDataWrapper)
+
 	if !ok && intended != nil {
 		return nil, errors.New("invalid data type")
 	}
@@ -937,6 +967,9 @@ func (actual *DcimPlatformDataWrapper) Data() any {
 
 // IsValid returns true if the Platform is not nil
 func (actual *DcimPlatformDataWrapper) IsValid() bool {
+	if actual.Platform != nil && !actual.hasParent && actual.Platform.Name == "" {
+		actual.Platform = nil
+	}
 	return actual.Platform != nil
 }
 
@@ -951,6 +984,10 @@ func (actual *DcimPlatformDataWrapper) Normalise() {
 func (actual *DcimPlatformDataWrapper) NestedObjects() ([]ComparableData, error) {
 	if len(actual.nestedObjects) > 0 {
 		return actual.nestedObjects, nil
+	}
+
+	if actual.Platform != nil && actual.hasParent && actual.Platform.Name == "" {
+		actual.Platform = nil
 	}
 
 	objects := make([]ComparableData, 0)
@@ -1126,6 +1163,9 @@ func (actual *DcimSiteDataWrapper) Data() any {
 
 // IsValid returns true if the Site is not nil
 func (actual *DcimSiteDataWrapper) IsValid() bool {
+	if actual.Site != nil && !actual.hasParent && actual.Site.Name == "" {
+		actual.Site = nil
+	}
 	return actual.Site != nil
 }
 
@@ -1140,6 +1180,10 @@ func (actual *DcimSiteDataWrapper) Normalise() {
 func (actual *DcimSiteDataWrapper) NestedObjects() ([]ComparableData, error) {
 	if len(actual.nestedObjects) > 0 {
 		return actual.nestedObjects, nil
+	}
+
+	if actual.Site != nil && actual.hasParent && actual.Site.Name == "" {
+		actual.Site = nil
 	}
 
 	objects := make([]ComparableData, 0)
