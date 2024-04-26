@@ -223,6 +223,23 @@ func TestPrepare(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "[P1] ingest empty dcim.site - error",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "dcim.site",
+				"entity": {
+					"Site": {}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet:   []changeset.Change{},
+			},
+			wantErr: true,
+		},
+		{
 			name: "[P2] ingest dcim.devicerole with name only - existing object not found - create",
 			rawIngestEntity: []byte(`{
 				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
@@ -387,6 +404,23 @@ func TestPrepare(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "[P2] ingest empty dcim.devicerole - error",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "dcim.devicerole",
+				"entity": {
+					"DeviceRole": {}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet:   []changeset.Change{},
+			},
+			wantErr: true,
+		},
+		{
 			name: "[P3] ingest dcim.manufacturer with name only - existing object not found - create",
 			rawIngestEntity: []byte(`{
 				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
@@ -459,6 +493,23 @@ func TestPrepare(t *testing.T) {
 				ChangeSet:   []changeset.Change{},
 			},
 			wantErr: false,
+		},
+		{
+			name: "[P3] ingest empty dcim.manufacturer - error",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "dcim.manufacturer",
+				"entity": {
+					"Manufacturer": {}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet:   []changeset.Change{},
+			},
+			wantErr: true,
 		},
 		{
 			name: "[P4] ingest dcim.devicetype with model only - existing object not found - create",
@@ -576,6 +627,23 @@ func TestPrepare(t *testing.T) {
 				ChangeSet:   []changeset.Change{},
 			},
 			wantErr: false,
+		},
+		{
+			name: "[P3] ingest empty dcim.devicetype - error",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "dcim.devicetype",
+				"entity": {
+					"DeviceType": {}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet:   []changeset.Change{},
+			},
+			wantErr: true,
 		},
 		{
 			name: "[P5] ingest dcim.devicetype with manufacturer - existing object not found - create manufacturer and devicetype",
@@ -1501,6 +1569,139 @@ func TestPrepare(t *testing.T) {
 			wantErr: false,
 		},
 		{
+			name: "[P6] ingest dcim.device with empty site",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "dcim.device",
+				"entity": {
+					"Device": {
+						"name": "router01",
+						"site": {}
+					}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "dcim.site",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimSiteDataWrapper{
+						Site: nil,
+					},
+				},
+				{
+					objectType:     "dcim.manufacturer",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimManufacturerDataWrapper{
+						Manufacturer: &netbox.DcimManufacturer{
+							ID:   1,
+							Name: "undefined",
+							Slug: "undefined",
+						},
+					},
+				},
+				{
+					objectType:     "dcim.devicetype",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceTypeDataWrapper{
+						DeviceType: &netbox.DcimDeviceType{
+							ID:    1,
+							Model: "undefined",
+							Slug:  "undefined",
+							Manufacturer: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+							},
+						},
+					},
+				},
+				{
+					objectType:     "dcim.devicerole",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceRoleDataWrapper{
+						DeviceRole: &netbox.DcimDeviceRole{
+							ID:    1,
+							Name:  "undefined",
+							Slug:  "undefined",
+							Color: strPtr("000000"),
+						},
+					},
+				},
+				{
+					objectType:     "dcim.platform",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimPlatformDataWrapper{
+						Platform: &netbox.DcimPlatform{
+							ID:   1,
+							Name: "undefined",
+							Slug: "undefined",
+							Manufacturer: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+							},
+						},
+					},
+				},
+				{
+					objectType:     "dcim.device",
+					objectID:       0,
+					query:          "router01",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceDataWrapper{
+						Device: &netbox.DcimDevice{
+							ID:   1,
+							Name: "router01",
+							Site: nil,
+							DeviceType: &netbox.DcimDeviceType{
+								ID:    1,
+								Model: "undefined",
+								Slug:  "undefined",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
+							},
+							Role: &netbox.DcimDeviceRole{
+								ID:    1,
+								Name:  "undefined",
+								Slug:  "undefined",
+								Color: strPtr("000000"),
+							},
+							Platform: &netbox.DcimPlatform{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
+							},
+							Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+						},
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet:   []changeset.Change{},
+			},
+			wantErr: false,
+		},
+		{
 			name: "[P7] ingest dcim.device - existing object not found - create device and all related objects",
 			rawIngestEntity: []byte(`{
 				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
@@ -1690,6 +1891,23 @@ func TestPrepare(t *testing.T) {
 				},
 			},
 			wantErr: false,
+		},
+		{
+			name: "[P6] ingest empty dcim.device - error",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "dcim.device",
+				"entity": {
+					"Device": {}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet:   []changeset.Change{},
+			},
+			wantErr: true,
 		},
 		{
 			name: "[P7] ingest dcim.device - existing object found - create missing related objects and update device",
@@ -3190,6 +3408,23 @@ func TestPrepare(t *testing.T) {
 				},
 			},
 			wantErr: false,
+		},
+		{
+			name: "[P12] ingest empty dcim.platform - error",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "dcim.platform",
+				"entity": {
+					"Platform": {}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet:   []changeset.Change{},
+			},
+			wantErr: true,
 		},
 	}
 
