@@ -2,19 +2,24 @@ syntax = "proto3";
 
 package diode.v1;
 
-import "google/protobuf/any.proto";
+import "diode/v1/device.proto";
+import "diode/v1/tag.proto";
 import "validate/validate.proto";
 
 option go_package = "github.com/netboxlabs/diode/diode-sdk-go/diode/v1/diodepb";
 
 // An interface
 message Interface {
-  google.protobuf.Any device = 1 [(validate.rules).any.required = true];
+  Device device = 1 [(validate.rules).any.required = true];
   string name = 2 [(validate.rules).string = {
     min_len: 1,
     max_len: 64
   }];
-  string type = 3 [(validate.rules).string = {
+  string label = 3 [(validate.rules).string = {
+    min_len: 1,
+    max_len: 64
+  }];
+  string type = 4 [(validate.rules).string = {
     in: [
       "virtual",
       "bridge",
@@ -133,11 +138,23 @@ message Interface {
       "other"
     ]
   }];
-  bool enabled = 4;
-  int32 mtu = 5 [(validate.rules).int32 = {
+  bool enabled = 5;
+  int32 mtu = 6 [(validate.rules).int32 = {
     gte: 1,
     lte: 65536
   }];
-  string mac_address = 6;
-  bool mgmt_only = 7;
+  string mac_address = 7;
+  int32 speed = 8 [(validate.rules).int32 = {gte: 0}];
+  string wwn = 9;
+  bool mgmt_only = 10;
+  string description = 11 [(validate.rules).string = {max_len: 200}];
+  bool mark_connected = 12;
+  string mode = 13 [(validate.rules).string = {
+    in: [
+      "access",
+      "tagged",
+      "tagged-all"
+    ]
+  }];
+  repeated Tag tags = 14;
 }
