@@ -716,64 +716,237 @@ func (actual *DcimDeviceTypeDataWrapper) SetDefaults() {}
 type DcimInterfaceDataWrapper struct {
 	Interface *DcimInterface
 
-	placeholder bool
+	placeholder        bool
+	hasParent          bool
+	nestedObjects      []ComparableData
+	objectsToReconcile []ComparableData
 }
 
 func (*DcimInterfaceDataWrapper) comparableData() {}
 
 // Data returns the Interface
-func (d *DcimInterfaceDataWrapper) Data() any {
-	return d.Interface
+func (actual *DcimInterfaceDataWrapper) Data() any {
+	return actual.Interface
 }
 
 // IsValid returns true if the Interface is not nil
-func (d *DcimInterfaceDataWrapper) IsValid() bool {
-	return d.Interface != nil
+func (actual *DcimInterfaceDataWrapper) IsValid() bool {
+	if actual.Interface != nil && !actual.hasParent && actual.Interface.Name == "" {
+		actual.Interface = nil
+	}
+	return actual.Interface != nil
 }
 
 // Normalise normalises the data
-func (d *DcimInterfaceDataWrapper) Normalise() {}
+func (actual *DcimInterfaceDataWrapper) Normalise() {
+	if actual.IsValid() && actual.Interface.Tags != nil && len(actual.Interface.Tags) == 0 {
+		actual.Interface.Tags = nil
+	}
+}
 
 // NestedObjects returns all nested objects
-func (d *DcimInterfaceDataWrapper) NestedObjects() ([]ComparableData, error) {
-	return nil, nil
+func (actual *DcimInterfaceDataWrapper) NestedObjects() ([]ComparableData, error) {
+	if len(actual.nestedObjects) > 0 {
+		return actual.nestedObjects, nil
+	}
+
+	if actual.Interface != nil && actual.hasParent && actual.Interface.Name == "" {
+		actual.Interface = nil
+	}
+
+	objects := make([]ComparableData, 0)
+
+	if actual.Interface == nil && actual.hasParent {
+		actual.Interface = NewDcimInterface()
+		actual.placeholder = true
+	}
+
+	device := DcimDeviceDataWrapper{Device: actual.Interface.Device, placeholder: actual.placeholder, hasParent: true}
+
+	do, err := device.NestedObjects()
+	if err != nil {
+		return nil, err
+	}
+
+	objects = append(objects, do...)
+
+	actual.Interface.Device = device.Device
+
+	if actual.Interface.Tags != nil {
+		for _, t := range actual.Interface.Tags {
+			if t.Slug == "" {
+				t.Slug = slug.Make(t.Name)
+			}
+			objects = append(objects, &TagDataWrapper{Tag: t, hasParent: true})
+		}
+	}
+
+	actual.nestedObjects = objects
+
+	objects = append(objects, actual)
+
+	return objects, nil
 }
 
 // DataType returns the data type
-func (d *DcimInterfaceDataWrapper) DataType() string {
+func (actual *DcimInterfaceDataWrapper) DataType() string {
 	return DcimInterfaceObjectType
 }
 
 // QueryString returns the query string needed to retrieve its object state
-func (d *DcimInterfaceDataWrapper) QueryString() string {
-	return d.Interface.Name
+func (actual *DcimInterfaceDataWrapper) QueryString() string {
+	return actual.Interface.Name
 }
 
 // ID returns the ID of the data
-func (d *DcimInterfaceDataWrapper) ID() int {
-	return d.Interface.ID
+func (actual *DcimInterfaceDataWrapper) ID() int {
+	return actual.Interface.ID
 }
 
 // IsPlaceholder returns true if the data is a placeholder
-func (d *DcimInterfaceDataWrapper) IsPlaceholder() bool {
-	return d.placeholder
+func (actual *DcimInterfaceDataWrapper) IsPlaceholder() bool {
+	return actual.placeholder
 }
 
 // Patch creates patches between the actual, intended and current data
-func (d *DcimInterfaceDataWrapper) Patch(cmp ComparableData, _ map[string]ComparableData) ([]ComparableData, error) {
-	d2, ok := cmp.(*DcimInterfaceDataWrapper)
-	if !ok && d2 != nil {
+func (actual *DcimInterfaceDataWrapper) Patch(cmp ComparableData, intendedNestedObjects map[string]ComparableData) ([]ComparableData, error) {
+	intended, ok := cmp.(*DcimInterfaceDataWrapper)
+	if !ok && intended != nil {
 		return nil, errors.New("invalid data type")
 	}
 
-	fmt.Printf("d: %#v\n", d)
-	fmt.Printf("d2: %#v\n", d2)
+	actualNestedObjectsMap := make(map[string]ComparableData)
+	for _, obj := range actual.nestedObjects {
+		actualNestedObjectsMap[fmt.Sprintf("%p", obj.Data())] = obj
+	}
 
-	return nil, nil
+	actualDevice := extractFromObjectsMap(actualNestedObjectsMap, fmt.Sprintf("%p", actual.Interface.Device))
+	intendedDevice := extractFromObjectsMap(intendedNestedObjects, fmt.Sprintf("%p", actual.Interface.Device))
+
+	reconciliationRequired := true
+
+	if intended != nil {
+		currentNestedObjectsMap := make(map[string]ComparableData)
+		currentNestedObjects, err := intended.NestedObjects()
+		if err != nil {
+			return nil, err
+		}
+		for _, obj := range currentNestedObjects {
+			currentNestedObjectsMap[fmt.Sprintf("%p", obj.Data())] = obj
+		}
+
+		actual.Interface.ID = intended.Interface.ID
+		actual.Interface.Name = intended.Interface.Name
+
+		if actualDevice.IsPlaceholder() && intended.Interface.Device != nil {
+			intendedDevice = extractFromObjectsMap(currentNestedObjectsMap, fmt.Sprintf("%p", intended.Interface.Device))
+		}
+
+		deviceObjectsToReconcile, deviceErr := actualDevice.Patch(intendedDevice, intendedNestedObjects)
+		if deviceErr != nil {
+			return nil, deviceErr
+		}
+		actual.Interface.Device = actualDevice.Data().(*DcimDevice)
+
+		actual.objectsToReconcile = append(actual.objectsToReconcile, deviceObjectsToReconcile...)
+
+		if actual.Interface.Label == nil {
+			actual.Interface.Label = intended.Interface.Label
+		}
+
+		if actual.Interface.Type == nil {
+			actual.Interface.Type = intended.Interface.Type
+		}
+
+		if actual.Interface.Enabled == nil {
+			actual.Interface.Enabled = intended.Interface.Enabled
+		}
+
+		if actual.Interface.MTU == nil {
+			actual.Interface.MTU = intended.Interface.MTU
+		}
+
+		if actual.Interface.MACAddress == nil {
+			actual.Interface.MACAddress = intended.Interface.MACAddress
+		}
+
+		if actual.Interface.Speed == nil {
+			actual.Interface.Speed = intended.Interface.Speed
+		}
+
+		if actual.Interface.WWN == nil {
+			actual.Interface.WWN = intended.Interface.WWN
+		}
+
+		if actual.Interface.MgmtOnly == nil {
+			actual.Interface.MgmtOnly = intended.Interface.MgmtOnly
+		}
+
+		if actual.Interface.Description == nil {
+			actual.Interface.Description = intended.Interface.Description
+		}
+
+		if actual.Interface.MarkConnected == nil {
+			actual.Interface.MarkConnected = intended.Interface.MarkConnected
+		}
+
+		if actual.Interface.Mode == nil {
+			actual.Interface.Mode = intended.Interface.Mode
+		}
+
+		tagsToMerge := mergeTags(actual.Interface.Tags, intended.Interface.Tags, intendedNestedObjects)
+
+		if len(tagsToMerge) > 0 {
+			actual.Interface.Tags = tagsToMerge
+		}
+
+		for _, t := range actual.Interface.Tags {
+			if t.ID == 0 {
+				actual.objectsToReconcile = append(actual.objectsToReconcile, &TagDataWrapper{Tag: t, hasParent: true})
+			}
+		}
+
+		actualHash, _ := hashstructure.Hash(actual.Data(), hashstructure.FormatV2, nil)
+		intendedHash, _ := hashstructure.Hash(intended.Data(), hashstructure.FormatV2, nil)
+
+		reconciliationRequired = actualHash != intendedHash
+	} else {
+		actual.SetDefaults()
+
+		deviceObjectsToReconcile, deviceErr := actualDevice.Patch(intendedDevice, intendedNestedObjects)
+		if deviceErr != nil {
+			return nil, deviceErr
+		}
+		actual.Interface.Device = actualDevice.Data().(*DcimDevice)
+
+		tagsToMerge := mergeTags(actual.Interface.Tags, nil, intendedNestedObjects)
+
+		if len(tagsToMerge) > 0 {
+			actual.Interface.Tags = tagsToMerge
+		}
+
+		for _, t := range actual.Interface.Tags {
+			if t.ID == 0 {
+				actual.objectsToReconcile = append(actual.objectsToReconcile, &TagDataWrapper{Tag: t, hasParent: true})
+			}
+		}
+
+		actual.objectsToReconcile = append(actual.objectsToReconcile, deviceObjectsToReconcile...)
+	}
+
+	if reconciliationRequired {
+		actual.objectsToReconcile = append(actual.objectsToReconcile, actual)
+	}
+
+	return actual.objectsToReconcile, nil
 }
 
 // SetDefaults sets the default values for the interface
-func (d *DcimInterfaceDataWrapper) SetDefaults() {}
+func (actual *DcimInterfaceDataWrapper) SetDefaults() {
+	if actual.Interface.Type == nil {
+		actual.Interface.Type = &DefaultInterfaceType
+	}
+}
 
 // DcimManufacturerDataWrapper represents a DCIM manufacturer data wrapper
 type DcimManufacturerDataWrapper struct {
