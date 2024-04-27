@@ -3,7 +3,7 @@ run:
   modules-download-mode: readonly
 
 output:
-  format: github-actions
+  formats: github-actions
 
 linters:
   enable:
