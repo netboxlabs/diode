@@ -228,6 +228,10 @@ func (actual *DcimDeviceDataWrapper) Patch(cmp ComparableData, intendedNestedObj
 			actual.Device.AssetTag = intended.Device.AssetTag
 		}
 
+		if actual.Device.Serial == nil {
+			actual.Device.Serial = intended.Device.Serial
+		}
+
 		if actualSite.IsPlaceholder() && intended.Device.Site != nil {
 			intendedSite = extractFromObjectsMap(currentNestedObjectsMap, fmt.Sprintf("%p", intended.Device.Site))
 		}
