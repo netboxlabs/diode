@@ -8,6 +8,9 @@ var (
 
 	// ErrInvalidInterfaceMode is returned when the interface mode is invalid
 	ErrInvalidInterfaceMode = errors.New("invalid interface mode")
+
+	// DefaultInterfaceType is the default interface type
+	DefaultInterfaceType = "other"
 )
 
 var interfaceTypesMap = map[string]struct{}{
