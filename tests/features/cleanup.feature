@@ -17,3 +17,5 @@ Scenario: Cleanup
     Given the site "undefined" is deleted
     Given the platform "undefined" is deleted
     Given the manufacturer "undefined" is deleted
+
+    Given the interface "GigabitEthernet0/0/0" is deleted

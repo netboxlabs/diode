@@ -55,3 +55,12 @@ def delete_device(context, device_name):
     device = get_object_by_name(device_name, endpoint)
     if device:
         send_delete_request(endpoint, device.get("id"))
+
+
+@given('the interface "{interface_name}" is deleted')
+def delete_interface(context, interface_name):
+    """Delete the interface"""
+    endpoint = "dcim/interfaces/"
+    interface = get_object_by_name(interface_name, endpoint)
+    if interface:
+        send_delete_request(endpoint, interface.get("id"))

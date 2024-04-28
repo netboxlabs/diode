@@ -190,15 +190,22 @@ A device
 
 An interface
 
-| Field       | Type                                        | Label | Description |
-|-------------|---------------------------------------------|-------|-------------|
-| device      | [google.protobuf.Any](#google-protobuf-Any) |       |             |
-| name        | [string](#string)                           |       |             |
-| type        | [string](#string)                           |       |             |
-| enabled     | [bool](#bool)                               |       |             |
-| mtu         | [int32](#int32)                             |       |             |
-| mac_address | [string](#string)                           |       |             |
-| mgmt_only   | [bool](#bool)                               |       |             |
+| Field          | Type                       | Label    | Description |
+|----------------|----------------------------|----------|-------------|
+| device         | [Device](#diode-v1-Device) |          |             |
+| name           | [string](#string)          |          |             |
+| label          | [string](#string)          |          |             |
+| type           | [string](#string)          |          |             |
+| enabled        | [bool](#bool)              |          |             |
+| mtu            | [int32](#int32)            |          |             |
+| mac_address    | [string](#string)          |          |             |
+| speed          | [int32](#int32)            |          |             |
+| wwn            | [string](#string)          |          |             |
+| mgmt_only      | [bool](#bool)              |          |             |
+| description    | [string](#string)          |          |             |
+| mark_connected | [bool](#bool)              |          |             |
+| mode           | [string](#string)          |          |             |
+| tags           | [Tag](#diode-v1-Tag)       | repeated |             |
 
 <a name="diode_v1_ingester-proto"></a>
 <p align="right"><a href="#top">Top</a></p>

@@ -87,13 +87,6 @@ type DcimDeviceType struct {
 	Tags         []*Tag            `json:"tags,omitempty"`
 }
 
-// DcimInterface represents a DCIM interface
-type DcimInterface struct {
-	ID   int    `json:"id,omitempty"`
-	Name string `json:"name,omitempty"`
-	Slug string `json:"slug,omitempty"`
-}
-
 // DcimManufacturer represents a DCIM manufacturer
 type DcimManufacturer struct {
 	ID          int     `json:"id,omitempty"`

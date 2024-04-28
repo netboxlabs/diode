@@ -83,6 +83,17 @@ func (m *Interface) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
+	if l := utf8.RuneCountInString(m.GetLabel()); l < 1 || l > 64 {
+		err := InterfaceValidationError{
+			field:  "Label",
+			reason: "value length must be between 1 and 64 runes, inclusive",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
 	if _, ok := _Interface_Type_InLookup[m.GetType()]; !ok {
 		err := InterfaceValidationError{
 			field:  "Type",
@@ -109,7 +120,78 @@ func (m *Interface) validate(all bool) error {
 
 	// no validation rules for MacAddress
 
+	if m.GetSpeed() < 0 {
+		err := InterfaceValidationError{
+			field:  "Speed",
+			reason: "value must be greater than or equal to 0",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	// no validation rules for Wwn
+
 	// no validation rules for MgmtOnly
+
+	if utf8.RuneCountInString(m.GetDescription()) > 200 {
+		err := InterfaceValidationError{
+			field:  "Description",
+			reason: "value length must be at most 200 runes",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	// no validation rules for MarkConnected
+
+	if _, ok := _Interface_Mode_InLookup[m.GetMode()]; !ok {
+		err := InterfaceValidationError{
+			field:  "Mode",
+			reason: "value must be in list [access tagged tagged-all]",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	for idx, item := range m.GetTags() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, InterfaceValidationError{
+						field:  fmt.Sprintf("Tags[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, InterfaceValidationError{
+						field:  fmt.Sprintf("Tags[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return InterfaceValidationError{
+					field:  fmt.Sprintf("Tags[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
 
 	if len(errors) > 0 {
 		return InterfaceMultiError(errors)
@@ -304,4 +386,10 @@ var _Interface_Type_InLookup = map[string]struct{}{
 	"extreme-summitstack-256": {},
 	"extreme-summitstack-512": {},
 	"other":                   {},
+}
+
+var _Interface_Mode_InLookup = map[string]struct{}{
+	"access":     {},
+	"tagged":     {},
+	"tagged-all": {},
 }
