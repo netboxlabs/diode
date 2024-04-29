@@ -1628,6 +1628,8 @@ func NewDataWrapper(dataType string) (ComparableData, error) {
 		return &DcimSiteDataWrapper{}, nil
 	case ExtrasTagObjectType:
 		return &TagDataWrapper{}, nil
+	case IpamIPAddressObjectType:
+		return &IpamIPAddressDataWrapper{}, nil
 	default:
 		return nil, fmt.Errorf("unsupported data type %s", dataType)
 	}
