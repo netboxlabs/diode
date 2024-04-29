@@ -8,16 +8,10 @@ from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Map
 
 DESCRIPTOR: _descriptor.FileDescriptor
 
-class AssignedObject(_message.Message):
-    __slots__ = ("interface",)
-    INTERFACE_FIELD_NUMBER: _ClassVar[int]
-    interface: _interface_pb2.Interface
-    def __init__(self, interface: _Optional[_Union[_interface_pb2.Interface, _Mapping]] = ...) -> None: ...
-
 class IPAddress(_message.Message):
-    __slots__ = ("address", "assigned_object", "status", "role", "dns_name", "description", "comments", "tags")
+    __slots__ = ("address", "interface", "status", "role", "dns_name", "description", "comments", "tags")
     ADDRESS_FIELD_NUMBER: _ClassVar[int]
-    ASSIGNED_OBJECT_FIELD_NUMBER: _ClassVar[int]
+    INTERFACE_FIELD_NUMBER: _ClassVar[int]
     STATUS_FIELD_NUMBER: _ClassVar[int]
     ROLE_FIELD_NUMBER: _ClassVar[int]
     DNS_NAME_FIELD_NUMBER: _ClassVar[int]
@@ -25,11 +19,11 @@ class IPAddress(_message.Message):
     COMMENTS_FIELD_NUMBER: _ClassVar[int]
     TAGS_FIELD_NUMBER: _ClassVar[int]
     address: str
-    assigned_object: AssignedObject
+    interface: _interface_pb2.Interface
     status: str
     role: str
     dns_name: str
     description: str
     comments: str
     tags: _containers.RepeatedCompositeFieldContainer[_tag_pb2.Tag]
-    def __init__(self, address: _Optional[str] = ..., assigned_object: _Optional[_Union[AssignedObject, _Mapping]] = ..., status: _Optional[str] = ..., role: _Optional[str] = ..., dns_name: _Optional[str] = ..., description: _Optional[str] = ..., comments: _Optional[str] = ..., tags: _Optional[_Iterable[_Union[_tag_pb2.Tag, _Mapping]]] = ...) -> None: ...
+    def __init__(self, address: _Optional[str] = ..., interface: _Optional[_Union[_interface_pb2.Interface, _Mapping]] = ..., status: _Optional[str] = ..., role: _Optional[str] = ..., dns_name: _Optional[str] = ..., description: _Optional[str] = ..., comments: _Optional[str] = ..., tags: _Optional[_Iterable[_Union[_tag_pb2.Tag, _Mapping]]] = ...) -> None: ...
