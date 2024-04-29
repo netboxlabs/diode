@@ -35,152 +35,6 @@ var (
 	_ = sort.Sort
 )
 
-// Validate checks the field values on AssignedObject with the rules defined in
-// the proto definition for this message. If any rules are violated, the first
-// error encountered is returned, or nil if there are no violations.
-func (m *AssignedObject) Validate() error {
-	return m.validate(false)
-}
-
-// ValidateAll checks the field values on AssignedObject with the rules defined
-// in the proto definition for this message. If any rules are violated, the
-// result is a list of violation errors wrapped in AssignedObjectMultiError,
-// or nil if none found.
-func (m *AssignedObject) ValidateAll() error {
-	return m.validate(true)
-}
-
-func (m *AssignedObject) validate(all bool) error {
-	if m == nil {
-		return nil
-	}
-
-	var errors []error
-
-	switch v := m.AssignedObject.(type) {
-	case *AssignedObject_Interface:
-		if v == nil {
-			err := AssignedObjectValidationError{
-				field:  "AssignedObject",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetInterface()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, AssignedObjectValidationError{
-						field:  "Interface",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, AssignedObjectValidationError{
-						field:  "Interface",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetInterface()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return AssignedObjectValidationError{
-					field:  "Interface",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
-	default:
-		_ = v // ensures v is used
-	}
-
-	if len(errors) > 0 {
-		return AssignedObjectMultiError(errors)
-	}
-
-	return nil
-}
-
-// AssignedObjectMultiError is an error wrapping multiple validation errors
-// returned by AssignedObject.ValidateAll() if the designated constraints
-// aren't met.
-type AssignedObjectMultiError []error
-
-// Error returns a concatenation of all the error messages it wraps.
-func (m AssignedObjectMultiError) Error() string {
-	var msgs []string
-	for _, err := range m {
-		msgs = append(msgs, err.Error())
-	}
-	return strings.Join(msgs, "; ")
-}
-
-// AllErrors returns a list of validation violation errors.
-func (m AssignedObjectMultiError) AllErrors() []error { return m }
-
-// AssignedObjectValidationError is the validation error returned by
-// AssignedObject.Validate if the designated constraints aren't met.
-type AssignedObjectValidationError struct {
-	field  string
-	reason string
-	cause  error
-	key    bool
-}
-
-// Field function returns field value.
-func (e AssignedObjectValidationError) Field() string { return e.field }
-
-// Reason function returns reason value.
-func (e AssignedObjectValidationError) Reason() string { return e.reason }
-
-// Cause function returns cause value.
-func (e AssignedObjectValidationError) Cause() error { return e.cause }
-
-// Key function returns key value.
-func (e AssignedObjectValidationError) Key() bool { return e.key }
-
-// ErrorName returns error name.
-func (e AssignedObjectValidationError) ErrorName() string { return "AssignedObjectValidationError" }
-
-// Error satisfies the builtin error interface
-func (e AssignedObjectValidationError) Error() string {
-	cause := ""
-	if e.cause != nil {
-		cause = fmt.Sprintf(" | caused by: %v", e.cause)
-	}
-
-	key := ""
-	if e.key {
-		key = "key for "
-	}
-
-	return fmt.Sprintf(
-		"invalid %sAssignedObject.%s: %s%s",
-		key,
-		e.field,
-		e.reason,
-		cause)
-}
-
-var _ error = AssignedObjectValidationError{}
-
-var _ interface {
-	Field() string
-	Reason() string
-	Key() bool
-	Cause() error
-	ErrorName() string
-} = AssignedObjectValidationError{}
-
 // Validate checks the field values on IPAddress with the rules defined in the
 // proto definition for this message. If any rules are violated, the first
 // error encountered is returned, or nil if there are no violations.
@@ -212,35 +66,6 @@ func (m *IPAddress) validate(all bool) error {
 			return err
 		}
 		errors = append(errors, err)
-	}
-
-	if all {
-		switch v := interface{}(m.GetAssignedObject()).(type) {
-		case interface{ ValidateAll() error }:
-			if err := v.ValidateAll(); err != nil {
-				errors = append(errors, IPAddressValidationError{
-					field:  "AssignedObject",
-					reason: "embedded message failed validation",
-					cause:  err,
-				})
-			}
-		case interface{ Validate() error }:
-			if err := v.Validate(); err != nil {
-				errors = append(errors, IPAddressValidationError{
-					field:  "AssignedObject",
-					reason: "embedded message failed validation",
-					cause:  err,
-				})
-			}
-		}
-	} else if v, ok := interface{}(m.GetAssignedObject()).(interface{ Validate() error }); ok {
-		if err := v.Validate(); err != nil {
-			return IPAddressValidationError{
-				field:  "AssignedObject",
-				reason: "embedded message failed validation",
-				cause:  err,
-			}
-		}
 	}
 
 	if _, ok := _IPAddress_Status_InLookup[m.GetStatus()]; !ok {
@@ -332,6 +157,52 @@ func (m *IPAddress) validate(all bool) error {
 			}
 		}
 
+	}
+
+	switch v := m.AssignedObject.(type) {
+	case *IPAddress_Interface:
+		if v == nil {
+			err := IPAddressValidationError{
+				field:  "AssignedObject",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetInterface()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, IPAddressValidationError{
+						field:  "Interface",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, IPAddressValidationError{
+						field:  "Interface",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetInterface()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return IPAddressValidationError{
+					field:  "Interface",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	default:
+		_ = v // ensures v is used
 	}
 
 	if len(errors) > 0 {
