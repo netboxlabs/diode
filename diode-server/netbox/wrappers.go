@@ -753,6 +753,13 @@ func (dw *DcimInterfaceDataWrapper) IsValid() bool {
 	if dw.Interface != nil && !dw.hasParent && dw.Interface.Name == "" {
 		dw.Interface = nil
 	}
+
+	if dw.Interface != nil {
+		if err := dw.Interface.Validate(); err != nil {
+			return false
+		}
+	}
+
 	return dw.Interface != nil
 }
 
