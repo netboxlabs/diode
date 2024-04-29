@@ -8,17 +8,12 @@ import "validate/validate.proto";
 
 option go_package = "github.com/netboxlabs/diode/diode-sdk-go/diode/v1/diodepb";
 
-// An assigned object.
-message AssignedObject {
-  oneof assigned_object {
-    Interface interface = 1;
-  }
-}
-
 // An IP address.
 message IPAddress {
   string address = 1 [(validate.rules).string.ip = true];
-  AssignedObject assigned_object = 2;
+  oneof assigned_object {
+    Interface interface = 2;
+  }
   string status = 3 [(validate.rules).string = {
     in: [
       "active",

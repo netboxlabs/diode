@@ -29,7 +29,6 @@
     - [Interface](#diode-v1-Interface)
 
 - [diode/v1/ip_address.proto](#diode_v1_ip_address-proto)
-    - [AssignedObject](#diode-v1-AssignedObject)
     - [IPAddress](#diode-v1-IPAddress)
 
 - [diode/v1/ingester.proto](#diode_v1_ingester-proto)
@@ -216,32 +215,22 @@ An interface
 
 ## diode/v1/ip_address.proto
 
-<a name="diode-v1-AssignedObject"></a>
-
-### AssignedObject
-
-An assigned object.
-
-| Field     | Type                             | Label | Description |
-|-----------|----------------------------------|-------|-------------|
-| interface | [Interface](#diode-v1-Interface) |       |             |
-
 <a name="diode-v1-IPAddress"></a>
 
 ### IPAddress
 
 An IP address.
 
-| Field           | Type                                       | Label    | Description |
-|-----------------|--------------------------------------------|----------|-------------|
-| address         | [string](#string)                          |          |             |
-| assigned_object | [AssignedObject](#diode-v1-AssignedObject) |          |             |
-| status          | [string](#string)                          |          |             |
-| role            | [string](#string)                          |          |             |
-| dns_name        | [string](#string)                          |          |             |
-| description     | [string](#string)                          |          |             |
-| comments        | [string](#string)                          |          |             |
-| tags            | [Tag](#diode-v1-Tag)                       | repeated |             |
+| Field           | Type                             | Label    | Description |
+|-----------------|----------------------------------|----------|-------------|
+| address         | [string](#string)                |          |             |
+| assigned_object | [Interface](#diode-v1-Interface) |          |             |
+| status          | [string](#string)                |          |             |
+| role            | [string](#string)                |          |             |
+| dns_name        | [string](#string)                |          |             |
+| description     | [string](#string)                |          |             |
+| comments        | [string](#string)                |          |             |
+| tags            | [Tag](#diode-v1-Tag)             | repeated |             |
 
 <a name="diode_v1_ingester-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
