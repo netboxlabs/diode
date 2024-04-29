@@ -2,7 +2,10 @@ package netbox
 
 import (
 	"errors"
-	"github.com/netboxlabs/diode/diode-sdk-go/diode/v1/diodepb"
+	"fmt"
+	"reflect"
+
+	"github.com/mitchellh/mapstructure"
 )
 
 const (
@@ -21,17 +24,29 @@ var (
 	DefaultIPAddressStatus = "active"
 )
 
+// IPAddressAssignedObject represents an assigned object for an IP address
+type IPAddressAssignedObject interface {
+	ipAddressAssignedObject()
+}
+
+// IPAddressInterface represents an assigned interface for an IP address
+type IPAddressInterface struct {
+	Interface *DcimInterface `json:"Interface,omitempty" mapstructure:"Interface"`
+}
+
+func (*IPAddressInterface) ipAddressAssignedObject() {}
+
 // IpamIPAddress represents an IPAM IP address
 type IpamIPAddress struct {
-	ID             int                     `json:"id,omitempty"`
-	Address        string                  `json:"address,omitempty"`
-	AssignedObject *diodepb.AssignedObject `json:"assigned_object,omitempty" mapstructure:"assigned_object"`
-	Status         *string                 `json:"status,omitempty"`
-	Role           *string                 `json:"role,omitempty"`
-	DNSName        *string                 `json:"dns_name,omitempty" mapstructure:"dns_name"`
-	Description    *string                 `json:"description,omitempty"`
-	Comments       *string                 `json:"comments,omitempty"`
-	Tags           []*Tag                  `json:"tags,omitempty"`
+	ID             int                      `json:"id,omitempty"`
+	Address        string                   `json:"address,omitempty"`
+	AssignedObject *IPAddressAssignedObject `json:"AssignedObject,omitempty" mapstructure:"AssignedObject"`
+	Status         *string                  `json:"status,omitempty"`
+	Role           *string                  `json:"role,omitempty"`
+	DNSName        *string                  `json:"dns_name,omitempty" mapstructure:"dns_name"`
+	Description    *string                  `json:"description,omitempty"`
+	Comments       *string                  `json:"comments,omitempty"`
+	Tags           []*Tag                   `json:"tags,omitempty"`
 }
 
 var ipAddressStatusMap = map[string]struct{}{
@@ -72,4 +87,26 @@ func (ip *IpamIPAddress) Validate() error {
 		return ErrInvalidIPAddressRole
 	}
 	return nil
+}
+
+func IpamIPAddressAssignedObjectHookFunc() mapstructure.DecodeHookFunc {
+	return func(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
+		if f.Kind() != reflect.Map {
+			return data, nil
+		}
+
+		if t.Implements(reflect.TypeOf((*IPAddressAssignedObject)(nil)).Elem()) {
+			for k, _ := range data.(map[string]any) {
+				if k == "Interface" {
+					var ipInterface IPAddressInterface
+					if err := mapstructure.Decode(data, &ipInterface); err != nil {
+						return nil, fmt.Errorf("failed to decode ingest entity %w", err)
+					}
+					return &ipInterface, nil
+				}
+			}
+		}
+
+		return data, nil
+	}
 }
