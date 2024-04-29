@@ -15,6 +15,7 @@ _sym_db = _symbol_database.Default()
 from netboxlabs.diode.sdk.diode.v1 import device_pb2 as diode_dot_v1_dot_device__pb2
 from netboxlabs.diode.sdk.diode.v1 import device_type_pb2 as diode_dot_v1_dot_device__type__pb2
 from netboxlabs.diode.sdk.diode.v1 import interface_pb2 as diode_dot_v1_dot_interface__pb2
+from netboxlabs.diode.sdk.diode.v1 import ip_address_pb2 as diode_dot_v1_dot_ip__address__pb2
 from netboxlabs.diode.sdk.diode.v1 import manufacturer_pb2 as diode_dot_v1_dot_manufacturer__pb2
 from netboxlabs.diode.sdk.diode.v1 import platform_pb2 as diode_dot_v1_dot_platform__pb2
 from netboxlabs.diode.sdk.diode.v1 import role_pb2 as diode_dot_v1_dot_role__pb2
@@ -23,7 +24,7 @@ from google.protobuf import timestamp_pb2 as google_dot_protobuf_dot_timestamp__
 from netboxlabs.diode.sdk.validate import validate_pb2 as validate_dot_validate__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x17\x64iode/v1/ingester.proto\x12\x08\x64iode.v1\x1a\x15\x64iode/v1/device.proto\x1a\x1a\x64iode/v1/device_type.proto\x1a\x18\x64iode/v1/interface.proto\x1a\x1b\x64iode/v1/manufacturer.proto\x1a\x17\x64iode/v1/platform.proto\x1a\x13\x64iode/v1/role.proto\x1a\x13\x64iode/v1/site.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x17validate/validate.proto\"\xbb\x03\n\x06\x45ntity\x12$\n\x04site\x18\x01 \x01(\x0b\x32\x0e.diode.v1.SiteH\x00R\x04site\x12\x30\n\x08platform\x18\x02 \x01(\x0b\x32\x12.diode.v1.PlatformH\x00R\x08platform\x12<\n\x0cmanufacturer\x18\x03 \x01(\x0b\x32\x16.diode.v1.ManufacturerH\x00R\x0cmanufacturer\x12*\n\x06\x64\x65vice\x18\x04 \x01(\x0b\x32\x10.diode.v1.DeviceH\x00R\x06\x64\x65vice\x12\x31\n\x0b\x64\x65vice_role\x18\x05 \x01(\x0b\x32\x0e.diode.v1.RoleH\x00R\ndeviceRole\x12\x37\n\x0b\x64\x65vice_type\x18\x06 \x01(\x0b\x32\x14.diode.v1.DeviceTypeH\x00R\ndeviceType\x12\x33\n\tinterface\x18\x07 \x01(\x0b\x32\x13.diode.v1.InterfaceH\x00R\tinterface\x12\x44\n\ttimestamp\x18\x08 \x01(\x0b\x32\x1a.google.protobuf.TimestampB\n\xfa\x42\x07\xb2\x01\x04\x08\x01\x38\x01R\ttimestampB\x08\n\x06\x65ntity\"\xe4\x02\n\rIngestRequest\x12\"\n\x06stream\x18\x01 \x01(\tB\n\xfa\x42\x07r\x05\x10\x01\x18\xff\x01R\x06stream\x12\x39\n\x08\x65ntities\x18\x02 \x03(\x0b\x32\x10.diode.v1.EntityB\x0b\xfa\x42\x08\x92\x01\x05\x08\x01\x10\xe8\x07R\x08\x65ntities\x12\x18\n\x02id\x18\x03 \x01(\tB\x08\xfa\x42\x05r\x03\xb0\x01\x01R\x02id\x12\x36\n\x11producer_app_name\x18\x04 \x01(\tB\n\xfa\x42\x07r\x05\x10\x01\x18\xff\x01R\x0fproducerAppName\x12<\n\x14producer_app_version\x18\x05 \x01(\tB\n\xfa\x42\x07r\x05\x10\x01\x18\xff\x01R\x12producerAppVersion\x12%\n\x08sdk_name\x18\x06 \x01(\tB\n\xfa\x42\x07r\x05\x10\x01\x18\xff\x01R\x07sdkName\x12=\n\x0bsdk_version\x18\x07 \x01(\tB\x1c\xfa\x42\x19r\x17\x32\x15^(\\d)+\\.(\\d)+\\.(\\d)+$R\nsdkVersion\"(\n\x0eIngestResponse\x12\x16\n\x06\x65rrors\x18\x01 \x03(\tR\x06\x65rrors2P\n\x0fIngesterService\x12=\n\x06Ingest\x12\x17.diode.v1.IngestRequest\x1a\x18.diode.v1.IngestResponse\"\x00\x42;Z9github.com/netboxlabs/diode/diode-sdk-go/diode/v1/diodepbb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x17\x64iode/v1/ingester.proto\x12\x08\x64iode.v1\x1a\x15\x64iode/v1/device.proto\x1a\x1a\x64iode/v1/device_type.proto\x1a\x18\x64iode/v1/interface.proto\x1a\x19\x64iode/v1/ip_address.proto\x1a\x1b\x64iode/v1/manufacturer.proto\x1a\x17\x64iode/v1/platform.proto\x1a\x13\x64iode/v1/role.proto\x1a\x13\x64iode/v1/site.proto\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x17validate/validate.proto\"\xf1\x03\n\x06\x45ntity\x12$\n\x04site\x18\x01 \x01(\x0b\x32\x0e.diode.v1.SiteH\x00R\x04site\x12\x30\n\x08platform\x18\x02 \x01(\x0b\x32\x12.diode.v1.PlatformH\x00R\x08platform\x12<\n\x0cmanufacturer\x18\x03 \x01(\x0b\x32\x16.diode.v1.ManufacturerH\x00R\x0cmanufacturer\x12*\n\x06\x64\x65vice\x18\x04 \x01(\x0b\x32\x10.diode.v1.DeviceH\x00R\x06\x64\x65vice\x12\x31\n\x0b\x64\x65vice_role\x18\x05 \x01(\x0b\x32\x0e.diode.v1.RoleH\x00R\ndeviceRole\x12\x37\n\x0b\x64\x65vice_type\x18\x06 \x01(\x0b\x32\x14.diode.v1.DeviceTypeH\x00R\ndeviceType\x12\x33\n\tinterface\x18\x07 \x01(\x0b\x32\x13.diode.v1.InterfaceH\x00R\tinterface\x12\x34\n\nip_address\x18\t \x01(\x0b\x32\x13.diode.v1.IPAddressH\x00R\tipAddress\x12\x44\n\ttimestamp\x18\x08 \x01(\x0b\x32\x1a.google.protobuf.TimestampB\n\xfa\x42\x07\xb2\x01\x04\x08\x01\x38\x01R\ttimestampB\x08\n\x06\x65ntity\"\xe4\x02\n\rIngestRequest\x12\"\n\x06stream\x18\x01 \x01(\tB\n\xfa\x42\x07r\x05\x10\x01\x18\xff\x01R\x06stream\x12\x39\n\x08\x65ntities\x18\x02 \x03(\x0b\x32\x10.diode.v1.EntityB\x0b\xfa\x42\x08\x92\x01\x05\x08\x01\x10\xe8\x07R\x08\x65ntities\x12\x18\n\x02id\x18\x03 \x01(\tB\x08\xfa\x42\x05r\x03\xb0\x01\x01R\x02id\x12\x36\n\x11producer_app_name\x18\x04 \x01(\tB\n\xfa\x42\x07r\x05\x10\x01\x18\xff\x01R\x0fproducerAppName\x12<\n\x14producer_app_version\x18\x05 \x01(\tB\n\xfa\x42\x07r\x05\x10\x01\x18\xff\x01R\x12producerAppVersion\x12%\n\x08sdk_name\x18\x06 \x01(\tB\n\xfa\x42\x07r\x05\x10\x01\x18\xff\x01R\x07sdkName\x12=\n\x0bsdk_version\x18\x07 \x01(\tB\x1c\xfa\x42\x19r\x17\x32\x15^(\\d)+\\.(\\d)+\\.(\\d)+$R\nsdkVersion\"(\n\x0eIngestResponse\x12\x16\n\x06\x65rrors\x18\x01 \x03(\tR\x06\x65rrors2P\n\x0fIngesterService\x12=\n\x06Ingest\x12\x17.diode.v1.IngestRequest\x1a\x18.diode.v1.IngestResponse\"\x00\x42;Z9github.com/netboxlabs/diode/diode-sdk-go/diode/v1/diodepbb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -47,12 +48,12 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_INGESTREQUEST'].fields_by_name['sdk_name']._serialized_options = b'\372B\007r\005\020\001\030\377\001'
   _globals['_INGESTREQUEST'].fields_by_name['sdk_version']._loaded_options = None
   _globals['_INGESTREQUEST'].fields_by_name['sdk_version']._serialized_options = b'\372B\031r\0272\025^(\\d)+\\.(\\d)+\\.(\\d)+$'
-  _globals['_ENTITY']._serialized_start=269
-  _globals['_ENTITY']._serialized_end=712
-  _globals['_INGESTREQUEST']._serialized_start=715
-  _globals['_INGESTREQUEST']._serialized_end=1071
-  _globals['_INGESTRESPONSE']._serialized_start=1073
-  _globals['_INGESTRESPONSE']._serialized_end=1113
-  _globals['_INGESTERSERVICE']._serialized_start=1115
-  _globals['_INGESTERSERVICE']._serialized_end=1195
+  _globals['_ENTITY']._serialized_start=296
+  _globals['_ENTITY']._serialized_end=793
+  _globals['_INGESTREQUEST']._serialized_start=796
+  _globals['_INGESTREQUEST']._serialized_end=1152
+  _globals['_INGESTRESPONSE']._serialized_start=1154
+  _globals['_INGESTRESPONSE']._serialized_end=1194
+  _globals['_INGESTERSERVICE']._serialized_start=1196
+  _globals['_INGESTERSERVICE']._serialized_end=1276
 # @@protoc_insertion_point(module_scope)
