@@ -151,7 +151,17 @@ func extractIngestEntityData(ingestEntity IngestEntity) (netbox.ComparableData, 
 		return nil, err
 	}
 
-	if err := mapstructure.Decode(ingestEntity.Entity, &dw); err != nil {
+	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+		Result: &dw,
+		DecodeHook: mapstructure.ComposeDecodeHookFunc(
+			netbox.IpamIPAddressAssignedObjectHookFunc(),
+		),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if err := decoder.Decode(ingestEntity.Entity); err != nil {
 		return nil, fmt.Errorf("failed to decode ingest entity %w", err)
 	}
 
