@@ -38,15 +38,15 @@ func (*IPAddressInterface) ipAddressAssignedObject() {}
 
 // IpamIPAddress represents an IPAM IP address
 type IpamIPAddress struct {
-	ID             int                      `json:"id,omitempty"`
-	Address        string                   `json:"address,omitempty"`
-	AssignedObject *IPAddressAssignedObject `json:"AssignedObject,omitempty" mapstructure:"AssignedObject"`
-	Status         *string                  `json:"status,omitempty"`
-	Role           *string                  `json:"role,omitempty"`
-	DNSName        *string                  `json:"dns_name,omitempty" mapstructure:"dns_name"`
-	Description    *string                  `json:"description,omitempty"`
-	Comments       *string                  `json:"comments,omitempty"`
-	Tags           []*Tag                   `json:"tags,omitempty"`
+	ID             int                     `json:"id,omitempty"`
+	Address        string                  `json:"address,omitempty"`
+	AssignedObject IPAddressAssignedObject `json:"AssignedObject,omitempty" mapstructure:"AssignedObject"`
+	Status         *string                 `json:"status,omitempty"`
+	Role           *string                 `json:"role,omitempty"`
+	DNSName        *string                 `json:"dns_name,omitempty" mapstructure:"dns_name"`
+	Description    *string                 `json:"description,omitempty"`
+	Comments       *string                 `json:"comments,omitempty"`
+	Tags           []*Tag                  `json:"tags,omitempty"`
 }
 
 var ipAddressStatusMap = map[string]struct{}{
@@ -89,6 +89,8 @@ func (ip *IpamIPAddress) Validate() error {
 	return nil
 }
 
+// IpamIPAddressAssignedObjectHookFunc returns a mapstructure decode hook function
+// for IPAM IP address assigned objects.
 func IpamIPAddressAssignedObjectHookFunc() mapstructure.DecodeHookFunc {
 	return func(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
 		if f.Kind() != reflect.Map {
@@ -96,7 +98,7 @@ func IpamIPAddressAssignedObjectHookFunc() mapstructure.DecodeHookFunc {
 		}
 
 		if t.Implements(reflect.TypeOf((*IPAddressAssignedObject)(nil)).Elem()) {
-			for k, _ := range data.(map[string]any) {
+			for k := range data.(map[string]any) {
 				if k == "Interface" {
 					var ipInterface IPAddressInterface
 					if err := mapstructure.Decode(data, &ipInterface); err != nil {

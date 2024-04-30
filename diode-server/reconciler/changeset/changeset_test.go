@@ -4372,6 +4372,1679 @@ func TestPrepare(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "[P14] ingest ipam.ipaddress with address only - existing object not found - create",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "ipam.ipaddress",
+				"entity": {
+					"IpAddress": {
+						"address": "192.168.0.1/22"
+					}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "ipam.ipaddress",
+					objectID:       0,
+					query:          "192.168.0.1/22",
+					objectChangeID: 0,
+					object: &netbox.IpamIPAddressDataWrapper{
+						IPAddress: nil,
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet: []changeset.Change{
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "ipam.ipaddress",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.IpamIPAddress{
+							Address: "192.168.0.1/22",
+							Status:  &netbox.DefaultIPAddressStatus,
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "[P14] ingest ipam.ipaddress with address and interface - existing object not found - create",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "ipam.ipaddress",
+				"entity": {
+					"IpAddress": {
+						"address": "192.168.0.1/22",
+						"AssignedObject": {
+							"Interface": {
+								"name": "GigabitEthernet0/0/0"
+							}
+						}
+					}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "dcim.site",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimSiteDataWrapper{
+						Site: &netbox.DcimSite{
+							ID:     1,
+							Name:   "undefined",
+							Slug:   "undefined",
+							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						},
+					},
+				},
+				{
+					objectType:     "dcim.manufacturer",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimManufacturerDataWrapper{
+						Manufacturer: &netbox.DcimManufacturer{
+							ID:   1,
+							Name: "undefined",
+							Slug: "undefined",
+						},
+					},
+				},
+				{
+					objectType:     "dcim.platform",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimPlatformDataWrapper{
+						Platform: &netbox.DcimPlatform{
+							ID:   1,
+							Name: "undefined",
+							Slug: "undefined",
+							Manufacturer: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+							},
+						},
+					},
+				},
+				{
+					objectType:     "dcim.devicetype",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceTypeDataWrapper{
+						DeviceType: &netbox.DcimDeviceType{
+							ID:    1,
+							Model: "undefined",
+							Slug:  "undefined",
+							Manufacturer: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+							},
+						},
+					},
+				},
+				{
+					objectType:     "dcim.devicerole",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceRoleDataWrapper{
+						DeviceRole: &netbox.DcimDeviceRole{
+							ID:    1,
+							Name:  "undefined",
+							Slug:  "undefined",
+							Color: strPtr("000000"),
+						},
+					},
+				},
+				{
+					objectType:     "dcim.device",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceDataWrapper{
+						Device: &netbox.DcimDevice{
+							ID:   1,
+							Name: "undefined",
+							Site: &netbox.DcimSite{
+								ID:     1,
+								Name:   "undefined",
+								Slug:   "undefined",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
+							DeviceType: &netbox.DcimDeviceType{
+								ID:    1,
+								Model: "undefined",
+								Slug:  "undefined",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
+							},
+							Role: &netbox.DcimDeviceRole{
+								ID:    1,
+								Name:  "undefined",
+								Slug:  "undefined",
+								Color: strPtr("000000"),
+							},
+							Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+						},
+					},
+				},
+				{
+					objectType:     "dcim.interface",
+					objectID:       0,
+					query:          "GigabitEthernet0/0/0",
+					objectChangeID: 0,
+					object: &netbox.DcimInterfaceDataWrapper{
+						Interface: &netbox.DcimInterface{
+							ID:   1,
+							Name: "GigabitEthernet0/0/0",
+							Type: strPtr(netbox.DefaultInterfaceType),
+							Device: &netbox.DcimDevice{
+								ID:   1,
+								Name: "undefined",
+								Site: &netbox.DcimSite{
+									ID:     1,
+									Name:   "undefined",
+									Slug:   "undefined",
+									Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+								},
+								DeviceType: &netbox.DcimDeviceType{
+									ID:    1,
+									Model: "undefined",
+									Slug:  "undefined",
+									Manufacturer: &netbox.DcimManufacturer{
+										ID:   1,
+										Name: "undefined",
+										Slug: "undefined",
+									},
+								},
+								Role: &netbox.DcimDeviceRole{
+									ID:    1,
+									Name:  "undefined",
+									Slug:  "undefined",
+									Color: strPtr("000000"),
+								},
+								Platform: &netbox.DcimPlatform{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+									Manufacturer: &netbox.DcimManufacturer{
+										ID:   1,
+										Name: "undefined",
+										Slug: "undefined",
+									},
+								},
+								Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+							},
+						},
+					},
+				},
+				{
+					objectType:     "ipam.ipaddress",
+					objectID:       0,
+					query:          "192.168.0.1/22",
+					objectChangeID: 0,
+					object: &netbox.IpamIPAddressDataWrapper{
+						IPAddress: nil,
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet: []changeset.Change{
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "ipam.ipaddress",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.IpamIPAddress{
+							Address: "192.168.0.1/22",
+							Status:  &netbox.DefaultIPAddressStatus,
+							AssignedObject: &netbox.IPAddressInterface{
+								Interface: &netbox.DcimInterface{
+									ID:   1,
+									Name: "GigabitEthernet0/0/0",
+									Type: strPtr(netbox.DefaultInterfaceType),
+									Device: &netbox.DcimDevice{
+										ID:   1,
+										Name: "undefined",
+										Site: &netbox.DcimSite{
+											ID:     1,
+											Name:   "undefined",
+											Slug:   "undefined",
+											Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+										},
+										DeviceType: &netbox.DcimDeviceType{
+											ID:    1,
+											Model: "undefined",
+											Slug:  "undefined",
+											Manufacturer: &netbox.DcimManufacturer{
+												ID:   1,
+												Name: "undefined",
+												Slug: "undefined",
+											},
+										},
+										Role: &netbox.DcimDeviceRole{
+											ID:    1,
+											Name:  "undefined",
+											Slug:  "undefined",
+											Color: strPtr("000000"),
+										},
+										Platform: &netbox.DcimPlatform{
+											ID:   1,
+											Name: "undefined",
+											Slug: "undefined",
+											Manufacturer: &netbox.DcimManufacturer{
+												ID:   1,
+												Name: "undefined",
+												Slug: "undefined",
+											},
+										},
+										Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "[P14] ingest ipam.ipaddress with address and a new interface - existing IP address and interface not found - create an interface and IP address",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "ipam.ipaddress",
+				"entity": {
+					"IpAddress": {
+						"address": "192.168.0.1/22",
+						"AssignedObject": {
+							"Interface": {
+								"name": "GigabitEthernet0/0/0"
+							}
+						}
+					}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "dcim.site",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimSiteDataWrapper{
+						Site: &netbox.DcimSite{
+							ID:     1,
+							Name:   "undefined",
+							Slug:   "undefined",
+							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						},
+					},
+				},
+				{
+					objectType:     "dcim.manufacturer",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimManufacturerDataWrapper{
+						Manufacturer: &netbox.DcimManufacturer{
+							ID:   1,
+							Name: "undefined",
+							Slug: "undefined",
+						},
+					},
+				},
+				{
+					objectType:     "dcim.platform",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimPlatformDataWrapper{
+						Platform: &netbox.DcimPlatform{
+							ID:   1,
+							Name: "undefined",
+							Slug: "undefined",
+							Manufacturer: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+							},
+						},
+					},
+				},
+				{
+					objectType:     "dcim.devicetype",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceTypeDataWrapper{
+						DeviceType: &netbox.DcimDeviceType{
+							ID:    1,
+							Model: "undefined",
+							Slug:  "undefined",
+							Manufacturer: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+							},
+						},
+					},
+				},
+				{
+					objectType:     "dcim.devicerole",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceRoleDataWrapper{
+						DeviceRole: &netbox.DcimDeviceRole{
+							ID:    1,
+							Name:  "undefined",
+							Slug:  "undefined",
+							Color: strPtr("000000"),
+						},
+					},
+				},
+				{
+					objectType:     "dcim.device",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceDataWrapper{
+						Device: &netbox.DcimDevice{
+							ID:   1,
+							Name: "undefined",
+							Site: &netbox.DcimSite{
+								ID:     1,
+								Name:   "undefined",
+								Slug:   "undefined",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
+							DeviceType: &netbox.DcimDeviceType{
+								ID:    1,
+								Model: "undefined",
+								Slug:  "undefined",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
+							},
+							Role: &netbox.DcimDeviceRole{
+								ID:    1,
+								Name:  "undefined",
+								Slug:  "undefined",
+								Color: strPtr("000000"),
+							},
+							Platform: &netbox.DcimPlatform{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
+							},
+							Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+						},
+					},
+				},
+				{
+					objectType:     "dcim.interface",
+					objectID:       0,
+					query:          "GigabitEthernet0/0/0",
+					objectChangeID: 0,
+					object: &netbox.DcimInterfaceDataWrapper{
+						Interface: nil,
+					},
+				},
+				{
+					objectType:     "ipam.ipaddress",
+					objectID:       0,
+					query:          "192.168.0.1/22",
+					objectChangeID: 0,
+					object: &netbox.IpamIPAddressDataWrapper{
+						IPAddress: nil,
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet: []changeset.Change{
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.interface",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimInterface{
+							Name: "GigabitEthernet0/0/0",
+							Type: strPtr(netbox.DefaultInterfaceType),
+							Device: &netbox.DcimDevice{
+								ID:   1,
+								Name: "undefined",
+								Site: &netbox.DcimSite{
+									ID:     1,
+									Name:   "undefined",
+									Slug:   "undefined",
+									Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+								},
+								DeviceType: &netbox.DcimDeviceType{
+									ID:    1,
+									Model: "undefined",
+									Slug:  "undefined",
+									Manufacturer: &netbox.DcimManufacturer{
+										ID:   1,
+										Name: "undefined",
+										Slug: "undefined",
+									},
+								},
+								Role: &netbox.DcimDeviceRole{
+									ID:    1,
+									Name:  "undefined",
+									Slug:  "undefined",
+									Color: strPtr("000000"),
+								},
+								Platform: &netbox.DcimPlatform{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+									Manufacturer: &netbox.DcimManufacturer{
+										ID:   1,
+										Name: "undefined",
+										Slug: "undefined",
+									},
+								},
+								Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+							},
+						},
+					},
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "ipam.ipaddress",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.IpamIPAddress{
+							Address: "192.168.0.1/22",
+							Status:  &netbox.DefaultIPAddressStatus,
+							AssignedObject: &netbox.IPAddressInterface{
+								Interface: &netbox.DcimInterface{
+									Name: "GigabitEthernet0/0/0",
+									Type: strPtr(netbox.DefaultInterfaceType),
+									Device: &netbox.DcimDevice{
+										ID:   1,
+										Name: "undefined",
+										Site: &netbox.DcimSite{
+											ID:     1,
+											Name:   "undefined",
+											Slug:   "undefined",
+											Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+										},
+										DeviceType: &netbox.DcimDeviceType{
+											ID:    1,
+											Model: "undefined",
+											Slug:  "undefined",
+											Manufacturer: &netbox.DcimManufacturer{
+												ID:   1,
+												Name: "undefined",
+												Slug: "undefined",
+											},
+										},
+										Role: &netbox.DcimDeviceRole{
+											ID:    1,
+											Name:  "undefined",
+											Slug:  "undefined",
+											Color: strPtr("000000"),
+										},
+										Platform: &netbox.DcimPlatform{
+											ID:   1,
+											Name: "undefined",
+											Slug: "undefined",
+											Manufacturer: &netbox.DcimManufacturer{
+												ID:   1,
+												Name: "undefined",
+												Slug: "undefined",
+											},
+										},
+										Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "[P14] ingest ipam.ipaddress with address and a new interface - existing IP address found - create an interface and update IP address",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "ipam.ipaddress",
+				"entity": {
+					"IpAddress": {
+						"address": "192.168.0.1/22",
+						"AssignedObject": {
+							"Interface": {
+								"name": "GigabitEthernet1/0/1"
+							}
+						}
+					}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "dcim.site",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimSiteDataWrapper{
+						Site: &netbox.DcimSite{
+							ID:     1,
+							Name:   "undefined",
+							Slug:   "undefined",
+							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						},
+					},
+				},
+				{
+					objectType:     "dcim.manufacturer",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimManufacturerDataWrapper{
+						Manufacturer: &netbox.DcimManufacturer{
+							ID:   1,
+							Name: "undefined",
+							Slug: "undefined",
+						},
+					},
+				},
+				{
+					objectType:     "dcim.platform",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimPlatformDataWrapper{
+						Platform: &netbox.DcimPlatform{
+							ID:   1,
+							Name: "undefined",
+							Slug: "undefined",
+							Manufacturer: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+							},
+						},
+					},
+				},
+				{
+					objectType:     "dcim.devicetype",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceTypeDataWrapper{
+						DeviceType: &netbox.DcimDeviceType{
+							ID:    1,
+							Model: "undefined",
+							Slug:  "undefined",
+							Manufacturer: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+							},
+						},
+					},
+				},
+				{
+					objectType:     "dcim.devicerole",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceRoleDataWrapper{
+						DeviceRole: &netbox.DcimDeviceRole{
+							ID:    1,
+							Name:  "undefined",
+							Slug:  "undefined",
+							Color: strPtr("000000"),
+						},
+					},
+				},
+				{
+					objectType:     "dcim.device",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceDataWrapper{
+						Device: &netbox.DcimDevice{
+							ID:   1,
+							Name: "undefined",
+							Site: &netbox.DcimSite{
+								ID:     1,
+								Name:   "undefined",
+								Slug:   "undefined",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
+							DeviceType: &netbox.DcimDeviceType{
+								ID:    1,
+								Model: "undefined",
+								Slug:  "undefined",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
+							},
+							Role: &netbox.DcimDeviceRole{
+								ID:    1,
+								Name:  "undefined",
+								Slug:  "undefined",
+								Color: strPtr("000000"),
+							},
+							Platform: &netbox.DcimPlatform{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
+							},
+							Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+						},
+					},
+				},
+				{
+					objectType:     "dcim.interface",
+					objectID:       0,
+					query:          "GigabitEthernet1/0/1",
+					objectChangeID: 0,
+					object: &netbox.DcimInterfaceDataWrapper{
+						Interface: nil,
+					},
+				},
+				{
+					objectType:     "ipam.ipaddress",
+					objectID:       0,
+					query:          "192.168.0.1/22",
+					objectChangeID: 0,
+					object: &netbox.IpamIPAddressDataWrapper{
+						IPAddress: &netbox.IpamIPAddress{
+							ID:      1,
+							Address: "192.168.0.1/22",
+							Status:  &netbox.DefaultIPAddressStatus,
+							AssignedObject: &netbox.IPAddressInterface{
+								Interface: &netbox.DcimInterface{
+									ID:   1,
+									Name: "GigabitEthernet0/0/0",
+									Type: strPtr(netbox.DefaultInterfaceType),
+									Device: &netbox.DcimDevice{
+										ID:   1,
+										Name: "undefined",
+										Site: &netbox.DcimSite{
+											ID:     1,
+											Name:   "undefined",
+											Slug:   "undefined",
+											Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+										},
+										DeviceType: &netbox.DcimDeviceType{
+											ID:    1,
+											Model: "undefined",
+											Slug:  "undefined",
+											Manufacturer: &netbox.DcimManufacturer{
+												ID:   1,
+												Name: "undefined",
+												Slug: "undefined",
+											},
+										},
+										Role: &netbox.DcimDeviceRole{
+											ID:    1,
+											Name:  "undefined",
+											Slug:  "undefined",
+											Color: strPtr("000000"),
+										},
+										Platform: &netbox.DcimPlatform{
+											ID:   1,
+											Name: "undefined",
+											Slug: "undefined",
+											Manufacturer: &netbox.DcimManufacturer{
+												ID:   1,
+												Name: "undefined",
+												Slug: "undefined",
+											},
+										},
+										Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet: []changeset.Change{
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.interface",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimInterface{
+							Name: "GigabitEthernet1/0/1",
+							Type: strPtr(netbox.DefaultInterfaceType),
+							Device: &netbox.DcimDevice{
+								ID:   1,
+								Name: "undefined",
+								Site: &netbox.DcimSite{
+									ID:     1,
+									Name:   "undefined",
+									Slug:   "undefined",
+									Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+								},
+								DeviceType: &netbox.DcimDeviceType{
+									ID:    1,
+									Model: "undefined",
+									Slug:  "undefined",
+									Manufacturer: &netbox.DcimManufacturer{
+										ID:   1,
+										Name: "undefined",
+										Slug: "undefined",
+									},
+								},
+								Role: &netbox.DcimDeviceRole{
+									ID:    1,
+									Name:  "undefined",
+									Slug:  "undefined",
+									Color: strPtr("000000"),
+								},
+								Platform: &netbox.DcimPlatform{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+									Manufacturer: &netbox.DcimManufacturer{
+										ID:   1,
+										Name: "undefined",
+										Slug: "undefined",
+									},
+								},
+								Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+							},
+						},
+					},
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeUpdate,
+						ObjectType:    "ipam.ipaddress",
+						ObjectID:      intPtr(1),
+						ObjectVersion: nil,
+						Data: &netbox.IpamIPAddress{
+							ID:      1,
+							Address: "192.168.0.1/22",
+							Status:  &netbox.DefaultIPAddressStatus,
+							AssignedObject: &netbox.IPAddressInterface{
+								Interface: &netbox.DcimInterface{
+									Name: "GigabitEthernet1/0/1",
+									Type: strPtr(netbox.DefaultInterfaceType),
+									Device: &netbox.DcimDevice{
+										ID:   1,
+										Name: "undefined",
+										Site: &netbox.DcimSite{
+											ID:     1,
+											Name:   "undefined",
+											Slug:   "undefined",
+											Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+										},
+										DeviceType: &netbox.DcimDeviceType{
+											ID:    1,
+											Model: "undefined",
+											Slug:  "undefined",
+											Manufacturer: &netbox.DcimManufacturer{
+												ID:   1,
+												Name: "undefined",
+												Slug: "undefined",
+											},
+										},
+										Role: &netbox.DcimDeviceRole{
+											ID:    1,
+											Name:  "undefined",
+											Slug:  "undefined",
+											Color: strPtr("000000"),
+										},
+										Platform: &netbox.DcimPlatform{
+											ID:   1,
+											Name: "undefined",
+											Slug: "undefined",
+											Manufacturer: &netbox.DcimManufacturer{
+												ID:   1,
+												Name: "undefined",
+												Slug: "undefined",
+											},
+										},
+										Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "[P14] ingest ipam.ipaddress with address and a different interface of the same device - existing IP address found - update IP address with a new assigned object (interface)",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "ipam.ipaddress",
+				"entity": {
+					"IpAddress": {
+						"address": "192.168.0.1/22",
+						"AssignedObject": {
+							"Interface": {
+								"name": "GigabitEthernet1/0/1"
+							}
+						}
+					}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "dcim.site",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimSiteDataWrapper{
+						Site: &netbox.DcimSite{
+							ID:     1,
+							Name:   "undefined",
+							Slug:   "undefined",
+							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						},
+					},
+				},
+				{
+					objectType:     "dcim.manufacturer",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimManufacturerDataWrapper{
+						Manufacturer: &netbox.DcimManufacturer{
+							ID:   1,
+							Name: "undefined",
+							Slug: "undefined",
+						},
+					},
+				},
+				{
+					objectType:     "dcim.platform",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimPlatformDataWrapper{
+						Platform: &netbox.DcimPlatform{
+							ID:   1,
+							Name: "undefined",
+							Slug: "undefined",
+							Manufacturer: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+							},
+						},
+					},
+				},
+				{
+					objectType:     "dcim.devicetype",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceTypeDataWrapper{
+						DeviceType: &netbox.DcimDeviceType{
+							ID:    1,
+							Model: "undefined",
+							Slug:  "undefined",
+							Manufacturer: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+							},
+						},
+					},
+				},
+				{
+					objectType:     "dcim.devicerole",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceRoleDataWrapper{
+						DeviceRole: &netbox.DcimDeviceRole{
+							ID:    1,
+							Name:  "undefined",
+							Slug:  "undefined",
+							Color: strPtr("000000"),
+						},
+					},
+				},
+				{
+					objectType:     "dcim.device",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceDataWrapper{
+						Device: &netbox.DcimDevice{
+							ID:   1,
+							Name: "undefined",
+							Site: &netbox.DcimSite{
+								ID:     1,
+								Name:   "undefined",
+								Slug:   "undefined",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
+							DeviceType: &netbox.DcimDeviceType{
+								ID:    1,
+								Model: "undefined",
+								Slug:  "undefined",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
+							},
+							Role: &netbox.DcimDeviceRole{
+								ID:    1,
+								Name:  "undefined",
+								Slug:  "undefined",
+								Color: strPtr("000000"),
+							},
+							Platform: &netbox.DcimPlatform{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
+							},
+							Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+						},
+					},
+				},
+				{
+					objectType:     "dcim.interface",
+					objectID:       0,
+					query:          "GigabitEthernet1/0/1",
+					objectChangeID: 0,
+					object: &netbox.DcimInterfaceDataWrapper{
+						Interface: &netbox.DcimInterface{
+							ID:   2,
+							Name: "GigabitEthernet1/0/1",
+							Type: strPtr(netbox.DefaultInterfaceType),
+							Device: &netbox.DcimDevice{
+								ID:   1,
+								Name: "undefined",
+								Site: &netbox.DcimSite{
+									ID:     1,
+									Name:   "undefined",
+									Slug:   "undefined",
+									Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+								},
+								DeviceType: &netbox.DcimDeviceType{
+									ID:    1,
+									Model: "undefined",
+									Slug:  "undefined",
+									Manufacturer: &netbox.DcimManufacturer{
+										ID:   1,
+										Name: "undefined",
+										Slug: "undefined",
+									},
+								},
+								Role: &netbox.DcimDeviceRole{
+									ID:    1,
+									Name:  "undefined",
+									Slug:  "undefined",
+									Color: strPtr("000000"),
+								},
+								Platform: &netbox.DcimPlatform{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+									Manufacturer: &netbox.DcimManufacturer{
+										ID:   1,
+										Name: "undefined",
+										Slug: "undefined",
+									},
+								},
+								Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+							},
+						},
+					},
+				},
+				{
+					objectType:     "ipam.ipaddress",
+					objectID:       0,
+					query:          "192.168.0.1/22",
+					objectChangeID: 0,
+					object: &netbox.IpamIPAddressDataWrapper{
+						IPAddress: &netbox.IpamIPAddress{
+							ID:      1,
+							Address: "192.168.0.1/22",
+							Status:  &netbox.DefaultIPAddressStatus,
+							AssignedObject: &netbox.IPAddressInterface{
+								Interface: &netbox.DcimInterface{
+									ID:   1,
+									Name: "GigabitEthernet0/0/0",
+									Type: strPtr(netbox.DefaultInterfaceType),
+									Device: &netbox.DcimDevice{
+										ID:   1,
+										Name: "undefined",
+										Site: &netbox.DcimSite{
+											ID:     1,
+											Name:   "undefined",
+											Slug:   "undefined",
+											Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+										},
+										DeviceType: &netbox.DcimDeviceType{
+											ID:    1,
+											Model: "undefined",
+											Slug:  "undefined",
+											Manufacturer: &netbox.DcimManufacturer{
+												ID:   1,
+												Name: "undefined",
+												Slug: "undefined",
+											},
+										},
+										Role: &netbox.DcimDeviceRole{
+											ID:    1,
+											Name:  "undefined",
+											Slug:  "undefined",
+											Color: strPtr("000000"),
+										},
+										Platform: &netbox.DcimPlatform{
+											ID:   1,
+											Name: "undefined",
+											Slug: "undefined",
+											Manufacturer: &netbox.DcimManufacturer{
+												ID:   1,
+												Name: "undefined",
+												Slug: "undefined",
+											},
+										},
+										Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet: []changeset.Change{
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeUpdate,
+						ObjectType:    "ipam.ipaddress",
+						ObjectID:      intPtr(1),
+						ObjectVersion: nil,
+						Data: &netbox.IpamIPAddress{
+							ID:      1,
+							Address: "192.168.0.1/22",
+							Status:  &netbox.DefaultIPAddressStatus,
+							AssignedObject: &netbox.IPAddressInterface{
+								Interface: &netbox.DcimInterface{
+									ID:   2,
+									Name: "GigabitEthernet1/0/1",
+									Type: strPtr(netbox.DefaultInterfaceType),
+									Device: &netbox.DcimDevice{
+										ID:   1,
+										Name: "undefined",
+										Site: &netbox.DcimSite{
+											ID:     1,
+											Name:   "undefined",
+											Slug:   "undefined",
+											Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+										},
+										DeviceType: &netbox.DcimDeviceType{
+											ID:    1,
+											Model: "undefined",
+											Slug:  "undefined",
+											Manufacturer: &netbox.DcimManufacturer{
+												ID:   1,
+												Name: "undefined",
+												Slug: "undefined",
+											},
+										},
+										Role: &netbox.DcimDeviceRole{
+											ID:    1,
+											Name:  "undefined",
+											Slug:  "undefined",
+											Color: strPtr("000000"),
+										},
+										Platform: &netbox.DcimPlatform{
+											ID:   1,
+											Name: "undefined",
+											Slug: "undefined",
+											Manufacturer: &netbox.DcimManufacturer{
+												ID:   1,
+												Name: "undefined",
+												Slug: "undefined",
+											},
+										},
+										Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "[P14] ingest ipam.ipaddress with address and interface - existing IP address found with same interface assigned - no update needed",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "ipam.ipaddress",
+				"entity": {
+					"IpAddress": {
+						"address": "192.168.0.1/22",
+						"AssignedObject": {
+							"Interface": {
+								"name": "GigabitEthernet0/0/0"
+							}
+						}
+					}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "dcim.site",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimSiteDataWrapper{
+						Site: &netbox.DcimSite{
+							ID:     1,
+							Name:   "undefined",
+							Slug:   "undefined",
+							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						},
+					},
+				},
+				{
+					objectType:     "dcim.manufacturer",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimManufacturerDataWrapper{
+						Manufacturer: &netbox.DcimManufacturer{
+							ID:   1,
+							Name: "undefined",
+							Slug: "undefined",
+						},
+					},
+				},
+				{
+					objectType:     "dcim.platform",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimPlatformDataWrapper{
+						Platform: &netbox.DcimPlatform{
+							ID:   1,
+							Name: "undefined",
+							Slug: "undefined",
+							Manufacturer: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+							},
+						},
+					},
+				},
+				{
+					objectType:     "dcim.devicetype",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceTypeDataWrapper{
+						DeviceType: &netbox.DcimDeviceType{
+							ID:    1,
+							Model: "undefined",
+							Slug:  "undefined",
+							Manufacturer: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+							},
+						},
+					},
+				},
+				{
+					objectType:     "dcim.devicerole",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceRoleDataWrapper{
+						DeviceRole: &netbox.DcimDeviceRole{
+							ID:    1,
+							Name:  "undefined",
+							Slug:  "undefined",
+							Color: strPtr("000000"),
+						},
+					},
+				},
+				{
+					objectType:     "dcim.device",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceDataWrapper{
+						Device: &netbox.DcimDevice{
+							ID:   1,
+							Name: "undefined",
+							Site: &netbox.DcimSite{
+								ID:     1,
+								Name:   "undefined",
+								Slug:   "undefined",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
+							DeviceType: &netbox.DcimDeviceType{
+								ID:    1,
+								Model: "undefined",
+								Slug:  "undefined",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
+							},
+							Role: &netbox.DcimDeviceRole{
+								ID:    1,
+								Name:  "undefined",
+								Slug:  "undefined",
+								Color: strPtr("000000"),
+							},
+							Platform: &netbox.DcimPlatform{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
+							},
+							Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+						},
+					},
+				},
+				{
+					objectType:     "dcim.interface",
+					objectID:       0,
+					query:          "GigabitEthernet0/0/0",
+					objectChangeID: 0,
+					object: &netbox.DcimInterfaceDataWrapper{
+						Interface: &netbox.DcimInterface{
+							ID:   1,
+							Name: "GigabitEthernet0/0/0",
+							Type: strPtr(netbox.DefaultInterfaceType),
+							Device: &netbox.DcimDevice{
+								ID:   1,
+								Name: "undefined",
+								Site: &netbox.DcimSite{
+									ID:     1,
+									Name:   "undefined",
+									Slug:   "undefined",
+									Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+								},
+								DeviceType: &netbox.DcimDeviceType{
+									ID:    1,
+									Model: "undefined",
+									Slug:  "undefined",
+									Manufacturer: &netbox.DcimManufacturer{
+										ID:   1,
+										Name: "undefined",
+										Slug: "undefined",
+									},
+								},
+								Role: &netbox.DcimDeviceRole{
+									ID:    1,
+									Name:  "undefined",
+									Slug:  "undefined",
+									Color: strPtr("000000"),
+								},
+								Platform: &netbox.DcimPlatform{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+									Manufacturer: &netbox.DcimManufacturer{
+										ID:   1,
+										Name: "undefined",
+										Slug: "undefined",
+									},
+								},
+								Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+							},
+						},
+					},
+				},
+				{
+					objectType:     "ipam.ipaddress",
+					objectID:       0,
+					query:          "192.168.0.1/22",
+					objectChangeID: 0,
+					object: &netbox.IpamIPAddressDataWrapper{
+						IPAddress: &netbox.IpamIPAddress{
+							ID:      1,
+							Address: "192.168.0.1/22",
+							Status:  &netbox.DefaultIPAddressStatus,
+							AssignedObject: &netbox.IPAddressInterface{
+								Interface: &netbox.DcimInterface{
+									ID:   1,
+									Name: "GigabitEthernet0/0/0",
+									Type: strPtr(netbox.DefaultInterfaceType),
+									Device: &netbox.DcimDevice{
+										ID:   1,
+										Name: "undefined",
+										Site: &netbox.DcimSite{
+											ID:     1,
+											Name:   "undefined",
+											Slug:   "undefined",
+											Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+										},
+										DeviceType: &netbox.DcimDeviceType{
+											ID:    1,
+											Model: "undefined",
+											Slug:  "undefined",
+											Manufacturer: &netbox.DcimManufacturer{
+												ID:   1,
+												Name: "undefined",
+												Slug: "undefined",
+											},
+										},
+										Role: &netbox.DcimDeviceRole{
+											ID:    1,
+											Name:  "undefined",
+											Slug:  "undefined",
+											Color: strPtr("000000"),
+										},
+										Platform: &netbox.DcimPlatform{
+											ID:   1,
+											Name: "undefined",
+											Slug: "undefined",
+											Manufacturer: &netbox.DcimManufacturer{
+												ID:   1,
+												Name: "undefined",
+												Slug: "undefined",
+											},
+										},
+										Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet:   []changeset.Change{},
+			},
+			wantErr: false,
+		},
+		{
+			name: "[P14] ingest ipam.ipaddress with address - existing IP address found with interface assigned - no update needed",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "ipam.ipaddress",
+				"entity": {
+					"IpAddress": {
+						"address": "192.168.0.1/22"
+					}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "ipam.ipaddress",
+					objectID:       0,
+					query:          "192.168.0.1/22",
+					objectChangeID: 0,
+					object: &netbox.IpamIPAddressDataWrapper{
+						IPAddress: &netbox.IpamIPAddress{
+							ID:      1,
+							Address: "192.168.0.1/22",
+							Status:  &netbox.DefaultIPAddressStatus,
+							AssignedObject: &netbox.IPAddressInterface{
+								Interface: &netbox.DcimInterface{
+									ID:   1,
+									Name: "GigabitEthernet0/0/0",
+									Type: strPtr(netbox.DefaultInterfaceType),
+									Device: &netbox.DcimDevice{
+										ID:   1,
+										Name: "undefined",
+										Site: &netbox.DcimSite{
+											ID:     1,
+											Name:   "undefined",
+											Slug:   "undefined",
+											Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+										},
+										DeviceType: &netbox.DcimDeviceType{
+											ID:    1,
+											Model: "undefined",
+											Slug:  "undefined",
+											Manufacturer: &netbox.DcimManufacturer{
+												ID:   1,
+												Name: "undefined",
+												Slug: "undefined",
+											},
+										},
+										Role: &netbox.DcimDeviceRole{
+											ID:    1,
+											Name:  "undefined",
+											Slug:  "undefined",
+											Color: strPtr("000000"),
+										},
+										Platform: &netbox.DcimPlatform{
+											ID:   1,
+											Name: "undefined",
+											Slug: "undefined",
+											Manufacturer: &netbox.DcimManufacturer{
+												ID:   1,
+												Name: "undefined",
+												Slug: "undefined",
+											},
+										},
+										Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet:   []changeset.Change{},
+			},
+			wantErr: false,
+		},
+		{
+			name: "[P14] ingest ipam.ipaddress with address and new description - existing IP address found - update IP address with new description",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "ipam.ipaddress",
+				"entity": {
+					"IpAddress": {
+						"address": "192.168.0.1/22",
+						"description": "new description"
+					}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "ipam.ipaddress",
+					objectID:       0,
+					query:          "192.168.0.1/22",
+					objectChangeID: 0,
+					object: &netbox.IpamIPAddressDataWrapper{
+						IPAddress: &netbox.IpamIPAddress{
+							ID:      1,
+							Address: "192.168.0.1/22",
+							Status:  &netbox.DefaultIPAddressStatus,
+							AssignedObject: &netbox.IPAddressInterface{
+								Interface: &netbox.DcimInterface{
+									ID:   1,
+									Name: "GigabitEthernet0/0/0",
+									Type: strPtr(netbox.DefaultInterfaceType),
+									Device: &netbox.DcimDevice{
+										ID:   1,
+										Name: "undefined",
+										Site: &netbox.DcimSite{
+											ID:     1,
+											Name:   "undefined",
+											Slug:   "undefined",
+											Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+										},
+										DeviceType: &netbox.DcimDeviceType{
+											ID:    1,
+											Model: "undefined",
+											Slug:  "undefined",
+											Manufacturer: &netbox.DcimManufacturer{
+												ID:   1,
+												Name: "undefined",
+												Slug: "undefined",
+											},
+										},
+										Role: &netbox.DcimDeviceRole{
+											ID:    1,
+											Name:  "undefined",
+											Slug:  "undefined",
+											Color: strPtr("000000"),
+										},
+										Platform: &netbox.DcimPlatform{
+											ID:   1,
+											Name: "undefined",
+											Slug: "undefined",
+											Manufacturer: &netbox.DcimManufacturer{
+												ID:   1,
+												Name: "undefined",
+												Slug: "undefined",
+											},
+										},
+										Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet: []changeset.Change{
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeUpdate,
+						ObjectType:    "ipam.ipaddress",
+						ObjectID:      intPtr(1),
+						ObjectVersion: nil,
+						Data: &netbox.IpamIPAddress{
+							ID:          1,
+							Address:     "192.168.0.1/22",
+							Status:      &netbox.DefaultIPAddressStatus,
+							Description: strPtr("new description"),
+							AssignedObject: &netbox.IPAddressInterface{
+								Interface: &netbox.DcimInterface{
+									ID:   1,
+									Name: "GigabitEthernet0/0/0",
+									Type: strPtr(netbox.DefaultInterfaceType),
+									Device: &netbox.DcimDevice{
+										ID:   1,
+										Name: "undefined",
+										Site: &netbox.DcimSite{
+											ID:     1,
+											Name:   "undefined",
+											Slug:   "undefined",
+											Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+										},
+										DeviceType: &netbox.DcimDeviceType{
+											ID:    1,
+											Model: "undefined",
+											Slug:  "undefined",
+											Manufacturer: &netbox.DcimManufacturer{
+												ID:   1,
+												Name: "undefined",
+												Slug: "undefined",
+											},
+										},
+										Role: &netbox.DcimDeviceRole{
+											ID:    1,
+											Name:  "undefined",
+											Slug:  "undefined",
+											Color: strPtr("000000"),
+										},
+										Platform: &netbox.DcimPlatform{
+											ID:   1,
+											Name: "undefined",
+											Slug: "undefined",
+											Manufacturer: &netbox.DcimManufacturer{
+												ID:   1,
+												Name: "undefined",
+												Slug: "undefined",
+											},
+										},
+										Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "[P14] ingest empty ipam.ipaddress - error",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "ipam.ipaddress",
+				"entity": {
+					"IPAddress": {}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet:   []changeset.Change{},
+			},
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {
