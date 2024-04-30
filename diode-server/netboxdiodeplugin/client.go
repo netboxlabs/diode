@@ -403,6 +403,12 @@ func wrapObjectState(dataType string, object any) (any, error) {
 		}{
 			Tag: object,
 		}, nil
+	case netbox.IpamIPAddressObjectType:
+		return struct {
+			IPAddress any
+		}{
+			IPAddress: object,
+		}, nil
 	default:
 		return nil, fmt.Errorf("unsupported data type %s", dataType)
 	}
