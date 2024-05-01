@@ -14,6 +14,7 @@ supported_object_types = {
         "platform",
         "site",
     ],
+    "ipam": ["ipaddress", "prefix"],
     "extras": ["tag"],
 }
 
