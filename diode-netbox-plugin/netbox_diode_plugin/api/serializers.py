@@ -147,6 +147,8 @@ class DiodeIPAddressSerializer(IPAddressSerializer):
 class DiodeSiteSerializer(SiteSerializer):
     """Diode Site Serializer."""
 
+    status = serializers.CharField()
+
     class Meta:
         """Meta class."""
 
@@ -213,6 +215,7 @@ class DiodeDeviceSerializer(DeviceSerializer):
     primary_ip4 = DiodeIPAddressSerializer(required=False, allow_null=True)
     primary_ip6 = DiodeIPAddressSerializer(required=False, allow_null=True)
     oob_ip = DiodeIPAddressSerializer(required=False, allow_null=True)
+    status = serializers.CharField()
 
     class Meta:
         """Meta class."""
@@ -236,6 +239,8 @@ class DiodeInterfaceSerializer(InterfaceSerializer):
 
     device = DiodeDeviceSerializer()
     parent = DiodeNestedInterfaceSerializer()
+    type = serializers.CharField()
+    mode = serializers.CharField()
 
     class Meta:
         """Meta class."""
