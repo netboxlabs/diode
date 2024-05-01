@@ -117,6 +117,13 @@ class ApplyChangeSetView(views.APIView):
         )
         return object_content_type.model_class()
 
+    def _get_assigned_object_type(self, model_name: str):
+        """Get the object type model from applied IPAddress assigned object."""
+        assignable_object_types = {
+            "interface": "dcim.interface",
+        }
+        return assignable_object_types.get(model_name, None)
+
     def _get_serializer(
         self,
         change_type: str,
@@ -160,6 +167,46 @@ class ApplyChangeSetView(views.APIView):
             status=status.HTTP_400_BAD_REQUEST,
         )
 
+    def _ipaddress_assigned_object(self, change_set: list) -> list:
+        ipaddress_assigned_object = [
+            change.get("data").get("assigned_object", None)
+            for change in change_set
+            if change.get("object_type") == "ipam.ipaddress"
+            and change.get("data", {}).get("assigned_object", None)
+        ]
+
+        return ipaddress_assigned_object
+
+    def _handle_ipaddress_assigned_object(
+        self, object_data: dict, ipaddress_assigned_object: list
+    ) -> dict:
+        """Handle IPAM IP address assigned object."""
+        if any(ipaddress_assigned_object):
+            assigned_object_keys = list(ipaddress_assigned_object[0].keys())
+            model_name = assigned_object_keys[0]
+            assigned_object_type = self._get_assigned_object_type(model_name)
+            assigned_object_model = self._get_object_type_model(assigned_object_type)
+            assigned_object_properties_dict = dict(
+                ipaddress_assigned_object[0][model_name].items()
+            )
+
+            if len(assigned_object_properties_dict) == 0:
+                return {"assigned_object": f"properties not provided for {model_name}"}
+
+            try:
+                assigned_object_instance = assigned_object_model.objects.get(
+                    **assigned_object_properties_dict
+                )
+            except assigned_object_model.DoesNotExist:
+                return {
+                    "assigned_object": f"Assigned object with name {ipaddress_assigned_object[0][model_name]} does not exist"
+                }
+
+            object_data.pop("assigned_object")
+            object_data["assigned_object_type"] = assigned_object_type
+            object_data["assigned_object_id"] = assigned_object_instance.id
+        return None
+
     def post(self, request, *args, **kwargs):
         """
         Create a new change set and apply it to the current state.
@@ -174,31 +221,15 @@ class ApplyChangeSetView(views.APIView):
 
         if not request_serializer.is_valid():
             for field_error_name in request_serializer.errors:
-                if isinstance(request_serializer.errors[field_error_name], dict):
-                    for error_index, error_values in request_serializer.errors[
-                        field_error_name
-                    ].items():
-                        errors_dict = {
-                            "change_id": request_serializer.data.get("change_set")[
-                                error_index
-                            ].get("change_id")
-                        }
-
-                        for field_name, field_errors in error_values.items():
-                            errors_dict[field_name] = f"{str(field_errors[0])}"
-
-                        serializer_errors.append(errors_dict)
-                else:
-                    errors = {
-                        field_error_name: f"{str(field_errors)}"
-                        for field_errors in request_serializer.errors[field_error_name]
-                    }
-
-                    serializer_errors.append(errors)
+                self._extract_serializer_errors(
+                    field_error_name, request_serializer, serializer_errors
+                )
 
             return self._get_error_response(change_set_id, serializer_errors)
 
         change_set = request_serializer.data.get("change_set", None)
+
+        ipaddress_assigned_object = self._ipaddress_assigned_object(change_set)
 
         try:
             with transaction.atomic():
@@ -208,6 +239,19 @@ class ApplyChangeSetView(views.APIView):
                     object_type = change.get("object_type", None)
                     object_data = change.get("data", None)
                     object_id = change.get("object_id", None)
+
+                    errors = None
+                    if (
+                        any(ipaddress_assigned_object)
+                        and object_type == "ipam.ipaddress"
+                    ):
+                        errors = self._handle_ipaddress_assigned_object(
+                            object_data, ipaddress_assigned_object
+                        )
+
+                    if errors is not None:
+                        serializer_errors.append({"change_id": change_id, **errors})
+                        raise ApplyChangeSetException
 
                     serializer = self._get_serializer(
                         change_type, object_id, object_type, object_data, change_set_id
@@ -225,12 +269,36 @@ class ApplyChangeSetView(views.APIView):
                             {"change_id": change_id, **errors_dict}
                         )
                         raise ApplyChangeSetException
-
         except ApplyChangeSetException:
             return self._get_error_response(change_set_id, serializer_errors)
 
         data = {"change_set_id": change_set_id, "result": "success"}
         return Response(data, status=status.HTTP_200_OK)
+
+    def _extract_serializer_errors(
+        self, field_error_name, request_serializer, serializer_errors
+    ):
+        if isinstance(request_serializer.errors[field_error_name], dict):
+            for error_index, error_values in request_serializer.errors[
+                field_error_name
+            ].items():
+                errors_dict = {
+                    "change_id": request_serializer.data.get("change_set")[
+                        error_index
+                    ].get("change_id")
+                }
+
+                for field_name, field_errors in error_values.items():
+                    errors_dict[field_name] = f"{str(field_errors[0])}"
+
+                serializer_errors.append(errors_dict)
+        else:
+            errors = {
+                field_error_name: f"{str(field_errors)}"
+                for field_errors in request_serializer.errors[field_error_name]
+            }
+
+            serializer_errors.append(errors)
 
 
 class ApplyChangeSetException(Exception):
