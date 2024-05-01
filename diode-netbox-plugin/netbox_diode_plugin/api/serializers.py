@@ -5,30 +5,27 @@ import copy
 import logging
 from collections import OrderedDict
 
-from django.core.exceptions import FieldDoesNotExist
-from rest_framework.utils.serializer_helpers import ReturnDict
-from extras.models import ObjectChange
-from rest_framework import serializers
-from utilities.api import get_serializer_for_model
-from ipam.api.serializers import IPAddressSerializer
 from dcim.api.serializers import (
-    InterfaceSerializer,
-    DeviceSerializer,
-    SiteSerializer,
-    DeviceTypeSerializer,
     DeviceRoleSerializer,
-    PlatformSerializer,
+    DeviceSerializer,
+    DeviceTypeSerializer,
+    InterfaceSerializer,
     ManufacturerSerializer,
+    PlatformSerializer,
+    SiteSerializer,
 )
-
+from django.core.exceptions import FieldDoesNotExist
+from extras.models import ObjectChange
+from ipam.api.serializers import IPAddressSerializer
+from rest_framework import serializers
+from rest_framework.utils.serializer_helpers import ReturnDict
+from utilities.api import get_serializer_for_model
 
 logger = logging.getLogger("netbox.netbox_diode_plugin.api.serializers")
 
 
 def dynamic_import(name):
-    """
-    Dynamically import a class from an absolute path string
-    """
+    """Dynamically import a class from an absolute path string."""
     components = name.split(".")
     mod = __import__(components[0])
     for comp in components[1:]:
@@ -127,6 +124,7 @@ class DiodeIPAddressSerializer(IPAddressSerializer):
         fields = IPAddressSerializer.Meta.fields
 
     def get_assigned_object(self, obj):
+        """Get the assigned object based on the instance model."""
         if obj.assigned_object is None:
             return None
 
