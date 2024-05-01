@@ -122,7 +122,7 @@ class ApplyChangeSetView(views.APIView):
         assignable_object_types = {
             "interface": "dcim.interface",
         }
-        return assignable_object_types.get(model_name, None)
+        return assignable_object_types.get(model_name.lower(), None)
 
     def _get_serializer(
         self,
