@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 
+	"github.com/iancoleman/strcase"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -31,7 +33,7 @@ type IPAddressAssignedObject interface {
 
 // IPAddressInterface represents an assigned interface for an IP address
 type IPAddressInterface struct {
-	Interface *DcimInterface `json:"Interface,omitempty" mapstructure:"Interface"`
+	Interface *DcimInterface `json:"interface,omitempty" mapstructure:"Interface"`
 }
 
 func (*IPAddressInterface) ipAddressAssignedObject() {}
@@ -40,7 +42,7 @@ func (*IPAddressInterface) ipAddressAssignedObject() {}
 type IpamIPAddress struct {
 	ID             int                     `json:"id,omitempty"`
 	Address        string                  `json:"address,omitempty"`
-	AssignedObject IPAddressAssignedObject `json:"AssignedObject,omitempty" mapstructure:"AssignedObject"`
+	AssignedObject IPAddressAssignedObject `json:"assigned_object,omitempty" mapstructure:"AssignedObject"`
 	Status         *string                 `json:"status,omitempty"`
 	Role           *string                 `json:"role,omitempty"`
 	DNSName        *string                 `json:"dns_name,omitempty" mapstructure:"dns_name"`
@@ -89,6 +91,11 @@ func (ip *IpamIPAddress) Validate() error {
 	return nil
 }
 
+// IpamIPAddressAssignedObjectMatchName returns true if the mapstructure key matches the field name
+func IpamIPAddressAssignedObjectMatchName(mapKey, fieldName string) bool {
+	return mapKey == fieldName || strcase.ToSnake(mapKey) == strcase.ToSnake(fieldName)
+}
+
 // IpamIPAddressAssignedObjectHookFunc returns a mapstructure decode hook function
 // for IPAM IP address assigned objects.
 func IpamIPAddressAssignedObjectHookFunc() mapstructure.DecodeHookFunc {
@@ -99,7 +106,7 @@ func IpamIPAddressAssignedObjectHookFunc() mapstructure.DecodeHookFunc {
 
 		if t.Implements(reflect.TypeOf((*IPAddressAssignedObject)(nil)).Elem()) {
 			for k := range data.(map[string]any) {
-				if k == "Interface" {
+				if strings.ToLower(k) == "interface" {
 					var ipInterface IPAddressInterface
 					if err := mapstructure.Decode(data, &ipInterface); err != nil {
 						return nil, fmt.Errorf("failed to decode ingest entity %w", err)

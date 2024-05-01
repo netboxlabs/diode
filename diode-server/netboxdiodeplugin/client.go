@@ -236,9 +236,11 @@ func extractObjectState(objState *objectStateRaw, objectType string) (netbox.Com
 	}
 
 	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
-		Result: &dw,
+		Result:    &dw,
+		MatchName: netbox.IpamIPAddressAssignedObjectMatchName,
 		DecodeHook: mapstructure.ComposeDecodeHookFunc(
 			statusMapToStringHookFunc(),
+			netbox.IpamIPAddressAssignedObjectHookFunc(),
 		),
 	})
 	if err != nil {
