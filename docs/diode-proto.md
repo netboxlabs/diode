@@ -31,6 +31,9 @@
 - [diode/v1/ip_address.proto](#diode_v1_ip_address-proto)
     - [IPAddress](#diode-v1-IPAddress)
 
+- [diode/v1/prefix.proto](#diode_v1_prefix-proto)
+    - [Prefix](#diode-v1-Prefix)
+
 - [diode/v1/ingester.proto](#diode_v1_ingester-proto)
     - [Entity](#diode-v1-Entity)
     - [IngestRequest](#diode-v1-IngestRequest)
@@ -221,16 +224,38 @@ An interface
 
 An IP address.
 
-| Field           | Type                             | Label    | Description |
-|-----------------|----------------------------------|----------|-------------|
-| address         | [string](#string)                |          |             |
-| assigned_object | [Interface](#diode-v1-Interface) |          |             |
-| status          | [string](#string)                |          |             |
-| role            | [string](#string)                |          |             |
-| dns_name        | [string](#string)                |          |             |
-| description     | [string](#string)                |          |             |
-| comments        | [string](#string)                |          |             |
-| tags            | [Tag](#diode-v1-Tag)             | repeated |             |
+| Field       | Type                             | Label    | Description |
+|-------------|----------------------------------|----------|-------------|
+| address     | [string](#string)                |          |             |
+| interface   | [Interface](#diode-v1-Interface) |          |             |
+| status      | [string](#string)                |          |             |
+| role        | [string](#string)                |          |             |
+| dns_name    | [string](#string)                |          |             |
+| description | [string](#string)                |          |             |
+| comments    | [string](#string)                |          |             |
+| tags        | [Tag](#diode-v1-Tag)             | repeated |             |
+
+<a name="diode_v1_prefix-proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## diode/v1/prefix.proto
+
+<a name="diode-v1-Prefix"></a>
+
+### Prefix
+
+An IPAM prefix.
+
+| Field         | Type                   | Label    | Description |
+|---------------|------------------------|----------|-------------|
+| prefix        | [string](#string)      |          |             |
+| site          | [Site](#diode-v1-Site) |          |             |
+| status        | [string](#string)      |          |             |
+| is_pool       | [bool](#bool)          |          |             |
+| mark_utilized | [bool](#bool)          |          |             |
+| description   | [string](#string)      |          |             |
+| comments      | [string](#string)      |          |             |
+| tags          | [Tag](#diode-v1-Tag)   | repeated |             |
 
 <a name="diode_v1_ingester-proto"></a>
 <p align="right"><a href="#top">Top</a></p>
@@ -253,6 +278,7 @@ An ingest entity wrapper
 | device_type  | [DeviceType](#diode-v1-DeviceType)                      |       |                                               |
 | interface    | [Interface](#diode-v1-Interface)                        |       |                                               |
 | ip_address   | [IPAddress](#diode-v1-IPAddress)                        |       |                                               |
+| prefix       | [Prefix](#diode-v1-Prefix)                              |       |                                               |
 | timestamp    | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |       | The timestamp of the data discovery at source |
 
 <a name="diode-v1-IngestRequest"></a>
