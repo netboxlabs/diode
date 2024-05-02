@@ -302,6 +302,8 @@ func extractObjectType(in *diodepb.Entity) (string, error) {
 		return netbox.DcimSiteObjectType, nil
 	case *diodepb.Entity_IpAddress:
 		return netbox.IpamIPAddressObjectType, nil
+	case *diodepb.Entity_Prefix:
+		return netbox.IpamPrefixObjectType, nil
 	default:
 		return "", fmt.Errorf("unknown data type")
 	}
