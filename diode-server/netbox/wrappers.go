@@ -286,6 +286,18 @@ func (dw *DcimDeviceDataWrapper) Patch(cmp ComparableData, intendedNestedObjects
 
 		dw.objectsToReconcile = append(dw.objectsToReconcile, roleObjectsToReconcile...)
 
+		tagsToMerge := mergeTags(dw.Device.Tags, intended.Device.Tags, intendedNestedObjects)
+
+		if len(tagsToMerge) > 0 {
+			dw.Device.Tags = tagsToMerge
+		}
+
+		for _, t := range dw.Device.Tags {
+			if t.ID == 0 {
+				dw.objectsToReconcile = append(dw.objectsToReconcile, &TagDataWrapper{Tag: t, hasParent: true})
+			}
+		}
+
 		actualHash, _ := hashstructure.Hash(dw.Data(), hashstructure.FormatV2, nil)
 		intendedHash, _ := hashstructure.Hash(intended.Data(), hashstructure.FormatV2, nil)
 
@@ -324,6 +336,18 @@ func (dw *DcimDeviceDataWrapper) Patch(cmp ComparableData, intendedNestedObjects
 		dw.Device.Role = actualRole.Data().(*DcimDeviceRole)
 
 		dw.objectsToReconcile = append(dw.objectsToReconcile, roleObjectsToReconcile...)
+
+		tagsToMerge := mergeTags(dw.Device.Tags, nil, intendedNestedObjects)
+
+		if len(tagsToMerge) > 0 {
+			dw.Device.Tags = tagsToMerge
+		}
+
+		for _, t := range dw.Device.Tags {
+			if t.ID == 0 {
+				dw.objectsToReconcile = append(dw.objectsToReconcile, &TagDataWrapper{Tag: t, hasParent: true})
+			}
+		}
 	}
 
 	if reconciliationRequired {

@@ -1730,7 +1730,12 @@ func TestPrepare(t *testing.T) {
 						},
 						"status": "active",
 						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-						"serial": "123456"
+						"serial": "123456",
+						"tags": [
+							{
+								"name": "tag 1"
+							}
+						]
 					}
 				},
 				"state": 0
@@ -1788,6 +1793,19 @@ func TestPrepare(t *testing.T) {
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
 						Device: nil,
+					},
+				},
+				{
+					objectType:     "extras.tag",
+					objectID:       0,
+					query:          "tag 1",
+					objectChangeID: 0,
+					object: &netbox.TagDataWrapper{
+						Tag: &netbox.Tag{
+							ID:   1,
+							Name: "tag 1",
+							Slug: "tag-1",
+						},
 					},
 				},
 			},
@@ -1896,6 +1914,13 @@ func TestPrepare(t *testing.T) {
 							Status:      (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
 							Serial:      strPtr("123456"),
+							Tags: []*netbox.Tag{
+								{
+									ID:   1,
+									Name: "tag 1",
+									Slug: "tag-1",
+								},
+							},
 						},
 					},
 				},
@@ -1938,7 +1963,12 @@ func TestPrepare(t *testing.T) {
 						},
 						"status": "active",
 						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-						"serial": "123456"
+						"serial": "123456",
+						"tags": [
+							{
+								"name": "tag 1"
+							}
+						]
 					}
 				},
 				"state": 0
@@ -2000,6 +2030,19 @@ func TestPrepare(t *testing.T) {
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
 						DeviceRole: nil,
+					},
+				},
+				{
+					objectType:     "extras.tag",
+					objectID:       0,
+					query:          "tag 1",
+					objectChangeID: 0,
+					object: &netbox.TagDataWrapper{
+						Tag: &netbox.Tag{
+							ID:   1,
+							Name: "tag 1",
+							Slug: "tag-1",
+						},
 					},
 				},
 				{
@@ -2134,6 +2177,13 @@ func TestPrepare(t *testing.T) {
 							Status:      (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
 							Serial:      strPtr("123456"),
+							Tags: []*netbox.Tag{
+								{
+									ID:   1,
+									Name: "tag 1",
+									Slug: "tag-1",
+								},
+							},
 						},
 					},
 				},
