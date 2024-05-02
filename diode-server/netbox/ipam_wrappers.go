@@ -279,3 +279,219 @@ func (dw *IpamIPAddressDataWrapper) TrimAssignedObject() {
 		}
 	}
 }
+
+// IpamPrefixDataWrapper represents the IPAM Prefix data wrapper
+type IpamPrefixDataWrapper struct {
+	Prefix *IpamPrefix
+
+	placeholder        bool
+	hasParent          bool
+	intended           bool
+	nestedObjects      []ComparableData
+	objectsToReconcile []ComparableData
+}
+
+func (*IpamPrefixDataWrapper) comparableData() {}
+
+// Data returns the Prefix
+func (dw *IpamPrefixDataWrapper) Data() any {
+	return dw.Prefix
+}
+
+// IsValid returns true if the IpamPrefix is not nil
+func (dw *IpamPrefixDataWrapper) IsValid() bool {
+	if dw.Prefix != nil && !dw.hasParent && dw.Prefix.Prefix == "" {
+		dw.Prefix = nil
+	}
+
+	if dw.Prefix != nil {
+		if err := dw.Prefix.Validate(); err != nil {
+			return false
+		}
+	}
+
+	return dw.Prefix != nil
+}
+
+// Normalise normalises the data
+func (dw *IpamPrefixDataWrapper) Normalise() {
+	if dw.IsValid() && dw.Prefix.Tags != nil && len(dw.Prefix.Tags) == 0 {
+		dw.Prefix.Tags = nil
+	}
+	dw.intended = true
+}
+
+// NestedObjects returns all nested objects
+func (dw *IpamPrefixDataWrapper) NestedObjects() ([]ComparableData, error) {
+	if len(dw.nestedObjects) > 0 {
+		return dw.nestedObjects, nil
+	}
+
+	if dw.Prefix != nil && dw.hasParent && dw.Prefix.Prefix == "" {
+		dw.Prefix = nil
+	}
+
+	objects := make([]ComparableData, 0)
+
+	if dw.Prefix == nil && dw.intended {
+		return objects, nil
+	}
+
+	if dw.Prefix == nil && dw.hasParent {
+		dw.placeholder = true
+	}
+
+	site := DcimSiteDataWrapper{Site: dw.Prefix.Site, placeholder: dw.placeholder, hasParent: true, intended: dw.intended}
+
+	so, err := site.NestedObjects()
+	if err != nil {
+		return nil, err
+	}
+
+	objects = append(objects, so...)
+
+	dw.Prefix.Site = site.Site
+
+	if dw.Prefix.Tags != nil {
+		for _, t := range dw.Prefix.Tags {
+			if t.Slug == "" {
+				t.Slug = slug.Make(t.Name)
+			}
+			objects = append(objects, &TagDataWrapper{Tag: t, hasParent: true})
+		}
+	}
+
+	dw.nestedObjects = objects
+
+	objects = append(objects, dw)
+
+	return objects, nil
+}
+
+// DataType returns the data type
+func (dw *IpamPrefixDataWrapper) DataType() string {
+	return IpamPrefixObjectType
+}
+
+// QueryString returns the query string needed to retrieve its object state
+func (dw *IpamPrefixDataWrapper) QueryString() string {
+	return dw.Prefix.Prefix
+}
+
+// ID returns the ID of the data
+func (dw *IpamPrefixDataWrapper) ID() int {
+	return dw.Prefix.ID
+}
+
+// IsPlaceholder returns true if the data is a placeholder
+func (dw *IpamPrefixDataWrapper) IsPlaceholder() bool {
+	return dw.placeholder
+}
+
+// Patch creates patches between the actual, intended and current data
+func (dw *IpamPrefixDataWrapper) Patch(cmp ComparableData, intendedNestedObjects map[string]ComparableData) ([]ComparableData, error) {
+	intended, ok := cmp.(*IpamPrefixDataWrapper)
+	if !ok && intended != nil {
+		return nil, errors.New("invalid data type")
+	}
+
+	actualNestedObjectsMap := make(map[string]ComparableData)
+	for _, obj := range dw.nestedObjects {
+		actualNestedObjectsMap[fmt.Sprintf("%p", obj.Data())] = obj
+	}
+
+	actualSite := extractFromObjectsMap(actualNestedObjectsMap, fmt.Sprintf("%p", dw.Prefix.Site))
+	intendedSite := extractFromObjectsMap(intendedNestedObjects, fmt.Sprintf("%p", dw.Prefix.Site))
+
+	reconciliationRequired := true
+
+	if intended != nil {
+		currentNestedObjectsMap := make(map[string]ComparableData)
+		currentNestedObjects, err := intended.NestedObjects()
+		if err != nil {
+			return nil, err
+		}
+		for _, obj := range currentNestedObjects {
+			currentNestedObjectsMap[fmt.Sprintf("%p", obj.Data())] = obj
+		}
+
+		dw.Prefix.ID = intended.Prefix.ID
+		dw.Prefix.Prefix = intended.Prefix.Prefix
+
+		if actualSite.IsPlaceholder() && intended.Prefix.Site != nil {
+			intendedSite = extractFromObjectsMap(currentNestedObjectsMap, fmt.Sprintf("%p", intended.Prefix.Site))
+		}
+
+		siteObjectsToReconcile, siteErr := actualSite.Patch(intendedSite, intendedNestedObjects)
+		if siteErr != nil {
+			return nil, siteErr
+		}
+		dw.Prefix.Site = actualSite.Data().(*DcimSite)
+
+		dw.objectsToReconcile = append(dw.objectsToReconcile, siteObjectsToReconcile...)
+
+		if dw.Prefix.Status == nil {
+			dw.Prefix.Status = intended.Prefix.Status
+		}
+
+		if dw.Prefix.Description == nil {
+			dw.Prefix.Description = intended.Prefix.Description
+		}
+
+		if dw.Prefix.Comments == nil {
+			dw.Prefix.Comments = intended.Prefix.Comments
+		}
+
+		tagsToMerge := mergeTags(dw.Prefix.Tags, intended.Prefix.Tags, intendedNestedObjects)
+
+		if len(tagsToMerge) > 0 {
+			dw.Prefix.Tags = tagsToMerge
+		}
+
+		for _, t := range dw.Prefix.Tags {
+			if t.ID == 0 {
+				dw.objectsToReconcile = append(dw.objectsToReconcile, &TagDataWrapper{Tag: t, hasParent: true})
+			}
+		}
+
+		actualHash, _ := hashstructure.Hash(dw.Data(), hashstructure.FormatV2, nil)
+		intendedHash, _ := hashstructure.Hash(intended.Data(), hashstructure.FormatV2, nil)
+
+		reconciliationRequired = actualHash != intendedHash
+	} else {
+		dw.SetDefaults()
+
+		siteObjectsToReconcile, siteErr := actualSite.Patch(intendedSite, intendedNestedObjects)
+		if siteErr != nil {
+			return nil, siteErr
+		}
+		dw.Prefix.Site = actualSite.Data().(*DcimSite)
+
+		dw.objectsToReconcile = append(dw.objectsToReconcile, siteObjectsToReconcile...)
+
+		tagsToMerge := mergeTags(dw.Prefix.Tags, nil, intendedNestedObjects)
+
+		if len(tagsToMerge) > 0 {
+			dw.Prefix.Tags = tagsToMerge
+		}
+
+		for _, t := range dw.Prefix.Tags {
+			if t.ID == 0 {
+				dw.objectsToReconcile = append(dw.objectsToReconcile, &TagDataWrapper{Tag: t, hasParent: true})
+			}
+		}
+	}
+
+	if reconciliationRequired {
+		dw.objectsToReconcile = append(dw.objectsToReconcile, dw)
+	}
+
+	return dw.objectsToReconcile, nil
+}
+
+// SetDefaults sets the default values for the IPAM Prefix
+func (dw *IpamPrefixDataWrapper) SetDefaults() {
+	if dw.Prefix.Status == nil {
+		dw.Prefix.Status = &DefaultPrefixStatus
+	}
+}
