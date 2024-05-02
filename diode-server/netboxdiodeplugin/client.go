@@ -411,6 +411,12 @@ func wrapObjectState(dataType string, object any) (any, error) {
 		}{
 			IPAddress: object,
 		}, nil
+	case netbox.IpamPrefixObjectType:
+		return struct {
+			Prefix any
+		}{
+			Prefix: object,
+		}, nil
 	default:
 		return nil, fmt.Errorf("unsupported data type %s", dataType)
 	}
