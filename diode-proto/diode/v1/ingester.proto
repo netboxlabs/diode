@@ -8,6 +8,7 @@ import "diode/v1/interface.proto";
 import "diode/v1/ip_address.proto";
 import "diode/v1/manufacturer.proto";
 import "diode/v1/platform.proto";
+import "diode/v1/prefix.proto";
 import "diode/v1/role.proto";
 import "diode/v1/site.proto";
 import "google/protobuf/timestamp.proto";
@@ -26,6 +27,7 @@ message Entity {
     DeviceType device_type = 6;
     Interface interface = 7;
     IPAddress ip_address = 9;
+    Prefix prefix = 10;
   }
 
   // The timestamp of the data discovery at source
