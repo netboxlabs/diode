@@ -147,9 +147,8 @@ func (dw *IpamIPAddressDataWrapper) Patch(cmp ComparableData, intendedNestedObje
 		case *IPAddressInterface:
 			assignedObject := &DcimInterfaceDataWrapper{Interface: dw.IPAddress.AssignedObject.(*IPAddressInterface).Interface, placeholder: dw.placeholder, hasParent: true, intended: dw.intended}
 			actualAssignedObject = extractFromObjectsMap(actualNestedObjectsMap, fmt.Sprintf("%p", assignedObject.Data()))
+			intendedAssignedObject = extractFromObjectsMap(intendedNestedObjects, fmt.Sprintf("%p", assignedObject.Data()))
 		}
-
-		intendedAssignedObject = extractFromObjectsMap(intendedNestedObjects, fmt.Sprintf("%p", actualAssignedObject.Data()))
 	}
 
 	reconciliationRequired := true
@@ -254,6 +253,8 @@ func (dw *IpamIPAddressDataWrapper) Patch(cmp ComparableData, intendedNestedObje
 		}
 	}
 
+	dw.TrimAssignedObject()
+
 	if reconciliationRequired {
 		dw.objectsToReconcile = append(dw.objectsToReconcile, dw)
 	}
@@ -265,5 +266,15 @@ func (dw *IpamIPAddressDataWrapper) Patch(cmp ComparableData, intendedNestedObje
 func (dw *IpamIPAddressDataWrapper) SetDefaults() {
 	if dw.IPAddress.Status == nil {
 		dw.IPAddress.Status = &DefaultIPAddressStatus
+	}
+}
+
+func (dw *IpamIPAddressDataWrapper) TrimAssignedObject() {
+	switch dw.IPAddress.AssignedObject.(type) {
+	case *IPAddressInterface:
+		dw.IPAddress.AssignedObject.(*IPAddressInterface).Interface = &DcimInterface{
+			ID:   dw.IPAddress.AssignedObject.(*IPAddressInterface).Interface.ID,
+			Name: dw.IPAddress.AssignedObject.(*IPAddressInterface).Interface.Name,
+		}
 	}
 }
