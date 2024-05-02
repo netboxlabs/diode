@@ -1,0 +1,19 @@
+Feature: Tests for IP address ingestion
+    Validate the behavior of the ingestion of the IP address
+
+@smoke
+@ingestion.ipaddress
+Scenario: Ingest a new IP address
+  Given a new IP address "192.168.0.1/32" and interface "GigabitEthernet0/0/0"
+  When the IP address is ingested
+    Then the IP address is found
+    And the IP address is associated with the interface "GigabitEthernet0/0/0"
+    And the IP address type is "other"
+
+@smoke
+@ingestion.ipaddress
+Scenario: Ingest an IP address with updates
+  Given an IP address "192.168.0.1/32" with description "lorep ipsum"
+  When the IP address with description is ingested
+    Then the IP address is found
+    And the IP address description is updated
