@@ -16,7 +16,7 @@ from dcim.api.serializers import (
 )
 from django.core.exceptions import FieldDoesNotExist
 from extras.models import ObjectChange
-from ipam.api.serializers import IPAddressSerializer
+from ipam.api.serializers import IPAddressSerializer, PrefixSerializer
 from rest_framework import serializers
 from rest_framework.utils.serializer_helpers import ReturnDict
 from utilities.api import get_serializer_for_model
@@ -247,3 +247,16 @@ class DiodeInterfaceSerializer(InterfaceSerializer):
 
         model = InterfaceSerializer.Meta.model
         fields = InterfaceSerializer.Meta.fields
+
+
+class DiodePrefixSerializer(PrefixSerializer):
+    """Diode Prefix Serializer."""
+
+    site = DiodeSiteSerializer()
+    status = serializers.CharField()
+
+    class Meta:
+        """Meta class."""
+
+        model = PrefixSerializer.Meta.model
+        fields = PrefixSerializer.Meta.fields
