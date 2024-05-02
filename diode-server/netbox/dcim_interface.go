@@ -162,6 +162,9 @@ func validateInterfaceType(t string) bool {
 }
 
 func validateInterfaceMode(m string) bool {
+	if m == "" {
+		return true
+	}
 	_, ok := interfaceModesMap[m]
 	return ok
 }
