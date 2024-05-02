@@ -236,9 +236,11 @@ func extractObjectState(objState *objectStateRaw, objectType string) (netbox.Com
 	}
 
 	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
-		Result: &dw,
+		Result:    &dw,
+		MatchName: netbox.IpamIPAddressAssignedObjectMatchName,
 		DecodeHook: mapstructure.ComposeDecodeHookFunc(
 			statusMapToStringHookFunc(),
+			netbox.IpamIPAddressAssignedObjectHookFunc(),
 		),
 	})
 	if err != nil {
@@ -402,6 +404,12 @@ func wrapObjectState(dataType string, object any) (any, error) {
 			Tag any
 		}{
 			Tag: object,
+		}, nil
+	case netbox.IpamIPAddressObjectType:
+		return struct {
+			IPAddress any
+		}{
+			IPAddress: object,
 		}, nil
 	default:
 		return nil, fmt.Errorf("unsupported data type %s", dataType)

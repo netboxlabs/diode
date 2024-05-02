@@ -64,3 +64,12 @@ def delete_interface(context, interface_name):
     interface = get_object_by_name(interface_name, endpoint)
     if interface:
         send_delete_request(endpoint, interface.get("id"))
+
+
+@given('the IP address "{ip_address}" is deleted')
+def delete_ip_address(context, ip_address):
+    """Delete the IP address"""
+    endpoint = "ipam/ip-addresses/"
+    ip = get_object_by_name(ip_address, endpoint)
+    if ip:
+        send_delete_request(endpoint, ip.get("id"))

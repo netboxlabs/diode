@@ -151,7 +151,17 @@ func extractIngestEntityData(ingestEntity IngestEntity) (netbox.ComparableData, 
 		return nil, err
 	}
 
-	if err := mapstructure.Decode(ingestEntity.Entity, &dw); err != nil {
+	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+		Result: &dw,
+		DecodeHook: mapstructure.ComposeDecodeHookFunc(
+			netbox.IpamIPAddressAssignedObjectHookFunc(),
+		),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if err := decoder.Decode(ingestEntity.Entity); err != nil {
 		return nil, fmt.Errorf("failed to decode ingest entity %w", err)
 	}
 
@@ -172,8 +182,19 @@ func extractNetBoxObjectStateData(obj ObjectState) (netbox.ComparableData, error
 		return nil, err
 	}
 
-	if err := mapstructure.Decode(obj.Object, &dw); err != nil {
-		return nil, fmt.Errorf("failed to decode object state %w", err)
+	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+		Result:    &dw,
+		MatchName: netbox.IpamIPAddressAssignedObjectMatchName,
+		DecodeHook: mapstructure.ComposeDecodeHookFunc(
+			netbox.IpamIPAddressAssignedObjectHookFunc(),
+		),
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if err := decoder.Decode(obj.Object); err != nil {
+		return nil, fmt.Errorf("failed to decode object entity %w", err)
 	}
 
 	if !dw.IsValid() {
