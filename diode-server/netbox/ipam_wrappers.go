@@ -269,6 +269,7 @@ func (dw *IpamIPAddressDataWrapper) SetDefaults() {
 	}
 }
 
+// TrimAssignedObject trims the assigned object to the necessary fields only
 func (dw *IpamIPAddressDataWrapper) TrimAssignedObject() {
 	switch dw.IPAddress.AssignedObject.(type) {
 	case *IPAddressInterface:
