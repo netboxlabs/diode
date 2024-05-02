@@ -13,6 +13,9 @@ import (
 const (
 	// IpamIPAddressObjectType represents the IPAM IP address object type
 	IpamIPAddressObjectType = "ipam.ipaddress"
+
+	// IpamPrefixObjectType represents the IPAM Prefix object type
+	IpamPrefixObjectType = "ipam.prefix"
 )
 
 var (
@@ -24,6 +27,12 @@ var (
 
 	// DefaultIPAddressStatus is the default status for an IP address
 	DefaultIPAddressStatus = "active"
+
+	// ErrInvalidIPrefixStatus is returned when the IPAM Prefix status is invalid
+	ErrInvalidIPrefixStatus = errors.New("invalid prefix status")
+
+	// DefaultPrefixStatus is the default status for the IpamPrefix
+	DefaultPrefixStatus = "active"
 )
 
 // IPAddressAssignedObject represents an assigned object for an IP address
@@ -118,4 +127,37 @@ func IpamIPAddressAssignedObjectHookFunc() mapstructure.DecodeHookFunc {
 
 		return data, nil
 	}
+}
+
+// IpamPrefix represents an IPAM Prefix
+type IpamPrefix struct {
+	ID           int       `json:"id,omitempty"`
+	Prefix       string    `json:"prefix,omitempty"`
+	Site         *DcimSite `json:"site,omitempty"`
+	Status       *string   `json:"status,omitempty"`
+	IsPool       *bool     `json:"is_pool,omitempty"`
+	MarkUtilized *bool     `json:"mark_utilized,omitempty" mapstructure:"mark_utilized"`
+	Description  *string   `json:"description,omitempty"`
+	Comments     *string   `json:"comments,omitempty"`
+	Tags         []*Tag    `json:"tags,omitempty"`
+}
+
+var prefixStatusMap = map[string]struct{}{
+	"active":     {},
+	"container":  {},
+	"reserved":   {},
+	"deprecated": {},
+}
+
+func validatePrefixStatus(r string) bool {
+	_, ok := prefixStatusMap[r]
+	return ok
+}
+
+// Validate checks if the IPAM prefix is valid
+func (p *IpamPrefix) Validate() error {
+	if p.Status != nil && !validatePrefixStatus(*p.Status) {
+		return ErrInvalidIPrefixStatus
+	}
+	return nil
 }

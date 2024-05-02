@@ -1730,7 +1730,12 @@ func TestPrepare(t *testing.T) {
 						},
 						"status": "active",
 						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-						"serial": "123456"
+						"serial": "123456",
+						"tags": [
+							{
+								"name": "tag 1"
+							}
+						]
 					}
 				},
 				"state": 0
@@ -1788,6 +1793,19 @@ func TestPrepare(t *testing.T) {
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
 						Device: nil,
+					},
+				},
+				{
+					objectType:     "extras.tag",
+					objectID:       0,
+					query:          "tag 1",
+					objectChangeID: 0,
+					object: &netbox.TagDataWrapper{
+						Tag: &netbox.Tag{
+							ID:   1,
+							Name: "tag 1",
+							Slug: "tag-1",
+						},
 					},
 				},
 			},
@@ -1896,6 +1914,13 @@ func TestPrepare(t *testing.T) {
 							Status:      (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
 							Serial:      strPtr("123456"),
+							Tags: []*netbox.Tag{
+								{
+									ID:   1,
+									Name: "tag 1",
+									Slug: "tag-1",
+								},
+							},
 						},
 					},
 				},
@@ -1938,7 +1963,12 @@ func TestPrepare(t *testing.T) {
 						},
 						"status": "active",
 						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-						"serial": "123456"
+						"serial": "123456",
+						"tags": [
+							{
+								"name": "tag 1"
+							}
+						]
 					}
 				},
 				"state": 0
@@ -2000,6 +2030,19 @@ func TestPrepare(t *testing.T) {
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
 						DeviceRole: nil,
+					},
+				},
+				{
+					objectType:     "extras.tag",
+					objectID:       0,
+					query:          "tag 1",
+					objectChangeID: 0,
+					object: &netbox.TagDataWrapper{
+						Tag: &netbox.Tag{
+							ID:   1,
+							Name: "tag 1",
+							Slug: "tag-1",
+						},
 					},
 				},
 				{
@@ -2134,6 +2177,13 @@ func TestPrepare(t *testing.T) {
 							Status:      (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
 							Serial:      strPtr("123456"),
+							Tags: []*netbox.Tag{
+								{
+									ID:   1,
+									Name: "tag 1",
+									Slug: "tag-1",
+								},
+							},
 						},
 					},
 				},
@@ -5854,6 +5904,286 @@ func TestPrepare(t *testing.T) {
 				ChangeSet:   []changeset.Change{},
 			},
 			wantErr: true,
+		},
+		{
+			name: "[P15] ingest ipam.prefix with prefix only - existing object not found - create prefix and site (placeholder)",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "ipam.prefix",
+				"entity": {
+					"Prefix": {
+						"prefix": "192.168.0.0/32"
+					}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "dcim.site",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimSiteDataWrapper{
+						Site: nil,
+					},
+				},
+				{
+					objectType:     "ipam.prefix",
+					objectID:       0,
+					query:          "192.168.0.0/32",
+					objectChangeID: 0,
+					object: &netbox.IpamPrefixDataWrapper{
+						Prefix: nil,
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet: []changeset.Change{
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.site",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimSite{
+							Name:   "undefined",
+							Slug:   "undefined",
+							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						},
+					},
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "ipam.prefix",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.IpamPrefix{
+							Prefix: "192.168.0.0/32",
+							Site: &netbox.DcimSite{
+								Name:   "undefined",
+								Slug:   "undefined",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
+							Status: &netbox.DefaultPrefixStatus,
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "[P15] ingest ipam.prefix with prefix only - existing object and its related objects found - do nothing",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "ipam.prefix",
+				"entity": {
+					"Prefix": {
+						"prefix": "192.168.0.0/32",
+						"site": {
+							"name": "undefined"
+						}
+					}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "dcim.site",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimSiteDataWrapper{
+						Site: &netbox.DcimSite{
+							ID:     1,
+							Name:   "undefined",
+							Slug:   "undefined",
+							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						},
+					},
+				},
+				{
+					objectType:     "ipam.prefix",
+					objectID:       0,
+					query:          "192.168.0.0/32",
+					objectChangeID: 0,
+					object: &netbox.IpamPrefixDataWrapper{
+						Prefix: &netbox.IpamPrefix{
+							ID:     1,
+							Prefix: "192.168.0.0/32",
+							Site: &netbox.DcimSite{
+								ID:     1,
+								Name:   "undefined",
+								Slug:   "undefined",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
+							Status: &netbox.DefaultPrefixStatus,
+						},
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet:   []changeset.Change{},
+			},
+			wantErr: false,
+		},
+		{
+			name: "[P15] ingest ipam.prefix with empty site",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "ipam.prefix",
+				"entity": {
+					"Prefix": {
+						"prefix": "192.168.0.0/32",
+						"site": {}
+					}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "dcim.site",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimSiteDataWrapper{
+						Site: &netbox.DcimSite{
+							ID:     1,
+							Name:   "undefined",
+							Slug:   "undefined",
+							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						},
+					},
+				},
+				{
+					objectType:     "ipam.prefix",
+					objectID:       0,
+					query:          "192.168.0.0/32",
+					objectChangeID: 0,
+					object: &netbox.IpamPrefixDataWrapper{
+						Prefix: &netbox.IpamPrefix{
+							ID:     1,
+							Prefix: "192.168.0.0/32",
+							Site: &netbox.DcimSite{
+								ID:     1,
+								Name:   "undefined",
+								Slug:   "undefined",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
+							Status: &netbox.DefaultPrefixStatus,
+						},
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet:   []changeset.Change{},
+			},
+			wantErr: false,
+		},
+		{
+			name: "[P15] ingest ipam.prefix with prefix and a tag - existing object found - create tag and update prefix",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "ipam.prefix",
+				"entity": {
+					"Prefix": {
+						"prefix": "192.168.0.0/32",
+						"tags": [
+							{
+								"name": "tag 100"
+							}
+						]
+					}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "dcim.site",
+					objectID:       0,
+					query:          "undefined",
+					objectChangeID: 0,
+					object: &netbox.DcimSiteDataWrapper{
+						Site: &netbox.DcimSite{
+							ID:     1,
+							Name:   "undefined",
+							Slug:   "undefined",
+							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						},
+					},
+				},
+				{
+					objectType:     "extras.tag",
+					objectID:       0,
+					query:          "tag 100",
+					objectChangeID: 0,
+					object: &netbox.TagDataWrapper{
+						Tag: nil,
+					},
+				},
+				{
+					objectType:     "ipam.prefix",
+					objectID:       0,
+					query:          "192.168.0.0/32",
+					objectChangeID: 0,
+					object: &netbox.IpamPrefixDataWrapper{
+						Prefix: &netbox.IpamPrefix{
+							ID:     1,
+							Prefix: "192.168.0.0/32",
+							Site: &netbox.DcimSite{
+								ID:     1,
+								Name:   "undefined",
+								Slug:   "undefined",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
+							Status: &netbox.DefaultPrefixStatus,
+						},
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet: []changeset.Change{
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b6",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "extras.tag",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.Tag{
+							Name: "tag 100",
+							Slug: "tag-100",
+						},
+					},
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeUpdate,
+						ObjectType:    "ipam.prefix",
+						ObjectID:      intPtr(1),
+						ObjectVersion: nil,
+						Data: &netbox.IpamPrefix{
+							ID:     1,
+							Prefix: "192.168.0.0/32",
+							Site: &netbox.DcimSite{
+								ID:     1,
+								Name:   "undefined",
+								Slug:   "undefined",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
+							Status: &netbox.DefaultPrefixStatus,
+							Tags: []*netbox.Tag{
+								{
+									Name: "tag 100",
+									Slug: "tag-100",
+								},
+							},
+						},
+					},
+				},
+			},
+			wantErr: false,
 		},
 	}
 

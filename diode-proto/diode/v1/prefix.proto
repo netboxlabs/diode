@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package diode.v1;
+
+import "diode/v1/site.proto";
+import "diode/v1/tag.proto";
+import "validate/validate.proto";
+
+option go_package = "github.com/netboxlabs/diode/diode-sdk-go/diode/v1/diodepb";
+
+// An IPAM prefix.
+message Prefix {
+  string prefix = 1 [(validate.rules).string.ip = true];
+  Site site = 2;
+  string status = 3 [(validate.rules).string = {
+    in: [
+      "active",
+      "container",
+      "reserved",
+      "deprecated"
+    ]
+  }];
+  bool is_pool = 4;
+  bool mark_utilized = 5;
+  string description = 6 [(validate.rules).string = {max_len: 200}];
+  string comments = 7;
+  repeated Tag tags = 8;
+}

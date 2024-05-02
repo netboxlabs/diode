@@ -20,3 +20,6 @@ Scenario: Cleanup
 
     Given the interface "GigabitEthernet0/0/0" is deleted
     Given the IP address "192.168.0.1/32" is deleted
+
+    Given the prefix "192.168.0.0/32" is deleted
+    Given the tag "tag 100" is deleted

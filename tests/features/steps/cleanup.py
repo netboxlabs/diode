@@ -73,3 +73,21 @@ def delete_ip_address(context, ip_address):
     ip = get_object_by_name(ip_address, endpoint)
     if ip:
         send_delete_request(endpoint, ip.get("id"))
+
+
+@given('the prefix "{prefix}" is deleted')
+def delete_prefix(context, prefix):
+    """Delete the prefix"""
+    endpoint = "ipam/prefixes/"
+    ip = get_object_by_name(prefix, endpoint)
+    if ip:
+        send_delete_request(endpoint, ip.get("id"))
+
+
+@given('the tag "{tag}" is deleted')
+def delete_tag(context, tag):
+    """Delete the tag"""
+    endpoint = "extras/tags/"
+    ip = get_object_by_name(tag, endpoint)
+    if ip:
+        send_delete_request(endpoint, ip.get("id"))
