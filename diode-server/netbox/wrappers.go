@@ -178,7 +178,7 @@ func (dw *DcimDeviceDataWrapper) ObjectStateQueryParams() map[string]string {
 		"q": dw.Device.Name,
 	}
 	if dw.Device.Site != nil {
-		params["attr_field"] = "site.name"
+		params["attr_name"] = "site.name"
 		params["attr_value"] = dw.Device.Site.Name
 	}
 	return params
@@ -888,7 +888,7 @@ func (dw *DcimInterfaceDataWrapper) ObjectStateQueryParams() map[string]string {
 		"q": dw.Interface.Name,
 	}
 	if dw.Interface.Device != nil {
-		params["attr_field"] = "device.name"
+		params["attr_name"] = "device.name"
 		params["attr_value"] = dw.Interface.Device.Name
 	}
 	return params
