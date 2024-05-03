@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # Copyright 2024 NetBox Labs Inc
 """Diode Netbox Plugin - API Views."""
+from typing import Any, Dict, Optional
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import FieldError
@@ -192,7 +193,7 @@ class ApplyChangeSetView(views.APIView):
 
     def _handle_ipaddress_assigned_object(
         self, object_data: dict, ipaddress_assigned_object: list
-    ) -> dict:
+    ) -> Optional[Dict[str, Any]]:
         """Handle IPAM IP address assigned object."""
         if any(ipaddress_assigned_object):
             assigned_object_keys = list(ipaddress_assigned_object[0].keys())
@@ -207,8 +208,24 @@ class ApplyChangeSetView(views.APIView):
                 return {"assigned_object": f"properties not provided for {model_name}"}
 
             try:
-                assigned_object_instance = assigned_object_model.objects.get(
-                    **assigned_object_properties_dict
+                lookups = (
+                    ("device", "device__site") if model_name == "interface" else ()
+                )
+                args = {}
+
+                if model_name == "interface":
+                    args["name"] = assigned_object_properties_dict.get("name")
+                    args["device__name"] = assigned_object_properties_dict.get(
+                        "device"
+                    ).get("name")
+                    args["device__site__name"] = (
+                        assigned_object_properties_dict.get("device")
+                        .get("site")
+                        .get("name")
+                    )
+
+                assigned_object_instance = (
+                    assigned_object_model.objects.prefetch_related(*lookups).get(**args)
                 )
             except assigned_object_model.DoesNotExist:
                 return {
