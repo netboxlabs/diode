@@ -112,11 +112,6 @@ func (dw *IpamIPAddressDataWrapper) DataType() string {
 	return IpamIPAddressObjectType
 }
 
-// QueryString returns the query string needed to retrieve its object state
-func (dw *IpamIPAddressDataWrapper) QueryString() string {
-	return dw.IPAddress.Address
-}
-
 // ObjectStateQueryParams returns the query parameters needed to retrieve its object state
 func (dw *IpamIPAddressDataWrapper) ObjectStateQueryParams() map[string]string {
 	return map[string]string{
@@ -378,11 +373,6 @@ func (dw *IpamPrefixDataWrapper) NestedObjects() ([]ComparableData, error) {
 // DataType returns the data type
 func (dw *IpamPrefixDataWrapper) DataType() string {
 	return IpamPrefixObjectType
-}
-
-// QueryString returns the query string needed to retrieve its object state
-func (dw *IpamPrefixDataWrapper) QueryString() string {
-	return dw.Prefix.Prefix
 }
 
 // ObjectStateQueryParams returns the query parameters needed to retrieve its object state

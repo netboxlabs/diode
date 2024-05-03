@@ -28,9 +28,6 @@ type ComparableData interface {
 	// DataType returns the data type
 	DataType() string
 
-	// QueryString returns the query string needed to retrieve its object state
-	QueryString() string
-
 	// ObjectStateQueryParams returns the query parameters needed to retrieve its object state
 	ObjectStateQueryParams() map[string]string
 
@@ -165,11 +162,6 @@ func (dw *DcimDeviceDataWrapper) NestedObjects() ([]ComparableData, error) {
 // DataType returns the data type
 func (dw *DcimDeviceDataWrapper) DataType() string {
 	return DcimDeviceObjectType
-}
-
-// QueryString returns the query string needed to retrieve its object state
-func (dw *DcimDeviceDataWrapper) QueryString() string {
-	return dw.Device.Name
 }
 
 // ObjectStateQueryParams returns the query parameters needed to retrieve its object state
@@ -466,11 +458,6 @@ func (dw *DcimDeviceRoleDataWrapper) DataType() string {
 	return DcimDeviceRoleObjectType
 }
 
-// QueryString returns the query string needed to retrieve its object state
-func (dw *DcimDeviceRoleDataWrapper) QueryString() string {
-	return dw.DeviceRole.Name
-}
-
 // ObjectStateQueryParams returns the query parameters needed to retrieve its object state
 func (dw *DcimDeviceRoleDataWrapper) ObjectStateQueryParams() map[string]string {
 	return map[string]string{
@@ -599,11 +586,6 @@ func (dw *DcimDeviceTypeDataWrapper) Normalise() {
 // DataType returns the data type
 func (dw *DcimDeviceTypeDataWrapper) DataType() string {
 	return DcimDeviceTypeObjectType
-}
-
-// QueryString returns the query string needed to retrieve its object state
-func (dw *DcimDeviceTypeDataWrapper) QueryString() string {
-	return dw.DeviceType.Model
 }
 
 // ObjectStateQueryParams returns the query parameters needed to retrieve its object state
@@ -877,11 +859,6 @@ func (dw *DcimInterfaceDataWrapper) DataType() string {
 	return DcimInterfaceObjectType
 }
 
-// QueryString returns the query string needed to retrieve its object state
-func (dw *DcimInterfaceDataWrapper) QueryString() string {
-	return dw.Interface.Name
-}
-
 // ObjectStateQueryParams returns the query parameters needed to retrieve its object state
 func (dw *DcimInterfaceDataWrapper) ObjectStateQueryParams() map[string]string {
 	params := map[string]string{
@@ -1124,11 +1101,6 @@ func (dw *DcimManufacturerDataWrapper) DataType() string {
 	return DcimManufacturerObjectType
 }
 
-// QueryString returns the query string needed to retrieve its object state
-func (dw *DcimManufacturerDataWrapper) QueryString() string {
-	return dw.Manufacturer.Name
-}
-
 // ObjectStateQueryParams returns the query parameters needed to retrieve its object state
 func (dw *DcimManufacturerDataWrapper) ObjectStateQueryParams() map[string]string {
 	return map[string]string{
@@ -1325,11 +1297,6 @@ func (dw *DcimPlatformDataWrapper) DataType() string {
 	return DcimPlatformObjectType
 }
 
-// QueryString returns the query string needed to retrieve its object state
-func (dw *DcimPlatformDataWrapper) QueryString() string {
-	return dw.Platform.Name
-}
-
 // ObjectStateQueryParams returns the query parameters needed to retrieve its object state
 func (dw *DcimPlatformDataWrapper) ObjectStateQueryParams() map[string]string {
 	return map[string]string{
@@ -1523,11 +1490,6 @@ func (dw *DcimSiteDataWrapper) DataType() string {
 	return DcimSiteObjectType
 }
 
-// QueryString returns the query string needed to retrieve its object state
-func (dw *DcimSiteDataWrapper) QueryString() string {
-	return dw.Site.Name
-}
-
 // ObjectStateQueryParams returns the query parameters needed to retrieve its object state
 func (dw *DcimSiteDataWrapper) ObjectStateQueryParams() map[string]string {
 	return map[string]string{
@@ -1662,11 +1624,6 @@ func (dw *TagDataWrapper) NestedObjects() ([]ComparableData, error) {
 // DataType returns the data type
 func (dw *TagDataWrapper) DataType() string {
 	return ExtrasTagObjectType
-}
-
-// QueryString returns the query string needed to retrieve its object state
-func (dw *TagDataWrapper) QueryString() string {
-	return dw.Tag.Name
 }
 
 // ObjectStateQueryParams returns the query parameters needed to retrieve its object state
