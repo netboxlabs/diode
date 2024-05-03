@@ -3,6 +3,7 @@
 """Diode Netbox Plugin - API Views."""
 
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import FieldError
 from django.db import transaction
 from django.db.models import ForeignKey, ManyToManyField, Q
 from extras.models import CachedValue
@@ -71,21 +72,33 @@ class ObjectStateView(views.APIView):
             )
 
             if attr_name and attr_value:
-
                 query_filter = {f"{attr_name}__{lookup}": attr_value}
 
-                if isinstance(
-                    object_type_model._meta.get_field(f"{attr_name}"), ForeignKey
-                ) or isinstance(
-                    object_type_model._meta.get_field(f"{attr_name}"), ManyToManyField
-                ):
-                    queryset = [
-                        item
-                        for item in queryset.prefetch_related(f"{attr_name}")
-                        if str(getattr(item, attr_name)) == str(attr_value)
-                    ]
-                else:
-                    queryset = queryset.filter(**query_filter)
+                attr_model, attr_field = (
+                    attr_name.split(".") if "." in attr_name else (None, None)
+                )
+
+                field_name = attr_model if attr_model else attr_name
+
+                try:
+                    if (
+                        isinstance(
+                            object_type_model._meta.get_field(f"{field_name}"),
+                            (ForeignKey, ManyToManyField),
+                        )
+                        and attr_field is not None
+                    ):
+                        filter_by = Q(**{f"{field_name}__{attr_field}": attr_value})
+                        queryset = queryset.prefetch_related(field_name).filter(
+                            filter_by
+                        )
+                    else:
+                        queryset = queryset.filter(**query_filter)
+                except (FieldError, ValueError):
+                    return Response(
+                        {"errors": ["invalid attr_name and/or attr_value"]},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
 
         self.check_object_permissions(request, queryset)
 
