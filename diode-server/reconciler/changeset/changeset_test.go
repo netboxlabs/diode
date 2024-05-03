@@ -18,7 +18,7 @@ func TestPrepare(t *testing.T) {
 	type mockRetrieveObjectState struct {
 		objectType     string
 		objectID       int
-		query          string
+		queryParams    map[string]string
 		objectChangeID int
 		object         netbox.ComparableData
 	}
@@ -45,7 +45,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.site",
 					objectID:       0,
-					query:          "Site A",
+					queryParams:    map[string]string{"q": "Site A"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
 						Site: nil,
@@ -87,7 +87,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.site",
 					objectID:       0,
-					query:          "Site A",
+					queryParams:    map[string]string{"q": "Site A"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
 						Site: &netbox.DcimSite{
@@ -129,7 +129,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.site",
 					objectID:       0,
-					query:          "Site A",
+					queryParams:    map[string]string{"q": "Site A"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
 						Site: &netbox.DcimSite{
@@ -155,7 +155,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "extras.tag",
 					objectID:       0,
-					query:          "tag 1",
+					queryParams:    map[string]string{"q": "tag 1"},
 					objectChangeID: 0,
 					object: &netbox.TagDataWrapper{
 						Tag: &netbox.Tag{
@@ -168,7 +168,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "extras.tag",
 					objectID:       0,
-					query:          "tag 2",
+					queryParams:    map[string]string{"q": "tag 2"},
 					objectChangeID: 0,
 					object: &netbox.TagDataWrapper{
 						Tag: nil,
@@ -255,7 +255,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicerole",
 					objectID:       0,
-					query:          "WAN Router",
+					queryParams:    map[string]string{"q": "WAN Router"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
 						DeviceRole: nil,
@@ -297,7 +297,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicerole",
 					objectID:       0,
-					query:          "WAN Router",
+					queryParams:    map[string]string{"q": "WAN Router"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
 						DeviceRole: &netbox.DcimDeviceRole{
@@ -332,7 +332,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicerole",
 					objectID:       0,
-					query:          "WAN Router",
+					queryParams:    map[string]string{"q": "WAN Router"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
 						DeviceRole: &netbox.DcimDeviceRole{
@@ -384,7 +384,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicerole",
 					objectID:       0,
-					query:          "WAN Router",
+					queryParams:    map[string]string{"q": "WAN Router"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
 						DeviceRole: &netbox.DcimDeviceRole{
@@ -436,7 +436,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.manufacturer",
 					objectID:       0,
-					query:          "Cisco",
+					queryParams:    map[string]string{"q": "Cisco"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
 						Manufacturer: nil,
@@ -477,7 +477,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.manufacturer",
 					objectID:       0,
-					query:          "Cisco",
+					queryParams:    map[string]string{"q": "Cisco"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
 						Manufacturer: &netbox.DcimManufacturer{
@@ -527,7 +527,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.manufacturer",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
 						Manufacturer: nil,
@@ -536,7 +536,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicetype",
 					objectID:       0,
-					query:          "ISR4321",
+					queryParams:    map[string]string{"q": "ISR4321"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
 						DeviceType: nil,
@@ -592,7 +592,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.manufacturer",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
 						Manufacturer: &netbox.DcimManufacturer{
@@ -605,7 +605,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicetype",
 					objectID:       0,
-					query:          "ISR4321",
+					queryParams:    map[string]string{"q": "ISR4321"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
 						DeviceType: &netbox.DcimDeviceType{
@@ -666,7 +666,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.manufacturer",
 					objectID:       0,
-					query:          "Cisco",
+					queryParams:    map[string]string{"q": "Cisco"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
 						Manufacturer: nil,
@@ -675,7 +675,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicetype",
 					objectID:       0,
-					query:          "ISR4321",
+					queryParams:    map[string]string{"q": "ISR4321"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
 						DeviceType: nil,
@@ -754,7 +754,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.manufacturer",
 					objectID:       0,
-					query:          "Cisco",
+					queryParams:    map[string]string{"q": "Cisco"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
 						Manufacturer: &netbox.DcimManufacturer{
@@ -779,7 +779,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "extras.tag",
 					objectID:       0,
-					query:          "tag 1",
+					queryParams:    map[string]string{"q": "tag 1"},
 					objectChangeID: 0,
 					object: &netbox.TagDataWrapper{
 						Tag: &netbox.Tag{
@@ -792,7 +792,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "extras.tag",
 					objectID:       0,
-					query:          "tag 10",
+					queryParams:    map[string]string{"q": "tag 10"},
 					objectChangeID: 0,
 					object: &netbox.TagDataWrapper{
 						Tag: &netbox.Tag{
@@ -805,7 +805,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "extras.tag",
 					objectID:       0,
-					query:          "tag 11",
+					queryParams:    map[string]string{"q": "tag 11"},
 					objectChangeID: 0,
 					object: &netbox.TagDataWrapper{
 						Tag: nil,
@@ -814,7 +814,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "extras.tag",
 					objectID:       0,
-					query:          "tag 3",
+					queryParams:    map[string]string{"q": "tag 3"},
 					objectChangeID: 0,
 					object: &netbox.TagDataWrapper{
 						Tag: nil,
@@ -823,7 +823,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicetype",
 					objectID:       0,
-					query:          "ISR4321",
+					queryParams:    map[string]string{"q": "ISR4321"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
 						DeviceType: &netbox.DcimDeviceType{
@@ -991,7 +991,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.manufacturer",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
 						Manufacturer: &netbox.DcimManufacturer{
@@ -1011,7 +1011,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "extras.tag",
 					objectID:       0,
-					query:          "tag 3",
+					queryParams:    map[string]string{"q": "tag 3"},
 					objectChangeID: 0,
 					object: &netbox.TagDataWrapper{
 						Tag: nil,
@@ -1020,7 +1020,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicetype",
 					objectID:       0,
-					query:          "ISR4321",
+					queryParams:    map[string]string{"q": "ISR4321"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
 						DeviceType: &netbox.DcimDeviceType{
@@ -1133,7 +1133,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.manufacturer",
 					objectID:       0,
-					query:          "Cisco",
+					queryParams:    map[string]string{"q": "Cisco"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
 						Manufacturer: &netbox.DcimManufacturer{
@@ -1153,7 +1153,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "extras.tag",
 					objectID:       0,
-					query:          "tag 3",
+					queryParams:    map[string]string{"q": "tag 3"},
 					objectChangeID: 0,
 					object: &netbox.TagDataWrapper{
 						Tag: nil,
@@ -1162,7 +1162,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicetype",
 					objectID:       0,
-					query:          "ISR4321",
+					queryParams:    map[string]string{"q": "ISR4321"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
 						DeviceType: &netbox.DcimDeviceType{
@@ -1265,7 +1265,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.site",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
 						Site: nil,
@@ -1274,7 +1274,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.manufacturer",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
 						Manufacturer: nil,
@@ -1283,7 +1283,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicetype",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
 						DeviceType: nil,
@@ -1292,7 +1292,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicerole",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
 						DeviceRole: nil,
@@ -1301,7 +1301,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.platform",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimPlatformDataWrapper{
 						Platform: nil,
@@ -1310,7 +1310,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.device",
 					objectID:       0,
-					query:          "router01",
+					queryParams:    map[string]string{"q": "router01", "attr_field": "site.name", "attr_value": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
 						Device: nil,
@@ -1442,7 +1442,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.site",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
 						Site: &netbox.DcimSite{
@@ -1456,7 +1456,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.manufacturer",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
 						Manufacturer: &netbox.DcimManufacturer{
@@ -1469,7 +1469,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicetype",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
 						DeviceType: &netbox.DcimDeviceType{
@@ -1487,7 +1487,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicerole",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
 						DeviceRole: &netbox.DcimDeviceRole{
@@ -1501,7 +1501,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.platform",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimPlatformDataWrapper{
 						Platform: &netbox.DcimPlatform{
@@ -1519,7 +1519,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.device",
 					objectID:       0,
-					query:          "router01",
+					queryParams:    map[string]string{"q": "router01", "attr_field": "site.name", "attr_value": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
 						Device: &netbox.DcimDevice{
@@ -1585,7 +1585,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.site",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
 						Site: &netbox.DcimSite{
@@ -1599,7 +1599,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.manufacturer",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
 						Manufacturer: &netbox.DcimManufacturer{
@@ -1612,7 +1612,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicetype",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
 						DeviceType: &netbox.DcimDeviceType{
@@ -1630,7 +1630,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicerole",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
 						DeviceRole: &netbox.DcimDeviceRole{
@@ -1644,7 +1644,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.platform",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimPlatformDataWrapper{
 						Platform: &netbox.DcimPlatform{
@@ -1662,7 +1662,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.device",
 					objectID:       0,
-					query:          "router01",
+					queryParams:    map[string]string{"q": "router01", "attr_field": "site.name", "attr_value": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
 						Device: &netbox.DcimDevice{
@@ -1744,7 +1744,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.site",
 					objectID:       0,
-					query:          "Site A",
+					queryParams:    map[string]string{"q": "Site A"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
 						Site: nil,
@@ -1753,7 +1753,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.manufacturer",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
 						Manufacturer: nil,
@@ -1762,7 +1762,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicetype",
 					objectID:       0,
-					query:          "ISR4321",
+					queryParams:    map[string]string{"q": "ISR4321"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
 						DeviceType: nil,
@@ -1771,7 +1771,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicerole",
 					objectID:       0,
-					query:          "WAN Router",
+					queryParams:    map[string]string{"q": "WAN Router"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
 						DeviceRole: nil,
@@ -1780,7 +1780,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.platform",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimPlatformDataWrapper{
 						Platform: nil,
@@ -1789,7 +1789,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.device",
 					objectID:       0,
-					query:          "router01",
+					queryParams:    map[string]string{"q": "router01", "attr_field": "site.name", "attr_value": "Site A"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
 						Device: nil,
@@ -1798,7 +1798,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "extras.tag",
 					objectID:       0,
-					query:          "tag 1",
+					queryParams:    map[string]string{"q": "tag 1"},
 					objectChangeID: 0,
 					object: &netbox.TagDataWrapper{
 						Tag: &netbox.Tag{
@@ -1977,7 +1977,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.site",
 					objectID:       0,
-					query:          "Site A",
+					queryParams:    map[string]string{"q": "Site A"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
 						Site: nil,
@@ -1986,7 +1986,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.manufacturer",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
 						Manufacturer: &netbox.DcimManufacturer{
@@ -1999,7 +1999,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.platform",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimPlatformDataWrapper{
 						Platform: &netbox.DcimPlatform{
@@ -2017,7 +2017,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicetype",
 					objectID:       0,
-					query:          "ISR4321",
+					queryParams:    map[string]string{"q": "ISR4321"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
 						DeviceType: nil,
@@ -2026,7 +2026,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicerole",
 					objectID:       0,
-					query:          "WAN Router",
+					queryParams:    map[string]string{"q": "WAN Router"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
 						DeviceRole: nil,
@@ -2035,7 +2035,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "extras.tag",
 					objectID:       0,
-					query:          "tag 1",
+					queryParams:    map[string]string{"q": "tag 1"},
 					objectChangeID: 0,
 					object: &netbox.TagDataWrapper{
 						Tag: &netbox.Tag{
@@ -2048,7 +2048,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.device",
 					objectID:       0,
-					query:          "router01",
+					queryParams:    map[string]string{"q": "router01", "attr_field": "site.name", "attr_value": "Site A"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
 						Device: &netbox.DcimDevice{
@@ -2221,7 +2221,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.site",
 					objectID:       0,
-					query:          "Site A",
+					queryParams:    map[string]string{"q": "Site A"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
 						Site: nil,
@@ -2230,7 +2230,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.manufacturer",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
 						Manufacturer: nil,
@@ -2239,7 +2239,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicetype",
 					objectID:       0,
-					query:          "ISR4321",
+					queryParams:    map[string]string{"q": "ISR4321"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
 						DeviceType: nil,
@@ -2248,7 +2248,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicerole",
 					objectID:       0,
-					query:          "WAN Router",
+					queryParams:    map[string]string{"q": "WAN Router"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
 						DeviceRole: nil,
@@ -2257,7 +2257,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.platform",
 					objectID:       0,
-					query:          "Cisco IOS 15.6",
+					queryParams:    map[string]string{"q": "Cisco IOS 15.6"},
 					objectChangeID: 0,
 					object: &netbox.DcimPlatformDataWrapper{
 						Platform: nil,
@@ -2266,7 +2266,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.device",
 					objectID:       0,
-					query:          "router01",
+					queryParams:    map[string]string{"q": "router01", "attr_field": "site.name", "attr_value": "Site A"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
 						Device: nil,
@@ -2415,7 +2415,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.site",
 					objectID:       0,
-					query:          "Site A",
+					queryParams:    map[string]string{"q": "Site A"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
 						Site: nil,
@@ -2424,7 +2424,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.manufacturer",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
 						Manufacturer: &netbox.DcimManufacturer{
@@ -2437,7 +2437,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicetype",
 					objectID:       0,
-					query:          "ISR4321",
+					queryParams:    map[string]string{"q": "ISR4321"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
 						DeviceType: nil,
@@ -2446,7 +2446,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicerole",
 					objectID:       0,
-					query:          "WAN Router",
+					queryParams:    map[string]string{"q": "WAN Router"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
 						DeviceRole: nil,
@@ -2455,7 +2455,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.platform",
 					objectID:       0,
-					query:          "Cisco IOS 15.6",
+					queryParams:    map[string]string{"q": "Cisco IOS 15.6"},
 					objectChangeID: 0,
 					object: &netbox.DcimPlatformDataWrapper{
 						Platform: &netbox.DcimPlatform{
@@ -2473,7 +2473,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.device",
 					objectID:       0,
-					query:          "router01",
+					queryParams:    map[string]string{"q": "router01", "attr_field": "site.name", "attr_value": "Site A"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
 						Device: &netbox.DcimDevice{
@@ -2634,7 +2634,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.site",
 					objectID:       0,
-					query:          "Site A",
+					queryParams:    map[string]string{"q": "Site A"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
 						Site: &netbox.DcimSite{
@@ -2648,7 +2648,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.manufacturer",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
 						Manufacturer: &netbox.DcimManufacturer{
@@ -2661,7 +2661,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicetype",
 					objectID:       0,
-					query:          "ISR4321",
+					queryParams:    map[string]string{"q": "ISR4321"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
 						DeviceType: &netbox.DcimDeviceType{
@@ -2679,7 +2679,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicerole",
 					objectID:       0,
-					query:          "WAN Router",
+					queryParams:    map[string]string{"q": "WAN Router"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
 						DeviceRole: &netbox.DcimDeviceRole{
@@ -2693,7 +2693,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.platform",
 					objectID:       0,
-					query:          "Cisco IOS 15.6",
+					queryParams:    map[string]string{"q": "Cisco IOS 15.6"},
 					objectChangeID: 0,
 					object: &netbox.DcimPlatformDataWrapper{
 						Platform: &netbox.DcimPlatform{
@@ -2711,7 +2711,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.device",
 					objectID:       0,
-					query:          "router01",
+					queryParams:    map[string]string{"q": "router01", "attr_field": "site.name", "attr_value": "Site A"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
 						Device: &netbox.DcimDevice{
@@ -2837,7 +2837,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.site",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
 						Site: &netbox.DcimSite{
@@ -2851,7 +2851,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.manufacturer",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
 						Manufacturer: &netbox.DcimManufacturer{
@@ -2864,7 +2864,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicetype",
 					objectID:       0,
-					query:          "ISR4321",
+					queryParams:    map[string]string{"q": "ISR4321"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
 						DeviceType: nil,
@@ -2873,7 +2873,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicerole",
 					objectID:       0,
-					query:          "WAN Router",
+					queryParams:    map[string]string{"q": "WAN Router"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
 						DeviceRole: nil,
@@ -2882,7 +2882,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.platform",
 					objectID:       0,
-					query:          "Cisco IOS 15.6",
+					queryParams:    map[string]string{"q": "Cisco IOS 15.6"},
 					objectChangeID: 0,
 					object: &netbox.DcimPlatformDataWrapper{
 						Platform: &netbox.DcimPlatform{
@@ -2900,7 +2900,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.device",
 					objectID:       0,
-					query:          "router01",
+					queryParams:    map[string]string{"q": "router01", "attr_field": "site.name", "attr_value": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
 						Device: &netbox.DcimDevice{
@@ -3055,7 +3055,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.site",
 					objectID:       0,
-					query:          "Site B",
+					queryParams:    map[string]string{"q": "Site B"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
 						Site: &netbox.DcimSite{
@@ -3069,7 +3069,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.manufacturer",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
 						Manufacturer: &netbox.DcimManufacturer{
@@ -3082,7 +3082,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicetype",
 					objectID:       0,
-					query:          "ISR4321",
+					queryParams:    map[string]string{"q": "ISR4321"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
 						DeviceType: &netbox.DcimDeviceType{
@@ -3100,7 +3100,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicerole",
 					objectID:       0,
-					query:          "WAN Router",
+					queryParams:    map[string]string{"q": "WAN Router"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
 						DeviceRole: &netbox.DcimDeviceRole{
@@ -3114,7 +3114,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.platform",
 					objectID:       0,
-					query:          "Cisco IOS 15.6",
+					queryParams:    map[string]string{"q": "Cisco IOS 15.6"},
 					objectChangeID: 0,
 					object: &netbox.DcimPlatformDataWrapper{
 						Platform: &netbox.DcimPlatform{
@@ -3132,7 +3132,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.device",
 					objectID:       0,
-					query:          "router01",
+					queryParams:    map[string]string{"q": "router01", "attr_field": "site.name", "attr_value": "Site B"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
 						Device: &netbox.DcimDevice{
@@ -3201,7 +3201,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.site",
 					objectID:       0,
-					query:          "Site A",
+					queryParams:    map[string]string{"q": "Site A"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
 						Site: nil,
@@ -3246,7 +3246,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.site",
 					objectID:       0,
-					query:          "Site A",
+					queryParams:    map[string]string{"q": "Site A"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
 						Site: &netbox.DcimSite{
@@ -3297,7 +3297,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.manufacturer",
 					objectID:       0,
-					query:          "Cisco",
+					queryParams:    map[string]string{"q": "Cisco"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
 						Manufacturer: nil,
@@ -3340,7 +3340,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.manufacturer",
 					objectID:       0,
-					query:          "Cisco",
+					queryParams:    map[string]string{"q": "Cisco"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
 						Manufacturer: &netbox.DcimManufacturer{
@@ -3390,7 +3390,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicerole",
 					objectID:       0,
-					query:          "WAN Router",
+					queryParams:    map[string]string{"q": "WAN Router"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
 						DeviceRole: nil,
@@ -3435,7 +3435,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicerole",
 					objectID:       0,
-					query:          "WAN Router",
+					queryParams:    map[string]string{"q": "WAN Router"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
 						DeviceRole: &netbox.DcimDeviceRole{
@@ -3502,7 +3502,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.interface",
 					objectID:       0,
-					query:          "GigabitEthernet0/0/0",
+					queryParams:    map[string]string{"q": "GigabitEthernet0/0/0", "attr_field": "device.name", "attr_value": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimInterfaceDataWrapper{
 						Interface: nil,
@@ -3511,7 +3511,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.site",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
 						Site: &netbox.DcimSite{
@@ -3525,7 +3525,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.manufacturer",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
 						Manufacturer: &netbox.DcimManufacturer{
@@ -3538,7 +3538,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.platform",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimPlatformDataWrapper{
 						Platform: &netbox.DcimPlatform{
@@ -3556,7 +3556,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicetype",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
 						DeviceType: &netbox.DcimDeviceType{
@@ -3574,7 +3574,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicerole",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
 						DeviceRole: &netbox.DcimDeviceRole{
@@ -3588,7 +3588,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.device",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined", "attr_field": "site.name", "attr_value": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
 						Device: nil,
@@ -3711,7 +3711,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.interface",
 					objectID:       0,
-					query:          "GigabitEthernet0/0/0",
+					queryParams:    map[string]string{"q": "GigabitEthernet0/0/0", "attr_field": "device.name", "attr_value": "router01"},
 					objectChangeID: 0,
 					object: &netbox.DcimInterfaceDataWrapper{
 						Interface: &netbox.DcimInterface{
@@ -3761,7 +3761,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.site",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
 						Site: &netbox.DcimSite{
@@ -3775,7 +3775,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.manufacturer",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
 						Manufacturer: &netbox.DcimManufacturer{
@@ -3788,7 +3788,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.platform",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimPlatformDataWrapper{
 						Platform: &netbox.DcimPlatform{
@@ -3806,7 +3806,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicetype",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
 						DeviceType: &netbox.DcimDeviceType{
@@ -3824,7 +3824,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicerole",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
 						DeviceRole: &netbox.DcimDeviceRole{
@@ -3838,7 +3838,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.device",
 					objectID:       0,
-					query:          "router01",
+					queryParams:    map[string]string{"q": "router01", "attr_field": "site.name", "attr_value": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
 						Device: &netbox.DcimDevice{
@@ -3903,7 +3903,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.interface",
 					objectID:       0,
-					query:          "GigabitEthernet0/0/0",
+					queryParams:    map[string]string{"q": "GigabitEthernet0/0/0", "attr_field": "device.name", "attr_value": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimInterfaceDataWrapper{
 						Interface: &netbox.DcimInterface{
@@ -3943,7 +3943,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.platform",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimPlatformDataWrapper{
 						Platform: nil,
@@ -3952,7 +3952,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.site",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
 						Site: &netbox.DcimSite{
@@ -3966,7 +3966,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.manufacturer",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
 						Manufacturer: &netbox.DcimManufacturer{
@@ -3979,7 +3979,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicetype",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
 						DeviceType: &netbox.DcimDeviceType{
@@ -3997,7 +3997,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicerole",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
 						DeviceRole: &netbox.DcimDeviceRole{
@@ -4011,7 +4011,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.device",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined", "attr_field": "site.name", "attr_value": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
 						Device: &netbox.DcimDevice{
@@ -4178,7 +4178,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.interface",
 					objectID:       0,
-					query:          "GigabitEthernet0/0/0",
+					queryParams:    map[string]string{"q": "GigabitEthernet0/0/0", "attr_field": "device.name", "attr_value": "router01"},
 					objectChangeID: 0,
 					object: &netbox.DcimInterfaceDataWrapper{
 						Interface: &netbox.DcimInterface{
@@ -4228,7 +4228,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.site",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
 						Site: &netbox.DcimSite{
@@ -4242,7 +4242,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.manufacturer",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
 						Manufacturer: &netbox.DcimManufacturer{
@@ -4255,7 +4255,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.platform",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimPlatformDataWrapper{
 						Platform: &netbox.DcimPlatform{
@@ -4273,7 +4273,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicetype",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
 						DeviceType: &netbox.DcimDeviceType{
@@ -4291,7 +4291,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicerole",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
 						DeviceRole: &netbox.DcimDeviceRole{
@@ -4305,7 +4305,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.device",
 					objectID:       0,
-					query:          "router01",
+					queryParams:    map[string]string{"q": "router01", "attr_field": "site.name", "attr_value": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
 						Device: &netbox.DcimDevice{
@@ -4438,7 +4438,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "ipam.ipaddress",
 					objectID:       0,
-					query:          "192.168.0.1/22",
+					queryParams:    map[string]string{"q": "192.168.0.1/22"},
 					objectChangeID: 0,
 					object: &netbox.IpamIPAddressDataWrapper{
 						IPAddress: nil,
@@ -4484,7 +4484,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.site",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
 						Site: &netbox.DcimSite{
@@ -4498,7 +4498,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.manufacturer",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
 						Manufacturer: &netbox.DcimManufacturer{
@@ -4511,7 +4511,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.platform",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimPlatformDataWrapper{
 						Platform: &netbox.DcimPlatform{
@@ -4529,7 +4529,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicetype",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
 						DeviceType: &netbox.DcimDeviceType{
@@ -4547,7 +4547,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicerole",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
 						DeviceRole: &netbox.DcimDeviceRole{
@@ -4561,7 +4561,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.device",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined", "attr_field": "site.name", "attr_value": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
 						Device: &netbox.DcimDevice{
@@ -4596,7 +4596,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.interface",
 					objectID:       0,
-					query:          "GigabitEthernet0/0/0",
+					queryParams:    map[string]string{"q": "GigabitEthernet0/0/0", "attr_field": "device.name", "attr_value": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimInterfaceDataWrapper{
 						Interface: &netbox.DcimInterface{
@@ -4646,7 +4646,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "ipam.ipaddress",
 					objectID:       0,
-					query:          "192.168.0.1/22",
+					queryParams:    map[string]string{"q": "192.168.0.1/22"},
 					objectChangeID: 0,
 					object: &netbox.IpamIPAddressDataWrapper{
 						IPAddress: nil,
@@ -4698,7 +4698,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.site",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
 						Site: &netbox.DcimSite{
@@ -4712,7 +4712,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.manufacturer",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
 						Manufacturer: &netbox.DcimManufacturer{
@@ -4725,7 +4725,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.platform",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimPlatformDataWrapper{
 						Platform: &netbox.DcimPlatform{
@@ -4743,7 +4743,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicetype",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
 						DeviceType: &netbox.DcimDeviceType{
@@ -4761,7 +4761,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicerole",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
 						DeviceRole: &netbox.DcimDeviceRole{
@@ -4775,7 +4775,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.device",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined", "attr_field": "site.name", "attr_value": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
 						Device: &netbox.DcimDevice{
@@ -4820,7 +4820,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.interface",
 					objectID:       0,
-					query:          "GigabitEthernet0/0/0",
+					queryParams:    map[string]string{"q": "GigabitEthernet0/0/0", "attr_field": "device.name", "attr_value": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimInterfaceDataWrapper{
 						Interface: nil,
@@ -4829,7 +4829,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "ipam.ipaddress",
 					objectID:       0,
-					query:          "192.168.0.1/22",
+					queryParams:    map[string]string{"q": "192.168.0.1/22"},
 					objectChangeID: 0,
 					object: &netbox.IpamIPAddressDataWrapper{
 						IPAddress: nil,
@@ -4928,7 +4928,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.site",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
 						Site: &netbox.DcimSite{
@@ -4942,7 +4942,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.manufacturer",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
 						Manufacturer: &netbox.DcimManufacturer{
@@ -4955,7 +4955,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.platform",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimPlatformDataWrapper{
 						Platform: &netbox.DcimPlatform{
@@ -4973,7 +4973,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicetype",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
 						DeviceType: &netbox.DcimDeviceType{
@@ -4991,7 +4991,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicerole",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
 						DeviceRole: &netbox.DcimDeviceRole{
@@ -5005,7 +5005,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.device",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined", "attr_field": "site.name", "attr_value": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
 						Device: &netbox.DcimDevice{
@@ -5050,7 +5050,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.interface",
 					objectID:       0,
-					query:          "GigabitEthernet1/0/1",
+					queryParams:    map[string]string{"q": "GigabitEthernet1/0/1", "attr_field": "device.name", "attr_value": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimInterfaceDataWrapper{
 						Interface: nil,
@@ -5059,7 +5059,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "ipam.ipaddress",
 					objectID:       0,
-					query:          "192.168.0.1/22",
+					queryParams:    map[string]string{"q": "192.168.0.1/22"},
 					objectChangeID: 0,
 					object: &netbox.IpamIPAddressDataWrapper{
 						IPAddress: &netbox.IpamIPAddress{
@@ -5207,7 +5207,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.site",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
 						Site: &netbox.DcimSite{
@@ -5221,7 +5221,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.manufacturer",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
 						Manufacturer: &netbox.DcimManufacturer{
@@ -5234,7 +5234,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.platform",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimPlatformDataWrapper{
 						Platform: &netbox.DcimPlatform{
@@ -5252,7 +5252,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicetype",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
 						DeviceType: &netbox.DcimDeviceType{
@@ -5270,7 +5270,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicerole",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
 						DeviceRole: &netbox.DcimDeviceRole{
@@ -5284,7 +5284,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.device",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined", "attr_field": "site.name", "attr_value": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
 						Device: &netbox.DcimDevice{
@@ -5329,7 +5329,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.interface",
 					objectID:       0,
-					query:          "GigabitEthernet1/0/1",
+					queryParams:    map[string]string{"q": "GigabitEthernet1/0/1", "attr_field": "device.name", "attr_value": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimInterfaceDataWrapper{
 						Interface: &netbox.DcimInterface{
@@ -5379,7 +5379,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "ipam.ipaddress",
 					objectID:       0,
-					query:          "192.168.0.1/22",
+					queryParams:    map[string]string{"q": "192.168.0.1/22"},
 					objectChangeID: 0,
 					object: &netbox.IpamIPAddressDataWrapper{
 						IPAddress: &netbox.IpamIPAddress{
@@ -5480,7 +5480,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.site",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
 						Site: &netbox.DcimSite{
@@ -5494,7 +5494,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.manufacturer",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
 						Manufacturer: &netbox.DcimManufacturer{
@@ -5507,7 +5507,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.platform",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimPlatformDataWrapper{
 						Platform: &netbox.DcimPlatform{
@@ -5525,7 +5525,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicetype",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
 						DeviceType: &netbox.DcimDeviceType{
@@ -5543,7 +5543,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.devicerole",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
 						DeviceRole: &netbox.DcimDeviceRole{
@@ -5557,7 +5557,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.device",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined", "attr_field": "site.name", "attr_value": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
 						Device: &netbox.DcimDevice{
@@ -5602,7 +5602,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.interface",
 					objectID:       0,
-					query:          "GigabitEthernet0/0/0",
+					queryParams:    map[string]string{"q": "GigabitEthernet0/0/0", "attr_field": "device.name", "attr_value": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimInterfaceDataWrapper{
 						Interface: &netbox.DcimInterface{
@@ -5652,7 +5652,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "ipam.ipaddress",
 					objectID:       0,
-					query:          "192.168.0.1/22",
+					queryParams:    map[string]string{"q": "192.168.0.1/22"},
 					objectChangeID: 0,
 					object: &netbox.IpamIPAddressDataWrapper{
 						IPAddress: &netbox.IpamIPAddress{
@@ -5729,7 +5729,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "ipam.ipaddress",
 					objectID:       0,
-					query:          "192.168.0.1/22",
+					queryParams:    map[string]string{"q": "192.168.0.1/22"},
 					objectChangeID: 0,
 					object: &netbox.IpamIPAddressDataWrapper{
 						IPAddress: &netbox.IpamIPAddress{
@@ -5807,7 +5807,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "ipam.ipaddress",
 					objectID:       0,
-					query:          "192.168.0.1/22",
+					queryParams:    map[string]string{"q": "192.168.0.1/22"},
 					objectChangeID: 0,
 					object: &netbox.IpamIPAddressDataWrapper{
 						IPAddress: &netbox.IpamIPAddress{
@@ -5921,7 +5921,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.site",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
 						Site: nil,
@@ -5930,7 +5930,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "ipam.prefix",
 					objectID:       0,
-					query:          "192.168.0.0/32",
+					queryParams:    map[string]string{"q": "192.168.0.0/32"},
 					objectChangeID: 0,
 					object: &netbox.IpamPrefixDataWrapper{
 						Prefix: nil,
@@ -5991,7 +5991,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.site",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
 						Site: &netbox.DcimSite{
@@ -6005,7 +6005,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "ipam.prefix",
 					objectID:       0,
-					query:          "192.168.0.0/32",
+					queryParams:    map[string]string{"q": "192.168.0.0/32"},
 					objectChangeID: 0,
 					object: &netbox.IpamPrefixDataWrapper{
 						Prefix: &netbox.IpamPrefix{
@@ -6045,7 +6045,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.site",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
 						Site: &netbox.DcimSite{
@@ -6059,7 +6059,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "ipam.prefix",
 					objectID:       0,
-					query:          "192.168.0.0/32",
+					queryParams:    map[string]string{"q": "192.168.0.0/32"},
 					objectChangeID: 0,
 					object: &netbox.IpamPrefixDataWrapper{
 						Prefix: &netbox.IpamPrefix{
@@ -6103,7 +6103,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.site",
 					objectID:       0,
-					query:          "undefined",
+					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
 						Site: &netbox.DcimSite{
@@ -6117,7 +6117,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "extras.tag",
 					objectID:       0,
-					query:          "tag 100",
+					queryParams:    map[string]string{"q": "tag 100"},
 					objectChangeID: 0,
 					object: &netbox.TagDataWrapper{
 						Tag: nil,
@@ -6126,7 +6126,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "ipam.prefix",
 					objectID:       0,
-					query:          "192.168.0.0/32",
+					queryParams:    map[string]string{"q": "192.168.0.0/32"},
 					objectChangeID: 0,
 					object: &netbox.IpamPrefixDataWrapper{
 						Prefix: &netbox.IpamPrefix{
@@ -6199,7 +6199,7 @@ func TestPrepare(t *testing.T) {
 				mockClient.EXPECT().RetrieveObjectState(context.Background(), netboxdiodeplugin.RetrieveObjectStateQueryParams{
 					ObjectType: m.objectType,
 					ObjectID:   m.objectID,
-					Query:      m.query,
+					Params:     m.queryParams,
 				}).Return(&netboxdiodeplugin.ObjectState{
 					ObjectID:       m.objectID,
 					ObjectType:     m.objectType,

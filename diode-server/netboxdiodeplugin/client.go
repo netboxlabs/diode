@@ -167,11 +167,9 @@ type ObjectState struct {
 
 // RetrieveObjectStateQueryParams represents the query parameters for retrieving the object state
 type RetrieveObjectStateQueryParams struct {
-	ObjectType     string
-	ObjectID       int
-	Query          string
-	AttributeField string
-	AttributeValue string
+	ObjectType string
+	ObjectID   int
+	Params     map[string]string
 }
 
 // RetrieveObjectState retrieves the object state
@@ -186,14 +184,8 @@ func (c *Client) RetrieveObjectState(ctx context.Context, params RetrieveObjectS
 	if params.ObjectID > 0 {
 		queryParams.Set("object_id", strconv.Itoa(params.ObjectID))
 	}
-	if len(params.Query) > 0 {
-		queryParams.Set("q", params.Query)
-	}
-	if len(params.AttributeField) > 0 {
-		queryParams.Set("attr_field", params.AttributeField)
-	}
-	if len(params.AttributeValue) > 0 {
-		queryParams.Set("attr_value", params.AttributeValue)
+	for k, v := range params.Params {
+		queryParams.Set(k, v)
 	}
 
 	endpointURL.RawQuery = queryParams.Encode()

@@ -125,7 +125,7 @@ func retrieveObjectState(netboxAPI netboxdiodeplugin.NetBoxAPI, change netbox.Co
 	params := netboxdiodeplugin.RetrieveObjectStateQueryParams{
 		ObjectID:   0,
 		ObjectType: change.DataType(),
-		Query:      change.QueryString(),
+		Params:     change.ObjectStateQueryParams(),
 	}
 	resp, err := netboxAPI.RetrieveObjectState(context.Background(), params)
 	if err != nil {

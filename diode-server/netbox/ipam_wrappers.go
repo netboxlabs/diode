@@ -117,6 +117,13 @@ func (dw *IpamIPAddressDataWrapper) QueryString() string {
 	return dw.IPAddress.Address
 }
 
+// ObjectStateQueryParams returns the query parameters needed to retrieve its object state
+func (dw *IpamIPAddressDataWrapper) ObjectStateQueryParams() map[string]string {
+	return map[string]string{
+		"q": dw.IPAddress.Address,
+	}
+}
+
 // ID returns the ID of the data
 func (dw *IpamIPAddressDataWrapper) ID() int {
 	return dw.IPAddress.ID
@@ -376,6 +383,13 @@ func (dw *IpamPrefixDataWrapper) DataType() string {
 // QueryString returns the query string needed to retrieve its object state
 func (dw *IpamPrefixDataWrapper) QueryString() string {
 	return dw.Prefix.Prefix
+}
+
+// ObjectStateQueryParams returns the query parameters needed to retrieve its object state
+func (dw *IpamPrefixDataWrapper) ObjectStateQueryParams() map[string]string {
+	return map[string]string{
+		"q": dw.Prefix.Prefix,
+	}
 }
 
 // ID returns the ID of the data
