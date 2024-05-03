@@ -6196,7 +6196,11 @@ func TestPrepare(t *testing.T) {
 			mockClient := mocks.NewNetBoxAPI(t)
 
 			for _, m := range tt.retrieveObjectStates {
-				mockClient.EXPECT().RetrieveObjectState(context.Background(), m.objectType, m.objectID, m.query).Return(&netboxdiodeplugin.ObjectState{
+				mockClient.EXPECT().RetrieveObjectState(context.Background(), netboxdiodeplugin.RetrieveObjectStateQueryParams{
+					ObjectType: m.objectType,
+					ObjectID:   m.objectID,
+					Query:      m.query,
+				}).Return(&netboxdiodeplugin.ObjectState{
 					ObjectID:       m.objectID,
 					ObjectType:     m.objectType,
 					ObjectChangeID: m.objectChangeID,

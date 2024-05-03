@@ -81,7 +81,7 @@ func (rt *apiRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) 
 // NetBoxAPI is the interface for the NetBox Diode plugin API
 type NetBoxAPI interface {
 	// RetrieveObjectState retrieves the object state
-	RetrieveObjectState(context.Context, string, int, string) (*ObjectState, error)
+	RetrieveObjectState(context.Context, RetrieveObjectStateQueryParams) (*ObjectState, error)
 
 	// ApplyChangeSet applies a change set
 	ApplyChangeSet(context.Context, ChangeSetRequest) (*ChangeSetResponse, error)
@@ -165,21 +165,37 @@ type ObjectState struct {
 	Object         netbox.ComparableData `json:"object"`
 }
 
+// RetrieveObjectStateQueryParams represents the query parameters for retrieving the object state
+type RetrieveObjectStateQueryParams struct {
+	ObjectType     string
+	ObjectID       int
+	Query          string
+	AttributeField string
+	AttributeValue string
+}
+
 // RetrieveObjectState retrieves the object state
-func (c *Client) RetrieveObjectState(ctx context.Context, objectType string, objectID int, query string) (*ObjectState, error) {
+func (c *Client) RetrieveObjectState(ctx context.Context, params RetrieveObjectStateQueryParams) (*ObjectState, error) {
 	endpointURL, err := url.Parse(fmt.Sprintf("%s/object-state/", c.baseURL.String()))
 	if err != nil {
 		return nil, err
 	}
 	queryParams := endpointURL.Query()
 
-	queryParams.Set("object_type", objectType)
-	if objectID > 0 {
-		queryParams.Set("object_id", strconv.Itoa(objectID))
+	queryParams.Set("object_type", params.ObjectType)
+	if params.ObjectID > 0 {
+		queryParams.Set("object_id", strconv.Itoa(params.ObjectID))
 	}
-	if len(query) > 0 {
-		queryParams.Set("q", query)
+	if len(params.Query) > 0 {
+		queryParams.Set("q", params.Query)
 	}
+	if len(params.AttributeField) > 0 {
+		queryParams.Set("attr_field", params.AttributeField)
+	}
+	if len(params.AttributeValue) > 0 {
+		queryParams.Set("attr_value", params.AttributeValue)
+	}
+
 	endpointURL.RawQuery = queryParams.Encode()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpointURL.String(), nil)
@@ -207,7 +223,7 @@ func (c *Client) RetrieveObjectState(ctx context.Context, objectType string, obj
 		return nil, err
 	}
 
-	objState, err := extractObjectState(&objStateRaw, objectType)
+	objState, err := extractObjectState(&objStateRaw, params.ObjectType)
 	if err != nil {
 		return nil, err
 	}

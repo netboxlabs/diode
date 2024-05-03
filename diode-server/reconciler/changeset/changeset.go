@@ -122,7 +122,12 @@ func Prepare(entity IngestEntity, netboxAPI netboxdiodeplugin.NetBoxAPI) (*Chang
 }
 
 func retrieveObjectState(netboxAPI netboxdiodeplugin.NetBoxAPI, change netbox.ComparableData) (netbox.ComparableData, error) {
-	resp, err := netboxAPI.RetrieveObjectState(context.Background(), change.DataType(), 0, change.QueryString())
+	params := netboxdiodeplugin.RetrieveObjectStateQueryParams{
+		ObjectID:   0,
+		ObjectType: change.DataType(),
+		Query:      change.QueryString(),
+	}
+	resp, err := netboxAPI.RetrieveObjectState(context.Background(), params)
 	if err != nil {
 		return nil, err
 	}

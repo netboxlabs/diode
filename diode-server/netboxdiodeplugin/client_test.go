@@ -111,9 +111,7 @@ func TestNewClient(t *testing.T) {
 func TestRetrieveObjectState(t *testing.T) {
 	tests := []struct {
 		name               string
-		objectType         string
-		objectID           int
-		query              string
+		params             netboxdiodeplugin.RetrieveObjectStateQueryParams
 		apiKey             string
 		mockServerResponse string
 		response           any
@@ -121,8 +119,7 @@ func TestRetrieveObjectState(t *testing.T) {
 	}{
 		{
 			name:               "valid response for DCIM device",
-			objectType:         netbox.DcimDeviceObjectType,
-			objectID:           1,
+			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.DcimDeviceObjectType, ObjectID: 1},
 			mockServerResponse: `{"object_type":"dcim.device","object_change_id":1,"object":{"id":1,"name":"test"}}`,
 			apiKey:             "foobar",
 			response: &netboxdiodeplugin.ObjectState{
@@ -139,9 +136,7 @@ func TestRetrieveObjectState(t *testing.T) {
 		},
 		{
 			name:               "valid response for DCIM site with query",
-			objectType:         netbox.DcimSiteObjectType,
-			objectID:           0,
-			query:              "site 01",
+			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.DcimSiteObjectType, Query: "site 01"},
 			mockServerResponse: `{"object_type":"dcim.site","object_change_id":1,"object":{"id":1,"name":"site 01", "slug": "site-01"}}`,
 			apiKey:             "foobar",
 			response: &netboxdiodeplugin.ObjectState{
@@ -158,9 +153,34 @@ func TestRetrieveObjectState(t *testing.T) {
 			shouldError: false,
 		},
 		{
+			name: "valid response for DCIM device with query and additional attributes",
+			params: netboxdiodeplugin.RetrieveObjectStateQueryParams{
+				ObjectType:     netbox.DcimDeviceObjectType,
+				Query:          "dev1",
+				ObjectID:       1,
+				AttributeField: "site.id",
+				AttributeValue: "2",
+			},
+			mockServerResponse: `{"object_type":"dcim.device","object_change_id":1,"object":{"id":1,"name":"dev1", "site": {"id": 2}}}`,
+			apiKey:             "foobar",
+			response: &netboxdiodeplugin.ObjectState{
+				ObjectType:     netbox.DcimDeviceObjectType,
+				ObjectChangeID: 1,
+				Object: &netbox.DcimDeviceDataWrapper{
+					Device: &netbox.DcimDevice{
+						ID:   1,
+						Name: "dev1",
+						Site: &netbox.DcimSite{
+							ID: 2,
+						},
+					},
+				},
+			},
+			shouldError: false,
+		},
+		{
 			name:               "response for invalid object - empty object",
-			objectType:         netbox.DcimDeviceObjectType,
-			objectID:           1,
+			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.DcimDeviceObjectType, ObjectID: 1},
 			mockServerResponse: `{"object_type":"dcim.device","object_change_id":1,"object":{"InvalidObjectType": {"id":1,"name":"test"}}}`,
 			apiKey:             "foobar",
 			response: &netboxdiodeplugin.ObjectState{
@@ -174,8 +194,7 @@ func TestRetrieveObjectState(t *testing.T) {
 		},
 		{
 			name:               "invalid server response",
-			objectType:         netbox.DcimDeviceObjectType,
-			objectID:           100,
+			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.DcimDeviceObjectType, ObjectID: 1},
 			apiKey:             "barfoo",
 			mockServerResponse: ``,
 			shouldError:        true,
@@ -191,10 +210,19 @@ func TestRetrieveObjectState(t *testing.T) {
 			handler := func(w http.ResponseWriter, r *http.Request) {
 				assert.Equal(t, r.Method, http.MethodGet)
 				assert.Equal(t, r.URL.Path, "/api/diode/object-state/")
-				assert.Equal(t, r.URL.Query().Get("object_type"), tt.objectType)
+				assert.Equal(t, r.URL.Query().Get("object_type"), tt.params.ObjectType)
 				var objectID string
-				if tt.objectID > 0 {
-					objectID = strconv.Itoa(tt.objectID)
+				if tt.params.ObjectID > 0 {
+					objectID = strconv.Itoa(tt.params.ObjectID)
+				}
+				if tt.params.Query != "" {
+					assert.Equal(t, r.URL.Query().Get("q"), tt.params.Query)
+				}
+				if tt.params.AttributeField != "" {
+					assert.Equal(t, r.URL.Query().Get("attr_field"), tt.params.AttributeField)
+				}
+				if tt.params.AttributeValue != "" {
+					assert.Equal(t, r.URL.Query().Get("attr_value"), tt.params.AttributeValue)
 				}
 				assert.Equal(t, r.URL.Query().Get("object_id"), objectID)
 				assert.Equal(t, r.Header.Get("Authorization"), fmt.Sprintf("Token %s", tt.apiKey))
@@ -210,7 +238,7 @@ func TestRetrieveObjectState(t *testing.T) {
 
 			client, err := netboxdiodeplugin.NewClient(logger, tt.apiKey)
 			require.NoError(t, err)
-			resp, err := client.RetrieveObjectState(context.Background(), tt.objectType, tt.objectID, tt.query)
+			resp, err := client.RetrieveObjectState(context.Background(), tt.params)
 			if tt.shouldError {
 				require.Error(t, err)
 				return
