@@ -114,9 +114,23 @@ func (dw *IpamIPAddressDataWrapper) DataType() string {
 
 // ObjectStateQueryParams returns the query parameters needed to retrieve its object state
 func (dw *IpamIPAddressDataWrapper) ObjectStateQueryParams() map[string]string {
-	return map[string]string{
+	params := map[string]string{
 		"q": dw.IPAddress.Address,
 	}
+	switch dw.IPAddress.AssignedObject.(type) {
+	case *IPAddressInterface:
+		ao := dw.IPAddress.AssignedObject.(*IPAddressInterface).Interface
+		if ao != nil {
+			params["interface__name"] = ao.Name
+			if ao.Device != nil {
+				params["interface__device__name"] = ao.Device.Name
+				if ao.Device.Site != nil {
+					params["interface__device__site__name"] = ao.Device.Site.Name
+				}
+			}
+		}
+	}
+	return params
 }
 
 // ID returns the ID of the data
@@ -127,6 +141,26 @@ func (dw *IpamIPAddressDataWrapper) ID() int {
 // IsPlaceholder returns true if the data is a placeholder
 func (dw *IpamIPAddressDataWrapper) IsPlaceholder() bool {
 	return dw.placeholder
+}
+
+func (dw *IpamIPAddressDataWrapper) hash() string {
+	var interfaceName, deviceName, siteName string
+	if dw.IPAddress.AssignedObject != nil {
+		switch dw.IPAddress.AssignedObject.(type) {
+		case *IPAddressInterface:
+			ao := dw.IPAddress.AssignedObject.(*IPAddressInterface).Interface
+			if ao != nil {
+				interfaceName = ao.Name
+				if ao.Device != nil {
+					deviceName = ao.Device.Name
+					if ao.Device.Site != nil {
+						siteName = ao.Device.Site.Name
+					}
+				}
+			}
+		}
+	}
+	return slug.Make(fmt.Sprintf("%s-%s-%s-%s", dw.IPAddress.Address, interfaceName, deviceName, siteName))
 }
 
 // Patch creates patches between the actual, intended and current data
@@ -155,7 +189,7 @@ func (dw *IpamIPAddressDataWrapper) Patch(cmp ComparableData, intendedNestedObje
 
 	reconciliationRequired := true
 
-	if intended != nil {
+	if intended != nil && dw.hash() == intended.hash() {
 		currentNestedObjectsMap := make(map[string]ComparableData)
 		currentNestedObjects, err := intended.NestedObjects()
 		if err != nil {
@@ -278,6 +312,11 @@ func (dw *IpamIPAddressDataWrapper) TrimAssignedObject() {
 		dw.IPAddress.AssignedObject.(*IPAddressInterface).Interface = &DcimInterface{
 			ID:   dw.IPAddress.AssignedObject.(*IPAddressInterface).Interface.ID,
 			Name: dw.IPAddress.AssignedObject.(*IPAddressInterface).Interface.Name,
+			Device: &DcimDevice{
+				ID:   dw.IPAddress.AssignedObject.(*IPAddressInterface).Interface.Device.ID,
+				Name: dw.IPAddress.AssignedObject.(*IPAddressInterface).Interface.Device.Name,
+				Site: dw.IPAddress.AssignedObject.(*IPAddressInterface).Interface.Device.Site,
+			},
 		}
 	}
 }

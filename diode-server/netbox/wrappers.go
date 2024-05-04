@@ -170,8 +170,7 @@ func (dw *DcimDeviceDataWrapper) ObjectStateQueryParams() map[string]string {
 		"q": dw.Device.Name,
 	}
 	if dw.Device.Site != nil {
-		params["attr_name"] = "site.name"
-		params["attr_value"] = dw.Device.Site.Name
+		params["site__name"] = dw.Device.Site.Name
 	}
 	return params
 }
@@ -865,8 +864,11 @@ func (dw *DcimInterfaceDataWrapper) ObjectStateQueryParams() map[string]string {
 		"q": dw.Interface.Name,
 	}
 	if dw.Interface.Device != nil {
-		params["attr_name"] = "device.name"
-		params["attr_value"] = dw.Interface.Device.Name
+		params["device__name"] = dw.Interface.Device.Name
+
+		if dw.Interface.Device.Site != nil {
+			params["device__site__name"] = dw.Interface.Device.Site.Name
+		}
 	}
 	return params
 }
@@ -879,6 +881,17 @@ func (dw *DcimInterfaceDataWrapper) ID() int {
 // IsPlaceholder returns true if the data is a placeholder
 func (dw *DcimInterfaceDataWrapper) IsPlaceholder() bool {
 	return dw.placeholder
+}
+
+func (dw *DcimInterfaceDataWrapper) hash() string {
+	var deviceName, siteName string
+	if dw.Interface.Device != nil {
+		deviceName = dw.Interface.Device.Name
+		if dw.Interface.Device.Site != nil {
+			siteName = dw.Interface.Device.Site.Name
+		}
+	}
+	return slug.Make(fmt.Sprintf("%s-%s-%s", dw.Interface.Name, deviceName, siteName))
 }
 
 // Patch creates patches between the actual, intended and current data
@@ -898,7 +911,7 @@ func (dw *DcimInterfaceDataWrapper) Patch(cmp ComparableData, intendedNestedObje
 
 	reconciliationRequired := true
 
-	if intended != nil {
+	if intended != nil && dw.hash() == intended.hash() {
 		currentNestedObjectsMap := make(map[string]ComparableData)
 		currentNestedObjects, err := intended.NestedObjects()
 		if err != nil {
