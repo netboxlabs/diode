@@ -1310,7 +1310,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.device",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "router01", "attr_name": "site.name", "attr_value": "undefined"},
+					queryParams:    map[string]string{"q": "router01", "site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
 						Device: nil,
@@ -1519,7 +1519,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.device",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "router01", "attr_name": "site.name", "attr_value": "undefined"},
+					queryParams:    map[string]string{"q": "router01", "site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
 						Device: &netbox.DcimDevice{
@@ -1662,7 +1662,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.device",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "router01", "attr_name": "site.name", "attr_value": "undefined"},
+					queryParams:    map[string]string{"q": "router01", "site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
 						Device: &netbox.DcimDevice{
@@ -1789,7 +1789,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.device",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "router01", "attr_name": "site.name", "attr_value": "Site A"},
+					queryParams:    map[string]string{"q": "router01", "site__name": "Site A"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
 						Device: nil,
@@ -2048,7 +2048,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.device",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "router01", "attr_name": "site.name", "attr_value": "Site A"},
+					queryParams:    map[string]string{"q": "router01", "site__name": "Site A"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
 						Device: &netbox.DcimDevice{
@@ -2266,7 +2266,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.device",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "router01", "attr_name": "site.name", "attr_value": "Site A"},
+					queryParams:    map[string]string{"q": "router01", "site__name": "Site A"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
 						Device: nil,
@@ -2473,7 +2473,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.device",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "router01", "attr_name": "site.name", "attr_value": "Site A"},
+					queryParams:    map[string]string{"q": "router01", "site__name": "Site A"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
 						Device: &netbox.DcimDevice{
@@ -2711,7 +2711,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.device",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "router01", "attr_name": "site.name", "attr_value": "Site A"},
+					queryParams:    map[string]string{"q": "router01", "site__name": "Site A"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
 						Device: &netbox.DcimDevice{
@@ -2900,7 +2900,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.device",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "router01", "attr_name": "site.name", "attr_value": "undefined"},
+					queryParams:    map[string]string{"q": "router01", "site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
 						Device: &netbox.DcimDevice{
@@ -3132,7 +3132,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.device",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "router01", "attr_name": "site.name", "attr_value": "Site B"},
+					queryParams:    map[string]string{"q": "router01", "site__name": "Site B"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
 						Device: &netbox.DcimDevice{
@@ -3502,7 +3502,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.interface",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "GigabitEthernet0/0/0", "attr_name": "device.name", "attr_value": "undefined"},
+					queryParams:    map[string]string{"q": "GigabitEthernet0/0/0", "device__name": "undefined", "device__site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimInterfaceDataWrapper{
 						Interface: nil,
@@ -3588,7 +3588,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.device",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined", "attr_name": "site.name", "attr_value": "undefined"},
+					queryParams:    map[string]string{"q": "undefined", "site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
 						Device: nil,
@@ -3711,7 +3711,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.interface",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "GigabitEthernet0/0/0", "attr_name": "device.name", "attr_value": "router01"},
+					queryParams:    map[string]string{"q": "GigabitEthernet0/0/0", "device__name": "router01", "device__site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimInterfaceDataWrapper{
 						Interface: &netbox.DcimInterface{
@@ -3838,7 +3838,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.device",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "router01", "attr_name": "site.name", "attr_value": "undefined"},
+					queryParams:    map[string]string{"q": "router01", "site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
 						Device: &netbox.DcimDevice{
@@ -3903,7 +3903,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.interface",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "GigabitEthernet0/0/0", "attr_name": "device.name", "attr_value": "undefined"},
+					queryParams:    map[string]string{"q": "GigabitEthernet0/0/0", "device__name": "undefined", "device__site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimInterfaceDataWrapper{
 						Interface: &netbox.DcimInterface{
@@ -4011,7 +4011,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.device",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined", "attr_name": "site.name", "attr_value": "undefined"},
+					queryParams:    map[string]string{"q": "undefined", "site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
 						Device: &netbox.DcimDevice{
@@ -4178,7 +4178,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.interface",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "GigabitEthernet0/0/0", "attr_name": "device.name", "attr_value": "router01"},
+					queryParams:    map[string]string{"q": "GigabitEthernet0/0/0", "device__name": "router01", "device__site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimInterfaceDataWrapper{
 						Interface: &netbox.DcimInterface{
@@ -4305,7 +4305,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.device",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "router01", "attr_name": "site.name", "attr_value": "undefined"},
+					queryParams:    map[string]string{"q": "router01", "site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
 						Device: &netbox.DcimDevice{
@@ -4561,7 +4561,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.device",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined", "attr_name": "site.name", "attr_value": "undefined"},
+					queryParams:    map[string]string{"q": "undefined", "site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
 						Device: &netbox.DcimDevice{
@@ -4596,7 +4596,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.interface",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "GigabitEthernet0/0/0", "attr_name": "device.name", "attr_value": "undefined"},
+					queryParams:    map[string]string{"q": "GigabitEthernet0/0/0", "device__name": "undefined", "device__site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimInterfaceDataWrapper{
 						Interface: &netbox.DcimInterface{
@@ -4646,7 +4646,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "ipam.ipaddress",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "192.168.0.1/22"},
+					queryParams:    map[string]string{"q": "192.168.0.1/22", "interface__name": "GigabitEthernet0/0/0", "interface__device__name": "undefined", "interface__device__site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.IpamIPAddressDataWrapper{
 						IPAddress: nil,
@@ -4669,6 +4669,16 @@ func TestPrepare(t *testing.T) {
 								Interface: &netbox.DcimInterface{
 									ID:   1,
 									Name: "GigabitEthernet0/0/0",
+									Device: &netbox.DcimDevice{
+										ID:   1,
+										Name: "undefined",
+										Site: &netbox.DcimSite{
+											ID:     1,
+											Name:   "undefined",
+											Slug:   "undefined",
+											Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+										},
+									},
 								},
 							},
 						},
@@ -4775,7 +4785,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.device",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined", "attr_name": "site.name", "attr_value": "undefined"},
+					queryParams:    map[string]string{"q": "undefined", "site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
 						Device: &netbox.DcimDevice{
@@ -4820,7 +4830,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.interface",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "GigabitEthernet0/0/0", "attr_name": "device.name", "attr_value": "undefined"},
+					queryParams:    map[string]string{"q": "GigabitEthernet0/0/0", "device__name": "undefined", "device__site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimInterfaceDataWrapper{
 						Interface: nil,
@@ -4829,7 +4839,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "ipam.ipaddress",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "192.168.0.1/22"},
+					queryParams:    map[string]string{"q": "192.168.0.1/22", "interface__name": "GigabitEthernet0/0/0", "interface__device__name": "undefined", "interface__device__site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.IpamIPAddressDataWrapper{
 						IPAddress: nil,
@@ -4899,6 +4909,16 @@ func TestPrepare(t *testing.T) {
 							AssignedObject: &netbox.IPAddressInterface{
 								Interface: &netbox.DcimInterface{
 									Name: "GigabitEthernet0/0/0",
+									Device: &netbox.DcimDevice{
+										ID:   1,
+										Name: "undefined",
+										Site: &netbox.DcimSite{
+											ID:     1,
+											Name:   "undefined",
+											Slug:   "undefined",
+											Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+										},
+									},
 								},
 							},
 						},
@@ -4908,7 +4928,7 @@ func TestPrepare(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "[P14] ingest ipam.ipaddress with address and a new interface - existing IP address found - create an interface and update IP address",
+			name: "[P14] ingest ipam.ipaddress with address and a new interface - IP address found assigned to a different interface - create the interface and the IP address",
 			rawIngestEntity: []byte(`{
 				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				"data_type": "ipam.ipaddress",
@@ -5005,7 +5025,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.device",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined", "attr_name": "site.name", "attr_value": "undefined"},
+					queryParams:    map[string]string{"q": "undefined", "site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
 						Device: &netbox.DcimDevice{
@@ -5050,7 +5070,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.interface",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "GigabitEthernet1/0/1", "attr_name": "device.name", "attr_value": "undefined"},
+					queryParams:    map[string]string{"q": "GigabitEthernet1/0/1", "device__name": "undefined", "device__site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimInterfaceDataWrapper{
 						Interface: nil,
@@ -5059,7 +5079,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "ipam.ipaddress",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "192.168.0.1/22"},
+					queryParams:    map[string]string{"q": "192.168.0.1/22", "interface__name": "GigabitEthernet1/0/1", "interface__device__name": "undefined", "interface__device__site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.IpamIPAddressDataWrapper{
 						IPAddress: &netbox.IpamIPAddress{
@@ -5167,17 +5187,26 @@ func TestPrepare(t *testing.T) {
 					},
 					{
 						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
-						ChangeType:    changeset.ChangeTypeUpdate,
+						ChangeType:    changeset.ChangeTypeCreate,
 						ObjectType:    "ipam.ipaddress",
-						ObjectID:      intPtr(1),
+						ObjectID:      nil,
 						ObjectVersion: nil,
 						Data: &netbox.IpamIPAddress{
-							ID:      1,
 							Address: "192.168.0.1/22",
 							Status:  &netbox.DefaultIPAddressStatus,
 							AssignedObject: &netbox.IPAddressInterface{
 								Interface: &netbox.DcimInterface{
 									Name: "GigabitEthernet1/0/1",
+									Device: &netbox.DcimDevice{
+										ID:   1,
+										Name: "undefined",
+										Site: &netbox.DcimSite{
+											ID:     1,
+											Name:   "undefined",
+											Slug:   "undefined",
+											Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+										},
+									},
 								},
 							},
 						},
@@ -5187,7 +5216,7 @@ func TestPrepare(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "[P14] ingest ipam.ipaddress with address and a different interface of the same device - existing IP address found - update IP address with a new assigned object (interface)",
+			name: "[P14] ingest ipam.ipaddress with assigned interface - existing IP address found assigned a different device - create IP address with a new assigned object (interface)",
 			rawIngestEntity: []byte(`{
 				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				"data_type": "ipam.ipaddress",
@@ -5284,7 +5313,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.device",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined", "attr_name": "site.name", "attr_value": "undefined"},
+					queryParams:    map[string]string{"q": "undefined", "site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
 						Device: &netbox.DcimDevice{
@@ -5329,7 +5358,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.interface",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "GigabitEthernet1/0/1", "attr_name": "device.name", "attr_value": "undefined"},
+					queryParams:    map[string]string{"q": "GigabitEthernet1/0/1", "device__name": "undefined", "device__site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimInterfaceDataWrapper{
 						Interface: &netbox.DcimInterface{
@@ -5379,7 +5408,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "ipam.ipaddress",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "192.168.0.1/22"},
+					queryParams:    map[string]string{"q": "192.168.0.1/22", "interface__name": "GigabitEthernet1/0/1", "interface__device__name": "undefined", "interface__device__site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.IpamIPAddressDataWrapper{
 						IPAddress: &netbox.IpamIPAddress{
@@ -5439,18 +5468,27 @@ func TestPrepare(t *testing.T) {
 				ChangeSet: []changeset.Change{
 					{
 						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
-						ChangeType:    changeset.ChangeTypeUpdate,
+						ChangeType:    changeset.ChangeTypeCreate,
 						ObjectType:    "ipam.ipaddress",
-						ObjectID:      intPtr(1),
+						ObjectID:      nil,
 						ObjectVersion: nil,
 						Data: &netbox.IpamIPAddress{
-							ID:      1,
 							Address: "192.168.0.1/22",
 							Status:  &netbox.DefaultIPAddressStatus,
 							AssignedObject: &netbox.IPAddressInterface{
 								Interface: &netbox.DcimInterface{
 									ID:   2,
 									Name: "GigabitEthernet1/0/1",
+									Device: &netbox.DcimDevice{
+										ID:   1,
+										Name: "undefined",
+										Site: &netbox.DcimSite{
+											ID:     1,
+											Name:   "undefined",
+											Slug:   "undefined",
+											Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+										},
+									},
 								},
 							},
 						},
@@ -5557,7 +5595,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.device",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined", "attr_name": "site.name", "attr_value": "undefined"},
+					queryParams:    map[string]string{"q": "undefined", "site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
 						Device: &netbox.DcimDevice{
@@ -5602,7 +5640,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "dcim.interface",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "GigabitEthernet0/0/0", "attr_name": "device.name", "attr_value": "undefined"},
+					queryParams:    map[string]string{"q": "GigabitEthernet0/0/0", "device__name": "undefined", "device__site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimInterfaceDataWrapper{
 						Interface: &netbox.DcimInterface{
@@ -5652,7 +5690,7 @@ func TestPrepare(t *testing.T) {
 				{
 					objectType:     "ipam.ipaddress",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "192.168.0.1/22"},
+					queryParams:    map[string]string{"q": "192.168.0.1/22", "interface__name": "GigabitEthernet0/0/0", "interface__device__name": "undefined", "interface__device__site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.IpamIPAddressDataWrapper{
 						IPAddress: &netbox.IpamIPAddress{
@@ -5714,7 +5752,7 @@ func TestPrepare(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "[P14] ingest ipam.ipaddress with address - existing IP address found with interface assigned - no update needed",
+			name: "[P14] ingest ipam.ipaddress with address only - existing IP address found without interface assigned - no update needed",
 			rawIngestEntity: []byte(`{
 				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				"data_type": "ipam.ipaddress",
@@ -5736,50 +5774,6 @@ func TestPrepare(t *testing.T) {
 							ID:      1,
 							Address: "192.168.0.1/22",
 							Status:  &netbox.DefaultIPAddressStatus,
-							AssignedObject: &netbox.IPAddressInterface{
-								Interface: &netbox.DcimInterface{
-									ID:   1,
-									Name: "GigabitEthernet0/0/0",
-									Type: strPtr(netbox.DefaultInterfaceType),
-									Device: &netbox.DcimDevice{
-										ID:   1,
-										Name: "undefined",
-										Site: &netbox.DcimSite{
-											ID:     1,
-											Name:   "undefined",
-											Slug:   "undefined",
-											Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-										},
-										DeviceType: &netbox.DcimDeviceType{
-											ID:    1,
-											Model: "undefined",
-											Slug:  "undefined",
-											Manufacturer: &netbox.DcimManufacturer{
-												ID:   1,
-												Name: "undefined",
-												Slug: "undefined",
-											},
-										},
-										Role: &netbox.DcimDeviceRole{
-											ID:    1,
-											Name:  "undefined",
-											Slug:  "undefined",
-											Color: strPtr("000000"),
-										},
-										Platform: &netbox.DcimPlatform{
-											ID:   1,
-											Name: "undefined",
-											Slug: "undefined",
-											Manufacturer: &netbox.DcimManufacturer{
-												ID:   1,
-												Name: "undefined",
-												Slug: "undefined",
-											},
-										},
-										Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
-									},
-								},
-							},
 						},
 					},
 				},
@@ -5798,16 +5792,193 @@ func TestPrepare(t *testing.T) {
 				"entity": {
 					"IpAddress": {
 						"address": "192.168.0.1/22",
-						"description": "new description"
+						"description": "new description",
+						"AssignedObject": {
+							"Interface": {
+								"name": "GigabitEthernet0/0/0"
+							}
+						}
 					}
 				},
 				"state": 0
 			}`),
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
+					objectType:     "dcim.site",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "undefined"},
+					objectChangeID: 0,
+					object: &netbox.DcimSiteDataWrapper{
+						Site: &netbox.DcimSite{
+							ID:     1,
+							Name:   "undefined",
+							Slug:   "undefined",
+							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						},
+					},
+				},
+				{
+					objectType:     "dcim.manufacturer",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "undefined"},
+					objectChangeID: 0,
+					object: &netbox.DcimManufacturerDataWrapper{
+						Manufacturer: &netbox.DcimManufacturer{
+							ID:   1,
+							Name: "undefined",
+							Slug: "undefined",
+						},
+					},
+				},
+				{
+					objectType:     "dcim.platform",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "undefined"},
+					objectChangeID: 0,
+					object: &netbox.DcimPlatformDataWrapper{
+						Platform: &netbox.DcimPlatform{
+							ID:   1,
+							Name: "undefined",
+							Slug: "undefined",
+							Manufacturer: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+							},
+						},
+					},
+				},
+				{
+					objectType:     "dcim.devicetype",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "undefined"},
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceTypeDataWrapper{
+						DeviceType: &netbox.DcimDeviceType{
+							ID:    1,
+							Model: "undefined",
+							Slug:  "undefined",
+							Manufacturer: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+							},
+						},
+					},
+				},
+				{
+					objectType:     "dcim.devicerole",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "undefined"},
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceRoleDataWrapper{
+						DeviceRole: &netbox.DcimDeviceRole{
+							ID:    1,
+							Name:  "undefined",
+							Slug:  "undefined",
+							Color: strPtr("000000"),
+						},
+					},
+				},
+				{
+					objectType:     "dcim.device",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "undefined", "site__name": "undefined"},
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceDataWrapper{
+						Device: &netbox.DcimDevice{
+							ID:   1,
+							Name: "undefined",
+							Site: &netbox.DcimSite{
+								ID:     1,
+								Name:   "undefined",
+								Slug:   "undefined",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
+							DeviceType: &netbox.DcimDeviceType{
+								ID:    1,
+								Model: "undefined",
+								Slug:  "undefined",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
+							},
+							Role: &netbox.DcimDeviceRole{
+								ID:    1,
+								Name:  "undefined",
+								Slug:  "undefined",
+								Color: strPtr("000000"),
+							},
+							Platform: &netbox.DcimPlatform{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
+							},
+							Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+						},
+					},
+				},
+				{
+					objectType:     "dcim.interface",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "GigabitEthernet0/0/0", "device__name": "undefined", "device__site__name": "undefined"},
+					objectChangeID: 0,
+					object: &netbox.DcimInterfaceDataWrapper{
+						Interface: &netbox.DcimInterface{
+							ID:   1,
+							Name: "GigabitEthernet0/0/0",
+							Type: strPtr(netbox.DefaultInterfaceType),
+							Device: &netbox.DcimDevice{
+								ID:   1,
+								Name: "undefined",
+								Site: &netbox.DcimSite{
+									ID:     1,
+									Name:   "undefined",
+									Slug:   "undefined",
+									Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+								},
+								DeviceType: &netbox.DcimDeviceType{
+									ID:    1,
+									Model: "undefined",
+									Slug:  "undefined",
+									Manufacturer: &netbox.DcimManufacturer{
+										ID:   1,
+										Name: "undefined",
+										Slug: "undefined",
+									},
+								},
+								Role: &netbox.DcimDeviceRole{
+									ID:    1,
+									Name:  "undefined",
+									Slug:  "undefined",
+									Color: strPtr("000000"),
+								},
+								Platform: &netbox.DcimPlatform{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+									Manufacturer: &netbox.DcimManufacturer{
+										ID:   1,
+										Name: "undefined",
+										Slug: "undefined",
+									},
+								},
+								Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+							},
+						},
+					},
+				},
+				{
 					objectType:     "ipam.ipaddress",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "192.168.0.1/22"},
+					queryParams:    map[string]string{"q": "192.168.0.1/22", "interface__name": "GigabitEthernet0/0/0", "interface__device__name": "undefined", "interface__device__site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.IpamIPAddressDataWrapper{
 						IPAddress: &netbox.IpamIPAddress{
@@ -5880,6 +6051,16 @@ func TestPrepare(t *testing.T) {
 								Interface: &netbox.DcimInterface{
 									ID:   1,
 									Name: "GigabitEthernet0/0/0",
+									Device: &netbox.DcimDevice{
+										ID:   1,
+										Name: "undefined",
+										Site: &netbox.DcimSite{
+											ID:     1,
+											Name:   "undefined",
+											Slug:   "undefined",
+											Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+										},
+									},
 								},
 							},
 						},
