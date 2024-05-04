@@ -27,6 +27,15 @@ class ObjectStateView(views.APIView):
 
     permission_classes = [IsAuthenticated, IsDiodeReader]
 
+    def _get_lookups(self, object_type_model):
+        if object_type_model == "ipaddress":
+            return ("interface", "interface__device", "interface__device__site")
+        elif object_type_model == "interface":
+            return ("device", "device__site")
+        elif object_type_model == "device":
+            return ("site",)
+        return ()
+
     def get(self, request, *args, **kwargs):
         """
         Return a JSON with object_type, object_change_id, and object.
@@ -38,9 +47,6 @@ class ObjectStateView(views.APIView):
         Lookup is iexact
         """
         object_type = self.request.query_params.get("object_type", None)
-
-        attr_name = self.request.query_params.get("attr_name", None)
-        attr_value = self.request.query_params.get("attr_value", None)
 
         if not object_type:
             raise ValidationError("object_type parameter is required")
@@ -72,32 +78,26 @@ class ObjectStateView(views.APIView):
                 id__in=object_id_in_cached_value
             )
 
-            if attr_name and attr_value:
-                query_filter = {f"{attr_name}__{lookup}": attr_value}
+            additional_attributes = {}
+            for attr in self.request.query_params:
+                if attr not in ["object_type", "id", "q"]:
+                    additional_attributes[attr] = self.request.query_params.get(attr)
 
-                attr_model, attr_field = (
-                    attr_name.split(".") if "." in attr_name else (None, None)
-                )
+            lookups = self._get_lookups(object_type_model)
 
-                field_name = attr_model if attr_model else attr_name
+            if lookups:
+                queryset = queryset.prefetch_related(*lookups)
+
+            if additional_attributes:
+                query_filter = {}
+                for attr_name, attr_value in additional_attributes.items():
+                    query_filter[attr_name] = attr_value
 
                 try:
-                    if (
-                        isinstance(
-                            object_type_model._meta.get_field(f"{field_name}"),
-                            (ForeignKey, ManyToManyField),
-                        )
-                        and attr_field is not None
-                    ):
-                        filter_by = Q(**{f"{field_name}__{attr_field}": attr_value})
-                        queryset = queryset.prefetch_related(field_name).filter(
-                            filter_by
-                        )
-                    else:
-                        queryset = queryset.filter(**query_filter)
-                except (FieldError, ValueError):
+                    queryset = queryset.filter(**query_filter)
+                except (FieldError, ValueError) as e:
                     return Response(
-                        {"errors": ["invalid attr_name and/or attr_value"]},
+                        {"errors": ["invalid additional attributes provided"]},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
 
