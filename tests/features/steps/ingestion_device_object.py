@@ -63,9 +63,9 @@ def assert_device_exists(context):
         "site__name": context.site_name,
     }
 
-    if context.device_type_model:
+    if hasattr(context, "device_type_model"):
         params["device_type__model"] = context.device_type_model
-    if context.device_role_name:
+    if hasattr(context, "device_role_name"):
         params["role__name"] = context.device_role_name
 
     device = get_object_state(params)
