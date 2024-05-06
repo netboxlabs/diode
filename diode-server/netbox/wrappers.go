@@ -28,8 +28,8 @@ type ComparableData interface {
 	// DataType returns the data type
 	DataType() string
 
-	// QueryString returns the query string needed to retrieve its object state
-	QueryString() string
+	// ObjectStateQueryParams returns the query parameters needed to retrieve its object state
+	ObjectStateQueryParams() map[string]string
 
 	// ID returns the ID of the data
 	ID() int
@@ -164,9 +164,15 @@ func (dw *DcimDeviceDataWrapper) DataType() string {
 	return DcimDeviceObjectType
 }
 
-// QueryString returns the query string needed to retrieve its object state
-func (dw *DcimDeviceDataWrapper) QueryString() string {
-	return dw.Device.Name
+// ObjectStateQueryParams returns the query parameters needed to retrieve its object state
+func (dw *DcimDeviceDataWrapper) ObjectStateQueryParams() map[string]string {
+	params := map[string]string{
+		"q": dw.Device.Name,
+	}
+	if dw.Device.Site != nil {
+		params["site__name"] = dw.Device.Site.Name
+	}
+	return params
 }
 
 // ID returns the ID of the data
@@ -451,9 +457,11 @@ func (dw *DcimDeviceRoleDataWrapper) DataType() string {
 	return DcimDeviceRoleObjectType
 }
 
-// QueryString returns the query string needed to retrieve its object state
-func (dw *DcimDeviceRoleDataWrapper) QueryString() string {
-	return dw.DeviceRole.Name
+// ObjectStateQueryParams returns the query parameters needed to retrieve its object state
+func (dw *DcimDeviceRoleDataWrapper) ObjectStateQueryParams() map[string]string {
+	return map[string]string{
+		"q": dw.DeviceRole.Name,
+	}
 }
 
 // ID returns the ID of the data
@@ -579,9 +587,11 @@ func (dw *DcimDeviceTypeDataWrapper) DataType() string {
 	return DcimDeviceTypeObjectType
 }
 
-// QueryString returns the query string needed to retrieve its object state
-func (dw *DcimDeviceTypeDataWrapper) QueryString() string {
-	return dw.DeviceType.Model
+// ObjectStateQueryParams returns the query parameters needed to retrieve its object state
+func (dw *DcimDeviceTypeDataWrapper) ObjectStateQueryParams() map[string]string {
+	return map[string]string{
+		"q": dw.DeviceType.Model,
+	}
 }
 
 // ID returns the ID of the data
@@ -848,9 +858,19 @@ func (dw *DcimInterfaceDataWrapper) DataType() string {
 	return DcimInterfaceObjectType
 }
 
-// QueryString returns the query string needed to retrieve its object state
-func (dw *DcimInterfaceDataWrapper) QueryString() string {
-	return dw.Interface.Name
+// ObjectStateQueryParams returns the query parameters needed to retrieve its object state
+func (dw *DcimInterfaceDataWrapper) ObjectStateQueryParams() map[string]string {
+	params := map[string]string{
+		"q": dw.Interface.Name,
+	}
+	if dw.Interface.Device != nil {
+		params["device__name"] = dw.Interface.Device.Name
+
+		if dw.Interface.Device.Site != nil {
+			params["device__site__name"] = dw.Interface.Device.Site.Name
+		}
+	}
+	return params
 }
 
 // ID returns the ID of the data
@@ -861,6 +881,17 @@ func (dw *DcimInterfaceDataWrapper) ID() int {
 // IsPlaceholder returns true if the data is a placeholder
 func (dw *DcimInterfaceDataWrapper) IsPlaceholder() bool {
 	return dw.placeholder
+}
+
+func (dw *DcimInterfaceDataWrapper) hash() string {
+	var deviceName, siteName string
+	if dw.Interface.Device != nil {
+		deviceName = dw.Interface.Device.Name
+		if dw.Interface.Device.Site != nil {
+			siteName = dw.Interface.Device.Site.Name
+		}
+	}
+	return slug.Make(fmt.Sprintf("%s-%s-%s", dw.Interface.Name, deviceName, siteName))
 }
 
 // Patch creates patches between the actual, intended and current data
@@ -880,7 +911,7 @@ func (dw *DcimInterfaceDataWrapper) Patch(cmp ComparableData, intendedNestedObje
 
 	reconciliationRequired := true
 
-	if intended != nil {
+	if intended != nil && dw.hash() == intended.hash() {
 		currentNestedObjectsMap := make(map[string]ComparableData)
 		currentNestedObjects, err := intended.NestedObjects()
 		if err != nil {
@@ -1083,9 +1114,11 @@ func (dw *DcimManufacturerDataWrapper) DataType() string {
 	return DcimManufacturerObjectType
 }
 
-// QueryString returns the query string needed to retrieve its object state
-func (dw *DcimManufacturerDataWrapper) QueryString() string {
-	return dw.Manufacturer.Name
+// ObjectStateQueryParams returns the query parameters needed to retrieve its object state
+func (dw *DcimManufacturerDataWrapper) ObjectStateQueryParams() map[string]string {
+	return map[string]string{
+		"q": dw.Manufacturer.Name,
+	}
 }
 
 // ID returns the ID of the data
@@ -1277,9 +1310,11 @@ func (dw *DcimPlatformDataWrapper) DataType() string {
 	return DcimPlatformObjectType
 }
 
-// QueryString returns the query string needed to retrieve its object state
-func (dw *DcimPlatformDataWrapper) QueryString() string {
-	return dw.Platform.Name
+// ObjectStateQueryParams returns the query parameters needed to retrieve its object state
+func (dw *DcimPlatformDataWrapper) ObjectStateQueryParams() map[string]string {
+	return map[string]string{
+		"q": dw.Platform.Name,
+	}
 }
 
 // ID returns the ID of the data
@@ -1468,9 +1503,11 @@ func (dw *DcimSiteDataWrapper) DataType() string {
 	return DcimSiteObjectType
 }
 
-// QueryString returns the query string needed to retrieve its object state
-func (dw *DcimSiteDataWrapper) QueryString() string {
-	return dw.Site.Name
+// ObjectStateQueryParams returns the query parameters needed to retrieve its object state
+func (dw *DcimSiteDataWrapper) ObjectStateQueryParams() map[string]string {
+	return map[string]string{
+		"q": dw.Site.Name,
+	}
 }
 
 // ID returns the ID of the data
@@ -1580,58 +1617,60 @@ type TagDataWrapper struct {
 func (*TagDataWrapper) comparableData() {}
 
 // Data returns the Tag
-func (d *TagDataWrapper) Data() any {
-	return d.Tag
+func (dw *TagDataWrapper) Data() any {
+	return dw.Tag
 }
 
 // IsValid returns true if the Tag is not nil
-func (d *TagDataWrapper) IsValid() bool {
-	return d.Tag != nil
+func (dw *TagDataWrapper) IsValid() bool {
+	return dw.Tag != nil
 }
 
 // Normalise normalises the data
-func (d *TagDataWrapper) Normalise() {}
+func (dw *TagDataWrapper) Normalise() {}
 
 // NestedObjects returns all nested objects
-func (d *TagDataWrapper) NestedObjects() ([]ComparableData, error) {
+func (dw *TagDataWrapper) NestedObjects() ([]ComparableData, error) {
 	return nil, nil
 }
 
 // DataType returns the data type
-func (d *TagDataWrapper) DataType() string {
+func (dw *TagDataWrapper) DataType() string {
 	return ExtrasTagObjectType
 }
 
-// QueryString returns the query string needed to retrieve its object state
-func (d *TagDataWrapper) QueryString() string {
-	return d.Tag.Name
+// ObjectStateQueryParams returns the query parameters needed to retrieve its object state
+func (dw *TagDataWrapper) ObjectStateQueryParams() map[string]string {
+	return map[string]string{
+		"q": dw.Tag.Name,
+	}
 }
 
 // ID returns the ID of the data
-func (d *TagDataWrapper) ID() int {
-	return d.Tag.ID
+func (dw *TagDataWrapper) ID() int {
+	return dw.Tag.ID
 }
 
 // IsPlaceholder returns true if the data is a placeholder
-func (d *TagDataWrapper) IsPlaceholder() bool {
-	return d.placeholder
+func (dw *TagDataWrapper) IsPlaceholder() bool {
+	return dw.placeholder
 }
 
 // Patch creates patches between the actual, intended and current data
-func (d *TagDataWrapper) Patch(cmp ComparableData, _ map[string]ComparableData) ([]ComparableData, error) {
+func (dw *TagDataWrapper) Patch(cmp ComparableData, _ map[string]ComparableData) ([]ComparableData, error) {
 	d2, ok := cmp.(*TagDataWrapper)
 	if !ok && d2 != nil {
 		return nil, errors.New("invalid data type")
 	}
 
-	fmt.Printf("d: %#v\n", d)
+	fmt.Printf("d: %#v\n", dw)
 	fmt.Printf("d2: %#v\n", d2)
 
 	return nil, nil
 }
 
 // SetDefaults sets the default values for the platform
-func (d *TagDataWrapper) SetDefaults() {}
+func (dw *TagDataWrapper) SetDefaults() {}
 
 // NewDataWrapper creates a new data wrapper for the given data type
 func NewDataWrapper(dataType string) (ComparableData, error) {

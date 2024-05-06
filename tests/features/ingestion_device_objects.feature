@@ -3,34 +3,40 @@ Feature: Tests for ingestion of device
 
 @smoke
 @ingestion.device
-Scenario: Ingestion of new device
-  Given a new device "router01"
-  When the device is ingested
-  Then the device, device type "undefined" , role "undefined", and site "undefined" are created
+Scenario: Ingestion of a new device (site not provided)
+    Given device "router01" with site not provided
+        And device "router01" with site "undefined" does not exist
+    When the device without site is ingested
+    Then the device is found
+        And device type is "undefined"
+        And role is "undefined"
 
 @smoke
 @ingestion.device
-Scenario: Ingestion of existing device to update its device type, site, and role
-  Given device type "ISR4321", role "WAN Router", and site "Site A" for device "router01"
-  When the device is ingested with the updates
-  Then device type, role and site are created
-  Then the device is updated
-
+Scenario: Ingestion of existing device (site not provided)
+    Given device "router01" with site not provided
+        And device "router01" with site "undefined" exists
+    When the device without site is ingested
+    Then the device is found
+        And device type is "undefined"
+        And role is "undefined"
 
 @smoke
 @ingestion.device
-Scenario: Ingestion of existing device to update its platform
-Given platform "Cisco IOS 15.6", device type "ISR4321", role "WAN Router", and site "Site A" for device "router01"
-  When the device is ingested with the platform update
-  Then the device is updated and platform is created
-  Given the device "router01" is deleted
-  Given the device type "ISR4321" is deleted
-  Given the device role "WAN Router" is deleted
-  Given the platform "Cisco IOS 15.6" is deleted
-  Given the site "Site A" is deleted
+Scenario: Ingestion of a new device (site provided)
+    Given a new device "router01" with site "Site B"
+        And device "router01" with site "Site B" does not exist
+    When the device with site is ingested
+    Then the device is found
+        And device type is "undefined"
+        And role is "undefined"
 
-  Given the site "undefined" is deleted
-  Given the device type "undefined" is deleted
-  Given the device role "undefined" is deleted
-  Given the site "undefined" is deleted
-  Given the platform "undefined" is deleted
+@smoke
+@ingestion.device
+Scenario: Ingestion of existing device (site provided) with different device type and role
+    Given device "router01" with site "Site B", device type "ISR4321" and role "WAN Router"
+        And device "router01" with site "Site B" exists
+    When the device with site, device type and role is ingested
+    Then the device is found
+        And device type is "ISR4321"
+        And role is "WAN Router"

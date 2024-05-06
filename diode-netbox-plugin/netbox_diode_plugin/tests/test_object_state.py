@@ -187,7 +187,7 @@ class ObjectStateTestCase(APITestCase):
         query_parameters = {
             "q": "ISR4321",
             "object_type": "dcim.devicetype",
-            "attr_name": "manufacturer",
+            "attr_name": "manufacturer.name",
             "attr_value": "Cisco",
         }
 

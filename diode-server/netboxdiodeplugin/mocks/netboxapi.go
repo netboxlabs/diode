@@ -81,9 +81,9 @@ func (_c *NetBoxAPI_ApplyChangeSet_Call) RunAndReturn(run func(context.Context, 
 	return _c
 }
 
-// RetrieveObjectState provides a mock function with given fields: _a0, _a1, _a2, _a3
-func (_m *NetBoxAPI) RetrieveObjectState(_a0 context.Context, _a1 string, _a2 int, _a3 string) (*netboxdiodeplugin.ObjectState, error) {
-	ret := _m.Called(_a0, _a1, _a2, _a3)
+// RetrieveObjectState provides a mock function with given fields: _a0, _a1
+func (_m *NetBoxAPI) RetrieveObjectState(_a0 context.Context, _a1 netboxdiodeplugin.RetrieveObjectStateQueryParams) (*netboxdiodeplugin.ObjectState, error) {
+	ret := _m.Called(_a0, _a1)
 
 	if len(ret) == 0 {
 		panic("no return value specified for RetrieveObjectState")
@@ -91,19 +91,19 @@ func (_m *NetBoxAPI) RetrieveObjectState(_a0 context.Context, _a1 string, _a2 in
 
 	var r0 *netboxdiodeplugin.ObjectState
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, int, string) (*netboxdiodeplugin.ObjectState, error)); ok {
-		return rf(_a0, _a1, _a2, _a3)
+	if rf, ok := ret.Get(0).(func(context.Context, netboxdiodeplugin.RetrieveObjectStateQueryParams) (*netboxdiodeplugin.ObjectState, error)); ok {
+		return rf(_a0, _a1)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, int, string) *netboxdiodeplugin.ObjectState); ok {
-		r0 = rf(_a0, _a1, _a2, _a3)
+	if rf, ok := ret.Get(0).(func(context.Context, netboxdiodeplugin.RetrieveObjectStateQueryParams) *netboxdiodeplugin.ObjectState); ok {
+		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*netboxdiodeplugin.ObjectState)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, int, string) error); ok {
-		r1 = rf(_a0, _a1, _a2, _a3)
+	if rf, ok := ret.Get(1).(func(context.Context, netboxdiodeplugin.RetrieveObjectStateQueryParams) error); ok {
+		r1 = rf(_a0, _a1)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -118,16 +118,14 @@ type NetBoxAPI_RetrieveObjectState_Call struct {
 
 // RetrieveObjectState is a helper method to define mock.On call
 //   - _a0 context.Context
-//   - _a1 string
-//   - _a2 int
-//   - _a3 string
-func (_e *NetBoxAPI_Expecter) RetrieveObjectState(_a0 interface{}, _a1 interface{}, _a2 interface{}, _a3 interface{}) *NetBoxAPI_RetrieveObjectState_Call {
-	return &NetBoxAPI_RetrieveObjectState_Call{Call: _e.mock.On("RetrieveObjectState", _a0, _a1, _a2, _a3)}
+//   - _a1 netboxdiodeplugin.RetrieveObjectStateQueryParams
+func (_e *NetBoxAPI_Expecter) RetrieveObjectState(_a0 interface{}, _a1 interface{}) *NetBoxAPI_RetrieveObjectState_Call {
+	return &NetBoxAPI_RetrieveObjectState_Call{Call: _e.mock.On("RetrieveObjectState", _a0, _a1)}
 }
 
-func (_c *NetBoxAPI_RetrieveObjectState_Call) Run(run func(_a0 context.Context, _a1 string, _a2 int, _a3 string)) *NetBoxAPI_RetrieveObjectState_Call {
+func (_c *NetBoxAPI_RetrieveObjectState_Call) Run(run func(_a0 context.Context, _a1 netboxdiodeplugin.RetrieveObjectStateQueryParams)) *NetBoxAPI_RetrieveObjectState_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(int), args[3].(string))
+		run(args[0].(context.Context), args[1].(netboxdiodeplugin.RetrieveObjectStateQueryParams))
 	})
 	return _c
 }
@@ -137,7 +135,7 @@ func (_c *NetBoxAPI_RetrieveObjectState_Call) Return(_a0 *netboxdiodeplugin.Obje
 	return _c
 }
 
-func (_c *NetBoxAPI_RetrieveObjectState_Call) RunAndReturn(run func(context.Context, string, int, string) (*netboxdiodeplugin.ObjectState, error)) *NetBoxAPI_RetrieveObjectState_Call {
+func (_c *NetBoxAPI_RetrieveObjectState_Call) RunAndReturn(run func(context.Context, netboxdiodeplugin.RetrieveObjectStateQueryParams) (*netboxdiodeplugin.ObjectState, error)) *NetBoxAPI_RetrieveObjectState_Call {
 	_c.Call.Return(run)
 	return _c
 }

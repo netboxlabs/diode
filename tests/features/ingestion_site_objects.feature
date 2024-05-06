@@ -3,24 +3,33 @@ Feature: Tests for ingestion of site
 
 @smoke
 @ingestion.site
-Scenario: Ingestion of new site
-    Given a new site "Site A"
+Scenario: Ingestion of a new site
+    Given a site "Site A"
+        And site "Site A" does not exist
     When the site is ingested
-    Then the site is created in the database
+    Then the site is found
+        And the site status is "active"
+        And the site description is empty
 
 @smoke
 @ingestion.site
-Scenario: Ingestion of existing site
-    Given site "Site A" already exists in the database
+Scenario: Ingestion of existing site - nothing to update
+    Given a site "Site A"
     When the site is ingested
-    Then the site remains the same
+    Then the site is found
+        And the site status is "active"
+        And the site description is empty
 
 
 @smoke
 @ingestion.site
-Scenario: Ingestion of site to update status and description
-    Given site "Site A" with status "planned" and description "some string"
-    When the site is ingested with the updates
-    Then the site is updated in the database
+Scenario: Ingestion of existing site with updated status and description
+    Given a site "Site A"
+        And the site status "planned"
+        And the site description "some string"
+    When the site with status and description is ingested
+    Then the site is found
+        And the site status is "planned"
+        And the site description is "some string"
 
 

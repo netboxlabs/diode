@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 # Copyright 2024 NetBox Labs Inc
 """Diode Netbox Plugin - API Views."""
+from typing import Any, Dict, Optional
 
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import FieldError
 from django.db import transaction
 from django.db.models import ForeignKey, ManyToManyField, Q
 from extras.models import CachedValue
@@ -25,6 +27,15 @@ class ObjectStateView(views.APIView):
 
     permission_classes = [IsAuthenticated, IsDiodeReader]
 
+    def _get_lookups(self, object_type_model):
+        if object_type_model == "ipaddress":
+            return ("interface", "interface__device", "interface__device__site")
+        elif object_type_model == "interface":
+            return ("device", "device__site")
+        elif object_type_model == "device":
+            return ("site",)
+        return ()
+
     def get(self, request, *args, **kwargs):
         """
         Return a JSON with object_type, object_change_id, and object.
@@ -36,9 +47,6 @@ class ObjectStateView(views.APIView):
         Lookup is iexact
         """
         object_type = self.request.query_params.get("object_type", None)
-
-        attr_name = self.request.query_params.get("attr_name", None)
-        attr_value = self.request.query_params.get("attr_value", None)
 
         if not object_type:
             raise ValidationError("object_type parameter is required")
@@ -70,22 +78,28 @@ class ObjectStateView(views.APIView):
                 id__in=object_id_in_cached_value
             )
 
-            if attr_name and attr_value:
+            additional_attributes = {}
+            for attr in self.request.query_params:
+                if attr not in ["object_type", "id", "q"]:
+                    additional_attributes[attr] = self.request.query_params.get(attr)
 
-                query_filter = {f"{attr_name}__{lookup}": attr_value}
+            lookups = self._get_lookups(object_type_model)
 
-                if isinstance(
-                    object_type_model._meta.get_field(f"{attr_name}"), ForeignKey
-                ) or isinstance(
-                    object_type_model._meta.get_field(f"{attr_name}"), ManyToManyField
-                ):
-                    queryset = [
-                        item
-                        for item in queryset.prefetch_related(f"{attr_name}")
-                        if str(getattr(item, attr_name)) == str(attr_value)
-                    ]
-                else:
+            if lookups:
+                queryset = queryset.prefetch_related(*lookups)
+
+            if additional_attributes:
+                query_filter = {}
+                for attr_name, attr_value in additional_attributes.items():
+                    query_filter[attr_name] = attr_value
+
+                try:
                     queryset = queryset.filter(**query_filter)
+                except (FieldError, ValueError) as e:
+                    return Response(
+                        {"errors": ["invalid additional attributes provided"]},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
 
         self.check_object_permissions(request, queryset)
 
@@ -179,7 +193,7 @@ class ApplyChangeSetView(views.APIView):
 
     def _handle_ipaddress_assigned_object(
         self, object_data: dict, ipaddress_assigned_object: list
-    ) -> dict:
+    ) -> Optional[Dict[str, Any]]:
         """Handle IPAM IP address assigned object."""
         if any(ipaddress_assigned_object):
             assigned_object_keys = list(ipaddress_assigned_object[0].keys())
@@ -194,8 +208,24 @@ class ApplyChangeSetView(views.APIView):
                 return {"assigned_object": f"properties not provided for {model_name}"}
 
             try:
-                assigned_object_instance = assigned_object_model.objects.get(
-                    **assigned_object_properties_dict
+                lookups = (
+                    ("device", "device__site") if model_name == "interface" else ()
+                )
+                args = {}
+
+                if model_name == "interface":
+                    args["name"] = assigned_object_properties_dict.get("name")
+                    args["device__name"] = assigned_object_properties_dict.get(
+                        "device"
+                    ).get("name")
+                    args["device__site__name"] = (
+                        assigned_object_properties_dict.get("device")
+                        .get("site")
+                        .get("name")
+                    )
+
+                assigned_object_instance = (
+                    assigned_object_model.objects.prefetch_related(*lookups).get(**args)
                 )
             except assigned_object_model.DoesNotExist:
                 return {

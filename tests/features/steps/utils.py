@@ -1,3 +1,6 @@
+import time
+from typing import Optional, Dict, Any
+
 import requests
 from netboxlabs.diode.sdk import DiodeClient
 from steps.config import TestConfig
@@ -74,6 +77,21 @@ def get_object_by_model(model, endpoint):
     response = send_get_request(endpoint, {"model__ic": model}).json().get("results")
     if response:
         return response[0]
+    return None
+
+
+def get_object_state(params: dict, max_retries: int = 3) -> Optional[Dict[str, Any]]:
+    """Get object using given endpoint and params."""
+    endpoint = "plugins/diode/object-state/"
+
+    attempt = 0
+    while attempt < max_retries:
+        response = send_get_request(endpoint, params).json().get("object")
+        if response:
+            return response
+        time.sleep(1)
+        attempt += 1
+
     return None
 
 
