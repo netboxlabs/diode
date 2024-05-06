@@ -1,17 +1,40 @@
-import time
-
 from behave import given, when, then
 from netboxlabs.diode.sdk.diode.v1.ingester_pb2 import Entity
 from netboxlabs.diode.sdk.diode.v1.site_pb2 import Site
-from steps.utils import get_object_by_name, ingester
+from steps.utils import get_object_state, ingester, send_delete_request
 
 endpoint = "dcim/sites/"
 
 
-@given('a new site "{site_name}"')
-def step_create_new_site(context, site_name):
-    """Set the body of the request to create a new site."""
+@given('a site "{site_name}"')
+def set_site(context, site_name):
+    """Set the site name."""
     context.site_name = site_name
+
+
+@given('the site status "{status}"')
+def set_status(context, status):
+    """Set the status of the site."""
+    context.status = status
+
+
+@given('the site description "{description}"')
+def set_description(context, description):
+    """Set the description of the site."""
+    context.description = description
+
+
+@given('site "{site_name}" does not exist')
+def ensure_site_does_not_exists(context, site_name):
+    """Ensure that the site does not exist."""
+    site = get_object_state(
+        {
+            "object_type": "dcim.site",
+            "q": site_name,
+        },
+    )
+    if site:
+        send_delete_request(endpoint, site.get("id"))
 
 
 @when("the site is ingested")
@@ -21,59 +44,74 @@ def ingest_site(context):
         Entity(site=Site(name=context.site_name)),
     ]
     context.response = ingester(entities)
+    assert context.response.errors == []
+
     return context.response
 
 
-@then("the site is created in the database")
-@then("the site remains the same")
-def check_site(context):
-    """Check if the response is not None and the is created in the database."""
-    time.sleep(3)
+@then("the site is found")
+def assert_site_exists(context):
+    """Assert that the site was created."""
     assert context.response is not None
-    site = get_object_by_name(context.site_name, endpoint)
+
+    params = {
+        "object_type": "dcim.site",
+        "q": context.site_name,
+    }
+    if hasattr(context, "status"):
+        params["status"] = context.status
+    if hasattr(context, "description"):
+        params["description"] = context.description
+
+    site = get_object_state(params)
     assert site.get("name") == context.site_name
-    assert site.get("status").get("value") == "active"
+
+    context.existing_site = site
 
 
-@given('site "{site_name}" already exists in the database')
-def retrieve_existing_site(context, site_name):
-    """Retrieve the site from the database"""
-    context.site_name = site_name
-    context.site = get_object_by_name(context.site_name, endpoint)
-    context.site_name = context.site.get("name")
-
-
-@given('site "{site_name}" with status "{status}" and description "{description}"')
-def create_site_to_update(context, site_name, status, description):
-    """Create a site with a status and description to update"""
-    context.site_name = site_name
-    context.status = status
-    context.description = description
-
-
-@when("the site is ingested with the updates")
-def ingest_to_update_site(context):
-    """Update the site using the Diode SDK"""
+@when("the site with status and description is ingested")
+def ingest_site_with_status_and_description(context):
+    """Ingest the site using the Diode SDK"""
     entities = [
         Entity(
             site=Site(
                 name=context.site_name,
                 status=context.status,
                 description=context.description,
-            )
+            ),
         ),
     ]
-
     context.response = ingester(entities)
+    assert context.response.errors == []
+
     return context.response
 
 
-@then("the site is updated in the database")
-def check_site_updated(context):
-    """Check if the is updated in the database."""
-    time.sleep(3)
-    assert context.response is not None
-    site = get_object_by_name(context.site_name, endpoint)
-    assert site.get("name") == context.site_name
-    assert site.get("status").get("value") == context.status
-    assert site.get("description") == context.description
+@then('the site status is "{status}"')
+def assert_site_status(context, status):
+    """Assert that the site status is correct."""
+    assert context.existing_site is not None
+    assert context.existing_site.get("status") == status
+
+
+@then("the site description is empty")
+def assert_site_description_empty(context):
+    """Assert that the site description is empty."""
+    assert context.existing_site is not None
+    assert context.existing_site.get("description") == ""
+
+
+@then('the site description is "{description}"')
+def assert_site_description(context, description):
+    """Assert that the site description is correct."""
+    assert context.existing_site is not None
+    assert context.existing_site.get("description") == description
+
+
+@then("the site remains the same")
+def assert_site_remains(context):
+    """Assert that the site remains the same."""
+    assert context.existing_site is not None
+    assert context.existing_site.get("name") == context.site_name
+    assert context.existing_site.get("status") == context.status
+    assert context.existing_site.get("description") == context.description

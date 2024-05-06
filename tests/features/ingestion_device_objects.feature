@@ -24,8 +24,8 @@ Scenario: Ingestion of existing device (site not provided)
 @smoke
 @ingestion.device
 Scenario: Ingestion of a new device (site provided)
-    Given a new device "router01" with site "Site A"
-        And device "router01" with site "Site A" does not exist
+    Given a new device "router01" with site "Site B"
+        And device "router01" with site "Site B" does not exist
     When the device with site is ingested
     Then the device is found
         And device type is "undefined"
@@ -34,8 +34,8 @@ Scenario: Ingestion of a new device (site provided)
 @smoke
 @ingestion.device
 Scenario: Ingestion of existing device (site provided) with different device type and role
-    Given device "router01" with site "Site A", device type "ISR4321" and role "WAN Router"
-        And device "router01" with site "Site A" exists
+    Given device "router01" with site "Site B", device type "ISR4321" and role "WAN Router"
+        And device "router01" with site "Site B" exists
     When the device with site, device type and role is ingested
     Then the device is found
         And device type is "ISR4321"

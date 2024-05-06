@@ -82,7 +82,7 @@ def get_object_by_model(model, endpoint):
 
 def get_object_state(params: dict, max_retries: int = 3) -> Optional[Dict[str, Any]]:
     """Get object using given endpoint and params."""
-    endpoint = f"plugins/diode/object-state/"
+    endpoint = "plugins/diode/object-state/"
 
     attempt = 0
     while attempt < max_retries:
