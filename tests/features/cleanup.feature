@@ -5,6 +5,7 @@ Feature: Cleanup tests
 Scenario: Cleanup
     Given the device "router01" is deleted
     Given the site "Site A" is deleted
+    Given the site "Site B" is deleted
     Given the device "router01" is deleted
     Given the device type "ISR4321" is deleted
     Given the device role "WAN Router" is deleted
