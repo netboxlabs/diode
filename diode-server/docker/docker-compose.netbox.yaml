@@ -16,7 +16,7 @@ services:
       start_period: 60s
       timeout: 3s
       interval: 15s
-      test: "curl -f http://localhost:8080/api/ || exit 1"
+      test: "curl -f http://localhost:8080/netbox/api/ || exit 1"
     volumes:
       - ./netbox/docker-entrypoint.sh:/opt/netbox/docker-entrypoint.sh:z,ro
       - ./diode/netbox_diode_plugin:/opt/netbox/netbox/netbox_diode_plugin:rw
