@@ -1,13 +1,12 @@
 #!/usr/bin/env python
 # Copyright 2024 NetBox Labs Inc
 """NetBox Labs, Diode - SDK - Client."""
-
+import collections
 import logging
 import os
 import platform
 import uuid
-from typing import Iterable, Optional
-from urllib.parse import urlparse
+from typing import Dict, Iterable, Optional
 
 import certifi
 import grpc
@@ -47,6 +46,25 @@ def _tls_verify(tls_verify: Optional[bool]) -> bool:
     return tls_verify
 
 
+def parse_target(target: str) -> Dict[str, str]:
+    """Parse target."""
+    if target.startswith(("http://", "https://")):
+        raise ValueError("target should not contain http:// or https://")
+
+    parts = [str(part) for part in target.split("/") if part != ""]
+
+    authority = ":".join([str(part) for part in parts[0].split(":") if part != ""])
+
+    if ":" not in authority:
+        authority += ":443"
+
+    path = ""
+    if len(parts) > 1:
+        path = "/" + "/".join(parts[1:])
+
+    return authority, path
+
+
 class DiodeClient:
     """Diode Client."""
 
@@ -69,9 +87,7 @@ class DiodeClient:
         log_level = os.getenv(_DIODE_SDK_LOG_LEVEL_ENVVAR_NAME, "INFO").upper()
         logging.basicConfig(level=log_level)
 
-        # TODO: validate target
-        self._target = target
-
+        self._target, self._path = parse_target(target)
         self._app_name = app_name
         self._app_version = app_version
 
@@ -90,9 +106,21 @@ class DiodeClient:
                 ),
             )
         else:
-            self._channel = grpc.insecure_channel(self._target)
+            self._channel = grpc.insecure_channel(
+                target=self._target,
+            )
 
-        self._stub = ingester_pb2_grpc.IngesterServiceStub(self._channel)
+        channel = self._channel
+
+        if self._path:
+            rpc_method_interceptor = DiodeMethodClientInterceptor(subpath=self._path)
+
+            intercept_channel = grpc.intercept_channel(
+                self._channel, rpc_method_interceptor
+            )
+            channel = intercept_channel
+
+        self._stub = ingester_pb2_grpc.IngesterServiceStub(channel)
 
     @property
     def name(self) -> str:
@@ -156,3 +184,60 @@ class DiodeClient:
             return self._stub.Ingest(request, metadata=self._metadata)
         except grpc.RpcError as err:
             raise DiodeClientError(err) from err
+
+
+class _ClientCallDetails(
+    collections.namedtuple(
+        "_ClientCallDetails",
+        (
+            "method",
+            "timeout",
+            "metadata",
+            "credentials",
+            "wait_for_ready",
+            "compression",
+        ),
+    ),
+    grpc.ClientCallDetails,
+):
+    """Client Call Details."""
+
+    pass
+
+
+class DiodeMethodClientInterceptor(
+    grpc.UnaryUnaryClientInterceptor, grpc.StreamUnaryClientInterceptor
+):
+    """Diode Method Client Interceptor."""
+
+    def __init__(self, subpath):
+        """Initiate a new interceptor."""
+        self._subpath = subpath
+
+    def _intercept_call(self, continuation, client_call_details, request_or_iterator):
+        """Intercept call."""
+        method = client_call_details.method
+        if client_call_details.method is not None:
+            method = f"{self._subpath}{client_call_details.method}"
+
+        client_call_details = _ClientCallDetails(
+            method,
+            client_call_details.timeout,
+            client_call_details.metadata,
+            client_call_details.credentials,
+            client_call_details.wait_for_ready,
+            client_call_details.compression,
+        )
+
+        response = continuation(client_call_details, request_or_iterator)
+        return response
+
+    def intercept_unary_unary(self, continuation, client_call_details, request):
+        """Intercept unary unary."""
+        return self._intercept_call(continuation, client_call_details, request)
+
+    def intercept_stream_unary(
+        self, continuation, client_call_details, request_iterator
+    ):
+        """Intercept stream unary."""
+        return self._intercept_call(continuation, client_call_details, request_iterator)
