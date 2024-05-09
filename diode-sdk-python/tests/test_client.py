@@ -22,6 +22,8 @@ def test_init():
     assert config.version == "0.0.1"
     assert config.app_name == "my-producer"
     assert config.app_version == "0.0.1"
+    assert config.tls_verify is False
+    assert config.path == ""
 
 
 def test_config_error():

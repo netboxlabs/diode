@@ -98,7 +98,9 @@ class DiodeClient:
             ("python-version", platform.python_version()),
         )
 
-        if _tls_verify(tls_verify):
+        self._tls_verify = _tls_verify(tls_verify)
+
+        if self._tls_verify:
             self._channel = grpc.secure_channel(
                 self._target,
                 grpc.ssl_channel_credentials(
@@ -136,6 +138,16 @@ class DiodeClient:
     def target(self) -> str:
         """Retrieve the target."""
         return self._target
+
+    @property
+    def path(self) -> str:
+        """Retrieve the path."""
+        return self._path
+
+    @property
+    def tls_verify(self) -> str:
+        """Retrieve the tls_verify."""
+        return self._tls_verify
 
     @property
     def app_name(self) -> str:
