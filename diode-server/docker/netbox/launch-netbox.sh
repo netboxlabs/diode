@@ -1,6 +1,6 @@
 #!/bin/bash
 
-UNIT_CONFIG="${UNIT_CONFIG-/etc/unit/nginx-unit.json}"
+UNIT_CONFIG="${UNIT_CONFIG-/opt/netbox/nginx-unit.json}"
 # Also used in "nginx-unit.json"
 UNIT_SOCKET="/opt/unit/unit.sock"
 

@@ -19,6 +19,7 @@ services:
       test: "curl -f http://localhost:8080/netbox/api/ || exit 1"
     volumes:
       - ./netbox/docker-entrypoint.sh:/opt/netbox/docker-entrypoint.sh:z,ro
+      - ./netbox/nginx-unit.json:/opt/netbox/nginx-unit.json:z,ro
       - ./diode/netbox_diode_plugin:/opt/netbox/netbox/netbox_diode_plugin:rw
       - ./netbox/configuration:/etc/netbox/config:z,rw
       - ./netbox/launch-netbox.sh:/opt/netbox/launch-netbox.sh:z,ro
