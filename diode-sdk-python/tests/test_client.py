@@ -31,8 +31,7 @@ def test_config_error():
             target="localhost:8081", app_name="my-producer", app_version="0.0.1"
         )
     assert (
-        str(err.value)
-        == f"api_key param or DIODE_API_KEY environment variable required"
+        str(err.value) == "api_key param or DIODE_API_KEY environment variable required"
     )
 
 
