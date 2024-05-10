@@ -110,16 +110,18 @@ func (dw *DcimDeviceDataWrapper) NestedObjects() ([]ComparableData, error) {
 
 	dw.Device.Site = site.Site
 
-	platform := DcimPlatformDataWrapper{Platform: dw.Device.Platform, placeholder: dw.placeholder, hasParent: true, intended: dw.intended}
+	if dw.Device.Platform != nil {
+		platform := DcimPlatformDataWrapper{Platform: dw.Device.Platform, placeholder: dw.placeholder, hasParent: true, intended: dw.intended}
 
-	po, err := platform.NestedObjects()
-	if err != nil {
-		return nil, err
+		po, err := platform.NestedObjects()
+		if err != nil {
+			return nil, err
+		}
+
+		objects = append(objects, po...)
+
+		dw.Device.Platform = platform.Platform
 	}
-
-	objects = append(objects, po...)
-
-	dw.Device.Platform = platform.Platform
 
 	deviceType := DcimDeviceTypeDataWrapper{DeviceType: dw.Device.DeviceType, placeholder: dw.placeholder, hasParent: true, intended: dw.intended}
 
@@ -129,6 +131,8 @@ func (dw *DcimDeviceDataWrapper) NestedObjects() ([]ComparableData, error) {
 	}
 
 	objects = append(objects, dto...)
+
+	objects = dedupManufacturers(objects)
 
 	dw.Device.DeviceType = deviceType.DeviceType
 
@@ -157,6 +161,53 @@ func (dw *DcimDeviceDataWrapper) NestedObjects() ([]ComparableData, error) {
 	objects = append(objects, dw)
 
 	return objects, nil
+}
+
+func dedupManufacturers(objects []ComparableData) []ComparableData {
+	type indexedComparableData struct {
+		index int
+		data  ComparableData
+	}
+
+	var nonPlaceholderManufacturer *indexedComparableData
+
+	var manufacturerObjects []ComparableData
+	for i, obj := range objects {
+		if obj.DataType() == DcimManufacturerObjectType {
+			manufacturerObjects = append(manufacturerObjects, obj)
+			if !obj.IsPlaceholder() {
+				nonPlaceholderManufacturer = &indexedComparableData{index: i, data: obj}
+			}
+		}
+	}
+
+	if len(manufacturerObjects) < 2 {
+		return objects
+	}
+
+	var dedupObjects []ComparableData
+
+	for i, obj := range objects {
+		if obj.DataType() == DcimManufacturerObjectType {
+			if nonPlaceholderManufacturer != nil {
+				if i == nonPlaceholderManufacturer.index {
+					continue
+				}
+
+				if obj.IsPlaceholder() {
+					objData := obj.Data().(*DcimManufacturer)
+					data := nonPlaceholderManufacturer.data
+					*objData = *data.Data().(*DcimManufacturer)
+					objects[i] = data
+					dedupObjects = append(dedupObjects, data)
+					continue
+				}
+			}
+		}
+		dedupObjects = append(dedupObjects, obj)
+	}
+
+	return dedupObjects
 }
 
 // DataType returns the data type
@@ -256,20 +307,28 @@ func (dw *DcimDeviceDataWrapper) Patch(cmp ComparableData, intendedNestedObjects
 
 		dw.objectsToReconcile = append(dw.objectsToReconcile, siteObjectsToReconcile...)
 
-		if actualPlatform.IsPlaceholder() && intended.Device.Platform != nil {
-			intendedPlatform = extractFromObjectsMap(currentNestedObjectsMap, fmt.Sprintf("%p", intended.Device.Platform))
-		}
+		if actualPlatform != nil {
+			if actualPlatform.IsPlaceholder() && intended.Device.Platform != nil {
+				intendedPlatform = extractFromObjectsMap(currentNestedObjectsMap, fmt.Sprintf("%p", intended.Device.Platform))
+			}
 
-		platformObjectsToReconcile, platformErr := actualPlatform.Patch(intendedPlatform, intendedNestedObjects)
-		if platformErr != nil {
-			return nil, platformErr
-		}
-		dw.Device.Platform = actualPlatform.Data().(*DcimPlatform)
+			platformObjectsToReconcile, platformErr := actualPlatform.Patch(intendedPlatform, intendedNestedObjects)
+			if platformErr != nil {
+				return nil, platformErr
+			}
+			dw.Device.Platform = actualPlatform.Data().(*DcimPlatform)
 
-		dw.objectsToReconcile = append(dw.objectsToReconcile, platformObjectsToReconcile...)
+			dw.objectsToReconcile = append(dw.objectsToReconcile, platformObjectsToReconcile...)
 
-		if actualDeviceType.IsPlaceholder() && intended.Device.DeviceType != nil {
-			intendedDeviceType = extractFromObjectsMap(currentNestedObjectsMap, fmt.Sprintf("%p", intended.Device.DeviceType))
+			if actualDeviceType.IsPlaceholder() && intended.Device.DeviceType != nil {
+				intendedDeviceType = extractFromObjectsMap(currentNestedObjectsMap, fmt.Sprintf("%p", intended.Device.DeviceType))
+			}
+		} else {
+			if intended.Device.Platform != nil {
+				intendedPlatform = extractFromObjectsMap(currentNestedObjectsMap, fmt.Sprintf("%p", intended.Device.Platform))
+				dw.Device.Platform = intendedPlatform.Data().(*DcimPlatform)
+			}
+
 		}
 
 		deviceTypeObjectsToReconcile, deviceTypeErr := actualDeviceType.Patch(intendedDeviceType, intendedNestedObjects)
@@ -319,13 +378,15 @@ func (dw *DcimDeviceDataWrapper) Patch(cmp ComparableData, intendedNestedObjects
 
 		dw.objectsToReconcile = append(dw.objectsToReconcile, siteObjectsToReconcile...)
 
-		platformObjectsToReconcile, platformErr := actualPlatform.Patch(intendedPlatform, intendedNestedObjects)
-		if platformErr != nil {
-			return nil, platformErr
-		}
-		dw.Device.Platform = actualPlatform.Data().(*DcimPlatform)
+		if actualPlatform != nil {
+			platformObjectsToReconcile, platformErr := actualPlatform.Patch(intendedPlatform, intendedNestedObjects)
+			if platformErr != nil {
+				return nil, platformErr
+			}
+			dw.Device.Platform = actualPlatform.Data().(*DcimPlatform)
 
-		dw.objectsToReconcile = append(dw.objectsToReconcile, platformObjectsToReconcile...)
+			dw.objectsToReconcile = append(dw.objectsToReconcile, platformObjectsToReconcile...)
+		}
 
 		deviceTypeObjectsToReconcile, deviceTypeErr := actualDeviceType.Patch(intendedDeviceType, intendedNestedObjects)
 		if deviceTypeErr != nil {
@@ -1278,16 +1339,18 @@ func (dw *DcimPlatformDataWrapper) NestedObjects() ([]ComparableData, error) {
 		dw.Platform.Slug = slug.Make(dw.Platform.Name)
 	}
 
-	manufacturer := DcimManufacturerDataWrapper{Manufacturer: dw.Platform.Manufacturer, placeholder: dw.placeholder, hasParent: true, intended: dw.intended}
+	if dw.Platform.Manufacturer != nil {
+		manufacturer := DcimManufacturerDataWrapper{Manufacturer: dw.Platform.Manufacturer, placeholder: dw.placeholder, hasParent: true, intended: dw.intended}
 
-	mo, err := manufacturer.NestedObjects()
-	if err != nil {
-		return nil, err
+		mo, err := manufacturer.NestedObjects()
+		if err != nil {
+			return nil, err
+		}
+
+		objects = append(objects, mo...)
+
+		dw.Platform.Manufacturer = manufacturer.Manufacturer
 	}
-
-	objects = append(objects, mo...)
-
-	dw.Platform.Manufacturer = manufacturer.Manufacturer
 
 	if dw.Platform.Tags != nil {
 		for _, t := range dw.Platform.Tags {
@@ -1359,17 +1422,24 @@ func (dw *DcimPlatformDataWrapper) Patch(cmp ComparableData, intendedNestedObjec
 		dw.Platform.Name = intended.Platform.Name
 		dw.Platform.Slug = intended.Platform.Slug
 
-		if actualManufacturer.IsPlaceholder() && intended.Platform.Manufacturer != nil {
-			intendedManufacturer = extractFromObjectsMap(currentNestedObjectsMap, fmt.Sprintf("%p", intended.Platform.Manufacturer))
-		}
+		if actualManufacturer != nil {
+			if actualManufacturer.IsPlaceholder() && intended.Platform.Manufacturer != nil {
+				intendedManufacturer = extractFromObjectsMap(currentNestedObjectsMap, fmt.Sprintf("%p", intended.Platform.Manufacturer))
+			}
 
-		manufacturerObjectsToReconcile, manufacturerErr := actualManufacturer.Patch(intendedManufacturer, intendedNestedObjects)
-		if manufacturerErr != nil {
-			return nil, manufacturerErr
-		}
-		dw.Platform.Manufacturer = actualManufacturer.Data().(*DcimManufacturer)
+			manufacturerObjectsToReconcile, manufacturerErr := actualManufacturer.Patch(intendedManufacturer, intendedNestedObjects)
+			if manufacturerErr != nil {
+				return nil, manufacturerErr
+			}
+			dw.Platform.Manufacturer = actualManufacturer.Data().(*DcimManufacturer)
 
-		dw.objectsToReconcile = append(dw.objectsToReconcile, manufacturerObjectsToReconcile...)
+			dw.objectsToReconcile = append(dw.objectsToReconcile, manufacturerObjectsToReconcile...)
+		} else {
+			if intended.Platform.Manufacturer != nil {
+				intendedManufacturer = extractFromObjectsMap(currentNestedObjectsMap, fmt.Sprintf("%p", intended.Platform.Manufacturer))
+				dw.Platform.Manufacturer = intendedManufacturer.Data().(*DcimManufacturer)
+			}
+		}
 
 		if dw.Platform.Description == nil {
 			dw.Platform.Description = intended.Platform.Description
@@ -1392,11 +1462,15 @@ func (dw *DcimPlatformDataWrapper) Patch(cmp ComparableData, intendedNestedObjec
 
 		reconciliationRequired = actualHash != intendedHash
 	} else {
-		manufacturerObjectsToReconcile, manufacturerErr := actualManufacturer.Patch(intendedManufacturer, intendedNestedObjects)
-		if manufacturerErr != nil {
-			return nil, manufacturerErr
+		var manufacturerObjectsToReconcile []ComparableData
+		if actualManufacturer != nil {
+			manufacturerObjectsToReconcile2, manufacturerErr := actualManufacturer.Patch(intendedManufacturer, intendedNestedObjects)
+			if manufacturerErr != nil {
+				return nil, manufacturerErr
+			}
+			dw.Platform.Manufacturer = actualManufacturer.Data().(*DcimManufacturer)
+			manufacturerObjectsToReconcile = manufacturerObjectsToReconcile2
 		}
-		dw.Platform.Manufacturer = actualManufacturer.Data().(*DcimManufacturer)
 
 		tagsToMerge := mergeTags(dw.Platform.Tags, nil, intendedNestedObjects)
 
@@ -1410,7 +1484,9 @@ func (dw *DcimPlatformDataWrapper) Patch(cmp ComparableData, intendedNestedObjec
 			}
 		}
 
-		dw.objectsToReconcile = append(dw.objectsToReconcile, manufacturerObjectsToReconcile...)
+		if manufacturerObjectsToReconcile != nil {
+			dw.objectsToReconcile = append(dw.objectsToReconcile, manufacturerObjectsToReconcile...)
+		}
 	}
 
 	if reconciliationRequired {

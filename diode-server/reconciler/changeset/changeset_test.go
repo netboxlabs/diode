@@ -1299,15 +1299,6 @@ func TestPrepare(t *testing.T) {
 					},
 				},
 				{
-					objectType:     "dcim.platform",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.DcimPlatformDataWrapper{
-						Platform: nil,
-					},
-				},
-				{
 					objectType:     "dcim.device",
 					objectID:       0,
 					queryParams:    map[string]string{"q": "router01", "site__name": "undefined"},
@@ -1341,21 +1332,6 @@ func TestPrepare(t *testing.T) {
 						Data: &netbox.DcimManufacturer{
 							Name: "undefined",
 							Slug: "undefined",
-						},
-					},
-					{
-						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
-						ChangeType:    changeset.ChangeTypeCreate,
-						ObjectType:    "dcim.platform",
-						ObjectID:      nil,
-						ObjectVersion: nil,
-						Data: &netbox.DcimPlatform{
-							Name: "undefined",
-							Slug: "undefined",
-							Manufacturer: &netbox.DcimManufacturer{
-								Name: "undefined",
-								Slug: "undefined",
-							},
 						},
 					},
 					{
@@ -1410,14 +1386,6 @@ func TestPrepare(t *testing.T) {
 								Name:  "undefined",
 								Slug:  "undefined",
 								Color: strPtr("000000"),
-							},
-							Platform: &netbox.DcimPlatform{
-								Name: "undefined",
-								Slug: "undefined",
-								Manufacturer: &netbox.DcimManufacturer{
-									Name: "undefined",
-									Slug: "undefined",
-								},
 							},
 							Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 						},
@@ -1499,24 +1467,6 @@ func TestPrepare(t *testing.T) {
 					},
 				},
 				{
-					objectType:     "dcim.platform",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.DcimPlatformDataWrapper{
-						Platform: &netbox.DcimPlatform{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
-							Manufacturer: &netbox.DcimManufacturer{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
-							},
-						},
-					},
-				},
-				{
 					objectType:     "dcim.device",
 					objectID:       0,
 					queryParams:    map[string]string{"q": "router01", "site__name": "undefined"},
@@ -1546,16 +1496,6 @@ func TestPrepare(t *testing.T) {
 								Name:  "undefined",
 								Slug:  "undefined",
 								Color: strPtr("000000"),
-							},
-							Platform: &netbox.DcimPlatform{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
-								Manufacturer: &netbox.DcimManufacturer{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
-								},
 							},
 							Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 						},
@@ -1642,24 +1582,6 @@ func TestPrepare(t *testing.T) {
 					},
 				},
 				{
-					objectType:     "dcim.platform",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.DcimPlatformDataWrapper{
-						Platform: &netbox.DcimPlatform{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
-							Manufacturer: &netbox.DcimManufacturer{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
-							},
-						},
-					},
-				},
-				{
 					objectType:     "dcim.device",
 					objectID:       0,
 					queryParams:    map[string]string{"q": "router01", "site__name": "undefined"},
@@ -1689,16 +1611,6 @@ func TestPrepare(t *testing.T) {
 								Name:  "undefined",
 								Slug:  "undefined",
 								Color: strPtr("000000"),
-							},
-							Platform: &netbox.DcimPlatform{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
-								Manufacturer: &netbox.DcimManufacturer{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
-								},
 							},
 							Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 						},
@@ -1778,15 +1690,6 @@ func TestPrepare(t *testing.T) {
 					},
 				},
 				{
-					objectType:     "dcim.platform",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.DcimPlatformDataWrapper{
-						Platform: nil,
-					},
-				},
-				{
 					objectType:     "dcim.device",
 					objectID:       0,
 					queryParams:    map[string]string{"q": "router01", "site__name": "Site A"},
@@ -1833,21 +1736,6 @@ func TestPrepare(t *testing.T) {
 						Data: &netbox.DcimManufacturer{
 							Name: "undefined",
 							Slug: "undefined",
-						},
-					},
-					{
-						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
-						ChangeType:    changeset.ChangeTypeCreate,
-						ObjectType:    "dcim.platform",
-						ObjectID:      nil,
-						ObjectVersion: nil,
-						Data: &netbox.DcimPlatform{
-							Name: "undefined",
-							Slug: "undefined",
-							Manufacturer: &netbox.DcimManufacturer{
-								Name: "undefined",
-								Slug: "undefined",
-							},
 						},
 					},
 					{
@@ -1903,13 +1791,192 @@ func TestPrepare(t *testing.T) {
 								Slug:  "wan-router",
 								Color: strPtr("000000"),
 							},
-							Platform: &netbox.DcimPlatform{
-								Name: "undefined",
-								Slug: "undefined",
-								Manufacturer: &netbox.DcimManufacturer{
-									Name: "undefined",
-									Slug: "undefined",
+							Status:      (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+							Serial:      strPtr("123456"),
+							Tags: []*netbox.Tag{
+								{
+									ID:   1,
+									Name: "tag 1",
+									Slug: "tag-1",
 								},
+							},
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "[P7] ingest dcim.device with device type having manufacturer defined - existing object not found - create device and all related objects",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "dcim.device",
+				"entity": {
+					"Device": {
+						"name": "router01",
+						"device_type": {
+							"model": "ISR4321",
+							"manufacturer": {
+								"name": "Cisco"
+							}
+						},
+						"role": {
+							"name": "WAN Router"
+						},
+						"site": {
+							"name": "Site A"
+						},
+						"status": "active",
+						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+						"serial": "123456",
+						"tags": [
+							{
+								"name": "tag 1"
+							}
+						]
+					}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "dcim.site",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "Site A"},
+					objectChangeID: 0,
+					object: &netbox.DcimSiteDataWrapper{
+						Site: nil,
+					},
+				},
+				{
+					objectType:     "dcim.manufacturer",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "Cisco"},
+					objectChangeID: 0,
+					object: &netbox.DcimManufacturerDataWrapper{
+						Manufacturer: nil,
+					},
+				},
+				{
+					objectType:     "dcim.devicetype",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "ISR4321"},
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceTypeDataWrapper{
+						DeviceType: nil,
+					},
+				},
+				{
+					objectType:     "dcim.devicerole",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "WAN Router"},
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceRoleDataWrapper{
+						DeviceRole: nil,
+					},
+				},
+				{
+					objectType:     "dcim.device",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "router01", "site__name": "Site A"},
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceDataWrapper{
+						Device: nil,
+					},
+				},
+				{
+					objectType:     "extras.tag",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "tag 1"},
+					objectChangeID: 0,
+					object: &netbox.TagDataWrapper{
+						Tag: &netbox.Tag{
+							ID:   1,
+							Name: "tag 1",
+							Slug: "tag-1",
+						},
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet: []changeset.Change{
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.site",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimSite{
+							Name:   "Site A",
+							Slug:   "site-a",
+							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						},
+					},
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.manufacturer",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimManufacturer{
+							Name: "Cisco",
+							Slug: "cisco",
+						},
+					},
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.devicetype",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimDeviceType{
+							Model: "ISR4321",
+							Slug:  "isr4321",
+							Manufacturer: &netbox.DcimManufacturer{
+								Name: "Cisco",
+								Slug: "cisco",
+							},
+						},
+					},
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.devicerole",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimDeviceRole{
+							Name:  "WAN Router",
+							Slug:  "wan-router",
+							Color: strPtr("000000"),
+						},
+					},
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.device",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimDevice{
+							Name: "router01",
+							Site: &netbox.DcimSite{
+								Name:   "Site A",
+								Slug:   "site-a",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
+							DeviceType: &netbox.DcimDeviceType{
+								Model: "ISR4321",
+								Slug:  "isr4321",
+								Manufacturer: &netbox.DcimManufacturer{
+									Name: "Cisco",
+									Slug: "cisco",
+								},
+							},
+							Role: &netbox.DcimDeviceRole{
+								Name:  "WAN Router",
+								Slug:  "wan-router",
+								Color: strPtr("000000"),
 							},
 							Status:      (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
@@ -1993,24 +2060,6 @@ func TestPrepare(t *testing.T) {
 							ID:   1,
 							Name: "undefined",
 							Slug: "undefined",
-						},
-					},
-				},
-				{
-					objectType:     "dcim.platform",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.DcimPlatformDataWrapper{
-						Platform: &netbox.DcimPlatform{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
-							Manufacturer: &netbox.DcimManufacturer{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
-							},
 						},
 					},
 				},
@@ -2291,27 +2340,23 @@ func TestPrepare(t *testing.T) {
 					{
 						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
 						ChangeType:    changeset.ChangeTypeCreate,
-						ObjectType:    "dcim.manufacturer",
-						ObjectID:      nil,
-						ObjectVersion: nil,
-						Data: &netbox.DcimManufacturer{
-							Name: "undefined",
-							Slug: "undefined",
-						},
-					},
-					{
-						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
-						ChangeType:    changeset.ChangeTypeCreate,
 						ObjectType:    "dcim.platform",
 						ObjectID:      nil,
 						ObjectVersion: nil,
 						Data: &netbox.DcimPlatform{
 							Name: "Cisco IOS 15.6",
 							Slug: "cisco-ios-15-6",
-							Manufacturer: &netbox.DcimManufacturer{
-								Name: "undefined",
-								Slug: "undefined",
-							},
+						},
+					},
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.manufacturer",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimManufacturer{
+							Name: "undefined",
+							Slug: "undefined",
 						},
 					},
 					{
@@ -2370,10 +2415,6 @@ func TestPrepare(t *testing.T) {
 							Platform: &netbox.DcimPlatform{
 								Name: "Cisco IOS 15.6",
 								Slug: "cisco-ios-15-6",
-								Manufacturer: &netbox.DcimManufacturer{
-									Name: "undefined",
-									Slug: "undefined",
-								},
 							},
 							Status:      (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
@@ -2462,11 +2503,6 @@ func TestPrepare(t *testing.T) {
 							ID:   1,
 							Name: "Cisco IOS 15.6",
 							Slug: "cisco-ios-15-6",
-							Manufacturer: &netbox.DcimManufacturer{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
-							},
 						},
 					},
 				},
@@ -2588,11 +2624,6 @@ func TestPrepare(t *testing.T) {
 								ID:   1,
 								Name: "Cisco IOS 15.6",
 								Slug: "cisco-ios-15-6",
-								Manufacturer: &netbox.DcimManufacturer{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
-								},
 							},
 							Status:      (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
@@ -3786,24 +3817,6 @@ func TestPrepare(t *testing.T) {
 					},
 				},
 				{
-					objectType:     "dcim.platform",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.DcimPlatformDataWrapper{
-						Platform: &netbox.DcimPlatform{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
-							Manufacturer: &netbox.DcimManufacturer{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
-							},
-						},
-					},
-				},
-				{
 					objectType:     "dcim.devicetype",
 					objectID:       0,
 					queryParams:    map[string]string{"q": "undefined"},
@@ -3884,277 +3897,6 @@ func TestPrepare(t *testing.T) {
 			wantChangeSet: changeset.ChangeSet{
 				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
 				ChangeSet:   []changeset.Change{},
-			},
-			wantErr: false,
-		},
-		{
-			name: "[P13] ingest dcim.interface with name - existing object found with missing platform on device - create platform and update device",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.interface",
-				"entity": {
-					"Interface": {
-						"name": "GigabitEthernet0/0/0"
-					}
-				},
-				"state": 0
-			}`),
-			retrieveObjectStates: []mockRetrieveObjectState{
-				{
-					objectType:     "dcim.interface",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "GigabitEthernet0/0/0", "device__name": "undefined", "device__site__name": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.DcimInterfaceDataWrapper{
-						Interface: &netbox.DcimInterface{
-							ID:   1,
-							Name: "GigabitEthernet0/0/0",
-							Device: &netbox.DcimDevice{
-								ID:   1,
-								Name: "undefined",
-								Site: &netbox.DcimSite{
-									ID:     1,
-									Name:   "undefined",
-									Slug:   "undefined",
-									Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-								},
-								DeviceType: &netbox.DcimDeviceType{
-									ID:    1,
-									Model: "undefined",
-									Slug:  "undefined",
-									Manufacturer: &netbox.DcimManufacturer{
-										ID:   1,
-										Name: "undefined",
-										Slug: "undefined",
-									},
-								},
-								Role: &netbox.DcimDeviceRole{
-									ID:    1,
-									Name:  "undefined",
-									Slug:  "undefined",
-									Color: strPtr("000000"),
-								},
-								Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
-							},
-							Type: strPtr(netbox.DefaultInterfaceType),
-						},
-					},
-				},
-				{
-					objectType:     "dcim.platform",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.DcimPlatformDataWrapper{
-						Platform: nil,
-					},
-				},
-				{
-					objectType:     "dcim.site",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.DcimSiteDataWrapper{
-						Site: &netbox.DcimSite{
-							ID:     1,
-							Name:   "undefined",
-							Slug:   "undefined",
-							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-						},
-					},
-				},
-				{
-					objectType:     "dcim.manufacturer",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.DcimManufacturerDataWrapper{
-						Manufacturer: &netbox.DcimManufacturer{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
-						},
-					},
-				},
-				{
-					objectType:     "dcim.devicetype",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.DcimDeviceTypeDataWrapper{
-						DeviceType: &netbox.DcimDeviceType{
-							ID:    1,
-							Model: "undefined",
-							Slug:  "undefined",
-							Manufacturer: &netbox.DcimManufacturer{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
-							},
-						},
-					},
-				},
-				{
-					objectType:     "dcim.devicerole",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.DcimDeviceRoleDataWrapper{
-						DeviceRole: &netbox.DcimDeviceRole{
-							ID:    1,
-							Name:  "undefined",
-							Slug:  "undefined",
-							Color: strPtr("000000"),
-						},
-					},
-				},
-				{
-					objectType:     "dcim.device",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined", "site__name": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.DcimDeviceDataWrapper{
-						Device: &netbox.DcimDevice{
-							ID:   1,
-							Name: "undefined",
-							Site: &netbox.DcimSite{
-								ID:     1,
-								Name:   "undefined",
-								Slug:   "undefined",
-								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-							},
-							DeviceType: &netbox.DcimDeviceType{
-								ID:    1,
-								Model: "undefined",
-								Slug:  "undefined",
-								Manufacturer: &netbox.DcimManufacturer{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
-								},
-							},
-							Role: &netbox.DcimDeviceRole{
-								ID:    1,
-								Name:  "undefined",
-								Slug:  "undefined",
-								Color: strPtr("000000"),
-							},
-							Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
-						},
-					},
-				},
-			},
-			wantChangeSet: changeset.ChangeSet{
-				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
-				ChangeSet: []changeset.Change{
-					{
-						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
-						ChangeType:    changeset.ChangeTypeCreate,
-						ObjectType:    "dcim.platform",
-						ObjectID:      nil,
-						ObjectVersion: nil,
-						Data: &netbox.DcimPlatform{
-							Name: "undefined",
-							Slug: "undefined",
-							Manufacturer: &netbox.DcimManufacturer{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
-							},
-						},
-					},
-					{
-						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
-						ChangeType:    changeset.ChangeTypeUpdate,
-						ObjectType:    "dcim.device",
-						ObjectID:      intPtr(1),
-						ObjectVersion: nil,
-						Data: &netbox.DcimDevice{
-							ID:   1,
-							Name: "undefined",
-							Site: &netbox.DcimSite{
-								ID:     1,
-								Name:   "undefined",
-								Slug:   "undefined",
-								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-							},
-							DeviceType: &netbox.DcimDeviceType{
-								ID:    1,
-								Model: "undefined",
-								Slug:  "undefined",
-								Manufacturer: &netbox.DcimManufacturer{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
-								},
-							},
-							Role: &netbox.DcimDeviceRole{
-								ID:    1,
-								Name:  "undefined",
-								Slug:  "undefined",
-								Color: strPtr("000000"),
-							},
-							Platform: &netbox.DcimPlatform{
-								Name: "undefined",
-								Slug: "undefined",
-								Manufacturer: &netbox.DcimManufacturer{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
-								},
-							},
-							Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
-						},
-					},
-					{
-						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
-						ChangeType:    changeset.ChangeTypeUpdate,
-						ObjectType:    "dcim.interface",
-						ObjectID:      intPtr(1),
-						ObjectVersion: nil,
-						Data: &netbox.DcimInterface{
-							ID:   1,
-							Name: "GigabitEthernet0/0/0",
-							Device: &netbox.DcimDevice{
-								ID:   1,
-								Name: "undefined",
-								Site: &netbox.DcimSite{
-									ID:     1,
-									Name:   "undefined",
-									Slug:   "undefined",
-									Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-								},
-								DeviceType: &netbox.DcimDeviceType{
-									ID:    1,
-									Model: "undefined",
-									Slug:  "undefined",
-									Manufacturer: &netbox.DcimManufacturer{
-										ID:   1,
-										Name: "undefined",
-										Slug: "undefined",
-									},
-								},
-								Role: &netbox.DcimDeviceRole{
-									ID:    1,
-									Name:  "undefined",
-									Slug:  "undefined",
-									Color: strPtr("000000"),
-								},
-								Platform: &netbox.DcimPlatform{
-									Name: "undefined",
-									Slug: "undefined",
-									Manufacturer: &netbox.DcimManufacturer{
-										ID:   1,
-										Name: "undefined",
-										Slug: "undefined",
-									},
-								},
-								Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
-							},
-							Type: strPtr(netbox.DefaultInterfaceType),
-						},
-					},
-				},
 			},
 			wantErr: false,
 		},
@@ -4249,24 +3991,6 @@ func TestPrepare(t *testing.T) {
 							ID:   1,
 							Name: "undefined",
 							Slug: "undefined",
-						},
-					},
-				},
-				{
-					objectType:     "dcim.platform",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.DcimPlatformDataWrapper{
-						Platform: &netbox.DcimPlatform{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
-							Manufacturer: &netbox.DcimManufacturer{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
-							},
 						},
 					},
 				},
