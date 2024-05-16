@@ -25,10 +25,7 @@ black netboxlabs/
 ```python
 
 from netboxlabs.diode.sdk import DiodeClient
-from netboxlabs.diode.sdk.diode.v1.device_type_pb2 import DeviceType
-from netboxlabs.diode.sdk.diode.v1.ingester_pb2 import Entity
-from netboxlabs.diode.sdk.diode.v1.manufacturer_pb2 import Manufacturer
-from netboxlabs.diode.sdk.diode.v1.site_pb2 import Site
+from netboxlabs.diode.sdk.diode.v1.ingester_pb2 import DeviceType, Entity, Manufacturer, Site
 
 
 def main():
