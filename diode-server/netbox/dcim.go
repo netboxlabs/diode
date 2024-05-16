@@ -35,6 +35,8 @@ type DcimDevice struct {
 	Description *string           `json:"description,omitempty"`
 	Status      *DcimDeviceStatus `json:"status,omitempty"`
 	AssetTag    *string           `json:"asset_tag,omitempty" mapstructure:"asset_tag"`
+	PrimaryIPv4 *IpamIPAddress    `json:"primary_ipv4,omitempty" mapstructure:"primary_ipv4"`
+	PrimaryIPv6 *IpamIPAddress    `json:"primary_ipv6,omitempty" mapstructure:"primary_ipv6"`
 	Comments    *string           `json:"comments,omitempty"`
 	Tags        []*Tag            `json:"tags,omitempty"`
 }
