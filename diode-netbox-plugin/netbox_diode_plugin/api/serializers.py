@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Copyright 2024 NetBox Labs Inc
-"""Diode Netbox Plugin - Serializer."""
+"""Diode Netbox Plugin - Serializers."""
 import copy
 import logging
 from collections import OrderedDict
