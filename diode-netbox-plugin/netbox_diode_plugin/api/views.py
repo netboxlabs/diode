@@ -164,15 +164,15 @@ class ApplyChangeSetView(views.APIView):
             if object_id:
                 args["id"] = object_id
             elif object_type == "dcim.device" and any(
-                object_data.get(attr) for attr in ("primary_ipv4", "primary_ipv6")
+                object_data.get(attr) for attr in ("primary_ip4", "primary_ip6")
             ):
                 ip_address = self._retrieve_primary_ip_address(
-                    "primary_ipv4", object_data
+                    "primary_ip4", object_data
                 )
 
                 if ip_address is None:
                     ip_address = self._retrieve_primary_ip_address(
-                        "primary_ipv6", object_data
+                        "primary_ip6", object_data
                     )
 
                 if ip_address is None:
