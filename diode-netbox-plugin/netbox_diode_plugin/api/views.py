@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import FieldError
 from django.db import transaction
-from django.db.models import ForeignKey, ManyToManyField, Q
+from django.db.models import Q
 from extras.models import CachedValue
 from netbox.search import LookupTypes
 from rest_framework import status, views
@@ -30,9 +30,9 @@ class ObjectStateView(views.APIView):
     def _get_lookups(self, object_type_model):
         if object_type_model == "ipaddress":
             return ("interface", "interface__device", "interface__device__site")
-        elif object_type_model == "interface":
+        if object_type_model == "interface":
             return ("device", "device__site")
-        elif object_type_model == "device":
+        if object_type_model == "device":
             return ("site",)
         return ()
 
@@ -78,24 +78,19 @@ class ObjectStateView(views.APIView):
                 id__in=object_id_in_cached_value
             )
 
-            additional_attributes = {}
-            for attr in self.request.query_params:
-                if attr not in ["object_type", "id", "q"]:
-                    additional_attributes[attr] = self.request.query_params.get(attr)
-
             lookups = self._get_lookups(object_type_model)
 
             if lookups:
                 queryset = queryset.prefetch_related(*lookups)
 
-            if additional_attributes:
-                query_filter = {}
-                for attr_name, attr_value in additional_attributes.items():
-                    query_filter[attr_name] = attr_value
+            additional_attributes_query_filter = (
+                self._additional_attributes_query_filter()
+            )
 
+            if additional_attributes_query_filter:
                 try:
-                    queryset = queryset.filter(**query_filter)
-                except (FieldError, ValueError) as e:
+                    queryset = queryset.filter(**additional_attributes_query_filter)
+                except (FieldError, ValueError):
                     return Response(
                         {"errors": ["invalid additional attributes provided"]},
                         status=status.HTTP_400_BAD_REQUEST,
@@ -115,6 +110,14 @@ class ObjectStateView(views.APIView):
         if len(serializer.data) > 0:
             return Response(serializer.data[0])
         return Response({})
+
+    def _additional_attributes_query_filter(self):
+        additional_attributes = {}
+        for attr in self.request.query_params:
+            if attr not in ["object_type", "id", "q"]:
+                additional_attributes[attr] = self.request.query_params.get(attr)
+
+        return dict(additional_attributes.items())
 
 
 class ApplyChangeSetView(views.APIView):
@@ -153,15 +156,56 @@ class ApplyChangeSetView(views.APIView):
                 data=object_data, context={"request": self.request}
             )
         elif change_type == "update":
-            if not object_id:
-                return self._get_error_response(
-                    change_set_id, ["object_id parameter is required"]
+            lookups = ()
+            args = {}
+
+            primary_ip_to_set: Optional[dict] = None
+
+            if object_id:
+                args["id"] = object_id
+            elif object_type == "dcim.device" and any(
+                object_data.get(attr) for attr in ("primary_ipv4", "primary_ipv6")
+            ):
+                ip_address = self._retrieve_primary_ip_address(
+                    "primary_ipv4", object_data
                 )
 
+                if ip_address is None:
+                    ip_address = self._retrieve_primary_ip_address(
+                        "primary_ipv6", object_data
+                    )
+
+                if ip_address is None:
+                    raise ValidationError("primary IP not found")
+
+                if ip_address:
+                    primary_ip_to_set = {
+                        "id": ip_address.id,
+                        "family": ip_address.family,
+                    }
+
+                lookups = ("site",)
+                args["name"] = object_data.get("name")
+                args["site__name"] = object_data.get("site").get("name")
+            else:
+                raise ValidationError("object_id parameter is required")
+
             try:
-                instance = object_type_model.objects.get(id=object_id)
+                instance = object_type_model.objects.prefetch_related(*lookups).get(
+                    **args
+                )
+                if object_type == "dcim.device" and primary_ip_to_set:
+                    object_data = {
+                        "id": instance.id,
+                        "device_type": instance.device_type.id,
+                        "role": instance.role.id,
+                        "site": instance.site.id,
+                        f'primary_ip{primary_ip_to_set.get("family")}': primary_ip_to_set.get(
+                            "id"
+                        ),
+                    }
             except object_type_model.DoesNotExist:
-                raise ValidationError(f"Object with id {object_id} does not exist")
+                raise ValidationError(f"object with id {object_id} does not exist")
 
             serializer = get_serializer_for_model(object_type_model)(
                 instance, data=object_data, context={"request": self.request}
@@ -169,6 +213,33 @@ class ApplyChangeSetView(views.APIView):
         else:
             raise ValidationError("Invalid change_type")
         return serializer
+
+    def _retrieve_primary_ip_address(self, primary_ip_attr: str, object_data: dict):
+        ip_address = object_data.get(primary_ip_attr)
+        if ip_address is None:
+            return None
+
+        ipaddress_assigned_object = object_data.get(primary_ip_attr, {}).get(
+            "assigned_object", None
+        )
+        if ipaddress_assigned_object is None:
+            return None
+
+        interface = ipaddress_assigned_object.get("interface")
+        if interface is None:
+            return None
+
+        interface_device = interface.get("device")
+        if interface_device is None:
+            return None
+
+        ip_address_object = self._get_object_type_model("ipam.ipaddress").objects.get(
+            address=ip_address.get("address"),
+            interface__name=interface.get("name"),
+            interface__device__name=interface_device.get("name"),
+            interface__device__site__name=interface_device.get("site").get("name"),
+        )
+        return ip_address_object
 
     @staticmethod
     def _get_error_response(change_set_id, error):
