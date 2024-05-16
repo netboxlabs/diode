@@ -35,7 +35,7 @@ message Device {
   string comments = 11;
   repeated Tag tags = 12;
   IPAddress primary_ipv4 = 13;
-  //  TODO: primary_ip, primary_ip4, primary_ip6
+  IPAddress primary_ipv6 = 14;
 }
 
 // An interface
