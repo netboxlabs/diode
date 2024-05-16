@@ -34,22 +34,22 @@
 
 A device
 
-| Field        | Type                               | Label    | Description |
-|--------------|------------------------------------|----------|-------------|
-| name         | [string](#string)                  |          |             |
-| device_fqdn  | [string](#string)                  |          |             |
-| device_type  | [DeviceType](#diode-v1-DeviceType) |          |             |
-| role         | [Role](#diode-v1-Role)             |          |             |
-| platform     | [Platform](#diode-v1-Platform)     |          |             |
-| serial       | [string](#string)                  |          |             |
-| site         | [Site](#diode-v1-Site)             |          |             |
-| asset_tag    | [string](#string)                  |          |             |
-| status       | [string](#string)                  |          |             |
-| description  | [string](#string)                  |          |             |
-| comments     | [string](#string)                  |          |             |
-| tags         | [Tag](#diode-v1-Tag)               | repeated |             |
-| primary_ipv4 | [IPAddress](#diode-v1-IPAddress)   |          |             |
-| primary_ipv6 | [IPAddress](#diode-v1-IPAddress)   |          |             |
+| Field       | Type                               | Label    | Description |
+|-------------|------------------------------------|----------|-------------|
+| name        | [string](#string)                  |          |             |
+| device_fqdn | [string](#string)                  |          |             |
+| device_type | [DeviceType](#diode-v1-DeviceType) |          |             |
+| role        | [Role](#diode-v1-Role)             |          |             |
+| platform    | [Platform](#diode-v1-Platform)     |          |             |
+| serial      | [string](#string)                  |          |             |
+| site        | [Site](#diode-v1-Site)             |          |             |
+| asset_tag   | [string](#string)                  |          |             |
+| status      | [string](#string)                  |          |             |
+| description | [string](#string)                  |          |             |
+| comments    | [string](#string)                  |          |             |
+| tags        | [Tag](#diode-v1-Tag)               | repeated |             |
+| primary_ip4 | [IPAddress](#diode-v1-IPAddress)   |          |             |
+| primary_ip6 | [IPAddress](#diode-v1-IPAddress)   |          |             |
 
 <a name="diode-v1-DeviceType"></a>
 

@@ -34,8 +34,8 @@ message Device {
   string description = 10 [(validate.rules).string = {max_len: 200}];
   string comments = 11;
   repeated Tag tags = 12;
-  IPAddress primary_ipv4 = 13;
-  IPAddress primary_ipv6 = 14;
+  IPAddress primary_ip4 = 13;
+  IPAddress primary_ip6 = 14;
 }
 
 // An interface
