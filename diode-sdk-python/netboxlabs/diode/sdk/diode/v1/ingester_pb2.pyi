@@ -8,7 +8,7 @@ from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Map
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class Device(_message.Message):
-    __slots__ = ("name", "device_fqdn", "device_type", "role", "platform", "serial", "site", "asset_tag", "status", "description", "comments", "tags", "primary_ipv4")
+    __slots__ = ("name", "device_fqdn", "device_type", "role", "platform", "serial", "site", "asset_tag", "status", "description", "comments", "tags", "primary_ipv4", "primary_ipv6")
     NAME_FIELD_NUMBER: _ClassVar[int]
     DEVICE_FQDN_FIELD_NUMBER: _ClassVar[int]
     DEVICE_TYPE_FIELD_NUMBER: _ClassVar[int]
@@ -22,6 +22,7 @@ class Device(_message.Message):
     COMMENTS_FIELD_NUMBER: _ClassVar[int]
     TAGS_FIELD_NUMBER: _ClassVar[int]
     PRIMARY_IPV4_FIELD_NUMBER: _ClassVar[int]
+    PRIMARY_IPV6_FIELD_NUMBER: _ClassVar[int]
     name: str
     device_fqdn: str
     device_type: DeviceType
@@ -35,7 +36,8 @@ class Device(_message.Message):
     comments: str
     tags: _containers.RepeatedCompositeFieldContainer[Tag]
     primary_ipv4: IPAddress
-    def __init__(self, name: _Optional[str] = ..., device_fqdn: _Optional[str] = ..., device_type: _Optional[_Union[DeviceType, _Mapping]] = ..., role: _Optional[_Union[Role, _Mapping]] = ..., platform: _Optional[_Union[Platform, _Mapping]] = ..., serial: _Optional[str] = ..., site: _Optional[_Union[Site, _Mapping]] = ..., asset_tag: _Optional[str] = ..., status: _Optional[str] = ..., description: _Optional[str] = ..., comments: _Optional[str] = ..., tags: _Optional[_Iterable[_Union[Tag, _Mapping]]] = ..., primary_ipv4: _Optional[_Union[IPAddress, _Mapping]] = ...) -> None: ...
+    primary_ipv6: IPAddress
+    def __init__(self, name: _Optional[str] = ..., device_fqdn: _Optional[str] = ..., device_type: _Optional[_Union[DeviceType, _Mapping]] = ..., role: _Optional[_Union[Role, _Mapping]] = ..., platform: _Optional[_Union[Platform, _Mapping]] = ..., serial: _Optional[str] = ..., site: _Optional[_Union[Site, _Mapping]] = ..., asset_tag: _Optional[str] = ..., status: _Optional[str] = ..., description: _Optional[str] = ..., comments: _Optional[str] = ..., tags: _Optional[_Iterable[_Union[Tag, _Mapping]]] = ..., primary_ipv4: _Optional[_Union[IPAddress, _Mapping]] = ..., primary_ipv6: _Optional[_Union[IPAddress, _Mapping]] = ...) -> None: ...
 
 class Interface(_message.Message):
     __slots__ = ("device", "name", "label", "type", "enabled", "mtu", "mac_address", "speed", "wwn", "mgmt_only", "description", "mark_connected", "mode", "tags")
