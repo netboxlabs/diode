@@ -306,6 +306,35 @@ func (m *Device) validate(all bool) error {
 		}
 	}
 
+	if all {
+		switch v := interface{}(m.GetPrimaryIpv6()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, DeviceValidationError{
+					field:  "PrimaryIpv6",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, DeviceValidationError{
+					field:  "PrimaryIpv6",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetPrimaryIpv6()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return DeviceValidationError{
+				field:  "PrimaryIpv6",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
 	if len(errors) > 0 {
 		return DeviceMultiError(errors)
 	}
