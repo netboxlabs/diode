@@ -278,11 +278,11 @@ func (m *Device) validate(all bool) error {
 	}
 
 	if all {
-		switch v := interface{}(m.GetPrimaryIpv4()).(type) {
+		switch v := interface{}(m.GetPrimaryIp4()).(type) {
 		case interface{ ValidateAll() error }:
 			if err := v.ValidateAll(); err != nil {
 				errors = append(errors, DeviceValidationError{
-					field:  "PrimaryIpv4",
+					field:  "PrimaryIp4",
 					reason: "embedded message failed validation",
 					cause:  err,
 				})
@@ -290,16 +290,16 @@ func (m *Device) validate(all bool) error {
 		case interface{ Validate() error }:
 			if err := v.Validate(); err != nil {
 				errors = append(errors, DeviceValidationError{
-					field:  "PrimaryIpv4",
+					field:  "PrimaryIp4",
 					reason: "embedded message failed validation",
 					cause:  err,
 				})
 			}
 		}
-	} else if v, ok := interface{}(m.GetPrimaryIpv4()).(interface{ Validate() error }); ok {
+	} else if v, ok := interface{}(m.GetPrimaryIp4()).(interface{ Validate() error }); ok {
 		if err := v.Validate(); err != nil {
 			return DeviceValidationError{
-				field:  "PrimaryIpv4",
+				field:  "PrimaryIp4",
 				reason: "embedded message failed validation",
 				cause:  err,
 			}
@@ -307,11 +307,11 @@ func (m *Device) validate(all bool) error {
 	}
 
 	if all {
-		switch v := interface{}(m.GetPrimaryIpv6()).(type) {
+		switch v := interface{}(m.GetPrimaryIp6()).(type) {
 		case interface{ ValidateAll() error }:
 			if err := v.ValidateAll(); err != nil {
 				errors = append(errors, DeviceValidationError{
-					field:  "PrimaryIpv6",
+					field:  "PrimaryIp6",
 					reason: "embedded message failed validation",
 					cause:  err,
 				})
@@ -319,16 +319,16 @@ func (m *Device) validate(all bool) error {
 		case interface{ Validate() error }:
 			if err := v.Validate(); err != nil {
 				errors = append(errors, DeviceValidationError{
-					field:  "PrimaryIpv6",
+					field:  "PrimaryIp6",
 					reason: "embedded message failed validation",
 					cause:  err,
 				})
 			}
 		}
-	} else if v, ok := interface{}(m.GetPrimaryIpv6()).(interface{ Validate() error }); ok {
+	} else if v, ok := interface{}(m.GetPrimaryIp6()).(interface{ Validate() error }); ok {
 		if err := v.Validate(); err != nil {
 			return DeviceValidationError{
-				field:  "PrimaryIpv6",
+				field:  "PrimaryIp6",
 				reason: "embedded message failed validation",
 				cause:  err,
 			}
