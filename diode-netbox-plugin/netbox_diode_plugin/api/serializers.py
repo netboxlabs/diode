@@ -211,10 +211,6 @@ class DiodeDeviceSerializer(DeviceSerializer):
         read_only=True, help_text="Deprecated in v3.6 in favor of `role`."
     )
     platform = DiodePlatformSerializer(required=False, allow_null=True)
-    primary_ip = DiodeIPAddressSerializer(read_only=True)
-    primary_ip4 = DiodeIPAddressSerializer(required=False, allow_null=True)
-    primary_ip6 = DiodeIPAddressSerializer(required=False, allow_null=True)
-    oob_ip = DiodeIPAddressSerializer(required=False, allow_null=True)
     status = serializers.CharField()
 
     class Meta:
