@@ -18,6 +18,7 @@ black netboxlabs/
 ### Environment variables
 
 * `DIODE_API_KEY` - API key for the Diode service
+* `DIODE_TLS_VERIFY` - Verify TLS certificate
 * `DIODE_SDK_LOG_LEVEL` - Log level for the SDK (default: `INFO`)
 
 ### Example
