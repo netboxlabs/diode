@@ -1,8 +1,7 @@
 import time
 
 from behave import given, when, then
-from netboxlabs.diode.sdk.diode.v1.ingester_pb2 import Entity
-from netboxlabs.diode.sdk.diode.v1.manufacturer_pb2 import Manufacturer
+from netboxlabs.diode.sdk.diode.v1.ingester_pb2 import Entity, Manufacturer
 from steps.utils import get_object_by_name, ingester
 
 endpoint = "dcim/manufacturers/"

@@ -1,6 +1,5 @@
 from behave import given, when, then
-from netboxlabs.diode.sdk.diode.v1.ingester_pb2 import Entity
-from netboxlabs.diode.sdk.diode.v1.site_pb2 import Site
+from netboxlabs.diode.sdk.diode.v1.ingester_pb2 import Entity, Site
 from steps.utils import get_object_state, ingester, send_delete_request
 
 endpoint = "dcim/sites/"

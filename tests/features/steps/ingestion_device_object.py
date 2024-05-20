@@ -1,9 +1,11 @@
 from behave import given, when, then
-from netboxlabs.diode.sdk.diode.v1.device_pb2 import Device
-from netboxlabs.diode.sdk.diode.v1.device_type_pb2 import DeviceType
-from netboxlabs.diode.sdk.diode.v1.ingester_pb2 import Entity
-from netboxlabs.diode.sdk.diode.v1.role_pb2 import Role
-from netboxlabs.diode.sdk.diode.v1.site_pb2 import Site
+from netboxlabs.diode.sdk.diode.v1.ingester_pb2 import (
+    Device,
+    DeviceType,
+    Entity,
+    Role,
+    Site,
+)
 from steps.utils import (
     get_object_state,
     ingester,
