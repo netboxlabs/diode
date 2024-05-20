@@ -1,8 +1,7 @@
 import time
 
 from behave import given, when, then
-from netboxlabs.diode.sdk.diode.v1.ingester_pb2 import Entity
-from netboxlabs.diode.sdk.diode.v1.role_pb2 import Role
+from netboxlabs.diode.sdk.diode.v1.ingester_pb2 import Entity, Role
 from steps.utils import get_object_by_name, ingester
 
 endpoint = "dcim/device-roles/"

@@ -15,7 +15,7 @@ from netboxlabs.diode.sdk.diode.v1 import ingester_pb2, ingester_pb2_grpc
 from netboxlabs.diode.sdk.exceptions import DiodeClientError, DiodeConfigError
 
 _DIODE_API_KEY_ENVVAR_NAME = "DIODE_API_KEY"
-_DIODE_API_TLS_VERIFY_ENVVAR_NAME = "DIODE_API_TLS_VERIFY"
+_DIODE_TLS_VERIFY_ENVVAR_NAME = "DIODE_TLS_VERIFY"
 _DIODE_SDK_LOG_LEVEL_ENVVAR_NAME = "DIODE_SDK_LOG_LEVEL"
 _DEFAULT_STREAM = "latest"
 _LOGGER = logging.getLogger(__name__)
@@ -38,7 +38,7 @@ def _api_key(api_key: Optional[str] = None) -> str:
 
 def _tls_verify(tls_verify: Optional[bool]) -> bool:
     if tls_verify is None:
-        tls_verify_env_var = os.getenv(_DIODE_API_TLS_VERIFY_ENVVAR_NAME, "false")
+        tls_verify_env_var = os.getenv(_DIODE_TLS_VERIFY_ENVVAR_NAME, "false")
         return tls_verify_env_var.lower() in ["true", "1", "yes"]
     if not isinstance(tls_verify, bool):
         raise DiodeConfigError("tls_verify must be a boolean")

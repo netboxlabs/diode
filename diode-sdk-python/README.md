@@ -18,6 +18,7 @@ black netboxlabs/
 ### Environment variables
 
 * `DIODE_API_KEY` - API key for the Diode service
+* `DIODE_TLS_VERIFY` - Verify TLS certificate
 * `DIODE_SDK_LOG_LEVEL` - Log level for the SDK (default: `INFO`)
 
 ### Example
@@ -25,10 +26,7 @@ black netboxlabs/
 ```python
 
 from netboxlabs.diode.sdk import DiodeClient
-from netboxlabs.diode.sdk.diode.v1.device_type_pb2 import DeviceType
-from netboxlabs.diode.sdk.diode.v1.ingester_pb2 import Entity
-from netboxlabs.diode.sdk.diode.v1.manufacturer_pb2 import Manufacturer
-from netboxlabs.diode.sdk.diode.v1.site_pb2 import Site
+from netboxlabs.diode.sdk.diode.v1.ingester_pb2 import DeviceType, Entity, Manufacturer, Site
 
 
 def main():
