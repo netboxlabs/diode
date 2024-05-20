@@ -218,6 +218,11 @@ class Interface:
         cls,
         name: _Optional[str] = None,
         device: _Optional[_Union[str, Device, DevicePb]] = None,
+        device_type: _Optional[_Union[str, DeviceType, DeviceTypePb]] = None,
+        role: _Optional[_Union[str, Role, RolePb]] = None,
+        platform: _Optional[_Union[str, Platform, PlatformPb]] = None,
+        manufacturer: _Optional[_Union[str, Manufacturer, ManufacturerPb]] = None,
+        site: _Optional[_Union[str, SitePb]] = None,
         type: _Optional[str] = None,
         enabled: _Optional[bool] = None,
         mtu: _Optional[int] = None,
@@ -231,8 +236,29 @@ class Interface:
         tags: _Optional[list[str]] = None,
     ) -> InterfacePb:
         """Create a new Interface protobuf message."""
+        if isinstance(manufacturer, str):
+            manufacturer = ManufacturerPb(name=manufacturer)
+
+        if isinstance(platform, str):
+            platform = PlatformPb(name=platform, manufacturer=manufacturer)
+
+        if isinstance(site, str):
+            site = SitePb(name=site)
+
+        if isinstance(device_type, str):
+            device_type = DeviceTypePb(model=device_type, manufacturer=manufacturer)
+
+        if isinstance(role, str):
+            role = RolePb(name=role)
+
         if isinstance(device, str):
-            device = DevicePb(name=device)
+            device = DevicePb(
+                name=device,
+                device_type=device_type,
+                platform=platform,
+                site=site,
+                role=role,
+            )
 
         if isinstance(tags, list) and all(isinstance(t, str) for t in tags):
             tags = [TagPb(name=tag) for tag in tags]
@@ -261,6 +287,12 @@ class IPAddress:
         cls,
         address: _Optional[str] = None,
         interface: _Optional[_Union[str, Interface, InterfacePb]] = None,
+        device: _Optional[_Union[str, Device, DevicePb]] = None,
+        device_type: _Optional[_Union[str, DeviceType, DeviceTypePb]] = None,
+        device_role: _Optional[_Union[str, Role, RolePb]] = None,
+        platform: _Optional[_Union[str, Platform, PlatformPb]] = None,
+        manufacturer: _Optional[_Union[str, Manufacturer, ManufacturerPb]] = None,
+        site: _Optional[_Union[str, SitePb]] = None,
         status: _Optional[str] = None,
         role: _Optional[str] = None,
         dns_name: _Optional[str] = None,
@@ -269,8 +301,31 @@ class IPAddress:
         tags: _Optional[list[str]] = None,
     ) -> IPAddressPb:
         """Create a new IPAddress protobuf message."""
+        if isinstance(manufacturer, str):
+            manufacturer = ManufacturerPb(name=manufacturer)
+
+        if isinstance(platform, str):
+            platform = PlatformPb(name=platform, manufacturer=manufacturer)
+
+        if isinstance(site, str):
+            site = SitePb(name=site)
+
+        if isinstance(device_type, str):
+            device_type = DeviceTypePb(model=device_type, manufacturer=manufacturer)
+
+        if isinstance(device_role, str):
+            device_role = RolePb(name=device_role)
+
+        if isinstance(device, str):
+            device = DevicePb(
+                name=device,
+                device_type=device_type,
+                platform=platform,
+                site=site,
+                role=device_role,
+            )
         if isinstance(interface, str):
-            interface = InterfacePb(name=interface)
+            interface = InterfacePb(name=interface, device=device)
 
         if isinstance(tags, list) and all(isinstance(t, str) for t in tags):
             tags = [TagPb(name=tag) for tag in tags]
@@ -334,7 +389,7 @@ class Entity:
         interface: _Optional[_Union[str, Interface, InterfacePb]] = None,
         ip_address: _Optional[_Union[str, IPAddress, IPAddressPb]] = None,
         prefix: _Optional[_Union[str, Prefix, PrefixPb]] = None,
-        timestamp: _Optional[_timestamp_pb2] = None,
+        timestamp: _Optional[_timestamp_pb2.Timestamp] = None,
     ):
         """Create a new Entity protobuf message."""
         if isinstance(site, str):

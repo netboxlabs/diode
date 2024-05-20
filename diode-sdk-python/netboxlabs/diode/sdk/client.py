@@ -6,7 +6,7 @@ import logging
 import os
 import platform
 import uuid
-from typing import Dict, Iterable, Optional
+from typing import Dict, Iterable, Optional, Union
 
 import certifi
 import grpc
@@ -179,7 +179,7 @@ class DiodeClient:
 
     def ingest(
         self,
-        entities: Iterable[Optional[Entity, ingester_pb2.Entity]],
+        entities: Iterable[Optional[Union[Entity, ingester_pb2.Entity]]],
         stream: Optional[str] = _DEFAULT_STREAM,
     ) -> ingester_pb2.IngestResponse:
         """Ingest entities."""
