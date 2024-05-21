@@ -6,13 +6,14 @@ import logging
 import os
 import platform
 import uuid
-from typing import Dict, Iterable, Optional
+from typing import Dict, Iterable, Optional, Union
 
 import certifi
 import grpc
 
 from netboxlabs.diode.sdk.diode.v1 import ingester_pb2, ingester_pb2_grpc
 from netboxlabs.diode.sdk.exceptions import DiodeClientError, DiodeConfigError
+from netboxlabs.diode.sdk.ingester import Entity
 
 _DIODE_API_KEY_ENVVAR_NAME = "DIODE_API_KEY"
 _DIODE_TLS_VERIFY_ENVVAR_NAME = "DIODE_TLS_VERIFY"
@@ -178,7 +179,7 @@ class DiodeClient:
 
     def ingest(
         self,
-        entities: Iterable[ingester_pb2.Entity],
+        entities: Iterable[Optional[Union[Entity, ingester_pb2.Entity]]],
         stream: Optional[str] = _DEFAULT_STREAM,
     ) -> ingester_pb2.IngestResponse:
         """Ingest entities."""
