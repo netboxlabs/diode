@@ -38,7 +38,7 @@ from netboxlabs.diode.sdk.diode.v1.ingester_pb2 import (
 from netboxlabs.diode.sdk.diode.v1.ingester_pb2 import (
     Tag as TagPb,
 )
-from netboxlabs.diode.sdk.wrappers import (
+from netboxlabs.diode.sdk.ingester import (
     Device,
     DeviceType,
     Entity,

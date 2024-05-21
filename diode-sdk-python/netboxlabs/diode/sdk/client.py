@@ -13,7 +13,7 @@ import grpc
 
 from netboxlabs.diode.sdk.diode.v1 import ingester_pb2, ingester_pb2_grpc
 from netboxlabs.diode.sdk.exceptions import DiodeClientError, DiodeConfigError
-from netboxlabs.diode.sdk.wrappers import Entity
+from netboxlabs.diode.sdk.ingester import Entity
 
 _DIODE_API_KEY_ENVVAR_NAME = "DIODE_API_KEY"
 _DIODE_TLS_VERIFY_ENVVAR_NAME = "DIODE_TLS_VERIFY"

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # Copyright 2024 NetBox Labs Inc
-"""NetBox Labs, Diode - SDK - protobuf message wrappers."""
+"""NetBox Labs, Diode - SDK - ingester protobuf message wrappers."""
 
 from typing import Mapping as _Mapping
 from typing import Optional as _Optional
