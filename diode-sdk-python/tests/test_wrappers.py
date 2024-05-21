@@ -48,6 +48,7 @@ from netboxlabs.diode.sdk.ingester import (
     Platform,
     Prefix,
     Role,
+    Site,
 )
 
 
@@ -317,3 +318,24 @@ def test_prefix_wrapper():
     assert isinstance(prefix.site, SitePb)
     assert prefix.site.name == "Site ABC"
     assert prefix.is_pool is True
+
+
+def test_site_wrapper():
+    """Ensure Site wrapper instantiates SitePb."""
+    entity = Entity(site="Site ABC")
+    assert isinstance(entity, EntityPb)
+    assert isinstance(entity.site, SitePb)
+
+    site = Site(
+        name="Site ABC",
+        slug="site-abc",
+        status="active",
+        tags=["tag1", "tag2"],
+    )
+    assert isinstance(site, SitePb)
+    assert site.name == "Site ABC"
+    assert site.slug == "site-abc"
+    assert site.status == "active"
+    assert len(site.tags) == 2
+    for tag in site.tags:
+        assert isinstance(tag, TagPb)

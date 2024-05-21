@@ -375,12 +375,42 @@ class Prefix:
         )
 
 
+class Site:
+    """Site message wrapper."""
+
+    def __new__(
+        cls,
+        name: _Optional[str] = None,
+        slug: _Optional[str] = None,
+        status: _Optional[str] = None,
+        facility: _Optional[str] = None,
+        time_zone: _Optional[str] = None,
+        description: _Optional[str] = None,
+        comments: _Optional[str] = None,
+        tags: _Optional[list[str]] = None,
+    ) -> SitePb:
+        """Create a new Site protobuf message."""
+        if isinstance(tags, list) and all(isinstance(t, str) for t in tags):
+            tags = [TagPb(name=tag) for tag in tags]
+
+        return SitePb(
+            name=name,
+            slug=slug,
+            status=status,
+            facility=facility,
+            time_zone=time_zone,
+            description=description,
+            comments=comments,
+            tags=tags,
+        )
+
+
 class Entity:
     """Entity message wrapper."""
 
     def __new__(
         cls,
-        site: _Optional[_Union[str, SitePb]] = None,
+        site: _Optional[_Union[str, Site, SitePb]] = None,
         platform: _Optional[_Union[str, Platform, PlatformPb]] = None,
         manufacturer: _Optional[_Union[str, Manufacturer, ManufacturerPb]] = None,
         device: _Optional[_Union[str, Device, DevicePb]] = None,
