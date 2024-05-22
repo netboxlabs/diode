@@ -175,11 +175,25 @@ class Device:
         if isinstance(platform, str):
             platform = PlatformPb(name=platform, manufacturer=manufacturer)
 
+        if (
+            isinstance(platform, PlatformPb)
+            and not platform.HasField("manufacturer")
+            and manufacturer is not None
+        ):
+            platform.manufacturer.CopyFrom(manufacturer)
+
         if isinstance(site, str):
             site = SitePb(name=site)
 
         if isinstance(device_type, str):
             device_type = DeviceTypePb(model=device_type, manufacturer=manufacturer)
+
+        if (
+            isinstance(device_type, DeviceTypePb)
+            and not device_type.HasField("manufacturer")
+            and manufacturer is not None
+        ):
+            device_type.manufacturer.CopyFrom(manufacturer)
 
         if isinstance(role, str):
             role = RolePb(name=role)
@@ -242,11 +256,25 @@ class Interface:
         if isinstance(platform, str):
             platform = PlatformPb(name=platform, manufacturer=manufacturer)
 
+        if (
+            isinstance(platform, PlatformPb)
+            and not platform.HasField("manufacturer")
+            and manufacturer is not None
+        ):
+            platform.manufacturer.CopyFrom(manufacturer)
+
         if isinstance(site, str):
             site = SitePb(name=site)
 
         if isinstance(device_type, str):
             device_type = DeviceTypePb(model=device_type, manufacturer=manufacturer)
+
+        if (
+            isinstance(device_type, DeviceTypePb)
+            and not device_type.HasField("manufacturer")
+            and manufacturer is not None
+        ):
+            device_type.manufacturer.CopyFrom(manufacturer)
 
         if isinstance(role, str):
             role = RolePb(name=role)
@@ -307,11 +335,25 @@ class IPAddress:
         if isinstance(platform, str):
             platform = PlatformPb(name=platform, manufacturer=manufacturer)
 
+        if (
+            isinstance(platform, PlatformPb)
+            and not platform.HasField("manufacturer")
+            and manufacturer is not None
+        ):
+            platform.manufacturer.CopyFrom(manufacturer)
+
         if isinstance(site, str):
             site = SitePb(name=site)
 
         if isinstance(device_type, str):
             device_type = DeviceTypePb(model=device_type, manufacturer=manufacturer)
+
+        if (
+            isinstance(device_type, DeviceTypePb)
+            and not device_type.HasField("manufacturer")
+            and manufacturer is not None
+        ):
+            device_type.manufacturer.CopyFrom(manufacturer)
 
         if isinstance(device_role, str):
             device_role = RolePb(name=device_role)
