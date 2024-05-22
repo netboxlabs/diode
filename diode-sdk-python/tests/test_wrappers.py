@@ -49,6 +49,7 @@ from netboxlabs.diode.sdk.ingester import (
     Prefix,
     Role,
     Site,
+    Tag,
 )
 
 
@@ -407,3 +408,30 @@ def test_site_wrapper():
     assert len(site.tags) == 2
     for tag in site.tags:
         assert isinstance(tag, TagPb)
+
+
+def test_tags_wrapper():
+    """Ensure Tag wrapper instantiates TagPb."""
+    tag = Tag(name="tag1")
+    assert isinstance(tag, TagPb)
+    assert tag.name == "tag1"
+
+    tag = TagPb(name="tag1")
+    assert isinstance(tag, TagPb)
+    assert tag.name == "tag1"
+
+    site = Site(name="Site ABC", tags=[Tag(name="tag 1"), Tag(name="tag 2")])
+    assert isinstance(site, SitePb)
+    assert site.name == "Site ABC"
+    assert len(site.tags) == 2
+    for tag in site.tags:
+        assert isinstance(tag, TagPb)
+        assert tag.name in ["tag 1", "tag 2"]
+
+    site = Site(name="Site ABC", tags=["tag 1", "tag 2"])
+    assert isinstance(site, SitePb)
+    assert site.name == "Site ABC"
+    assert len(site.tags) == 2
+    for tag in site.tags:
+        assert isinstance(tag, TagPb)
+        assert tag.name in ["tag 1", "tag 2"]

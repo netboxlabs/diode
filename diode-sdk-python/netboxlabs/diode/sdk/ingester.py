@@ -50,6 +50,19 @@ def convert_to_protobuf(value: Any, protobuf_class, **kwargs):
     return value
 
 
+class Tag:
+    """Tag message wrapper."""
+
+    def __new__(
+        cls,
+        name: _Optional[str] = None,
+        slug: _Optional[str] = None,
+        color: _Optional[str] = None,
+    ) -> TagPb:
+        """Create a new Tag protobuf message."""
+        return TagPb(name=name, slug=slug, color=color)
+
+
 class Manufacturer:
     """Manufacturer message wrapper."""
 
@@ -58,7 +71,7 @@ class Manufacturer:
         name: _Optional[str] = None,
         slug: _Optional[str] = None,
         description: _Optional[str] = None,
-        tags: _Optional[list[str]] = None,
+        tags: _Optional[list[_Union[str, Tag, TagPb]]] = None,
     ) -> ManufacturerPb:
         """Create a new Manufacturer protobuf message."""
         if isinstance(tags, list) and all(isinstance(t, str) for t in tags):
@@ -81,7 +94,7 @@ class Platform:
         slug: _Optional[str] = None,
         manufacturer: _Optional[_Union[str, Manufacturer, ManufacturerPb]] = None,
         description: _Optional[str] = None,
-        tags: _Optional[list[str]] = None,
+        tags: _Optional[list[_Union[str, Tag, TagPb]]] = None,
     ) -> PlatformPb:
         """Create a new Platform protobuf message."""
         manufacturer = convert_to_protobuf(
@@ -109,7 +122,7 @@ class Role:
         slug: _Optional[str] = None,
         color: _Optional[str] = None,
         description: _Optional[str] = None,
-        tags: _Optional[list[str]] = None,
+        tags: _Optional[list[_Union[str, Tag, TagPb]]] = None,
     ) -> RolePb:
         """Create a new Role protobuf message."""
         if isinstance(tags, list) and all(isinstance(t, str) for t in tags):
@@ -135,7 +148,7 @@ class DeviceType:
         description: _Optional[str] = None,
         comments: _Optional[str] = None,
         part_number: _Optional[str] = None,
-        tags: _Optional[list[str]] = None,
+        tags: _Optional[list[_Union[str, Tag, TagPb]]] = None,
     ) -> DeviceTypePb:
         """Create a new DeviceType protobuf message."""
         manufacturer = convert_to_protobuf(
@@ -172,7 +185,7 @@ class Device:
         status: _Optional[str] = None,
         description: _Optional[str] = None,
         comments: _Optional[str] = None,
-        tags: _Optional[list[str]] = None,
+        tags: _Optional[list[_Union[str, Tag, TagPb]]] = None,
         primary_ip4: _Optional[_Union[str, IPAddressPb]] = None,
         primary_ip6: _Optional[_Union[str, IPAddressPb]] = None,
         manufacturer: _Optional[_Union[str, Manufacturer, ManufacturerPb]] = None,
@@ -252,7 +265,7 @@ class Interface:
         description: _Optional[str] = None,
         mark_connected: _Optional[bool] = None,
         mode: _Optional[str] = None,
-        tags: _Optional[list[str]] = None,
+        tags: _Optional[list[_Union[str, Tag, TagPb]]] = None,
     ) -> InterfacePb:
         """Create a new Interface protobuf message."""
         manufacturer = convert_to_protobuf(
@@ -333,7 +346,7 @@ class IPAddress:
         dns_name: _Optional[str] = None,
         description: _Optional[str] = None,
         comments: _Optional[str] = None,
-        tags: _Optional[list[str]] = None,
+        tags: _Optional[list[_Union[str, Tag, TagPb]]] = None,
     ) -> IPAddressPb:
         """Create a new IPAddress protobuf message."""
         manufacturer = convert_to_protobuf(
@@ -410,7 +423,7 @@ class Prefix:
         mark_utilized: _Optional[bool] = None,
         description: _Optional[str] = None,
         comments: _Optional[str] = None,
-        tags: _Optional[list[str]] = None,
+        tags: _Optional[list[_Union[str, Tag, TagPb]]] = None,
     ) -> PrefixPb:
         """Create a new Prefix protobuf message."""
         site = convert_to_protobuf(site, SitePb, name=site)
@@ -442,7 +455,7 @@ class Site:
         time_zone: _Optional[str] = None,
         description: _Optional[str] = None,
         comments: _Optional[str] = None,
-        tags: _Optional[list[str]] = None,
+        tags: _Optional[list[_Union[str, Tag, TagPb]]] = None,
     ) -> SitePb:
         """Create a new Site protobuf message."""
         if isinstance(tags, list) and all(isinstance(t, str) for t in tags):
