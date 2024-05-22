@@ -214,6 +214,24 @@ def test_device_wrapper():
     assert device.asset_tag == "123456"
     assert device.status == "active"
 
+    device = Device(
+        name="Device ABC",
+        device_type=DeviceType(model="Device Type ABC"),
+        platform=Platform(name="Platform ABC"),
+        manufacturer="Cisco",
+    )
+    assert device.device_type.manufacturer.name == "Cisco"
+    assert device.platform.manufacturer.name == "Cisco"
+
+    device = Device(
+        name="Device ABC",
+        device_type=DeviceType(model="Device Type ABC", manufacturer="Manufacturer A"),
+        platform=Platform(name="Platform ABC", manufacturer="Manufacturer A"),
+        manufacturer="Cisco",
+    )
+    assert device.device_type.manufacturer.name == "Manufacturer A"
+    assert device.platform.manufacturer.name == "Manufacturer A"
+
 
 def test_interface_wrapper():
     """Ensure Interface wrapper instantiates InterfacePb."""
@@ -253,6 +271,30 @@ def test_interface_wrapper():
     assert interface.mtu == 1500
     assert interface.mac_address == "00:00:00:00:00:00"
     assert interface.description == "Description ABC"
+
+    interface = Interface(
+        name="Interface ABC",
+        device="Device ABC",
+        device_type="Device Type ABC",
+        role="Role ABC",
+        platform="Platform ABC",
+        site="Site ABC",
+        manufacturer="Cisco",
+    )
+    assert interface.device.device_type.manufacturer.name == "Cisco"
+    assert interface.device.platform.manufacturer.name == "Cisco"
+
+    interface = Interface(
+        name="Interface ABC",
+        device="Device ABC",
+        device_type=DeviceType(model="Device Type ABC", manufacturer="Manufacturer A"),
+        role="Role ABC",
+        platform=Platform(name="Platform ABC", manufacturer="Manufacturer A"),
+        site="Site ABC",
+        manufacturer="Cisco",
+    )
+    assert interface.device.device_type.manufacturer.name == "Manufacturer A"
+    assert interface.device.platform.manufacturer.name == "Manufacturer A"
 
 
 def test_ip_address_wrapper():
@@ -300,6 +342,32 @@ def test_ip_address_wrapper():
     assert ip_address.interface.device.platform.name == "Platform ABC"
     assert isinstance(ip_address.interface.device.platform.manufacturer, ManufacturerPb)
     assert ip_address.interface.device.platform.manufacturer.name == "Cisco"
+
+    ip_address = IPAddress(
+        address="192.168.0.1/24",
+        interface="Interface ABC",
+        device="Device ABC",
+        device_type="Device Type ABC",
+        device_role="Role ABC",
+        platform="Platform ABC",
+        manufacturer="Cisco",
+        site="Site ABC",
+    )
+    assert ip_address.interface.device.device_type.manufacturer.name == "Cisco"
+    assert ip_address.interface.device.platform.manufacturer.name == "Cisco"
+
+    ip_address = IPAddress(
+        address="192.168.0.1/24",
+        interface="Interface ABC",
+        device="Device ABC",
+        device_type=DeviceType(model="Device Type ABC", manufacturer="Manufacturer A"),
+        device_role="Role ABC",
+        platform=Platform(name="Platform ABC", manufacturer="Manufacturer A"),
+        manufacturer="Cisco",
+        site="Site ABC",
+    )
+    assert ip_address.interface.device.device_type.manufacturer.name == "Manufacturer A"
+    assert ip_address.interface.device.platform.manufacturer.name == "Manufacturer A"
 
 
 def test_prefix_wrapper():

@@ -1,10 +1,7 @@
 from behave import given, when, then
-from netboxlabs.diode.sdk.diode.v1.ingester_pb2 import (
+from netboxlabs.diode.sdk.ingester import (
     Device,
-    DeviceType,
     Entity,
-    Role,
-    Site,
 )
 from steps.utils import (
     get_object_state,
@@ -44,7 +41,7 @@ def ingest_device_without_site(context):
     """Ingest the device using the Diode SDK"""
 
     entities = [
-        Entity(device=Device(name=context.device_name)),
+        Entity(device=context.device_name),
     ]
 
     response = ingester(entities)
@@ -123,7 +120,7 @@ def ingest_device_with_site(context):
         Entity(
             device=Device(
                 name=context.device_name,
-                site=Site(name=context.site_name),
+                site=context.site_name,
             ),
         ),
     ]
@@ -152,9 +149,9 @@ def ingest_device_with_site_device_type_and_role(context):
         Entity(
             device=Device(
                 name=context.device_name,
-                site=Site(name=context.site_name),
-                device_type=DeviceType(model=context.device_type_model),
-                role=Role(name=context.device_role_name),
+                site=context.site_name,
+                device_type=context.device_type_model,
+                role=context.device_role_name,
             ),
         ),
     ]
