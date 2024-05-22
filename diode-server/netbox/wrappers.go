@@ -132,8 +132,6 @@ func (dw *DcimDeviceDataWrapper) NestedObjects() ([]ComparableData, error) {
 
 	objects = append(objects, dto...)
 
-	objects = dedupManufacturers(objects)
-
 	dw.Device.DeviceType = deviceType.DeviceType
 
 	deviceRole := DcimDeviceRoleDataWrapper{DeviceRole: dw.Device.Role, placeholder: dw.placeholder, hasParent: true, intended: dw.intended}
@@ -161,53 +159,6 @@ func (dw *DcimDeviceDataWrapper) NestedObjects() ([]ComparableData, error) {
 	objects = append(objects, dw)
 
 	return objects, nil
-}
-
-func dedupManufacturers(objects []ComparableData) []ComparableData {
-	type indexedComparableData struct {
-		index int
-		data  ComparableData
-	}
-
-	var nonPlaceholderManufacturer *indexedComparableData
-
-	var manufacturerObjects []ComparableData
-	for i, obj := range objects {
-		if obj.DataType() == DcimManufacturerObjectType {
-			manufacturerObjects = append(manufacturerObjects, obj)
-			if !obj.IsPlaceholder() {
-				nonPlaceholderManufacturer = &indexedComparableData{index: i, data: obj}
-			}
-		}
-	}
-
-	if len(manufacturerObjects) < 2 {
-		return objects
-	}
-
-	var dedupObjects []ComparableData
-
-	for i, obj := range objects {
-		if obj.DataType() == DcimManufacturerObjectType {
-			if nonPlaceholderManufacturer != nil {
-				if i == nonPlaceholderManufacturer.index {
-					continue
-				}
-
-				if obj.IsPlaceholder() {
-					objData := obj.Data().(*DcimManufacturer)
-					data := nonPlaceholderManufacturer.data
-					*objData = *data.Data().(*DcimManufacturer)
-					objects[i] = data
-					dedupObjects = append(dedupObjects, data)
-					continue
-				}
-			}
-		}
-		dedupObjects = append(dedupObjects, obj)
-	}
-
-	return dedupObjects
 }
 
 // DataType returns the data type
@@ -650,9 +601,13 @@ func (dw *DcimDeviceTypeDataWrapper) DataType() string {
 
 // ObjectStateQueryParams returns the query parameters needed to retrieve its object state
 func (dw *DcimDeviceTypeDataWrapper) ObjectStateQueryParams() map[string]string {
-	return map[string]string{
+	params := map[string]string{
 		"q": dw.DeviceType.Model,
 	}
+	if dw.DeviceType.Manufacturer != nil {
+		params["manufacturer__name"] = dw.DeviceType.Manufacturer.Name
+	}
+	return params
 }
 
 // ID returns the ID of the data
@@ -1375,9 +1330,13 @@ func (dw *DcimPlatformDataWrapper) DataType() string {
 
 // ObjectStateQueryParams returns the query parameters needed to retrieve its object state
 func (dw *DcimPlatformDataWrapper) ObjectStateQueryParams() map[string]string {
-	return map[string]string{
+	params := map[string]string{
 		"q": dw.Platform.Name,
 	}
+	if dw.Platform.Manufacturer != nil {
+		params["manufacturer__name"] = dw.Platform.Manufacturer.Name
+	}
+	return params
 }
 
 // ID returns the ID of the data
