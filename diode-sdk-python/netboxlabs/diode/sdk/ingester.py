@@ -2,7 +2,7 @@
 # Copyright 2024 NetBox Labs Inc
 """NetBox Labs, Diode - SDK - ingester protobuf message wrappers."""
 
-from typing import Mapping as _Mapping
+from typing import Any
 from typing import Optional as _Optional
 from typing import Union as _Union
 
@@ -43,6 +43,13 @@ from netboxlabs.diode.sdk.diode.v1.ingester_pb2 import (
 )
 
 
+def convert_to_protobuf(value: Any, protobuf_class, **kwargs):
+    """Convert a value to a protobuf message."""
+    if isinstance(value, str):
+        return protobuf_class(**kwargs)
+    return value
+
+
 class Manufacturer:
     """Manufacturer message wrapper."""
 
@@ -77,8 +84,9 @@ class Platform:
         tags: _Optional[list[str]] = None,
     ) -> PlatformPb:
         """Create a new Platform protobuf message."""
-        if isinstance(manufacturer, str):
-            manufacturer = ManufacturerPb(name=manufacturer)
+        manufacturer = convert_to_protobuf(
+            manufacturer, ManufacturerPb, name=manufacturer
+        )
 
         if isinstance(tags, list) and all(isinstance(t, str) for t in tags):
             tags = [TagPb(name=tag) for tag in tags]
@@ -130,8 +138,9 @@ class DeviceType:
         tags: _Optional[list[str]] = None,
     ) -> DeviceTypePb:
         """Create a new DeviceType protobuf message."""
-        if isinstance(manufacturer, str):
-            manufacturer = ManufacturerPb(name=manufacturer)
+        manufacturer = convert_to_protobuf(
+            manufacturer, ManufacturerPb, name=manufacturer
+        )
 
         if isinstance(tags, list) and all(isinstance(t, str) for t in tags):
             tags = [TagPb(name=tag) for tag in tags]
@@ -169,11 +178,12 @@ class Device:
         manufacturer: _Optional[_Union[str, Manufacturer, ManufacturerPb]] = None,
     ) -> DevicePb:
         """Create a new Device protobuf message."""
-        if isinstance(manufacturer, str):
-            manufacturer = ManufacturerPb(name=manufacturer)
-
-        if isinstance(platform, str):
-            platform = PlatformPb(name=platform, manufacturer=manufacturer)
+        manufacturer = convert_to_protobuf(
+            manufacturer, ManufacturerPb, name=manufacturer
+        )
+        platform = convert_to_protobuf(
+            platform, PlatformPb, name=platform, manufacturer=manufacturer
+        )
 
         if (
             isinstance(platform, PlatformPb)
@@ -182,11 +192,10 @@ class Device:
         ):
             platform.manufacturer.CopyFrom(manufacturer)
 
-        if isinstance(site, str):
-            site = SitePb(name=site)
-
-        if isinstance(device_type, str):
-            device_type = DeviceTypePb(model=device_type, manufacturer=manufacturer)
+        site = convert_to_protobuf(site, SitePb, name=site)
+        device_type = convert_to_protobuf(
+            device_type, DeviceTypePb, model=device_type, manufacturer=manufacturer
+        )
 
         if (
             isinstance(device_type, DeviceTypePb)
@@ -195,17 +204,13 @@ class Device:
         ):
             device_type.manufacturer.CopyFrom(manufacturer)
 
-        if isinstance(role, str):
-            role = RolePb(name=role)
+        role = convert_to_protobuf(role, RolePb, name=role)
 
         if isinstance(tags, list) and all(isinstance(t, str) for t in tags):
             tags = [TagPb(name=tag) for tag in tags]
 
-        if isinstance(primary_ip4, str):
-            primary_ip4 = IPAddressPb(address=primary_ip4)
-
-        if isinstance(primary_ip6, str):
-            primary_ip6 = IPAddressPb(address=primary_ip6)
+        primary_ip4 = convert_to_protobuf(primary_ip4, IPAddressPb, address=IPAddressPb)
+        primary_ip6 = convert_to_protobuf(primary_ip6, IPAddressPb, address=IPAddressPb)
 
         return DevicePb(
             name=name,
@@ -250,11 +255,13 @@ class Interface:
         tags: _Optional[list[str]] = None,
     ) -> InterfacePb:
         """Create a new Interface protobuf message."""
-        if isinstance(manufacturer, str):
-            manufacturer = ManufacturerPb(name=manufacturer)
+        manufacturer = convert_to_protobuf(
+            manufacturer, ManufacturerPb, name=manufacturer
+        )
 
-        if isinstance(platform, str):
-            platform = PlatformPb(name=platform, manufacturer=manufacturer)
+        platform = convert_to_protobuf(
+            platform, PlatformPb, name=platform, manufacturer=manufacturer
+        )
 
         if (
             isinstance(platform, PlatformPb)
@@ -263,11 +270,11 @@ class Interface:
         ):
             platform.manufacturer.CopyFrom(manufacturer)
 
-        if isinstance(site, str):
-            site = SitePb(name=site)
+        site = convert_to_protobuf(site, SitePb, name=site)
 
-        if isinstance(device_type, str):
-            device_type = DeviceTypePb(model=device_type, manufacturer=manufacturer)
+        device_type = convert_to_protobuf(
+            device_type, DeviceTypePb, model=device_type, manufacturer=manufacturer
+        )
 
         if (
             isinstance(device_type, DeviceTypePb)
@@ -276,17 +283,17 @@ class Interface:
         ):
             device_type.manufacturer.CopyFrom(manufacturer)
 
-        if isinstance(role, str):
-            role = RolePb(name=role)
+        role = convert_to_protobuf(role, RolePb, name=role)
 
-        if isinstance(device, str):
-            device = DevicePb(
-                name=device,
-                device_type=device_type,
-                platform=platform,
-                site=site,
-                role=role,
-            )
+        device = convert_to_protobuf(
+            device,
+            DevicePb,
+            name=device,
+            device_type=device_type,
+            platform=platform,
+            site=site,
+            role=role,
+        )
 
         if isinstance(tags, list) and all(isinstance(t, str) for t in tags):
             tags = [TagPb(name=tag) for tag in tags]
@@ -329,11 +336,13 @@ class IPAddress:
         tags: _Optional[list[str]] = None,
     ) -> IPAddressPb:
         """Create a new IPAddress protobuf message."""
-        if isinstance(manufacturer, str):
-            manufacturer = ManufacturerPb(name=manufacturer)
+        manufacturer = convert_to_protobuf(
+            manufacturer, ManufacturerPb, name=manufacturer
+        )
 
-        if isinstance(platform, str):
-            platform = PlatformPb(name=platform, manufacturer=manufacturer)
+        platform = convert_to_protobuf(
+            platform, PlatformPb, name=platform, manufacturer=manufacturer
+        )
 
         if (
             isinstance(platform, PlatformPb)
@@ -342,11 +351,11 @@ class IPAddress:
         ):
             platform.manufacturer.CopyFrom(manufacturer)
 
-        if isinstance(site, str):
-            site = SitePb(name=site)
+        site = convert_to_protobuf(site, SitePb, name=site)
 
-        if isinstance(device_type, str):
-            device_type = DeviceTypePb(model=device_type, manufacturer=manufacturer)
+        device_type = convert_to_protobuf(
+            device_type, DeviceTypePb, model=device_type, manufacturer=manufacturer
+        )
 
         if (
             isinstance(device_type, DeviceTypePb)
@@ -355,19 +364,24 @@ class IPAddress:
         ):
             device_type.manufacturer.CopyFrom(manufacturer)
 
-        if isinstance(device_role, str):
-            device_role = RolePb(name=device_role)
+        device_role = convert_to_protobuf(device_role, RolePb, name=device_role)
 
-        if isinstance(device, str):
-            device = DevicePb(
-                name=device,
-                device_type=device_type,
-                platform=platform,
-                site=site,
-                role=device_role,
-            )
-        if isinstance(interface, str):
-            interface = InterfacePb(name=interface, device=device)
+        device = convert_to_protobuf(
+            device,
+            DevicePb,
+            name=device,
+            device_type=device_type,
+            platform=platform,
+            site=site,
+            role=device_role,
+        )
+
+        interface = convert_to_protobuf(
+            interface,
+            InterfacePb,
+            name=interface,
+            device=device,
+        )
 
         if isinstance(tags, list) and all(isinstance(t, str) for t in tags):
             tags = [TagPb(name=tag) for tag in tags]
@@ -399,8 +413,7 @@ class Prefix:
         tags: _Optional[list[str]] = None,
     ) -> PrefixPb:
         """Create a new Prefix protobuf message."""
-        if isinstance(site, str):
-            site = SitePb(name=site)
+        site = convert_to_protobuf(site, SitePb, name=site)
 
         if isinstance(tags, list) and all(isinstance(t, str) for t in tags):
             tags = [TagPb(name=tag) for tag in tags]
@@ -464,32 +477,17 @@ class Entity:
         timestamp: _Optional[_timestamp_pb2.Timestamp] = None,
     ):
         """Create a new Entity protobuf message."""
-        if isinstance(site, str):
-            site = SitePb(name=site)
-
-        if isinstance(platform, str):
-            platform = PlatformPb(name=platform)
-
-        if isinstance(manufacturer, str):
-            manufacturer = ManufacturerPb(name=manufacturer)
-
-        if isinstance(device, str):
-            device = DevicePb(name=device)
-
-        if isinstance(device_role, str):
-            device_role = RolePb(name=device_role)
-
-        if isinstance(device_type, str):
-            device_type = DeviceTypePb(model=device_type)
-
-        if isinstance(ip_address, str):
-            ip_address = IPAddressPb(address=ip_address)
-
-        if isinstance(interface, str):
-            interface = InterfacePb(name=interface)
-
-        if isinstance(prefix, str):
-            prefix = PrefixPb(prefix=prefix)
+        site = convert_to_protobuf(site, SitePb, name=site)
+        platform = convert_to_protobuf(platform, PlatformPb, name=platform)
+        manufacturer = convert_to_protobuf(
+            manufacturer, ManufacturerPb, name=manufacturer
+        )
+        device = convert_to_protobuf(device, DevicePb, name=device)
+        device_role = convert_to_protobuf(device_role, RolePb, name=device_role)
+        device_type = convert_to_protobuf(device_type, DeviceTypePb, model=device_type)
+        ip_address = convert_to_protobuf(ip_address, IPAddressPb, address=ip_address)
+        interface = convert_to_protobuf(interface, InterfacePb, name=interface)
+        prefix = convert_to_protobuf(prefix, PrefixPb, prefix=prefix)
 
         return EntityPb(
             site=site,
