@@ -22,6 +22,11 @@ def set_device_without_site(context, device_name):
     context.device_role_name = "undefined"
 
 
+@given('tags "{tags}" are provided')
+def set_tags(context, tags):
+    context.device_tags = tags.split(",")
+
+
 @given('device "{device_name}" with site "{site_name}" does not exist')
 def ensure_device_does_not_exists(context, device_name, site_name):
     """Ensure that the device does not exist."""
@@ -88,6 +93,14 @@ def assert_device_role(context, device_role_name):
     assert context.existing_device.get("device_role").get("name") == device_role_name
 
 
+@then('tags "{tags}" are present')
+def assert_tags(context, tags):
+    """Assert that the device role is correct."""
+    assert context.existing_device is not None
+    device_tags = [tag.get("name") for tag in context.existing_device.get("tags")]
+    assert set(device_tags) == set(tags.split(","))
+
+
 @given('device "{device_name}" with site "{site_name}" exists')
 def assert_device_exists_with_site(context, device_name, site_name):
     """Assert that the device exists."""
@@ -152,6 +165,27 @@ def ingest_device_with_site_device_type_and_role(context):
                 site=context.site_name,
                 device_type=context.device_type_model,
                 role=context.device_role_name,
+            ),
+        ),
+    ]
+
+    context.response = ingester(entities)
+    assert context.response.errors == []
+
+    return context.response
+
+
+@when("the device with site, device type, role and tags is ingested")
+def ingest_device_with_site_device_type_role_and_tags(context):
+    """Ingest the device using the Diode SDK"""
+    entities = [
+        Entity(
+            device=Device(
+                name=context.device_name,
+                site=context.site_name,
+                device_type=context.device_type_model,
+                role=context.device_role_name,
+                tags=context.device_tags,
             ),
         ),
     ]

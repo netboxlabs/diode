@@ -40,3 +40,15 @@ Scenario: Ingestion of existing device (site provided) with different device typ
     Then the device is found
         And device type is "ISR4321"
         And role is "WAN Router"
+
+@smoke
+@ingestion.device
+Scenario: Ingestion of a new device with tags
+    Given device "router01" with site not provided
+        And tags "tag1,tag2,tag3" are provided
+        And device "router01" with site "undefined" does not exist
+    When the device with site, device type, role and tags is ingested
+    Then the device is found
+        And device type is "undefined"
+        And role is "undefined"
+        And tags "tag1,tag2,tag3" are present
