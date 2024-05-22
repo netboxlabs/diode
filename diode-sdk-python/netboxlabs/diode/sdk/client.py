@@ -10,6 +10,7 @@ from typing import Dict, Iterable, Optional, Union
 
 import certifi
 import grpc
+import sentry_sdk
 
 from netboxlabs.diode.sdk.diode.v1 import ingester_pb2, ingester_pb2_grpc
 from netboxlabs.diode.sdk.exceptions import DiodeClientError, DiodeConfigError
@@ -18,6 +19,7 @@ from netboxlabs.diode.sdk.ingester import Entity
 _DIODE_API_KEY_ENVVAR_NAME = "DIODE_API_KEY"
 _DIODE_TLS_VERIFY_ENVVAR_NAME = "DIODE_TLS_VERIFY"
 _DIODE_SDK_LOG_LEVEL_ENVVAR_NAME = "DIODE_SDK_LOG_LEVEL"
+_DIODE_SENTRY_DSN_ENVVAR_NAME = "DIODE_SENTRY_DSN"
 _DEFAULT_STREAM = "latest"
 _LOGGER = logging.getLogger(__name__)
 
@@ -66,6 +68,12 @@ def parse_target(target: str) -> Dict[str, str]:
     return authority, path
 
 
+def _sentry_dsn(sentry_dsn: Optional[str] = None) -> str:
+    if sentry_dsn is None:
+        sentry_dsn = os.getenv(_DIODE_SENTRY_DSN_ENVVAR_NAME)
+    return sentry_dsn
+
+
 class DiodeClient:
     """Diode Client."""
 
@@ -83,6 +91,9 @@ class DiodeClient:
         app_version: str,
         api_key: Optional[str] = None,
         tls_verify: bool = None,
+        sentry_dsn: str = None,
+        sentry_traces_sample_rate: float = 1.0,
+        sentry_profiles_sample_rate: float = 1.0,
     ):
         """Initiate a new client."""
         log_level = os.getenv(_DIODE_SDK_LOG_LEVEL_ENVVAR_NAME, "INFO").upper()
@@ -91,12 +102,14 @@ class DiodeClient:
         self._target, self._path = parse_target(target)
         self._app_name = app_name
         self._app_version = app_version
+        self._platform = platform.platform()
+        self._python_version = platform.python_version()
 
         api_key = _api_key(api_key)
         self._metadata = (
             ("diode-api-key", api_key),
-            ("platform", platform.platform()),
-            ("python-version", platform.python_version()),
+            ("platform", self._platform),
+            ("python-version", self._python_version),
         )
 
         self._tls_verify = _tls_verify(tls_verify)
@@ -124,6 +137,13 @@ class DiodeClient:
             channel = intercept_channel
 
         self._stub = ingester_pb2_grpc.IngesterServiceStub(channel)
+
+        self._sentry_dsn = _sentry_dsn(sentry_dsn)
+        print(f"self._sentry_dsn: {self._sentry_dsn}")
+        if self._sentry_dsn is not None:
+            self._setup_sentry(
+                self._sentry_dsn, sentry_traces_sample_rate, sentry_profiles_sample_rate
+            )
 
     @property
     def name(self) -> str:
@@ -197,6 +217,23 @@ class DiodeClient:
             return self._stub.Ingest(request, metadata=self._metadata)
         except grpc.RpcError as err:
             raise DiodeClientError(err) from err
+
+    def _setup_sentry(
+        self, dsn: str, traces_sample_rate: float, profiles_sample_rate: float
+    ):
+        sentry_sdk.init(
+            dsn=dsn,
+            release=self.version,
+            traces_sample_rate=traces_sample_rate,
+            profiles_sample_rate=profiles_sample_rate,
+        )
+        sentry_sdk.set_tag("target", self.target)
+        sentry_sdk.set_tag("path", self.path if self.path else "/")
+        sentry_sdk.set_tag("app_name", self.app_name)
+        sentry_sdk.set_tag("app_version", self.app_version)
+        sentry_sdk.set_tag("sdk_version", self.version)
+        sentry_sdk.set_tag("platform", self._platform)
+        sentry_sdk.set_tag("python_version", self._python_version)
 
 
 class _ClientCallDetails(
