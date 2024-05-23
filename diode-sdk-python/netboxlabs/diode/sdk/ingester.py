@@ -222,8 +222,8 @@ class Device:
         if isinstance(tags, list) and all(isinstance(t, str) for t in tags):
             tags = [TagPb(name=tag) for tag in tags]
 
-        primary_ip4 = convert_to_protobuf(primary_ip4, IPAddressPb, address=IPAddressPb)
-        primary_ip6 = convert_to_protobuf(primary_ip6, IPAddressPb, address=IPAddressPb)
+        primary_ip4 = convert_to_protobuf(primary_ip4, IPAddressPb, address=primary_ip4)
+        primary_ip6 = convert_to_protobuf(primary_ip6, IPAddressPb, address=primary_ip6)
 
         return DevicePb(
             name=name,

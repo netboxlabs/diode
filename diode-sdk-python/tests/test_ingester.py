@@ -172,6 +172,7 @@ def test_device_wrapper():
         serial="123456",
         asset_tag="123456",
         status="active",
+        primary_ip4="192.168.0.1/24",
     )
     assert isinstance(device, DevicePb)
     assert device.name == "Device ABC"
@@ -188,6 +189,7 @@ def test_device_wrapper():
     assert device.serial == "123456"
     assert device.asset_tag == "123456"
     assert device.status == "active"
+    assert isinstance(device.primary_ip4, IPAddressPb)
 
     device = Device(
         name="Device ABC",
