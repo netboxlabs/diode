@@ -176,7 +176,7 @@ class Device:
         cls,
         name: _Optional[str] = None,
         device_type: _Optional[_Union[str, DeviceType, DeviceTypePb]] = None,
-        fqdn: _Optional[str] = None,
+        device_fqdn: _Optional[str] = None,
         role: _Optional[_Union[str, Role, RolePb]] = None,
         platform: _Optional[_Union[str, Platform, PlatformPb]] = None,
         serial: _Optional[str] = None,
@@ -227,7 +227,7 @@ class Device:
 
         return DevicePb(
             name=name,
-            device_fqdn=fqdn,
+            device_fqdn=device_fqdn,
             device_type=device_type,
             role=role,
             platform=platform,
