@@ -165,6 +165,7 @@ def test_device_wrapper():
     device = Device(
         name="Device ABC",
         device_type="Device Type ABC",
+        device_fqdn="device-abc.example.com",
         platform="Platform ABC",
         manufacturer="Cisco",
         site="Site ABC",
@@ -178,6 +179,7 @@ def test_device_wrapper():
     assert device.name == "Device ABC"
     assert isinstance(device.device_type, DeviceTypePb)
     assert device.device_type.model == "Device Type ABC"
+    assert device.device_fqdn == "device-abc.example.com"
     assert isinstance(device.platform, PlatformPb)
     assert device.platform.name == "Platform ABC"
     assert isinstance(device.platform.manufacturer, ManufacturerPb)
