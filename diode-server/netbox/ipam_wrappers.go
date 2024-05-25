@@ -15,6 +15,7 @@ type IpamIPAddressDataWrapper struct {
 	placeholder        bool
 	hasParent          bool
 	intended           bool
+	hasChanged         bool
 	nestedObjects      []ComparableData
 	objectsToReconcile []ComparableData
 }
@@ -138,6 +139,11 @@ func (dw *IpamIPAddressDataWrapper) ID() int {
 	return dw.IPAddress.ID
 }
 
+// HasChanged returns true if the data has changed
+func (dw *IpamIPAddressDataWrapper) HasChanged() bool {
+	return dw.hasChanged
+}
+
 // IsPlaceholder returns true if the data is a placeholder
 func (dw *IpamIPAddressDataWrapper) IsPlaceholder() bool {
 	return dw.placeholder
@@ -210,7 +216,38 @@ func (dw *IpamIPAddressDataWrapper) Patch(cmp ComparableData, intendedNestedObje
 
 			switch dw.IPAddress.AssignedObject.(type) {
 			case *IPAddressInterface:
-				dw.IPAddress.AssignedObject.(*IPAddressInterface).Interface = actualAssignedObject.Data().(*DcimInterface)
+				assignedInterface, err := copyData(actualAssignedObject.Data().(*DcimInterface))
+				if err != nil {
+					return nil, err
+				}
+				assignedInterface.Tags = nil
+
+				if !actualAssignedObject.HasChanged() {
+					assignedInterface = &DcimInterface{
+						ID: actualAssignedObject.ID(),
+						Device: &DcimDevice{
+							ID: actualAssignedObject.Data().(*DcimInterface).Device.ID,
+						},
+					}
+
+					intendedAssignedInterfaceID := intendedAssignedObject.ID()
+					intendedAssignedInterfaceDeviceID := intendedAssignedObject.Data().(*DcimInterface).Device.ID
+					if intended.IPAddress.AssignedObject != nil {
+						intendedAssignedInterfaceID = intended.IPAddress.AssignedObject.(*IPAddressInterface).Interface.ID
+						intendedAssignedInterfaceDeviceID = intended.IPAddress.AssignedObject.(*IPAddressInterface).Interface.Device.ID
+					}
+
+					intended.IPAddress.AssignedObject = &IPAddressInterface{
+						Interface: &DcimInterface{
+							ID: intendedAssignedInterfaceID,
+							Device: &DcimDevice{
+								ID: intendedAssignedInterfaceDeviceID,
+							},
+						},
+					}
+				}
+
+				dw.IPAddress.AssignedObject.(*IPAddressInterface).Interface = assignedInterface
 			}
 
 			dw.objectsToReconcile = append(dw.objectsToReconcile, assignedObjectsToReconcile...)
@@ -265,10 +302,27 @@ func (dw *IpamIPAddressDataWrapper) Patch(cmp ComparableData, intendedNestedObje
 			if aoErr != nil {
 				return nil, aoErr
 			}
+
 			switch dw.IPAddress.AssignedObject.(type) {
 			case *IPAddressInterface:
-				dw.IPAddress.AssignedObject.(*IPAddressInterface).Interface = actualAssignedObject.Data().(*DcimInterface)
+				assignedInterface, err := copyData(actualAssignedObject.Data().(*DcimInterface))
+				if err != nil {
+					return nil, err
+				}
+				assignedInterface.Tags = nil
+
+				if !actualAssignedObject.HasChanged() {
+					assignedInterface = &DcimInterface{
+						ID: actualAssignedObject.Data().(*DcimInterface).ID,
+						Device: &DcimDevice{
+							ID: actualAssignedObject.Data().(*DcimInterface).Device.ID,
+						},
+					}
+				}
+
+				dw.IPAddress.AssignedObject.(*IPAddressInterface).Interface = assignedInterface
 			}
+
 			objectsToReconcile = append(objectsToReconcile, assignedObjectsToReconcile...)
 		}
 
@@ -289,9 +343,8 @@ func (dw *IpamIPAddressDataWrapper) Patch(cmp ComparableData, intendedNestedObje
 		}
 	}
 
-	dw.TrimAssignedObject()
-
 	if reconciliationRequired {
+		dw.hasChanged = true
 		dw.objectsToReconcile = append(dw.objectsToReconcile, dw)
 	}
 
@@ -305,22 +358,6 @@ func (dw *IpamIPAddressDataWrapper) SetDefaults() {
 	}
 }
 
-// TrimAssignedObject trims the assigned object to the necessary fields only
-func (dw *IpamIPAddressDataWrapper) TrimAssignedObject() {
-	switch dw.IPAddress.AssignedObject.(type) {
-	case *IPAddressInterface:
-		dw.IPAddress.AssignedObject.(*IPAddressInterface).Interface = &DcimInterface{
-			ID:   dw.IPAddress.AssignedObject.(*IPAddressInterface).Interface.ID,
-			Name: dw.IPAddress.AssignedObject.(*IPAddressInterface).Interface.Name,
-			Device: &DcimDevice{
-				ID:   dw.IPAddress.AssignedObject.(*IPAddressInterface).Interface.Device.ID,
-				Name: dw.IPAddress.AssignedObject.(*IPAddressInterface).Interface.Device.Name,
-				Site: dw.IPAddress.AssignedObject.(*IPAddressInterface).Interface.Device.Site,
-			},
-		}
-	}
-}
-
 // IpamPrefixDataWrapper represents the IPAM Prefix data wrapper
 type IpamPrefixDataWrapper struct {
 	Prefix *IpamPrefix
@@ -328,6 +365,7 @@ type IpamPrefixDataWrapper struct {
 	placeholder        bool
 	hasParent          bool
 	intended           bool
+	hasChanged         bool
 	nestedObjects      []ComparableData
 	objectsToReconcile []ComparableData
 }
@@ -426,6 +464,11 @@ func (dw *IpamPrefixDataWrapper) ID() int {
 	return dw.Prefix.ID
 }
 
+// HasChanged returns true if the data has changed
+func (dw *IpamPrefixDataWrapper) HasChanged() bool {
+	return dw.hasChanged
+}
+
 // IsPlaceholder returns true if the data is a placeholder
 func (dw *IpamPrefixDataWrapper) IsPlaceholder() bool {
 	return dw.placeholder
@@ -469,7 +512,29 @@ func (dw *IpamPrefixDataWrapper) Patch(cmp ComparableData, intendedNestedObjects
 		if siteErr != nil {
 			return nil, siteErr
 		}
-		dw.Prefix.Site = actualSite.Data().(*DcimSite)
+
+		site, err := copyData(actualSite.Data().(*DcimSite))
+		if err != nil {
+			return nil, err
+		}
+		site.Tags = nil
+
+		if !actualSite.HasChanged() {
+			site = &DcimSite{
+				ID: actualSite.ID(),
+			}
+
+			intendedSiteID := intendedSite.ID()
+			if intended.Prefix.Site != nil {
+				intendedSiteID = intended.Prefix.Site.ID
+			}
+
+			intended.Prefix.Site = &DcimSite{
+				ID: intendedSiteID,
+			}
+		}
+
+		dw.Prefix.Site = site
 
 		dw.objectsToReconcile = append(dw.objectsToReconcile, siteObjectsToReconcile...)
 
@@ -508,7 +573,19 @@ func (dw *IpamPrefixDataWrapper) Patch(cmp ComparableData, intendedNestedObjects
 		if siteErr != nil {
 			return nil, siteErr
 		}
-		dw.Prefix.Site = actualSite.Data().(*DcimSite)
+
+		site, err := copyData(actualSite.Data().(*DcimSite))
+		if err != nil {
+			return nil, err
+		}
+		site.Tags = nil
+
+		if !actualSite.HasChanged() {
+			site = &DcimSite{
+				ID: actualSite.ID(),
+			}
+		}
+		dw.Prefix.Site = site
 
 		dw.objectsToReconcile = append(dw.objectsToReconcile, siteObjectsToReconcile...)
 
@@ -526,6 +603,7 @@ func (dw *IpamPrefixDataWrapper) Patch(cmp ComparableData, intendedNestedObjects
 	}
 
 	if reconciliationRequired {
+		dw.hasChanged = true
 		dw.objectsToReconcile = append(dw.objectsToReconcile, dw)
 	}
 
