@@ -6,6 +6,7 @@ import (
 	"slices"
 
 	"github.com/gosimple/slug"
+	"github.com/jinzhu/copier"
 	"github.com/mitchellh/hashstructure/v2"
 )
 
@@ -42,6 +43,17 @@ type ComparableData interface {
 
 	// Patch creates patches between the actual, intended and current data
 	Patch(ComparableData, map[string]ComparableData) ([]ComparableData, error)
+
+	// HasChanged returns true if the data has changed
+	HasChanged() bool
+}
+
+func copyData[T any](srcData *T) (*T, error) {
+	var dstData T
+	if err := copier.Copy(&dstData, srcData); err != nil {
+		return nil, err
+	}
+	return &dstData, nil
 }
 
 // DcimDeviceDataWrapper represents a DCIM device data wrapper
@@ -51,6 +63,7 @@ type DcimDeviceDataWrapper struct {
 	placeholder        bool
 	hasParent          bool
 	intended           bool
+	hasChanged         bool
 	nestedObjects      []ComparableData
 	objectsToReconcile []ComparableData
 }
@@ -98,6 +111,10 @@ func (dw *DcimDeviceDataWrapper) NestedObjects() ([]ComparableData, error) {
 		dw.Device = NewDcimDevice()
 		dw.placeholder = true
 	}
+
+	// Ignore primary IP addresses for time being
+	dw.Device.PrimaryIPv4 = nil
+	dw.Device.PrimaryIPv6 = nil
 
 	site := DcimSiteDataWrapper{Site: dw.Device.Site, placeholder: dw.placeholder, hasParent: true, intended: dw.intended}
 
@@ -182,6 +199,11 @@ func (dw *DcimDeviceDataWrapper) ID() int {
 	return dw.Device.ID
 }
 
+// HasChanged returns true if the data has changed
+func (dw *DcimDeviceDataWrapper) HasChanged() bool {
+	return dw.hasChanged
+}
+
 // IsPlaceholder returns true if the data is a placeholder
 func (dw *DcimDeviceDataWrapper) IsPlaceholder() bool {
 	return dw.placeholder
@@ -254,7 +276,29 @@ func (dw *DcimDeviceDataWrapper) Patch(cmp ComparableData, intendedNestedObjects
 		if siteErr != nil {
 			return nil, siteErr
 		}
-		dw.Device.Site = actualSite.Data().(*DcimSite)
+
+		site, err := copyData(actualSite.Data().(*DcimSite))
+		if err != nil {
+			return nil, err
+		}
+		site.Tags = nil
+
+		if !actualSite.HasChanged() {
+			site = &DcimSite{
+				ID: actualSite.ID(),
+			}
+
+			intendedSiteID := intendedSite.ID()
+			if intended.Device.Site != nil {
+				intendedSiteID = intended.Device.Site.ID
+			}
+
+			intended.Device.Site = &DcimSite{
+				ID: intendedSiteID,
+			}
+		}
+
+		dw.Device.Site = site
 
 		dw.objectsToReconcile = append(dw.objectsToReconcile, siteObjectsToReconcile...)
 
@@ -267,7 +311,29 @@ func (dw *DcimDeviceDataWrapper) Patch(cmp ComparableData, intendedNestedObjects
 			if platformErr != nil {
 				return nil, platformErr
 			}
-			dw.Device.Platform = actualPlatform.Data().(*DcimPlatform)
+
+			platform, err := copyData(actualPlatform.Data().(*DcimPlatform))
+			if err != nil {
+				return nil, err
+			}
+			platform.Tags = nil
+
+			if !actualPlatform.HasChanged() {
+				platform = &DcimPlatform{
+					ID: actualPlatform.ID(),
+				}
+
+				intendedPlatformID := intendedPlatform.ID()
+				if intended.Device.Platform != nil {
+					intendedPlatformID = intended.Device.Platform.ID
+				}
+
+				intended.Device.Platform = &DcimPlatform{
+					ID: intendedPlatformID,
+				}
+			}
+
+			dw.Device.Platform = platform
 
 			dw.objectsToReconcile = append(dw.objectsToReconcile, platformObjectsToReconcile...)
 
@@ -276,17 +342,43 @@ func (dw *DcimDeviceDataWrapper) Patch(cmp ComparableData, intendedNestedObjects
 			}
 		} else {
 			if intended.Device.Platform != nil {
-				intendedPlatform = extractFromObjectsMap(currentNestedObjectsMap, fmt.Sprintf("%p", intended.Device.Platform))
-				dw.Device.Platform = intendedPlatform.Data().(*DcimPlatform)
+				platformID := intended.Device.Platform.ID
+				dw.Device.Platform = &DcimPlatform{
+					ID: platformID,
+				}
+				intended.Device.Platform = &DcimPlatform{
+					ID: platformID,
+				}
 			}
-
 		}
 
 		deviceTypeObjectsToReconcile, deviceTypeErr := actualDeviceType.Patch(intendedDeviceType, intendedNestedObjects)
 		if deviceTypeErr != nil {
 			return nil, deviceTypeErr
 		}
-		dw.Device.DeviceType = actualDeviceType.Data().(*DcimDeviceType)
+
+		deviceType, err := copyData(actualDeviceType.Data().(*DcimDeviceType))
+		if err != nil {
+			return nil, err
+		}
+		deviceType.Tags = nil
+
+		if !actualDeviceType.HasChanged() {
+			deviceType = &DcimDeviceType{
+				ID: actualDeviceType.ID(),
+			}
+
+			intendedDeviceTypeID := intendedDeviceType.ID()
+			if intended.Device.DeviceType != nil {
+				intendedDeviceTypeID = intended.Device.DeviceType.ID
+			}
+
+			intended.Device.DeviceType = &DcimDeviceType{
+				ID: intendedDeviceTypeID,
+			}
+		}
+
+		dw.Device.DeviceType = deviceType
 
 		dw.objectsToReconcile = append(dw.objectsToReconcile, deviceTypeObjectsToReconcile...)
 
@@ -298,7 +390,29 @@ func (dw *DcimDeviceDataWrapper) Patch(cmp ComparableData, intendedNestedObjects
 		if roleErr != nil {
 			return nil, roleErr
 		}
-		dw.Device.Role = actualRole.Data().(*DcimDeviceRole)
+
+		role, err := copyData(actualRole.Data().(*DcimDeviceRole))
+		if err != nil {
+			return nil, err
+		}
+		role.Tags = nil
+
+		if !actualRole.HasChanged() {
+			role = &DcimDeviceRole{
+				ID: actualRole.ID(),
+			}
+
+			intendedRoleID := intendedRole.ID()
+			if intended.Device.Role != nil {
+				intendedRoleID = intended.Device.Role.ID
+			}
+
+			intended.Device.Role = &DcimDeviceRole{
+				ID: intendedRoleID,
+			}
+		}
+
+		dw.Device.Role = role
 
 		dw.objectsToReconcile = append(dw.objectsToReconcile, roleObjectsToReconcile...)
 
@@ -325,7 +439,19 @@ func (dw *DcimDeviceDataWrapper) Patch(cmp ComparableData, intendedNestedObjects
 		if siteErr != nil {
 			return nil, siteErr
 		}
-		dw.Device.Site = actualSite.Data().(*DcimSite)
+
+		site, err := copyData(actualSite.Data().(*DcimSite))
+		if err != nil {
+			return nil, err
+		}
+		site.Tags = nil
+
+		if !actualSite.HasChanged() {
+			site = &DcimSite{
+				ID: actualSite.ID(),
+			}
+		}
+		dw.Device.Site = site
 
 		dw.objectsToReconcile = append(dw.objectsToReconcile, siteObjectsToReconcile...)
 
@@ -334,7 +460,19 @@ func (dw *DcimDeviceDataWrapper) Patch(cmp ComparableData, intendedNestedObjects
 			if platformErr != nil {
 				return nil, platformErr
 			}
-			dw.Device.Platform = actualPlatform.Data().(*DcimPlatform)
+
+			platform, err := copyData(actualPlatform.Data().(*DcimPlatform))
+			if err != nil {
+				return nil, err
+			}
+			platform.Tags = nil
+
+			if !actualPlatform.HasChanged() {
+				platform = &DcimPlatform{
+					ID: actualPlatform.ID(),
+				}
+			}
+			dw.Device.Platform = platform
 
 			dw.objectsToReconcile = append(dw.objectsToReconcile, platformObjectsToReconcile...)
 		}
@@ -343,7 +481,19 @@ func (dw *DcimDeviceDataWrapper) Patch(cmp ComparableData, intendedNestedObjects
 		if deviceTypeErr != nil {
 			return nil, deviceTypeErr
 		}
-		dw.Device.DeviceType = actualDeviceType.Data().(*DcimDeviceType)
+
+		deviceType, err := copyData(actualDeviceType.Data().(*DcimDeviceType))
+		if err != nil {
+			return nil, err
+		}
+		deviceType.Tags = nil
+
+		if !actualDeviceType.HasChanged() {
+			deviceType = &DcimDeviceType{
+				ID: actualDeviceType.ID(),
+			}
+		}
+		dw.Device.DeviceType = deviceType
 
 		dw.objectsToReconcile = append(dw.objectsToReconcile, deviceTypeObjectsToReconcile...)
 
@@ -351,7 +501,19 @@ func (dw *DcimDeviceDataWrapper) Patch(cmp ComparableData, intendedNestedObjects
 		if roleErr != nil {
 			return nil, roleErr
 		}
-		dw.Device.Role = actualRole.Data().(*DcimDeviceRole)
+
+		role, err := copyData(actualRole.Data().(*DcimDeviceRole))
+		if err != nil {
+			return nil, err
+		}
+		role.Tags = nil
+
+		if !actualRole.HasChanged() {
+			role = &DcimDeviceRole{
+				ID: actualRole.ID(),
+			}
+		}
+		dw.Device.Role = role
 
 		dw.objectsToReconcile = append(dw.objectsToReconcile, roleObjectsToReconcile...)
 
@@ -369,6 +531,7 @@ func (dw *DcimDeviceDataWrapper) Patch(cmp ComparableData, intendedNestedObjects
 	}
 
 	if reconciliationRequired {
+		dw.hasChanged = true
 		dw.objectsToReconcile = append(dw.objectsToReconcile, dw)
 	}
 
@@ -396,6 +559,7 @@ type DcimDeviceRoleDataWrapper struct {
 	placeholder        bool
 	hasParent          bool
 	intended           bool
+	hasChanged         bool
 	nestedObjects      []ComparableData
 	objectsToReconcile []ComparableData
 }
@@ -481,6 +645,11 @@ func (dw *DcimDeviceRoleDataWrapper) ID() int {
 	return dw.DeviceRole.ID
 }
 
+// HasChanged returns true if the data has changed
+func (dw *DcimDeviceRoleDataWrapper) HasChanged() bool {
+	return dw.hasChanged
+}
+
 // IsPlaceholder returns true if the data is a placeholder
 func (dw *DcimDeviceRoleDataWrapper) IsPlaceholder() bool {
 	return dw.placeholder
@@ -546,6 +715,7 @@ func (dw *DcimDeviceRoleDataWrapper) Patch(cmp ComparableData, intendedNestedObj
 	}
 
 	if reconciliationRequired {
+		dw.hasChanged = true
 		dw.objectsToReconcile = append(dw.objectsToReconcile, dw)
 	}
 
@@ -567,6 +737,7 @@ type DcimDeviceTypeDataWrapper struct {
 	placeholder        bool
 	hasParent          bool
 	intended           bool
+	hasChanged         bool
 	nestedObjects      []ComparableData
 	objectsToReconcile []ComparableData
 }
@@ -613,6 +784,11 @@ func (dw *DcimDeviceTypeDataWrapper) ObjectStateQueryParams() map[string]string 
 // ID returns the ID of the data
 func (dw *DcimDeviceTypeDataWrapper) ID() int {
 	return dw.DeviceType.ID
+}
+
+// HasChanged returns true if the data has changed
+func (dw *DcimDeviceTypeDataWrapper) HasChanged() bool {
+	return dw.hasChanged
 }
 
 // IsPlaceholder returns true if the data is a placeholder
@@ -728,7 +904,29 @@ func (dw *DcimDeviceTypeDataWrapper) Patch(cmp ComparableData, intendedNestedObj
 		if manufacturerErr != nil {
 			return nil, manufacturerErr
 		}
-		dw.DeviceType.Manufacturer = actualManufacturer.Data().(*DcimManufacturer)
+
+		manufacturer, err := copyData(actualManufacturer.Data().(*DcimManufacturer))
+		if err != nil {
+			return nil, err
+		}
+		manufacturer.Tags = nil
+
+		if !actualManufacturer.HasChanged() {
+			manufacturer = &DcimManufacturer{
+				ID: actualManufacturer.ID(),
+			}
+
+			intendedManufacturerID := intendedManufacturer.ID()
+			if intended.DeviceType.Manufacturer != nil {
+				intendedManufacturerID = intended.DeviceType.Manufacturer.ID
+			}
+
+			intended.DeviceType.Manufacturer = &DcimManufacturer{
+				ID: intendedManufacturerID,
+			}
+		}
+
+		dw.DeviceType.Manufacturer = manufacturer
 
 		tagsToMerge := mergeTags(dw.DeviceType.Tags, intended.DeviceType.Tags, intendedNestedObjects)
 
@@ -753,7 +951,19 @@ func (dw *DcimDeviceTypeDataWrapper) Patch(cmp ComparableData, intendedNestedObj
 		if manufacturerErr != nil {
 			return nil, manufacturerErr
 		}
-		dw.DeviceType.Manufacturer = actualManufacturer.Data().(*DcimManufacturer)
+
+		manufacturer, err := copyData(actualManufacturer.Data().(*DcimManufacturer))
+		if err != nil {
+			return nil, err
+		}
+		manufacturer.Tags = nil
+
+		if !actualManufacturer.HasChanged() {
+			manufacturer = &DcimManufacturer{
+				ID: actualManufacturer.ID(),
+			}
+		}
+		dw.DeviceType.Manufacturer = manufacturer
 
 		tagsToMerge := mergeTags(dw.DeviceType.Tags, nil, intendedNestedObjects)
 
@@ -771,6 +981,7 @@ func (dw *DcimDeviceTypeDataWrapper) Patch(cmp ComparableData, intendedNestedObj
 	}
 
 	if reconciliationRequired {
+		dw.hasChanged = true
 		dw.objectsToReconcile = append(dw.objectsToReconcile, dw)
 	}
 
@@ -787,6 +998,7 @@ type DcimInterfaceDataWrapper struct {
 	placeholder        bool
 	hasParent          bool
 	intended           bool
+	hasChanged         bool
 	nestedObjects      []ComparableData
 	objectsToReconcile []ComparableData
 }
@@ -894,6 +1106,11 @@ func (dw *DcimInterfaceDataWrapper) ID() int {
 	return dw.Interface.ID
 }
 
+// HasChanged returns true if the data has changed
+func (dw *DcimInterfaceDataWrapper) HasChanged() bool {
+	return dw.hasChanged
+}
+
 // IsPlaceholder returns true if the data is a placeholder
 func (dw *DcimInterfaceDataWrapper) IsPlaceholder() bool {
 	return dw.placeholder
@@ -948,7 +1165,29 @@ func (dw *DcimInterfaceDataWrapper) Patch(cmp ComparableData, intendedNestedObje
 		if deviceErr != nil {
 			return nil, deviceErr
 		}
-		dw.Interface.Device = actualDevice.Data().(*DcimDevice)
+
+		device, err := copyData(actualDevice.Data().(*DcimDevice))
+		if err != nil {
+			return nil, err
+		}
+		device.Tags = nil
+
+		if !actualDevice.HasChanged() {
+			device = &DcimDevice{
+				ID: actualDevice.ID(),
+			}
+
+			intendedDeviceID := intendedDevice.ID()
+			if intended.Interface.Device != nil {
+				intendedDeviceID = intended.Interface.Device.ID
+			}
+
+			intended.Interface.Device = &DcimDevice{
+				ID: intendedDeviceID,
+			}
+		}
+
+		dw.Interface.Device = device
 
 		dw.objectsToReconcile = append(dw.objectsToReconcile, deviceObjectsToReconcile...)
 
@@ -1019,7 +1258,19 @@ func (dw *DcimInterfaceDataWrapper) Patch(cmp ComparableData, intendedNestedObje
 		if deviceErr != nil {
 			return nil, deviceErr
 		}
-		dw.Interface.Device = actualDevice.Data().(*DcimDevice)
+
+		device, err := copyData(actualDevice.Data().(*DcimDevice))
+		if err != nil {
+			return nil, err
+		}
+		device.Tags = nil
+
+		if !actualDevice.HasChanged() {
+			device = &DcimDevice{
+				ID: actualDevice.ID(),
+			}
+		}
+		dw.Interface.Device = device
 
 		tagsToMerge := mergeTags(dw.Interface.Tags, nil, intendedNestedObjects)
 
@@ -1037,6 +1288,7 @@ func (dw *DcimInterfaceDataWrapper) Patch(cmp ComparableData, intendedNestedObje
 	}
 
 	if reconciliationRequired {
+		dw.hasChanged = true
 		dw.objectsToReconcile = append(dw.objectsToReconcile, dw)
 	}
 
@@ -1057,6 +1309,7 @@ type DcimManufacturerDataWrapper struct {
 	placeholder        bool
 	hasParent          bool
 	intended           bool
+	hasChanged         bool
 	nestedObjects      []ComparableData
 	objectsToReconcile []ComparableData
 }
@@ -1142,6 +1395,11 @@ func (dw *DcimManufacturerDataWrapper) ID() int {
 	return dw.Manufacturer.ID
 }
 
+// HasChanged returns true if the data has changed
+func (dw *DcimManufacturerDataWrapper) HasChanged() bool {
+	return dw.hasChanged
+}
+
 // IsPlaceholder returns true if the data is a placeholder
 func (dw *DcimManufacturerDataWrapper) IsPlaceholder() bool {
 	return dw.placeholder
@@ -1191,6 +1449,7 @@ func (dw *DcimManufacturerDataWrapper) Patch(cmp ComparableData, intendedNestedO
 	}
 
 	if reconciliationRequired {
+		dw.hasChanged = true
 		dw.objectsToReconcile = append(dw.objectsToReconcile, dw)
 	}
 
@@ -1242,6 +1501,7 @@ type DcimPlatformDataWrapper struct {
 	placeholder        bool
 	hasParent          bool
 	intended           bool
+	hasChanged         bool
 	nestedObjects      []ComparableData
 	objectsToReconcile []ComparableData
 }
@@ -1344,6 +1604,11 @@ func (dw *DcimPlatformDataWrapper) ID() int {
 	return dw.Platform.ID
 }
 
+// HasChanged returns true if the data has changed
+func (dw *DcimPlatformDataWrapper) HasChanged() bool {
+	return dw.hasChanged
+}
+
 // IsPlaceholder returns true if the data is a placeholder
 func (dw *DcimPlatformDataWrapper) IsPlaceholder() bool {
 	return dw.placeholder
@@ -1390,13 +1655,41 @@ func (dw *DcimPlatformDataWrapper) Patch(cmp ComparableData, intendedNestedObjec
 			if manufacturerErr != nil {
 				return nil, manufacturerErr
 			}
-			dw.Platform.Manufacturer = actualManufacturer.Data().(*DcimManufacturer)
+
+			manufacturer, err := copyData(actualManufacturer.Data().(*DcimManufacturer))
+			if err != nil {
+				return nil, err
+			}
+			manufacturer.Tags = nil
+
+			if !actualManufacturer.HasChanged() {
+				manufacturer = &DcimManufacturer{
+					ID: actualManufacturer.ID(),
+				}
+
+				intendedManufacturerID := intendedManufacturer.ID()
+				if intended.Platform.Manufacturer != nil {
+					intendedManufacturerID = intended.Platform.Manufacturer.ID
+				}
+
+				intended.Platform.Manufacturer = &DcimManufacturer{
+					ID: intendedManufacturerID,
+				}
+			}
+
+			dw.Platform.Manufacturer = manufacturer
 
 			dw.objectsToReconcile = append(dw.objectsToReconcile, manufacturerObjectsToReconcile...)
 		} else {
 			if intended.Platform.Manufacturer != nil {
-				intendedManufacturer = extractFromObjectsMap(currentNestedObjectsMap, fmt.Sprintf("%p", intended.Platform.Manufacturer))
-				dw.Platform.Manufacturer = intendedManufacturer.Data().(*DcimManufacturer)
+				manufacturerID := intended.Platform.Manufacturer.ID
+
+				dw.Platform.Manufacturer = &DcimManufacturer{
+					ID: manufacturerID,
+				}
+				intended.Platform.Manufacturer = &DcimManufacturer{
+					ID: manufacturerID,
+				}
 			}
 		}
 
@@ -1421,14 +1714,26 @@ func (dw *DcimPlatformDataWrapper) Patch(cmp ComparableData, intendedNestedObjec
 
 		reconciliationRequired = actualHash != intendedHash
 	} else {
-		var manufacturerObjectsToReconcile []ComparableData
 		if actualManufacturer != nil {
-			manufacturerObjectsToReconcile2, manufacturerErr := actualManufacturer.Patch(intendedManufacturer, intendedNestedObjects)
+			manufacturerObjectsToReconcile, manufacturerErr := actualManufacturer.Patch(intendedManufacturer, intendedNestedObjects)
 			if manufacturerErr != nil {
 				return nil, manufacturerErr
 			}
-			dw.Platform.Manufacturer = actualManufacturer.Data().(*DcimManufacturer)
-			manufacturerObjectsToReconcile = manufacturerObjectsToReconcile2
+
+			manufacturer, err := copyData(actualManufacturer.Data().(*DcimManufacturer))
+			if err != nil {
+				return nil, err
+			}
+			manufacturer.Tags = nil
+
+			if !actualManufacturer.HasChanged() {
+				manufacturer = &DcimManufacturer{
+					ID: actualManufacturer.ID(),
+				}
+			}
+			dw.Platform.Manufacturer = manufacturer
+
+			dw.objectsToReconcile = append(dw.objectsToReconcile, manufacturerObjectsToReconcile...)
 		}
 
 		tagsToMerge := mergeTags(dw.Platform.Tags, nil, intendedNestedObjects)
@@ -1442,13 +1747,10 @@ func (dw *DcimPlatformDataWrapper) Patch(cmp ComparableData, intendedNestedObjec
 				dw.objectsToReconcile = append(dw.objectsToReconcile, &TagDataWrapper{Tag: t, hasParent: true})
 			}
 		}
-
-		if manufacturerObjectsToReconcile != nil {
-			dw.objectsToReconcile = append(dw.objectsToReconcile, manufacturerObjectsToReconcile...)
-		}
 	}
 
 	if reconciliationRequired {
+		dw.hasChanged = true
 		dw.objectsToReconcile = append(dw.objectsToReconcile, dw)
 	}
 
@@ -1465,6 +1767,7 @@ type DcimSiteDataWrapper struct {
 	placeholder        bool
 	hasParent          bool
 	intended           bool
+	hasChanged         bool
 	nestedObjects      []ComparableData
 	objectsToReconcile []ComparableData
 }
@@ -1550,6 +1853,11 @@ func (dw *DcimSiteDataWrapper) ID() int {
 	return dw.Site.ID
 }
 
+// HasChanged returns true if the data has changed
+func (dw *DcimSiteDataWrapper) HasChanged() bool {
+	return dw.hasChanged
+}
+
 // IsPlaceholder returns true if the data is a placeholder
 func (dw *DcimSiteDataWrapper) IsPlaceholder() bool {
 	return dw.placeholder
@@ -1627,6 +1935,7 @@ func (dw *DcimSiteDataWrapper) Patch(cmp ComparableData, intendedNestedObjects m
 	}
 
 	if reconciliationRequired {
+		dw.hasChanged = true
 		dw.objectsToReconcile = append(dw.objectsToReconcile, dw)
 	}
 
@@ -1686,6 +1995,11 @@ func (dw *TagDataWrapper) ID() int {
 	return dw.Tag.ID
 }
 
+// HasChanged returns true if the data has changed
+func (dw *TagDataWrapper) HasChanged() bool {
+	return false
+}
+
 // IsPlaceholder returns true if the data is a placeholder
 func (dw *TagDataWrapper) IsPlaceholder() bool {
 	return dw.placeholder
@@ -1697,9 +2011,6 @@ func (dw *TagDataWrapper) Patch(cmp ComparableData, _ map[string]ComparableData)
 	if !ok && d2 != nil {
 		return nil, errors.New("invalid data type")
 	}
-
-	fmt.Printf("d: %#v\n", dw)
-	fmt.Printf("d2: %#v\n", d2)
 
 	return nil, nil
 }

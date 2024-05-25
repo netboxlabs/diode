@@ -927,27 +927,6 @@ func TestPrepare(t *testing.T) {
 								ID:   2,
 								Name: "Cisco",
 								Slug: "cisco",
-								Tags: []*netbox.Tag{
-									{
-										ID:   1,
-										Name: "tag 1",
-										Slug: "tag-1",
-									},
-									{
-										ID:   5,
-										Name: "tag 5",
-										Slug: "tag-5",
-									},
-									{
-										ID:   10,
-										Name: "tag 10",
-										Slug: "tag-10",
-									},
-									{
-										Name: "tag 11",
-										Slug: "tag-11",
-									},
-								},
 							},
 							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
 							PartNumber:  strPtr("xyz123"),
@@ -1077,16 +1056,7 @@ func TestPrepare(t *testing.T) {
 							Model: "ISR4321",
 							Slug:  "isr4321",
 							Manufacturer: &netbox.DcimManufacturer{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
-								Tags: []*netbox.Tag{
-									{
-										ID:   4,
-										Name: "tag 4",
-										Slug: "tag-4",
-									},
-								},
+								ID: 1,
 							},
 							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
 							PartNumber:  strPtr("xyz123"),
@@ -1219,16 +1189,7 @@ func TestPrepare(t *testing.T) {
 							Model: "ISR4321",
 							Slug:  "isr4321",
 							Manufacturer: &netbox.DcimManufacturer{
-								ID:   1,
-								Name: "Cisco",
-								Slug: "cisco",
-								Tags: []*netbox.Tag{
-									{
-										ID:   4,
-										Name: "tag 4",
-										Slug: "tag-4",
-									},
-								},
+								ID: 1,
 							},
 							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
 							PartNumber:  strPtr("xyz123"),
@@ -2167,9 +2128,7 @@ func TestPrepare(t *testing.T) {
 							Model: "ISR4321",
 							Slug:  "isr4321",
 							Manufacturer: &netbox.DcimManufacturer{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
+								ID: 1,
 							},
 						},
 					},
@@ -2203,9 +2162,7 @@ func TestPrepare(t *testing.T) {
 								Model: "ISR4321",
 								Slug:  "isr4321",
 								Manufacturer: &netbox.DcimManufacturer{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
+									ID: 1,
 								},
 							},
 							Role: &netbox.DcimDeviceRole{
@@ -2214,14 +2171,7 @@ func TestPrepare(t *testing.T) {
 								Color: strPtr("000000"),
 							},
 							Platform: &netbox.DcimPlatform{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
-								Manufacturer: &netbox.DcimManufacturer{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
-								},
+								ID: 1,
 							},
 							Status:      (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
@@ -2538,9 +2488,7 @@ func TestPrepare(t *testing.T) {
 								Color: strPtr("000000"),
 							},
 							Platform: &netbox.DcimPlatform{
-								ID:   1,
-								Name: "Cisco IOS 15.6",
-								Slug: "cisco-ios-15-6",
+								ID: 1,
 							},
 							Status:      (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
@@ -2574,9 +2522,7 @@ func TestPrepare(t *testing.T) {
 							Model: "ISR4321",
 							Slug:  "isr4321",
 							Manufacturer: &netbox.DcimManufacturer{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
+								ID: 1,
 							},
 						},
 					},
@@ -2610,9 +2556,7 @@ func TestPrepare(t *testing.T) {
 								Model: "ISR4321",
 								Slug:  "isr4321",
 								Manufacturer: &netbox.DcimManufacturer{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
+									ID: 1,
 								},
 							},
 							Role: &netbox.DcimDeviceRole{
@@ -2621,9 +2565,7 @@ func TestPrepare(t *testing.T) {
 								Color: strPtr("000000"),
 							},
 							Platform: &netbox.DcimPlatform{
-								ID:   1,
-								Name: "Cisco IOS 15.6",
-								Slug: "cisco-ios-15-6",
+								ID: 1,
 							},
 							Status:      (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
@@ -2800,36 +2742,16 @@ func TestPrepare(t *testing.T) {
 							ID:   1,
 							Name: "router01",
 							Site: &netbox.DcimSite{
-								ID:     1,
-								Name:   "Site A",
-								Slug:   "site-a",
-								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+								ID: 1,
 							},
 							DeviceType: &netbox.DcimDeviceType{
-								ID:    1,
-								Model: "ISR4321",
-								Slug:  "isr4321",
-								Manufacturer: &netbox.DcimManufacturer{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
-								},
+								ID: 1,
 							},
 							Role: &netbox.DcimDeviceRole{
-								ID:    1,
-								Name:  "WAN Router",
-								Slug:  "wan-router",
-								Color: strPtr("111111"),
+								ID: 1,
 							},
 							Platform: &netbox.DcimPlatform{
-								ID:   1,
-								Name: "Cisco IOS 15.6",
-								Slug: "cisco-ios-15-6",
-								Manufacturer: &netbox.DcimManufacturer{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
-								},
+								ID: 1,
 							},
 							Status:      (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
@@ -2989,9 +2911,7 @@ func TestPrepare(t *testing.T) {
 							Model: "ISR4321",
 							Slug:  "isr4321",
 							Manufacturer: &netbox.DcimManufacturer{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
+								ID: 1,
 							},
 						},
 					},
@@ -3017,18 +2937,13 @@ func TestPrepare(t *testing.T) {
 							ID:   1,
 							Name: "router01",
 							Site: &netbox.DcimSite{
-								ID:     2,
-								Name:   "Site B",
-								Slug:   "site-b",
-								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+								ID: 2,
 							},
 							DeviceType: &netbox.DcimDeviceType{
 								Model: "ISR4321",
 								Slug:  "isr4321",
 								Manufacturer: &netbox.DcimManufacturer{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
+									ID: 1,
 								},
 							},
 							Role: &netbox.DcimDeviceRole{
@@ -3037,14 +2952,7 @@ func TestPrepare(t *testing.T) {
 								Color: strPtr("000000"),
 							},
 							Platform: &netbox.DcimPlatform{
-								ID:   1,
-								Name: "Cisco IOS 15.6",
-								Slug: "cisco-ios-15-6",
-								Manufacturer: &netbox.DcimManufacturer{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
-								},
+								ID: 1,
 							},
 							Status:      (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
@@ -3638,36 +3546,16 @@ func TestPrepare(t *testing.T) {
 						Data: &netbox.DcimDevice{
 							Name: "undefined",
 							Site: &netbox.DcimSite{
-								ID:     1,
-								Name:   "undefined",
-								Slug:   "undefined",
-								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+								ID: 1,
 							},
 							DeviceType: &netbox.DcimDeviceType{
-								ID:    1,
-								Model: "undefined",
-								Slug:  "undefined",
-								Manufacturer: &netbox.DcimManufacturer{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
-								},
+								ID: 1,
 							},
 							Role: &netbox.DcimDeviceRole{
-								ID:    1,
-								Name:  "undefined",
-								Slug:  "undefined",
-								Color: strPtr("000000"),
+								ID: 1,
 							},
 							Platform: &netbox.DcimPlatform{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
-								Manufacturer: &netbox.DcimManufacturer{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
-								},
+								ID: 1,
 							},
 							Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 						},
@@ -3683,36 +3571,16 @@ func TestPrepare(t *testing.T) {
 							Device: &netbox.DcimDevice{
 								Name: "undefined",
 								Site: &netbox.DcimSite{
-									ID:     1,
-									Name:   "undefined",
-									Slug:   "undefined",
-									Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+									ID: 1,
 								},
 								DeviceType: &netbox.DcimDeviceType{
-									ID:    1,
-									Model: "undefined",
-									Slug:  "undefined",
-									Manufacturer: &netbox.DcimManufacturer{
-										ID:   1,
-										Name: "undefined",
-										Slug: "undefined",
-									},
+									ID: 1,
 								},
 								Role: &netbox.DcimDeviceRole{
-									ID:    1,
-									Name:  "undefined",
-									Slug:  "undefined",
-									Color: strPtr("000000"),
+									ID: 1,
 								},
 								Platform: &netbox.DcimPlatform{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
-									Manufacturer: &netbox.DcimManufacturer{
-										ID:   1,
-										Name: "undefined",
-										Slug: "undefined",
-									},
+									ID: 1,
 								},
 								Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 							},
@@ -4085,41 +3953,7 @@ func TestPrepare(t *testing.T) {
 							ID:   1,
 							Name: "GigabitEthernet0/0/0",
 							Device: &netbox.DcimDevice{
-								ID:   1,
-								Name: "router01",
-								Site: &netbox.DcimSite{
-									ID:     1,
-									Name:   "undefined",
-									Slug:   "undefined",
-									Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-								},
-								DeviceType: &netbox.DcimDeviceType{
-									ID:    1,
-									Model: "undefined",
-									Slug:  "undefined",
-									Manufacturer: &netbox.DcimManufacturer{
-										ID:   1,
-										Name: "undefined",
-										Slug: "undefined",
-									},
-								},
-								Role: &netbox.DcimDeviceRole{
-									ID:    1,
-									Name:  "undefined",
-									Slug:  "undefined",
-									Color: strPtr("000000"),
-								},
-								Platform: &netbox.DcimPlatform{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
-									Manufacturer: &netbox.DcimManufacturer{
-										ID:   1,
-										Name: "undefined",
-										Slug: "undefined",
-									},
-								},
-								Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+								ID: 1,
 							},
 							Type:  strPtr(netbox.DefaultInterfaceType),
 							Label: strPtr("WAN"),
@@ -4391,17 +4225,9 @@ func TestPrepare(t *testing.T) {
 							Status:  &netbox.DefaultIPAddressStatus,
 							AssignedObject: &netbox.IPAddressInterface{
 								Interface: &netbox.DcimInterface{
-									ID:   1,
-									Name: "GigabitEthernet0/0/0",
+									ID: 1,
 									Device: &netbox.DcimDevice{
-										ID:   1,
-										Name: "undefined",
-										Site: &netbox.DcimSite{
-											ID:     1,
-											Name:   "undefined",
-											Slug:   "undefined",
-											Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-										},
+										ID: 1,
 									},
 								},
 							},
@@ -4583,41 +4409,7 @@ func TestPrepare(t *testing.T) {
 							Name: "GigabitEthernet0/0/0",
 							Type: strPtr(netbox.DefaultInterfaceType),
 							Device: &netbox.DcimDevice{
-								ID:   1,
-								Name: "undefined",
-								Site: &netbox.DcimSite{
-									ID:     1,
-									Name:   "undefined",
-									Slug:   "undefined",
-									Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-								},
-								DeviceType: &netbox.DcimDeviceType{
-									ID:    1,
-									Model: "undefined",
-									Slug:  "undefined",
-									Manufacturer: &netbox.DcimManufacturer{
-										ID:   1,
-										Name: "undefined",
-										Slug: "undefined",
-									},
-								},
-								Role: &netbox.DcimDeviceRole{
-									ID:    1,
-									Name:  "undefined",
-									Slug:  "undefined",
-									Color: strPtr("000000"),
-								},
-								Platform: &netbox.DcimPlatform{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
-									Manufacturer: &netbox.DcimManufacturer{
-										ID:   1,
-										Name: "undefined",
-										Slug: "undefined",
-									},
-								},
-								Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+								ID: 1,
 							},
 						},
 					},
@@ -4633,15 +4425,9 @@ func TestPrepare(t *testing.T) {
 							AssignedObject: &netbox.IPAddressInterface{
 								Interface: &netbox.DcimInterface{
 									Name: "GigabitEthernet0/0/0",
+									Type: strPtr(netbox.DefaultInterfaceType),
 									Device: &netbox.DcimDevice{
-										ID:   1,
-										Name: "undefined",
-										Site: &netbox.DcimSite{
-											ID:     1,
-											Name:   "undefined",
-											Slug:   "undefined",
-											Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-										},
+										ID: 1,
 									},
 								},
 							},
@@ -4871,41 +4657,7 @@ func TestPrepare(t *testing.T) {
 							Name: "GigabitEthernet1/0/1",
 							Type: strPtr(netbox.DefaultInterfaceType),
 							Device: &netbox.DcimDevice{
-								ID:   1,
-								Name: "undefined",
-								Site: &netbox.DcimSite{
-									ID:     1,
-									Name:   "undefined",
-									Slug:   "undefined",
-									Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-								},
-								DeviceType: &netbox.DcimDeviceType{
-									ID:    1,
-									Model: "undefined",
-									Slug:  "undefined",
-									Manufacturer: &netbox.DcimManufacturer{
-										ID:   1,
-										Name: "undefined",
-										Slug: "undefined",
-									},
-								},
-								Role: &netbox.DcimDeviceRole{
-									ID:    1,
-									Name:  "undefined",
-									Slug:  "undefined",
-									Color: strPtr("000000"),
-								},
-								Platform: &netbox.DcimPlatform{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
-									Manufacturer: &netbox.DcimManufacturer{
-										ID:   1,
-										Name: "undefined",
-										Slug: "undefined",
-									},
-								},
-								Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+								ID: 1,
 							},
 						},
 					},
@@ -4921,15 +4673,9 @@ func TestPrepare(t *testing.T) {
 							AssignedObject: &netbox.IPAddressInterface{
 								Interface: &netbox.DcimInterface{
 									Name: "GigabitEthernet1/0/1",
+									Type: strPtr(netbox.DefaultInterfaceType),
 									Device: &netbox.DcimDevice{
-										ID:   1,
-										Name: "undefined",
-										Site: &netbox.DcimSite{
-											ID:     1,
-											Name:   "undefined",
-											Slug:   "undefined",
-											Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-										},
+										ID: 1,
 									},
 								},
 							},
@@ -5201,17 +4947,9 @@ func TestPrepare(t *testing.T) {
 							Status:  &netbox.DefaultIPAddressStatus,
 							AssignedObject: &netbox.IPAddressInterface{
 								Interface: &netbox.DcimInterface{
-									ID:   2,
-									Name: "GigabitEthernet1/0/1",
+									ID: 2,
 									Device: &netbox.DcimDevice{
-										ID:   1,
-										Name: "undefined",
-										Site: &netbox.DcimSite{
-											ID:     1,
-											Name:   "undefined",
-											Slug:   "undefined",
-											Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-										},
+										ID: 1,
 									},
 								},
 							},
@@ -5773,17 +5511,9 @@ func TestPrepare(t *testing.T) {
 							Description: strPtr("new description"),
 							AssignedObject: &netbox.IPAddressInterface{
 								Interface: &netbox.DcimInterface{
-									ID:   1,
-									Name: "GigabitEthernet0/0/0",
+									ID: 1,
 									Device: &netbox.DcimDevice{
-										ID:   1,
-										Name: "undefined",
-										Site: &netbox.DcimSite{
-											ID:     1,
-											Name:   "undefined",
-											Slug:   "undefined",
-											Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-										},
+										ID: 1,
 									},
 								},
 							},
@@ -6072,10 +5802,7 @@ func TestPrepare(t *testing.T) {
 							ID:     1,
 							Prefix: "192.168.0.0/32",
 							Site: &netbox.DcimSite{
-								ID:     1,
-								Name:   "undefined",
-								Slug:   "undefined",
-								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+								ID: 1,
 							},
 							Status: &netbox.DefaultPrefixStatus,
 							Tags: []*netbox.Tag{
