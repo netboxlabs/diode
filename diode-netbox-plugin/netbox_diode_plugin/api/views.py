@@ -340,15 +340,16 @@ class ApplyChangeSetView(views.APIView):
                 args = {}
 
                 if model_name == "interface":
-                    try:
-                        device = assigned_object_properties_dict.get("device", {})
-                        args = (
-                            self._retrieve_assigned_object_interface_device_lookup_args(
+                    if assigned_object_properties_dict.get("id"):
+                        args["id"] = assigned_object_properties_dict.get("id")
+                    else:
+                        try:
+                            device = assigned_object_properties_dict.get("device", {})
+                            args = self._retrieve_assigned_object_interface_device_lookup_args(
                                 device
                             )
-                        )
-                    except ValidationError as e:
-                        return {"assigned_object": str(e)}
+                        except ValidationError as e:
+                            return {"assigned_object": str(e)}
 
                 assigned_object_instance = (
                     assigned_object_model.objects.prefetch_related(*lookups).get(**args)
