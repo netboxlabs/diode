@@ -27,11 +27,22 @@ class ObjectStateView(views.APIView):
 
     permission_classes = [IsAuthenticated, IsDiodeReader]
 
-    def _get_lookups(self, object_type_model):
+    def _get_lookups(self, object_type_model: str) -> tuple:
+        """
+        This method returns a tuple of related object lookups based on the provided object type model.
+
+        Args:
+            object_type_model (str): The name of the object type model.
+
+        Returns:
+            tuple: A tuple of related object lookups. The tuple is empty if the object type model does not match any
+            of the specified models.
+
+        """
         if object_type_model == "ipaddress":
-            return ("interface", "interface__device", "interface__device__site")
+            return "interface", "interface__device", "interface__device__site"
         if object_type_model == "interface":
-            return ("device", "device__site")
+            return "device", "device__site"
         if object_type_model == "device":
             return ("site",)
         return ()
@@ -262,6 +273,45 @@ class ApplyChangeSetView(views.APIView):
 
         return ipaddress_assigned_object
 
+    def _retrieve_assigned_object_interface_device_lookup_args(
+        self, device: dict
+    ) -> dict:
+        """
+        This method retrieves the lookup arguments for the interface device of an assigned object.
+
+        Args:
+            device (dict): A dictionary containing the details of the device. It should contain either 'id' or 'name'
+                of the device and 'site' which is another dictionary containing either 'id' or 'name' of the site.
+
+        Returns:
+            dict: A dictionary containing the lookup arguments for the interface device.
+
+        Raises:
+            ValidationError: If neither 'id' nor 'name' is provided for the device or the site.
+
+        """
+        args = {}
+        if device.get("id"):
+            args["device__id"] = device.get("id")
+        elif device.get("name"):
+            args["device__name"] = device.get("name")
+        else:
+            raise ValidationError(
+                "Interface device needs to have either id or name provided"
+            )
+
+        site = device.get("site", {})
+        if site:
+            if site.get("id"):
+                args["device__site__id"] = site.get("id")
+            elif site.get("name"):
+                args["device__site__name"] = site.get("name")
+            else:
+                raise ValidationError(
+                    "Interface device site needs to have either id or name provided"
+                )
+        return args
+
     def _handle_ipaddress_assigned_object(
         self, object_data: dict, ipaddress_assigned_object: list
     ) -> Optional[Dict[str, Any]]:
@@ -285,15 +335,15 @@ class ApplyChangeSetView(views.APIView):
                 args = {}
 
                 if model_name == "interface":
-                    args["name"] = assigned_object_properties_dict.get("name")
-                    args["device__name"] = assigned_object_properties_dict.get(
-                        "device"
-                    ).get("name")
-                    args["device__site__name"] = (
-                        assigned_object_properties_dict.get("device")
-                        .get("site")
-                        .get("name")
-                    )
+                    try:
+                        device = assigned_object_properties_dict.get("device", {})
+                        args = (
+                            self._retrieve_assigned_object_interface_device_lookup_args(
+                                device
+                            )
+                        )
+                    except ValidationError as e:
+                        return {"assigned_object": str(e)}
 
                 assigned_object_instance = (
                     assigned_object_model.objects.prefetch_related(*lookups).get(**args)
