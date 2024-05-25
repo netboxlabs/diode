@@ -112,6 +112,10 @@ func (dw *DcimDeviceDataWrapper) NestedObjects() ([]ComparableData, error) {
 		dw.placeholder = true
 	}
 
+	// Ignore primary IP addresses for time being
+	dw.Device.PrimaryIPv4 = nil
+	dw.Device.PrimaryIPv6 = nil
+
 	site := DcimSiteDataWrapper{Site: dw.Device.Site, placeholder: dw.placeholder, hasParent: true, intended: dw.intended}
 
 	so, err := site.NestedObjects()
