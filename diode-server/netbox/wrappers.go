@@ -336,10 +336,6 @@ func (dw *DcimDeviceDataWrapper) Patch(cmp ComparableData, intendedNestedObjects
 			dw.Device.Platform = platform
 
 			dw.objectsToReconcile = append(dw.objectsToReconcile, platformObjectsToReconcile...)
-
-			if actualDeviceType.IsPlaceholder() && intended.Device.DeviceType != nil {
-				intendedDeviceType = extractFromObjectsMap(currentNestedObjectsMap, fmt.Sprintf("%p", intended.Device.DeviceType))
-			}
 		} else {
 			if intended.Device.Platform != nil {
 				platformID := intended.Device.Platform.ID
@@ -350,6 +346,10 @@ func (dw *DcimDeviceDataWrapper) Patch(cmp ComparableData, intendedNestedObjects
 					ID: platformID,
 				}
 			}
+		}
+
+		if actualDeviceType.IsPlaceholder() && intended.Device.DeviceType != nil {
+			intendedDeviceType = extractFromObjectsMap(currentNestedObjectsMap, fmt.Sprintf("%p", intended.Device.DeviceType))
 		}
 
 		deviceTypeObjectsToReconcile, deviceTypeErr := actualDeviceType.Patch(intendedDeviceType, intendedNestedObjects)

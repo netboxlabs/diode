@@ -5979,6 +5979,149 @@ func TestPrepare(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "[P17] ingest dcim.interface with name, mtu, device with site - device exists for platform Arista - create interface with existing device and platform",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "dcim.interface",
+				"entity": {
+					"Interface": {
+						"name": "Ethernet2",
+						"device": {
+							"name": "CEOS1",
+							"site": {
+                                "name": "default_namespace"
+                            }
+						},
+						"mtu": 1500
+					}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "dcim.interface",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "Ethernet2", "device__name": "CEOS1", "device__site__name": "default_namespace"},
+					objectChangeID: 0,
+					object: &netbox.DcimInterfaceDataWrapper{
+						Interface: nil,
+					},
+				},
+				{
+					objectType:     "dcim.manufacturer",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "undefined"},
+					objectChangeID: 0,
+					object: &netbox.DcimManufacturerDataWrapper{
+						Manufacturer: nil,
+					},
+				},
+				{
+					objectType:     "dcim.devicetype",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "undefined", "manufacturer__name": "undefined"},
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceTypeDataWrapper{
+						DeviceType: nil,
+					},
+				},
+				{
+					objectType:     "dcim.devicerole",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "undefined"},
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceRoleDataWrapper{
+						DeviceRole: &netbox.DcimDeviceRole{
+							ID:    89,
+							Name:  "undefined",
+							Slug:  "undefined",
+							Color: strPtr("000000"),
+						},
+					},
+				},
+				{
+					objectType:     "dcim.site",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "default_namespace"},
+					objectChangeID: 0,
+					object: &netbox.DcimSiteDataWrapper{
+						Site: &netbox.DcimSite{
+							ID:     21,
+							Name:   "default_namespace",
+							Slug:   "default_namespace",
+							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						},
+					},
+				},
+				{
+					objectType:     "dcim.device",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "CEOS1", "site__name": "default_namespace"},
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceDataWrapper{
+						Device: &netbox.DcimDevice{
+							ID:   111,
+							Name: "CEOS1",
+							Site: &netbox.DcimSite{
+								ID:     21,
+								Name:   "default_namespace",
+								Slug:   "default_namespace",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
+							DeviceType: &netbox.DcimDeviceType{
+								ID:    10,
+								Model: "cEOSLab",
+								Slug:  "ceoslab",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   15,
+									Name: "Arista",
+									Slug: "arista",
+								},
+							},
+							Role: &netbox.DcimDeviceRole{
+								ID:    89,
+								Name:  "undefined",
+								Slug:  "undefined",
+								Color: strPtr("000000"),
+							},
+							Platform: &netbox.DcimPlatform{
+								ID:   68,
+								Name: "eos:4.29.0.2F-29226602.42902F (engineering build)",
+								Slug: "eos-4-29-0-2f-29226602-42902f-engineering-build",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   15,
+									Name: "Arista",
+									Slug: "arista",
+								},
+							},
+							Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+						},
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet: []changeset.Change{
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.interface",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimInterface{
+							Name: "Ethernet2",
+							Device: &netbox.DcimDevice{
+								ID: 111,
+							},
+							MTU:  intPtr(1500),
+							Type: strPtr(netbox.DefaultInterfaceType),
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range tests {
