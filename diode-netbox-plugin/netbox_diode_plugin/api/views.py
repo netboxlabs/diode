@@ -32,9 +32,11 @@ class ObjectStateView(views.APIView):
         This method returns a tuple of related object lookups based on the provided object type model.
 
         Args:
+        ----
             object_type_model (str): The name of the object type model.
 
         Returns:
+        -------
             tuple: A tuple of related object lookups. The tuple is empty if the object type model does not match any
             of the specified models.
 
@@ -280,13 +282,16 @@ class ApplyChangeSetView(views.APIView):
         This method retrieves the lookup arguments for the interface device of an assigned object.
 
         Args:
+        ----
             device (dict): A dictionary containing the details of the device. It should contain either 'id' or 'name'
                 of the device and 'site' which is another dictionary containing either 'id' or 'name' of the site.
 
         Returns:
+        -------
             dict: A dictionary containing the lookup arguments for the interface device.
 
         Raises:
+        ------
             ValidationError: If neither 'id' nor 'name' is provided for the device or the site.
 
         """
