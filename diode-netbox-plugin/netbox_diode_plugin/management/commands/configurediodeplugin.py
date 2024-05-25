@@ -7,7 +7,7 @@ from users.models import NetBoxGroup, ObjectPermission, Token
 
 
 def _create_user_with_token(
-        username: str, group: NetBoxGroup, is_superuser: bool = False
+    username: str, group: NetBoxGroup, is_superuser: bool = False
 ) -> User:
     """Create a user with the given username and API key if it does not exist."""
     try:
@@ -51,7 +51,7 @@ class Command(BaseCommand):
             app_label="netbox_diode_plugin", model="diode"
         )
 
-        permission = ObjectPermission.objects.create(
+        permission, _ = ObjectPermission.objects.get_or_create(
             name="Diode",
             actions=["add", "view"],
         )
