@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/kelseyhightower/envconfig"
@@ -96,6 +97,17 @@ func (s *Server) RegisterComponent(c Component) error {
 
 	s.componentGroup.Add(
 		func() error {
+			componentHub := sentry.CurrentHub().Clone()
+			componentHub.Scope().SetTag("component", c.Name())
+
+			defer func() {
+				if err := recover(); err != nil {
+					eventID := componentHub.Recover(err)
+					componentHub.Flush(2 * time.Second)
+					s.logger.Warn("recovered from panic", "componentName", c.Name(), "eventID", eventID)
+				}
+			}()
+
 			return c.Start(ctx)
 		},
 		func(err error) {
