@@ -2,8 +2,8 @@
 
 Diode SDK Python is a Python library for interacting with the Diode ingestion service utilizing gRPC.
 
-Diode is a new NetBox ingestion service that greatly simplifies and enhances the process to add and update network data 
-in NetBox, ensuring your network source of truth is always accurate and can be trusted to power your network automation 
+Diode is a new NetBox ingestion service that greatly simplifies and enhances the process to add and update network data
+in NetBox, ensuring your network source of truth is always accurate and can be trusted to power your network automation
 pipelines.
 
 ## Installation
@@ -83,11 +83,10 @@ if __name__ == "__main__":
 
 ## Development notes
 
-```python
+```shell
 ruff netboxlabs/
 black netboxlabs/
 ```
-
 
 ## License
 
