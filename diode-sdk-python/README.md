@@ -6,6 +6,8 @@ Diode is a new NetBox ingestion service that greatly simplifies and enhances the
 in NetBox, ensuring your network source of truth is always accurate and can be trusted to power your network automation
 pipelines.
 
+More information about Diode can be found at [https://netboxlabs.com/blog/introducing-diode-streamlining-data-ingestion-in-netbox/](https://netboxlabs.com/blog/introducing-diode-streamlining-data-ingestion-in-netbox/).
+
 ## Installation
 
 ```bash
