@@ -4,6 +4,8 @@ import (
 	"context"
 	"os"
 
+	"github.com/getsentry/sentry-go"
+
 	"github.com/netboxlabs/diode/diode-server/reconciler"
 	"github.com/netboxlabs/diode/diode-server/server"
 )
@@ -11,6 +13,8 @@ import (
 func main() {
 	ctx := context.Background()
 	s := server.New(ctx, "diode-reconciler")
+
+	defer s.Recover(sentry.CurrentHub())
 
 	ingestionProcessor, err := reconciler.NewIngestionProcessor(ctx, s.Logger())
 	if err != nil {

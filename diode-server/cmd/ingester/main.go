@@ -4,6 +4,8 @@ import (
 	"context"
 	"os"
 
+	"github.com/getsentry/sentry-go"
+
 	"github.com/netboxlabs/diode/diode-server/ingester"
 	"github.com/netboxlabs/diode/diode-server/server"
 )
@@ -11,6 +13,8 @@ import (
 func main() {
 	ctx := context.Background()
 	s := server.New(ctx, "diode-ingester")
+
+	defer s.Recover(sentry.CurrentHub())
 
 	ingesterComponent, err := ingester.New(ctx, s.Logger())
 	if err != nil {

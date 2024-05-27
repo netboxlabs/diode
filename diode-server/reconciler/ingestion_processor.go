@@ -18,6 +18,7 @@ import (
 	"github.com/netboxlabs/diode/diode-server/netbox"
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
 	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
+	"github.com/netboxlabs/diode/diode-server/sentry"
 )
 
 const (
@@ -139,6 +140,14 @@ func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, stream,
 		for _, msg := range streams[0].Messages {
 			if err := p.handleStreamMessage(ctx, msg); err != nil {
 				p.logger.Error("failed to handle stream message", "error", err, "message", msg)
+
+				contextMap := map[string]any{
+					"redis_stream_msg_id": msg.ID,
+					"consumer":            consumer,
+					"hostname":            p.hostname,
+				}
+				sentry.CaptureError(fmt.Errorf("failed to handle stream message: %v", err), nil, "Ingestion stream", contextMap)
+
 				return err
 			}
 		}
@@ -214,14 +223,16 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 		}
 	}
 
-	if len(errs) > 0 {
-		p.logger.Error("failed to handle ingest request", "errors", strings.Join(errs, ", "))
-	}
-
 	p.redisStreamClient.XAck(ctx, redisStreamID, redisConsumerGroup, msg.ID)
 
 	if len(errs) > 0 {
 		p.logger.Error("failed to handle ingest request", "errors", strings.Join(errs, ", "))
+		contextMap := map[string]any{
+			"redis_stream_msg_id": msg.ID,
+			"consumer":            fmt.Sprintf("%s-%s", redisConsumerGroup, p.hostname),
+			"hostname":            p.hostname,
+		}
+		sentry.CaptureError(fmt.Errorf("failed to handle ingest request: %v", errs), nil, "Ingestion request", contextMap)
 	} else {
 		p.redisStreamClient.XDel(ctx, redisStreamID, msg.ID)
 	}
@@ -233,10 +244,16 @@ func (p *IngestionProcessor) reconcileEntity(ctx context.Context, encodedValue [
 	var ingestEntity changeset.IngestEntity
 	_ = json.Unmarshal(encodedValue, &ingestEntity)
 
-	ingestEntity.RequestID = uuid.NewString()
-
 	cs, err := changeset.Prepare(ingestEntity, p.nbClient)
 	if err != nil {
+		tags := map[string]string{
+			"request_id": ingestEntity.RequestID,
+		}
+		contextMap := map[string]any{
+			"request_id": ingestEntity.RequestID,
+			"data_type":  ingestEntity.DataType,
+		}
+		sentry.CaptureError(err, tags, "Ingest Entity", contextMap)
 		return nil, fmt.Errorf("failed to prepare change set: %v", err)
 	}
 

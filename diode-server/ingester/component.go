@@ -19,6 +19,7 @@ import (
 	"github.com/netboxlabs/diode/diode-sdk-go/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/reconciler"
 	"github.com/netboxlabs/diode/diode-server/reconciler/v1/reconcilerpb"
+	"github.com/netboxlabs/diode/diode-server/sentry"
 )
 
 const (
@@ -139,6 +140,20 @@ func (c *Component) Stop() error {
 // Ingest handles the ingest request
 func (c *Component) Ingest(ctx context.Context, in *diodepb.IngestRequest) (*diodepb.IngestResponse, error) {
 	if err := validateRequest(in); err != nil {
+		tags := map[string]string{
+			"hostname":    c.hostname,
+			"sdk_name":    in.SdkName,
+			"sdk_version": in.SdkVersion,
+		}
+		contextMap := map[string]any{
+			"request_id":           in.Id,
+			"producer_app_name":    in.ProducerAppName,
+			"producer_app_version": in.ProducerAppVersion,
+			"sdk_name":             in.SdkName,
+			"sdk_version":          in.SdkVersion,
+			"stream":               in.Stream,
+		}
+		sentry.CaptureError(err, tags, "Ingest Request", contextMap)
 		return nil, err
 	}
 

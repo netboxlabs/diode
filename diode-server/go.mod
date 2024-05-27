@@ -4,6 +4,7 @@ go 1.22
 
 require (
 	github.com/envoyproxy/protoc-gen-validate v1.0.4
+	github.com/getsentry/sentry-go v0.27.0
 	github.com/google/uuid v1.6.0
 	github.com/gosimple/slug v1.14.0
 	github.com/iancoleman/strcase v0.3.0
