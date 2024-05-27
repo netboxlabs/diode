@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/oklog/run"
 
@@ -39,6 +40,25 @@ type Component interface {
 func New(ctx context.Context, name string) *Server {
 	var cfg Config
 	envconfig.MustProcess("", &cfg)
+
+	logger := newLogger(cfg)
+
+	if cfg.SentryDSN != "" {
+		logger.Info("initializing sentry")
+		if err := sentry.Init(sentry.ClientOptions{
+			Dsn:              cfg.SentryDSN,
+			Environment:      cfg.Environment,
+			Debug:            cfg.SentryDebug,
+			SampleRate:       cfg.SentrySampleRate,
+			EnableTracing:    cfg.SentryEnableTracing,
+			TracesSampleRate: cfg.SentryTracesSampleRate,
+			AttachStacktrace: cfg.SentryAttachStacktrace,
+			ServerName:       name,
+			Release:          fmt.Sprintf("v%s", version.GetBuildVersion()),
+		}); err != nil {
+			logger.Error("failed to initialize sentry", "error", err)
+		}
+	}
 
 	return &Server{
 		ctx:            ctx,
