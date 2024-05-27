@@ -10,13 +10,17 @@ import (
 
 	"github.com/kelseyhightower/envconfig"
 	"github.com/oklog/run"
+
+	"github.com/netboxlabs/diode/diode-server/version"
 )
 
 // A Server is a diode Server
 type Server struct {
-	ctx    context.Context
-	name   string
-	logger *slog.Logger
+	ctx         context.Context
+	name        string
+	environment string
+	release     string
+	logger      *slog.Logger
 
 	mu         sync.Mutex
 	components map[string]Component
@@ -39,7 +43,9 @@ func New(ctx context.Context, name string) *Server {
 	return &Server{
 		ctx:            ctx,
 		name:           name,
-		logger:         newLogger(cfg),
+		environment:    cfg.Environment,
+		release:        fmt.Sprintf("v%s-%s", version.GetBuildVersion(), version.GetBuildCommit()),
+		logger:         logger,
 		components:     make(map[string]Component),
 		componentGroup: run.Group{},
 	}
@@ -85,8 +91,7 @@ func (s *Server) RegisterComponent(c Component) error {
 
 // Run starts the diode Server
 func (s *Server) Run() error {
-	s.logger.Info("starting server", "serverName", s.name)
-
+	s.logger.Info("starting server", "serverName", s.name, "environment", s.environment, "release", s.release)
 	s.componentGroup.Add(run.SignalHandler(s.ctx, os.Interrupt, os.Kill))
 
 	return s.componentGroup.Run()

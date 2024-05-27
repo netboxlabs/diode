@@ -11,9 +11,10 @@ GOARCH           ?= $(shell go env GOARCH)
 GOOS             = linux
 ORG_NAME         = netboxlabs
 REPO_NAME        = diode
-DIODE_VERSION    := $(shell cat version/VERSION.txt)
-COMMIT_SHA       := $(shell git rev-parse --short HEAD)
 ROOT_DIR         := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+VERSION_DIR      = $(ROOT_DIR)/version
+DIODE_VERSION    := $(shell cat $(VERSION_DIR)/BUILD_VERSION.txt)
+COMMIT_SHA       := $(shell git rev-parse --short HEAD)
 VALIDATE_PKG_DIR := $(shell find $(GOPATH)/pkg/mod/github.com/envoyproxy/protoc-gen-validate@* -type d -prune | sort | tail -1)
 
 deps:
