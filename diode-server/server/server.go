@@ -100,13 +100,7 @@ func (s *Server) RegisterComponent(c Component) error {
 			componentHub := sentry.CurrentHub().Clone()
 			componentHub.Scope().SetTag("component", c.Name())
 
-			defer func() {
-				if err := recover(); err != nil {
-					eventID := componentHub.Recover(err)
-					componentHub.Flush(2 * time.Second)
-					s.logger.Warn("recovered from panic", "componentName", c.Name(), "eventID", eventID)
-				}
-			}()
+			defer s.Recover(componentHub)
 
 			return c.Start(ctx)
 		},
@@ -127,6 +121,19 @@ func (s *Server) Run() error {
 	s.componentGroup.Add(run.SignalHandler(s.ctx, os.Interrupt, os.Kill))
 
 	return s.componentGroup.Run()
+}
+
+// Recover recovers from a panic
+func (s *Server) Recover(hub *sentry.Hub) {
+	if err := recover(); err != nil {
+		args := []any{"error", err}
+		if hub != nil && hub.Client() != nil {
+			eventID := hub.Recover(err)
+			args = append(args, "eventID", eventID)
+			sentry.Flush(2 * time.Second)
+		}
+		s.logger.Error("recovered from panic", args...)
+	}
 }
 
 func newLogger(cfg Config) *slog.Logger {

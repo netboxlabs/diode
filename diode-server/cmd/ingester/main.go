@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"os"
-	"time"
 
 	"github.com/getsentry/sentry-go"
 
@@ -15,17 +14,7 @@ func main() {
 	ctx := context.Background()
 	s := server.New(ctx, "diode-ingester")
 
-	defer func() {
-		if err := recover(); err != nil {
-			if sentry.CurrentHub().Client() != nil {
-				eventID := sentry.CurrentHub().Recover(err)
-				sentry.Flush(2 * time.Second)
-				s.Logger().Error("recovered from panic", "error", err, "eventID", eventID)
-			} else {
-				s.Logger().Error("recovered from panic", "error", err)
-			}
-		}
-	}()
+	defer s.Recover(sentry.CurrentHub())
 
 	ingesterComponent, err := ingester.New(ctx, s.Logger())
 	if err != nil {
