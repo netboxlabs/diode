@@ -3,6 +3,7 @@
 ## Device
 
 Attributes:
+
 * `name` (str) - device name
 * `device_type` (str, [DeviceType](#device-type)) - device type name or DeviceType entity
 * `platform` (str, [Platform](#platform)) - platform name or Platform entity
@@ -32,10 +33,10 @@ from netboxlabs.diode.sdk.ingester import (
 
 def main():
     with DiodeClient(
-            target="localhost:8081",
-            app_name="my-test-app",
-            app_version="0.0.1",
-            tls_verify=False,
+        target="localhost:8081",
+        app_name="my-test-app",
+        app_version="0.0.1",
+        tls_verify=False,
     ) as client:
         entities = []
 
@@ -91,7 +92,6 @@ def main():
 
         entities.append(Entity(device=device_explicit))
 
-
         response = client.ingest(entities=entities)
         if response.errors:
             print(f"Errors: {response.errors}")
@@ -104,6 +104,7 @@ if __name__ == "__main__":
 ## Interface
 
 Attributes:
+
 * `name` (str) - interface name
 * `device` (str, [Device](#device)) - device name or Device entity
 * `device_type` (str, [DeviceType](#device-type)) - device type name or DeviceType entity
@@ -143,10 +144,10 @@ from netboxlabs.diode.sdk.ingester import (
 
 def main():
     with DiodeClient(
-            target="localhost:8081",
-            app_name="my-test-app",
-            app_version="0.0.1",
-            tls_verify=False,
+        target="localhost:8081",
+        app_name="my-test-app",
+        app_version="0.0.1",
+        tls_verify=False,
     ) as client:
         entities = []
 
@@ -222,6 +223,7 @@ if __name__ == "__main__":
 ## Device Type
 
 Attributes:
+
 * `model` (str) - device type model
 * `slug` (str) - slug
 * `manufacturer` (str, [Manufacturer](#manufacturer)) - manufacturer name or Manufacturer entity
@@ -307,6 +309,7 @@ if __name__ == "__main__":
 ## Platform
 
 Attributes:
+
 * `name` (str) - platform name
 * `slug` (str) - slug
 * `manufacturer` (str, [Manufacturer](#manufacturer)) - manufacturer name or Manufacturer entity
@@ -384,6 +387,7 @@ if __name__ == "__main__":
 ## Manufacturer
 
 Attributes:
+
 * `name` (str) - manufacturer name
 * `slug` (str) - slug
 * `description` (str) - description
@@ -433,6 +437,7 @@ if __name__ == "__main__":
 ## Site
 
 Attributes:
+
 * `name` (str) - site name
 * `slug` (str) - slug
 * `status` (str) - status (`active`, `planned`, `retired`, `staging`, `decommissioning`)
@@ -490,6 +495,7 @@ if __name__ == "__main__":
 ## Role
 
 Attributes:
+
 * `name` (str) - role name
 * `slug` (str) - slug
 * `color` (str) - color
@@ -542,6 +548,7 @@ if __name__ == "__main__":
 ## IP Address
 
 Attributes:
+
 * `address` (str) - IP address
 * `interface` (str, [Interface](#interface)) - interface name or Interface entity
 * `device` (str, [Device](#device)) - device name or Device entity
@@ -659,6 +666,7 @@ if __name__ == "__main__":
 ## Prefix
 
 Attributes:
+
 * `prefix` (str) - prefix
 * `site` (str, [Site](#site)) - site name or Site entity
 * `status` (str) - status (`active`, `reserved`, `deprecated`, `container`)
@@ -740,7 +748,7 @@ def main():
         )
 
         entities.append(Entity(prefix=prefix_explicit))
-        
+
         response = client.ingest(entities=entities)
         if response.errors:
             print(f"Errors: {response.errors}")
