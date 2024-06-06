@@ -80,12 +80,6 @@ diode-sdk-go:
           - 'diode-sdk-go/*'
           - 'diode-sdk-go/**/*'
 
-diode-sdk-python:
-  - changed-files:
-      - any-glob-to-any-file:
-          - 'diode-sdk-python/*'
-          - 'diode-sdk-python/**/*'
-
 diode-server:
   - changed-files:
       - any-glob-to-any-file:
