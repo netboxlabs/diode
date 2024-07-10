@@ -1,13 +1,15 @@
 import os
 
-from django.contrib.auth.models import User
-from django.contrib.contenttypes.models import ContentType
+from django.contrib.auth import get_user_model
+from core.models import ObjectType
 from django.core.management.base import BaseCommand
-from users.models import NetBoxGroup, ObjectPermission, Token
+from users.models import Group, ObjectPermission, Token
+
+User = get_user_model()
 
 
 def _create_user_with_token(
-    username: str, group: NetBoxGroup, is_superuser: bool = False
+    username: str, group: Group, is_superuser: bool = False
 ) -> User:
     """Create a user with the given username and API key if it does not exist."""
     try:
@@ -39,7 +41,7 @@ class Command(BaseCommand):
         """Handle command execution."""
         self.stdout.write("Configuring NetBox Diode plugin...")
 
-        group, _ = NetBoxGroup.objects.get_or_create(name="diode")
+        group, _ = Group.objects.get_or_create(name="diode")
 
         diode_to_netbox_user = _create_user_with_token(
             self.diode_to_netbox_username, group
@@ -47,7 +49,7 @@ class Command(BaseCommand):
         _ = _create_user_with_token(self.netbox_to_diode_username, group, True)
         _ = _create_user_with_token(self.ingestion_username, group)
 
-        diode_plugin_object_type = ContentType.objects.get(
+        diode_plugin_object_type = ObjectType.objects.get(
             app_label="netbox_diode_plugin", model="diode"
         )
 
