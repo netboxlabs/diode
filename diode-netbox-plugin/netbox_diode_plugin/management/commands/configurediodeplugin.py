@@ -1,9 +1,15 @@
 import os
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
-from core.models import ObjectType
 from django.core.management.base import BaseCommand
+from packaging import version
 from users.models import Group, ObjectPermission, Token
+
+if version.parse(settings.VERSION) >= version.parse("4.0"):
+    from core.models import ObjectType as NetBoxType
+else:
+    from django.contrib.contenttypes.models import ContentType as NetBoxType
 
 User = get_user_model()
 
@@ -49,7 +55,7 @@ class Command(BaseCommand):
         _ = _create_user_with_token(self.netbox_to_diode_username, group, True)
         _ = _create_user_with_token(self.ingestion_username, group)
 
-        diode_plugin_object_type = ObjectType.objects.get(
+        diode_plugin_object_type = NetBoxType.objects.get(
             app_label="netbox_diode_plugin", model="diode"
         )
 
