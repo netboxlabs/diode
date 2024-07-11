@@ -5,13 +5,13 @@ package diode.v1;
 import "google/protobuf/timestamp.proto";
 import "validate/validate.proto";
 
-option go_package = "github.com/netboxlabs/diode/diode-sdk-go/diode/v1/diodepb";
+option go_package = "github.com/netboxlabs/diode-sdk-go/diode/v1/diodepb";
 
 // A device
 message Device {
   string name = 1 [(validate.rules).string = {max_len: 64}];
   string device_fqdn = 2 [(validate.rules).string = {
-    min_len: 1,
+    min_len: 1
     max_len: 255
   }];
   DeviceType device_type = 3;
@@ -42,11 +42,11 @@ message Device {
 message Interface {
   Device device = 1 [(validate.rules).any.required = true];
   string name = 2 [(validate.rules).string = {
-    min_len: 1,
+    min_len: 1
     max_len: 64
   }];
   string label = 3 [(validate.rules).string = {
-    min_len: 1,
+    min_len: 1
     max_len: 64
   }];
   string type = 4 [(validate.rules).string = {
@@ -170,7 +170,7 @@ message Interface {
   }];
   bool enabled = 5;
   int32 mtu = 6 [(validate.rules).int32 = {
-    gte: 1,
+    gte: 1
     lte: 65536
   }];
   string mac_address = 7;
@@ -217,7 +217,7 @@ message IPAddress {
     ]
   }];
   string dns_name = 5 [(validate.rules).string = {
-    max_len: 255,
+    max_len: 255
     pattern: "^([0-9A-Za-z_-]+|\\*)(\\.[0-9A-Za-z_-]+)*\\.?$"
   }];
   string description = 6 [(validate.rules).string = {max_len: 200}];
@@ -228,12 +228,12 @@ message IPAddress {
 // A device type
 message DeviceType {
   string model = 1 [(validate.rules).string = {
-    min_len: 1,
+    min_len: 1
     max_len: 100
   }];
   string slug = 2 [(validate.rules).string = {
-    min_len: 1,
-    max_len: 100,
+    min_len: 1
+    max_len: 100
     pattern: "^[-a-zA-Z0-9_]+$"
   }];
   Manufacturer manufacturer = 3;
@@ -246,12 +246,12 @@ message DeviceType {
 // A manufacturer
 message Manufacturer {
   string name = 1 [(validate.rules).string = {
-    min_len: 1,
+    min_len: 1
     max_len: 100
   }];
   string slug = 2 [(validate.rules).string = {
-    min_len: 1,
-    max_len: 100,
+    min_len: 1
+    max_len: 100
     pattern: "^[-a-zA-Z0-9_]+$"
   }];
   string description = 3 [(validate.rules).string = {max_len: 200}];
@@ -261,12 +261,12 @@ message Manufacturer {
 // A platform
 message Platform {
   string name = 1 [(validate.rules).string = {
-    min_len: 1,
+    min_len: 1
     max_len: 100
   }];
   string slug = 2 [(validate.rules).string = {
-    min_len: 1,
-    max_len: 100,
+    min_len: 1
+    max_len: 100
     pattern: "^[-a-zA-Z0-9_]+$"
   }];
   Manufacturer manufacturer = 3;
@@ -296,17 +296,17 @@ message Prefix {
 // A role
 message Role {
   string name = 1 [(validate.rules).string = {
-    min_len: 1,
+    min_len: 1
     max_len: 100
   }];
   string slug = 2 [(validate.rules).string = {
-    min_len: 1,
-    max_len: 100,
+    min_len: 1
+    max_len: 100
     pattern: "^[-a-zA-Z0-9_]+$"
   }];
   string color = 3 [(validate.rules).string = {
-    min_len: 6,
-    max_len: 6,
+    min_len: 6
+    max_len: 6
     pattern: "^[0-9a-f]{6}$"
   }];
   string description = 4 [(validate.rules).string = {max_len: 200}];
@@ -316,12 +316,12 @@ message Role {
 // A site
 message Site {
   string name = 1 [(validate.rules).string = {
-    min_len: 1,
+    min_len: 1
     max_len: 100
   }];
   string slug = 2 [(validate.rules).string = {
-    min_len: 1,
-    max_len: 100,
+    min_len: 1
+    max_len: 100
     pattern: "^[-a-zA-Z0-9_]+$"
   }];
   string status = 3 [(validate.rules).string = {
@@ -343,17 +343,17 @@ message Site {
 // A tag
 message Tag {
   string name = 1 [(validate.rules).string = {
-    min_len: 1,
+    min_len: 1
     max_len: 100
   }];
   string slug = 2 [(validate.rules).string = {
-    min_len: 1,
-    max_len: 100,
+    min_len: 1
+    max_len: 100
     pattern: "^[-a-zA-Z0-9_]+$"
   }];
   string color = 3 [(validate.rules).string = {
-    min_len: 6,
-    max_len: 6,
+    min_len: 6
+    max_len: 6
     pattern: "^[0-9a-f]{6}$"
   }];
 }
@@ -382,25 +382,25 @@ message Entity {
 // The request to ingest the data
 message IngestRequest {
   string stream = 1 [(validate.rules).string = {
-    min_len: 1,
+    min_len: 1
     max_len: 255
   }];
   repeated Entity entities = 2 [(validate.rules).repeated = {
-    min_items: 1,
+    min_items: 1
     max_items: 1000
   }];
 
   string id = 3 [(validate.rules).string.uuid = true];
   string producer_app_name = 4 [(validate.rules).string = {
-    min_len: 1,
+    min_len: 1
     max_len: 255
   }];
   string producer_app_version = 5 [(validate.rules).string = {
-    min_len: 1,
+    min_len: 1
     max_len: 255
   }];
   string sdk_name = 6 [(validate.rules).string = {
-    min_len: 1,
+    min_len: 1
     max_len: 255
   }];
   string sdk_version = 7 [(validate.rules).string = {pattern: "^(\\d)+\\.(\\d)+\\.(\\d)+$"}];
