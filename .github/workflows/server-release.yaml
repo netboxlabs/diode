@@ -7,6 +7,7 @@ on:
       - "diode-server/**"
 env:
   GH_TOKEN: ${{ secrets.ORB_CI_GH_TOKEN }}
+  GOPRIVATE: github.com/netboxlabs/diode-sdk-go
   SEMANTIC_RELEASE_PACKAGE: ${{ github.repository }}
 
 jobs:

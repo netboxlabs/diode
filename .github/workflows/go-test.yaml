@@ -5,6 +5,9 @@ on:
       - "!release"
   pull_request:
 
+env:
+  GOPRIVATE: github.com/netboxlabs/diode-sdk-go
+
 jobs:
   go-test:
     runs-on: ubuntu-latest

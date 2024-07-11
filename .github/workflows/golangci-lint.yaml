@@ -8,6 +8,9 @@ on:
 permissions:
   contents: read
 
+env:
+  GOPRIVATE: github.com/netboxlabs/diode-sdk-go
+
 jobs:
   golangci:
     strategy:
