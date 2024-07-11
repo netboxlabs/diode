@@ -6,7 +6,7 @@ from django.core.management.base import BaseCommand
 from packaging import version
 from users.models import Group, ObjectPermission, Token
 
-if version.parse(settings.VERSION) >= version.parse("4.0"):
+if version.parse(settings.VERSION).major >= 4:
     from core.models import ObjectType as NetBoxType
 else:
     from django.contrib.contenttypes.models import ContentType as NetBoxType
