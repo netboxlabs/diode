@@ -2,7 +2,7 @@
 # Copyright 2024 NetBox Labs Inc
 """Diode Netbox Plugin."""
 
-from extras.plugins import PluginConfig
+from netbox.plugins import PluginConfig
 
 from .version import version_semver
 
