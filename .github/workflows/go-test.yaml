@@ -25,7 +25,7 @@ jobs:
           go-version: '1.22'
           check-latest: true
       - name: Configure git for private modules
-        run: git config --global url."https://${{ secrets.GITHUB_TOKEN }}@github.com/netboxlabs".insteadOf "https://github.com/netboxlabs"
+        run: git config --global url."https://${{ secrets.GITHUB_TOKEN }}:x-oauth-basic@github.com/netboxlabs/diode-sdk-go".insteadOf "https://github.com/netboxlabs/diode-sdk-go"
       - name: Run go build ${{ matrix.go }}
         working-directory: ${{ matrix.go }}
         run: go build ./...

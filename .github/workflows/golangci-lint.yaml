@@ -26,7 +26,7 @@ jobs:
           go-version: '1.22'
           cache: false
       - name: Configure git for private modules
-        run: git config --global url."https://${{ secrets.GITHUB_TOKEN }}@github.com/netboxlabs".insteadOf "https://github.com/netboxlabs"
+        run: git config --global url."https://${{ secrets.GITHUB_TOKEN }}:x-oauth-basic@github.com/netboxlabs/diode-sdk-go".insteadOf "https://github.com/netboxlabs/diode-sdk-go"
       - name: golangci-lint ${{ matrix.go }}
         uses: golangci/golangci-lint-action@v3
         with:
