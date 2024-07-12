@@ -24,9 +24,8 @@ jobs:
         with:
           go-version: '1.22'
           check-latest: true
-          cache: false
       - name: Configure git for private modules
-        run: git config --global url."https://${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+        run: git config --global url."https://${{ secrets.ORB_CI_GH_TOKEN }}@github.com/netboxlabs".insteadOf https://github.com/netboxlabs
       - name: Run go build ${{ matrix.go }}
         working-directory: ${{ matrix.go }}
         run: go build ./...
