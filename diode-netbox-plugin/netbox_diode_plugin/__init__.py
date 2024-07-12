@@ -17,11 +17,5 @@ class NetBoxDiodePluginConfig(PluginConfig):
     base_url = "diode"
     min_version = "3.7.2"
 
-    def ready(self):
-        """Registers plugin signals."""
-        super().ready()
-
-        from . import signals  # noqa: F401
-
 
 config = NetBoxDiodePluginConfig
