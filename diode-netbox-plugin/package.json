@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "extends": "semantic-release-monorepo",
   "devDependencies": {
-    "semantic-release-monorepo": "^7.0.8",
+    "semantic-release-monorepo": "^8.0.2",
     "semantic-release-export-data": "^1.0.1",
     "@semantic-release/changelog": "^6.0.3"
   }
