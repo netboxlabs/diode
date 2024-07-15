@@ -414,7 +414,7 @@ class ApplyChangeSetView(views.APIView):
 
                     if errors is not None:
                         serializer_errors.append({"change_id": change_id, **errors})
-                        raise ApplyChangeSetException
+                        continue
 
                     serializer = self._get_serializer(
                         change_type, object_id, object_type, object_data, change_set_id
@@ -431,7 +431,8 @@ class ApplyChangeSetView(views.APIView):
                         serializer_errors.append(
                             {"change_id": change_id, **errors_dict}
                         )
-                        raise ApplyChangeSetException
+                if len(serializer_errors) > 0:
+                    raise ApplyChangeSetException
         except ApplyChangeSetException:
             return self._get_error_response(change_set_id, serializer_errors)
 
