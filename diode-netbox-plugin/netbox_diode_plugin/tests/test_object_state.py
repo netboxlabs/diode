@@ -187,8 +187,7 @@ class ObjectStateTestCase(APITestCase):
         query_parameters = {
             "q": "ISR4321",
             "object_type": "dcim.devicetype",
-            "attr_name": "manufacturer.name",
-            "attr_value": "Cisco",
+            "manufacturer__name": "Cisco",
         }
 
         response = self.client.get(self.url, query_parameters, **self.root_header)

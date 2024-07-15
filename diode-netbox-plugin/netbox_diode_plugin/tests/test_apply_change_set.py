@@ -553,7 +553,7 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
 
         site_updated = Site.objects.get(id=20)
 
-        self.assertEqual(response.json()[0], "Object with id 30 does not exist")
+        self.assertEqual(response.json()[0], "object with id 30 does not exist")
         self.assertEqual(site_updated.name, "Site 2")
 
     def test_change_set_id_field_not_provided_return_400(self):
