@@ -127,7 +127,7 @@ class BaseApplyChangeSet(APITestCase):
         )
         Device.objects.bulk_create(devices)
 
-        self.url = "/api/plugins/diode/apply-change-set/"
+        self.url = "/netbox/api/plugins/diode/apply-change-set/"
 
     def send_request(self, payload, status_code=status.HTTP_200_OK):
         """Post the payload to the url and return the response."""
