@@ -31,8 +31,10 @@ jobs:
           pip install .
           pip install .[dev]
           pip install .[test]
-
       - name: Lint with Ruff
         run: |
           ruff --output-format=github netbox_diode_plugin/ tests/
         continue-on-error: true
+      - name: Test
+        run: |
+          make docker-compose-netbox-plugin-test-cover
