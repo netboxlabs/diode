@@ -17,6 +17,12 @@ DIODE_VERSION    := $(shell cat $(VERSION_DIR)/BUILD_VERSION.txt)
 COMMIT_SHA       := $(shell git rev-parse --short HEAD)
 VALIDATE_PKG_DIR := $(shell find $(GOPATH)/pkg/mod/github.com/envoyproxy/protoc-gen-validate@* -type d -prune | sort | tail -1)
 
+ifneq ($(shell docker compose version 2>/dev/null),)
+  DOCKER_COMPOSE := docker compose
+else
+  DOCKER_COMPOSE := docker-compose
+endif
+
 deps:
 	@go mod tidy
 
@@ -53,11 +59,11 @@ docker-all: $(DOCKER_SERVICES)
 
 docker-compose-up: docker-all
 	@DIODE_VERSION=$(DIODE_VERSION) COMMIT_SHA=$(COMMIT_SHA) \
-	docker compose -f docker/docker-compose.yaml -f docker/docker-compose.netbox.yaml up -d --build
+	$(DOCKER_COMPOSE) -f docker/docker-compose.yaml -f docker/docker-compose.netbox.yaml up -d --build
 
 docker-compose-down:
 	@DIODE_VERSION=$(DIODE_VERSION) COMMIT_SHA=$(COMMIT_SHA) \
-	docker compose -f docker/docker-compose.yaml -f docker/docker-compose.netbox.yaml down
+	$(DOCKER_COMPOSE) -f docker/docker-compose.yaml -f docker/docker-compose.netbox.yaml down
 
 clean:
 	@rm -rf $(BUILD_DIR)/*

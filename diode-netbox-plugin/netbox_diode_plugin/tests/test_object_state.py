@@ -102,7 +102,7 @@ class ObjectStateTestCase(APITestCase):
             "HTTP_AUTHORIZATION": f"Token {self.another_user_token.key}"
         }
 
-        self.url = "/api/plugins/diode/object-state/"
+        self.url = "/netbox/api/plugins/diode/object-state/"
 
     def test_return_object_state_using_id(self):
         """Test searching using id parameter - Root User."""
