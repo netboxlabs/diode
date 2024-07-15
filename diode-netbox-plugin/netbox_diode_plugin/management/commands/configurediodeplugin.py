@@ -1,3 +1,7 @@
+#!/usr/bin/env python
+# Copyright 2024 NetBox Labs Inc
+"""Diode Netbox Plugin - Configure Diode plugin command."""
+
 import os
 
 from django.conf import settings
