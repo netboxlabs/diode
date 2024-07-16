@@ -31,9 +31,6 @@ jobs:
       - name: Build docker images
         run: |
           make docker-compose-netbox-plugin-build
-      - name: Cache docker images
-        uses: satackey/action-docker-layer-caching@v0.0.11
-        continue-on-error: true
   tests:
     runs-on: ubuntu-latest
     timeout-minutes: 10
