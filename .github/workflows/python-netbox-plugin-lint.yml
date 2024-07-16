@@ -49,4 +49,8 @@ jobs:
       - name: Test
         run: |
           make docker-compose-netbox-plugin-test-cover
-          cat ./docker/coverage/report.txt
+      - name: Coverage comment
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          pytest-coverage-path: ./docker/coverage/report.txt
+          junitxml-path: ./docker/coverage/junit.xml

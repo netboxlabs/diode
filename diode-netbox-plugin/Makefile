@@ -17,5 +17,5 @@ docker-compose-netbox-plugin-test:
 	@$(MAKE) docker-compose-netbox-plugin-down
 
 docker-compose-netbox-plugin-test-cover:
-	-@$(DOCKER_COMPOSE) -f docker/docker-compose.yaml run --rm -u root -e COVERAGE_FILE=/tmp/.coverage netbox sh -c "coverage run --source=netbox_diode_plugin ./manage.py test --keepdb netbox_diode_plugin && coverage report -m | tee /opt/netbox/netbox/coverage/report.txt"
+	-@$(DOCKER_COMPOSE) -f docker/docker-compose.yaml run --rm -u root -e COVERAGE_FILE=/tmp/.coverage netbox sh -c "coverage run --source=netbox_diode_plugin ./manage.py test --keepdb netbox_diode_plugin && coverage xml -o /opt/netbox/netbox/coverage/junit.xml && coverage report -m | tee /opt/netbox/netbox/coverage/report.txt"
 	@$(MAKE) docker-compose-netbox-plugin-down
