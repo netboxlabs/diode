@@ -2,9 +2,19 @@
 # Copyright 2024 NetBox Labs Inc
 """Diode Netbox Plugin - Tests for ObjectStateView."""
 
-from dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Rack, Site
+from dcim.models import (
+    Device,
+    DeviceRole,
+    DeviceType,
+    Interface,
+    Manufacturer,
+    Rack,
+    Site,
+)
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
+from ipam.models import IPAddress
+from netaddr import IPNetwork
 from rest_framework import status
 from users.models import Token
 from utilities.testing import APITestCase
@@ -124,6 +134,25 @@ class ObjectStateTestCase(APITestCase):
             ),
         )
         Device.objects.bulk_create(cls.devices)
+
+        cls.interfaces = (
+            Interface(name="Interface 1", device=cls.devices[0], type="1000baset"),
+            Interface(name="Interface 2", device=cls.devices[0], type="1000baset"),
+            Interface(name="Interface 3", device=cls.devices[0], type="1000baset"),
+            Interface(name="Interface 4", device=cls.devices[0], type="1000baset"),
+            Interface(name="Interface 5", device=cls.devices[0], type="1000baset"),
+        )
+        Interface.objects.bulk_create(cls.interfaces)
+
+        cls.ip_addresses = (
+            IPAddress(
+                address=IPNetwork("10.0.0.1/24"), assigned_object=cls.interfaces[0]
+            ),
+            IPAddress(
+                address=IPNetwork("192.0.2.1/24"), assigned_object=cls.interfaces[1]
+            ),
+        )
+        IPAddress.objects.bulk_create(cls.ip_addresses)
 
         # call_command is because the searching using q parameter uses CachedValue to get the object ID
         call_command("reindex")
@@ -259,3 +288,41 @@ class ObjectStateTestCase(APITestCase):
         response = self.client.get(self.url, query_parameters, **self.root_header)
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_common_user_with_permissions_get_device_state(self):
+        """Test searching for device using q parameter."""
+        query_parameters = {
+            "q": self.devices[0].name,
+            "object_type": "dcim.device",
+            "site": self.sites[0].id,
+        }
+
+        response = self.client.get(self.url, query_parameters, **self.user_header)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_common_user_with_permissions_get_interface_state(self):
+        """Test searching for interface using q parameter."""
+        query_parameters = {
+            "q": self.interfaces[0].name,
+            "object_type": "dcim.interface",
+            "device": self.devices[0].id,
+            "device__site": self.sites[0].id,
+        }
+
+        response = self.client.get(self.url, query_parameters, **self.user_header)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_common_user_with_permissions_get_ip_state(self):
+        """Test searching for ip using q parameter."""
+        query_parameters = {
+            "q": self.ip_addresses[0].address.ip,
+            "object_type": "ipam.ipaddress",
+            "interface": self.interfaces[0].id,
+            "interface__device": self.devices[0].id,
+            "interface__device__site": self.sites[0].id,
+        }
+
+        response = self.client.get(self.url, query_parameters, **self.user_header)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+

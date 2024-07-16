@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # Copyright 2024 NetBox Labs Inc
 """Diode Netbox Plugin - Tests for ApplyChangeSetView."""
-
 import uuid
 
 from dcim.models import (

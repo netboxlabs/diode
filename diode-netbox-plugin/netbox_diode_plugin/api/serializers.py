@@ -207,9 +207,6 @@ class DiodeDeviceSerializer(DeviceSerializer):
     site = DiodeSiteSerializer()
     device_type = DiodeDeviceTypeSerializer()
     role = DiodeDeviceRoleSerializer()
-    device_role = DiodeDeviceRoleSerializer(
-        read_only=True, help_text="Deprecated in v3.6 in favor of `role`."
-    )
     platform = DiodePlatformSerializer(required=False, allow_null=True)
     status = serializers.CharField()
 
