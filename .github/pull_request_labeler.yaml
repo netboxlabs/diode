@@ -74,12 +74,6 @@ diode-proto:
           - 'diode-proto/*'
           - 'diode-proto/**/*'
 
-diode-sdk-go:
-  - changed-files:
-      - any-glob-to-any-file:
-          - 'diode-sdk-go/*'
-          - 'diode-sdk-go/**/*'
-
 diode-server:
   - changed-files:
       - any-glob-to-any-file:

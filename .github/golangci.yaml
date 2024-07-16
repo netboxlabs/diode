@@ -3,7 +3,7 @@ run:
   modules-download-mode: readonly
 
 output:
-  formats: github-actions
+  formats: colored-line-number
 
 linters:
   enable:
