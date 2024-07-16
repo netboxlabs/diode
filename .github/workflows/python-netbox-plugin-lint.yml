@@ -50,7 +50,7 @@ jobs:
         run: |
           make docker-compose-netbox-plugin-test-cover
       - name: Coverage comment
-        uses: py-cov-action/python-coverage-comment-action@v3
+        uses: orgoro/coverage@v3.2
         with:
-          COVERAGE_PATH: ./diode-netbox-plugin/docker/coverage/
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          coverageFile: ./diode-netbox-plugin/docker/coverage/report.xml
+          token: ${{ secrets.GITHUB_TOKEN }}
