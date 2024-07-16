@@ -51,3 +51,6 @@ jobs:
           make docker-compose-netbox-plugin-test-cover
       - name: Coverage comment
         uses: py-cov-action/python-coverage-comment-action@v3
+        with:
+          COVERAGE_PATH: ./diode-netbox-plugin/docker/coverage/
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
