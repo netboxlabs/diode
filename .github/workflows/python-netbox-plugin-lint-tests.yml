@@ -1,4 +1,4 @@
-name: Python Netbox plugin - lint
+name: Python NetBox plugin - lint and tests
 on:
   workflow_dispatch:
   pull_request:
@@ -10,12 +10,22 @@ on:
     paths:
       - "diode-netbox-plugin/**"
 
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  checks: write
+  pull-requests: write
+
 jobs:
   tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     strategy:
       matrix:
-        python-version: [ "3.7", "3.8", "3.9", "3.10", "3.11", "3.12" ]
+        python-version: [ "3.10" ]
     defaults:
       run:
         working-directory: diode-netbox-plugin
@@ -31,8 +41,15 @@ jobs:
           pip install .
           pip install .[dev]
           pip install .[test]
-
       - name: Lint with Ruff
         run: |
-          ruff --output-format=github netbox_diode_plugin/ tests/
+          ruff check --output-format=github netbox_diode_plugin/ tests/
         continue-on-error: true
+      - name: Test
+        run: |
+          make docker-compose-netbox-plugin-test-cover
+      - name: Coverage comment
+        uses: orgoro/coverage@v3.2
+        with:
+          coverageFile: ./diode-netbox-plugin/docker/coverage/report.xml
+          token: ${{ secrets.GITHUB_TOKEN }}

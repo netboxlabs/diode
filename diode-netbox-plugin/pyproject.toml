@@ -39,6 +39,7 @@ test = ["coverage", "pytest", "pytest-cov"]
 [project.scripts]  # Optional
 
 [tool.setuptools]
+py-modules = []
 
 [build-system]
 requires = ["setuptools>=43.0.0", "wheel"]

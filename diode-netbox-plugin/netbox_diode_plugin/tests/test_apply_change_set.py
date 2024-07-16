@@ -127,7 +127,7 @@ class BaseApplyChangeSet(APITestCase):
         )
         Device.objects.bulk_create(devices)
 
-        self.url = "/api/plugins/diode/apply-change-set/"
+        self.url = "/netbox/api/plugins/diode/apply-change-set/"
 
     def send_request(self, payload, status_code=status.HTTP_200_OK):
         """Post the payload to the url and return the response."""
@@ -553,7 +553,7 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
 
         site_updated = Site.objects.get(id=20)
 
-        self.assertEqual(response.json()[0], "Object with id 30 does not exist")
+        self.assertEqual(response.json()[0], "object with id 30 does not exist")
         self.assertEqual(site_updated.name, "Site 2")
 
     def test_change_set_id_field_not_provided_return_400(self):

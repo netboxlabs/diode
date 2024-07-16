@@ -3,7 +3,13 @@
 """Diode Netbox Plugin - API Views."""
 from typing import Any, Dict, Optional
 
-from django.contrib.contenttypes.models import ContentType
+from django.conf import settings
+from packaging import version
+
+if version.parse(settings.VERSION).major >= 4:
+    from core.models import ObjectType as NetBoxType
+else:
+    from django.contrib.contenttypes.models import ContentType as NetBoxType
 from django.core.exceptions import FieldError
 from django.db import transaction
 from django.db.models import Q
@@ -65,7 +71,7 @@ class ObjectStateView(views.APIView):
             raise ValidationError("object_type parameter is required")
 
         app_label, model_name = object_type.split(".")
-        object_content_type = ContentType.objects.get_by_natural_key(
+        object_content_type = NetBoxType.objects.get_by_natural_key(
             app_label, model_name
         )
         object_type_model = object_content_type.model_class()
@@ -142,7 +148,7 @@ class ApplyChangeSetView(views.APIView):
     def _get_object_type_model(object_type: str):
         """Get the object type model from object_type."""
         app_label, model_name = object_type.split(".")
-        object_content_type = ContentType.objects.get_by_natural_key(
+        object_content_type = NetBoxType.objects.get_by_natural_key(
             app_label, model_name
         )
         return object_content_type.model_class()
@@ -408,7 +414,7 @@ class ApplyChangeSetView(views.APIView):
 
                     if errors is not None:
                         serializer_errors.append({"change_id": change_id, **errors})
-                        raise ApplyChangeSetException
+                        continue
 
                     serializer = self._get_serializer(
                         change_type, object_id, object_type, object_data, change_set_id
@@ -425,7 +431,8 @@ class ApplyChangeSetView(views.APIView):
                         serializer_errors.append(
                             {"change_id": change_id, **errors_dict}
                         )
-                        raise ApplyChangeSetException
+                if len(serializer_errors) > 0:
+                    raise ApplyChangeSetException
         except ApplyChangeSetException:
             return self._get_error_response(change_set_id, serializer_errors)
 

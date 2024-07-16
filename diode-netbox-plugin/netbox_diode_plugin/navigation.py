@@ -1,10 +1,15 @@
-from extras.plugins import PluginMenu, PluginMenuItem
+#!/usr/bin/env python
+# Copyright 2024 NetBox Labs Inc
+"""Diode Netbox Plugin - Navigation."""
+
+
+from netbox.plugins import PluginMenu, PluginMenuItem
 
 # default arguments for the PluginMenuItem class
 display_state = {
     "link": "plugins:netbox_diode_plugin:display_state",
     "link_text": "Display state",
-    "staff_only": True                  # 3.6+ feature
+    "staff_only": True,  # 3.6+ feature
 }
 
 

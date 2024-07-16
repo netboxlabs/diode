@@ -1,9 +1,10 @@
+name: diode-netbox-plugin
 services:
   netbox: &netbox
-    image: netboxcommunity/netbox:v4.0-2.9.1-diode
+    image: netboxcommunity/netbox:v4.0-2.9.1-diode-netbox-plugin
     build:
       context: .
-      dockerfile: netbox/Dockerfile-diode
+      dockerfile: Dockerfile-diode-netbox-plugin
       pull: true
     depends_on:
       - netbox-postgres
@@ -19,40 +20,15 @@ services:
     volumes:
       - ./netbox/docker-entrypoint.sh:/opt/netbox/docker-entrypoint.sh:z,ro
       - ./netbox/nginx-unit.json:/opt/netbox/nginx-unit.json:z,ro
-      - ./diode/netbox_diode_plugin:/opt/netbox/netbox/netbox_diode_plugin:rw
-      - ./netbox/configuration:/etc/netbox/config:z,rw
+      - ../netbox_diode_plugin:/opt/netbox/netbox/netbox_diode_plugin:ro
       - ./netbox/launch-netbox.sh:/opt/netbox/launch-netbox.sh:z,ro
+      - ./coverage:/opt/netbox/netbox/coverage:z,rw
       - netbox-media-files:/opt/netbox/netbox/media:rw
       - netbox-reports-files:/opt/netbox/netbox/reports:rw
       - netbox-scripts-files:/opt/netbox/netbox/scripts:rw
     ports:
       - "8000:8080"
-  netbox-worker:
-    <<: *netbox
-    depends_on:
-      netbox:
-        condition: service_healthy
-    ports: [ ]
-    command:
-      - /opt/netbox/venv/bin/python
-      - /opt/netbox/netbox/manage.py
-      - rqworker
-    healthcheck:
-      start_period: 20s
-      timeout: 3s
-      interval: 15s
-      test: "ps -aux | grep -v grep | grep -q rqworker || exit 1"
-  netbox-diode-plugin-configurator:
-    <<: *netbox
-    depends_on:
-      netbox:
-        condition: service_healthy
-    ports: [ ]
-    env_file: netbox/env/netbox.env
-    command:
-      - /opt/netbox/venv/bin/python
-      - /opt/netbox/netbox/manage.py
-      - configurediodeplugin
+
   # postgres
   netbox-postgres:
     image: docker.io/postgres:16-alpine
@@ -70,6 +46,7 @@ services:
     env_file: netbox/env/redis.env
     volumes:
       - netbox-redis-data:/data
+
   netbox-redis-cache:
     image: docker.io/redis:7-alpine
     command:
