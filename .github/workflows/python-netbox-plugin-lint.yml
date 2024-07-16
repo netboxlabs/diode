@@ -52,5 +52,5 @@ jobs:
       - name: Coverage comment
         uses: MishaKav/pytest-coverage-comment@main
         with:
-          pytest-coverage-path: ./docker/coverage/report.txt
-          junitxml-path: ./docker/coverage/junit.xml
+          pytest-coverage-path: ./diode-netbox-plugin/docker/coverage/report.txt
+          junitxml-path: ./diode-netbox-plugin/docker/coverage/junit.xml
