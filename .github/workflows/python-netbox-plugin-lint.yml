@@ -49,3 +49,4 @@ jobs:
       - name: Test
         run: |
           make docker-compose-netbox-plugin-test-cover
+          cat ./docker/coverage/report.txt
