@@ -27,6 +27,7 @@ jobs:
       run:
         working-directory: diode-netbox-plugin
     steps:
+      - uses: actions/checkout@v4
       - name: Build docker images
         run: make docker-compose-netbox-plugin-test-build
       - name: Cache docker images
@@ -35,6 +36,7 @@ jobs:
   tests:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    needs: docker-build-and-cache
     strategy:
       matrix:
         python-version: [ "3.9", "3.10", "3.11" ]
