@@ -1,14 +1,15 @@
-import ldap
-from django_auth_ldap.config import LDAPSearch
 from importlib import import_module
 from os import environ
+
+import ldap
+from django_auth_ldap.config import LDAPSearch
 
 
 # Read secret from file
 def _read_secret(secret_name, default=None):
     try:
-        f = open('/run/secrets/' + secret_name, 'r', encoding='utf-8')
-    except EnvironmentError:
+        f = open('/run/secrets/' + secret_name, encoding='utf-8')
+    except OSError:
         return default
     else:
         with f:
