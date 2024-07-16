@@ -32,14 +32,6 @@
         }
       },
       {
-        "match": {
-          "uri": "/*/netbox/static/*"
-        },
-        "action": {
-          "share": "`/opt/netbox${uri.substring(9)}`"
-        }
-      },
-      {
         "action": {
           "pass": "applications/netbox"
         }
