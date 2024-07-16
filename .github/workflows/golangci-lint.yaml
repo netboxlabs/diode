@@ -8,9 +8,6 @@ on:
 permissions:
   contents: read
 
-env:
-  GOPRIVATE: github.com/netboxlabs/diode-sdk-go
-
 jobs:
   golangci:
     strategy:
@@ -25,8 +22,6 @@ jobs:
         with:
           go-version: '1.22'
           check-latest: true
-      - name: Configure git for private modules
-        run: git config --global url."https://${{ secrets.ORB_CI_GH_TOKEN }}@github.com/netboxlabs".insteadOf https://github.com/netboxlabs
       - name: golangci-lint ${{ matrix.go }}
         uses: golangci/golangci-lint-action@v3
         with:

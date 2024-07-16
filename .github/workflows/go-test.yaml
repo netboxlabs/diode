@@ -5,9 +5,6 @@ on:
       - "!release"
   pull_request:
 
-env:
-  GOPRIVATE: github.com/netboxlabs/diode-sdk-go
-
 jobs:
   go-test:
     runs-on: ubuntu-latest
@@ -24,8 +21,6 @@ jobs:
         with:
           go-version: '1.22'
           check-latest: true
-      - name: Configure git for private modules
-        run: git config --global url."https://${{ secrets.ORB_CI_GH_TOKEN }}@github.com/netboxlabs".insteadOf https://github.com/netboxlabs
       - name: Run go build ${{ matrix.go }}
         working-directory: ${{ matrix.go }}
         run: go build ./...
