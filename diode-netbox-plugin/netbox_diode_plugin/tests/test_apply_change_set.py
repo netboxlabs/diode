@@ -215,25 +215,6 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
                         },
                     },
                 },
-                {
-                    "change_id": str(uuid.uuid4()),
-                    "change_type": "create",
-                    "object_version": None,
-                    "object_type": "ipam.ipaddress",
-                    "object_id": None,
-                    "data": {
-                        "address": "192.163.3.1/24",
-                        "assigned_object": {
-                            "interface": {
-                                "name": self.interfaces[3].name,
-                                "device": {
-                                    "name": self.devices[0].name,
-                                    "site": {"name": self.sites[0].name},
-                                }
-                            },
-                        },
-                    },
-                },
             ],
         }
 
@@ -783,43 +764,225 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
             "This field may not be blank.",
         )
 
-    # def test_add_primary_ip_address_to_device(self):
-    #     """Add primary ip address to device."""
-    #     payload = {
-    #         "change_set_id": str(uuid.uuid4()),
-    #         "change_set": [
-    #             {
-    #                 "change_id": str(uuid.uuid4()),
-    #                 "change_type": "update",
-    #                 "object_version": None,
-    #                 "object_type": "dcim.device",
-    #                 "data": {
-    #                     "name": self.devices[0].name,
-    #                     "primary_ip4": {
-    #                         "address": str(self.ip_addresses[0].address),
-    #                         "assigned_object": {
-    #                             "interface": {
-    #                                 "id": self.interfaces[0].pk,
-    #                                 "name": self.interfaces[0].name,
-    #                                 "type": self.interfaces[0].type,
-    #                                 "device": {
-    #                                     "id": self.devices[0].pk,
-    #                                     "name": self.devices[0].name,
-    #                                     "site": {"name": self.sites[0].name},
-    #                                 },
-    #                             },
-    #                         },
-    #                     },
-    #                 },
-    #             },
-    #         ],
-    #     }
-    #     # HTTP_500_INTERNAL_SERVER_ERROR
-    #     response = self.send_request(
-    #         payload, status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
-    #     )
-    #     self.assertIn("blk", response.json())
+    def test_create_ip_address_return_200(self):
+        """Test create ip_address with successful."""
+        payload = {
+            "change_set_id": str(uuid.uuid4()),
+            "change_set": [
+                {
+                    "change_id": str(uuid.uuid4()),
+                    "change_type": "create",
+                    "object_version": None,
+                    "object_type": "ipam.ipaddress",
+                    "object_id": None,
+                    "data": {
+                        "address": "192.161.3.1/24",
+                        "assigned_object": {
+                            "interface": {
+                                "name": self.interfaces[3].name,
+                                "device": {
+                                    "name": self.devices[0].name,
+                                    "site": {"name": self.sites[0].name},
+                                },
+                            },
+                        },
+                    },
+                },
+            ],
+        }
+        response = self.send_request(payload)
 
-    #     # device_updated = Device.objects.get(id=10)
+        self.assertEqual(response.json().get("result"), "success")
 
-    #     self.assertEqual(response.json().get("result"), "success")
+    def test_create_ip_address_return_400(self):
+        """Test create ip_address with missing interface name."""
+        payload = {
+            "change_set_id": str(uuid.uuid4()),
+            "change_set": [
+                {
+                    "change_id": str(uuid.uuid4()),
+                    "change_type": "create",
+                    "object_version": None,
+                    "object_type": "ipam.ipaddress",
+                    "object_id": None,
+                    "data": {
+                        "address": "192.161.3.1/24",
+                        "assigned_object": {
+                            "interface": {
+                                # Forcing to miss the name of the interface
+                                "device": {
+                                    "name": self.devices[0].name,
+                                    "site": {"name": self.sites[0].name},
+                                },
+                            },
+                        },
+                    },
+                },
+            ],
+        }
+        response = self.send_request(payload, status_code=status.HTTP_400_BAD_REQUEST)
+
+        self.assertIn(
+            "not sufficient to retrieve interface",
+            response.json().get("errors")[0].get("assigned_object"),
+        )
+
+    def test_create_ip_address_not_exist_interface_return_400(self):
+        """Test create ip_address with not valid interface."""
+        payload = {
+            "change_set_id": str(uuid.uuid4()),
+            "change_set": [
+                {
+                    "change_id": str(uuid.uuid4()),
+                    "change_type": "create",
+                    "object_version": None,
+                    "object_type": "ipam.ipaddress",
+                    "object_id": None,
+                    "data": {
+                        "address": "192.161.3.1/24",
+                        "assigned_object": {
+                            "interface": {
+                                "name": "not_exist",
+                                "device": {
+                                    "name": self.devices[0].name,
+                                    "site": {"name": self.sites[0].name},
+                                },
+                            },
+                        },
+                    },
+                },
+            ],
+        }
+        response = self.send_request(payload, status_code=status.HTTP_400_BAD_REQUEST)
+
+        self.assertIn(
+            "does not exist",
+            response.json().get("errors")[0].get("assigned_object"),
+        )
+
+    def test_create_ip_address_missing_device_interface_return_400(self):
+        """Test create ip_address with missing device interface name."""
+        payload = {
+            "change_set_id": str(uuid.uuid4()),
+            "change_set": [
+                {
+                    "change_id": str(uuid.uuid4()),
+                    "change_type": "create",
+                    "object_version": None,
+                    "object_type": "ipam.ipaddress",
+                    "object_id": None,
+                    "data": {
+                        "address": "192.161.3.1/24",
+                        "assigned_object": {
+                            "interface": {
+                                "name": "not_exist",
+                                "device": {
+                                    "site": {"name": self.sites[0].name},
+                                },
+                            },
+                        },
+                    },
+                },
+            ],
+        }
+        response = self.send_request(payload, status_code=status.HTTP_400_BAD_REQUEST)
+
+        self.assertIn(
+            "Interface device needs to have either id or name provided",
+            response.json().get("errors")[0].get("assigned_object"),
+        )
+
+    def test_create_ip_address_missing_interface_device_site_return_400(self):
+        """Test create ip_address with missing interface device site name."""
+        payload = {
+            "change_set_id": str(uuid.uuid4()),
+            "change_set": [
+                {
+                    "change_id": str(uuid.uuid4()),
+                    "change_type": "create",
+                    "object_version": None,
+                    "object_type": "ipam.ipaddress",
+                    "object_id": None,
+                    "data": {
+                        "address": "192.161.3.1/24",
+                        "assigned_object": {
+                            "interface": {
+                                "name": "not_exist",
+                                "device": {
+                                    "name": self.devices[0].name,
+                                    "site": {"facility": "Betha"},
+                                },
+                            },
+                        },
+                    },
+                },
+            ],
+        }
+        response = self.send_request(payload, status_code=status.HTTP_400_BAD_REQUEST)
+
+        self.assertIn(
+            "Interface device site needs to have either id or name provided",
+            response.json().get("errors")[0].get("assigned_object"),
+        )
+
+    def test_primary_ip_address_not_found_return_400(self):
+        """Test update primary ip address with site name."""
+        payload = {
+            "change_set_id": str(uuid.uuid4()),
+            "change_set": [
+                {
+                    "change_id": str(uuid.uuid4()),
+                    "change_type": "update",
+                    "object_version": None,
+                    "object_type": "dcim.device",
+                    "data": {
+                        "name": self.devices[0].name,
+                        "site": {"name": self.sites[0].name},
+                        "primary_ip6": {
+                            "address": "2001:DB8:0000:0000:244:17FF:FEB6:D37D/64",
+                        },
+                    },
+                },
+            ],
+        }
+        response = self.send_request(payload, status_code=status.HTTP_400_BAD_REQUEST)
+
+        self.assertEquals(response.json()[0], "primary IP not found")
+
+    def test_add_primary_ip_address_to_device(self):
+        """Add primary ip address to device."""
+        payload = {
+            "change_set_id": str(uuid.uuid4()),
+            "change_set": [
+                {
+                    "change_id": str(uuid.uuid4()),
+                    "change_type": "update",
+                    "object_version": None,
+                    "object_type": "dcim.device",
+                    "data": {
+                        "name": self.devices[0].name,
+                        "site": {"name": self.sites[0].name},
+                        "primary_ip4": {
+                            "address": str(self.ip_addresses[0].address),
+                            "assigned_object": {
+                                "interface": {
+                                    "name": self.interfaces[0].name,
+                                    "device": {
+                                        "name": self.devices[0].name,
+                                        "site": {"name": self.sites[0].name},
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            ],
+        }
+
+        response = self.send_request(payload)
+
+        device_updated = Device.objects.get(id=10)
+
+        self.assertEqual(response.json().get("result"), "success")
+        self.assertEqual(device_updated.name, self.devices[0].name)
+        self.assertEqual(device_updated.primary_ip4, self.ip_addresses[0])

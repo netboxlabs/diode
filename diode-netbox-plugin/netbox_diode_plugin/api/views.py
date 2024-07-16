@@ -348,14 +348,19 @@ class ApplyChangeSetView(views.APIView):
                 if model_name == "interface":
                     if assigned_object_properties_dict.get("id"):
                         args["id"] = assigned_object_properties_dict.get("id")
-                    else:
+                    elif assigned_object_properties_dict.get("name"):
                         try:
                             device = assigned_object_properties_dict.get("device", {})
                             args = self._retrieve_assigned_object_interface_device_lookup_args(
                                 device
                             )
+                            args["name"] = assigned_object_properties_dict.get("name")
                         except ValidationError as e:
                             return {"assigned_object": str(e)}
+                    else:
+                        return {
+                            "assigned_object": f"provided properties '{assigned_object_properties_dict}' not sufficient to retrieve {model_name}"
+                        }
 
                 assigned_object_instance = (
                     assigned_object_model.objects.prefetch_related(*lookups).get(**args)
