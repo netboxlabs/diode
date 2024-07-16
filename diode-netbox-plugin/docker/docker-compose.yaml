@@ -29,22 +29,6 @@ services:
     ports:
       - "8000:8080"
 
-  netbox-worker:
-    <<: *netbox
-    depends_on:
-      netbox:
-        condition: service_healthy
-    ports: [ ]
-    command:
-      - /opt/netbox/venv/bin/python
-      - /opt/netbox/netbox/manage.py
-      - rqworker
-    healthcheck:
-      start_period: 20s
-      timeout: 3s
-      interval: 15s
-      test: "ps -aux | grep -v grep | grep -q rqworker || exit 1"
-
   # postgres
   netbox-postgres:
     image: docker.io/postgres:16-alpine
