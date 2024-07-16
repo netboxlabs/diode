@@ -50,7 +50,4 @@ jobs:
         run: |
           make docker-compose-netbox-plugin-test-cover
       - name: Coverage comment
-        uses: MishaKav/pytest-coverage-comment@main
-        with:
-          pytest-coverage-path: ./diode-netbox-plugin/docker/coverage/report.txt
-          junitxml-path: ./diode-netbox-plugin/docker/coverage/junit.xml
+        uses: py-cov-action/python-coverage-comment-action@v3
