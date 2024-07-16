@@ -45,9 +45,13 @@ jobs:
         run: |
           ruff check --output-format=github netbox_diode_plugin/ tests/
         continue-on-error: true
+      - name: Build docker images
+        run: make docker-compose-netbox-plugin-test-build
+      - name: Cache docker images
+        uses: satackey/action-docker-layer-caching@v0.0.11
+        continue-on-error: true
       - name: Test
-        run: |
-          make docker-compose-netbox-plugin-test-cover
+        run: make docker-compose-netbox-plugin-test-cover
       - name: Coverage comment
         uses: orgoro/coverage@v3.2
         with:

@@ -16,6 +16,9 @@ docker-compose-netbox-plugin-test:
 	-@$(DOCKER_COMPOSE) -f docker/docker-compose.yaml run --rm netbox ./manage.py test --keepdb netbox_diode_plugin
 	@$(MAKE) docker-compose-netbox-plugin-down
 
+docker-compose-netbox-plugin-build:
+	-@$(DOCKER_COMPOSE) -f docker/docker-compose.yaml build
+
 docker-compose-netbox-plugin-test-cover:
 	-@$(DOCKER_COMPOSE) -f docker/docker-compose.yaml run --rm -u root -e COVERAGE_FILE=/opt/netbox/netbox/coverage/.coverage netbox sh -c "coverage run --source=netbox_diode_plugin ./manage.py test --keepdb netbox_diode_plugin && coverage xml -o /opt/netbox/netbox/coverage/report.xml && coverage report -m | tee /opt/netbox/netbox/coverage/report.txt"
 	@$(MAKE) docker-compose-netbox-plugin-down
