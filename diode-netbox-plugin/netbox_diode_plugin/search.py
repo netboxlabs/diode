@@ -1,3 +1,7 @@
+#!/usr/bin/env python
+# Copyright 2024 NetBox Labs Inc
+"""Diode Netbox Plugin - Search."""
+
 from extras.models import Tag
 from netbox.search import SearchIndex, register_search
 
