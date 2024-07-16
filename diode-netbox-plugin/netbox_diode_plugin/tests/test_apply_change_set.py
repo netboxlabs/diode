@@ -947,7 +947,7 @@ class ApplyChangeSetTestCase(BaseApplyChangeSet):
         }
         response = self.send_request(payload, status_code=status.HTTP_400_BAD_REQUEST)
 
-        self.assertEquals(response.json()[0], "primary IP not found")
+        self.assertEqual(response.json()[0], "primary IP not found")
 
     def test_add_primary_ip_address_to_device(self):
         """Add primary ip address to device."""

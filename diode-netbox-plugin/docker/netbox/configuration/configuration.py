@@ -35,7 +35,7 @@ def _environ_get_and_map(variable_name: str, default: str | None = None,
                          map_fn: Callable[[str], Any | None] = None) -> Any | None:
     env_value = environ.get(variable_name, default)
 
-    if env_value == None:
+    if env_value is None:
         return env_value
 
     if not map_fn:

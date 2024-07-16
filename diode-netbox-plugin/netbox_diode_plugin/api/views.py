@@ -358,9 +358,8 @@ class ApplyChangeSetView(views.APIView):
                         except ValidationError as e:
                             return {"assigned_object": str(e)}
                     else:
-                        return {
-                            "assigned_object": f"provided properties '{assigned_object_properties_dict}' not sufficient to retrieve {model_name}"
-                        }
+                        error = f"provided properties '{assigned_object_properties_dict}' not sufficient to retrieve {model_name}"
+                        return {"assigned_object": error}
 
                 assigned_object_instance = (
                     assigned_object_model.objects.prefetch_related(*lookups).get(**args)
