@@ -1,4 +1,4 @@
-.PHONY: docker-compose-netbox-plugin-up docker-compose-netbox-plugin-down docker-compose-netbox-plugin-test
+.PHONY: docker-compose-netbox-plugin-up docker-compose-netbox-plugin-down docker-compose-netbox-plugin-build docker-compose-netbox-plugin-test docker-compose-netbox-plugin-test-cover
 
 ifneq ($(shell docker compose version 2>/dev/null),)
   DOCKER_COMPOSE := docker compose
