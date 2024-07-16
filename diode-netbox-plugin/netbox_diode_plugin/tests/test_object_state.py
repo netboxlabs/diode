@@ -2,12 +2,13 @@
 # Copyright 2024 NetBox Labs Inc
 """Diode Netbox Plugin - Tests for ObjectStateView."""
 
-from dcim.models import DeviceType, Manufacturer, Site
+from dcim.models import Device, DeviceRole, DeviceType, Manufacturer, Rack, Site
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from rest_framework import status
 from users.models import Token
 from utilities.testing import APITestCase
+from virtualization.models import Cluster, ClusterType
 
 User = get_user_model()
 
@@ -77,6 +78,52 @@ class ObjectStateTestCase(APITestCase):
             ),
         )
         DeviceType.objects.bulk_create(cls.device_types)
+
+        cls.roles = (
+            DeviceRole(name="Device Role 1", slug="device-role-1", color="ff0000"),
+            DeviceRole(name="Device Role 2", slug="device-role-2", color="00ff00"),
+        )
+        DeviceRole.objects.bulk_create(cls.roles)
+
+        cls.racks = (
+            Rack(name="Rack 1", site=cls.sites[0]),
+            Rack(name="Rack 2", site=cls.sites[1]),
+        )
+        Rack.objects.bulk_create(cls.racks)
+
+        cluster_type = ClusterType.objects.create(
+            name="Cluster Type 1", slug="cluster-type-1"
+        )
+
+        cls.clusters = (
+            Cluster(name="Cluster 1", type=cluster_type),
+            Cluster(name="Cluster 2", type=cluster_type),
+        )
+        Cluster.objects.bulk_create(cls.clusters)
+
+        cls.devices = (
+            Device(
+                id=10,
+                device_type=cls.device_types[0],
+                role=cls.roles[0],
+                name="Device 1",
+                site=cls.sites[0],
+                rack=cls.racks[0],
+                cluster=cls.clusters[0],
+                local_context_data={"A": 1},
+            ),
+            Device(
+                id=20,
+                device_type=cls.device_types[0],
+                role=cls.roles[0],
+                name="Device 2",
+                site=cls.sites[0],
+                rack=cls.racks[0],
+                cluster=cls.clusters[0],
+                local_context_data={"B": 2},
+            ),
+        )
+        Device.objects.bulk_create(cls.devices)
 
         # call_command is because the searching using q parameter uses CachedValue to get the object ID
         call_command("reindex")
@@ -197,3 +244,18 @@ class ObjectStateTestCase(APITestCase):
         self.assertEqual(
             response.json().get("object").get("manufacturer").get("name"), "Cisco"
         )
+
+    def test_invalid_object_state_using_q_objects_and_wrong_additional_attributes_return_400(
+        self,
+    ):
+        """Test searching using q parameter - invalid additional attributes."""
+        query_parameters = {
+            "q": "ISR4321",
+            "object_type": "dcim.devicetype",
+            "attr_name": "manufacturer.name",
+            "attr_value": "Cisco",
+        }
+
+        response = self.client.get(self.url, query_parameters, **self.root_header)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
