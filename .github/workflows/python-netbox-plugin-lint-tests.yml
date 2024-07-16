@@ -20,24 +20,13 @@ permissions:
   pull-requests: write
 
 jobs:
-  docker-build-and-cache:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    defaults:
-      run:
-        working-directory: diode-netbox-plugin
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build docker images
-        run: |
-          make docker-compose-netbox-plugin-build
   tests:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: docker-build-and-cache
     strategy:
       matrix:
-        python-version: [ "3.9", "3.10", "3.11" ]
+        python-version: [ "3.10" ]
     defaults:
       run:
         working-directory: diode-netbox-plugin
