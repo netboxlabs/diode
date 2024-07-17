@@ -5,9 +5,18 @@ on:
       - "!release"
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: read
+
 jobs:
   go-test:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: diode-server
@@ -25,4 +34,25 @@ jobs:
         run: |
           go install github.com/mfridman/tparse@v0.14.0
       - name: Run go test
-        run: make test-coverage
+        id: go-test
+        run: |
+          make test-coverage
+          echo "coverage-report=$(cat .coverage/test-report.md)" >> $GITHUB_OUTPUT
+          echo "coverage-total=$(cat .coverage/coverage.txt)" >> $GITHUB_OUTPUT
+      - name: Find comment
+        uses: peter-evans/find-comment@v3
+        id: existing-comment
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: Go test coverage
+      - name: Post comment
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          comment-id: ${{ steps.existing-comment.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            Go test coverage
+            ${{ steps.go-test.outputs.coverage-report }}
+            Total coverage: ${{ steps.go-test.outputs.coverage-total }}%
+          edit-mode: replace
