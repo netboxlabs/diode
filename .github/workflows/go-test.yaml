@@ -37,9 +37,9 @@ jobs:
         id: go-test
         run: |
           make test-coverage
-          echo 'coverage-report<<EOF' >> $GITHUB_ENV
-          cat .coverage/test-report.md >> $GITHUB_ENV
-          echo 'EOF' >> $GITHUB_ENV
+          echo 'coverage-report<<EOF' >> GITHUB_OUTPUT
+          cat .coverage/test-report.md >> GITHUB_OUTPUT
+          echo 'EOF' >> GITHUB_OUTPUT
           echo "coverage-total=$(cat .coverage/coverage.txt)" >> $GITHUB_OUTPUT
       - name: Find comment
         uses: peter-evans/find-comment@v3
