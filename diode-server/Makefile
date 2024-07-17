@@ -1,4 +1,4 @@
-.PHONY: deps lint test build-all docker-all docker-compose-up docker-compose-down clean reconciler-proto-gen
+.PHONY: deps lint test test-coverage build-all docker-all docker-compose-up docker-compose-down clean reconciler-proto-gen
 
 SERVICES         := $(shell find ./cmd/* -type d -exec basename {} \;)
 BUILD_SERVICES   = $(addprefix build-,$(SERVICES))
@@ -31,6 +31,12 @@ lint:
 
 test:
 	@go test -race ./...
+
+test-coverage:
+	@mkdir -p .coverage
+	@go test -race -cover -json -coverprofile=.coverage/cover.out.tmp ./... | grep -Ev "diodepb|reconcilerpb|cmd|mocks|sentry" | tparse -format=markdown > .coverage/test-report.md
+	@cat .coverage/cover.out.tmp | grep -Ev "diodepb|reconcilerpb|cmd|mocks|sentry" > .coverage/cover.out
+	@go tool cover -func=.coverage/cover.out | grep total | awk '{print substr($$3, 1, length($$3)-1)}' > .coverage/coverage.txt
 
 .PHONY: $(BUILD_SERVICES)
 $(BUILD_SERVICES):
@@ -69,10 +75,4 @@ clean:
 	@rm -rf $(BUILD_DIR)/*
 
 reconciler-proto-gen:
-	@mkdir -p proto/validate
-	@cp $(VALIDATE_PKG_DIR)/validate/validate.proto proto/validate/validate.proto
-	@sed -i '' 's/^option go_package = "github.com\/envoyproxy\/protoc-gen-validate\/validate";/option go_package = "github.com\/netboxlabs\/diode\/diode-server\/validate";/' proto/validate/validate.proto
-	@chmod u+rw proto/validate/validate.proto
-	@cd proto/ && buf format -w && buf generate
-	@find ../diode-netbox-plugin/netbox_diode_plugin/diode_reconciler_sdk/reconciler -name '*.py' \
-	-exec sed -i '' 's/^from reconciler.v1/from netbox_diode_plugin.diode_reconciler_sdk.reconciler.v1/; s/^from validate/from netbox_diode_plugin.diode_reconciler_sdk.validate/' {} \;
+	@cd proto/ && buf format -w && buf generate --template buf.gen.yaml

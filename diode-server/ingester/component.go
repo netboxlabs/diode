@@ -84,7 +84,6 @@ func New(ctx context.Context, logger *slog.Logger) (*Component, error) {
 	}
 
 	ingestionDataSources := dataSources.GetIngestionDataSources()
-	//auth := grpc.UnaryServerInterceptor(authUnaryInterceptor)
 	auth := newAuthUnaryInterceptor(ingestionDataSources)
 	grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(auth))
 

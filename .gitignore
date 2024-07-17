@@ -22,6 +22,7 @@ venv.bak/
 coverage.txt
 
 # diode-server
+diode-server/.coverage/
 diode-server/build/
 
 # Python
