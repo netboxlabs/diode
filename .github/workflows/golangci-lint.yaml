@@ -26,6 +26,6 @@ jobs:
         uses: golangci/golangci-lint-action@v3
         with:
           version: v1.54
-          args: --config .github/golangci.yaml
+          args: --config ../.github/golangci.yaml
           skip-pkg-cache: true
           skip-build-cache: true
