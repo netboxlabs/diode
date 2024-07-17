@@ -47,11 +47,11 @@ class ObjectStateView(views.APIView):
             of the specified models.
 
         """
-        if object_type_model == "ipaddress":
+        if "'ipam.models.ip.ipaddress'" in object_type_model:
             return "interface", "interface__device", "interface__device__site"
-        if object_type_model == "interface":
+        if "'dcim.models.device_components.interface'" in object_type_model:
             return "device", "device__site"
-        if object_type_model == "device":
+        if "'dcim.models.devices.device'" in object_type_model:
             return ("site",)
         return ()
 
@@ -97,7 +97,7 @@ class ObjectStateView(views.APIView):
                 id__in=object_id_in_cached_value
             )
 
-            lookups = self._get_lookups(object_type_model)
+            lookups = self._get_lookups(str(object_type_model).lower())
 
             if lookups:
                 queryset = queryset.prefetch_related(*lookups)
@@ -348,14 +348,18 @@ class ApplyChangeSetView(views.APIView):
                 if model_name == "interface":
                     if assigned_object_properties_dict.get("id"):
                         args["id"] = assigned_object_properties_dict.get("id")
-                    else:
+                    elif assigned_object_properties_dict.get("name"):
                         try:
                             device = assigned_object_properties_dict.get("device", {})
                             args = self._retrieve_assigned_object_interface_device_lookup_args(
                                 device
                             )
+                            args["name"] = assigned_object_properties_dict.get("name")
                         except ValidationError as e:
                             return {"assigned_object": str(e)}
+                    else:
+                        error = f"provided properties '{assigned_object_properties_dict}' not sufficient to retrieve {model_name}"
+                        return {"assigned_object": error}
 
                 assigned_object_instance = (
                     assigned_object_model.objects.prefetch_related(*lookups).get(**args)

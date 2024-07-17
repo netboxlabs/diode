@@ -9,7 +9,6 @@ from os import environ
 from os.path import abspath, dirname, join
 from typing import Any, Callable
 
-
 # For reference see https://docs.netbox.dev/en/stable/configuration/
 # Based on https://github.com/netbox-community/netbox/blob/develop/netbox/netbox/configuration_example.py
 
@@ -20,8 +19,8 @@ from typing import Any, Callable
 # Read secret from file
 def _read_secret(secret_name: str, default: str | None = None) -> str | None:
     try:
-        f = open('/run/secrets/' + secret_name, 'r', encoding='utf-8')
-    except EnvironmentError:
+        f = open('/run/secrets/' + secret_name, encoding='utf-8')
+    except OSError:
         return default
     else:
         with f:
@@ -36,7 +35,7 @@ def _environ_get_and_map(variable_name: str, default: str | None = None,
                          map_fn: Callable[[str], Any | None] = None) -> Any | None:
     env_value = environ.get(variable_name, default)
 
-    if env_value == None:
+    if env_value is None:
         return env_value
 
     if not map_fn:
