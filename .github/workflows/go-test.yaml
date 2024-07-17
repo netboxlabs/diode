@@ -21,5 +21,8 @@ jobs:
           check-latest: true
       - name: Run go build
         run: go build ./...
+      - name: Install additional dependencies
+        run: |
+          go install github.com/mfridman/tparse@v0.14.0
       - name: Run go test
         run: make test-coverage
