@@ -11,9 +11,6 @@ permissions:
 jobs:
   golangci:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: diode-server
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -26,6 +23,7 @@ jobs:
         uses: golangci/golangci-lint-action@v3
         with:
           version: v1.54
+          working-directory: diode-server
           args: --config ../.github/golangci.yaml
           skip-pkg-cache: true
           skip-build-cache: true
