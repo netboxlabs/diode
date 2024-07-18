@@ -59,7 +59,7 @@ jobs:
           write-mode: overwrite
           contents: |
             {
-              "branches": "release",
+              "branches": "feat/OBS-477-diode-server-release",
               "repositoryUrl": "https://github.com/netboxlabs/diode",
               "debug": "true",
               "extends": "semantic-release-monorepo",

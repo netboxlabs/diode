@@ -29,7 +29,7 @@ jobs:
 
   get-next-version:
     needs: [ setup ]
-    uses: netboxlabs/diode/.github/workflows/reusable_semantic_release_get_next_version.yaml@develop
+    uses: netboxlabs/diode/.github/workflows/reusable_semantic_release_get_next_version.yaml@feat/OBS-477-diode-server-release
     strategy:
       fail-fast: false
       matrix:
