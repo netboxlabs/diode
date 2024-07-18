@@ -48,9 +48,6 @@ jobs:
       matrix:
         app: ${{ fromJSON(needs.setup.outputs.apps) }}
     if: needs.get-next-version.outputs.new-release-published == 'true'
-#    defaults:
-#      run:
-#        working-directory: diode-server
     env:
       BUILD_VERSION: ${{ needs.get-next-version.outputs.new-release-version }}
       BUILD_COMMIT: ${{ needs.get-next-version.outputs.short-sha }}
