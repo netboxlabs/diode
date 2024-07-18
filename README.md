@@ -10,7 +10,7 @@ Diode runs as a sidecar service to NetBox and can run anywhere with network conn
 
 1. Diode plugin - see how to [install the Diode plugin](https://github.com/netboxlabs/diode-netbox-plugin)
 2. Diode server - see how to [run the Diode server](https://github.com/netboxlabs/diode/tree/develop/diode-server#readme)
-3. Diode SDK - see how to [install the Diode client SDK](https://github.com/netboxlabs/diode-sdk-python) and [download Diode Python script examples](https://github.com/netboxlabs/netbox-learning/tree/develop/diode-private-preview/examples)
+3. Diode SDK - see how to [install the Diode client SDK](https://github.com/netboxlabs/diode-sdk-python) and [download Diode Python script examples](https://github.com/netboxlabs/netbox-learning/tree/develop/diode/examples)
 4. Diode agent (optional) - see how to [install and run the Diode discovery agent](https://github.com/netboxlabs/diode-agent)
 
 ## Related Projects
