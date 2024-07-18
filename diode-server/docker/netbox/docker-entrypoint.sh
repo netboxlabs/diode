@@ -7,9 +7,6 @@ set -e
 # Allows NetBox to be run as non-root users
 umask 002
 
-# disable plugins
-sed -i 's/PLUGINS = \[/# PLUGINS = \[/' /etc/netbox/config/plugins.py
-
 # Load correct Python3 env
 # shellcheck disable=SC1091
 source /opt/netbox/venv/bin/activate
@@ -97,9 +94,6 @@ except Token.DoesNotExist:
 END
 
 echo "✅ Initialisation is done."
-
-# re-enable plugins
-sed -i 's/# PLUGINS = \[/PLUGINS = \[/' /etc/netbox/config/plugins.py
 
 # Launch whatever is passed by docker
 # (i.e. the RUN instruction in the Dockerfile)

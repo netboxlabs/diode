@@ -44,25 +44,9 @@ load_configuration() {
   echo "✅ Unit configuration loaded successfully"
 }
 
-reload_netbox() {
-  if [ "$RELOAD_NETBOX_ON_DIODE_PLUGIN_CHANGE" == "true" ]; then
-    netbox_diode_plugin_md5=$(find /opt/netbox/netbox/netbox_diode_plugin -type f -name "*.py" -exec md5sum {} + | md5sum | awk '{print $1}')
-
-    while true; do
-      new_md5=$(find /opt/netbox/netbox/netbox_diode_plugin -type f -name "*.py" -exec md5sum {} + | md5sum | awk '{print $1}')
-      if [ "$netbox_diode_plugin_md5" != "$new_md5" ]; then
-        echo "🔄 Reloading NetBox"
-        curl --silent --output /dev/null --unix-socket /opt/unit/unit.sock -X GET http://localhost/control/applications/netbox/restart
-        netbox_diode_plugin_md5=$new_md5
-      fi
-      sleep 1
-    done
-  fi
-}
-
 load_configuration &
 
-reload_netbox &
+sh /opt/netbox/configure-diode-plugin.sh &
 
 exec unitd \
   --no-daemon \
