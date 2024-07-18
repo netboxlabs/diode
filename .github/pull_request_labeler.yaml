@@ -62,12 +62,6 @@ python:
   - changed-files:
       - any-glob-to-any-file: '**/*.py'
 
-diode-netbox-plugin:
-  - changed-files:
-      - any-glob-to-any-file:
-          - 'diode-netbox-plugin/*'
-          - 'diode-netbox-plugin/**/*'
-
 diode-proto:
   - changed-files:
       - any-glob-to-any-file:

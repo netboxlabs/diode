@@ -1,4 +1,3 @@
 FROM netboxcommunity/netbox:v4.0-2.9.1
 
-COPY ../diode/requirements-plugins.txt /opt/netbox/
-RUN /opt/netbox/venv/bin/pip install  --no-warn-script-location -r /opt/netbox/requirements-plugins.txt
+RUN /opt/netbox/venv/bin/pip install  --no-warn-script-location netboxlabs-diode-netbox-plugin
