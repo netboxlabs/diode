@@ -65,11 +65,17 @@ docker-all: $(DOCKER_SERVICES)
 
 docker-compose-up: docker-all
 	@DIODE_VERSION=$(DIODE_VERSION) COMMIT_SHA=$(COMMIT_SHA) \
-	$(DOCKER_COMPOSE) --env-file docker/sample.env -f docker/docker-compose.yaml -f docker/docker-compose.netbox.yaml up -d --build
+	$(DOCKER_COMPOSE) --env-file docker/sample.env -f docker/docker-compose.yaml up -d --build
 
 docker-compose-down:
 	@DIODE_VERSION=$(DIODE_VERSION) COMMIT_SHA=$(COMMIT_SHA) \
-	$(DOCKER_COMPOSE) --env-file docker/sample.env -f docker/docker-compose.yaml -f docker/docker-compose.netbox.yaml down
+	$(DOCKER_COMPOSE) --env-file docker/sample.env -f docker/docker-compose.yaml down --remove-orphans
+
+docker-compose-netbox-up: docker-all
+	$(DOCKER_COMPOSE) -f docker/docker-compose.netbox.yaml up -d --build
+
+docker-compose-netbox-down:
+	$(DOCKER_COMPOSE) -f docker/docker-compose.netbox.yaml down
 
 clean:
 	@rm -rf $(BUILD_DIR)/*
