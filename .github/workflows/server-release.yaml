@@ -2,9 +2,7 @@ name: Server - release
 on:
   workflow_dispatch:
   push:
-#    branches: [ release ]
-    branches:
-      - "feat/OBS-477-diode-server-release"
+    branches: [ release ]
 
 concurrency:
   group: ${{ github.workflow }}
@@ -28,8 +26,9 @@ jobs:
           echo 'apps=["ingester", "reconciler"]' >> "$GITHUB_OUTPUT"
 
   get-next-version:
+    name: Get next version - ${{ matrix.app }}
     needs: [ setup ]
-    uses: netboxlabs/diode/.github/workflows/reusable_semantic_release_get_next_version.yaml@feat/OBS-477-diode-server-release
+    uses: netboxlabs/diode/.github/workflows/reusable_semantic_release_get_next_version.yaml@develop
     strategy:
       fail-fast: false
       matrix:
@@ -40,7 +39,7 @@ jobs:
     secrets: inherit
 
   build:
-    name: Build ${{ matrix.app }}
+    name: Build - ${{ matrix.app }}
     needs: [ setup, get-next-version ]
     runs-on: ubuntu-latest
     strategy:
@@ -71,8 +70,6 @@ jobs:
         run: |
           echo $BUILD_COMMIT > ./diode-server/version/BUILD_COMMIT.txt
           echo $BUILD_VERSION > ./diode-server/version/BUILD_VERSION.txt
-          cat ./diode-server/version/BUILD_VERSION.txt
-          cat ./diode-server/version/BUILD_COMMIT.txt
 
       - name: Build image and push
         uses: docker/build-push-action@v6
@@ -80,7 +77,7 @@ jobs:
           context: diode-server
           file: diode-server/docker/Dockerfile-build
           platforms: linux/amd64,linux/arm64
-          push: false
+          push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
           tags: |
@@ -90,15 +87,16 @@ jobs:
             GO_VERSION=${{ env.GO_VERSION }}
             SVC=${{ matrix.app }}
 
-#  semantic-release:
-#    uses: netboxlabs/diode/.github/workflows/reusable_semantic_release.yaml@develop
-#    needs: [ setup, build ]
-#    strategy:
-#      fail-fast: false
-#      matrix:
-#        app: ${{ fromJSON(needs.setup.outputs.apps) }}
-#    if: needs.setup.outputs.app != ''
-#    with:
-#      app_name: diode-${{ matrix.app }}
-#      app_dir: diode-server/cmd/${{ matrix.app }}
-#    secrets: inherit
+  semantic-release:
+    name: Semantic release - ${{ matrix.app }}
+    uses: netboxlabs/diode/.github/workflows/reusable_semantic_release.yaml@develop
+    needs: [ setup, build ]
+    strategy:
+      fail-fast: false
+      matrix:
+        app: ${{ fromJSON(needs.setup.outputs.apps) }}
+    if: needs.setup.outputs.app != ''
+    with:
+      app_name: diode-${{ matrix.app }}
+      app_dir: diode-server/cmd/${{ matrix.app }}
+    secrets: inherit
