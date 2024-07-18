@@ -11,6 +11,7 @@ LABEL org.opencontainers.image.documentation="https://github.com/netboxlabs/diod
 LABEL org.opencontainers.image.description="NetBox Labs diode $SVC image"
 LABEL org.opencontainers.image.vendor="NetBox Labs, Inc"
 LABEL org.opencontainers.image.authors="techops@netboxlabs.com"
+LABEL org.opencontainers.image.licenses="PolyForm Shield License 1.0.0"
 
 COPY build/$SVC /usr/local/bin/diode-server
 
