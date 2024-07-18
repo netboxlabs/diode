@@ -6,7 +6,7 @@ Diode server is splited into two services:
 
 - Responsible for receiving and validating ingestion data.
 - Utilizes `IngesterService.Ingest` RPC method.
-- Supports multiple API keys for data source authorization.
+- Supports single API key for data source authorization.
 - Validates incoming data and pushes it into Redis streams.
 
 ### Reconciler Service

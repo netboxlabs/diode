@@ -7,7 +7,6 @@ Diode is a service designed to streamline the process of data ingestion and reco
 ## Related Projects
 
 - [diode-netbox-plugin](https://github.com/netboxlabs/diode-netbox-plugin) - The Diode NetBox plugin is a NetBox plugin and a required component of the Diode ingestion service.
-- [diode-sdk-go](https://github.com/netboxlabs/diode-sdk-go) - Diode SDK Go is a Go library for interacting with the Diode ingestion service utilizing gRPC.
 - [diode-sdk-python](https://github.com/netboxlabs/diode-sdk-python) - Diode SDK Python is a Python library for interacting with the Diode ingestion service utilizing gRPC.
 - [diode-agent](https://github.com/netboxlabs/diode-agent) - A collection of agents that leverage the Diode SDK to interact with the Diode server.
 

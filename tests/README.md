@@ -14,7 +14,7 @@ Here's what you'll need to do in order to run these tests:
 To run the tests, you must have the diode plugin directory, and execute the following commands in the **diode-server** folder.
 
 ```bash
-pip install netboxlabs-diode-sdk 
+pip install netboxlabs-diode-netbox-plugin
 ```
 
 After that, you can start the docker container by running the following command:
