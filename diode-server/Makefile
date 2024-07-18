@@ -69,7 +69,7 @@ docker-compose-up: docker-all
 
 docker-compose-down:
 	@DIODE_VERSION=$(DIODE_VERSION) COMMIT_SHA=$(COMMIT_SHA) \
-	$(DOCKER_COMPOSE) --env-file docker/sample.env -f docker/docker-compose.yaml -f docker/docker-compose.netbox.yaml down -v
+	$(DOCKER_COMPOSE) --env-file docker/sample.env -f docker/docker-compose.yaml -f docker/docker-compose.netbox.yaml down
 
 clean:
 	@rm -rf $(BUILD_DIR)/*
