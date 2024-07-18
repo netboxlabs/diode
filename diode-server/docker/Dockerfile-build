@@ -1,0 +1,33 @@
+ARG GO_VERSION=1.22
+
+FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine AS build
+
+WORKDIR /diode-server
+
+COPY . .
+
+ARG TARGETOS TARGETARCH SVC
+
+RUN --mount=target=. \
+    --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg \
+    GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o /build/$SVC ./cmd/$SVC
+
+FROM gcr.io/distroless/base:latest
+
+USER nonroot
+
+ARG SVC
+
+COPY --from=build /build/$SVC /usr/local/bin/diode-server
+
+LABEL maintainer="techops@netboxlabs.com"
+LABEL org.opencontainers.image.title="Diode $SVC"
+LABEL org.opencontainers.image.url="https://github.com/netboxlabs/diode"
+LABEL org.opencontainers.image.documentation="https://github.com/netboxlabs/diode"
+LABEL org.opencontainers.image.description="NetBox Labs diode $SVC image"
+LABEL org.opencontainers.image.vendor="NetBox Labs, Inc"
+LABEL org.opencontainers.image.authors="techops@netboxlabs.com"
+LABEL org.opencontainers.image.licenses="PolyForm Shield License 1.0.0"
+
+CMD ["/usr/local/bin/diode-server"]

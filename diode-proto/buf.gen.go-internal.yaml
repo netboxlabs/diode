@@ -1,0 +1,11 @@
+version: v1
+plugins:
+  - plugin: go
+    out: ../diode-server/gen/
+    opt: module=github.com/netboxlabs/diode-sdk-go
+  - plugin: buf.build/grpc/go:v1.3.0
+    out: ../diode-server/gen/
+    opt: module=github.com/netboxlabs/diode-sdk-go
+  - plugin: buf.build/bufbuild/validate-go:v1.0.4
+    out: ../diode-server/gen/
+    opt: module=github.com/netboxlabs/diode-sdk-go

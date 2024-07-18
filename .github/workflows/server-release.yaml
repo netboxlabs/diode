@@ -3,89 +3,100 @@ on:
   workflow_dispatch:
   push:
     branches: [ release ]
-    paths:
-      - "diode-server/**"
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
 env:
   GH_TOKEN: ${{ secrets.ORB_CI_GH_TOKEN }}
   SEMANTIC_RELEASE_PACKAGE: ${{ github.repository }}
+  GO_VERSION: '1.22'
 
 jobs:
   setup:
     name: Setup
     runs-on: ubuntu-latest
     outputs:
-      matrix: ${{ steps.generate-matrix.outputs.matrix }}
-      short_sha: ${{ steps.set-sha.outputs.short_sha }}
+      apps: ${{ steps.apps.outputs.apps }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Set short SHA
-        id: short-sha
+      - name: Get apps
+        id: apps
         run: |
-          echo "short_sha=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
-      - name: Get changed dirs
-        id: get-changed-dirs
-        run: |
-          echo "changed-dirs=$(git diff --name-only ${{ github.event.before }} ${{ steps.short-sha.outputs.short_sha }} | sort -u | tr '\n' ';')" >> $GITHUB_OUTPUT
-      - name: Generate servers matrix
-        id: generate-matrix
-        run: .github/workflows/generate_changed_servers_matrix.sh "${{ steps.get-changed-dirs.outputs.changed-dirs }}"
-      - name: Echo test
-        run: |
-          echo "matrix: ${{ steps.generate-matrix.outputs.matrix }}"
+          echo 'apps=["ingester", "reconciler"]' >> "$GITHUB_OUTPUT"
 
   get-next-version:
-    uses: netboxlabs/diode/.github/workflows/reusable_semantic_release_get_next_version.yaml@develop
+    name: Get next version - ${{ matrix.app }}
     needs: [ setup ]
+    uses: netboxlabs/diode/.github/workflows/reusable_semantic_release_get_next_version.yaml@develop
     strategy:
       fail-fast: false
-      matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
-    if: needs.setup.outputs.matrix != ''
+      matrix:
+        app: ${{ fromJSON(needs.setup.outputs.apps) }}
     with:
-      # passed vars need hard coding - https://docs.github.com/en/actions/using-workflows/reusing-workflows#limitations
-      app_name: ${{ matrix.server }}
-      app_dir: diode-server/cmd/${{ matrix.server }}
+      app_name: diode-${{ matrix.app }}
+      app_dir: diode-server/cmd/${{ matrix.app }}
     secrets: inherit
 
   build:
-    name: Build ${{ matrix.server }}
-    needs: [ get-next-version, setup ]
+    name: Build - ${{ matrix.app }}
+    needs: [ setup, get-next-version ]
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
-    runs-on: ubuntu-latest
-    if: needs.setup.outputs.matrix != ''
-    defaults:
-      run:
-        working-directory: diode-server/cmd/${{ matrix.server }}
+      matrix:
+        app: ${{ fromJSON(needs.setup.outputs.apps) }}
+    if: needs.get-next-version.outputs.new-release-published == 'true'
     env:
       BUILD_VERSION: ${{ needs.get-next-version.outputs.new-release-version }}
-      BUILD_TRACK: release
       BUILD_COMMIT: ${{ needs.get-next-version.outputs.short-sha }}
     steps:
-      - uses: actions/checkout@v4
-      #
-      # do the build and inject versions here
-      #
-      # - name: Upload Github build artifact
-      #  uses: actions/upload-artifact@v4
-      #  with:
-      #    name: build-production.zip
-      #    path: services/controlplane/signup-ui/build-production.zip
-      #    retention-days: 1
-      #    if-no-files-found: error
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set build info
+        run: |
+          echo $BUILD_COMMIT > ./diode-server/version/BUILD_COMMIT.txt
+          echo $BUILD_VERSION > ./diode-server/version/BUILD_VERSION.txt
+
+      - name: Build image and push
+        uses: docker/build-push-action@v6
+        with:
+          context: diode-server
+          file: diode-server/docker/Dockerfile-build
+          platforms: linux/amd64,linux/arm64
+          push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: |
+            netboxlabs/diode-${{ matrix.app }}:latest
+            netboxlabs/diode-${{ matrix.app }}:${{ env.BUILD_VERSION }}
+          build-args: |
+            GO_VERSION=${{ env.GO_VERSION }}
+            SVC=${{ matrix.app }}
 
   semantic-release:
+    name: Semantic release - ${{ matrix.app }}
     uses: netboxlabs/diode/.github/workflows/reusable_semantic_release.yaml@develop
-    needs: [ build, setup ]
+    needs: [ setup, build ]
     strategy:
       fail-fast: false
-      matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
-    if: needs.setup.outputs.matrix != ''
+      matrix:
+        app: ${{ fromJSON(needs.setup.outputs.apps) }}
+    if: needs.setup.outputs.app != ''
     with:
-      app_dir: diode-server/cmd/${{ matrix.server }}
+      app_name: diode-${{ matrix.app }}
+      app_dir: diode-server/cmd/${{ matrix.app }}
     secrets: inherit
-
-  # upload to Docker hub / GHCR here

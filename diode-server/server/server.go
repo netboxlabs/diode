@@ -7,16 +7,22 @@ import (
 	"os"
 	"strings"
 	"sync"
+	"time"
 
+	"github.com/getsentry/sentry-go"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/oklog/run"
+
+	"github.com/netboxlabs/diode/diode-server/version"
 )
 
 // A Server is a diode Server
 type Server struct {
-	ctx    context.Context
-	name   string
-	logger *slog.Logger
+	ctx         context.Context
+	name        string
+	environment string
+	release     string
+	logger      *slog.Logger
 
 	mu         sync.Mutex
 	components map[string]Component
@@ -36,10 +42,31 @@ func New(ctx context.Context, name string) *Server {
 	var cfg Config
 	envconfig.MustProcess("", &cfg)
 
+	logger := newLogger(cfg)
+
+	if cfg.SentryDSN != "" {
+		logger.Info("initializing sentry")
+		if err := sentry.Init(sentry.ClientOptions{
+			Dsn:              cfg.SentryDSN,
+			Environment:      cfg.Environment,
+			Debug:            cfg.SentryDebug,
+			SampleRate:       cfg.SentrySampleRate,
+			EnableTracing:    cfg.SentryEnableTracing,
+			TracesSampleRate: cfg.SentryTracesSampleRate,
+			AttachStacktrace: cfg.SentryAttachStacktrace,
+			ServerName:       name,
+			Release:          fmt.Sprintf("v%s", version.GetBuildVersion()),
+		}); err != nil {
+			logger.Error("failed to initialize sentry", "error", err)
+		}
+	}
+
 	return &Server{
 		ctx:            ctx,
 		name:           name,
-		logger:         newLogger(cfg),
+		environment:    cfg.Environment,
+		release:        fmt.Sprintf("v%s-%s", version.GetBuildVersion(), version.GetBuildCommit()),
+		logger:         logger,
 		components:     make(map[string]Component),
 		componentGroup: run.Group{},
 	}
@@ -70,6 +97,11 @@ func (s *Server) RegisterComponent(c Component) error {
 
 	s.componentGroup.Add(
 		func() error {
+			componentHub := sentry.CurrentHub().Clone()
+			componentHub.Scope().SetTag("component", c.Name())
+
+			defer s.Recover(componentHub)
+
 			return c.Start(ctx)
 		},
 		func(err error) {
@@ -85,11 +117,23 @@ func (s *Server) RegisterComponent(c Component) error {
 
 // Run starts the diode Server
 func (s *Server) Run() error {
-	s.logger.Info("starting server", "serverName", s.name)
-
+	s.logger.Info("starting server", "serverName", s.name, "environment", s.environment, "release", s.release)
 	s.componentGroup.Add(run.SignalHandler(s.ctx, os.Interrupt, os.Kill))
 
 	return s.componentGroup.Run()
+}
+
+// Recover recovers from a panic
+func (s *Server) Recover(hub *sentry.Hub) {
+	if err := recover(); err != nil {
+		args := []any{"error", err}
+		if hub != nil && hub.Client() != nil {
+			eventID := hub.Recover(err)
+			args = append(args, "eventID", eventID)
+			sentry.Flush(2 * time.Second)
+		}
+		s.logger.Error("recovered from panic", args...)
+	}
 }
 
 func newLogger(cfg Config) *slog.Logger {

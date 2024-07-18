@@ -1,3 +1,0 @@
-# Diode SDK Go
-
-TBD

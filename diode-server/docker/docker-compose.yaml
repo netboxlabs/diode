@@ -1,21 +1,73 @@
-version: '3.8'
 name: diode
 services:
-  diode-distributor:
-    image: netboxlabs/diode-distributor:${DIODE_VERSION}-${COMMIT_SHA}
-    env_file: diode/env/distributor.env
+  ingress-nginx:
+    image: nginx:latest
+    command: >
+      /bin/sh -c "echo 'upstream diode {
+        server diode-ingester:8081;
+      }
+
+      upstream netbox {
+        server netbox:8080;
+      }
+
+      server {
+        listen 80;
+        http2 on;
+        server_name localhost;
+        location /diode {
+          rewrite /diode/(.*) /$1 break;
+          grpc_pass grpc://diode;
+        }
+        location /netbox/static/ {
+          proxy_pass http://netbox/static/;
+        }
+        location /netbox/ {
+          proxy_pass http://netbox;
+          proxy_set_header X-Forwarded-Host $$http_host;
+          proxy_set_header X-Real-IP $$remote_addr;
+          proxy_set_header X-Forwarded-Proto $$scheme;
+        }
+      }'
+      > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - diode-ingester
+      - diode-reconciler
+
+  diode-ingester:
+    image: netboxlabs/diode-ingester:${DIODE_VERSION}-${COMMIT_SHA}
+    environment:
+    - API_KEY=${RECONCILER_API_KEY}
+    - REDIS_PASSWORD=${REDIS_PASSWORD}
+    - REDIS_HOST=${REDIS_HOST}
+    - REDIS_PORT=${REDIS_PORT}
+    - RECONCILER_GRPC_HOST=${RECONCILER_GRPC_HOST}
+    - RECONCILER_GRPC_PORT=${RECONCILER_GRPC_PORT}
+    - SENTRY_DSN=${SENTRY_DSN}
+    restart: always
     ports:
       - "8081:8081"
     depends_on:
       - diode-redis
-  diode-ingester:
-    image: netboxlabs/diode-ingester:${DIODE_VERSION}-${COMMIT_SHA}
-    env_file: diode/env/ingester.env
-    depends_on:
-      - diode-redis
+      - diode-reconciler
+
   diode-reconciler:
     image: netboxlabs/diode-reconciler:${DIODE_VERSION}-${COMMIT_SHA}
-    env_file: diode/env/reconciler.env
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - NETBOX_DIODE_PLUGIN_API_BASE_URL=${NETBOX_DIODE_PLUGIN_API_BASE_URL}
+      - DIODE_TO_NETBOX_API_KEY=${DIODE_TO_NETBOX_API_KEY}
+      - NETBOX_TO_DIODE_API_KEY=${NETBOX_TO_DIODE_API_KEY}
+      - INGESTION_API_KEY=${INGESTION_API_KEY}
+      - NETBOX_API_URL=${NETBOX_API_URL}
+      - LOGGING_LEVEL=${LOGGING_LEVEL}
+      - SENTRY_DSN=${SENTRY_DSN}
+    restart: always
     ports:
       - "8082:8081"
     depends_on:
@@ -26,7 +78,8 @@ services:
       - sh
       - -c
       - redis-server --appendonly yes --requirepass $$REDIS_PASSWORD --loadmodule /opt/redis-stack/lib/rejson.so --loadmodule /opt/redis-stack/lib/redisearch.so
-    env_file: diode/env/redis.env
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
     ports:
       - "6379:6379"
     volumes:
@@ -35,8 +88,10 @@ services:
     image: redis/redis-stack-server:latest
     links:
       - diode-redis
-    command: ./home/redis/bootstrap.sh
-    env_file: diode/env/redis.env
+    command: redis-cli -h "$REDIS_HOST" -p 6379 -a "$REDIS_PASSWORD" FT.CREATE ingest-entity ON JSON PREFIX 1 "ingest-entity:" SCHEMA $.data_type AS data_type TEXT $.state AS state NUMERIC
+    environment:
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
     volumes:
       - ./diode/redis:/home/redis
 volumes:
