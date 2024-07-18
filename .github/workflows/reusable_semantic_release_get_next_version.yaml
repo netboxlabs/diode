@@ -1,19 +1,19 @@
-name: Reusable - Semantic Release - Get Next Version
+name: Semantic Release - Get Next Version
 on:
   workflow_call:
     inputs:
-      app_name: 
+      app_name:
         type: string
         required: true
-      app_dir: 
+      app_dir:
         type: string
         required: true
     outputs:
-      new-release-published: 
+      new-release-published:
         value: ${{ jobs.get-next-version.outputs.new-release-published }}
-      new-release-version: 
+      new-release-version:
         value: ${{ jobs.get-next-version.outputs.new-release-version }}
-      short-sha: 
+      short-sha:
         value: ${{ jobs.get-next-version.outputs.short-sha }}
 
 env:
@@ -32,6 +32,68 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "lts/*"
+      - name: Write package.json
+        uses: DamianReeves/write-file-action@master
+        with:
+          path: ${{ inputs.app_dir }}/package.json
+          write-mode: overwrite
+          contents: |
+            {
+              "name": "${{ inputs.app_name }}",
+              "version": "1.0.0",
+              "extends": "semantic-release-monorepo",
+              "devDependencies": {
+                "semantic-release-monorepo": "^7.0.0",
+                "semantic-release-export-data": "^1.0.1",
+                "@semantic-release/changelog": "^6.0.3",
+                "@semantic-release/commit-analyzer": "^9.0.2",
+                "@semantic-release/github": "^8.0.0",
+                "@semantic-release/npm": "^9.0.0",
+                "@semantic-release/release-notes-generator": "^10.0.0"
+              }
+            }
+      - name: Write .releaserc.json
+        uses: DamianReeves/write-file-action@master
+        with:
+          path: ${{ inputs.app_dir }}/.releaserc.json
+          write-mode: overwrite
+          contents: |
+            {
+              "branches": "release",
+              "repositoryUrl": "https://github.com/netboxlabs/diode",
+              "debug": "true",
+              "extends": "semantic-release-monorepo",
+              "tagFormat": "${{ inputs.app_name }}/v${version}",
+              "plugins": [
+                ["semantic-release-export-data"],
+                ["@semantic-release/commit-analyzer", {
+                  "releaseRules": [
+                    { "message": "*", "release": "patch"},
+                    { "message": "fix*", "release": "patch" },
+                    { "message": "feat*", "release": "minor" },
+                    { "message": "perf*",  "release": "major" }
+                  ]
+                }],
+                "@semantic-release/release-notes-generator",
+                [
+                  "@semantic-release/changelog",
+                  {
+                    "changelogFile": "CHANGELOG.md",
+                    "changelogTitle": "# Semantic Versioning Changelog"
+                  }
+                ],
+                [
+                  "@semantic-release/github",
+                  {
+                    "assets": [
+                      {
+                        "path": "release/**"
+                      }
+                    ]
+                  }
+                ]
+              ]
+            }
       - name: setup semantic-release
         run: npm i
       - name: release dry-run
@@ -45,7 +107,7 @@ jobs:
       - name: Set release version
         id: release-version
         run: |
-          echo "::set-output name=release-version::`echo ${{ steps.get-next-version.outputs.new-release-version }} | sed 's/${{ inputs.app_name }}-v//g'`" 
+          echo "::set-output name=release-version::`echo ${{ steps.get-next-version.outputs.new-release-version }} | sed 's/${{ inputs.app_name }}-v//g'`"
     outputs:
       new-release-published: ${{ steps.get-next-version.outputs.new-release-published }}
       new-release-version: ${{ steps.release-version.outputs.release-version }}

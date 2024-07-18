@@ -1,7 +1,10 @@
-name: Reusable - Semantic Release - Release
+name: Semantic Release - Release
 on:
   workflow_call:
     inputs:
+      app_name:
+        type: string
+        required: true
       app_dir:
         type: string
         required: true
@@ -17,11 +20,72 @@ jobs:
     defaults:
       run:
         working-directory: ${{ inputs.app_dir }}
+    concurrency:
+      group: semantic-release
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: "21.4.0"
+      - name: Write package.json
+        uses: DamianReeves/write-file-action@master
+        with:
+          path: ${{ inputs.app_dir }}/package.json
+          write-mode: overwrite
+          contents: |
+            {
+              "name": "${{ inputs.app_name }}",
+              "version": "1.0.0",
+              "extends": "semantic-release-monorepo",
+              "devDependencies": {
+                "semantic-release-monorepo": "^7.0.0",
+                "semantic-release-export-data": "^1.0.1",
+                "@semantic-release/changelog": "^6.0.3"
+              }
+            }
+      - name: Write .releaserc.json
+        uses: DamianReeves/write-file-action@master
+        with:
+          path: ${{ inputs.app_dir }}/.releaserc.json
+          write-mode: overwrite
+          contents: |
+            {
+              "branches": "release",
+              "repositoryUrl": "https://github.com/netboxlabs/diode",
+              "debug": "true",
+              "extends": "semantic-release-monorepo",
+              "tagFormat": "${{ inputs.app_name }}/v${version}",
+              "plugins": [
+                ["semantic-release-export-data"],
+                ["@semantic-release/commit-analyzer", {
+                  "releaseRules": [
+                    { "message": "*", "release": "patch"},
+                    { "message": "fix*", "release": "patch" },
+                    { "message": "feat*", "release": "minor" },
+                    { "message": "perf*",  "release": "major" }
+                  ]
+                }],
+                "@semantic-release/release-notes-generator",
+                [
+                  "@semantic-release/changelog",
+                  {
+                    "changelogFile": "CHANGELOG.md",
+                    "changelogTitle": "# Semantic Versioning Changelog"
+                  }
+                ],
+                [
+                  "@semantic-release/github",
+                  {
+                    "assets": [
+                      {
+                        "path": "release/**"
+                      }
+                    ]
+                  }
+                ]
+              ]
+            }
       - name: setup semantic-release
         run: npm i
       - name: Release
