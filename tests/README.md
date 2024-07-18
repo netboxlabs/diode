@@ -17,12 +17,6 @@ To run the tests, you must have the diode plugin directory, and execute the foll
 pip install netboxlabs-diode-sdk 
 ```
 
-if you prefer to run the tests using diode-sdk-python local version, you can do it by running the following command:
-
-```bash
-pip install ../diode-netbox-plugin
-```
-
 After that, you can start the docker container by running the following command:
 
 ```bash
