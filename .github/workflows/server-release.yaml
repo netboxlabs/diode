@@ -2,9 +2,9 @@ name: Server - release
 on:
   workflow_dispatch:
   push:
-    branches: [ release ]
-    paths:
-      - "diode-server/**"
+#    branches: [ release ]
+    branches:
+      - "feat/OBS-477-diode-server-release"
 
 concurrency:
   group: ${{ github.workflow }}
