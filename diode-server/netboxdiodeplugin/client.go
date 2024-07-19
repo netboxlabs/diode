@@ -114,7 +114,7 @@ func NewClient(logger *slog.Logger, apiKey string) (*Client, error) {
 		TLSHandshakeTimeout:   10 * time.Second,
 		ExpectContinueTimeout: 1 * time.Second,
 		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: tlsConfig(),
+			InsecureSkipVerify: skipTLS(),
 		},
 	}
 
@@ -159,7 +159,7 @@ func baseURL() string {
 	return u
 }
 
-func tlsConfig() bool {
+func skipTLS() bool {
 	skipTLS, ok := os.LookupEnv(TLSSkipVerify)
 	if !ok {
 		return false
