@@ -41,14 +41,11 @@ jobs:
             {
               "name": "${{ inputs.app_name }}",
               "version": "1.0.0",
-              "extends": "semantic-release-monorepo",
               "devDependencies": {
-                "semantic-release-monorepo": "^7.0.0",
                 "semantic-release-export-data": "^1.0.1",
                 "@semantic-release/changelog": "^6.0.3",
                 "@semantic-release/commit-analyzer": "^9.0.2",
                 "@semantic-release/github": "^8.0.0",
-                "@semantic-release/npm": "^9.0.0",
                 "@semantic-release/release-notes-generator": "^10.0.0"
               }
             }
@@ -62,7 +59,6 @@ jobs:
               "branches": "release",
               "repositoryUrl": "https://github.com/netboxlabs/diode",
               "debug": "true",
-              "extends": "semantic-release-monorepo",
               "tagFormat": "${{ inputs.app_name }}/v${version}",
               "plugins": [
                 ["semantic-release-export-data"],

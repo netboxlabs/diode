@@ -35,7 +35,7 @@ jobs:
         app: ${{ fromJSON(needs.setup.outputs.apps) }}
     with:
       app_name: diode-${{ matrix.app }}
-      app_dir: diode-server/cmd/${{ matrix.app }}
+      app_dir: diode-server
     secrets: inherit
 
   build:
@@ -98,5 +98,5 @@ jobs:
     if: needs.setup.outputs.app != ''
     with:
       app_name: diode-${{ matrix.app }}
-      app_dir: diode-server/cmd/${{ matrix.app }}
+      app_dir: diode-server
     secrets: inherit
