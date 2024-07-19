@@ -8,7 +8,7 @@ services:
       }
 
       upstream netbox {
-        server netbox:8080;
+        server $NETBOX_EXTERNAL_URI;
       }
 
       server {
@@ -38,7 +38,7 @@ services:
       - diode-reconciler
 
   diode-ingester:
-    image: netboxlabs/diode-ingester:${DIODE_VERSION}-${COMMIT_SHA}
+    image: netboxlabs/diode-ingester:latest
     environment:
     - API_KEY=${RECONCILER_API_KEY}
     - REDIS_PASSWORD=${REDIS_PASSWORD}
@@ -55,7 +55,7 @@ services:
       - diode-reconciler
 
   diode-reconciler:
-    image: netboxlabs/diode-reconciler:${DIODE_VERSION}-${COMMIT_SHA}
+    image: netboxlabs/diode-reconciler:latest
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - REDIS_HOST=${REDIS_HOST}
