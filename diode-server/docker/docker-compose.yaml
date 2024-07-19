@@ -74,7 +74,7 @@ services:
     image: redis/redis-stack-server:latest
     links:
       - diode-redis
-    command: redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" -a "$REDIS_PASSWORD" FT.CREATE ingest-entity ON JSON PREFIX 1 "ingest-entity:" SCHEMA $.data_type AS data_type TEXT $.state AS state NUMERIC
+    command: redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" -a "$REDIS_PASSWORD" FT.CREATE ingest-entity ON JSON PREFIX 1 "ingest-entity:" SCHEMA $$.data_type AS data_type TEXT $$.state AS state NUMERIC
 volumes:
   diode-redis-data:
     driver: local
