@@ -8,7 +8,7 @@ services:
       }
 
       server {
-        listen 8080;
+        listen ${DIODE_NGINX_PORT};
         http2 on;
         server_name localhost;
         location /diode {
@@ -18,8 +18,10 @@ services:
       }'
       > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
     restart: always
+    environment:
+      - DIODE_NGINX_PORT=${DIODE_NGINX_PORT}
     ports:
-      - "8080:8080"
+      - ${DIODE_NGINX_PORT}:80
     depends_on:
       - diode-ingester
       - diode-reconciler
