@@ -8,18 +8,20 @@ services:
       }
 
       server {
-        listen 80;
+        listen ${DIODE_NGINX_PORT};
         http2 on;
         server_name localhost;
         location /diode {
-          rewrite /diode/(.*) /$1 break;
+          rewrite /diode/(.*) /$$1 break;
           grpc_pass grpc://diode;
         }
       }'
       > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
     restart: always
+    environment:
+      - DIODE_NGINX_PORT=${DIODE_NGINX_PORT}
     ports:
-      - "80:80"
+      - ${DIODE_NGINX_PORT}:80
     depends_on:
       - diode-ingester
       - diode-reconciler
@@ -27,13 +29,13 @@ services:
   diode-ingester:
     image: netboxlabs/diode-ingester:latest
     environment:
-    - API_KEY=${RECONCILER_API_KEY}
-    - REDIS_PASSWORD=${REDIS_PASSWORD}
-    - REDIS_HOST=${REDIS_HOST}
-    - REDIS_PORT=${REDIS_PORT}
-    - RECONCILER_GRPC_HOST=${RECONCILER_GRPC_HOST}
-    - RECONCILER_GRPC_PORT=${RECONCILER_GRPC_PORT}
-    - SENTRY_DSN=${SENTRY_DSN}
+      - API_KEY=${RECONCILER_API_KEY}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - RECONCILER_GRPC_HOST=${RECONCILER_GRPC_HOST}
+      - RECONCILER_GRPC_PORT=${RECONCILER_GRPC_PORT}
+      - SENTRY_DSN=${SENTRY_DSN}
     restart: always
     ports:
       - "8081:8081"
@@ -54,8 +56,7 @@ services:
       - LOGGING_LEVEL=${LOGGING_LEVEL}
       - SENTRY_DSN=${SENTRY_DSN}
     restart: always
-    ports:
-      - "8082:8081"
+    ports: [ ]
     depends_on:
       - diode-redis
   diode-redis:
@@ -63,23 +64,18 @@ services:
     command:
       - sh
       - -c
-      - redis-server --appendonly yes --requirepass $$REDIS_PASSWORD --loadmodule /opt/redis-stack/lib/rejson.so --loadmodule /opt/redis-stack/lib/redisearch.so
+      - redis-server --appendonly yes --requirepass $$REDIS_PASSWORD --loadmodule /opt/redis-stack/lib/rejson.so --loadmodule /opt/redis-stack/lib/redisearch.so --port $$REDIS_PORT
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
-    ports:
-      - "6379:6379"
+      - REDIS_PORT=${REDIS_PORT}
+    ports: [ ]
     volumes:
       - diode-redis-data:/data
   diode-redis-cli:
     image: redis/redis-stack-server:latest
     links:
       - diode-redis
-    command: redis-cli -h "$REDIS_HOST" -p 6379 -a "$REDIS_PASSWORD" FT.CREATE ingest-entity ON JSON PREFIX 1 "ingest-entity:" SCHEMA $.data_type AS data_type TEXT $.state AS state NUMERIC
-    environment:
-      - REDIS_HOST=${REDIS_HOST}
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
-    volumes:
-      - ./diode/redis:/home/redis
+    command: redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" -a "$REDIS_PASSWORD" FT.CREATE ingest-entity ON JSON PREFIX 1 "ingest-entity:" SCHEMA $$.data_type AS data_type TEXT $$.state AS state NUMERIC
 volumes:
   diode-redis-data:
     driver: local
