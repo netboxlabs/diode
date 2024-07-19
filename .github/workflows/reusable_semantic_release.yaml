@@ -37,7 +37,6 @@ jobs:
             {
               "name": "${{ inputs.app_name }}",
               "version": "1.0.0",
-              "extends": "semantic-release-monorepo",
               "devDependencies": {
                 "semantic-release-export-data": "^1.0.1",
                 "@semantic-release/changelog": "^6.0.3"
@@ -89,4 +88,4 @@ jobs:
       - name: Release
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_OBSERVABILITY_RELEASE_WEBHOOK }}
-        run: npx semantic-release -e semantic-release-monorepo --debug
+        run: npx semantic-release --debug
