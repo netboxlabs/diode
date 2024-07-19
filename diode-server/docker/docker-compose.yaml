@@ -7,10 +7,6 @@ services:
         server diode-ingester:8081;
       }
 
-      upstream netbox {
-        server $NETBOX_EXTERNAL_URI;
-      }
-
       server {
         listen 80;
         http2 on;
@@ -18,15 +14,6 @@ services:
         location /diode {
           rewrite /diode/(.*) /$1 break;
           grpc_pass grpc://diode;
-        }
-        location /netbox/static/ {
-          proxy_pass http://netbox/static/;
-        }
-        location /netbox/ {
-          proxy_pass http://netbox;
-          proxy_set_header X-Forwarded-Host $$http_host;
-          proxy_set_header X-Real-IP $$remote_addr;
-          proxy_set_header X-Forwarded-Proto $$scheme;
         }
       }'
       > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
