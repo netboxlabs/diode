@@ -95,7 +95,7 @@ jobs:
       - name: release dry-run
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_OBSERVABILITY_RELEASE_WEBHOOK }}
-        run: npx semantic-release -e semantic-release-monorepo --debug --dry-run
+        run: npx semantic-release --debug --dry-run
         id: get-next-version
       - name: Set short sha output
         id: short-sha
