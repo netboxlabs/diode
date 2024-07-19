@@ -12,7 +12,7 @@ services:
         http2 on;
         server_name localhost;
         location /diode {
-          rewrite /diode/(.*) /$1 break;
+          rewrite /diode/(.*) /$$1 break;
           grpc_pass grpc://diode;
         }
       }'
