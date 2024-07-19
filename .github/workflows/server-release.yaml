@@ -95,7 +95,6 @@ jobs:
       fail-fast: false
       matrix:
         app: ${{ fromJSON(needs.setup.outputs.apps) }}
-    if: needs.setup.outputs.app != ''
     with:
       app_name: diode-${{ matrix.app }}
       app_dir: diode-server
