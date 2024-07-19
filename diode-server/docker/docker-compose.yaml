@@ -55,8 +55,7 @@ services:
       - LOGGING_LEVEL=${LOGGING_LEVEL}
       - SENTRY_DSN=${SENTRY_DSN}
     restart: always
-    ports:
-      - "8082:8081"
+    ports: [ ]
     depends_on:
       - diode-redis
   diode-redis:
