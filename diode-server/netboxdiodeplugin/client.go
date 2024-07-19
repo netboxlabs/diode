@@ -32,8 +32,8 @@ const (
 	// BaseURLEnvVarName is the environment variable name for the NetBox Diode plugin HTTP base URL
 	BaseURLEnvVarName = "NETBOX_DIODE_PLUGIN_API_BASE_URL"
 
-	// TLSSkipVerify is the environment variable name for Netbox Diode plugin TLS verification
-	TLSSkipVerify = "NETBOX_DIODE_PLUGIN_SKIP_TLS_VERIFY"
+	// TLSSkipVerifyEnvVarName is the environment variable name for Netbox Diode plugin TLS verification
+	TLSSkipVerifyEnvVarName = "NETBOX_DIODE_PLUGIN_SKIP_TLS_VERIFY"
 
 	// TimeoutSecondsEnvVarName is the environment variable name for the NetBox Diode plugin HTTP timeout
 	TimeoutSecondsEnvVarName = "NETBOX_DIODE_PLUGIN_API_TIMEOUT_SECONDS"
@@ -160,7 +160,7 @@ func baseURL() string {
 }
 
 func skipTLS() bool {
-	skipTLS, ok := os.LookupEnv(TLSSkipVerify)
+	skipTLS, ok := os.LookupEnv(TLSSkipVerifyEnvVarName)
 	if !ok {
 		return false
 	}
