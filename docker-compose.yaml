@@ -77,8 +77,6 @@ services:
     environment:
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PASSWORD=${REDIS_PASSWORD}
-    volumes:
-      - ./diode/redis:/home/redis
 volumes:
   diode-redis-data:
     driver: local
