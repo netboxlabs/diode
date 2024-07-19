@@ -66,8 +66,7 @@ services:
       - redis-server --appendonly yes --requirepass $$REDIS_PASSWORD --loadmodule /opt/redis-stack/lib/rejson.so --loadmodule /opt/redis-stack/lib/redisearch.so
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
-    ports:
-      - "6379:6379"
+    ports: [ ]
     volumes:
       - diode-redis-data:/data
   diode-redis-cli:
