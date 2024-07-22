@@ -17,7 +17,7 @@ import (
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
 )
 
-func TestTransfortSecurity(t *testing.T) {
+func TestTransportSecurity(t *testing.T) {
 	tests := []struct {
 		name             string
 		expectedInsecure bool
