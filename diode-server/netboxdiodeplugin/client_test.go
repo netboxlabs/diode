@@ -39,8 +39,8 @@ func TestTransfortSecurity(t *testing.T) {
 				_ = os.Setenv(netboxdiodeplugin.TLSSkipVerifyEnvVarName, "true")
 			}
 
-			http_transport := netboxdiodeplugin.NewHTTPTransport()
-			assert.Equal(t, tt.expectedInsecure, http_transport.TLSClientConfig.InsecureSkipVerify)
+			httpTransport := netboxdiodeplugin.NewHTTPTransport()
+			assert.Equal(t, tt.expectedInsecure, httpTransport.TLSClientConfig.InsecureSkipVerify)
 		})
 	}
 }
