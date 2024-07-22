@@ -17,6 +17,34 @@ import (
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
 )
 
+func TestTransfortSecurity(t *testing.T) {
+	tests := []struct {
+		name             string
+		expectedInsecure bool
+	}{
+		{
+			name:             "valid client",
+			expectedInsecure: true,
+		},
+		{
+			name:             "default base URL",
+			expectedInsecure: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cleanUpEnvVars()
+
+			if tt.expectedInsecure {
+				_ = os.Setenv(netboxdiodeplugin.TLSSkipVerifyEnvVarName, "true")
+			}
+
+			http_transport := netboxdiodeplugin.NewHTTPTransport()
+			assert.Equal(t, tt.expectedInsecure, http_transport.TLSClientConfig.InsecureSkipVerify)
+		})
+	}
+}
+
 func TestNewClient(t *testing.T) {
 	tests := []struct {
 		name             string
@@ -222,7 +250,7 @@ func TestRetrieveObjectState(t *testing.T) {
 			shouldError:        true,
 		},
 		{
-			name:               "tls bad ceritificate",
+			name:               "tls bad certificate",
 			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.DcimDeviceObjectType, ObjectID: 1},
 			apiKey:             "barfoo",
 			mockServerResponse: ``,

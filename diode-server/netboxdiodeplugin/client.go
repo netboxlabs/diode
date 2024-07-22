@@ -99,10 +99,8 @@ type Client struct {
 	baseURL    *url.URL
 }
 
-// NewClient creates a new NetBox Diode plugin client
-func NewClient(logger *slog.Logger, apiKey string) (*Client, error) {
-
-	transport := &http.Transport{
+func NewHTTPTransport() *http.Transport {
+	return &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
 		DialContext: (&net.Dialer{
 			Timeout:   30 * time.Second,
@@ -117,6 +115,11 @@ func NewClient(logger *slog.Logger, apiKey string) (*Client, error) {
 			InsecureSkipVerify: skipTLS(),
 		},
 	}
+}
+
+// NewClient creates a new NetBox Diode plugin client
+func NewClient(logger *slog.Logger, apiKey string) (*Client, error) {
+	transport := NewHTTPTransport()
 
 	rt, err := newAPIRoundTripper(apiKey, transport)
 	if err != nil {
