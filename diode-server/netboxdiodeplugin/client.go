@@ -99,6 +99,7 @@ type Client struct {
 	baseURL    *url.URL
 }
 
+// NewHTTPTransport creates a http Transport Layer
 func NewHTTPTransport() *http.Transport {
 	return &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
