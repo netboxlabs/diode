@@ -19,57 +19,73 @@ func TestNewServer(t *testing.T) {
 		serverName    string
 		loggingLevel  string
 		loggingFormat string
+		sentryDSN     string
 	}{
 		{
 			desc:          "diode-test-server with debug level and json format",
 			serverName:    "diode-test-server",
 			loggingLevel:  "debug",
 			loggingFormat: "json",
+			sentryDSN:     "",
 		},
 		{
 			desc:          "diode-test-server2 with debug level and text format",
 			serverName:    "diode-test-server2",
 			loggingLevel:  "debug",
 			loggingFormat: "text",
+			sentryDSN:     "",
 		},
 		{
 			desc:          "diode-test-server with info level and json format",
 			serverName:    "diode-test-server",
 			loggingLevel:  "info",
 			loggingFormat: "json",
+			sentryDSN:     "",
 		},
 		{
 			desc:          "diode-test-server with info level and text format",
 			serverName:    "diode-test-server",
 			loggingLevel:  "warn",
 			loggingFormat: "json",
+			sentryDSN:     "",
 		},
 		{
 			desc:          "diode-test-server with error level and text format",
 			serverName:    "diode-test-server",
 			loggingLevel:  "error",
 			loggingFormat: "text",
+			sentryDSN:     "",
 		},
 		{
 			desc:          "diode-test-server with error level and empty format",
 			serverName:    "diode-test-server",
 			loggingLevel:  "error",
 			loggingFormat: "",
+			sentryDSN:     "",
 		},
 		{
 			desc:          "diode-test-server with empty level and text format",
 			serverName:    "diode-test-server",
 			loggingLevel:  "",
 			loggingFormat: "text",
+			sentryDSN:     "",
+		},
+		{
+			desc:          "diode-test-server with sentry DSN",
+			serverName:    "diode-test-server",
+			loggingLevel:  "error",
+			loggingFormat: "text",
+			sentryDSN:     "https://public@sentry.example.com/1",
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			ctx := context.Background()
 			err := os.Setenv("LOGGING_LEVEL", tt.loggingLevel)
 			require.NoError(t, err)
 			err = os.Setenv("LOGGING_FORMAT", tt.loggingFormat)
+			require.NoError(t, err)
+			err = os.Setenv("SENTRY_DSN", tt.sentryDSN)
 			require.NoError(t, err)
 
 			s := server.New(ctx, tt.serverName)
