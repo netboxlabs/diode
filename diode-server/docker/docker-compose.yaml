@@ -11,6 +11,7 @@ services:
         listen ${DIODE_NGINX_PORT};
         http2 on;
         server_name localhost;
+        client_max_body_size 25m;
         location /diode {
           rewrite /diode/(.*) /$$1 break;
           grpc_pass grpc://diode;

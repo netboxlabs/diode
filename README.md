@@ -15,7 +15,7 @@ Diode runs as a sidecar service to NetBox and can run anywhere with network conn
 1. Diode plugin - see how to [install the Diode plugin](https://github.com/netboxlabs/diode-netbox-plugin)
 2. Diode server - see how to [run the Diode server](https://github.com/netboxlabs/diode/tree/develop/diode-server#readme)
 3. Diode SDK - see how to [install the Diode client SDK](https://github.com/netboxlabs/diode-sdk-python) and [download Diode Python script examples](https://github.com/netboxlabs/netbox-learning/tree/develop/diode)
-4. Diode agent (optional) - see how to [install and run the Diode discovery agent](https://github.com/netboxlabs/diode-agent)
+4. Diode agent (optional) - see how to [install and run the Diode NAPALM discovery agent](https://github.com/netboxlabs/diode-agent/tree/develop/diode-napalm-agent)
 
 ## Related Projects
 
@@ -28,3 +28,8 @@ Diode runs as a sidecar service to NetBox and can run anywhere with network conn
 Distributed under the PolyForm Shield License 1.0.0 License. See [LICENSE.md](./LICENSE.md) for more information.
 
 Diode protocol buffers are distributed under the Apache 2.0 License. See [LICENSE.txt](./diode-proto/LICENSE.txt) for more information.
+
+## Required Notice
+
+Copyright NetBox Labs, Inc.
+
