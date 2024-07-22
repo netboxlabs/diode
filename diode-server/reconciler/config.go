@@ -12,5 +12,5 @@ type Config struct {
 	// API keys
 	DiodeToNetBoxAPIKey string `envconfig:"DIODE_TO_NETBOX_API_KEY" required:"true"`
 	NetBoxToDiodeAPIKey string `envconfig:"NETBOX_TO_DIODE_API_KEY" required:"true"`
-	IngestionAPIKey     string `envconfig:"DIODE_API_KEY" required:"true"`
+	DiodeAPIKey         string `envconfig:"DIODE_API_KEY" required:"true"`
 }
