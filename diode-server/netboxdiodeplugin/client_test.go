@@ -23,11 +23,11 @@ func TestTransfortSecurity(t *testing.T) {
 		expectedInsecure bool
 	}{
 		{
-			name:             "valid client",
+			name:             "enable insecure mode",
 			expectedInsecure: true,
 		},
 		{
-			name:             "default base URL",
+			name:             "default secure TLS config",
 			expectedInsecure: false,
 		},
 	}
