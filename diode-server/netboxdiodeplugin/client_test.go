@@ -17,6 +17,34 @@ import (
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
 )
 
+func TestTransportSecurity(t *testing.T) {
+	tests := []struct {
+		name             string
+		expectedInsecure bool
+	}{
+		{
+			name:             "enable insecure mode",
+			expectedInsecure: true,
+		},
+		{
+			name:             "default secure TLS config",
+			expectedInsecure: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cleanUpEnvVars()
+
+			if tt.expectedInsecure {
+				_ = os.Setenv(netboxdiodeplugin.TLSSkipVerifyEnvVarName, "true")
+			}
+
+			httpTransport := netboxdiodeplugin.NewHTTPTransport()
+			assert.Equal(t, tt.expectedInsecure, httpTransport.TLSClientConfig.InsecureSkipVerify)
+		})
+	}
+}
+
 func TestNewClient(t *testing.T) {
 	tests := []struct {
 		name             string
@@ -25,6 +53,7 @@ func TestNewClient(t *testing.T) {
 		timeout          string
 		setBaseURLEnvVar bool
 		setTimeoutEnvVar bool
+		setTLSSkipEnvVar bool
 		shouldError      bool
 	}{
 		{
@@ -34,6 +63,7 @@ func TestNewClient(t *testing.T) {
 			timeout:          "5",
 			setBaseURLEnvVar: true,
 			setTimeoutEnvVar: true,
+			setTLSSkipEnvVar: false,
 			shouldError:      false,
 		},
 		{
@@ -52,6 +82,7 @@ func TestNewClient(t *testing.T) {
 			timeout:          "5",
 			setBaseURLEnvVar: true,
 			setTimeoutEnvVar: true,
+			setTLSSkipEnvVar: false,
 			shouldError:      true,
 		},
 		{
@@ -61,6 +92,7 @@ func TestNewClient(t *testing.T) {
 			timeout:          "",
 			setBaseURLEnvVar: true,
 			setTimeoutEnvVar: false,
+			setTLSSkipEnvVar: false,
 			shouldError:      false,
 		},
 		{
@@ -70,6 +102,7 @@ func TestNewClient(t *testing.T) {
 			timeout:          "-1",
 			setBaseURLEnvVar: true,
 			setTimeoutEnvVar: true,
+			setTLSSkipEnvVar: false,
 			shouldError:      true,
 		},
 		{
@@ -79,7 +112,18 @@ func TestNewClient(t *testing.T) {
 			timeout:          "5",
 			setBaseURLEnvVar: true,
 			setTimeoutEnvVar: true,
+			setTLSSkipEnvVar: false,
 			shouldError:      true,
+		},
+		{
+			name:             "set TLS skip verify",
+			apiKey:           "test",
+			baseURL:          "",
+			timeout:          "5",
+			setBaseURLEnvVar: false,
+			setTimeoutEnvVar: true,
+			setTLSSkipEnvVar: true,
+			shouldError:      false,
 		},
 	}
 
@@ -94,6 +138,9 @@ func TestNewClient(t *testing.T) {
 			}
 			if tt.setTimeoutEnvVar {
 				_ = os.Setenv(netboxdiodeplugin.TimeoutSecondsEnvVarName, tt.timeout)
+			}
+			if tt.setTLSSkipEnvVar {
+				_ = os.Setenv(netboxdiodeplugin.TLSSkipVerifyEnvVarName, "true")
 			}
 
 			client, err := netboxdiodeplugin.NewClient(logger, tt.apiKey)
@@ -115,6 +162,7 @@ func TestRetrieveObjectState(t *testing.T) {
 		apiKey             string
 		mockServerResponse string
 		response           any
+		tlsSkipVerify      bool
 		shouldError        bool
 	}{
 		{
@@ -132,7 +180,8 @@ func TestRetrieveObjectState(t *testing.T) {
 					},
 				},
 			},
-			shouldError: false,
+			tlsSkipVerify: true,
+			shouldError:   false,
 		},
 		{
 			name:               "valid response for DCIM site with query",
@@ -150,7 +199,8 @@ func TestRetrieveObjectState(t *testing.T) {
 					},
 				},
 			},
-			shouldError: false,
+			tlsSkipVerify: true,
+			shouldError:   false,
 		},
 		{
 			name: "valid response for DCIM device with query and additional attributes",
@@ -173,7 +223,8 @@ func TestRetrieveObjectState(t *testing.T) {
 					},
 				},
 			},
-			shouldError: false,
+			tlsSkipVerify: true,
+			shouldError:   false,
 		},
 		{
 			name:               "response for invalid object - empty object",
@@ -187,13 +238,23 @@ func TestRetrieveObjectState(t *testing.T) {
 					Device: &netbox.DcimDevice{},
 				},
 			},
-			shouldError: false,
+			tlsSkipVerify: true,
+			shouldError:   false,
 		},
 		{
 			name:               "invalid server response",
 			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.DcimDeviceObjectType, ObjectID: 1},
 			apiKey:             "barfoo",
 			mockServerResponse: ``,
+			tlsSkipVerify:      true,
+			shouldError:        true,
+		},
+		{
+			name:               "tls bad certificate",
+			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.DcimDeviceObjectType, ObjectID: 1},
+			apiKey:             "barfoo",
+			mockServerResponse: ``,
+			tlsSkipVerify:      false,
 			shouldError:        true,
 		},
 	}
@@ -220,12 +281,16 @@ func TestRetrieveObjectState(t *testing.T) {
 				assert.Equal(t, r.Header.Get("User-Agent"), fmt.Sprintf("%s/%s", netboxdiodeplugin.SDKName, netboxdiodeplugin.SDKVersion))
 				_, _ = w.Write([]byte(tt.mockServerResponse))
 			}
+
 			mux := http.NewServeMux()
 			mux.HandleFunc("/api/diode/object-state/", handler)
-			ts := httptest.NewServer(mux)
+			ts := httptest.NewTLSServer(mux)
 			defer ts.Close()
 
 			_ = os.Setenv(netboxdiodeplugin.BaseURLEnvVarName, fmt.Sprintf("%s/api/diode", ts.URL))
+			if tt.tlsSkipVerify {
+				_ = os.Setenv(netboxdiodeplugin.TLSSkipVerifyEnvVarName, "true")
+			}
 
 			client, err := netboxdiodeplugin.NewClient(logger, tt.apiKey)
 			require.NoError(t, err)
@@ -347,6 +412,7 @@ func TestApplyChangeSet(t *testing.T) {
 func cleanUpEnvVars() {
 	_ = os.Unsetenv(netboxdiodeplugin.BaseURLEnvVarName)
 	_ = os.Unsetenv(netboxdiodeplugin.TimeoutSecondsEnvVarName)
+	_ = os.Unsetenv(netboxdiodeplugin.TLSSkipVerifyEnvVarName)
 }
 
 func ptrInt(i int) *int {
