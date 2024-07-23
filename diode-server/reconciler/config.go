@@ -8,7 +8,6 @@ type Config struct {
 	RedisPassword string `envconfig:"REDIS_PASSWORD" required:"true"`
 	RedisDB       int    `envconfig:"REDIS_DB" default:"0"`
 	RedisStreamDB int    `envconfig:"REDIS_STREAM_DB" default:"1"`
-	NetBoxAPIURL  string `envconfig:"NETBOX_API_URL" required:"true"`
 
 	// API keys
 	DiodeToNetBoxAPIKey string `envconfig:"DIODE_TO_NETBOX_API_KEY" required:"true"`

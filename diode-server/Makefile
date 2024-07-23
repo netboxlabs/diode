@@ -71,7 +71,7 @@ docker-compose-down:
 	@DIODE_VERSION=$(DIODE_VERSION) COMMIT_SHA=$(COMMIT_SHA) \
 	$(DOCKER_COMPOSE) --env-file docker/sample.env -f docker/docker-compose.yaml down --remove-orphans
 
-docker-compose-netbox-up: docker-all
+docker-compose-netbox-up:
 	$(DOCKER_COMPOSE) -f docker/docker-compose.netbox.yaml up -d --build
 
 docker-compose-netbox-down:

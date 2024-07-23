@@ -3,11 +3,13 @@ package netboxdiodeplugin
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -29,6 +31,9 @@ const (
 
 	// BaseURLEnvVarName is the environment variable name for the NetBox Diode plugin HTTP base URL
 	BaseURLEnvVarName = "NETBOX_DIODE_PLUGIN_API_BASE_URL"
+
+	// TLSSkipVerifyEnvVarName is the environment variable name for Netbox Diode plugin TLS verification
+	TLSSkipVerifyEnvVarName = "NETBOX_DIODE_PLUGIN_SKIP_TLS_VERIFY"
 
 	// TimeoutSecondsEnvVarName is the environment variable name for the NetBox Diode plugin HTTP timeout
 	TimeoutSecondsEnvVarName = "NETBOX_DIODE_PLUGIN_API_TIMEOUT_SECONDS"
@@ -94,9 +99,30 @@ type Client struct {
 	baseURL    *url.URL
 }
 
+// NewHTTPTransport creates a http Transport Layer
+func NewHTTPTransport() *http.Transport {
+	return &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: (&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}).DialContext,
+		ForceAttemptHTTP2:     true,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: skipTLS(),
+		},
+	}
+}
+
 // NewClient creates a new NetBox Diode plugin client
 func NewClient(logger *slog.Logger, apiKey string) (*Client, error) {
-	rt, err := newAPIRoundTripper(apiKey, http.DefaultTransport)
+	transport := NewHTTPTransport()
+
+	rt, err := newAPIRoundTripper(apiKey, transport)
 	if err != nil {
 		return nil, err
 	}
@@ -135,6 +161,18 @@ func baseURL() string {
 		u = defaultBaseURL
 	}
 	return u
+}
+
+func skipTLS() bool {
+	skipTLS, ok := os.LookupEnv(TLSSkipVerifyEnvVarName)
+	if !ok {
+		return false
+	}
+	skip, err := strconv.ParseBool(skipTLS)
+	if err != nil {
+		return false
+	}
+	return skip
 }
 
 func httpTimeout() (time.Duration, error) {
