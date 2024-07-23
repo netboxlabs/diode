@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
-	"strings"
 
 	"github.com/kelseyhightower/envconfig"
 	"github.com/redis/go-redis/v9"
@@ -95,7 +94,7 @@ func (s *Server) RetrieveIngestionDataSources(_ context.Context, in *reconcilerp
 	filterByName := in.Name != ""
 
 	if filterByName {
-		if _, ok := s.apiKeys[in.Name]; !ok || !strings.HasPrefix(in.Name, "INGESTION") {
+		if _, ok := s.apiKeys[in.Name]; !ok || in.Name != "DIODE" {
 			return nil, fmt.Errorf("data source %s not found", in.Name)
 		}
 		dataSources = append(dataSources, &reconcilerpb.IngestionDataSource{Name: in.Name, ApiKey: s.apiKeys[in.Name]})
@@ -103,7 +102,7 @@ func (s *Server) RetrieveIngestionDataSources(_ context.Context, in *reconcilerp
 	}
 
 	for name, key := range s.apiKeys {
-		if strings.HasPrefix(name, "INGESTION") {
+		if name == "DIODE" {
 			dataSources = append(dataSources, &reconcilerpb.IngestionDataSource{Name: name, ApiKey: key})
 		}
 	}
