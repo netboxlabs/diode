@@ -3,6 +3,7 @@ package reconciler
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/redis/go-redis/v9"
 )
 
@@ -18,7 +19,7 @@ func loadAPIKeys(ctx context.Context, cfg Config, rc *redis.Client) (APIKeys, er
 	apiKeys := map[string]string{
 		"DIODE_TO_NETBOX": cfg.DiodeToNetBoxAPIKey,
 		"NETBOX_TO_DIODE": cfg.NetBoxToDiodeAPIKey,
-		"INGESTION":       cfg.IngestionAPIKey,
+		"DIODE":           cfg.DiodeAPIKey,
 	}
 
 	if err := rc.HSet(ctx, "diode.api_keys", apiKeys).Err(); err != nil {
