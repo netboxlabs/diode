@@ -10,16 +10,16 @@ option go_package = "github.com/netboxlabs/diode-sdk-go/diode/v1/diodepb";
 // A device
 message Device {
   string name = 1 [(validate.rules).string = {max_len: 64}];
-  string device_fqdn = 2 [(validate.rules).string = {
+  optional string device_fqdn = 2 [(validate.rules).string = {
     min_len: 1
     max_len: 255
   }];
   DeviceType device_type = 3;
   Role role = 4;
   Platform platform = 5;
-  string serial = 6 [(validate.rules).string = {max_len: 50}];
+  optional string serial = 6 [(validate.rules).string = {max_len: 50}];
   Site site = 7;
-  string asset_tag = 8 [(validate.rules).string = {max_len: 200}];
+  optional string asset_tag = 8 [(validate.rules).string = {max_len: 200}];
   string status = 9 [(validate.rules).string = {
     in: [
       "offline",
@@ -31,8 +31,8 @@ message Device {
       "decommissioning"
     ]
   }];
-  string description = 10 [(validate.rules).string = {max_len: 200}];
-  string comments = 11;
+  optional string description = 10 [(validate.rules).string = {max_len: 200}];
+  optional string comments = 11;
   repeated Tag tags = 12;
   IPAddress primary_ip4 = 13;
   IPAddress primary_ip6 = 14;
@@ -45,7 +45,7 @@ message Interface {
     min_len: 1
     max_len: 64
   }];
-  string label = 3 [(validate.rules).string = {
+  optional string label = 3 [(validate.rules).string = {
     min_len: 1
     max_len: 64
   }];
@@ -168,17 +168,17 @@ message Interface {
       "other"
     ]
   }];
-  bool enabled = 5;
-  int32 mtu = 6 [(validate.rules).int32 = {
+  optional bool enabled = 5;
+  optional int32 mtu = 6 [(validate.rules).int32 = {
     gte: 1
     lte: 65536
   }];
-  string mac_address = 7;
-  int32 speed = 8 [(validate.rules).int32 = {gte: 0}];
-  string wwn = 9;
-  bool mgmt_only = 10;
-  string description = 11 [(validate.rules).string = {max_len: 200}];
-  bool mark_connected = 12;
+  optional string mac_address = 7;
+  optional int32 speed = 8 [(validate.rules).int32 = {gte: 0}];
+  optional string wwn = 9;
+  optional bool mgmt_only = 10;
+  optional string description = 11 [(validate.rules).string = {max_len: 200}];
+  optional bool mark_connected = 12;
   string mode = 13 [(validate.rules).string = {
     in: [
       "access",
@@ -216,12 +216,12 @@ message IPAddress {
       "carp"
     ]
   }];
-  string dns_name = 5 [(validate.rules).string = {
+  optional string dns_name = 5 [(validate.rules).string = {
     max_len: 255
     pattern: "^([0-9A-Za-z_-]+|\\*)(\\.[0-9A-Za-z_-]+)*\\.?$"
   }];
-  string description = 6 [(validate.rules).string = {max_len: 200}];
-  string comments = 7;
+  optional string description = 6 [(validate.rules).string = {max_len: 200}];
+  optional string comments = 7;
   repeated Tag tags = 8;
 }
 
@@ -237,9 +237,9 @@ message DeviceType {
     pattern: "^[-a-zA-Z0-9_]+$"
   }];
   Manufacturer manufacturer = 3;
-  string description = 4 [(validate.rules).string = {max_len: 200}];
-  string comments = 5;
-  string part_number = 6 [(validate.rules).string = {max_len: 50}];
+  optional string description = 4 [(validate.rules).string = {max_len: 200}];
+  optional string comments = 5;
+  optional string part_number = 6 [(validate.rules).string = {max_len: 50}];
   repeated Tag tags = 7;
 }
 
@@ -254,7 +254,7 @@ message Manufacturer {
     max_len: 100
     pattern: "^[-a-zA-Z0-9_]+$"
   }];
-  string description = 3 [(validate.rules).string = {max_len: 200}];
+  optional string description = 3 [(validate.rules).string = {max_len: 200}];
   repeated Tag tags = 4;
 }
 
@@ -270,7 +270,7 @@ message Platform {
     pattern: "^[-a-zA-Z0-9_]+$"
   }];
   Manufacturer manufacturer = 3;
-  string description = 4 [(validate.rules).string = {max_len: 200}];
+  optional string description = 4 [(validate.rules).string = {max_len: 200}];
   repeated Tag tags = 5;
 }
 
@@ -286,10 +286,10 @@ message Prefix {
       "deprecated"
     ]
   }];
-  bool is_pool = 4;
-  bool mark_utilized = 5;
-  string description = 6 [(validate.rules).string = {max_len: 200}];
-  string comments = 7;
+  optional bool is_pool = 4;
+  optional bool mark_utilized = 5;
+  optional string description = 6 [(validate.rules).string = {max_len: 200}];
+  optional string comments = 7;
   repeated Tag tags = 8;
 }
 
@@ -309,7 +309,7 @@ message Role {
     max_len: 6
     pattern: "^[0-9a-f]{6}$"
   }];
-  string description = 4 [(validate.rules).string = {max_len: 200}];
+  optional string description = 4 [(validate.rules).string = {max_len: 200}];
   repeated Tag tags = 5;
 }
 
@@ -333,10 +333,10 @@ message Site {
       "retired"
     ]
   }];
-  string facility = 4 [(validate.rules).string = {max_len: 50}];
-  string time_zone = 5;
-  string description = 6 [(validate.rules).string = {max_len: 200}];
-  string comments = 7;
+  optional string facility = 4 [(validate.rules).string = {max_len: 50}];
+  optional string time_zone = 5;
+  optional string description = 6 [(validate.rules).string = {max_len: 200}];
+  optional string comments = 7;
   repeated Tag tags = 8;
 }
 

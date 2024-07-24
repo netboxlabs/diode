@@ -70,17 +70,6 @@ func (m *Device) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
-	if l := utf8.RuneCountInString(m.GetDeviceFqdn()); l < 1 || l > 255 {
-		err := DeviceValidationError{
-			field:  "DeviceFqdn",
-			reason: "value length must be between 1 and 255 runes, inclusive",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
 	if all {
 		switch v := interface{}(m.GetDeviceType()).(type) {
 		case interface{ ValidateAll() error }:
@@ -168,17 +157,6 @@ func (m *Device) validate(all bool) error {
 		}
 	}
 
-	if utf8.RuneCountInString(m.GetSerial()) > 50 {
-		err := DeviceValidationError{
-			field:  "Serial",
-			reason: "value length must be at most 50 runes",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
 	if all {
 		switch v := interface{}(m.GetSite()).(type) {
 		case interface{ ValidateAll() error }:
@@ -208,17 +186,6 @@ func (m *Device) validate(all bool) error {
 		}
 	}
 
-	if utf8.RuneCountInString(m.GetAssetTag()) > 200 {
-		err := DeviceValidationError{
-			field:  "AssetTag",
-			reason: "value length must be at most 200 runes",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
 	if _, ok := _Device_Status_InLookup[m.GetStatus()]; !ok {
 		err := DeviceValidationError{
 			field:  "Status",
@@ -229,19 +196,6 @@ func (m *Device) validate(all bool) error {
 		}
 		errors = append(errors, err)
 	}
-
-	if utf8.RuneCountInString(m.GetDescription()) > 200 {
-		err := DeviceValidationError{
-			field:  "Description",
-			reason: "value length must be at most 200 runes",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
-	// no validation rules for Comments
 
 	for idx, item := range m.GetTags() {
 		_, _ = idx, item
@@ -333,6 +287,70 @@ func (m *Device) validate(all bool) error {
 				cause:  err,
 			}
 		}
+	}
+
+	if m.DeviceFqdn != nil {
+
+		if l := utf8.RuneCountInString(m.GetDeviceFqdn()); l < 1 || l > 255 {
+			err := DeviceValidationError{
+				field:  "DeviceFqdn",
+				reason: "value length must be between 1 and 255 runes, inclusive",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+	}
+
+	if m.Serial != nil {
+
+		if utf8.RuneCountInString(m.GetSerial()) > 50 {
+			err := DeviceValidationError{
+				field:  "Serial",
+				reason: "value length must be at most 50 runes",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+	}
+
+	if m.AssetTag != nil {
+
+		if utf8.RuneCountInString(m.GetAssetTag()) > 200 {
+			err := DeviceValidationError{
+				field:  "AssetTag",
+				reason: "value length must be at most 200 runes",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+	}
+
+	if m.Description != nil {
+
+		if utf8.RuneCountInString(m.GetDescription()) > 200 {
+			err := DeviceValidationError{
+				field:  "Description",
+				reason: "value length must be at most 200 runes",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+	}
+
+	if m.Comments != nil {
+		// no validation rules for Comments
 	}
 
 	if len(errors) > 0 {
@@ -470,17 +488,6 @@ func (m *Interface) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
-	if l := utf8.RuneCountInString(m.GetLabel()); l < 1 || l > 64 {
-		err := InterfaceValidationError{
-			field:  "Label",
-			reason: "value length must be between 1 and 64 runes, inclusive",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
 	if _, ok := _Interface_Type_InLookup[m.GetType()]; !ok {
 		err := InterfaceValidationError{
 			field:  "Type",
@@ -491,49 +498,6 @@ func (m *Interface) validate(all bool) error {
 		}
 		errors = append(errors, err)
 	}
-
-	// no validation rules for Enabled
-
-	if val := m.GetMtu(); val < 1 || val > 65536 {
-		err := InterfaceValidationError{
-			field:  "Mtu",
-			reason: "value must be inside range [1, 65536]",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
-	// no validation rules for MacAddress
-
-	if m.GetSpeed() < 0 {
-		err := InterfaceValidationError{
-			field:  "Speed",
-			reason: "value must be greater than or equal to 0",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
-	// no validation rules for Wwn
-
-	// no validation rules for MgmtOnly
-
-	if utf8.RuneCountInString(m.GetDescription()) > 200 {
-		err := InterfaceValidationError{
-			field:  "Description",
-			reason: "value length must be at most 200 runes",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
-	// no validation rules for MarkConnected
 
 	if _, ok := _Interface_Mode_InLookup[m.GetMode()]; !ok {
 		err := InterfaceValidationError{
@@ -578,6 +542,86 @@ func (m *Interface) validate(all bool) error {
 			}
 		}
 
+	}
+
+	if m.Label != nil {
+
+		if l := utf8.RuneCountInString(m.GetLabel()); l < 1 || l > 64 {
+			err := InterfaceValidationError{
+				field:  "Label",
+				reason: "value length must be between 1 and 64 runes, inclusive",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+	}
+
+	if m.Enabled != nil {
+		// no validation rules for Enabled
+	}
+
+	if m.Mtu != nil {
+
+		if val := m.GetMtu(); val < 1 || val > 65536 {
+			err := InterfaceValidationError{
+				field:  "Mtu",
+				reason: "value must be inside range [1, 65536]",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+	}
+
+	if m.MacAddress != nil {
+		// no validation rules for MacAddress
+	}
+
+	if m.Speed != nil {
+
+		if m.GetSpeed() < 0 {
+			err := InterfaceValidationError{
+				field:  "Speed",
+				reason: "value must be greater than or equal to 0",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+	}
+
+	if m.Wwn != nil {
+		// no validation rules for Wwn
+	}
+
+	if m.MgmtOnly != nil {
+		// no validation rules for MgmtOnly
+	}
+
+	if m.Description != nil {
+
+		if utf8.RuneCountInString(m.GetDescription()) > 200 {
+			err := InterfaceValidationError{
+				field:  "Description",
+				reason: "value length must be at most 200 runes",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+	}
+
+	if m.MarkConnected != nil {
+		// no validation rules for MarkConnected
 	}
 
 	if len(errors) > 0 {
@@ -836,41 +880,6 @@ func (m *IPAddress) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
-	if utf8.RuneCountInString(m.GetDnsName()) > 255 {
-		err := IPAddressValidationError{
-			field:  "DnsName",
-			reason: "value length must be at most 255 runes",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
-	if !_IPAddress_DnsName_Pattern.MatchString(m.GetDnsName()) {
-		err := IPAddressValidationError{
-			field:  "DnsName",
-			reason: "value does not match regex pattern \"^([0-9A-Za-z_-]+|\\\\*)(\\\\.[0-9A-Za-z_-]+)*\\\\.?$\"",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
-	if utf8.RuneCountInString(m.GetDescription()) > 200 {
-		err := IPAddressValidationError{
-			field:  "Description",
-			reason: "value length must be at most 200 runes",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
-	// no validation rules for Comments
-
 	for idx, item := range m.GetTags() {
 		_, _ = idx, item
 
@@ -949,6 +958,51 @@ func (m *IPAddress) validate(all bool) error {
 
 	default:
 		_ = v // ensures v is used
+	}
+
+	if m.DnsName != nil {
+
+		if utf8.RuneCountInString(m.GetDnsName()) > 255 {
+			err := IPAddressValidationError{
+				field:  "DnsName",
+				reason: "value length must be at most 255 runes",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if !_IPAddress_DnsName_Pattern.MatchString(m.GetDnsName()) {
+			err := IPAddressValidationError{
+				field:  "DnsName",
+				reason: "value does not match regex pattern \"^([0-9A-Za-z_-]+|\\\\*)(\\\\.[0-9A-Za-z_-]+)*\\\\.?$\"",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+	}
+
+	if m.Description != nil {
+
+		if utf8.RuneCountInString(m.GetDescription()) > 200 {
+			err := IPAddressValidationError{
+				field:  "Description",
+				reason: "value length must be at most 200 runes",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+	}
+
+	if m.Comments != nil {
+		// no validation rules for Comments
 	}
 
 	if len(errors) > 0 {
@@ -1133,30 +1187,6 @@ func (m *DeviceType) validate(all bool) error {
 		}
 	}
 
-	if utf8.RuneCountInString(m.GetDescription()) > 200 {
-		err := DeviceTypeValidationError{
-			field:  "Description",
-			reason: "value length must be at most 200 runes",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
-	// no validation rules for Comments
-
-	if utf8.RuneCountInString(m.GetPartNumber()) > 50 {
-		err := DeviceTypeValidationError{
-			field:  "PartNumber",
-			reason: "value length must be at most 50 runes",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
 	for idx, item := range m.GetTags() {
 		_, _ = idx, item
 
@@ -1187,6 +1217,40 @@ func (m *DeviceType) validate(all bool) error {
 					cause:  err,
 				}
 			}
+		}
+
+	}
+
+	if m.Description != nil {
+
+		if utf8.RuneCountInString(m.GetDescription()) > 200 {
+			err := DeviceTypeValidationError{
+				field:  "Description",
+				reason: "value length must be at most 200 runes",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+	}
+
+	if m.Comments != nil {
+		// no validation rules for Comments
+	}
+
+	if m.PartNumber != nil {
+
+		if utf8.RuneCountInString(m.GetPartNumber()) > 50 {
+			err := DeviceTypeValidationError{
+				field:  "PartNumber",
+				reason: "value length must be at most 50 runes",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
 		}
 
 	}
@@ -1325,17 +1389,6 @@ func (m *Manufacturer) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
-	if utf8.RuneCountInString(m.GetDescription()) > 200 {
-		err := ManufacturerValidationError{
-			field:  "Description",
-			reason: "value length must be at most 200 runes",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
 	for idx, item := range m.GetTags() {
 		_, _ = idx, item
 
@@ -1366,6 +1419,21 @@ func (m *Manufacturer) validate(all bool) error {
 					cause:  err,
 				}
 			}
+		}
+
+	}
+
+	if m.Description != nil {
+
+		if utf8.RuneCountInString(m.GetDescription()) > 200 {
+			err := ManufacturerValidationError{
+				field:  "Description",
+				reason: "value length must be at most 200 runes",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
 		}
 
 	}
@@ -1533,17 +1601,6 @@ func (m *Platform) validate(all bool) error {
 		}
 	}
 
-	if utf8.RuneCountInString(m.GetDescription()) > 200 {
-		err := PlatformValidationError{
-			field:  "Description",
-			reason: "value length must be at most 200 runes",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
 	for idx, item := range m.GetTags() {
 		_, _ = idx, item
 
@@ -1574,6 +1631,21 @@ func (m *Platform) validate(all bool) error {
 					cause:  err,
 				}
 			}
+		}
+
+	}
+
+	if m.Description != nil {
+
+		if utf8.RuneCountInString(m.GetDescription()) > 200 {
+			err := PlatformValidationError{
+				field:  "Description",
+				reason: "value length must be at most 200 runes",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
 		}
 
 	}
@@ -1729,23 +1801,6 @@ func (m *Prefix) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
-	// no validation rules for IsPool
-
-	// no validation rules for MarkUtilized
-
-	if utf8.RuneCountInString(m.GetDescription()) > 200 {
-		err := PrefixValidationError{
-			field:  "Description",
-			reason: "value length must be at most 200 runes",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
-	// no validation rules for Comments
-
 	for idx, item := range m.GetTags() {
 		_, _ = idx, item
 
@@ -1778,6 +1833,33 @@ func (m *Prefix) validate(all bool) error {
 			}
 		}
 
+	}
+
+	if m.IsPool != nil {
+		// no validation rules for IsPool
+	}
+
+	if m.MarkUtilized != nil {
+		// no validation rules for MarkUtilized
+	}
+
+	if m.Description != nil {
+
+		if utf8.RuneCountInString(m.GetDescription()) > 200 {
+			err := PrefixValidationError{
+				field:  "Description",
+				reason: "value length must be at most 200 runes",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+	}
+
+	if m.Comments != nil {
+		// no validation rules for Comments
 	}
 
 	if len(errors) > 0 {
@@ -1941,17 +2023,6 @@ func (m *Role) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
-	if utf8.RuneCountInString(m.GetDescription()) > 200 {
-		err := RoleValidationError{
-			field:  "Description",
-			reason: "value length must be at most 200 runes",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
 	for idx, item := range m.GetTags() {
 		_, _ = idx, item
 
@@ -1982,6 +2053,21 @@ func (m *Role) validate(all bool) error {
 					cause:  err,
 				}
 			}
+		}
+
+	}
+
+	if m.Description != nil {
+
+		if utf8.RuneCountInString(m.GetDescription()) > 200 {
+			err := RoleValidationError{
+				field:  "Description",
+				reason: "value length must be at most 200 runes",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
 		}
 
 	}
@@ -2132,32 +2218,6 @@ func (m *Site) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
-	if utf8.RuneCountInString(m.GetFacility()) > 50 {
-		err := SiteValidationError{
-			field:  "Facility",
-			reason: "value length must be at most 50 runes",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
-	// no validation rules for TimeZone
-
-	if utf8.RuneCountInString(m.GetDescription()) > 200 {
-		err := SiteValidationError{
-			field:  "Description",
-			reason: "value length must be at most 200 runes",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
-	// no validation rules for Comments
-
 	for idx, item := range m.GetTags() {
 		_, _ = idx, item
 
@@ -2190,6 +2250,44 @@ func (m *Site) validate(all bool) error {
 			}
 		}
 
+	}
+
+	if m.Facility != nil {
+
+		if utf8.RuneCountInString(m.GetFacility()) > 50 {
+			err := SiteValidationError{
+				field:  "Facility",
+				reason: "value length must be at most 50 runes",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+	}
+
+	if m.TimeZone != nil {
+		// no validation rules for TimeZone
+	}
+
+	if m.Description != nil {
+
+		if utf8.RuneCountInString(m.GetDescription()) > 200 {
+			err := SiteValidationError{
+				field:  "Description",
+				reason: "value length must be at most 200 runes",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+	}
+
+	if m.Comments != nil {
+		// no validation rules for Comments
 	}
 
 	if len(errors) > 0 {
