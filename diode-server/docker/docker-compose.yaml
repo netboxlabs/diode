@@ -1,4 +1,4 @@
-name: diode
+name: ${PROJECT_NAME:-diode}
 services:
   ingress-nginx:
     image: nginx:latest
@@ -28,7 +28,7 @@ services:
       - diode-reconciler
 
   diode-ingester:
-    image: netboxlabs/diode-ingester:latest
+    image: netboxlabs/diode-ingester:${DIODE_TAG:-latest}
     environment:
       - API_KEY=${RECONCILER_API_KEY}
       - REDIS_PASSWORD=${REDIS_PASSWORD}
@@ -45,7 +45,7 @@ services:
       - diode-reconciler
 
   diode-reconciler:
-    image: netboxlabs/diode-reconciler:latest
+    image: netboxlabs/diode-reconciler:${DIODE_TAG:-latest}
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - REDIS_HOST=${REDIS_HOST}
