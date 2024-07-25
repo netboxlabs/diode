@@ -64,17 +64,14 @@ func TestNewServer(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, server)
 
-	// Start the server in a separate goroutine
+	// Start and stop the server in a separate goroutine
 	go func() {
 		err = server.Start(ctx)
 		require.NoError(t, err)
 	}()
 
-	// Wait for the server to start
-	time.Sleep(100 * time.Millisecond)
-
-	err = server.Stop()
-	require.NoError(t, err)
+	// Wait for the server to start and stop
+	time.Sleep(50 * time.Millisecond)
 }
 
 func TestRetrieveIngestionDataSources(t *testing.T) {
@@ -150,6 +147,9 @@ func TestRetrieveIngestionDataSources(t *testing.T) {
 				require.NoError(t, err)
 				require.NotNil(t, resp)
 			}
+
+			err = server.Stop()
+			require.NoError(t, err)
 		})
 	}
 }
