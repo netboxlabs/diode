@@ -53,7 +53,7 @@ func TestWriteJSON(t *testing.T) {
 			key := "test-key"
 
 			// Create a mock Redis client
-			mockRedisClient := new(MockRedisClient)
+			mockRedisClient := new(mr.RedisClient)
 			p := &IngestionProcessor{
 				redisClient: mockRedisClient,
 			}
@@ -63,7 +63,7 @@ func TestWriteJSON(t *testing.T) {
 			if tt.hasError {
 				cmd.SetErr(errors.New("error"))
 			}
-			mockRedisClient.On("Do", ctx, mock.Anything, mock.Anything).
+			mockRedisClient.On("Do", ctx, "JSON.SET", "test-key", "$", mock.Anything).
 				Return(cmd)
 
 			// Call the method
@@ -319,7 +319,7 @@ func TestHandleStreamMessage(t *testing.T) {
 			}
 			mockNbClient.On("ApplyChangeSet", ctx, mock.Anything).Return(&netboxdiodeplugin.ChangeSetResponse{}, nil)
 			if tt.entities[0].Entity != nil {
-				mockRedisClient.On("Do", ctx, mock.Anything, mock.Anything).Return(redis.NewCmd(ctx))
+				mockRedisClient.On("Do", ctx, "JSON.SET", mock.Anything, "$", mock.Anything).Return(redis.NewCmd(ctx))
 			}
 			mockRedisStreamClient.On("XAck", ctx, mock.Anything, mock.Anything, mock.Anything).Return(redis.NewIntCmd(ctx))
 			mockRedisStreamClient.On("XDel", ctx, mock.Anything, mock.Anything).Return(redis.NewIntCmd(ctx))
