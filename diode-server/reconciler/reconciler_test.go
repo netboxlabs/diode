@@ -13,16 +13,20 @@ func getFreePort() (string, error) {
 	if err != nil {
 		return strconv.Itoa(0), err
 	}
-	defer listener.Close()
 
 	addr := listener.Addr().(*net.TCPAddr)
+
+	err = listener.Close()
+	if err != nil {
+		return strconv.Itoa(0), err
+	}
 	return strconv.Itoa(addr.Port), nil
 }
 
 func setupEnv(redisAddr string) {
 	host, port, _ := net.SplitHostPort(redisAddr)
-	grpc_port, _ := getFreePort()
-	_ = os.Setenv("GRPC_PORT", grpc_port)
+	grpcPort, _ := getFreePort()
+	_ = os.Setenv("GRPC_PORT", grpcPort)
 	_ = os.Setenv("REDIS_HOST", host)
 	_ = os.Setenv("REDIS_PORT", port)
 	_ = os.Setenv("REDIS_PASSWORD", "")
