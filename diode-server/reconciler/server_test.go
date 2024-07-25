@@ -2,12 +2,11 @@ package reconciler_test
 
 import (
 	"context"
+	"log/slog"
 	"net"
 	"os"
 	"testing"
 	"time"
-
-	"log/slog"
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/netboxlabs/diode/diode-server/reconciler"
