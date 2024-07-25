@@ -90,7 +90,7 @@ def assert_device_type(context, device_type_model):
 def assert_device_role(context, device_role_name):
     """Assert that the device role is correct."""
     assert context.existing_device is not None
-    assert context.existing_device.get("device_role").get("name") == device_role_name
+    assert context.existing_device.get("role").get("name") == device_role_name
 
 
 @then('tags "{tags}" are present')

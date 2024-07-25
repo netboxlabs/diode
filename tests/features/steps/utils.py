@@ -99,7 +99,7 @@ def ingester(entities):
     """Ingest the site object using the Diode SDK"""
     api_key = str(configs["api_key"])
     with DiodeClient(
-        target="localhost:8081",
+        target="grpc://localhost:8081",
         app_name="my-test-app",
         app_version="0.0.1",
         api_key=api_key,
