@@ -131,7 +131,6 @@ func TestRetrieveIngestionDataSources(t *testing.T) {
 			defer s.Close()
 
 			server, conn := startTestServer(ctx, t, s.Addr())
-			defer conn.Close()
 
 			req := &pb.RetrieveIngestionDataSourcesRequest{
 				Name:       tt.requestName,
@@ -149,6 +148,8 @@ func TestRetrieveIngestionDataSources(t *testing.T) {
 			}
 
 			err = server.Stop()
+			require.NoError(t, err)
+			err = conn.Close()
 			require.NoError(t, err)
 		})
 	}
