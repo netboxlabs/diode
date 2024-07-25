@@ -8,3 +8,8 @@ packages:
       all: true
       dir: "{{.InterfaceDir}}/mocks"
       outpkg: mocks
+  github.com/netboxlabs/diode/diode-server/reconciler:
+    config:
+      all: true
+      dir: "{{.InterfaceDir}}/mocks"
+      outpkg: mocks

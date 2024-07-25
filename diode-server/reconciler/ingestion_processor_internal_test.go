@@ -15,59 +15,10 @@ import (
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/netbox"
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
+	mnp "github.com/netboxlabs/diode/diode-server/netboxdiodeplugin/mocks"
 	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
+	mr "github.com/netboxlabs/diode/diode-server/reconciler/mocks"
 )
-
-type MockRedisClient struct {
-	mock.Mock
-}
-type MockNbClient struct {
-	mock.Mock
-}
-
-func (m *MockNbClient) ApplyChangeSet(ctx context.Context, req netboxdiodeplugin.ChangeSetRequest) (*netboxdiodeplugin.ChangeSetResponse, error) {
-	args := m.Called(ctx, req)
-	return args.Get(0).(*netboxdiodeplugin.ChangeSetResponse), args.Error(1)
-}
-
-func (m *MockNbClient) RetrieveObjectState(ctx context.Context, params netboxdiodeplugin.RetrieveObjectStateQueryParams) (*netboxdiodeplugin.ObjectState, error) {
-	args := m.Called(ctx, params)
-	return args.Get(0).(*netboxdiodeplugin.ObjectState), args.Error(1)
-}
-func (m *MockRedisClient) Ping(ctx context.Context) *redis.StatusCmd {
-	args := m.Called(ctx)
-	return args.Get(0).(*redis.StatusCmd)
-}
-
-func (m *MockRedisClient) Close() error {
-	args := m.Called()
-	return args.Error(0)
-}
-
-func (m *MockRedisClient) XGroupCreateMkStream(ctx context.Context, stream, group, start string) *redis.StatusCmd {
-	args := m.Called(ctx, stream, group, start)
-	return args.Get(0).(*redis.StatusCmd)
-}
-
-func (m *MockRedisClient) XReadGroup(ctx context.Context, a *redis.XReadGroupArgs) *redis.XStreamSliceCmd {
-	args := m.Called(ctx, a)
-	return args.Get(0).(*redis.XStreamSliceCmd)
-}
-
-func (m *MockRedisClient) XAck(ctx context.Context, stream, group string, ids ...string) *redis.IntCmd {
-	args := m.Called(ctx, stream, group, ids)
-	return args.Get(0).(*redis.IntCmd)
-}
-
-func (m *MockRedisClient) XDel(ctx context.Context, stream string, ids ...string) *redis.IntCmd {
-	args := m.Called(ctx, stream, ids)
-	return args.Get(0).(*redis.IntCmd)
-}
-
-func (m *MockRedisClient) Do(ctx context.Context, args ...interface{}) *redis.Cmd {
-	callArgs := m.Called(ctx, args)
-	return callArgs.Get(0).(*redis.Cmd)
-}
 
 func strPtr(s string) *string { return &s }
 func TestWriteJSON(t *testing.T) {
@@ -181,7 +132,7 @@ func TestReconcileEntity(t *testing.T) {
 			ctx := context.Background()
 
 			// Mock nbClient
-			mockNbClient := new(MockNbClient)
+			mockNbClient := new(mnp.NetBoxAPI)
 			logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
 			// Create IngestionProcessor
 			p := &IngestionProcessor{
@@ -320,9 +271,9 @@ func TestHandleStreamMessage(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()
-			mockRedisClient := new(MockRedisClient)
-			mockRedisStreamClient := new(MockRedisClient)
-			mockNbClient := new(MockNbClient)
+			mockRedisClient := new(mr.RedisClient)
+			mockRedisStreamClient := new(mr.RedisClient)
+			mockNbClient := new(mnp.NetBoxAPI)
 			logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
 
 			p := &IngestionProcessor{
@@ -408,7 +359,7 @@ func TestConsumeIngestionStream(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()
-			mockRedisClient := new(MockRedisClient)
+			mockRedisClient := new(mr.RedisClient)
 			logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
 
 			cmdSlice := redis.NewXStreamSliceCmd(ctx)
