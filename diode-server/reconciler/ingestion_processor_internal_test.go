@@ -21,6 +21,7 @@ import (
 )
 
 func strPtr(s string) *string { return &s }
+
 func TestWriteJSON(t *testing.T) {
 	tests := []struct {
 		name     string

@@ -9,12 +9,13 @@ import (
 	"time"
 
 	"github.com/alicebob/miniredis/v2"
-	"github.com/netboxlabs/diode/diode-server/reconciler"
-	pb "github.com/netboxlabs/diode/diode-server/reconciler/v1/reconcilerpb"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
+
+	"github.com/netboxlabs/diode/diode-server/reconciler"
+	pb "github.com/netboxlabs/diode/diode-server/reconciler/v1/reconcilerpb"
 )
 
 func startTestServer(ctx context.Context, t *testing.T, redisAddr string) (*reconciler.Server, *grpc.ClientConn) {

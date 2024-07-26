@@ -2,19 +2,19 @@ package reconciler_test
 
 import (
 	"context"
+	"log/slog"
 	"os"
 	"testing"
 	"time"
 
-	"log/slog"
-
 	"github.com/alicebob/miniredis/v2"
-	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
-	"github.com/netboxlabs/diode/diode-server/reconciler"
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
+
+	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
+	"github.com/netboxlabs/diode/diode-server/reconciler"
 )
 
 func TestNewIngestionProcessor(t *testing.T) {
