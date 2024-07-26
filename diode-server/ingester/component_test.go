@@ -28,8 +28,7 @@ func getFreePort() (string, error) {
 
 	addr := listener.Addr().(*net.TCPAddr)
 
-	err = listener.Close()
-	if err != nil {
+	if err = listener.Close(); err != nil {
 		return strconv.Itoa(0), err
 	}
 	return strconv.Itoa(addr.Port), nil
