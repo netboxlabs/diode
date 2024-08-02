@@ -90,7 +90,7 @@ def assert_device_type(context, device_type_model):
 def assert_device_role(context, device_role_name):
     """Assert that the device role is correct."""
     assert context.existing_device is not None
-    assert context.existing_device.get("device_role").get("name") == device_role_name
+    assert context.existing_device.get("role").get("name") == device_role_name
 
 
 @then('tags "{tags}" are present')
@@ -194,3 +194,65 @@ def ingest_device_with_site_device_type_role_and_tags(context):
     assert context.response.errors == []
 
     return context.response
+
+
+@given('device "{device_name}" with "{description}" description')
+def set_device_with_description(context, device_name, description):
+    """Set the body of the request to ingest the device."""
+    context.device_name = device_name
+    context.site_name = "undefined"
+    if description == "empty":
+        description = ""
+    context.description = description
+
+
+@when("the device with description is ingested")
+def ingest_device_with_description(context):
+    """Ingest the device using the Diode SDK"""
+    entities = [
+        Entity(
+            device=Device(
+                name=context.device_name,
+                description=context.description,
+            ),
+        )
+    ]
+
+    context.response = ingester(entities)
+    assert context.response.errors == []
+
+    return context.response
+
+
+@then('the device with ingested "{field_name}" field is found')
+def assert_device_with_ingested_field_is_found(context, field_name):
+    """Assert that the device exists."""
+    assert context.response is not None
+
+    params = {
+        "object_type": "dcim.device",
+        "q": context.device_name,
+        "site__name": context.site_name,
+        field_name: getattr(context, field_name),
+    }
+
+    if hasattr(context, "device_type_model"):
+        params["device_type__model"] = context.device_type_model
+    if hasattr(context, "device_role_name"):
+        params["role__name"] = context.device_role_name
+
+    device = get_object_state(params)
+
+    assert device.get("name") == context.device_name
+    assert device.get("site").get("name") == context.site_name
+
+    context.existing_device = device
+
+
+@then('description is "{description}"')
+def assert_description(context, description):
+    """Assert that the description is correct."""
+    if description == "empty":
+        description = ""
+    assert context.existing_device is not None
+    assert context.existing_device.get("description") == description

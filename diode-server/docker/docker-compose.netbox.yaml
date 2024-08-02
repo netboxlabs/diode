@@ -20,7 +20,6 @@ services:
       - ./netbox/docker-entrypoint.sh:/opt/netbox/docker-entrypoint.sh:z,ro
       - ./netbox/nginx-unit.json:/opt/netbox/nginx-unit.json:z,ro
       - ./netbox/launch-netbox.sh:/opt/netbox/launch-netbox.sh:z,ro
-      - ./netbox/configure-diode-plugin.sh:/opt/netbox/configure-diode-plugin.sh:z,ro
       - netbox-media-files:/opt/netbox/netbox/media:rw
       - netbox-reports-files:/opt/netbox/netbox/reports:rw
       - netbox-scripts-files:/opt/netbox/netbox/scripts:rw

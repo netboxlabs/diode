@@ -19,6 +19,6 @@ Scenario: Ingestion of existing device type
 @ingestion.device_type
 Scenario: Ingestion of device type object to update the manufacturer, description and part number
     Given device type "ISR4321-1" with manufacturer "Cisco-1", description "some string" and part number "xyz123"
-    Then check if the manufacturer "Cisco" exists in the database and remove it
+    Then check if the manufacturer "Cisco-1" exists in the database and remove it
     When the device type object is ingested with the updates
     Then the manufacturer "Cisco-1" is created and the device updated
