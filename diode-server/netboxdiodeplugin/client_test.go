@@ -203,6 +203,150 @@ func TestRetrieveObjectState(t *testing.T) {
 			shouldError:   false,
 		},
 		{
+			name:               "valid response for DCIM DeviceRole",
+			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.DcimDeviceRoleObjectType, ObjectID: 1},
+			mockServerResponse: `{"object_type":"dcim.devicerole","object_change_id":1,"object":{"id":1,"name":"test"}}`,
+			apiKey:             "foobar",
+			response: &netboxdiodeplugin.ObjectState{
+				ObjectType:     netbox.DcimDeviceRoleObjectType,
+				ObjectChangeID: 1,
+				Object: &netbox.DcimDeviceRoleDataWrapper{
+					DeviceRole: &netbox.DcimDeviceRole{
+						ID:   1,
+						Name: "test",
+					},
+				},
+			},
+			tlsSkipVerify: true,
+			shouldError:   false,
+		},
+		{
+			name:               "valid response for DCIM DeviceType",
+			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.DcimDeviceTypeObjectType, ObjectID: 1},
+			mockServerResponse: `{"object_type":"dcim.devicetype","object_change_id":1,"object":{"id":1,"model":"test"}}`,
+			apiKey:             "foobar",
+			response: &netboxdiodeplugin.ObjectState{
+				ObjectType:     netbox.DcimDeviceTypeObjectType,
+				ObjectChangeID: 1,
+				Object: &netbox.DcimDeviceTypeDataWrapper{
+					DeviceType: &netbox.DcimDeviceType{
+						ID:    1,
+						Model: "test",
+					},
+				},
+			},
+			tlsSkipVerify: true,
+			shouldError:   false,
+		},
+		{
+			name:               "valid response for DCIM Interface",
+			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.DcimInterfaceObjectType, ObjectID: 1},
+			mockServerResponse: `{"object_type":"dcim.interface","object_change_id":1,"object":{"id":1,"name":"test"}}`,
+			apiKey:             "foobar",
+			response: &netboxdiodeplugin.ObjectState{
+				ObjectType:     netbox.DcimInterfaceObjectType,
+				ObjectChangeID: 1,
+				Object: &netbox.DcimInterfaceDataWrapper{
+					Interface: &netbox.DcimInterface{
+						ID:   1,
+						Name: "test",
+					},
+				},
+			},
+			tlsSkipVerify: true,
+			shouldError:   false,
+		},
+		{
+			name:               "valid response for DCIM Manufacturer",
+			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.DcimManufacturerObjectType, ObjectID: 1},
+			mockServerResponse: `{"object_type":"dcim.manufacturer","object_change_id":1,"object":{"id":1,"name":"test"}}`,
+			apiKey:             "foobar",
+			response: &netboxdiodeplugin.ObjectState{
+				ObjectType:     netbox.DcimManufacturerObjectType,
+				ObjectChangeID: 1,
+				Object: &netbox.DcimManufacturerDataWrapper{
+					Manufacturer: &netbox.DcimManufacturer{
+						ID:   1,
+						Name: "test",
+					},
+				},
+			},
+			tlsSkipVerify: true,
+			shouldError:   false,
+		},
+		{
+			name:               "valid response for DCIM Platform",
+			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.DcimPlatformObjectType, ObjectID: 1},
+			mockServerResponse: `{"object_type":"dcim.platform","object_change_id":1,"object":{"id":1,"name":"test"}}`,
+			apiKey:             "foobar",
+			response: &netboxdiodeplugin.ObjectState{
+				ObjectType:     netbox.DcimPlatformObjectType,
+				ObjectChangeID: 1,
+				Object: &netbox.DcimPlatformDataWrapper{
+					Platform: &netbox.DcimPlatform{
+						ID:   1,
+						Name: "test",
+					},
+				},
+			},
+			tlsSkipVerify: true,
+			shouldError:   false,
+		},
+		{
+			name:               "valid response for Extra tags",
+			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.ExtrasTagObjectType, ObjectID: 1},
+			mockServerResponse: `{"object_type":"extras.tag","object_change_id":1,"object":{"id":1,"name":"test"}}`,
+			apiKey:             "foobar",
+			response: &netboxdiodeplugin.ObjectState{
+				ObjectType:     netbox.ExtrasTagObjectType,
+				ObjectChangeID: 1,
+				Object: &netbox.TagDataWrapper{
+					Tag: &netbox.Tag{
+						ID:   1,
+						Name: "test",
+					},
+				},
+			},
+			tlsSkipVerify: true,
+			shouldError:   false,
+		},
+		{
+			name:               "valid response for IPAM IP Address",
+			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.IpamIPAddressObjectType, ObjectID: 1},
+			mockServerResponse: `{"object_type":"ipam.ipaddress","object_change_id":1,"object":{"id":1,"address":"192.168.0.1/22"}}`,
+			apiKey:             "foobar",
+			response: &netboxdiodeplugin.ObjectState{
+				ObjectType:     netbox.IpamIPAddressObjectType,
+				ObjectChangeID: 1,
+				Object: &netbox.IpamIPAddressDataWrapper{
+					IPAddress: &netbox.IpamIPAddress{
+						ID:      1,
+						Address: "192.168.0.1/22",
+					},
+				},
+			},
+			tlsSkipVerify: true,
+			shouldError:   false,
+		},
+		{
+			name:               "valid response for IPAM Prefix",
+			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.IpamPrefixObjectType, ObjectID: 1},
+			mockServerResponse: `{"object_type":"ipam.prefix","object_change_id":1,"object":{"id":1,"prefix":"192.168.0.0/22"}}`,
+			apiKey:             "foobar",
+			response: &netboxdiodeplugin.ObjectState{
+				ObjectType:     netbox.IpamPrefixObjectType,
+				ObjectChangeID: 1,
+				Object: &netbox.IpamPrefixDataWrapper{
+					Prefix: &netbox.IpamPrefix{
+						ID:     1,
+						Prefix: "192.168.0.0/22",
+					},
+				},
+			},
+			tlsSkipVerify: true,
+			shouldError:   false,
+		},
+		{
 			name: "valid response for DCIM device with query and additional attributes",
 			params: netboxdiodeplugin.RetrieveObjectStateQueryParams{
 				ObjectType: netbox.DcimDeviceObjectType,
@@ -256,6 +400,27 @@ func TestRetrieveObjectState(t *testing.T) {
 			mockServerResponse: ``,
 			tlsSkipVerify:      false,
 			shouldError:        true,
+		},
+		{
+			name:               "unmarshal error",
+			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.DcimDeviceObjectType, ObjectID: 1},
+			mockServerResponse: `{invalid - json}`,
+			apiKey:             "foobar",
+			tlsSkipVerify:      true,
+			shouldError:        true,
+		},
+		{
+			name:               "invalid object type",
+			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.DcimDeviceObjectType, ObjectID: 1},
+			mockServerResponse: `{"object_type":"invalid.type","object_change_id":1}`,
+			apiKey:             "foobar",
+			response: &netboxdiodeplugin.ObjectState{
+				ObjectType:     "invalid.type",
+				ObjectChangeID: 1,
+				Object:         &netbox.DcimDeviceDataWrapper{},
+			},
+			tlsSkipVerify: true,
+			shouldError:   false,
 		},
 	}
 
@@ -312,7 +477,7 @@ func TestApplyChangeSet(t *testing.T) {
 		changeSetRequest   netboxdiodeplugin.ChangeSetRequest
 		mockServerResponse string
 		mockStatusCode     int
-		response           any
+		response           *netboxdiodeplugin.ChangeSetResponse
 		shouldError        bool
 	}{
 		{
@@ -367,8 +532,75 @@ func TestApplyChangeSet(t *testing.T) {
 					},
 				},
 			},
-			mockServerResponse: `{"change_set_id":"00000000-0000-0000-0000-000000000000","result":"failure","errors":["invalid object type"]}`,
+			response:    nil,
+			shouldError: true,
+		},
+		{
+			name:   "marshal error",
+			apiKey: "foobar",
+			changeSetRequest: netboxdiodeplugin.ChangeSetRequest{
+				ChangeSetID: "00000000-0000-0000-0000-000000000000",
+				ChangeSet: []netboxdiodeplugin.Change{
+					{
+						ChangeID:      "00000000-0000-0000-0000-000000000001",
+						ChangeType:    "create",
+						ObjectType:    "",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data:          map[string]any{"invalid": make(chan int)},
+					},
+				},
+			},
+			response:    nil,
+			shouldError: true,
+		},
+		{
+			name:   "invalid post message",
+			apiKey: "foobar",
+			changeSetRequest: netboxdiodeplugin.ChangeSetRequest{
+				ChangeSetID: "00000000-0000-0000-0000-000000000000",
+				ChangeSet: []netboxdiodeplugin.Change{
+					{
+						ChangeID:      "00000000-0000-0000-0000-000000000001",
+						ChangeType:    "create",
+						ObjectType:    "dcim.device",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimDevice{
+							Name: "test",
+						},
+					},
+				},
+			},
+			mockServerResponse: `{"change_set_id":"00000000-0000-0000-0000-000000000000","result":"error"}`,
 			mockStatusCode:     http.StatusBadRequest,
+			response: &netboxdiodeplugin.ChangeSetResponse{
+				ChangeSetID: "00000000-0000-0000-0000-000000000000",
+				Result:      "error",
+			},
+			shouldError: true,
+		},
+		{
+			name:   "unmarshal error",
+			apiKey: "foobar",
+			changeSetRequest: netboxdiodeplugin.ChangeSetRequest{
+				ChangeSetID: "00000000-0000-0000-0000-000000000000",
+				ChangeSet: []netboxdiodeplugin.Change{
+					{
+						ChangeID:      "00000000-0000-0000-0000-000000000001",
+						ChangeType:    "create",
+						ObjectType:    "dcim.device",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimDevice{
+							Name: "test",
+						},
+					},
+				},
+			},
+			mockServerResponse: `{"change_set_id"  - "00000000-0000-0000\-0000-000000000000","result":"error"}`,
+			mockStatusCode:     http.StatusBadRequest,
+			response:           nil,
 			shouldError:        true,
 		},
 	}
@@ -400,6 +632,7 @@ func TestApplyChangeSet(t *testing.T) {
 			resp, err := client.ApplyChangeSet(context.Background(), tt.changeSetRequest)
 			if tt.shouldError {
 				require.Error(t, err)
+				assert.Equal(t, tt.response, resp)
 				return
 			}
 			require.NoError(t, err)

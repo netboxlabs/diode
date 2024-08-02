@@ -44,14 +44,25 @@ const (
 	IngestEntityStateReconciliationFailed
 )
 
+// RedisClient is an interface that represents the methods used from redis.Client
+type RedisClient interface {
+	Ping(ctx context.Context) *redis.StatusCmd
+	Close() error
+	XGroupCreateMkStream(ctx context.Context, stream, group, start string) *redis.StatusCmd
+	XReadGroup(ctx context.Context, a *redis.XReadGroupArgs) *redis.XStreamSliceCmd
+	XAck(ctx context.Context, stream, group string, ids ...string) *redis.IntCmd
+	XDel(ctx context.Context, stream string, ids ...string) *redis.IntCmd
+	Do(ctx context.Context, args ...interface{}) *redis.Cmd
+}
+
 // IngestionProcessor processes ingested data
 type IngestionProcessor struct {
 	config            Config
 	logger            *slog.Logger
 	hostname          string
-	redisClient       *redis.Client
-	redisStreamClient *redis.Client
-	nbClient          *netboxdiodeplugin.Client
+	redisClient       RedisClient
+	redisStreamClient RedisClient
+	nbClient          netboxdiodeplugin.NetBoxAPI
 }
 
 // NewIngestionProcessor creates a new ingestion processor
