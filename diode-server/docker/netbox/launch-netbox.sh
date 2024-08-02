@@ -46,8 +46,6 @@ load_configuration() {
 
 load_configuration &
 
-sh /opt/netbox/configure-diode-plugin.sh &
-
 exec unitd \
   --no-daemon \
   --control unix:$UNIT_SOCKET \
