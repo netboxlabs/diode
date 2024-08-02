@@ -37,16 +37,16 @@ A device
 | Field       | Type                               | Label    | Description |
 |-------------|------------------------------------|----------|-------------|
 | name        | [string](#string)                  |          |             |
-| device_fqdn | [string](#string)                  |          |             |
+| device_fqdn | [string](#string)                  | optional |             |
 | device_type | [DeviceType](#diode-v1-DeviceType) |          |             |
 | role        | [Role](#diode-v1-Role)             |          |             |
 | platform    | [Platform](#diode-v1-Platform)     |          |             |
-| serial      | [string](#string)                  |          |             |
+| serial      | [string](#string)                  | optional |             |
 | site        | [Site](#diode-v1-Site)             |          |             |
-| asset_tag   | [string](#string)                  |          |             |
+| asset_tag   | [string](#string)                  | optional |             |
 | status      | [string](#string)                  |          |             |
-| description | [string](#string)                  |          |             |
-| comments    | [string](#string)                  |          |             |
+| description | [string](#string)                  | optional |             |
+| comments    | [string](#string)                  | optional |             |
 | tags        | [Tag](#diode-v1-Tag)               | repeated |             |
 | primary_ip4 | [IPAddress](#diode-v1-IPAddress)   |          |             |
 | primary_ip6 | [IPAddress](#diode-v1-IPAddress)   |          |             |
@@ -62,9 +62,9 @@ A device type
 | model        | [string](#string)                      |          |             |
 | slug         | [string](#string)                      |          |             |
 | manufacturer | [Manufacturer](#diode-v1-Manufacturer) |          |             |
-| description  | [string](#string)                      |          |             |
-| comments     | [string](#string)                      |          |             |
-| part_number  | [string](#string)                      |          |             |
+| description  | [string](#string)                      | optional |             |
+| comments     | [string](#string)                      | optional |             |
+| part_number  | [string](#string)                      | optional |             |
 | tags         | [Tag](#diode-v1-Tag)                   | repeated |             |
 
 <a name="diode-v1-Entity"></a>
@@ -98,9 +98,9 @@ An IP address.
 | interface   | [Interface](#diode-v1-Interface) |          |             |
 | status      | [string](#string)                |          |             |
 | role        | [string](#string)                |          |             |
-| dns_name    | [string](#string)                |          |             |
-| description | [string](#string)                |          |             |
-| comments    | [string](#string)                |          |             |
+| dns_name    | [string](#string)                | optional |             |
+| description | [string](#string)                | optional |             |
+| comments    | [string](#string)                | optional |             |
 | tags        | [Tag](#diode-v1-Tag)             | repeated |             |
 
 <a name="diode-v1-IngestRequest"></a>
@@ -139,16 +139,16 @@ An interface
 |----------------|----------------------------|----------|-------------|
 | device         | [Device](#diode-v1-Device) |          |             |
 | name           | [string](#string)          |          |             |
-| label          | [string](#string)          |          |             |
+| label          | [string](#string)          | optional |             |
 | type           | [string](#string)          |          |             |
-| enabled        | [bool](#bool)              |          |             |
-| mtu            | [int32](#int32)            |          |             |
-| mac_address    | [string](#string)          |          |             |
-| speed          | [int32](#int32)            |          |             |
-| wwn            | [string](#string)          |          |             |
-| mgmt_only      | [bool](#bool)              |          |             |
-| description    | [string](#string)          |          |             |
-| mark_connected | [bool](#bool)              |          |             |
+| enabled        | [bool](#bool)              | optional |             |
+| mtu            | [int32](#int32)            | optional |             |
+| mac_address    | [string](#string)          | optional |             |
+| speed          | [int32](#int32)            | optional |             |
+| wwn            | [string](#string)          | optional |             |
+| mgmt_only      | [bool](#bool)              | optional |             |
+| description    | [string](#string)          | optional |             |
+| mark_connected | [bool](#bool)              | optional |             |
 | mode           | [string](#string)          |          |             |
 | tags           | [Tag](#diode-v1-Tag)       | repeated |             |
 
@@ -162,7 +162,7 @@ A manufacturer
 |-------------|----------------------|----------|-------------|
 | name        | [string](#string)    |          |             |
 | slug        | [string](#string)    |          |             |
-| description | [string](#string)    |          |             |
+| description | [string](#string)    | optional |             |
 | tags        | [Tag](#diode-v1-Tag) | repeated |             |
 
 <a name="diode-v1-Platform"></a>
@@ -176,7 +176,7 @@ A platform
 | name         | [string](#string)                      |          |             |
 | slug         | [string](#string)                      |          |             |
 | manufacturer | [Manufacturer](#diode-v1-Manufacturer) |          |             |
-| description  | [string](#string)                      |          |             |
+| description  | [string](#string)                      | optional |             |
 | tags         | [Tag](#diode-v1-Tag)                   | repeated |             |
 
 <a name="diode-v1-Prefix"></a>
@@ -190,10 +190,10 @@ An IPAM prefix.
 | prefix        | [string](#string)      |          |             |
 | site          | [Site](#diode-v1-Site) |          |             |
 | status        | [string](#string)      |          |             |
-| is_pool       | [bool](#bool)          |          |             |
-| mark_utilized | [bool](#bool)          |          |             |
-| description   | [string](#string)      |          |             |
-| comments      | [string](#string)      |          |             |
+| is_pool       | [bool](#bool)          | optional |             |
+| mark_utilized | [bool](#bool)          | optional |             |
+| description   | [string](#string)      | optional |             |
+| comments      | [string](#string)      | optional |             |
 | tags          | [Tag](#diode-v1-Tag)   | repeated |             |
 
 <a name="diode-v1-Role"></a>
@@ -207,7 +207,7 @@ A role
 | name        | [string](#string)    |          |             |
 | slug        | [string](#string)    |          |             |
 | color       | [string](#string)    |          |             |
-| description | [string](#string)    |          |             |
+| description | [string](#string)    | optional |             |
 | tags        | [Tag](#diode-v1-Tag) | repeated |             |
 
 <a name="diode-v1-Site"></a>
@@ -221,10 +221,10 @@ A site
 | name        | [string](#string)    |          |             |
 | slug        | [string](#string)    |          |             |
 | status      | [string](#string)    |          |             |
-| facility    | [string](#string)    |          |             |
-| time_zone   | [string](#string)    |          |             |
-| description | [string](#string)    |          |             |
-| comments    | [string](#string)    |          |             |
+| facility    | [string](#string)    | optional |             |
+| time_zone   | [string](#string)    | optional |             |
+| description | [string](#string)    | optional |             |
+| comments    | [string](#string)    | optional |             |
 | tags        | [Tag](#diode-v1-Tag) | repeated |             |
 
 <a name="diode-v1-Tag"></a>

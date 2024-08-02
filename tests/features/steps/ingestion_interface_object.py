@@ -3,6 +3,7 @@ import time
 from behave import given, when, then
 from netboxlabs.diode.sdk.ingester import Entity, Interface
 from steps.utils import (
+    get_object_state,
     get_object_by_name,
     ingester,
 )
@@ -134,3 +135,55 @@ def assert_interface_mtu(context):
 
     assert interface.get("name") == context.interface_name
     assert interface.get("mtu") == context.mtu
+
+
+@given('an interface "{interface_name}" with enabled field set to "{field_value}"')
+def set_interface_with_enabled_field(context, interface_name, field_value):
+    """Set the body of the request to ingest an interface with enabled field."""
+    context.interface_name = interface_name
+    context.enabled = str.lower(field_value) == "true"
+
+
+@when("the interface with enabled field is ingested")
+def ingest_interface_enabled_with_field(context):
+    """Ingest an interface using the Diode SDK"""
+    entities = [
+        Entity(
+            interface=Interface(
+                name=context.interface_name,
+                enabled=context.enabled,
+            )
+        )
+    ]
+
+    context.response = ingester(entities)
+    assert context.response.errors == []
+
+    return context.response
+
+
+@then("the interface with enabled field is found")
+def assert_interface_with_ingested_enabled_field_is_found(context):
+    """Assert that the interface exists."""
+    assert context.response is not None
+
+    params = {
+        "object_type": "dcim.interface",
+        "q": context.interface_name,
+        "enabled": context.enabled,
+    }
+
+    interface = get_object_state(params)
+
+    assert interface.get("name") == context.interface_name
+
+    context.existing_interface = interface
+
+
+@then('enabled field is "{field_value}"')
+def assert_enabled_field(context, field_value):
+    """Assert that the enabled field is correct."""
+    assert context.existing_interface is not None
+    assert context.existing_interface.get("enabled") == (
+        str.lower(field_value) == "true"
+    )
