@@ -40,7 +40,7 @@ Diode server requires Docker version 27.0.3 or above.
 
 Diode requires a configuration file and an environment file to execute successfully:
 
-* `docker-compose.yml` - to configure and run the Diode server containers
+* `docker-compose.yaml` - to configure and run the Diode server containers
 * `.env` - to store the specific environmental settings
 
 We recommend placing both files in a clean directory:
@@ -50,10 +50,10 @@ mkdir /opt/diode
 cd /opt/diode
 ```
 
-Download the default `docker-compose.yml` and `.env` files from this repository:
+Download the default `docker-compose.yaml` and `.env` files from this repository:
 
 ```bash
-curl -o docker-compose.yml https://raw.githubusercontent.com/netboxlabs/diode/develop/diode-server/docker/docker-compose.yaml
+curl -o docker-compose.yaml https://raw.githubusercontent.com/netboxlabs/diode/develop/diode-server/docker/docker-compose.yaml
 curl -o .env https://raw.githubusercontent.com/netboxlabs/diode/develop/diode-server/docker/sample.env
 ```
 
