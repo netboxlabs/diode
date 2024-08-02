@@ -52,3 +52,15 @@ Scenario: Ingestion of a new device with tags
         And device type is "undefined"
         And role is "undefined"
         And tags "tag1,tag2,tag3" are present
+
+@smoke
+@ingestion.device
+Scenario: Ingestion of existing device with description set to empty
+    Given device "router01" with "lorem ipsum" description
+    When the device with description is ingested
+    Then the device with ingested "description" field is found
+        And description is "lorem ipsum"
+    Given device "router01" with "empty" description
+    When the device with description is ingested
+    Then the device with ingested "description" field is found
+        And description is "empty"
