@@ -65,7 +65,7 @@ services:
     command:
       - sh
       - -c
-      - redis-server --appendonly yes --requirepass $$REDIS_PASSWORD --loadmodule /opt/redis-stack/lib/rejson.so --loadmodule /opt/redis-stack/lib/redisearch.so --port $$REDIS_PORT
+      - redis-server --appendonly yes --dir /data --save 60 1 --requirepass $$REDIS_PASSWORD --loadmodule /opt/redis-stack/lib/rejson.so --loadmodule /opt/redis-stack/lib/redisearch.so --port $$REDIS_PORT
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - REDIS_PORT=${REDIS_PORT}
