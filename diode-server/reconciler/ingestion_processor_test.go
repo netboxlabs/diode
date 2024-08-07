@@ -181,7 +181,7 @@ func TestIngestionProcessorStart(t *testing.T) {
 	// Add a message to the Redis stream
 	metadata := []string{
 		"request", string(reqBytes),
-		"ingestion_ts", "1720425600",
+		"ingestion_ts", 1720425600,
 	}
 	err = redisClient.XAdd(context.Background(), &redis.XAddArgs{
 		Stream: "diode.v1.ingest-stream",
