@@ -295,7 +295,7 @@ func TestHandleStreamMessage(t *testing.T) {
 						ID: "1",
 						Values: map[string]interface{}{
 							"request":      string(reqBytes),
-							"ingestion_ts": "timestamp",
+							"ingestion_ts": "1720425600",
 						},
 					}
 				}
@@ -304,7 +304,7 @@ func TestHandleStreamMessage(t *testing.T) {
 					ID: "2",
 					Values: map[string]interface{}{
 						"request":      "invalid-request",
-						"ingestion_ts": "timestamp",
+						"ingestion_ts": "1720425600",
 					},
 				}
 			}
