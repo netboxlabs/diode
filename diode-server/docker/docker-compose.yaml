@@ -76,7 +76,26 @@ services:
     image: redis/redis-stack-server:latest
     links:
       - diode-redis
-    command: redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" -a "$REDIS_PASSWORD" FT.CREATE ingest-entity ON JSON PREFIX 1 "ingest-entity:" SCHEMA $$.data_type AS data_type TEXT $$.state AS state NUMERIC
+    entrypoint:
+      - sh
+      - -c
+      - |
+        redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" -a "$REDIS_PASSWORD" <<EOF
+        FT.CREATE ingest-entity ON JSON PREFIX 1 "ingest-entity:" SCHEMA \
+        $.data_type AS data_type TEXT \
+        $.state AS state NUMERIC \
+        $.request_id AS request_id TEXT \
+        $.ingestion_ts AS ingestion_ts NUMERIC SORTABLE
+        EOF
+  redis-commander:
+    container_name: redis-commander
+    hostname: redis-commander
+    image: ghcr.io/joeferner/redis-commander:latest
+    restart: always
+    environment:
+    - REDIS_HOSTS=local:$REDIS_HOST:$REDIS_PORT:0:$REDIS_PASSWORD
+    ports:
+    - "8082:8081"
 volumes:
   diode-redis-data:
     driver: local
