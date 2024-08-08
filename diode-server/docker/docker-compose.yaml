@@ -87,15 +87,6 @@ services:
         $.request_id AS request_id TEXT \
         $.ingestion_ts AS ingestion_ts NUMERIC SORTABLE
         EOF
-  redis-commander:
-    container_name: redis-commander
-    hostname: redis-commander
-    image: ghcr.io/joeferner/redis-commander:latest
-    restart: always
-    environment:
-    - REDIS_HOSTS=local:$REDIS_HOST:$REDIS_PORT:0:$REDIS_PASSWORD
-    ports:
-    - "8082:8081"
 volumes:
   diode-redis-data:
     driver: local

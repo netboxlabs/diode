@@ -1,0 +1,10 @@
+name: ${PROJECT_NAME:-diode}
+services:
+  redis-commander:
+    hostname: redis-commander
+    image: ghcr.io/joeferner/redis-commander:latest
+    restart: always
+    environment:
+    - REDIS_HOSTS=local:$REDIS_HOST:$REDIS_PORT:0:$REDIS_PASSWORD
+    ports:
+    - "8082:8081"
