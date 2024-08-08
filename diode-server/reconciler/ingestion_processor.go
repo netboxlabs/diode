@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -175,7 +176,10 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 
 	errs := make([]string, 0)
 
-	ingestionTs := msg.Values["ingestion_ts"]
+	ingestionTs, err := strconv.Atoi(fmt.Sprintf("%v", msg.Values["ingestion_ts"]))
+	if err != nil {
+		return err
+	}
 
 	p.logger.Debug("handling ingest request", "request", ingestReq)
 
@@ -191,7 +195,7 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 			continue
 		}
 
-		key := fmt.Sprintf("ingest-entity:%s-%s-%s", objectType, ingestionTs, uuid.NewString())
+		key := fmt.Sprintf("ingest-entity:%s-%d-%s", objectType, ingestionTs, uuid.NewString())
 		p.logger.Debug("ingest entity key", "key", key)
 
 		val := map[string]any{
