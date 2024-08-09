@@ -8,7 +8,6 @@ import (
 	"log/slog"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/google/uuid"
 	"github.com/kelseyhightower/envconfig"
@@ -43,6 +42,9 @@ const (
 
 	// IngestEntityStateReconciliationFailed is the state of an entity after it has failed to be reconciled
 	IngestEntityStateReconciliationFailed
+
+	// IngestEntityStateNoChangesToApply is the state of an entity without changes to apply after reconciliation
+	IngestEntityStateNoChangesToApply
 )
 
 // RedisClient is an interface that represents the methods used from redis.Client
@@ -174,24 +176,24 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 		return err
 	}
 
-	errs := make([]string, 0)
+	errs := make([]error, 0)
 
-	ingestionTs, err := strconv.Atoi(fmt.Sprintf("%v", msg.Values["ingestion_ts"]))
+	ingestionTs, err := strconv.Atoi(msg.Values["ingestion_ts"].(string))
 	if err != nil {
-		return err
+		errs = append(errs, fmt.Errorf("failed to convert ingestion timestamp: %v", err))
 	}
 
 	p.logger.Debug("handling ingest request", "request", ingestReq)
 
 	for i, v := range ingestReq.GetEntities() {
 		if v.GetEntity() == nil {
-			errs = append(errs, fmt.Sprintf("entity at index %d is nil", i))
+			errs = append(errs, fmt.Errorf("entity at index %d is nil", i))
 			continue
 		}
 
 		objectType, err := extractObjectType(v)
 		if err != nil {
-			errs = append(errs, fmt.Sprintf("failed to extract data type for index %d: %v", i, err))
+			errs = append(errs, fmt.Errorf("failed to extract data type for index %d: %v", i, err))
 			continue
 		}
 
@@ -212,36 +214,44 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 
 		encodedValue, err := p.writeJSON(ctx, key, val)
 		if err != nil {
-			errs = append(errs, fmt.Sprintf("failed to write JSON: %v", err))
+			errs = append(errs, fmt.Errorf("failed to write JSON: %v", err))
 			continue
 		}
 
 		changeSet, err := p.reconcileEntity(ctx, encodedValue)
 		if err != nil {
-			errs = append(errs, fmt.Sprintf("failed to reconcile entity: %v", err))
+			errs = append(errs, err)
+
 			val["state"] = IngestEntityStateReconciliationFailed
-			_, err = p.writeJSON(ctx, key, val)
-			if err != nil {
-				errs = append(errs, fmt.Sprintf("failed to write JSON: %v", err))
+			val["error"] = err
+			if _, err = p.writeJSON(ctx, key, val); err != nil {
+				errs = append(errs, err)
 			}
 			continue
 		}
 
 		if changeSet != nil {
 			val["state"] = IngestEntityStateReconciled
-			val["change_set"] = changeSet
-			_, err = p.writeJSON(ctx, key, val)
-			if err != nil {
-				errs = append(errs, fmt.Sprintf("failed to write JSON: %v", err))
-				continue
-			}
+			val["change_set_id"] = changeSet.ChangeSetID
+
+		} else {
+			val["state"] = IngestEntityStateNoChangesToApply
+		}
+		if _, err = p.writeJSON(ctx, key, val); err != nil {
+			errs = append(errs, fmt.Errorf("failed to write JSON: %v", err))
+			continue
 		}
 	}
 
 	p.redisStreamClient.XAck(ctx, redisStreamID, redisConsumerGroup, msg.ID)
 
 	if len(errs) > 0 {
-		p.logger.Error("failed to handle ingest request", "errors", strings.Join(errs, ", "))
+		errsStr := make([]string, 0)
+		for _, err := range errs {
+			errsStr = append(errsStr, err.Error())
+		}
+		p.logger.Warn("failed to handle ingest request", slog.String("request_id", ingestReq.Id), slog.Any("errors", errsStr))
+
 		contextMap := map[string]any{
 			"redis_stream_msg_id": msg.ID,
 			"consumer":            fmt.Sprintf("%s-%s", redisConsumerGroup, p.hostname),
@@ -273,7 +283,7 @@ func (p *IngestionProcessor) reconcileEntity(ctx context.Context, encodedValue [
 	}
 
 	if len(cs.ChangeSet) == 0 {
-		p.logger.Info("no changes to apply")
+		p.logger.Debug("no changes to apply", "request_id", ingestEntity.RequestID)
 		return nil, nil
 	}
 
@@ -296,7 +306,7 @@ func (p *IngestionProcessor) reconcileEntity(ctx context.Context, encodedValue [
 
 	resp, err := p.nbClient.ApplyChangeSet(ctx, req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to apply change set: %v", err)
+		return nil, err
 	}
 
 	p.logger.Debug("apply change set response", "response", resp)

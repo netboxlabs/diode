@@ -46,6 +46,9 @@ const (
 var (
 	// ErrInvalidTimeout is an error for invalid timeout value
 	ErrInvalidTimeout = errors.New("invalid timeout value")
+
+	// ErrApplyChangeSetFailed is an error for failed to apply change set
+	ErrApplyChangeSetFailed = errors.New("failed to apply change set")
 )
 
 type apiRoundTripper struct {
@@ -81,6 +84,28 @@ func (rt *apiRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) 
 	req2.Header.Set("Content-Type", "application/json")
 
 	return rt.transport.RoundTrip(req2)
+}
+
+// ApplyChangeSetError represents an error when applying a change set
+type ApplyChangeSetError struct {
+	Message string
+	Code    int
+	Details ChangeSetResponse
+}
+
+// Error returns the NetBoxDiodePluginError message
+func (e *ApplyChangeSetError) Error() string {
+	detailsErrorsJSON, _ := json.Marshal(e.Details.Errors)
+	return fmt.Sprintf("msg: %s, code: %d, change set id: %s, result: %s, errors: %s", e.Message, e.Code, e.Details.ChangeSetID, e.Details.Result, detailsErrorsJSON)
+}
+
+// NewApplyChangeSetError creates a new ApplyChangeSetError
+func NewApplyChangeSetError(msg string, code int, response ChangeSetResponse) error {
+	return &ApplyChangeSetError{
+		Message: msg,
+		Code:    code,
+		Details: response,
+	}
 }
 
 // NetBoxAPI is the interface for the NetBox Diode plugin API
@@ -364,7 +389,7 @@ func (c *Client) ApplyChangeSet(ctx context.Context, payload ChangeSetRequest) (
 		return nil, err
 	}
 
-	c.logger.Info("apply change set", "payload", string(reqBody))
+	c.logger.Debug("apply change set", "payload", string(reqBody))
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpointURL.String(), bytes.NewBuffer(reqBody))
 	if err != nil {
@@ -387,17 +412,18 @@ func (c *Client) ApplyChangeSet(ctx context.Context, payload ChangeSetRequest) (
 		return nil, fmt.Errorf("failed to read response body %w", err)
 	}
 
-	c.logger.Info("apply change set", "response", string(respBytes))
+	c.logger.Debug("apply change set", "response", string(respBytes))
 
 	var changeSetResponse ChangeSetResponse
 	if err = json.Unmarshal(respBytes, &changeSetResponse); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal response body %w", err)
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		c.logger.Info(fmt.Sprintf("request POST %s failed", req.URL.String()), "statusCode", resp.StatusCode, "response", changeSetResponse)
-		return &changeSetResponse, fmt.Errorf("request POST %s failed - %q", req.URL.String(), resp.Status)
+	// return errors with 4xx status code
+	if resp.StatusCode >= http.StatusBadRequest {
+		return nil, NewApplyChangeSetError(ErrApplyChangeSetFailed.Error(), resp.StatusCode, changeSetResponse)
 	}
+
 	return &changeSetResponse, nil
 }
 
