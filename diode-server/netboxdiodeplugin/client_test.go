@@ -574,11 +574,8 @@ func TestApplyChangeSet(t *testing.T) {
 			},
 			mockServerResponse: `{"change_set_id":"00000000-0000-0000-0000-000000000000","result":"error"}`,
 			mockStatusCode:     http.StatusBadRequest,
-			response: &netboxdiodeplugin.ChangeSetResponse{
-				ChangeSetID: "00000000-0000-0000-0000-000000000000",
-				Result:      "error",
-			},
-			shouldError: true,
+			response:           nil,
+			shouldError:        true,
 		},
 		{
 			name:   "unmarshal error",
