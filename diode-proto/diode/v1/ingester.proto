@@ -189,6 +189,87 @@ message Interface {
   repeated Tag tags = 14;
 }
 
+//A Cluster
+message Cluster {
+  string name = 1 [(validate.rules).string = {
+    min_len: 1
+    max_len: 100
+  }];
+  ClusterType type = 2;
+  ClusterGroup group = 3;
+  Site site = 4;
+  string status = 5 [(validate.rules).string = {
+    in: [
+      "offline",
+      "active",
+      "planned",
+      "staged",
+      "failed",
+      "decommissioning"
+    ]
+  }];
+  optional string description = 6 [(validate.rules).string = {max_len: 200}];
+  repeated Tag tags = 7;
+}
+
+//A Cluster Type
+message ClusterType {
+  string name = 1 [(validate.rules).string = {
+    min_len: 1
+    max_len: 100
+  }];
+  string slug = 2 [(validate.rules).string = {
+    min_len: 1
+    max_len: 100
+    pattern: "^[-a-zA-Z0-9_]+$"
+  }];
+  optional string description = 3 [(validate.rules).string = {max_len: 200}];
+  repeated Tag tags = 4;
+}
+
+//A Cluster Group
+message ClusterGroup {
+  string name = 1 [(validate.rules).string = {
+    min_len: 1
+    max_len: 100
+  }];
+  string slug = 2 [(validate.rules).string = {
+    min_len: 1
+    max_len: 100
+    pattern: "^[-a-zA-Z0-9_]+$"
+  }];
+  optional string description = 3 [(validate.rules).string = {max_len: 200}];
+  repeated Tag tags = 4;
+}
+
+//A Virtual Machine
+message VirtualMachine {
+  string name = 1 [(validate.rules).string = {max_len: 64}];
+  string status = 2 [(validate.rules).string = {
+    in: [
+      "offline",
+      "active",
+      "planned",
+      "staged",
+      "failed",
+      "decommissioning"
+    ]
+  }];
+  Site site = 3;
+  Cluster cluster = 4;
+  Role role = 5;
+  Device device = 6;
+  Platform platform = 7;
+  IPAddress primary_ip4 = 8;
+  IPAddress primary_ip6 = 9;
+  optional int32 vcpus = 10 [(validate.rules).int32 = {gte: 0}];
+  optional int32 memory = 11 [(validate.rules).int32 = {gte: 0}];
+  optional int32 disk = 12 [(validate.rules).int32 = {gte: 0}];
+  optional string description = 13 [(validate.rules).string = {max_len: 200}];
+  optional string comments = 14;
+  repeated Tag tags = 15;
+}
+
 // An IP address.
 message IPAddress {
   string address = 1 [(validate.rules).string.ip = true];
