@@ -62,6 +62,11 @@ func (g *GRPCClient) RetrieveIngestionDataSources(ctx context.Context, req *pb.R
 	return g.client.RetrieveIngestionDataSources(ctx, req, opt...)
 }
 
+// RetrieveIngestionLogs retrieves ingestion logs
+func (g *GRPCClient) RetrieveIngestionLogs(ctx context.Context, req *pb.RetrieveIngestionLogsRequest, opt ...grpc.CallOption) (*pb.RetrieveIngestionLogsResponse, error) {
+	return g.client.RetrieveIngestionLogs(ctx, req, opt...)
+}
+
 // NewClient creates a new reconciler client based on gRPC
 func NewClient() (Client, error) {
 	dialOpts := []grpc.DialOption{

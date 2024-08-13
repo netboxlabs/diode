@@ -36,8 +36,38 @@ message RetrieveIngestionDataSourcesResponse {
   repeated IngestionDataSource ingestion_data_sources = 1;
 }
 
+// An ingestion log
+message IngestionLog {
+  string id = 1; // Unique identifier for the log
+  string state = 2; // State of the log
+  string data_type = 3; // Data type of the log
+  string request_id = 4; // Request ID associated with the log
+  int64 ingestion_ts = 5; // Timestamp of the ingestion
+  string value = 6; // The stored value in the JSON key
+}
+
+// The request to retrieve ingestion logs
+message RetrieveIngestionLogsRequest {
+  int32 number_of_entities = 1; // Override the default page size
+  string state = 2; // Optional filter by state field
+  string data_type = 3; // Optional filter by data type field
+  string request_id = 4; // Optional filter by request ID
+  int64 ingestion_ts_start = 5; // Optional start of ingestion timestamp range
+  int64 ingestion_ts_end = 6; // Optional end of ingestion timestamp range
+  int32 page_size = 7; // Number of logs per page, default is 100
+  string page_token = 8; // Token to fetch the next page of results
+}
+
+// The response from the retrieve ingestion logs request
+message RetrieveIngestionLogsResponse {
+  repeated IngestionLog logs = 1; // List of ingestion logs
+  string next_page_token = 2; // Token for the next page of results, if any
+}
+
 // Reconciler service API
 service ReconcilerService {
   // Retrieves ingestion data sources
   rpc RetrieveIngestionDataSources(RetrieveIngestionDataSourcesRequest) returns (RetrieveIngestionDataSourcesResponse) {}
+  // Retrieves ingestion logs
+  rpc RetrieveIngestionLogs(RetrieveIngestionLogsRequest) returns (RetrieveIngestionLogsResponse);
 }

@@ -438,3 +438,372 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = RetrieveIngestionDataSourcesResponseValidationError{}
+
+// Validate checks the field values on IngestionLog with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *IngestionLog) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on IngestionLog with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in IngestionLogMultiError, or
+// nil if none found.
+func (m *IngestionLog) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *IngestionLog) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Id
+
+	// no validation rules for State
+
+	// no validation rules for DataType
+
+	// no validation rules for RequestId
+
+	// no validation rules for IngestionTs
+
+	// no validation rules for Value
+
+	if len(errors) > 0 {
+		return IngestionLogMultiError(errors)
+	}
+
+	return nil
+}
+
+// IngestionLogMultiError is an error wrapping multiple validation errors
+// returned by IngestionLog.ValidateAll() if the designated constraints aren't met.
+type IngestionLogMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m IngestionLogMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m IngestionLogMultiError) AllErrors() []error { return m }
+
+// IngestionLogValidationError is the validation error returned by
+// IngestionLog.Validate if the designated constraints aren't met.
+type IngestionLogValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e IngestionLogValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e IngestionLogValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e IngestionLogValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e IngestionLogValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e IngestionLogValidationError) ErrorName() string { return "IngestionLogValidationError" }
+
+// Error satisfies the builtin error interface
+func (e IngestionLogValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sIngestionLog.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = IngestionLogValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = IngestionLogValidationError{}
+
+// Validate checks the field values on RetrieveIngestionLogsRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *RetrieveIngestionLogsRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on RetrieveIngestionLogsRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// RetrieveIngestionLogsRequestMultiError, or nil if none found.
+func (m *RetrieveIngestionLogsRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *RetrieveIngestionLogsRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for NumberOfEntities
+
+	// no validation rules for State
+
+	// no validation rules for DataType
+
+	// no validation rules for RequestId
+
+	// no validation rules for IngestionTsStart
+
+	// no validation rules for IngestionTsEnd
+
+	// no validation rules for PageSize
+
+	// no validation rules for PageToken
+
+	if len(errors) > 0 {
+		return RetrieveIngestionLogsRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// RetrieveIngestionLogsRequestMultiError is an error wrapping multiple
+// validation errors returned by RetrieveIngestionLogsRequest.ValidateAll() if
+// the designated constraints aren't met.
+type RetrieveIngestionLogsRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m RetrieveIngestionLogsRequestMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m RetrieveIngestionLogsRequestMultiError) AllErrors() []error { return m }
+
+// RetrieveIngestionLogsRequestValidationError is the validation error returned
+// by RetrieveIngestionLogsRequest.Validate if the designated constraints
+// aren't met.
+type RetrieveIngestionLogsRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e RetrieveIngestionLogsRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e RetrieveIngestionLogsRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e RetrieveIngestionLogsRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e RetrieveIngestionLogsRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e RetrieveIngestionLogsRequestValidationError) ErrorName() string {
+	return "RetrieveIngestionLogsRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e RetrieveIngestionLogsRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sRetrieveIngestionLogsRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = RetrieveIngestionLogsRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = RetrieveIngestionLogsRequestValidationError{}
+
+// Validate checks the field values on RetrieveIngestionLogsResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *RetrieveIngestionLogsResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on RetrieveIngestionLogsResponse with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the result is a list of violation errors wrapped in
+// RetrieveIngestionLogsResponseMultiError, or nil if none found.
+func (m *RetrieveIngestionLogsResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *RetrieveIngestionLogsResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	for idx, item := range m.GetLogs() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, RetrieveIngestionLogsResponseValidationError{
+						field:  fmt.Sprintf("Logs[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, RetrieveIngestionLogsResponseValidationError{
+						field:  fmt.Sprintf("Logs[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return RetrieveIngestionLogsResponseValidationError{
+					field:  fmt.Sprintf("Logs[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	// no validation rules for NextPageToken
+
+	if len(errors) > 0 {
+		return RetrieveIngestionLogsResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// RetrieveIngestionLogsResponseMultiError is an error wrapping multiple
+// validation errors returned by RetrieveIngestionLogsResponse.ValidateAll()
+// if the designated constraints aren't met.
+type RetrieveIngestionLogsResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m RetrieveIngestionLogsResponseMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m RetrieveIngestionLogsResponseMultiError) AllErrors() []error { return m }
+
+// RetrieveIngestionLogsResponseValidationError is the validation error
+// returned by RetrieveIngestionLogsResponse.Validate if the designated
+// constraints aren't met.
+type RetrieveIngestionLogsResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e RetrieveIngestionLogsResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e RetrieveIngestionLogsResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e RetrieveIngestionLogsResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e RetrieveIngestionLogsResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e RetrieveIngestionLogsResponseValidationError) ErrorName() string {
+	return "RetrieveIngestionLogsResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e RetrieveIngestionLogsResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sRetrieveIngestionLogsResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = RetrieveIngestionLogsResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = RetrieveIngestionLogsResponseValidationError{}
