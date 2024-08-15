@@ -2041,6 +2041,14 @@ func NewDataWrapper(dataType string) (ComparableData, error) {
 		return &IpamIPAddressDataWrapper{}, nil
 	case IpamPrefixObjectType:
 		return &IpamPrefixDataWrapper{}, nil
+	case VirtualizationClusterObjectType:
+		return &VirtualizationClusterGroupDataWrapper{}, nil
+	case VirtualizationClusterGroupObjectType:
+		return &VirtualizationClusterTypeDataWrapper{}, nil
+	case VirtualizationClusterTypeObjectType:
+		return &VirtualizationClusterDataWrapper{}, nil
+	case VirtualizationVirtualMachineObjectType:
+		return &VirtualizationVirtualMachineDataWrapper{}, nil
 	default:
 		return nil, fmt.Errorf("unsupported data type %s", dataType)
 	}

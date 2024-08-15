@@ -451,6 +451,10 @@ message Entity {
     Interface interface = 7;
     IPAddress ip_address = 9;
     Prefix prefix = 10;
+    ClusterGroup cluster_group = 11;
+    ClusterType cluster_type = 12;
+    Cluster cluster = 13;
+    VirtualMachine virtual_machine = 14;
   }
 
   // The timestamp of the data discovery at source
