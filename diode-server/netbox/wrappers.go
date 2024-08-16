@@ -58,10 +58,12 @@ type BaseDataWrapper struct {
 	objectsToReconcile []ComparableData
 }
 
+// IsPlaceholder returns true if the data is a placeholder
 func (bw *BaseDataWrapper) IsPlaceholder() bool {
 	return bw.placeholder
 }
 
+// HasChanged returns true if the data has changed
 func (bw *BaseDataWrapper) HasChanged() bool {
 	return bw.hasChanged
 }
