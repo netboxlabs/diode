@@ -2,7 +2,6 @@ package netbox
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/gosimple/slug"
 	"github.com/mitchellh/hashstructure/v2"
@@ -461,9 +460,6 @@ func (vw *VirtualizationClusterDataWrapper) Patch(cmp ComparableData, intendedNe
 	if !ok && intended != nil {
 		return nil, errors.New("invalid data type")
 	}
-
-	actualDevice := extractFromObjectsMap(actualNestedObjectsMap, fmt.Sprintf("%p", dw.Interface.Device))
-	intendedDevice := extractFromObjectsMap(intendedNestedObjects, fmt.Sprintf("%p", dw.Interface.Device))
 
 	reconciliationRequired := true
 
