@@ -174,9 +174,11 @@ func TestRetrieveObjectState(t *testing.T) {
 				ObjectType:     netbox.DcimDeviceObjectType,
 				ObjectChangeID: 1,
 				Object: &netbox.DcimDeviceDataWrapper{
-					Device: &netbox.DcimDevice{
-						ID:   1,
-						Name: "test",
+					BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDevice]{
+						Field: &netbox.DcimDevice{
+							ID:   1,
+							Name: "test",
+						},
 					},
 				},
 			},
@@ -192,10 +194,12 @@ func TestRetrieveObjectState(t *testing.T) {
 				ObjectType:     netbox.DcimSiteObjectType,
 				ObjectChangeID: 1,
 				Object: &netbox.DcimSiteDataWrapper{
-					Site: &netbox.DcimSite{
-						ID:   1,
-						Name: "site 01",
-						Slug: "site-01",
+					BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimSite]{
+						Field: &netbox.DcimSite{
+							ID:   1,
+							Name: "site 01",
+							Slug: "site-01",
+						},
 					},
 				},
 			},
@@ -211,9 +215,11 @@ func TestRetrieveObjectState(t *testing.T) {
 				ObjectType:     netbox.DcimDeviceRoleObjectType,
 				ObjectChangeID: 1,
 				Object: &netbox.DcimDeviceRoleDataWrapper{
-					DeviceRole: &netbox.DcimDeviceRole{
-						ID:   1,
-						Name: "test",
+					BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceRole]{
+						Field: &netbox.DcimDeviceRole{
+							ID:   1,
+							Name: "test",
+						},
 					},
 				},
 			},
@@ -229,9 +235,11 @@ func TestRetrieveObjectState(t *testing.T) {
 				ObjectType:     netbox.DcimDeviceTypeObjectType,
 				ObjectChangeID: 1,
 				Object: &netbox.DcimDeviceTypeDataWrapper{
-					DeviceType: &netbox.DcimDeviceType{
-						ID:    1,
-						Model: "test",
+					BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceType]{
+						Field: &netbox.DcimDeviceType{
+							ID:    1,
+							Model: "test",
+						},
 					},
 				},
 			},
@@ -247,9 +255,11 @@ func TestRetrieveObjectState(t *testing.T) {
 				ObjectType:     netbox.DcimInterfaceObjectType,
 				ObjectChangeID: 1,
 				Object: &netbox.DcimInterfaceDataWrapper{
-					Interface: &netbox.DcimInterface{
-						ID:   1,
-						Name: "test",
+					BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimInterface]{
+						Field: &netbox.DcimInterface{
+							ID:   1,
+							Name: "test",
+						},
 					},
 				},
 			},
@@ -265,9 +275,11 @@ func TestRetrieveObjectState(t *testing.T) {
 				ObjectType:     netbox.DcimManufacturerObjectType,
 				ObjectChangeID: 1,
 				Object: &netbox.DcimManufacturerDataWrapper{
-					Manufacturer: &netbox.DcimManufacturer{
-						ID:   1,
-						Name: "test",
+					BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimManufacturer]{
+						Field: &netbox.DcimManufacturer{
+							ID:   1,
+							Name: "test",
+						},
 					},
 				},
 			},
@@ -283,9 +295,11 @@ func TestRetrieveObjectState(t *testing.T) {
 				ObjectType:     netbox.DcimPlatformObjectType,
 				ObjectChangeID: 1,
 				Object: &netbox.DcimPlatformDataWrapper{
-					Platform: &netbox.DcimPlatform{
-						ID:   1,
-						Name: "test",
+					BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimPlatform]{
+						Field: &netbox.DcimPlatform{
+							ID:   1,
+							Name: "test",
+						},
 					},
 				},
 			},
@@ -319,9 +333,11 @@ func TestRetrieveObjectState(t *testing.T) {
 				ObjectType:     netbox.IpamIPAddressObjectType,
 				ObjectChangeID: 1,
 				Object: &netbox.IpamIPAddressDataWrapper{
-					IPAddress: &netbox.IpamIPAddress{
-						ID:      1,
-						Address: "192.168.0.1/22",
+					BaseDataWrapper: netbox.BaseDataWrapper[netbox.IpamIPAddress]{
+						Field: &netbox.IpamIPAddress{
+							ID:      1,
+							Address: "192.168.0.1/22",
+						},
 					},
 				},
 			},
@@ -337,9 +353,11 @@ func TestRetrieveObjectState(t *testing.T) {
 				ObjectType:     netbox.IpamPrefixObjectType,
 				ObjectChangeID: 1,
 				Object: &netbox.IpamPrefixDataWrapper{
-					Prefix: &netbox.IpamPrefix{
-						ID:     1,
-						Prefix: "192.168.0.0/22",
+					BaseDataWrapper: netbox.BaseDataWrapper[netbox.IpamPrefix]{
+						Field: &netbox.IpamPrefix{
+							ID:     1,
+							Prefix: "192.168.0.0/22",
+						},
 					},
 				},
 			},
@@ -358,11 +376,13 @@ func TestRetrieveObjectState(t *testing.T) {
 				ObjectType:     netbox.DcimDeviceObjectType,
 				ObjectChangeID: 1,
 				Object: &netbox.DcimDeviceDataWrapper{
-					Device: &netbox.DcimDevice{
-						ID:   1,
-						Name: "dev1",
-						Site: &netbox.DcimSite{
-							ID: 2,
+					BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDevice]{
+						Field: &netbox.DcimDevice{
+							ID:   1,
+							Name: "dev1",
+							Site: &netbox.DcimSite{
+								ID: 2,
+							},
 						},
 					},
 				},
@@ -379,7 +399,9 @@ func TestRetrieveObjectState(t *testing.T) {
 				ObjectType:     netbox.DcimDeviceObjectType,
 				ObjectChangeID: 1,
 				Object: &netbox.DcimDeviceDataWrapper{
-					Device: &netbox.DcimDevice{},
+					BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDevice]{
+						Field: &netbox.DcimDevice{},
+					},
 				},
 			},
 			tlsSkipVerify: true,
