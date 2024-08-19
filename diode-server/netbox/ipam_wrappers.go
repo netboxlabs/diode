@@ -10,36 +10,28 @@ import (
 
 // IpamIPAddressDataWrapper represents the IPAM IP address data wrapper
 type IpamIPAddressDataWrapper struct {
-	BaseDataWrapper
-	IPAddress *IpamIPAddress
-}
-
-func (*IpamIPAddressDataWrapper) comparableData() {}
-
-// Data returns the IP address
-func (dw *IpamIPAddressDataWrapper) Data() any {
-	return dw.IPAddress
+	BaseDataWrapper[IpamIPAddress]
 }
 
 // IsValid returns true if the IPAddress is not nil
 func (dw *IpamIPAddressDataWrapper) IsValid() bool {
-	if dw.IPAddress != nil && !dw.hasParent && dw.IPAddress.Address == "" {
-		dw.IPAddress = nil
+	if dw.Field != nil && !dw.hasParent && dw.Field.Address == "" {
+		dw.Field = nil
 	}
 
-	if dw.IPAddress != nil {
-		if err := dw.IPAddress.Validate(); err != nil {
+	if dw.Field != nil {
+		if err := dw.Field.Validate(); err != nil {
 			return false
 		}
 	}
 
-	return dw.IPAddress != nil
+	return dw.Field != nil
 }
 
 // Normalise normalises the data
 func (dw *IpamIPAddressDataWrapper) Normalise() {
-	if dw.IsValid() && dw.IPAddress.Tags != nil && len(dw.IPAddress.Tags) == 0 {
-		dw.IPAddress.Tags = nil
+	if dw.IsValid() && dw.Field.Tags != nil && len(dw.Field.Tags) == 0 {
+		dw.Field.Tags = nil
 	}
 	dw.intended = true
 }
@@ -50,25 +42,25 @@ func (dw *IpamIPAddressDataWrapper) NestedObjects() ([]ComparableData, error) {
 		return dw.nestedObjects, nil
 	}
 
-	if dw.IPAddress != nil && dw.hasParent && dw.IPAddress.Address == "" {
-		dw.IPAddress = nil
+	if dw.Field != nil && dw.hasParent && dw.Field.Address == "" {
+		dw.Field = nil
 	}
 
 	objects := make([]ComparableData, 0)
 
-	if dw.IPAddress == nil && dw.intended {
+	if dw.Field == nil && dw.intended {
 		return objects, nil
 	}
 
-	if dw.IPAddress == nil && dw.hasParent {
+	if dw.Field == nil && dw.hasParent {
 		dw.placeholder = true
 	}
 
 	var assignedObject ComparableData
-	if dw.IPAddress.AssignedObject != nil {
-		switch dw.IPAddress.AssignedObject.(type) {
+	if dw.Field.AssignedObject != nil {
+		switch dw.Field.AssignedObject.(type) {
 		case *IPAddressInterface:
-			assignedObject = &DcimInterfaceDataWrapper{Interface: dw.IPAddress.AssignedObject.(*IPAddressInterface).Interface, BaseDataWrapper: BaseDataWrapper{placeholder: dw.placeholder, hasParent: true, intended: dw.intended}}
+			assignedObject = &DcimInterfaceDataWrapper{BaseDataWrapper: BaseDataWrapper[DcimInterface]{Field: dw.Field.AssignedObject.(*IPAddressInterface).Interface, placeholder: dw.placeholder, hasParent: true, intended: dw.intended}}
 		}
 	}
 
@@ -80,14 +72,14 @@ func (dw *IpamIPAddressDataWrapper) NestedObjects() ([]ComparableData, error) {
 
 		objects = append(objects, do...)
 
-		switch dw.IPAddress.AssignedObject.(type) {
+		switch dw.Field.AssignedObject.(type) {
 		case *IPAddressInterface:
-			dw.IPAddress.AssignedObject.(*IPAddressInterface).Interface = assignedObject.Data().(*DcimInterface)
+			dw.Field.AssignedObject.(*IPAddressInterface).Interface = assignedObject.Data().(*DcimInterface)
 		}
 	}
 
-	if dw.IPAddress.Tags != nil {
-		for _, t := range dw.IPAddress.Tags {
+	if dw.Field.Tags != nil {
+		for _, t := range dw.Field.Tags {
 			if t.Slug == "" {
 				t.Slug = slug.Make(t.Name)
 			}
@@ -110,11 +102,11 @@ func (dw *IpamIPAddressDataWrapper) DataType() string {
 // ObjectStateQueryParams returns the query parameters needed to retrieve its object state
 func (dw *IpamIPAddressDataWrapper) ObjectStateQueryParams() map[string]string {
 	params := map[string]string{
-		"q": dw.IPAddress.Address,
+		"q": dw.Field.Address,
 	}
-	switch dw.IPAddress.AssignedObject.(type) {
+	switch dw.Field.AssignedObject.(type) {
 	case *IPAddressInterface:
-		ao := dw.IPAddress.AssignedObject.(*IPAddressInterface).Interface
+		ao := dw.Field.AssignedObject.(*IPAddressInterface).Interface
 		if ao != nil {
 			params["interface__name"] = ao.Name
 			if ao.Device != nil {
@@ -130,15 +122,15 @@ func (dw *IpamIPAddressDataWrapper) ObjectStateQueryParams() map[string]string {
 
 // ID returns the ID of the data
 func (dw *IpamIPAddressDataWrapper) ID() int {
-	return dw.IPAddress.ID
+	return dw.Field.ID
 }
 
 func (dw *IpamIPAddressDataWrapper) hash() string {
 	var interfaceName, deviceName, siteName string
-	if dw.IPAddress.AssignedObject != nil {
-		switch dw.IPAddress.AssignedObject.(type) {
+	if dw.Field.AssignedObject != nil {
+		switch dw.Field.AssignedObject.(type) {
 		case *IPAddressInterface:
-			ao := dw.IPAddress.AssignedObject.(*IPAddressInterface).Interface
+			ao := dw.Field.AssignedObject.(*IPAddressInterface).Interface
 			if ao != nil {
 				interfaceName = ao.Name
 				if ao.Device != nil {
@@ -150,7 +142,7 @@ func (dw *IpamIPAddressDataWrapper) hash() string {
 			}
 		}
 	}
-	return slug.Make(fmt.Sprintf("%s-%s-%s-%s", dw.IPAddress.Address, interfaceName, deviceName, siteName))
+	return slug.Make(fmt.Sprintf("%s-%s-%s-%s", dw.Field.Address, interfaceName, deviceName, siteName))
 }
 
 // Patch creates patches between the actual, intended and current data
@@ -168,10 +160,10 @@ func (dw *IpamIPAddressDataWrapper) Patch(cmp ComparableData, intendedNestedObje
 	var actualAssignedObject ComparableData
 	var intendedAssignedObject ComparableData
 
-	if dw.IPAddress.AssignedObject != nil {
-		switch dw.IPAddress.AssignedObject.(type) {
+	if dw.Field.AssignedObject != nil {
+		switch dw.Field.AssignedObject.(type) {
 		case *IPAddressInterface:
-			assignedObject := &DcimInterfaceDataWrapper{Interface: dw.IPAddress.AssignedObject.(*IPAddressInterface).Interface, BaseDataWrapper: BaseDataWrapper{placeholder: dw.placeholder, hasParent: true, intended: dw.intended}}
+			assignedObject := &DcimInterfaceDataWrapper{BaseDataWrapper: BaseDataWrapper[DcimInterface]{Field: dw.Field.AssignedObject.(*IPAddressInterface).Interface, placeholder: dw.placeholder, hasParent: true, intended: dw.intended}}
 			actualAssignedObject = extractFromObjectsMap(actualNestedObjectsMap, fmt.Sprintf("%p", assignedObject.Data()))
 			intendedAssignedObject = extractFromObjectsMap(intendedNestedObjects, fmt.Sprintf("%p", assignedObject.Data()))
 		}
@@ -189,8 +181,8 @@ func (dw *IpamIPAddressDataWrapper) Patch(cmp ComparableData, intendedNestedObje
 			currentNestedObjectsMap[fmt.Sprintf("%p", obj.Data())] = obj
 		}
 
-		dw.IPAddress.ID = intended.IPAddress.ID
-		dw.IPAddress.Address = intended.IPAddress.Address
+		dw.Field.ID = intended.Field.ID
+		dw.Field.Address = intended.Field.Address
 
 		if actualAssignedObject != nil {
 			assignedObjectsToReconcile, aoErr := actualAssignedObject.Patch(intendedAssignedObject, intendedNestedObjects)
@@ -198,7 +190,7 @@ func (dw *IpamIPAddressDataWrapper) Patch(cmp ComparableData, intendedNestedObje
 				return nil, aoErr
 			}
 
-			switch dw.IPAddress.AssignedObject.(type) {
+			switch dw.Field.AssignedObject.(type) {
 			case *IPAddressInterface:
 				assignedInterface, err := copyData(actualAssignedObject.Data().(*DcimInterface))
 				if err != nil {
@@ -216,12 +208,12 @@ func (dw *IpamIPAddressDataWrapper) Patch(cmp ComparableData, intendedNestedObje
 
 					intendedAssignedInterfaceID := intendedAssignedObject.ID()
 					intendedAssignedInterfaceDeviceID := intendedAssignedObject.Data().(*DcimInterface).Device.ID
-					if intended.IPAddress.AssignedObject != nil {
-						intendedAssignedInterfaceID = intended.IPAddress.AssignedObject.(*IPAddressInterface).Interface.ID
-						intendedAssignedInterfaceDeviceID = intended.IPAddress.AssignedObject.(*IPAddressInterface).Interface.Device.ID
+					if intended.Field.AssignedObject != nil {
+						intendedAssignedInterfaceID = intended.Field.AssignedObject.(*IPAddressInterface).Interface.ID
+						intendedAssignedInterfaceDeviceID = intended.Field.AssignedObject.(*IPAddressInterface).Interface.Device.ID
 					}
 
-					intended.IPAddress.AssignedObject = &IPAddressInterface{
+					intended.Field.AssignedObject = &IPAddressInterface{
 						Interface: &DcimInterface{
 							ID: intendedAssignedInterfaceID,
 							Device: &DcimDevice{
@@ -231,43 +223,43 @@ func (dw *IpamIPAddressDataWrapper) Patch(cmp ComparableData, intendedNestedObje
 					}
 				}
 
-				dw.IPAddress.AssignedObject.(*IPAddressInterface).Interface = assignedInterface
+				dw.Field.AssignedObject.(*IPAddressInterface).Interface = assignedInterface
 			}
 
 			dw.objectsToReconcile = append(dw.objectsToReconcile, assignedObjectsToReconcile...)
 		}
 
-		if dw.IPAddress.AssignedObject == nil {
-			dw.IPAddress.AssignedObject = intended.IPAddress.AssignedObject
+		if dw.Field.AssignedObject == nil {
+			dw.Field.AssignedObject = intended.Field.AssignedObject
 		}
 
-		if dw.IPAddress.Status == nil {
-			dw.IPAddress.Status = intended.IPAddress.Status
+		if dw.Field.Status == nil {
+			dw.Field.Status = intended.Field.Status
 		}
 
-		if dw.IPAddress.Role == nil {
-			dw.IPAddress.Role = intended.IPAddress.Role
+		if dw.Field.Role == nil {
+			dw.Field.Role = intended.Field.Role
 		}
 
-		if dw.IPAddress.DNSName == nil {
-			dw.IPAddress.DNSName = intended.IPAddress.DNSName
+		if dw.Field.DNSName == nil {
+			dw.Field.DNSName = intended.Field.DNSName
 		}
 
-		if dw.IPAddress.Description == nil {
-			dw.IPAddress.Description = intended.IPAddress.Description
+		if dw.Field.Description == nil {
+			dw.Field.Description = intended.Field.Description
 		}
 
-		if dw.IPAddress.Comments == nil {
-			dw.IPAddress.Comments = intended.IPAddress.Comments
+		if dw.Field.Comments == nil {
+			dw.Field.Comments = intended.Field.Comments
 		}
 
-		tagsToMerge := mergeTags(dw.IPAddress.Tags, intended.IPAddress.Tags, intendedNestedObjects)
+		tagsToMerge := mergeTags(dw.Field.Tags, intended.Field.Tags, intendedNestedObjects)
 
 		if len(tagsToMerge) > 0 {
-			dw.IPAddress.Tags = tagsToMerge
+			dw.Field.Tags = tagsToMerge
 		}
 
-		for _, t := range dw.IPAddress.Tags {
+		for _, t := range dw.Field.Tags {
 			if t.ID == 0 {
 				dw.objectsToReconcile = append(dw.objectsToReconcile, &TagDataWrapper{Tag: t, hasParent: true})
 			}
@@ -287,7 +279,7 @@ func (dw *IpamIPAddressDataWrapper) Patch(cmp ComparableData, intendedNestedObje
 				return nil, aoErr
 			}
 
-			switch dw.IPAddress.AssignedObject.(type) {
+			switch dw.Field.AssignedObject.(type) {
 			case *IPAddressInterface:
 				assignedInterface, err := copyData(actualAssignedObject.Data().(*DcimInterface))
 				if err != nil {
@@ -304,19 +296,19 @@ func (dw *IpamIPAddressDataWrapper) Patch(cmp ComparableData, intendedNestedObje
 					}
 				}
 
-				dw.IPAddress.AssignedObject.(*IPAddressInterface).Interface = assignedInterface
+				dw.Field.AssignedObject.(*IPAddressInterface).Interface = assignedInterface
 			}
 
 			objectsToReconcile = append(objectsToReconcile, assignedObjectsToReconcile...)
 		}
 
-		tagsToMerge := mergeTags(dw.IPAddress.Tags, nil, intendedNestedObjects)
+		tagsToMerge := mergeTags(dw.Field.Tags, nil, intendedNestedObjects)
 
 		if len(tagsToMerge) > 0 {
-			dw.IPAddress.Tags = tagsToMerge
+			dw.Field.Tags = tagsToMerge
 		}
 
-		for _, t := range dw.IPAddress.Tags {
+		for _, t := range dw.Field.Tags {
 			if t.ID == 0 {
 				dw.objectsToReconcile = append(dw.objectsToReconcile, &TagDataWrapper{Tag: t, hasParent: true})
 			}
@@ -337,43 +329,35 @@ func (dw *IpamIPAddressDataWrapper) Patch(cmp ComparableData, intendedNestedObje
 
 // SetDefaults sets the default values for the IP address
 func (dw *IpamIPAddressDataWrapper) SetDefaults() {
-	if dw.IPAddress.Status == nil {
-		dw.IPAddress.Status = &DefaultIPAddressStatus
+	if dw.Field.Status == nil {
+		dw.Field.Status = &DefaultIPAddressStatus
 	}
 }
 
 // IpamPrefixDataWrapper represents the IPAM Prefix data wrapper
 type IpamPrefixDataWrapper struct {
-	BaseDataWrapper
-	Prefix *IpamPrefix
-}
-
-func (*IpamPrefixDataWrapper) comparableData() {}
-
-// Data returns the Prefix
-func (dw *IpamPrefixDataWrapper) Data() any {
-	return dw.Prefix
+	BaseDataWrapper[IpamPrefix]
 }
 
 // IsValid returns true if the IpamPrefix is not nil
 func (dw *IpamPrefixDataWrapper) IsValid() bool {
-	if dw.Prefix != nil && !dw.hasParent && dw.Prefix.Prefix == "" {
-		dw.Prefix = nil
+	if dw.Field != nil && !dw.hasParent && dw.Field.Prefix == "" {
+		dw.Field = nil
 	}
 
-	if dw.Prefix != nil {
-		if err := dw.Prefix.Validate(); err != nil {
+	if dw.Field != nil {
+		if err := dw.Field.Validate(); err != nil {
 			return false
 		}
 	}
 
-	return dw.Prefix != nil
+	return dw.Field != nil
 }
 
 // Normalise normalises the data
 func (dw *IpamPrefixDataWrapper) Normalise() {
-	if dw.IsValid() && dw.Prefix.Tags != nil && len(dw.Prefix.Tags) == 0 {
-		dw.Prefix.Tags = nil
+	if dw.IsValid() && dw.Field.Tags != nil && len(dw.Field.Tags) == 0 {
+		dw.Field.Tags = nil
 	}
 	dw.intended = true
 }
@@ -384,21 +368,21 @@ func (dw *IpamPrefixDataWrapper) NestedObjects() ([]ComparableData, error) {
 		return dw.nestedObjects, nil
 	}
 
-	if dw.Prefix != nil && dw.hasParent && dw.Prefix.Prefix == "" {
-		dw.Prefix = nil
+	if dw.Field != nil && dw.hasParent && dw.Field.Prefix == "" {
+		dw.Field = nil
 	}
 
 	objects := make([]ComparableData, 0)
 
-	if dw.Prefix == nil && dw.intended {
+	if dw.Field == nil && dw.intended {
 		return objects, nil
 	}
 
-	if dw.Prefix == nil && dw.hasParent {
+	if dw.Field == nil && dw.hasParent {
 		dw.placeholder = true
 	}
 
-	site := DcimSiteDataWrapper{Site: dw.Prefix.Site, BaseDataWrapper: BaseDataWrapper{placeholder: dw.placeholder, hasParent: true, intended: dw.intended}}
+	site := DcimSiteDataWrapper{BaseDataWrapper: BaseDataWrapper[DcimSite]{Field: dw.Field.Site, placeholder: dw.placeholder, hasParent: true, intended: dw.intended}}
 
 	so, err := site.NestedObjects()
 	if err != nil {
@@ -407,10 +391,10 @@ func (dw *IpamPrefixDataWrapper) NestedObjects() ([]ComparableData, error) {
 
 	objects = append(objects, so...)
 
-	dw.Prefix.Site = site.Site
+	dw.Field.Site = site.Field
 
-	if dw.Prefix.Tags != nil {
-		for _, t := range dw.Prefix.Tags {
+	if dw.Field.Tags != nil {
+		for _, t := range dw.Field.Tags {
 			if t.Slug == "" {
 				t.Slug = slug.Make(t.Name)
 			}
@@ -433,13 +417,13 @@ func (dw *IpamPrefixDataWrapper) DataType() string {
 // ObjectStateQueryParams returns the query parameters needed to retrieve its object state
 func (dw *IpamPrefixDataWrapper) ObjectStateQueryParams() map[string]string {
 	return map[string]string{
-		"q": dw.Prefix.Prefix,
+		"q": dw.Field.Prefix,
 	}
 }
 
 // ID returns the ID of the data
 func (dw *IpamPrefixDataWrapper) ID() int {
-	return dw.Prefix.ID
+	return dw.Field.ID
 }
 
 // Patch creates patches between the actual, intended and current data
@@ -454,8 +438,8 @@ func (dw *IpamPrefixDataWrapper) Patch(cmp ComparableData, intendedNestedObjects
 		actualNestedObjectsMap[fmt.Sprintf("%p", obj.Data())] = obj
 	}
 
-	actualSite := extractFromObjectsMap(actualNestedObjectsMap, fmt.Sprintf("%p", dw.Prefix.Site))
-	intendedSite := extractFromObjectsMap(intendedNestedObjects, fmt.Sprintf("%p", dw.Prefix.Site))
+	actualSite := extractFromObjectsMap(actualNestedObjectsMap, fmt.Sprintf("%p", dw.Field.Site))
+	intendedSite := extractFromObjectsMap(intendedNestedObjects, fmt.Sprintf("%p", dw.Field.Site))
 
 	reconciliationRequired := true
 
@@ -469,11 +453,11 @@ func (dw *IpamPrefixDataWrapper) Patch(cmp ComparableData, intendedNestedObjects
 			currentNestedObjectsMap[fmt.Sprintf("%p", obj.Data())] = obj
 		}
 
-		dw.Prefix.ID = intended.Prefix.ID
-		dw.Prefix.Prefix = intended.Prefix.Prefix
+		dw.Field.ID = intended.Field.ID
+		dw.Field.Prefix = intended.Field.Prefix
 
-		if actualSite.IsPlaceholder() && intended.Prefix.Site != nil {
-			intendedSite = extractFromObjectsMap(currentNestedObjectsMap, fmt.Sprintf("%p", intended.Prefix.Site))
+		if actualSite.IsPlaceholder() && intended.Field.Site != nil {
+			intendedSite = extractFromObjectsMap(currentNestedObjectsMap, fmt.Sprintf("%p", intended.Field.Site))
 		}
 
 		siteObjectsToReconcile, siteErr := actualSite.Patch(intendedSite, intendedNestedObjects)
@@ -493,38 +477,38 @@ func (dw *IpamPrefixDataWrapper) Patch(cmp ComparableData, intendedNestedObjects
 			}
 
 			intendedSiteID := intendedSite.ID()
-			if intended.Prefix.Site != nil {
-				intendedSiteID = intended.Prefix.Site.ID
+			if intended.Field.Site != nil {
+				intendedSiteID = intended.Field.Site.ID
 			}
 
-			intended.Prefix.Site = &DcimSite{
+			intended.Field.Site = &DcimSite{
 				ID: intendedSiteID,
 			}
 		}
 
-		dw.Prefix.Site = site
+		dw.Field.Site = site
 
 		dw.objectsToReconcile = append(dw.objectsToReconcile, siteObjectsToReconcile...)
 
-		if dw.Prefix.Status == nil {
-			dw.Prefix.Status = intended.Prefix.Status
+		if dw.Field.Status == nil {
+			dw.Field.Status = intended.Field.Status
 		}
 
-		if dw.Prefix.Description == nil {
-			dw.Prefix.Description = intended.Prefix.Description
+		if dw.Field.Description == nil {
+			dw.Field.Description = intended.Field.Description
 		}
 
-		if dw.Prefix.Comments == nil {
-			dw.Prefix.Comments = intended.Prefix.Comments
+		if dw.Field.Comments == nil {
+			dw.Field.Comments = intended.Field.Comments
 		}
 
-		tagsToMerge := mergeTags(dw.Prefix.Tags, intended.Prefix.Tags, intendedNestedObjects)
+		tagsToMerge := mergeTags(dw.Field.Tags, intended.Field.Tags, intendedNestedObjects)
 
 		if len(tagsToMerge) > 0 {
-			dw.Prefix.Tags = tagsToMerge
+			dw.Field.Tags = tagsToMerge
 		}
 
-		for _, t := range dw.Prefix.Tags {
+		for _, t := range dw.Field.Tags {
 			if t.ID == 0 {
 				dw.objectsToReconcile = append(dw.objectsToReconcile, &TagDataWrapper{Tag: t, hasParent: true})
 			}
@@ -553,17 +537,17 @@ func (dw *IpamPrefixDataWrapper) Patch(cmp ComparableData, intendedNestedObjects
 				ID: actualSite.ID(),
 			}
 		}
-		dw.Prefix.Site = site
+		dw.Field.Site = site
 
 		dw.objectsToReconcile = append(dw.objectsToReconcile, siteObjectsToReconcile...)
 
-		tagsToMerge := mergeTags(dw.Prefix.Tags, nil, intendedNestedObjects)
+		tagsToMerge := mergeTags(dw.Field.Tags, nil, intendedNestedObjects)
 
 		if len(tagsToMerge) > 0 {
-			dw.Prefix.Tags = tagsToMerge
+			dw.Field.Tags = tagsToMerge
 		}
 
-		for _, t := range dw.Prefix.Tags {
+		for _, t := range dw.Field.Tags {
 			if t.ID == 0 {
 				dw.objectsToReconcile = append(dw.objectsToReconcile, &TagDataWrapper{Tag: t, hasParent: true})
 			}
@@ -580,7 +564,7 @@ func (dw *IpamPrefixDataWrapper) Patch(cmp ComparableData, intendedNestedObjects
 
 // SetDefaults sets the default values for the IPAM Prefix
 func (dw *IpamPrefixDataWrapper) SetDefaults() {
-	if dw.Prefix.Status == nil {
-		dw.Prefix.Status = &DefaultPrefixStatus
+	if dw.Field.Status == nil {
+		dw.Field.Status = &DefaultPrefixStatus
 	}
 }

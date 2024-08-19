@@ -48,7 +48,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "Site A"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
-						Site: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimSite]{Field: nil},
 					},
 				},
 			},
@@ -90,11 +90,13 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "Site A"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
-						Site: &netbox.DcimSite{
-							ID:     1,
-							Name:   "Site A",
-							Slug:   "site-a",
-							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimSite]{
+							Field: &netbox.DcimSite{
+								ID:     1,
+								Name:   "Site A",
+								Slug:   "site-a",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
 						},
 					},
 				},
@@ -132,21 +134,23 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "Site A"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
-						Site: &netbox.DcimSite{
-							ID:     1,
-							Name:   "Site A",
-							Slug:   "site-a",
-							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-							Tags: []*netbox.Tag{
-								{
-									ID:   1,
-									Name: "tag 1",
-									Slug: "tag-1",
-								},
-								{
-									ID:   3,
-									Name: "tag 3",
-									Slug: "tag-3",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimSite]{
+							Field: &netbox.DcimSite{
+								ID:     1,
+								Name:   "Site A",
+								Slug:   "site-a",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+								Tags: []*netbox.Tag{
+									{
+										ID:   1,
+										Name: "tag 1",
+										Slug: "tag-1",
+									},
+									{
+										ID:   3,
+										Name: "tag 3",
+										Slug: "tag-3",
+									},
 								},
 							},
 						},
@@ -258,7 +262,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "WAN Router"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
-						DeviceRole: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceRole]{Field: nil},
 					},
 				},
 			},
@@ -300,11 +304,13 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "WAN Router"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
-						DeviceRole: &netbox.DcimDeviceRole{
-							ID:    1,
-							Name:  "WAN Router",
-							Slug:  "wan-router",
-							Color: strPtr("000000"),
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceRole]{
+							Field: &netbox.DcimDeviceRole{
+								ID:    1,
+								Name:  "WAN Router",
+								Slug:  "wan-router",
+								Color: strPtr("000000"),
+							},
 						},
 					},
 				},
@@ -335,12 +341,14 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "WAN Router"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
-						DeviceRole: &netbox.DcimDeviceRole{
-							ID:          1,
-							Name:        "WAN Router",
-							Slug:        "wan-router",
-							Color:       strPtr("111222"),
-							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean sed molestie felis."),
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceRole]{
+							Field: &netbox.DcimDeviceRole{
+								ID:          1,
+								Name:        "WAN Router",
+								Slug:        "wan-router",
+								Color:       strPtr("111222"),
+								Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean sed molestie felis."),
+							},
 						},
 					},
 				},
@@ -387,12 +395,14 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "WAN Router"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
-						DeviceRole: &netbox.DcimDeviceRole{
-							ID:          1,
-							Name:        "WAN Router",
-							Slug:        "wan-router",
-							Color:       strPtr("111222"),
-							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceRole]{
+							Field: &netbox.DcimDeviceRole{
+								ID:          1,
+								Name:        "WAN Router",
+								Slug:        "wan-router",
+								Color:       strPtr("111222"),
+								Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+							},
 						},
 					},
 				},
@@ -439,7 +449,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "Cisco"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
-						Manufacturer: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimManufacturer]{Field: nil},
 					},
 				},
 			},
@@ -480,10 +490,12 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "Cisco"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
-						Manufacturer: &netbox.DcimManufacturer{
-							ID:   1,
-							Name: "Cisco",
-							Slug: "cisco",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimManufacturer]{
+							Field: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "Cisco",
+								Slug: "cisco",
+							},
 						},
 					},
 				},
@@ -530,7 +542,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
-						Manufacturer: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimManufacturer]{Field: nil},
 					},
 				},
 				{
@@ -539,7 +551,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "ISR4321", "manufacturer__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
-						DeviceType: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceType]{Field: nil},
 					},
 				},
 			},
@@ -595,10 +607,12 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
-						Manufacturer: &netbox.DcimManufacturer{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimManufacturer]{
+							Field: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+							},
 						},
 					},
 				},
@@ -608,16 +622,18 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "ISR4321", "manufacturer__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
-						DeviceType: &netbox.DcimDeviceType{
-							ID:    1,
-							Model: "ISR4321",
-							Slug:  "isr4321",
-							Manufacturer: &netbox.DcimManufacturer{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceType]{
+							Field: &netbox.DcimDeviceType{
+								ID:    1,
+								Model: "ISR4321",
+								Slug:  "isr4321",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
+								Tags: []*netbox.Tag{},
 							},
-							Tags: []*netbox.Tag{},
 						},
 					},
 				},
@@ -669,7 +685,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "Cisco"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
-						Manufacturer: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimManufacturer]{Field: nil},
 					},
 				},
 				{
@@ -678,7 +694,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "ISR4321", "manufacturer__name": "Cisco"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
-						DeviceType: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceType]{Field: nil},
 					},
 				},
 			},
@@ -757,20 +773,22 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "Cisco"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
-						Manufacturer: &netbox.DcimManufacturer{
-							ID:   2,
-							Name: "Cisco",
-							Slug: "cisco",
-							Tags: []*netbox.Tag{
-								{
-									ID:   1,
-									Name: "tag 1",
-									Slug: "tag-1",
-								},
-								{
-									ID:   5,
-									Name: "tag 5",
-									Slug: "tag-5",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimManufacturer]{
+							Field: &netbox.DcimManufacturer{
+								ID:   2,
+								Name: "Cisco",
+								Slug: "cisco",
+								Tags: []*netbox.Tag{
+									{
+										ID:   1,
+										Name: "tag 1",
+										Slug: "tag-1",
+									},
+									{
+										ID:   5,
+										Name: "tag 5",
+										Slug: "tag-5",
+									},
 								},
 							},
 						},
@@ -826,29 +844,31 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "ISR4321", "manufacturer__name": "Cisco"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
-						DeviceType: &netbox.DcimDeviceType{
-							ID:    1,
-							Model: "ISR4321",
-							Slug:  "isr4321",
-							Manufacturer: &netbox.DcimManufacturer{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
-								Tags: []*netbox.Tag{
-									{
-										ID:   4,
-										Name: "tag 4",
-										Slug: "tag-4",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceType]{
+							Field: &netbox.DcimDeviceType{
+								ID:    1,
+								Model: "ISR4321",
+								Slug:  "isr4321",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+									Tags: []*netbox.Tag{
+										{
+											ID:   4,
+											Name: "tag 4",
+											Slug: "tag-4",
+										},
 									},
 								},
-							},
-							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
-							PartNumber:  strPtr("xyz123"),
-							Tags: []*netbox.Tag{
-								{
-									ID:   2,
-									Name: "tag 2",
-									Slug: "tag-2",
+								Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+								PartNumber:  strPtr("xyz123"),
+								Tags: []*netbox.Tag{
+									{
+										ID:   2,
+										Name: "tag 2",
+										Slug: "tag-2",
+									},
 								},
 							},
 						},
@@ -973,15 +993,17 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
-						Manufacturer: &netbox.DcimManufacturer{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
-							Tags: []*netbox.Tag{
-								{
-									ID:   4,
-									Name: "tag 4",
-									Slug: "tag-4",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimManufacturer]{
+							Field: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+								Tags: []*netbox.Tag{
+									{
+										ID:   4,
+										Name: "tag 4",
+										Slug: "tag-4",
+									},
 								},
 							},
 						},
@@ -1002,29 +1024,31 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "ISR4321", "manufacturer__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
-						DeviceType: &netbox.DcimDeviceType{
-							ID:    1,
-							Model: "ISR4321",
-							Slug:  "isr4321",
-							Manufacturer: &netbox.DcimManufacturer{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
-								Tags: []*netbox.Tag{
-									{
-										ID:   4,
-										Name: "tag 4",
-										Slug: "tag-4",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceType]{
+							Field: &netbox.DcimDeviceType{
+								ID:    1,
+								Model: "ISR4321",
+								Slug:  "isr4321",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+									Tags: []*netbox.Tag{
+										{
+											ID:   4,
+											Name: "tag 4",
+											Slug: "tag-4",
+										},
 									},
 								},
-							},
-							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
-							PartNumber:  strPtr("xyz123"),
-							Tags: []*netbox.Tag{
-								{
-									ID:   2,
-									Name: "tag 2",
-									Slug: "tag-2",
+								Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+								PartNumber:  strPtr("xyz123"),
+								Tags: []*netbox.Tag{
+									{
+										ID:   2,
+										Name: "tag 2",
+										Slug: "tag-2",
+									},
 								},
 							},
 						},
@@ -1106,15 +1130,17 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "Cisco"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
-						Manufacturer: &netbox.DcimManufacturer{
-							ID:   1,
-							Name: "Cisco",
-							Slug: "cisco",
-							Tags: []*netbox.Tag{
-								{
-									ID:   4,
-									Name: "tag 4",
-									Slug: "tag-4",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimManufacturer]{
+							Field: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "Cisco",
+								Slug: "cisco",
+								Tags: []*netbox.Tag{
+									{
+										ID:   4,
+										Name: "tag 4",
+										Slug: "tag-4",
+									},
 								},
 							},
 						},
@@ -1135,29 +1161,31 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "ISR4321", "manufacturer__name": "Cisco"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
-						DeviceType: &netbox.DcimDeviceType{
-							ID:    1,
-							Model: "ISR4321",
-							Slug:  "isr4321",
-							Manufacturer: &netbox.DcimManufacturer{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
-								Tags: []*netbox.Tag{
-									{
-										ID:   4,
-										Name: "tag 4",
-										Slug: "tag-4",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceType]{
+							Field: &netbox.DcimDeviceType{
+								ID:    1,
+								Model: "ISR4321",
+								Slug:  "isr4321",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+									Tags: []*netbox.Tag{
+										{
+											ID:   4,
+											Name: "tag 4",
+											Slug: "tag-4",
+										},
 									},
 								},
-							},
-							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
-							PartNumber:  strPtr("xyz123"),
-							Tags: []*netbox.Tag{
-								{
-									ID:   2,
-									Name: "tag 2",
-									Slug: "tag-2",
+								Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+								PartNumber:  strPtr("xyz123"),
+								Tags: []*netbox.Tag{
+									{
+										ID:   2,
+										Name: "tag 2",
+										Slug: "tag-2",
+									},
 								},
 							},
 						},
@@ -1229,7 +1257,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
-						Site: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimSite]{Field: nil},
 					},
 				},
 				{
@@ -1238,7 +1266,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
-						Manufacturer: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimManufacturer]{Field: nil},
 					},
 				},
 				{
@@ -1247,7 +1275,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined", "manufacturer__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
-						DeviceType: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceType]{Field: nil},
 					},
 				},
 				{
@@ -1256,7 +1284,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
-						DeviceRole: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceRole]{Field: nil},
 					},
 				},
 				{
@@ -1265,7 +1293,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "router01", "site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
-						Device: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDevice]{Field: nil},
 					},
 				},
 			},
@@ -1374,11 +1402,13 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
-						Site: &netbox.DcimSite{
-							ID:     1,
-							Name:   "undefined",
-							Slug:   "undefined",
-							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimSite]{
+							Field: &netbox.DcimSite{
+								ID:     1,
+								Name:   "undefined",
+								Slug:   "undefined",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
 						},
 					},
 				},
@@ -1388,10 +1418,12 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
-						Manufacturer: &netbox.DcimManufacturer{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimManufacturer]{
+							Field: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+							},
 						},
 					},
 				},
@@ -1401,14 +1433,16 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined", "manufacturer__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
-						DeviceType: &netbox.DcimDeviceType{
-							ID:    1,
-							Model: "undefined",
-							Slug:  "undefined",
-							Manufacturer: &netbox.DcimManufacturer{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceType]{
+							Field: &netbox.DcimDeviceType{
+								ID:    1,
+								Model: "undefined",
+								Slug:  "undefined",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
 							},
 						},
 					},
@@ -1419,11 +1453,13 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
-						DeviceRole: &netbox.DcimDeviceRole{
-							ID:    1,
-							Name:  "undefined",
-							Slug:  "undefined",
-							Color: strPtr("000000"),
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceRole]{
+							Field: &netbox.DcimDeviceRole{
+								ID:    1,
+								Name:  "undefined",
+								Slug:  "undefined",
+								Color: strPtr("000000"),
+							},
 						},
 					},
 				},
@@ -1433,32 +1469,34 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "router01", "site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
-						Device: &netbox.DcimDevice{
-							ID:   1,
-							Name: "router01",
-							Site: &netbox.DcimSite{
-								ID:     1,
-								Name:   "undefined",
-								Slug:   "undefined",
-								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-							},
-							DeviceType: &netbox.DcimDeviceType{
-								ID:    1,
-								Model: "undefined",
-								Slug:  "undefined",
-								Manufacturer: &netbox.DcimManufacturer{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDevice]{
+							Field: &netbox.DcimDevice{
+								ID:   1,
+								Name: "router01",
+								Site: &netbox.DcimSite{
+									ID:     1,
+									Name:   "undefined",
+									Slug:   "undefined",
+									Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
 								},
+								DeviceType: &netbox.DcimDeviceType{
+									ID:    1,
+									Model: "undefined",
+									Slug:  "undefined",
+									Manufacturer: &netbox.DcimManufacturer{
+										ID:   1,
+										Name: "undefined",
+										Slug: "undefined",
+									},
+								},
+								Role: &netbox.DcimDeviceRole{
+									ID:    1,
+									Name:  "undefined",
+									Slug:  "undefined",
+									Color: strPtr("000000"),
+								},
+								Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 							},
-							Role: &netbox.DcimDeviceRole{
-								ID:    1,
-								Name:  "undefined",
-								Slug:  "undefined",
-								Color: strPtr("000000"),
-							},
-							Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 						},
 					},
 				},
@@ -1489,11 +1527,13 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
-						Site: &netbox.DcimSite{
-							ID:     1,
-							Name:   "undefined",
-							Slug:   "undefined",
-							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimSite]{
+							Field: &netbox.DcimSite{
+								ID:     1,
+								Name:   "undefined",
+								Slug:   "undefined",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
 						},
 					},
 				},
@@ -1503,10 +1543,12 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
-						Manufacturer: &netbox.DcimManufacturer{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimManufacturer]{
+							Field: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+							},
 						},
 					},
 				},
@@ -1516,14 +1558,16 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined", "manufacturer__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
-						DeviceType: &netbox.DcimDeviceType{
-							ID:    1,
-							Model: "undefined",
-							Slug:  "undefined",
-							Manufacturer: &netbox.DcimManufacturer{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceType]{
+							Field: &netbox.DcimDeviceType{
+								ID:    1,
+								Model: "undefined",
+								Slug:  "undefined",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
 							},
 						},
 					},
@@ -1534,11 +1578,13 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
-						DeviceRole: &netbox.DcimDeviceRole{
-							ID:    1,
-							Name:  "undefined",
-							Slug:  "undefined",
-							Color: strPtr("000000"),
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceRole]{
+							Field: &netbox.DcimDeviceRole{
+								ID:    1,
+								Name:  "undefined",
+								Slug:  "undefined",
+								Color: strPtr("000000"),
+							},
 						},
 					},
 				},
@@ -1548,32 +1594,34 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "router01", "site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
-						Device: &netbox.DcimDevice{
-							ID:   1,
-							Name: "router01",
-							Site: &netbox.DcimSite{
-								ID:     1,
-								Name:   "undefined",
-								Slug:   "undefined",
-								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-							},
-							DeviceType: &netbox.DcimDeviceType{
-								ID:    1,
-								Model: "undefined",
-								Slug:  "undefined",
-								Manufacturer: &netbox.DcimManufacturer{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDevice]{
+							Field: &netbox.DcimDevice{
+								ID:   1,
+								Name: "router01",
+								Site: &netbox.DcimSite{
+									ID:     1,
+									Name:   "undefined",
+									Slug:   "undefined",
+									Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
 								},
+								DeviceType: &netbox.DcimDeviceType{
+									ID:    1,
+									Model: "undefined",
+									Slug:  "undefined",
+									Manufacturer: &netbox.DcimManufacturer{
+										ID:   1,
+										Name: "undefined",
+										Slug: "undefined",
+									},
+								},
+								Role: &netbox.DcimDeviceRole{
+									ID:    1,
+									Name:  "undefined",
+									Slug:  "undefined",
+									Color: strPtr("000000"),
+								},
+								Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 							},
-							Role: &netbox.DcimDeviceRole{
-								ID:    1,
-								Name:  "undefined",
-								Slug:  "undefined",
-								Color: strPtr("000000"),
-							},
-							Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 						},
 					},
 				},
@@ -1620,7 +1668,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "Site A"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
-						Site: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimSite]{Field: nil},
 					},
 				},
 				{
@@ -1629,7 +1677,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
-						Manufacturer: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimManufacturer]{Field: nil},
 					},
 				},
 				{
@@ -1638,7 +1686,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "ISR4321", "manufacturer__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
-						DeviceType: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceType]{Field: nil},
 					},
 				},
 				{
@@ -1647,7 +1695,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "WAN Router"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
-						DeviceRole: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceRole]{Field: nil},
 					},
 				},
 				{
@@ -1656,7 +1704,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "router01", "site__name": "Site A"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
-						Device: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDevice]{Field: nil},
 					},
 				},
 				{
@@ -1807,7 +1855,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "Site A"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
-						Site: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimSite]{Field: nil},
 					},
 				},
 				{
@@ -1816,7 +1864,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "Cisco"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
-						Manufacturer: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimManufacturer]{Field: nil},
 					},
 				},
 				{
@@ -1825,7 +1873,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "ISR4321", "manufacturer__name": "Cisco"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
-						DeviceType: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceType]{Field: nil},
 					},
 				},
 				{
@@ -1834,7 +1882,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "WAN Router"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
-						DeviceRole: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceRole]{Field: nil},
 					},
 				},
 				{
@@ -1843,7 +1891,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "router01", "site__name": "Site A"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
-						Device: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDevice]{Field: nil},
 					},
 				},
 				{
@@ -2008,7 +2056,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "Site A"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
-						Site: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimSite]{Field: nil},
 					},
 				},
 				{
@@ -2017,10 +2065,12 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
-						Manufacturer: &netbox.DcimManufacturer{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimManufacturer]{
+							Field: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+							},
 						},
 					},
 				},
@@ -2030,7 +2080,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "ISR4321", "manufacturer__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
-						DeviceType: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceType]{Field: nil},
 					},
 				},
 				{
@@ -2039,7 +2089,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "WAN Router"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
-						DeviceRole: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceRole]{Field: nil},
 					},
 				},
 				{
@@ -2061,44 +2111,46 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "router01", "site__name": "Site A"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
-						Device: &netbox.DcimDevice{
-							ID:   1,
-							Name: "router01",
-							Site: &netbox.DcimSite{
-								ID:     1,
-								Name:   "Site B",
-								Slug:   "site-b",
-								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-							},
-							DeviceType: &netbox.DcimDeviceType{
-								ID:    1,
-								Model: "ISR4322",
-								Slug:  "isr4322",
-								Manufacturer: &netbox.DcimManufacturer{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
-								},
-							},
-							Role: &netbox.DcimDeviceRole{
-								ID:    1,
-								Name:  "undefined",
-								Slug:  "undefined",
-								Color: strPtr("000000"),
-							},
-							Platform: &netbox.DcimPlatform{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDevice]{
+							Field: &netbox.DcimDevice{
 								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
-								Manufacturer: &netbox.DcimManufacturer{
+								Name: "router01",
+								Site: &netbox.DcimSite{
+									ID:     1,
+									Name:   "Site B",
+									Slug:   "site-b",
+									Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+								},
+								DeviceType: &netbox.DcimDeviceType{
+									ID:    1,
+									Model: "ISR4322",
+									Slug:  "isr4322",
+									Manufacturer: &netbox.DcimManufacturer{
+										ID:   1,
+										Name: "undefined",
+										Slug: "undefined",
+									},
+								},
+								Role: &netbox.DcimDeviceRole{
+									ID:    1,
+									Name:  "undefined",
+									Slug:  "undefined",
+									Color: strPtr("000000"),
+								},
+								Platform: &netbox.DcimPlatform{
 									ID:   1,
 									Name: "undefined",
 									Slug: "undefined",
+									Manufacturer: &netbox.DcimManufacturer{
+										ID:   1,
+										Name: "undefined",
+										Slug: "undefined",
+									},
 								},
+								Status:      (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+								Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+								Serial:      strPtr("123456"),
 							},
-							Status:      (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
-							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
-							Serial:      strPtr("123456"),
 						},
 					},
 				},
@@ -2223,7 +2275,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "Site A"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
-						Site: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimSite]{Field: nil},
 					},
 				},
 				{
@@ -2232,7 +2284,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
-						Manufacturer: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimManufacturer]{Field: nil},
 					},
 				},
 				{
@@ -2241,7 +2293,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "ISR4321", "manufacturer__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
-						DeviceType: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceType]{Field: nil},
 					},
 				},
 				{
@@ -2250,7 +2302,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "WAN Router"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
-						DeviceRole: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceRole]{Field: nil},
 					},
 				},
 				{
@@ -2259,7 +2311,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "Cisco IOS 15.6"},
 					objectChangeID: 0,
 					object: &netbox.DcimPlatformDataWrapper{
-						Platform: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimPlatform]{Field: nil},
 					},
 				},
 				{
@@ -2268,7 +2320,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "router01", "site__name": "Site A"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
-						Device: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDevice]{Field: nil},
 					},
 				},
 			},
@@ -2409,7 +2461,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "Site A"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
-						Site: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimSite]{Field: nil},
 					},
 				},
 				{
@@ -2418,10 +2470,12 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
-						Manufacturer: &netbox.DcimManufacturer{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimManufacturer]{
+							Field: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+							},
 						},
 					},
 				},
@@ -2431,7 +2485,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "ISR4321", "manufacturer__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
-						DeviceType: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceType]{Field: nil},
 					},
 				},
 				{
@@ -2440,7 +2494,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "WAN Router"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
-						DeviceRole: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceRole]{Field: nil},
 					},
 				},
 				{
@@ -2449,10 +2503,12 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "Cisco IOS 15.6"},
 					objectChangeID: 0,
 					object: &netbox.DcimPlatformDataWrapper{
-						Platform: &netbox.DcimPlatform{
-							ID:   1,
-							Name: "Cisco IOS 15.6",
-							Slug: "cisco-ios-15-6",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimPlatform]{
+							Field: &netbox.DcimPlatform{
+								ID:   1,
+								Name: "Cisco IOS 15.6",
+								Slug: "cisco-ios-15-6",
+							},
 						},
 					},
 				},
@@ -2462,37 +2518,39 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "router01", "site__name": "Site A"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
-						Device: &netbox.DcimDevice{
-							ID:   1,
-							Name: "router01",
-							Site: &netbox.DcimSite{
-								ID:     1,
-								Name:   "Site B",
-								Slug:   "site-b",
-								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-							},
-							DeviceType: &netbox.DcimDeviceType{
-								ID:    1,
-								Model: "ISR4322",
-								Slug:  "isr4322",
-								Manufacturer: &netbox.DcimManufacturer{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDevice]{
+							Field: &netbox.DcimDevice{
+								ID:   1,
+								Name: "router01",
+								Site: &netbox.DcimSite{
+									ID:     1,
+									Name:   "Site B",
+									Slug:   "site-b",
+									Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
 								},
+								DeviceType: &netbox.DcimDeviceType{
+									ID:    1,
+									Model: "ISR4322",
+									Slug:  "isr4322",
+									Manufacturer: &netbox.DcimManufacturer{
+										ID:   1,
+										Name: "undefined",
+										Slug: "undefined",
+									},
+								},
+								Role: &netbox.DcimDeviceRole{
+									ID:    1,
+									Name:  "undefined",
+									Slug:  "undefined",
+									Color: strPtr("000000"),
+								},
+								Platform: &netbox.DcimPlatform{
+									ID: 1,
+								},
+								Status:      (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+								Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+								Serial:      strPtr("123456"),
 							},
-							Role: &netbox.DcimDeviceRole{
-								ID:    1,
-								Name:  "undefined",
-								Slug:  "undefined",
-								Color: strPtr("000000"),
-							},
-							Platform: &netbox.DcimPlatform{
-								ID: 1,
-							},
-							Status:      (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
-							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
-							Serial:      strPtr("123456"),
 						},
 					},
 				},
@@ -2610,11 +2668,13 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "Site A"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
-						Site: &netbox.DcimSite{
-							ID:     1,
-							Name:   "Site A",
-							Slug:   "site-a",
-							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimSite]{
+							Field: &netbox.DcimSite{
+								ID:     1,
+								Name:   "Site A",
+								Slug:   "site-a",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
 						},
 					},
 				},
@@ -2624,10 +2684,12 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
-						Manufacturer: &netbox.DcimManufacturer{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimManufacturer]{
+							Field: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+							},
 						},
 					},
 				},
@@ -2637,14 +2699,16 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "ISR4321", "manufacturer__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
-						DeviceType: &netbox.DcimDeviceType{
-							ID:    1,
-							Model: "ISR4321",
-							Slug:  "isr4321",
-							Manufacturer: &netbox.DcimManufacturer{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceType]{
+							Field: &netbox.DcimDeviceType{
+								ID:    1,
+								Model: "ISR4321",
+								Slug:  "isr4321",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
 							},
 						},
 					},
@@ -2655,11 +2719,13 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "WAN Router"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
-						DeviceRole: &netbox.DcimDeviceRole{
-							ID:    1,
-							Name:  "WAN Router",
-							Slug:  "wan-router",
-							Color: strPtr("111111"),
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceRole]{
+							Field: &netbox.DcimDeviceRole{
+								ID:    1,
+								Name:  "WAN Router",
+								Slug:  "wan-router",
+								Color: strPtr("111111"),
+							},
 						},
 					},
 				},
@@ -2669,14 +2735,16 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "Cisco IOS 15.6"},
 					objectChangeID: 0,
 					object: &netbox.DcimPlatformDataWrapper{
-						Platform: &netbox.DcimPlatform{
-							ID:   1,
-							Name: "Cisco IOS 15.6",
-							Slug: "cisco-ios-15-6",
-							Manufacturer: &netbox.DcimManufacturer{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimPlatform]{
+							Field: &netbox.DcimPlatform{
 								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
+								Name: "Cisco IOS 15.6",
+								Slug: "cisco-ios-15-6",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
 							},
 						},
 					},
@@ -2687,44 +2755,46 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "router01", "site__name": "Site A"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
-						Device: &netbox.DcimDevice{
-							ID:   1,
-							Name: "router01",
-							Site: &netbox.DcimSite{
-								ID:     1,
-								Name:   "Site B",
-								Slug:   "site-b",
-								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-							},
-							DeviceType: &netbox.DcimDeviceType{
-								ID:    1,
-								Model: "ISR4322",
-								Slug:  "isr4322",
-								Manufacturer: &netbox.DcimManufacturer{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
-								},
-							},
-							Role: &netbox.DcimDeviceRole{
-								ID:    1,
-								Name:  "undefined",
-								Slug:  "undefined",
-								Color: strPtr("111111"),
-							},
-							Platform: &netbox.DcimPlatform{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDevice]{
+							Field: &netbox.DcimDevice{
 								ID:   1,
-								Name: "Cisco IOS 15.6",
-								Slug: "cisco-ios-15-6",
-								Manufacturer: &netbox.DcimManufacturer{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
+								Name: "router01",
+								Site: &netbox.DcimSite{
+									ID:     1,
+									Name:   "Site B",
+									Slug:   "site-b",
+									Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
 								},
+								DeviceType: &netbox.DcimDeviceType{
+									ID:    1,
+									Model: "ISR4322",
+									Slug:  "isr4322",
+									Manufacturer: &netbox.DcimManufacturer{
+										ID:   1,
+										Name: "undefined",
+										Slug: "undefined",
+									},
+								},
+								Role: &netbox.DcimDeviceRole{
+									ID:    1,
+									Name:  "undefined",
+									Slug:  "undefined",
+									Color: strPtr("111111"),
+								},
+								Platform: &netbox.DcimPlatform{
+									ID:   1,
+									Name: "Cisco IOS 15.6",
+									Slug: "cisco-ios-15-6",
+									Manufacturer: &netbox.DcimManufacturer{
+										ID:   1,
+										Name: "undefined",
+										Slug: "undefined",
+									},
+								},
+								Status:      (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+								Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+								Serial:      strPtr("123456"),
 							},
-							Status:      (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
-							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
-							Serial:      strPtr("123456"),
 						},
 					},
 				},
@@ -2793,11 +2863,13 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
-						Site: &netbox.DcimSite{
-							ID:     1,
-							Name:   "undefined",
-							Slug:   "undefined",
-							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimSite]{
+							Field: &netbox.DcimSite{
+								ID:     1,
+								Name:   "undefined",
+								Slug:   "undefined",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
 						},
 					},
 				},
@@ -2807,10 +2879,12 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
-						Manufacturer: &netbox.DcimManufacturer{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimManufacturer]{
+							Field: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+							},
 						},
 					},
 				},
@@ -2820,7 +2894,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "ISR4321", "manufacturer__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
-						DeviceType: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceType]{Field: nil},
 					},
 				},
 				{
@@ -2829,7 +2903,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "WAN Router"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
-						DeviceRole: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceRole]{Field: nil},
 					},
 				},
 				{
@@ -2838,14 +2912,16 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "Cisco IOS 15.6"},
 					objectChangeID: 0,
 					object: &netbox.DcimPlatformDataWrapper{
-						Platform: &netbox.DcimPlatform{
-							ID:   1,
-							Name: "Cisco IOS 15.6",
-							Slug: "cisco-ios-15-6",
-							Manufacturer: &netbox.DcimManufacturer{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimPlatform]{
+							Field: &netbox.DcimPlatform{
 								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
+								Name: "Cisco IOS 15.6",
+								Slug: "cisco-ios-15-6",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
 							},
 						},
 					},
@@ -2856,44 +2932,46 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "router01", "site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
-						Device: &netbox.DcimDevice{
-							ID:   1,
-							Name: "router01",
-							Site: &netbox.DcimSite{
-								ID:     2,
-								Name:   "Site B",
-								Slug:   "site-b",
-								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-							},
-							DeviceType: &netbox.DcimDeviceType{
-								ID:    1,
-								Model: "ISR4322",
-								Slug:  "isr4322",
-								Manufacturer: &netbox.DcimManufacturer{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
-								},
-							},
-							Role: &netbox.DcimDeviceRole{
-								ID:    1,
-								Name:  "undefined",
-								Slug:  "undefined",
-								Color: strPtr("000000"),
-							},
-							Platform: &netbox.DcimPlatform{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDevice]{
+							Field: &netbox.DcimDevice{
 								ID:   1,
-								Name: "Cisco IOS 15.6",
-								Slug: "cisco-ios-15-6",
-								Manufacturer: &netbox.DcimManufacturer{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
+								Name: "router01",
+								Site: &netbox.DcimSite{
+									ID:     2,
+									Name:   "Site B",
+									Slug:   "site-b",
+									Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
 								},
+								DeviceType: &netbox.DcimDeviceType{
+									ID:    1,
+									Model: "ISR4322",
+									Slug:  "isr4322",
+									Manufacturer: &netbox.DcimManufacturer{
+										ID:   1,
+										Name: "undefined",
+										Slug: "undefined",
+									},
+								},
+								Role: &netbox.DcimDeviceRole{
+									ID:    1,
+									Name:  "undefined",
+									Slug:  "undefined",
+									Color: strPtr("000000"),
+								},
+								Platform: &netbox.DcimPlatform{
+									ID:   1,
+									Name: "Cisco IOS 15.6",
+									Slug: "cisco-ios-15-6",
+									Manufacturer: &netbox.DcimManufacturer{
+										ID:   1,
+										Name: "undefined",
+										Slug: "undefined",
+									},
+								},
+								Status:      (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+								Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+								Serial:      strPtr("123456"),
 							},
-							Status:      (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
-							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
-							Serial:      strPtr("123456"),
 						},
 					},
 				},
@@ -2997,11 +3075,13 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "Site B"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
-						Site: &netbox.DcimSite{
-							ID:     1,
-							Name:   "Site B",
-							Slug:   "site-b",
-							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimSite]{
+							Field: &netbox.DcimSite{
+								ID:     1,
+								Name:   "Site B",
+								Slug:   "site-b",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
 						},
 					},
 				},
@@ -3011,10 +3091,12 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
-						Manufacturer: &netbox.DcimManufacturer{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimManufacturer]{
+							Field: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+							},
 						},
 					},
 				},
@@ -3024,14 +3106,16 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "ISR4321", "manufacturer__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
-						DeviceType: &netbox.DcimDeviceType{
-							ID:    1,
-							Model: "ISR4321",
-							Slug:  "isr4321",
-							Manufacturer: &netbox.DcimManufacturer{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceType]{
+							Field: &netbox.DcimDeviceType{
+								ID:    1,
+								Model: "ISR4321",
+								Slug:  "isr4321",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
 							},
 						},
 					},
@@ -3042,11 +3126,13 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "WAN Router"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
-						DeviceRole: &netbox.DcimDeviceRole{
-							ID:    1,
-							Name:  "WAN Router",
-							Slug:  "wan-router",
-							Color: strPtr("111111"),
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceRole]{
+							Field: &netbox.DcimDeviceRole{
+								ID:    1,
+								Name:  "WAN Router",
+								Slug:  "wan-router",
+								Color: strPtr("111111"),
+							},
 						},
 					},
 				},
@@ -3056,14 +3142,16 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "Cisco IOS 15.6"},
 					objectChangeID: 0,
 					object: &netbox.DcimPlatformDataWrapper{
-						Platform: &netbox.DcimPlatform{
-							ID:   1,
-							Name: "Cisco IOS 15.6",
-							Slug: "cisco-ios-15-6",
-							Manufacturer: &netbox.DcimManufacturer{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimPlatform]{
+							Field: &netbox.DcimPlatform{
 								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
+								Name: "Cisco IOS 15.6",
+								Slug: "cisco-ios-15-6",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
 							},
 						},
 					},
@@ -3074,44 +3162,46 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "router01", "site__name": "Site B"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
-						Device: &netbox.DcimDevice{
-							ID:   1,
-							Name: "router01",
-							Site: &netbox.DcimSite{
-								ID:     1,
-								Name:   "Site B",
-								Slug:   "site-b",
-								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-							},
-							DeviceType: &netbox.DcimDeviceType{
-								ID:    1,
-								Model: "ISR4321",
-								Slug:  "isr4321",
-								Manufacturer: &netbox.DcimManufacturer{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
-								},
-							},
-							Role: &netbox.DcimDeviceRole{
-								ID:    1,
-								Name:  "WAN Router",
-								Slug:  "wan-router",
-								Color: strPtr("111111"),
-							},
-							Platform: &netbox.DcimPlatform{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDevice]{
+							Field: &netbox.DcimDevice{
 								ID:   1,
-								Name: "Cisco IOS 15.6",
-								Slug: "cisco-ios-15-6",
-								Manufacturer: &netbox.DcimManufacturer{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
+								Name: "router01",
+								Site: &netbox.DcimSite{
+									ID:     1,
+									Name:   "Site B",
+									Slug:   "site-b",
+									Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
 								},
+								DeviceType: &netbox.DcimDeviceType{
+									ID:    1,
+									Model: "ISR4321",
+									Slug:  "isr4321",
+									Manufacturer: &netbox.DcimManufacturer{
+										ID:   1,
+										Name: "undefined",
+										Slug: "undefined",
+									},
+								},
+								Role: &netbox.DcimDeviceRole{
+									ID:    1,
+									Name:  "WAN Router",
+									Slug:  "wan-router",
+									Color: strPtr("111111"),
+								},
+								Platform: &netbox.DcimPlatform{
+									ID:   1,
+									Name: "Cisco IOS 15.6",
+									Slug: "cisco-ios-15-6",
+									Manufacturer: &netbox.DcimManufacturer{
+										ID:   1,
+										Name: "undefined",
+										Slug: "undefined",
+									},
+								},
+								Status:      (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+								Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+								Serial:      strPtr("123456"),
 							},
-							Status:      (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
-							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
-							Serial:      strPtr("123456"),
 						},
 					},
 				},
@@ -3143,7 +3233,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "Site A"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
-						Site: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimSite]{Field: nil},
 					},
 				},
 			},
@@ -3188,12 +3278,14 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "Site A"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
-						Site: &netbox.DcimSite{
-							ID:          1,
-							Name:        "Site A",
-							Slug:        "site-a",
-							Status:      (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimSite]{
+							Field: &netbox.DcimSite{
+								ID:          1,
+								Name:        "Site A",
+								Slug:        "site-a",
+								Status:      (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+								Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+							},
 						},
 					},
 				},
@@ -3239,7 +3331,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "Cisco"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
-						Manufacturer: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimManufacturer]{Field: nil},
 					},
 				},
 			},
@@ -3282,11 +3374,13 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "Cisco"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
-						Manufacturer: &netbox.DcimManufacturer{
-							ID:          1,
-							Name:        "Cisco",
-							Slug:        "cisco",
-							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimManufacturer]{
+							Field: &netbox.DcimManufacturer{
+								ID:          1,
+								Name:        "Cisco",
+								Slug:        "cisco",
+								Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+							},
 						},
 					},
 				},
@@ -3332,7 +3426,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "WAN Router"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
-						DeviceRole: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceRole]{Field: nil},
 					},
 				},
 			},
@@ -3377,12 +3471,14 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "WAN Router"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
-						DeviceRole: &netbox.DcimDeviceRole{
-							ID:          1,
-							Name:        "WAN Router",
-							Slug:        "wan-router",
-							Color:       strPtr("509415"),
-							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceRole]{
+							Field: &netbox.DcimDeviceRole{
+								ID:          1,
+								Name:        "WAN Router",
+								Slug:        "wan-router",
+								Color:       strPtr("509415"),
+								Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+							},
 						},
 					},
 				},
@@ -3444,7 +3540,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "GigabitEthernet0/0/0", "device__name": "undefined", "device__site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimInterfaceDataWrapper{
-						Interface: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimInterface]{Field: nil},
 					},
 				},
 				{
@@ -3453,11 +3549,13 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
-						Site: &netbox.DcimSite{
-							ID:     1,
-							Name:   "undefined",
-							Slug:   "undefined",
-							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimSite]{
+							Field: &netbox.DcimSite{
+								ID:     1,
+								Name:   "undefined",
+								Slug:   "undefined",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
 						},
 					},
 				},
@@ -3467,10 +3565,12 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
-						Manufacturer: &netbox.DcimManufacturer{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimManufacturer]{
+							Field: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+							},
 						},
 					},
 				},
@@ -3480,14 +3580,16 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimPlatformDataWrapper{
-						Platform: &netbox.DcimPlatform{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
-							Manufacturer: &netbox.DcimManufacturer{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimPlatform]{
+							Field: &netbox.DcimPlatform{
 								ID:   1,
 								Name: "undefined",
 								Slug: "undefined",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
 							},
 						},
 					},
@@ -3498,14 +3600,16 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined", "manufacturer__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
-						DeviceType: &netbox.DcimDeviceType{
-							ID:    1,
-							Model: "undefined",
-							Slug:  "undefined",
-							Manufacturer: &netbox.DcimManufacturer{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceType]{
+							Field: &netbox.DcimDeviceType{
+								ID:    1,
+								Model: "undefined",
+								Slug:  "undefined",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
 							},
 						},
 					},
@@ -3516,11 +3620,13 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
-						DeviceRole: &netbox.DcimDeviceRole{
-							ID:    1,
-							Name:  "undefined",
-							Slug:  "undefined",
-							Color: strPtr("000000"),
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceRole]{
+							Field: &netbox.DcimDeviceRole{
+								ID:    1,
+								Name:  "undefined",
+								Slug:  "undefined",
+								Color: strPtr("000000"),
+							},
 						},
 					},
 				},
@@ -3530,7 +3636,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined", "site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
-						Device: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDevice]{Field: nil},
 					},
 				},
 			},
@@ -3613,10 +3719,127 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "GigabitEthernet0/0/0", "device__name": "router01", "device__site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimInterfaceDataWrapper{
-						Interface: &netbox.DcimInterface{
-							ID:   1,
-							Name: "GigabitEthernet0/0/0",
-							Device: &netbox.DcimDevice{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimInterface]{
+							Field: &netbox.DcimInterface{
+								ID:   1,
+								Name: "GigabitEthernet0/0/0",
+								Device: &netbox.DcimDevice{
+									ID:   1,
+									Name: "router01",
+									Site: &netbox.DcimSite{
+										ID:     1,
+										Name:   "undefined",
+										Slug:   "undefined",
+										Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+									},
+									DeviceType: &netbox.DcimDeviceType{
+										ID:    1,
+										Model: "undefined",
+										Slug:  "undefined",
+										Manufacturer: &netbox.DcimManufacturer{
+											ID:   1,
+											Name: "undefined",
+											Slug: "undefined",
+										},
+									},
+									Role: &netbox.DcimDeviceRole{
+										ID:    1,
+										Name:  "undefined",
+										Slug:  "undefined",
+										Color: strPtr("000000"),
+									},
+									Platform: &netbox.DcimPlatform{
+										ID:   1,
+										Name: "undefined",
+										Slug: "undefined",
+										Manufacturer: &netbox.DcimManufacturer{
+											ID:   1,
+											Name: "undefined",
+											Slug: "undefined",
+										},
+									},
+									Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+								},
+								Type: strPtr(netbox.DefaultInterfaceType),
+							},
+						},
+					},
+				},
+				{
+					objectType:     "dcim.site",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "undefined"},
+					objectChangeID: 0,
+					object: &netbox.DcimSiteDataWrapper{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimSite]{
+							Field: &netbox.DcimSite{
+								ID:     1,
+								Name:   "undefined",
+								Slug:   "undefined",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
+						},
+					},
+				},
+				{
+					objectType:     "dcim.manufacturer",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "undefined"},
+					objectChangeID: 0,
+					object: &netbox.DcimManufacturerDataWrapper{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimManufacturer]{
+							Field: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+							},
+						},
+					},
+				},
+				{
+					objectType:     "dcim.devicetype",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "undefined", "manufacturer__name": "undefined"},
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceTypeDataWrapper{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceType]{
+							Field: &netbox.DcimDeviceType{
+								ID:    1,
+								Model: "undefined",
+								Slug:  "undefined",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
+							},
+						},
+					},
+				},
+				{
+					objectType:     "dcim.devicerole",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "undefined"},
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceRoleDataWrapper{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceRole]{
+							Field: &netbox.DcimDeviceRole{
+								ID:    1,
+								Name:  "undefined",
+								Slug:  "undefined",
+								Color: strPtr("000000"),
+							},
+						},
+					},
+				},
+				{
+					objectType:     "dcim.device",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "router01", "site__name": "undefined"},
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceDataWrapper{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDevice]{
+							Field: &netbox.DcimDevice{
 								ID:   1,
 								Name: "router01",
 								Site: &netbox.DcimSite{
@@ -3653,111 +3876,6 @@ func TestPrepare(t *testing.T) {
 								},
 								Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 							},
-							Type: strPtr(netbox.DefaultInterfaceType),
-						},
-					},
-				},
-				{
-					objectType:     "dcim.site",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.DcimSiteDataWrapper{
-						Site: &netbox.DcimSite{
-							ID:     1,
-							Name:   "undefined",
-							Slug:   "undefined",
-							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-						},
-					},
-				},
-				{
-					objectType:     "dcim.manufacturer",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.DcimManufacturerDataWrapper{
-						Manufacturer: &netbox.DcimManufacturer{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
-						},
-					},
-				},
-				{
-					objectType:     "dcim.devicetype",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined", "manufacturer__name": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.DcimDeviceTypeDataWrapper{
-						DeviceType: &netbox.DcimDeviceType{
-							ID:    1,
-							Model: "undefined",
-							Slug:  "undefined",
-							Manufacturer: &netbox.DcimManufacturer{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
-							},
-						},
-					},
-				},
-				{
-					objectType:     "dcim.devicerole",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.DcimDeviceRoleDataWrapper{
-						DeviceRole: &netbox.DcimDeviceRole{
-							ID:    1,
-							Name:  "undefined",
-							Slug:  "undefined",
-							Color: strPtr("000000"),
-						},
-					},
-				},
-				{
-					objectType:     "dcim.device",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "router01", "site__name": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.DcimDeviceDataWrapper{
-						Device: &netbox.DcimDevice{
-							ID:   1,
-							Name: "router01",
-							Site: &netbox.DcimSite{
-								ID:     1,
-								Name:   "undefined",
-								Slug:   "undefined",
-								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-							},
-							DeviceType: &netbox.DcimDeviceType{
-								ID:    1,
-								Model: "undefined",
-								Slug:  "undefined",
-								Manufacturer: &netbox.DcimManufacturer{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
-								},
-							},
-							Role: &netbox.DcimDeviceRole{
-								ID:    1,
-								Name:  "undefined",
-								Slug:  "undefined",
-								Color: strPtr("000000"),
-							},
-							Platform: &netbox.DcimPlatform{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
-								Manufacturer: &netbox.DcimManufacturer{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
-								},
-							},
-							Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 						},
 					},
 				},
@@ -3791,10 +3909,127 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "GigabitEthernet0/0/0", "device__name": "router01", "device__site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimInterfaceDataWrapper{
-						Interface: &netbox.DcimInterface{
-							ID:   1,
-							Name: "GigabitEthernet0/0/0",
-							Device: &netbox.DcimDevice{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimInterface]{
+							Field: &netbox.DcimInterface{
+								ID:   1,
+								Name: "GigabitEthernet0/0/0",
+								Device: &netbox.DcimDevice{
+									ID:   1,
+									Name: "router01",
+									Site: &netbox.DcimSite{
+										ID:     1,
+										Name:   "undefined",
+										Slug:   "undefined",
+										Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+									},
+									DeviceType: &netbox.DcimDeviceType{
+										ID:    1,
+										Model: "undefined",
+										Slug:  "undefined",
+										Manufacturer: &netbox.DcimManufacturer{
+											ID:   1,
+											Name: "undefined",
+											Slug: "undefined",
+										},
+									},
+									Role: &netbox.DcimDeviceRole{
+										ID:    1,
+										Name:  "undefined",
+										Slug:  "undefined",
+										Color: strPtr("000000"),
+									},
+									Platform: &netbox.DcimPlatform{
+										ID:   1,
+										Name: "undefined",
+										Slug: "undefined",
+										Manufacturer: &netbox.DcimManufacturer{
+											ID:   1,
+											Name: "undefined",
+											Slug: "undefined",
+										},
+									},
+									Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+								},
+								Type: strPtr(netbox.DefaultInterfaceType),
+							},
+						},
+					},
+				},
+				{
+					objectType:     "dcim.site",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "undefined"},
+					objectChangeID: 0,
+					object: &netbox.DcimSiteDataWrapper{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimSite]{
+							Field: &netbox.DcimSite{
+								ID:     1,
+								Name:   "undefined",
+								Slug:   "undefined",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
+						},
+					},
+				},
+				{
+					objectType:     "dcim.manufacturer",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "undefined"},
+					objectChangeID: 0,
+					object: &netbox.DcimManufacturerDataWrapper{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimManufacturer]{
+							Field: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+							},
+						},
+					},
+				},
+				{
+					objectType:     "dcim.devicetype",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "undefined", "manufacturer__name": "undefined"},
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceTypeDataWrapper{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceType]{
+							Field: &netbox.DcimDeviceType{
+								ID:    1,
+								Model: "undefined",
+								Slug:  "undefined",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
+							},
+						},
+					},
+				},
+				{
+					objectType:     "dcim.devicerole",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "undefined"},
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceRoleDataWrapper{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceRole]{
+							Field: &netbox.DcimDeviceRole{
+								ID:    1,
+								Name:  "undefined",
+								Slug:  "undefined",
+								Color: strPtr("000000"),
+							},
+						},
+					},
+				},
+				{
+					objectType:     "dcim.device",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "router01", "site__name": "undefined"},
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceDataWrapper{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDevice]{
+							Field: &netbox.DcimDevice{
 								ID:   1,
 								Name: "router01",
 								Site: &netbox.DcimSite{
@@ -3831,111 +4066,6 @@ func TestPrepare(t *testing.T) {
 								},
 								Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 							},
-							Type: strPtr(netbox.DefaultInterfaceType),
-						},
-					},
-				},
-				{
-					objectType:     "dcim.site",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.DcimSiteDataWrapper{
-						Site: &netbox.DcimSite{
-							ID:     1,
-							Name:   "undefined",
-							Slug:   "undefined",
-							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-						},
-					},
-				},
-				{
-					objectType:     "dcim.manufacturer",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.DcimManufacturerDataWrapper{
-						Manufacturer: &netbox.DcimManufacturer{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
-						},
-					},
-				},
-				{
-					objectType:     "dcim.devicetype",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined", "manufacturer__name": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.DcimDeviceTypeDataWrapper{
-						DeviceType: &netbox.DcimDeviceType{
-							ID:    1,
-							Model: "undefined",
-							Slug:  "undefined",
-							Manufacturer: &netbox.DcimManufacturer{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
-							},
-						},
-					},
-				},
-				{
-					objectType:     "dcim.devicerole",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.DcimDeviceRoleDataWrapper{
-						DeviceRole: &netbox.DcimDeviceRole{
-							ID:    1,
-							Name:  "undefined",
-							Slug:  "undefined",
-							Color: strPtr("000000"),
-						},
-					},
-				},
-				{
-					objectType:     "dcim.device",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "router01", "site__name": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.DcimDeviceDataWrapper{
-						Device: &netbox.DcimDevice{
-							ID:   1,
-							Name: "router01",
-							Site: &netbox.DcimSite{
-								ID:     1,
-								Name:   "undefined",
-								Slug:   "undefined",
-								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-							},
-							DeviceType: &netbox.DcimDeviceType{
-								ID:    1,
-								Model: "undefined",
-								Slug:  "undefined",
-								Manufacturer: &netbox.DcimManufacturer{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
-								},
-							},
-							Role: &netbox.DcimDeviceRole{
-								ID:    1,
-								Name:  "undefined",
-								Slug:  "undefined",
-								Color: strPtr("000000"),
-							},
-							Platform: &netbox.DcimPlatform{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
-								Manufacturer: &netbox.DcimManufacturer{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
-								},
-							},
-							Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 						},
 					},
 				},
@@ -3999,7 +4129,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "192.168.0.1/22"},
 					objectChangeID: 0,
 					object: &netbox.IpamIPAddressDataWrapper{
-						IPAddress: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.IpamIPAddress]{Field: nil},
 					},
 				},
 			},
@@ -4045,11 +4175,13 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
-						Site: &netbox.DcimSite{
-							ID:     1,
-							Name:   "undefined",
-							Slug:   "undefined",
-							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimSite]{
+							Field: &netbox.DcimSite{
+								ID:     1,
+								Name:   "undefined",
+								Slug:   "undefined",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
 						},
 					},
 				},
@@ -4059,10 +4191,12 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
-						Manufacturer: &netbox.DcimManufacturer{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimManufacturer]{
+							Field: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+							},
 						},
 					},
 				},
@@ -4072,14 +4206,16 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimPlatformDataWrapper{
-						Platform: &netbox.DcimPlatform{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
-							Manufacturer: &netbox.DcimManufacturer{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimPlatform]{
+							Field: &netbox.DcimPlatform{
 								ID:   1,
 								Name: "undefined",
 								Slug: "undefined",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
 							},
 						},
 					},
@@ -4090,14 +4226,16 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined", "manufacturer__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
-						DeviceType: &netbox.DcimDeviceType{
-							ID:    1,
-							Model: "undefined",
-							Slug:  "undefined",
-							Manufacturer: &netbox.DcimManufacturer{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceType]{
+							Field: &netbox.DcimDeviceType{
+								ID:    1,
+								Model: "undefined",
+								Slug:  "undefined",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
 							},
 						},
 					},
@@ -4108,11 +4246,13 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
-						DeviceRole: &netbox.DcimDeviceRole{
-							ID:    1,
-							Name:  "undefined",
-							Slug:  "undefined",
-							Color: strPtr("000000"),
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceRole]{
+							Field: &netbox.DcimDeviceRole{
+								ID:    1,
+								Name:  "undefined",
+								Slug:  "undefined",
+								Color: strPtr("000000"),
+							},
 						},
 					},
 				},
@@ -4122,46 +4262,8 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined", "site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
-						Device: &netbox.DcimDevice{
-							ID:   1,
-							Name: "undefined",
-							Site: &netbox.DcimSite{
-								ID:     1,
-								Name:   "undefined",
-								Slug:   "undefined",
-								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-							},
-							DeviceType: &netbox.DcimDeviceType{
-								ID:    1,
-								Model: "undefined",
-								Slug:  "undefined",
-								Manufacturer: &netbox.DcimManufacturer{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
-								},
-							},
-							Role: &netbox.DcimDeviceRole{
-								ID:    1,
-								Name:  "undefined",
-								Slug:  "undefined",
-								Color: strPtr("000000"),
-							},
-							Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
-						},
-					},
-				},
-				{
-					objectType:     "dcim.interface",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "GigabitEthernet0/0/0", "device__name": "undefined", "device__site__name": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.DcimInterfaceDataWrapper{
-						Interface: &netbox.DcimInterface{
-							ID:   1,
-							Name: "GigabitEthernet0/0/0",
-							Type: strPtr(netbox.DefaultInterfaceType),
-							Device: &netbox.DcimDevice{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDevice]{
+							Field: &netbox.DcimDevice{
 								ID:   1,
 								Name: "undefined",
 								Site: &netbox.DcimSite{
@@ -4186,17 +4288,59 @@ func TestPrepare(t *testing.T) {
 									Slug:  "undefined",
 									Color: strPtr("000000"),
 								},
-								Platform: &netbox.DcimPlatform{
+								Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+							},
+						},
+					},
+				},
+				{
+					objectType:     "dcim.interface",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "GigabitEthernet0/0/0", "device__name": "undefined", "device__site__name": "undefined"},
+					objectChangeID: 0,
+					object: &netbox.DcimInterfaceDataWrapper{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimInterface]{
+							Field: &netbox.DcimInterface{
+								ID:   1,
+								Name: "GigabitEthernet0/0/0",
+								Type: strPtr(netbox.DefaultInterfaceType),
+								Device: &netbox.DcimDevice{
 									ID:   1,
 									Name: "undefined",
-									Slug: "undefined",
-									Manufacturer: &netbox.DcimManufacturer{
+									Site: &netbox.DcimSite{
+										ID:     1,
+										Name:   "undefined",
+										Slug:   "undefined",
+										Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+									},
+									DeviceType: &netbox.DcimDeviceType{
+										ID:    1,
+										Model: "undefined",
+										Slug:  "undefined",
+										Manufacturer: &netbox.DcimManufacturer{
+											ID:   1,
+											Name: "undefined",
+											Slug: "undefined",
+										},
+									},
+									Role: &netbox.DcimDeviceRole{
+										ID:    1,
+										Name:  "undefined",
+										Slug:  "undefined",
+										Color: strPtr("000000"),
+									},
+									Platform: &netbox.DcimPlatform{
 										ID:   1,
 										Name: "undefined",
 										Slug: "undefined",
+										Manufacturer: &netbox.DcimManufacturer{
+											ID:   1,
+											Name: "undefined",
+											Slug: "undefined",
+										},
 									},
+									Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 								},
-								Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 							},
 						},
 					},
@@ -4207,7 +4351,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "192.168.0.1/22", "interface__name": "GigabitEthernet0/0/0", "interface__device__name": "undefined", "interface__device__site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.IpamIPAddressDataWrapper{
-						IPAddress: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.IpamIPAddress]{Field: nil},
 					},
 				},
 			},
@@ -4261,11 +4405,13 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
-						Site: &netbox.DcimSite{
-							ID:     1,
-							Name:   "undefined",
-							Slug:   "undefined",
-							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimSite]{
+							Field: &netbox.DcimSite{
+								ID:     1,
+								Name:   "undefined",
+								Slug:   "undefined",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
 						},
 					},
 				},
@@ -4275,10 +4421,12 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
-						Manufacturer: &netbox.DcimManufacturer{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimManufacturer]{
+							Field: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+							},
 						},
 					},
 				},
@@ -4288,14 +4436,16 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimPlatformDataWrapper{
-						Platform: &netbox.DcimPlatform{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
-							Manufacturer: &netbox.DcimManufacturer{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimPlatform]{
+							Field: &netbox.DcimPlatform{
 								ID:   1,
 								Name: "undefined",
 								Slug: "undefined",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
 							},
 						},
 					},
@@ -4306,14 +4456,16 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined", "manufacturer__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
-						DeviceType: &netbox.DcimDeviceType{
-							ID:    1,
-							Model: "undefined",
-							Slug:  "undefined",
-							Manufacturer: &netbox.DcimManufacturer{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceType]{
+							Field: &netbox.DcimDeviceType{
+								ID:    1,
+								Model: "undefined",
+								Slug:  "undefined",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
 							},
 						},
 					},
@@ -4324,11 +4476,13 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
-						DeviceRole: &netbox.DcimDeviceRole{
-							ID:    1,
-							Name:  "undefined",
-							Slug:  "undefined",
-							Color: strPtr("000000"),
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceRole]{
+							Field: &netbox.DcimDeviceRole{
+								ID:    1,
+								Name:  "undefined",
+								Slug:  "undefined",
+								Color: strPtr("000000"),
+							},
 						},
 					},
 				},
@@ -4338,42 +4492,44 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined", "site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
-						Device: &netbox.DcimDevice{
-							ID:   1,
-							Name: "undefined",
-							Site: &netbox.DcimSite{
-								ID:     1,
-								Name:   "undefined",
-								Slug:   "undefined",
-								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-							},
-							DeviceType: &netbox.DcimDeviceType{
-								ID:    1,
-								Model: "undefined",
-								Slug:  "undefined",
-								Manufacturer: &netbox.DcimManufacturer{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
-								},
-							},
-							Role: &netbox.DcimDeviceRole{
-								ID:    1,
-								Name:  "undefined",
-								Slug:  "undefined",
-								Color: strPtr("000000"),
-							},
-							Platform: &netbox.DcimPlatform{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDevice]{
+							Field: &netbox.DcimDevice{
 								ID:   1,
 								Name: "undefined",
-								Slug: "undefined",
-								Manufacturer: &netbox.DcimManufacturer{
+								Site: &netbox.DcimSite{
+									ID:     1,
+									Name:   "undefined",
+									Slug:   "undefined",
+									Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+								},
+								DeviceType: &netbox.DcimDeviceType{
+									ID:    1,
+									Model: "undefined",
+									Slug:  "undefined",
+									Manufacturer: &netbox.DcimManufacturer{
+										ID:   1,
+										Name: "undefined",
+										Slug: "undefined",
+									},
+								},
+								Role: &netbox.DcimDeviceRole{
+									ID:    1,
+									Name:  "undefined",
+									Slug:  "undefined",
+									Color: strPtr("000000"),
+								},
+								Platform: &netbox.DcimPlatform{
 									ID:   1,
 									Name: "undefined",
 									Slug: "undefined",
+									Manufacturer: &netbox.DcimManufacturer{
+										ID:   1,
+										Name: "undefined",
+										Slug: "undefined",
+									},
 								},
+								Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 							},
-							Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 						},
 					},
 				},
@@ -4383,7 +4539,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "GigabitEthernet0/0/0", "device__name": "undefined", "device__site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimInterfaceDataWrapper{
-						Interface: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimInterface]{Field: nil},
 					},
 				},
 				{
@@ -4392,7 +4548,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "192.168.0.1/22", "interface__name": "GigabitEthernet0/0/0", "interface__device__name": "undefined", "interface__device__site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.IpamIPAddressDataWrapper{
-						IPAddress: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.IpamIPAddress]{Field: nil},
 					},
 				},
 			},
@@ -4461,11 +4617,13 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
-						Site: &netbox.DcimSite{
-							ID:     1,
-							Name:   "undefined",
-							Slug:   "undefined",
-							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimSite]{
+							Field: &netbox.DcimSite{
+								ID:     1,
+								Name:   "undefined",
+								Slug:   "undefined",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
 						},
 					},
 				},
@@ -4475,10 +4633,12 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
-						Manufacturer: &netbox.DcimManufacturer{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimManufacturer]{
+							Field: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+							},
 						},
 					},
 				},
@@ -4488,14 +4648,16 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimPlatformDataWrapper{
-						Platform: &netbox.DcimPlatform{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
-							Manufacturer: &netbox.DcimManufacturer{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimPlatform]{
+							Field: &netbox.DcimPlatform{
 								ID:   1,
 								Name: "undefined",
 								Slug: "undefined",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
 							},
 						},
 					},
@@ -4506,14 +4668,16 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined", "manufacturer__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
-						DeviceType: &netbox.DcimDeviceType{
-							ID:    1,
-							Model: "undefined",
-							Slug:  "undefined",
-							Manufacturer: &netbox.DcimManufacturer{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceType]{
+							Field: &netbox.DcimDeviceType{
+								ID:    1,
+								Model: "undefined",
+								Slug:  "undefined",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
 							},
 						},
 					},
@@ -4524,11 +4688,13 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
-						DeviceRole: &netbox.DcimDeviceRole{
-							ID:    1,
-							Name:  "undefined",
-							Slug:  "undefined",
-							Color: strPtr("000000"),
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceRole]{
+							Field: &netbox.DcimDeviceRole{
+								ID:    1,
+								Name:  "undefined",
+								Slug:  "undefined",
+								Color: strPtr("000000"),
+							},
 						},
 					},
 				},
@@ -4538,42 +4704,44 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined", "site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
-						Device: &netbox.DcimDevice{
-							ID:   1,
-							Name: "undefined",
-							Site: &netbox.DcimSite{
-								ID:     1,
-								Name:   "undefined",
-								Slug:   "undefined",
-								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-							},
-							DeviceType: &netbox.DcimDeviceType{
-								ID:    1,
-								Model: "undefined",
-								Slug:  "undefined",
-								Manufacturer: &netbox.DcimManufacturer{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
-								},
-							},
-							Role: &netbox.DcimDeviceRole{
-								ID:    1,
-								Name:  "undefined",
-								Slug:  "undefined",
-								Color: strPtr("000000"),
-							},
-							Platform: &netbox.DcimPlatform{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDevice]{
+							Field: &netbox.DcimDevice{
 								ID:   1,
 								Name: "undefined",
-								Slug: "undefined",
-								Manufacturer: &netbox.DcimManufacturer{
+								Site: &netbox.DcimSite{
+									ID:     1,
+									Name:   "undefined",
+									Slug:   "undefined",
+									Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+								},
+								DeviceType: &netbox.DcimDeviceType{
+									ID:    1,
+									Model: "undefined",
+									Slug:  "undefined",
+									Manufacturer: &netbox.DcimManufacturer{
+										ID:   1,
+										Name: "undefined",
+										Slug: "undefined",
+									},
+								},
+								Role: &netbox.DcimDeviceRole{
+									ID:    1,
+									Name:  "undefined",
+									Slug:  "undefined",
+									Color: strPtr("000000"),
+								},
+								Platform: &netbox.DcimPlatform{
 									ID:   1,
 									Name: "undefined",
 									Slug: "undefined",
+									Manufacturer: &netbox.DcimManufacturer{
+										ID:   1,
+										Name: "undefined",
+										Slug: "undefined",
+									},
 								},
+								Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 							},
-							Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 						},
 					},
 				},
@@ -4583,7 +4751,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "GigabitEthernet1/0/1", "device__name": "undefined", "device__site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimInterfaceDataWrapper{
-						Interface: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimInterface]{Field: nil},
 					},
 				},
 				{
@@ -4592,51 +4760,53 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "192.168.0.1/22", "interface__name": "GigabitEthernet1/0/1", "interface__device__name": "undefined", "interface__device__site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.IpamIPAddressDataWrapper{
-						IPAddress: &netbox.IpamIPAddress{
-							ID:      1,
-							Address: "192.168.0.1/22",
-							Status:  &netbox.DefaultIPAddressStatus,
-							AssignedObject: &netbox.IPAddressInterface{
-								Interface: &netbox.DcimInterface{
-									ID:   1,
-									Name: "GigabitEthernet0/0/0",
-									Type: strPtr(netbox.DefaultInterfaceType),
-									Device: &netbox.DcimDevice{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.IpamIPAddress]{
+							Field: &netbox.IpamIPAddress{
+								ID:      1,
+								Address: "192.168.0.1/22",
+								Status:  &netbox.DefaultIPAddressStatus,
+								AssignedObject: &netbox.IPAddressInterface{
+									Interface: &netbox.DcimInterface{
 										ID:   1,
-										Name: "undefined",
-										Site: &netbox.DcimSite{
-											ID:     1,
-											Name:   "undefined",
-											Slug:   "undefined",
-											Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-										},
-										DeviceType: &netbox.DcimDeviceType{
-											ID:    1,
-											Model: "undefined",
-											Slug:  "undefined",
-											Manufacturer: &netbox.DcimManufacturer{
-												ID:   1,
-												Name: "undefined",
-												Slug: "undefined",
-											},
-										},
-										Role: &netbox.DcimDeviceRole{
-											ID:    1,
-											Name:  "undefined",
-											Slug:  "undefined",
-											Color: strPtr("000000"),
-										},
-										Platform: &netbox.DcimPlatform{
+										Name: "GigabitEthernet0/0/0",
+										Type: strPtr(netbox.DefaultInterfaceType),
+										Device: &netbox.DcimDevice{
 											ID:   1,
 											Name: "undefined",
-											Slug: "undefined",
-											Manufacturer: &netbox.DcimManufacturer{
+											Site: &netbox.DcimSite{
+												ID:     1,
+												Name:   "undefined",
+												Slug:   "undefined",
+												Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+											},
+											DeviceType: &netbox.DcimDeviceType{
+												ID:    1,
+												Model: "undefined",
+												Slug:  "undefined",
+												Manufacturer: &netbox.DcimManufacturer{
+													ID:   1,
+													Name: "undefined",
+													Slug: "undefined",
+												},
+											},
+											Role: &netbox.DcimDeviceRole{
+												ID:    1,
+												Name:  "undefined",
+												Slug:  "undefined",
+												Color: strPtr("000000"),
+											},
+											Platform: &netbox.DcimPlatform{
 												ID:   1,
 												Name: "undefined",
 												Slug: "undefined",
+												Manufacturer: &netbox.DcimManufacturer{
+													ID:   1,
+													Name: "undefined",
+													Slug: "undefined",
+												},
 											},
+											Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 										},
-										Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 									},
 								},
 							},
@@ -4709,11 +4879,13 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
-						Site: &netbox.DcimSite{
-							ID:     1,
-							Name:   "undefined",
-							Slug:   "undefined",
-							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimSite]{
+							Field: &netbox.DcimSite{
+								ID:     1,
+								Name:   "undefined",
+								Slug:   "undefined",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
 						},
 					},
 				},
@@ -4723,10 +4895,12 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
-						Manufacturer: &netbox.DcimManufacturer{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimManufacturer]{
+							Field: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+							},
 						},
 					},
 				},
@@ -4736,14 +4910,16 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimPlatformDataWrapper{
-						Platform: &netbox.DcimPlatform{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
-							Manufacturer: &netbox.DcimManufacturer{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimPlatform]{
+							Field: &netbox.DcimPlatform{
 								ID:   1,
 								Name: "undefined",
 								Slug: "undefined",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
 							},
 						},
 					},
@@ -4754,14 +4930,16 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined", "manufacturer__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
-						DeviceType: &netbox.DcimDeviceType{
-							ID:    1,
-							Model: "undefined",
-							Slug:  "undefined",
-							Manufacturer: &netbox.DcimManufacturer{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceType]{
+							Field: &netbox.DcimDeviceType{
+								ID:    1,
+								Model: "undefined",
+								Slug:  "undefined",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
 							},
 						},
 					},
@@ -4772,11 +4950,13 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
-						DeviceRole: &netbox.DcimDeviceRole{
-							ID:    1,
-							Name:  "undefined",
-							Slug:  "undefined",
-							Color: strPtr("000000"),
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceRole]{
+							Field: &netbox.DcimDeviceRole{
+								ID:    1,
+								Name:  "undefined",
+								Slug:  "undefined",
+								Color: strPtr("000000"),
+							},
 						},
 					},
 				},
@@ -4786,56 +4966,8 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined", "site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
-						Device: &netbox.DcimDevice{
-							ID:   1,
-							Name: "undefined",
-							Site: &netbox.DcimSite{
-								ID:     1,
-								Name:   "undefined",
-								Slug:   "undefined",
-								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-							},
-							DeviceType: &netbox.DcimDeviceType{
-								ID:    1,
-								Model: "undefined",
-								Slug:  "undefined",
-								Manufacturer: &netbox.DcimManufacturer{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
-								},
-							},
-							Role: &netbox.DcimDeviceRole{
-								ID:    1,
-								Name:  "undefined",
-								Slug:  "undefined",
-								Color: strPtr("000000"),
-							},
-							Platform: &netbox.DcimPlatform{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
-								Manufacturer: &netbox.DcimManufacturer{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
-								},
-							},
-							Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
-						},
-					},
-				},
-				{
-					objectType:     "dcim.interface",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "GigabitEthernet1/0/1", "device__name": "undefined", "device__site__name": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.DcimInterfaceDataWrapper{
-						Interface: &netbox.DcimInterface{
-							ID:   2,
-							Name: "GigabitEthernet1/0/1",
-							Type: strPtr(netbox.DefaultInterfaceType),
-							Device: &netbox.DcimDevice{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDevice]{
+							Field: &netbox.DcimDevice{
 								ID:   1,
 								Name: "undefined",
 								Site: &netbox.DcimSite{
@@ -4876,56 +5008,110 @@ func TestPrepare(t *testing.T) {
 					},
 				},
 				{
+					objectType:     "dcim.interface",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "GigabitEthernet1/0/1", "device__name": "undefined", "device__site__name": "undefined"},
+					objectChangeID: 0,
+					object: &netbox.DcimInterfaceDataWrapper{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimInterface]{
+							Field: &netbox.DcimInterface{
+								ID:   2,
+								Name: "GigabitEthernet1/0/1",
+								Type: strPtr(netbox.DefaultInterfaceType),
+								Device: &netbox.DcimDevice{
+									ID:   1,
+									Name: "undefined",
+									Site: &netbox.DcimSite{
+										ID:     1,
+										Name:   "undefined",
+										Slug:   "undefined",
+										Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+									},
+									DeviceType: &netbox.DcimDeviceType{
+										ID:    1,
+										Model: "undefined",
+										Slug:  "undefined",
+										Manufacturer: &netbox.DcimManufacturer{
+											ID:   1,
+											Name: "undefined",
+											Slug: "undefined",
+										},
+									},
+									Role: &netbox.DcimDeviceRole{
+										ID:    1,
+										Name:  "undefined",
+										Slug:  "undefined",
+										Color: strPtr("000000"),
+									},
+									Platform: &netbox.DcimPlatform{
+										ID:   1,
+										Name: "undefined",
+										Slug: "undefined",
+										Manufacturer: &netbox.DcimManufacturer{
+											ID:   1,
+											Name: "undefined",
+											Slug: "undefined",
+										},
+									},
+									Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+								},
+							},
+						},
+					},
+				},
+				{
 					objectType:     "ipam.ipaddress",
 					objectID:       0,
 					queryParams:    map[string]string{"q": "192.168.0.1/22", "interface__name": "GigabitEthernet1/0/1", "interface__device__name": "undefined", "interface__device__site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.IpamIPAddressDataWrapper{
-						IPAddress: &netbox.IpamIPAddress{
-							ID:      1,
-							Address: "192.168.0.1/22",
-							Status:  &netbox.DefaultIPAddressStatus,
-							AssignedObject: &netbox.IPAddressInterface{
-								Interface: &netbox.DcimInterface{
-									ID:   1,
-									Name: "GigabitEthernet0/0/0",
-									Type: strPtr(netbox.DefaultInterfaceType),
-									Device: &netbox.DcimDevice{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.IpamIPAddress]{
+							Field: &netbox.IpamIPAddress{
+								ID:      1,
+								Address: "192.168.0.1/22",
+								Status:  &netbox.DefaultIPAddressStatus,
+								AssignedObject: &netbox.IPAddressInterface{
+									Interface: &netbox.DcimInterface{
 										ID:   1,
-										Name: "undefined",
-										Site: &netbox.DcimSite{
-											ID:     1,
-											Name:   "undefined",
-											Slug:   "undefined",
-											Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-										},
-										DeviceType: &netbox.DcimDeviceType{
-											ID:    1,
-											Model: "undefined",
-											Slug:  "undefined",
-											Manufacturer: &netbox.DcimManufacturer{
-												ID:   1,
-												Name: "undefined",
-												Slug: "undefined",
-											},
-										},
-										Role: &netbox.DcimDeviceRole{
-											ID:    1,
-											Name:  "undefined",
-											Slug:  "undefined",
-											Color: strPtr("000000"),
-										},
-										Platform: &netbox.DcimPlatform{
+										Name: "GigabitEthernet0/0/0",
+										Type: strPtr(netbox.DefaultInterfaceType),
+										Device: &netbox.DcimDevice{
 											ID:   1,
 											Name: "undefined",
-											Slug: "undefined",
-											Manufacturer: &netbox.DcimManufacturer{
+											Site: &netbox.DcimSite{
+												ID:     1,
+												Name:   "undefined",
+												Slug:   "undefined",
+												Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+											},
+											DeviceType: &netbox.DcimDeviceType{
+												ID:    1,
+												Model: "undefined",
+												Slug:  "undefined",
+												Manufacturer: &netbox.DcimManufacturer{
+													ID:   1,
+													Name: "undefined",
+													Slug: "undefined",
+												},
+											},
+											Role: &netbox.DcimDeviceRole{
+												ID:    1,
+												Name:  "undefined",
+												Slug:  "undefined",
+												Color: strPtr("000000"),
+											},
+											Platform: &netbox.DcimPlatform{
 												ID:   1,
 												Name: "undefined",
 												Slug: "undefined",
+												Manufacturer: &netbox.DcimManufacturer{
+													ID:   1,
+													Name: "undefined",
+													Slug: "undefined",
+												},
 											},
+											Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 										},
-										Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 									},
 								},
 							},
@@ -4983,11 +5169,13 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
-						Site: &netbox.DcimSite{
-							ID:     1,
-							Name:   "undefined",
-							Slug:   "undefined",
-							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimSite]{
+							Field: &netbox.DcimSite{
+								ID:     1,
+								Name:   "undefined",
+								Slug:   "undefined",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
 						},
 					},
 				},
@@ -4997,10 +5185,12 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
-						Manufacturer: &netbox.DcimManufacturer{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimManufacturer]{
+							Field: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+							},
 						},
 					},
 				},
@@ -5010,14 +5200,16 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimPlatformDataWrapper{
-						Platform: &netbox.DcimPlatform{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
-							Manufacturer: &netbox.DcimManufacturer{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimPlatform]{
+							Field: &netbox.DcimPlatform{
 								ID:   1,
 								Name: "undefined",
 								Slug: "undefined",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
 							},
 						},
 					},
@@ -5028,14 +5220,16 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined", "manufacturer__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
-						DeviceType: &netbox.DcimDeviceType{
-							ID:    1,
-							Model: "undefined",
-							Slug:  "undefined",
-							Manufacturer: &netbox.DcimManufacturer{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceType]{
+							Field: &netbox.DcimDeviceType{
+								ID:    1,
+								Model: "undefined",
+								Slug:  "undefined",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
 							},
 						},
 					},
@@ -5046,11 +5240,13 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
-						DeviceRole: &netbox.DcimDeviceRole{
-							ID:    1,
-							Name:  "undefined",
-							Slug:  "undefined",
-							Color: strPtr("000000"),
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceRole]{
+							Field: &netbox.DcimDeviceRole{
+								ID:    1,
+								Name:  "undefined",
+								Slug:  "undefined",
+								Color: strPtr("000000"),
+							},
 						},
 					},
 				},
@@ -5060,56 +5256,8 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined", "site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
-						Device: &netbox.DcimDevice{
-							ID:   1,
-							Name: "undefined",
-							Site: &netbox.DcimSite{
-								ID:     1,
-								Name:   "undefined",
-								Slug:   "undefined",
-								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-							},
-							DeviceType: &netbox.DcimDeviceType{
-								ID:    1,
-								Model: "undefined",
-								Slug:  "undefined",
-								Manufacturer: &netbox.DcimManufacturer{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
-								},
-							},
-							Role: &netbox.DcimDeviceRole{
-								ID:    1,
-								Name:  "undefined",
-								Slug:  "undefined",
-								Color: strPtr("000000"),
-							},
-							Platform: &netbox.DcimPlatform{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
-								Manufacturer: &netbox.DcimManufacturer{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
-								},
-							},
-							Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
-						},
-					},
-				},
-				{
-					objectType:     "dcim.interface",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "GigabitEthernet0/0/0", "device__name": "undefined", "device__site__name": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.DcimInterfaceDataWrapper{
-						Interface: &netbox.DcimInterface{
-							ID:   1,
-							Name: "GigabitEthernet0/0/0",
-							Type: strPtr(netbox.DefaultInterfaceType),
-							Device: &netbox.DcimDevice{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDevice]{
+							Field: &netbox.DcimDevice{
 								ID:   1,
 								Name: "undefined",
 								Site: &netbox.DcimSite{
@@ -5150,56 +5298,110 @@ func TestPrepare(t *testing.T) {
 					},
 				},
 				{
+					objectType:     "dcim.interface",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "GigabitEthernet0/0/0", "device__name": "undefined", "device__site__name": "undefined"},
+					objectChangeID: 0,
+					object: &netbox.DcimInterfaceDataWrapper{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimInterface]{
+							Field: &netbox.DcimInterface{
+								ID:   1,
+								Name: "GigabitEthernet0/0/0",
+								Type: strPtr(netbox.DefaultInterfaceType),
+								Device: &netbox.DcimDevice{
+									ID:   1,
+									Name: "undefined",
+									Site: &netbox.DcimSite{
+										ID:     1,
+										Name:   "undefined",
+										Slug:   "undefined",
+										Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+									},
+									DeviceType: &netbox.DcimDeviceType{
+										ID:    1,
+										Model: "undefined",
+										Slug:  "undefined",
+										Manufacturer: &netbox.DcimManufacturer{
+											ID:   1,
+											Name: "undefined",
+											Slug: "undefined",
+										},
+									},
+									Role: &netbox.DcimDeviceRole{
+										ID:    1,
+										Name:  "undefined",
+										Slug:  "undefined",
+										Color: strPtr("000000"),
+									},
+									Platform: &netbox.DcimPlatform{
+										ID:   1,
+										Name: "undefined",
+										Slug: "undefined",
+										Manufacturer: &netbox.DcimManufacturer{
+											ID:   1,
+											Name: "undefined",
+											Slug: "undefined",
+										},
+									},
+									Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+								},
+							},
+						},
+					},
+				},
+				{
 					objectType:     "ipam.ipaddress",
 					objectID:       0,
 					queryParams:    map[string]string{"q": "192.168.0.1/22", "interface__name": "GigabitEthernet0/0/0", "interface__device__name": "undefined", "interface__device__site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.IpamIPAddressDataWrapper{
-						IPAddress: &netbox.IpamIPAddress{
-							ID:      1,
-							Address: "192.168.0.1/22",
-							Status:  &netbox.DefaultIPAddressStatus,
-							AssignedObject: &netbox.IPAddressInterface{
-								Interface: &netbox.DcimInterface{
-									ID:   1,
-									Name: "GigabitEthernet0/0/0",
-									Type: strPtr(netbox.DefaultInterfaceType),
-									Device: &netbox.DcimDevice{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.IpamIPAddress]{
+							Field: &netbox.IpamIPAddress{
+								ID:      1,
+								Address: "192.168.0.1/22",
+								Status:  &netbox.DefaultIPAddressStatus,
+								AssignedObject: &netbox.IPAddressInterface{
+									Interface: &netbox.DcimInterface{
 										ID:   1,
-										Name: "undefined",
-										Site: &netbox.DcimSite{
-											ID:     1,
-											Name:   "undefined",
-											Slug:   "undefined",
-											Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-										},
-										DeviceType: &netbox.DcimDeviceType{
-											ID:    1,
-											Model: "undefined",
-											Slug:  "undefined",
-											Manufacturer: &netbox.DcimManufacturer{
-												ID:   1,
-												Name: "undefined",
-												Slug: "undefined",
-											},
-										},
-										Role: &netbox.DcimDeviceRole{
-											ID:    1,
-											Name:  "undefined",
-											Slug:  "undefined",
-											Color: strPtr("000000"),
-										},
-										Platform: &netbox.DcimPlatform{
+										Name: "GigabitEthernet0/0/0",
+										Type: strPtr(netbox.DefaultInterfaceType),
+										Device: &netbox.DcimDevice{
 											ID:   1,
 											Name: "undefined",
-											Slug: "undefined",
-											Manufacturer: &netbox.DcimManufacturer{
+											Site: &netbox.DcimSite{
+												ID:     1,
+												Name:   "undefined",
+												Slug:   "undefined",
+												Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+											},
+											DeviceType: &netbox.DcimDeviceType{
+												ID:    1,
+												Model: "undefined",
+												Slug:  "undefined",
+												Manufacturer: &netbox.DcimManufacturer{
+													ID:   1,
+													Name: "undefined",
+													Slug: "undefined",
+												},
+											},
+											Role: &netbox.DcimDeviceRole{
+												ID:    1,
+												Name:  "undefined",
+												Slug:  "undefined",
+												Color: strPtr("000000"),
+											},
+											Platform: &netbox.DcimPlatform{
 												ID:   1,
 												Name: "undefined",
 												Slug: "undefined",
+												Manufacturer: &netbox.DcimManufacturer{
+													ID:   1,
+													Name: "undefined",
+													Slug: "undefined",
+												},
 											},
+											Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 										},
-										Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 									},
 								},
 							},
@@ -5232,10 +5434,12 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "192.168.0.1/22"},
 					objectChangeID: 0,
 					object: &netbox.IpamIPAddressDataWrapper{
-						IPAddress: &netbox.IpamIPAddress{
-							ID:      1,
-							Address: "192.168.0.1/22",
-							Status:  &netbox.DefaultIPAddressStatus,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.IpamIPAddress]{
+							Field: &netbox.IpamIPAddress{
+								ID:      1,
+								Address: "192.168.0.1/22",
+								Status:  &netbox.DefaultIPAddressStatus,
+							},
 						},
 					},
 				},
@@ -5271,11 +5475,13 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
-						Site: &netbox.DcimSite{
-							ID:     1,
-							Name:   "undefined",
-							Slug:   "undefined",
-							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimSite]{
+							Field: &netbox.DcimSite{
+								ID:     1,
+								Name:   "undefined",
+								Slug:   "undefined",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
 						},
 					},
 				},
@@ -5285,10 +5491,12 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
-						Manufacturer: &netbox.DcimManufacturer{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimManufacturer]{
+							Field: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "undefined",
+								Slug: "undefined",
+							},
 						},
 					},
 				},
@@ -5298,14 +5506,16 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimPlatformDataWrapper{
-						Platform: &netbox.DcimPlatform{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
-							Manufacturer: &netbox.DcimManufacturer{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimPlatform]{
+							Field: &netbox.DcimPlatform{
 								ID:   1,
 								Name: "undefined",
 								Slug: "undefined",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
 							},
 						},
 					},
@@ -5316,14 +5526,16 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined", "manufacturer__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
-						DeviceType: &netbox.DcimDeviceType{
-							ID:    1,
-							Model: "undefined",
-							Slug:  "undefined",
-							Manufacturer: &netbox.DcimManufacturer{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceType]{
+							Field: &netbox.DcimDeviceType{
+								ID:    1,
+								Model: "undefined",
+								Slug:  "undefined",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "undefined",
+									Slug: "undefined",
+								},
 							},
 						},
 					},
@@ -5334,11 +5546,13 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
-						DeviceRole: &netbox.DcimDeviceRole{
-							ID:    1,
-							Name:  "undefined",
-							Slug:  "undefined",
-							Color: strPtr("000000"),
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceRole]{
+							Field: &netbox.DcimDeviceRole{
+								ID:    1,
+								Name:  "undefined",
+								Slug:  "undefined",
+								Color: strPtr("000000"),
+							},
 						},
 					},
 				},
@@ -5348,56 +5562,8 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined", "site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
-						Device: &netbox.DcimDevice{
-							ID:   1,
-							Name: "undefined",
-							Site: &netbox.DcimSite{
-								ID:     1,
-								Name:   "undefined",
-								Slug:   "undefined",
-								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-							},
-							DeviceType: &netbox.DcimDeviceType{
-								ID:    1,
-								Model: "undefined",
-								Slug:  "undefined",
-								Manufacturer: &netbox.DcimManufacturer{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
-								},
-							},
-							Role: &netbox.DcimDeviceRole{
-								ID:    1,
-								Name:  "undefined",
-								Slug:  "undefined",
-								Color: strPtr("000000"),
-							},
-							Platform: &netbox.DcimPlatform{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
-								Manufacturer: &netbox.DcimManufacturer{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
-								},
-							},
-							Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
-						},
-					},
-				},
-				{
-					objectType:     "dcim.interface",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "GigabitEthernet0/0/0", "device__name": "undefined", "device__site__name": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.DcimInterfaceDataWrapper{
-						Interface: &netbox.DcimInterface{
-							ID:   1,
-							Name: "GigabitEthernet0/0/0",
-							Type: strPtr(netbox.DefaultInterfaceType),
-							Device: &netbox.DcimDevice{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDevice]{
+							Field: &netbox.DcimDevice{
 								ID:   1,
 								Name: "undefined",
 								Site: &netbox.DcimSite{
@@ -5438,56 +5604,110 @@ func TestPrepare(t *testing.T) {
 					},
 				},
 				{
+					objectType:     "dcim.interface",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "GigabitEthernet0/0/0", "device__name": "undefined", "device__site__name": "undefined"},
+					objectChangeID: 0,
+					object: &netbox.DcimInterfaceDataWrapper{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimInterface]{
+							Field: &netbox.DcimInterface{
+								ID:   1,
+								Name: "GigabitEthernet0/0/0",
+								Type: strPtr(netbox.DefaultInterfaceType),
+								Device: &netbox.DcimDevice{
+									ID:   1,
+									Name: "undefined",
+									Site: &netbox.DcimSite{
+										ID:     1,
+										Name:   "undefined",
+										Slug:   "undefined",
+										Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+									},
+									DeviceType: &netbox.DcimDeviceType{
+										ID:    1,
+										Model: "undefined",
+										Slug:  "undefined",
+										Manufacturer: &netbox.DcimManufacturer{
+											ID:   1,
+											Name: "undefined",
+											Slug: "undefined",
+										},
+									},
+									Role: &netbox.DcimDeviceRole{
+										ID:    1,
+										Name:  "undefined",
+										Slug:  "undefined",
+										Color: strPtr("000000"),
+									},
+									Platform: &netbox.DcimPlatform{
+										ID:   1,
+										Name: "undefined",
+										Slug: "undefined",
+										Manufacturer: &netbox.DcimManufacturer{
+											ID:   1,
+											Name: "undefined",
+											Slug: "undefined",
+										},
+									},
+									Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
+								},
+							},
+						},
+					},
+				},
+				{
 					objectType:     "ipam.ipaddress",
 					objectID:       0,
 					queryParams:    map[string]string{"q": "192.168.0.1/22", "interface__name": "GigabitEthernet0/0/0", "interface__device__name": "undefined", "interface__device__site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.IpamIPAddressDataWrapper{
-						IPAddress: &netbox.IpamIPAddress{
-							ID:      1,
-							Address: "192.168.0.1/22",
-							Status:  &netbox.DefaultIPAddressStatus,
-							AssignedObject: &netbox.IPAddressInterface{
-								Interface: &netbox.DcimInterface{
-									ID:   1,
-									Name: "GigabitEthernet0/0/0",
-									Type: strPtr(netbox.DefaultInterfaceType),
-									Device: &netbox.DcimDevice{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.IpamIPAddress]{
+							Field: &netbox.IpamIPAddress{
+								ID:      1,
+								Address: "192.168.0.1/22",
+								Status:  &netbox.DefaultIPAddressStatus,
+								AssignedObject: &netbox.IPAddressInterface{
+									Interface: &netbox.DcimInterface{
 										ID:   1,
-										Name: "undefined",
-										Site: &netbox.DcimSite{
-											ID:     1,
-											Name:   "undefined",
-											Slug:   "undefined",
-											Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-										},
-										DeviceType: &netbox.DcimDeviceType{
-											ID:    1,
-											Model: "undefined",
-											Slug:  "undefined",
-											Manufacturer: &netbox.DcimManufacturer{
-												ID:   1,
-												Name: "undefined",
-												Slug: "undefined",
-											},
-										},
-										Role: &netbox.DcimDeviceRole{
-											ID:    1,
-											Name:  "undefined",
-											Slug:  "undefined",
-											Color: strPtr("000000"),
-										},
-										Platform: &netbox.DcimPlatform{
+										Name: "GigabitEthernet0/0/0",
+										Type: strPtr(netbox.DefaultInterfaceType),
+										Device: &netbox.DcimDevice{
 											ID:   1,
 											Name: "undefined",
-											Slug: "undefined",
-											Manufacturer: &netbox.DcimManufacturer{
+											Site: &netbox.DcimSite{
+												ID:     1,
+												Name:   "undefined",
+												Slug:   "undefined",
+												Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+											},
+											DeviceType: &netbox.DcimDeviceType{
+												ID:    1,
+												Model: "undefined",
+												Slug:  "undefined",
+												Manufacturer: &netbox.DcimManufacturer{
+													ID:   1,
+													Name: "undefined",
+													Slug: "undefined",
+												},
+											},
+											Role: &netbox.DcimDeviceRole{
+												ID:    1,
+												Name:  "undefined",
+												Slug:  "undefined",
+												Color: strPtr("000000"),
+											},
+											Platform: &netbox.DcimPlatform{
 												ID:   1,
 												Name: "undefined",
 												Slug: "undefined",
+												Manufacturer: &netbox.DcimManufacturer{
+													ID:   1,
+													Name: "undefined",
+													Slug: "undefined",
+												},
 											},
+											Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 										},
-										Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 									},
 								},
 							},
@@ -5559,7 +5779,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
-						Site: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimSite]{Field: nil},
 					},
 				},
 				{
@@ -5568,7 +5788,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "192.168.0.0/32"},
 					objectChangeID: 0,
 					object: &netbox.IpamPrefixDataWrapper{
-						Prefix: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.IpamPrefix]{Field: nil},
 					},
 				},
 			},
@@ -5629,11 +5849,13 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
-						Site: &netbox.DcimSite{
-							ID:     1,
-							Name:   "undefined",
-							Slug:   "undefined",
-							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimSite]{
+							Field: &netbox.DcimSite{
+								ID:     1,
+								Name:   "undefined",
+								Slug:   "undefined",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
 						},
 					},
 				},
@@ -5643,16 +5865,18 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "192.168.0.0/32"},
 					objectChangeID: 0,
 					object: &netbox.IpamPrefixDataWrapper{
-						Prefix: &netbox.IpamPrefix{
-							ID:     1,
-							Prefix: "192.168.0.0/32",
-							Site: &netbox.DcimSite{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.IpamPrefix]{
+							Field: &netbox.IpamPrefix{
 								ID:     1,
-								Name:   "undefined",
-								Slug:   "undefined",
-								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+								Prefix: "192.168.0.0/32",
+								Site: &netbox.DcimSite{
+									ID:     1,
+									Name:   "undefined",
+									Slug:   "undefined",
+									Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+								},
+								Status: &netbox.DefaultPrefixStatus,
 							},
-							Status: &netbox.DefaultPrefixStatus,
 						},
 					},
 				},
@@ -5683,11 +5907,13 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
-						Site: &netbox.DcimSite{
-							ID:     1,
-							Name:   "undefined",
-							Slug:   "undefined",
-							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimSite]{
+							Field: &netbox.DcimSite{
+								ID:     1,
+								Name:   "undefined",
+								Slug:   "undefined",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
 						},
 					},
 				},
@@ -5697,16 +5923,18 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "192.168.0.0/32"},
 					objectChangeID: 0,
 					object: &netbox.IpamPrefixDataWrapper{
-						Prefix: &netbox.IpamPrefix{
-							ID:     1,
-							Prefix: "192.168.0.0/32",
-							Site: &netbox.DcimSite{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.IpamPrefix]{
+							Field: &netbox.IpamPrefix{
 								ID:     1,
-								Name:   "undefined",
-								Slug:   "undefined",
-								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+								Prefix: "192.168.0.0/32",
+								Site: &netbox.DcimSite{
+									ID:     1,
+									Name:   "undefined",
+									Slug:   "undefined",
+									Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+								},
+								Status: &netbox.DefaultPrefixStatus,
 							},
-							Status: &netbox.DefaultPrefixStatus,
 						},
 					},
 				},
@@ -5741,11 +5969,13 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
-						Site: &netbox.DcimSite{
-							ID:     1,
-							Name:   "undefined",
-							Slug:   "undefined",
-							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimSite]{
+							Field: &netbox.DcimSite{
+								ID:     1,
+								Name:   "undefined",
+								Slug:   "undefined",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
 						},
 					},
 				},
@@ -5764,16 +5994,18 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "192.168.0.0/32"},
 					objectChangeID: 0,
 					object: &netbox.IpamPrefixDataWrapper{
-						Prefix: &netbox.IpamPrefix{
-							ID:     1,
-							Prefix: "192.168.0.0/32",
-							Site: &netbox.DcimSite{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.IpamPrefix]{
+							Field: &netbox.IpamPrefix{
 								ID:     1,
-								Name:   "undefined",
-								Slug:   "undefined",
-								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+								Prefix: "192.168.0.0/32",
+								Site: &netbox.DcimSite{
+									ID:     1,
+									Name:   "undefined",
+									Slug:   "undefined",
+									Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+								},
+								Status: &netbox.DefaultPrefixStatus,
 							},
-							Status: &netbox.DefaultPrefixStatus,
 						},
 					},
 				},
@@ -5855,11 +6087,13 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "Site ABC"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
-						Site: &netbox.DcimSite{
-							ID:     1,
-							Name:   "Site ABC",
-							Slug:   "site-abc",
-							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimSite]{
+							Field: &netbox.DcimSite{
+								ID:     1,
+								Name:   "Site ABC",
+								Slug:   "site-abc",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
 						},
 					},
 				},
@@ -5869,10 +6103,12 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "Manufacturer A"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
-						Manufacturer: &netbox.DcimManufacturer{
-							ID:   1,
-							Name: "Manufacturer A",
-							Slug: "manufacturer-a",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimManufacturer]{
+							Field: &netbox.DcimManufacturer{
+								ID:   1,
+								Name: "Manufacturer A",
+								Slug: "manufacturer-a",
+							},
 						},
 					},
 				},
@@ -5882,14 +6118,16 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "Platform A", "manufacturer__name": "Manufacturer A"},
 					objectChangeID: 0,
 					object: &netbox.DcimPlatformDataWrapper{
-						Platform: &netbox.DcimPlatform{
-							ID:   1,
-							Name: "Platform A",
-							Slug: "platform-a",
-							Manufacturer: &netbox.DcimManufacturer{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimPlatform]{
+							Field: &netbox.DcimPlatform{
 								ID:   1,
-								Name: "Manufacturer A",
-								Slug: "manufacturer-a",
+								Name: "Platform A",
+								Slug: "platform-a",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "Manufacturer A",
+									Slug: "manufacturer-a",
+								},
 							},
 						},
 					},
@@ -5900,14 +6138,16 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "Device Type A", "manufacturer__name": "Manufacturer A"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
-						DeviceType: &netbox.DcimDeviceType{
-							ID:    1,
-							Model: "Device Type A",
-							Slug:  "device-type-a",
-							Manufacturer: &netbox.DcimManufacturer{
-								ID:   1,
-								Name: "Manufacturer A",
-								Slug: "manufacturer-a",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceType]{
+							Field: &netbox.DcimDeviceType{
+								ID:    1,
+								Model: "Device Type A",
+								Slug:  "device-type-a",
+								Manufacturer: &netbox.DcimManufacturer{
+									ID:   1,
+									Name: "Manufacturer A",
+									Slug: "manufacturer-a",
+								},
 							},
 						},
 					},
@@ -5918,11 +6158,13 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "Role ABC"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
-						DeviceRole: &netbox.DcimDeviceRole{
-							ID:    1,
-							Name:  "Role ABC",
-							Slug:  "role-abc",
-							Color: strPtr("000000"),
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceRole]{
+							Field: &netbox.DcimDeviceRole{
+								ID:    1,
+								Name:  "Role ABC",
+								Slug:  "role-abc",
+								Color: strPtr("000000"),
+							},
 						},
 					},
 				},
@@ -5932,43 +6174,45 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "Device A", "site__name": "Site ABC"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
-						Device: &netbox.DcimDevice{
-							ID:   1,
-							Name: "Device A",
-							Site: &netbox.DcimSite{
-								ID:     1,
-								Name:   "Site ABC",
-								Slug:   "site-abc",
-								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-							},
-							DeviceType: &netbox.DcimDeviceType{
-								ID:    1,
-								Model: "Device Type A",
-								Slug:  "device-type-a",
-								Manufacturer: &netbox.DcimManufacturer{
-									ID:   1,
-									Name: "Manufacturer A",
-									Slug: "manufacturer-a",
-								},
-							},
-							Role: &netbox.DcimDeviceRole{
-								ID:    1,
-								Name:  "Role ABC",
-								Slug:  "role-abc",
-								Color: strPtr("000000"),
-							},
-							Platform: &netbox.DcimPlatform{
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDevice]{
+							Field: &netbox.DcimDevice{
 								ID:   1,
-								Name: "Platform A",
-								Slug: "platform-a",
-								Manufacturer: &netbox.DcimManufacturer{
-									ID:   1,
-									Name: "Manufacturer A",
-									Slug: "manufacturer-a",
+								Name: "Device A",
+								Site: &netbox.DcimSite{
+									ID:     1,
+									Name:   "Site ABC",
+									Slug:   "site-abc",
+									Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
 								},
+								DeviceType: &netbox.DcimDeviceType{
+									ID:    1,
+									Model: "Device Type A",
+									Slug:  "device-type-a",
+									Manufacturer: &netbox.DcimManufacturer{
+										ID:   1,
+										Name: "Manufacturer A",
+										Slug: "manufacturer-a",
+									},
+								},
+								Role: &netbox.DcimDeviceRole{
+									ID:    1,
+									Name:  "Role ABC",
+									Slug:  "role-abc",
+									Color: strPtr("000000"),
+								},
+								Platform: &netbox.DcimPlatform{
+									ID:   1,
+									Name: "Platform A",
+									Slug: "platform-a",
+									Manufacturer: &netbox.DcimManufacturer{
+										ID:   1,
+										Name: "Manufacturer A",
+										Slug: "manufacturer-a",
+									},
+								},
+								Serial: strPtr("123456"),
+								Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 							},
-							Serial: strPtr("123456"),
-							Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 						},
 					},
 				},
@@ -6005,7 +6249,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "Ethernet2", "device__name": "CEOS1", "device__site__name": "default_namespace"},
 					objectChangeID: 0,
 					object: &netbox.DcimInterfaceDataWrapper{
-						Interface: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimInterface]{Field: nil},
 					},
 				},
 				{
@@ -6014,7 +6258,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimManufacturerDataWrapper{
-						Manufacturer: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimManufacturer]{Field: nil},
 					},
 				},
 				{
@@ -6023,7 +6267,7 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined", "manufacturer__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceTypeDataWrapper{
-						DeviceType: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceType]{Field: nil},
 					},
 				},
 				{
@@ -6032,11 +6276,13 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceRoleDataWrapper{
-						DeviceRole: &netbox.DcimDeviceRole{
-							ID:    89,
-							Name:  "undefined",
-							Slug:  "undefined",
-							Color: strPtr("000000"),
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDeviceRole]{
+							Field: &netbox.DcimDeviceRole{
+								ID:    89,
+								Name:  "undefined",
+								Slug:  "undefined",
+								Color: strPtr("000000"),
+							},
 						},
 					},
 				},
@@ -6046,11 +6292,13 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "default_namespace"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
-						Site: &netbox.DcimSite{
-							ID:     21,
-							Name:   "default_namespace",
-							Slug:   "default_namespace",
-							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimSite]{
+							Field: &netbox.DcimSite{
+								ID:     21,
+								Name:   "default_namespace",
+								Slug:   "default_namespace",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
 						},
 					},
 				},
@@ -6060,42 +6308,44 @@ func TestPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "CEOS1", "site__name": "default_namespace"},
 					objectChangeID: 0,
 					object: &netbox.DcimDeviceDataWrapper{
-						Device: &netbox.DcimDevice{
-							ID:   111,
-							Name: "CEOS1",
-							Site: &netbox.DcimSite{
-								ID:     21,
-								Name:   "default_namespace",
-								Slug:   "default_namespace",
-								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-							},
-							DeviceType: &netbox.DcimDeviceType{
-								ID:    10,
-								Model: "cEOSLab",
-								Slug:  "ceoslab",
-								Manufacturer: &netbox.DcimManufacturer{
-									ID:   15,
-									Name: "Arista",
-									Slug: "arista",
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimDevice]{
+							Field: &netbox.DcimDevice{
+								ID:   111,
+								Name: "CEOS1",
+								Site: &netbox.DcimSite{
+									ID:     21,
+									Name:   "default_namespace",
+									Slug:   "default_namespace",
+									Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
 								},
-							},
-							Role: &netbox.DcimDeviceRole{
-								ID:    89,
-								Name:  "undefined",
-								Slug:  "undefined",
-								Color: strPtr("000000"),
-							},
-							Platform: &netbox.DcimPlatform{
-								ID:   68,
-								Name: "eos:4.29.0.2F-29226602.42902F (engineering build)",
-								Slug: "eos-4-29-0-2f-29226602-42902f-engineering-build",
-								Manufacturer: &netbox.DcimManufacturer{
-									ID:   15,
-									Name: "Arista",
-									Slug: "arista",
+								DeviceType: &netbox.DcimDeviceType{
+									ID:    10,
+									Model: "cEOSLab",
+									Slug:  "ceoslab",
+									Manufacturer: &netbox.DcimManufacturer{
+										ID:   15,
+										Name: "Arista",
+										Slug: "arista",
+									},
 								},
+								Role: &netbox.DcimDeviceRole{
+									ID:    89,
+									Name:  "undefined",
+									Slug:  "undefined",
+									Color: strPtr("000000"),
+								},
+								Platform: &netbox.DcimPlatform{
+									ID:   68,
+									Name: "eos:4.29.0.2F-29226602.42902F (engineering build)",
+									Slug: "eos-4-29-0-2f-29226602-42902f-engineering-build",
+									Manufacturer: &netbox.DcimManufacturer{
+										ID:   15,
+										Name: "Arista",
+										Slug: "arista",
+									},
+								},
+								Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 							},
-							Status: (*netbox.DcimDeviceStatus)(strPtr(string(netbox.DcimDeviceStatusActive))),
 						},
 					},
 				},

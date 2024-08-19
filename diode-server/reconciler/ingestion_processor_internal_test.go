@@ -150,7 +150,7 @@ func TestReconcileEntity(t *testing.T) {
 					ObjectID:       0,
 					ObjectChangeID: 0,
 					Object: &netbox.DcimSiteDataWrapper{
-						Site: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimSite]{Field: nil},
 					}}, nil)
 			}
 			// Setup mock for ApplyChangeSet
@@ -315,7 +315,7 @@ func TestHandleStreamMessage(t *testing.T) {
 					ObjectID:       0,
 					ObjectChangeID: 0,
 					Object: &netbox.DcimSiteDataWrapper{
-						Site: nil,
+						BaseDataWrapper: netbox.BaseDataWrapper[netbox.DcimSite]{Field: nil},
 					}}, nil)
 			}
 			mockNbClient.On("ApplyChangeSet", ctx, mock.Anything).Return(&netboxdiodeplugin.ChangeSetResponse{}, nil)
