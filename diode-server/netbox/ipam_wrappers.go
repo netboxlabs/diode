@@ -10,14 +10,8 @@ import (
 
 // IpamIPAddressDataWrapper represents the IPAM IP address data wrapper
 type IpamIPAddressDataWrapper struct {
+	BaseDataWrapper
 	IPAddress *IpamIPAddress
-
-	placeholder        bool
-	hasParent          bool
-	intended           bool
-	hasChanged         bool
-	nestedObjects      []ComparableData
-	objectsToReconcile []ComparableData
 }
 
 func (*IpamIPAddressDataWrapper) comparableData() {}
@@ -74,7 +68,7 @@ func (dw *IpamIPAddressDataWrapper) NestedObjects() ([]ComparableData, error) {
 	if dw.IPAddress.AssignedObject != nil {
 		switch dw.IPAddress.AssignedObject.(type) {
 		case *IPAddressInterface:
-			assignedObject = &DcimInterfaceDataWrapper{Interface: dw.IPAddress.AssignedObject.(*IPAddressInterface).Interface, placeholder: dw.placeholder, hasParent: true, intended: dw.intended}
+			assignedObject = &DcimInterfaceDataWrapper{Interface: dw.IPAddress.AssignedObject.(*IPAddressInterface).Interface, BaseDataWrapper: BaseDataWrapper{placeholder: dw.placeholder, hasParent: true, intended: dw.intended}}
 		}
 	}
 
@@ -139,16 +133,6 @@ func (dw *IpamIPAddressDataWrapper) ID() int {
 	return dw.IPAddress.ID
 }
 
-// HasChanged returns true if the data has changed
-func (dw *IpamIPAddressDataWrapper) HasChanged() bool {
-	return dw.hasChanged
-}
-
-// IsPlaceholder returns true if the data is a placeholder
-func (dw *IpamIPAddressDataWrapper) IsPlaceholder() bool {
-	return dw.placeholder
-}
-
 func (dw *IpamIPAddressDataWrapper) hash() string {
 	var interfaceName, deviceName, siteName string
 	if dw.IPAddress.AssignedObject != nil {
@@ -187,7 +171,7 @@ func (dw *IpamIPAddressDataWrapper) Patch(cmp ComparableData, intendedNestedObje
 	if dw.IPAddress.AssignedObject != nil {
 		switch dw.IPAddress.AssignedObject.(type) {
 		case *IPAddressInterface:
-			assignedObject := &DcimInterfaceDataWrapper{Interface: dw.IPAddress.AssignedObject.(*IPAddressInterface).Interface, placeholder: dw.placeholder, hasParent: true, intended: dw.intended}
+			assignedObject := &DcimInterfaceDataWrapper{Interface: dw.IPAddress.AssignedObject.(*IPAddressInterface).Interface, BaseDataWrapper: BaseDataWrapper{placeholder: dw.placeholder, hasParent: true, intended: dw.intended}}
 			actualAssignedObject = extractFromObjectsMap(actualNestedObjectsMap, fmt.Sprintf("%p", assignedObject.Data()))
 			intendedAssignedObject = extractFromObjectsMap(intendedNestedObjects, fmt.Sprintf("%p", assignedObject.Data()))
 		}
@@ -360,14 +344,8 @@ func (dw *IpamIPAddressDataWrapper) SetDefaults() {
 
 // IpamPrefixDataWrapper represents the IPAM Prefix data wrapper
 type IpamPrefixDataWrapper struct {
+	BaseDataWrapper
 	Prefix *IpamPrefix
-
-	placeholder        bool
-	hasParent          bool
-	intended           bool
-	hasChanged         bool
-	nestedObjects      []ComparableData
-	objectsToReconcile []ComparableData
 }
 
 func (*IpamPrefixDataWrapper) comparableData() {}
@@ -420,7 +398,7 @@ func (dw *IpamPrefixDataWrapper) NestedObjects() ([]ComparableData, error) {
 		dw.placeholder = true
 	}
 
-	site := DcimSiteDataWrapper{Site: dw.Prefix.Site, placeholder: dw.placeholder, hasParent: true, intended: dw.intended}
+	site := DcimSiteDataWrapper{Site: dw.Prefix.Site, BaseDataWrapper: BaseDataWrapper{placeholder: dw.placeholder, hasParent: true, intended: dw.intended}}
 
 	so, err := site.NestedObjects()
 	if err != nil {
@@ -462,16 +440,6 @@ func (dw *IpamPrefixDataWrapper) ObjectStateQueryParams() map[string]string {
 // ID returns the ID of the data
 func (dw *IpamPrefixDataWrapper) ID() int {
 	return dw.Prefix.ID
-}
-
-// HasChanged returns true if the data has changed
-func (dw *IpamPrefixDataWrapper) HasChanged() bool {
-	return dw.hasChanged
-}
-
-// IsPlaceholder returns true if the data is a placeholder
-func (dw *IpamPrefixDataWrapper) IsPlaceholder() bool {
-	return dw.placeholder
 }
 
 // Patch creates patches between the actual, intended and current data

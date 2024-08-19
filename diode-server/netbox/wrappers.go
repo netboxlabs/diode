@@ -48,6 +48,26 @@ type ComparableData interface {
 	HasChanged() bool
 }
 
+// BaseDataWrapper is the base struct for all data wrappers
+type BaseDataWrapper struct {
+	placeholder        bool
+	hasParent          bool
+	intended           bool
+	hasChanged         bool
+	nestedObjects      []ComparableData
+	objectsToReconcile []ComparableData
+}
+
+// IsPlaceholder returns true if the data is a placeholder
+func (bw *BaseDataWrapper) IsPlaceholder() bool {
+	return bw.placeholder
+}
+
+// HasChanged returns true if the data has changed
+func (bw *BaseDataWrapper) HasChanged() bool {
+	return bw.hasChanged
+}
+
 func copyData[T any](srcData *T) (*T, error) {
 	var dstData T
 	if err := copier.Copy(&dstData, srcData); err != nil {
@@ -58,14 +78,8 @@ func copyData[T any](srcData *T) (*T, error) {
 
 // DcimDeviceDataWrapper represents a DCIM device data wrapper
 type DcimDeviceDataWrapper struct {
+	BaseDataWrapper
 	Device *DcimDevice
-
-	placeholder        bool
-	hasParent          bool
-	intended           bool
-	hasChanged         bool
-	nestedObjects      []ComparableData
-	objectsToReconcile []ComparableData
 }
 
 func (*DcimDeviceDataWrapper) comparableData() {}
@@ -116,7 +130,7 @@ func (dw *DcimDeviceDataWrapper) NestedObjects() ([]ComparableData, error) {
 	dw.Device.PrimaryIPv4 = nil
 	dw.Device.PrimaryIPv6 = nil
 
-	site := DcimSiteDataWrapper{Site: dw.Device.Site, placeholder: dw.placeholder, hasParent: true, intended: dw.intended}
+	site := DcimSiteDataWrapper{Site: dw.Device.Site, BaseDataWrapper: BaseDataWrapper{placeholder: dw.placeholder, hasParent: true, intended: dw.intended}}
 
 	so, err := site.NestedObjects()
 	if err != nil {
@@ -128,7 +142,7 @@ func (dw *DcimDeviceDataWrapper) NestedObjects() ([]ComparableData, error) {
 	dw.Device.Site = site.Site
 
 	if dw.Device.Platform != nil {
-		platform := DcimPlatformDataWrapper{Platform: dw.Device.Platform, placeholder: dw.placeholder, hasParent: true, intended: dw.intended}
+		platform := DcimPlatformDataWrapper{Platform: dw.Device.Platform, BaseDataWrapper: BaseDataWrapper{placeholder: dw.placeholder, hasParent: true, intended: dw.intended}}
 
 		po, err := platform.NestedObjects()
 		if err != nil {
@@ -140,7 +154,7 @@ func (dw *DcimDeviceDataWrapper) NestedObjects() ([]ComparableData, error) {
 		dw.Device.Platform = platform.Platform
 	}
 
-	deviceType := DcimDeviceTypeDataWrapper{DeviceType: dw.Device.DeviceType, placeholder: dw.placeholder, hasParent: true, intended: dw.intended}
+	deviceType := DcimDeviceTypeDataWrapper{DeviceType: dw.Device.DeviceType, BaseDataWrapper: BaseDataWrapper{placeholder: dw.placeholder, hasParent: true, intended: dw.intended}}
 
 	dto, err := deviceType.NestedObjects()
 	if err != nil {
@@ -151,7 +165,7 @@ func (dw *DcimDeviceDataWrapper) NestedObjects() ([]ComparableData, error) {
 
 	dw.Device.DeviceType = deviceType.DeviceType
 
-	deviceRole := DcimDeviceRoleDataWrapper{DeviceRole: dw.Device.Role, placeholder: dw.placeholder, hasParent: true, intended: dw.intended}
+	deviceRole := DcimDeviceRoleDataWrapper{DeviceRole: dw.Device.Role, BaseDataWrapper: BaseDataWrapper{placeholder: dw.placeholder, hasParent: true, intended: dw.intended}}
 
 	dro, err := deviceRole.NestedObjects()
 	if err != nil {
@@ -197,16 +211,6 @@ func (dw *DcimDeviceDataWrapper) ObjectStateQueryParams() map[string]string {
 // ID returns the ID of the data
 func (dw *DcimDeviceDataWrapper) ID() int {
 	return dw.Device.ID
-}
-
-// HasChanged returns true if the data has changed
-func (dw *DcimDeviceDataWrapper) HasChanged() bool {
-	return dw.hasChanged
-}
-
-// IsPlaceholder returns true if the data is a placeholder
-func (dw *DcimDeviceDataWrapper) IsPlaceholder() bool {
-	return dw.placeholder
 }
 
 // Patch creates patches between the actual, intended and current data
@@ -554,14 +558,8 @@ func (dw *DcimDeviceDataWrapper) SetDefaults() {
 
 // DcimDeviceRoleDataWrapper represents a DCIM device role data wrapper
 type DcimDeviceRoleDataWrapper struct {
+	BaseDataWrapper
 	DeviceRole *DcimDeviceRole
-
-	placeholder        bool
-	hasParent          bool
-	intended           bool
-	hasChanged         bool
-	nestedObjects      []ComparableData
-	objectsToReconcile []ComparableData
 }
 
 func (*DcimDeviceRoleDataWrapper) comparableData() {}
@@ -645,16 +643,6 @@ func (dw *DcimDeviceRoleDataWrapper) ID() int {
 	return dw.DeviceRole.ID
 }
 
-// HasChanged returns true if the data has changed
-func (dw *DcimDeviceRoleDataWrapper) HasChanged() bool {
-	return dw.hasChanged
-}
-
-// IsPlaceholder returns true if the data is a placeholder
-func (dw *DcimDeviceRoleDataWrapper) IsPlaceholder() bool {
-	return dw.placeholder
-}
-
 // Patch creates patches between the actual, intended and current data
 func (dw *DcimDeviceRoleDataWrapper) Patch(cmp ComparableData, intendedNestedObjects map[string]ComparableData) ([]ComparableData, error) {
 	intended, ok := cmp.(*DcimDeviceRoleDataWrapper)
@@ -732,14 +720,8 @@ func (dw *DcimDeviceRoleDataWrapper) SetDefaults() {
 
 // DcimDeviceTypeDataWrapper represents a DCIM device type data wrapper
 type DcimDeviceTypeDataWrapper struct {
+	BaseDataWrapper
 	DeviceType *DcimDeviceType
-
-	placeholder        bool
-	hasParent          bool
-	intended           bool
-	hasChanged         bool
-	nestedObjects      []ComparableData
-	objectsToReconcile []ComparableData
 }
 
 func (*DcimDeviceTypeDataWrapper) comparableData() {}
@@ -786,16 +768,6 @@ func (dw *DcimDeviceTypeDataWrapper) ID() int {
 	return dw.DeviceType.ID
 }
 
-// HasChanged returns true if the data has changed
-func (dw *DcimDeviceTypeDataWrapper) HasChanged() bool {
-	return dw.hasChanged
-}
-
-// IsPlaceholder returns true if the data is a placeholder
-func (dw *DcimDeviceTypeDataWrapper) IsPlaceholder() bool {
-	return dw.placeholder
-}
-
 // NestedObjects returns all nested objects
 func (dw *DcimDeviceTypeDataWrapper) NestedObjects() ([]ComparableData, error) {
 	if len(dw.nestedObjects) > 0 {
@@ -821,7 +793,7 @@ func (dw *DcimDeviceTypeDataWrapper) NestedObjects() ([]ComparableData, error) {
 		dw.DeviceType.Slug = slug.Make(dw.DeviceType.Model)
 	}
 
-	manufacturer := DcimManufacturerDataWrapper{Manufacturer: dw.DeviceType.Manufacturer, placeholder: dw.placeholder, hasParent: true, intended: dw.intended}
+	manufacturer := DcimManufacturerDataWrapper{Manufacturer: dw.DeviceType.Manufacturer, BaseDataWrapper: BaseDataWrapper{placeholder: dw.placeholder, hasParent: true, intended: dw.intended}}
 
 	mo, err := manufacturer.NestedObjects()
 	if err != nil {
@@ -993,14 +965,8 @@ func (dw *DcimDeviceTypeDataWrapper) SetDefaults() {}
 
 // DcimInterfaceDataWrapper represents a DCIM interface data wrapper
 type DcimInterfaceDataWrapper struct {
+	BaseDataWrapper
 	Interface *DcimInterface
-
-	placeholder        bool
-	hasParent          bool
-	intended           bool
-	hasChanged         bool
-	nestedObjects      []ComparableData
-	objectsToReconcile []ComparableData
 }
 
 func (*DcimInterfaceDataWrapper) comparableData() {}
@@ -1054,7 +1020,7 @@ func (dw *DcimInterfaceDataWrapper) NestedObjects() ([]ComparableData, error) {
 		dw.placeholder = true
 	}
 
-	device := DcimDeviceDataWrapper{Device: dw.Interface.Device, placeholder: dw.placeholder, hasParent: true, intended: dw.intended}
+	device := DcimDeviceDataWrapper{Device: dw.Interface.Device, BaseDataWrapper: BaseDataWrapper{placeholder: dw.placeholder, hasParent: true, intended: dw.intended}}
 
 	do, err := device.NestedObjects()
 	if err != nil {
@@ -1104,16 +1070,6 @@ func (dw *DcimInterfaceDataWrapper) ObjectStateQueryParams() map[string]string {
 // ID returns the ID of the data
 func (dw *DcimInterfaceDataWrapper) ID() int {
 	return dw.Interface.ID
-}
-
-// HasChanged returns true if the data has changed
-func (dw *DcimInterfaceDataWrapper) HasChanged() bool {
-	return dw.hasChanged
-}
-
-// IsPlaceholder returns true if the data is a placeholder
-func (dw *DcimInterfaceDataWrapper) IsPlaceholder() bool {
-	return dw.placeholder
 }
 
 func (dw *DcimInterfaceDataWrapper) hash() string {
@@ -1304,14 +1260,8 @@ func (dw *DcimInterfaceDataWrapper) SetDefaults() {
 
 // DcimManufacturerDataWrapper represents a DCIM manufacturer data wrapper
 type DcimManufacturerDataWrapper struct {
+	BaseDataWrapper
 	Manufacturer *DcimManufacturer
-
-	placeholder        bool
-	hasParent          bool
-	intended           bool
-	hasChanged         bool
-	nestedObjects      []ComparableData
-	objectsToReconcile []ComparableData
 }
 
 func (*DcimManufacturerDataWrapper) comparableData() {}
@@ -1393,16 +1343,6 @@ func (dw *DcimManufacturerDataWrapper) ObjectStateQueryParams() map[string]strin
 // ID returns the ID of the data
 func (dw *DcimManufacturerDataWrapper) ID() int {
 	return dw.Manufacturer.ID
-}
-
-// HasChanged returns true if the data has changed
-func (dw *DcimManufacturerDataWrapper) HasChanged() bool {
-	return dw.hasChanged
-}
-
-// IsPlaceholder returns true if the data is a placeholder
-func (dw *DcimManufacturerDataWrapper) IsPlaceholder() bool {
-	return dw.placeholder
 }
 
 // Patch creates patches between the actual, intended and current data
@@ -1496,14 +1436,8 @@ func (dw *DcimManufacturerDataWrapper) SetDefaults() {}
 
 // DcimPlatformDataWrapper represents a DCIM platform data wrapper
 type DcimPlatformDataWrapper struct {
+	BaseDataWrapper
 	Platform *DcimPlatform
-
-	placeholder        bool
-	hasParent          bool
-	intended           bool
-	hasChanged         bool
-	nestedObjects      []ComparableData
-	objectsToReconcile []ComparableData
 }
 
 func (*DcimPlatformDataWrapper) comparableData() {}
@@ -1555,7 +1489,7 @@ func (dw *DcimPlatformDataWrapper) NestedObjects() ([]ComparableData, error) {
 	}
 
 	if dw.Platform.Manufacturer != nil {
-		manufacturer := DcimManufacturerDataWrapper{Manufacturer: dw.Platform.Manufacturer, placeholder: dw.placeholder, hasParent: true, intended: dw.intended}
+		manufacturer := DcimManufacturerDataWrapper{Manufacturer: dw.Platform.Manufacturer, BaseDataWrapper: BaseDataWrapper{placeholder: dw.placeholder, hasParent: true, intended: dw.intended}}
 
 		mo, err := manufacturer.NestedObjects()
 		if err != nil {
@@ -1602,16 +1536,6 @@ func (dw *DcimPlatformDataWrapper) ObjectStateQueryParams() map[string]string {
 // ID returns the ID of the data
 func (dw *DcimPlatformDataWrapper) ID() int {
 	return dw.Platform.ID
-}
-
-// HasChanged returns true if the data has changed
-func (dw *DcimPlatformDataWrapper) HasChanged() bool {
-	return dw.hasChanged
-}
-
-// IsPlaceholder returns true if the data is a placeholder
-func (dw *DcimPlatformDataWrapper) IsPlaceholder() bool {
-	return dw.placeholder
 }
 
 // Patch creates patches between the actual, intended and current data
@@ -1762,14 +1686,8 @@ func (dw *DcimPlatformDataWrapper) SetDefaults() {}
 
 // DcimSiteDataWrapper represents a DCIM site data wrapper
 type DcimSiteDataWrapper struct {
+	BaseDataWrapper
 	Site *DcimSite
-
-	placeholder        bool
-	hasParent          bool
-	intended           bool
-	hasChanged         bool
-	nestedObjects      []ComparableData
-	objectsToReconcile []ComparableData
 }
 
 func (*DcimSiteDataWrapper) comparableData() {}
@@ -1851,16 +1769,6 @@ func (dw *DcimSiteDataWrapper) ObjectStateQueryParams() map[string]string {
 // ID returns the ID of the data
 func (dw *DcimSiteDataWrapper) ID() int {
 	return dw.Site.ID
-}
-
-// HasChanged returns true if the data has changed
-func (dw *DcimSiteDataWrapper) HasChanged() bool {
-	return dw.hasChanged
-}
-
-// IsPlaceholder returns true if the data is a placeholder
-func (dw *DcimSiteDataWrapper) IsPlaceholder() bool {
-	return dw.placeholder
 }
 
 // Patch creates patches between the actual, intended and current data
