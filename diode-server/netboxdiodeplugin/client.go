@@ -515,9 +515,9 @@ func wrapObjectState(dataType string, object any) (any, error) {
 		}, nil
 	case netbox.VirtualizationInterfaceObjectType:
 		return struct {
-			VMInterface any
+			VirtualInterface any
 		}{
-			VMInterface: object,
+			VirtualInterface: object,
 		}, nil
 	case netbox.VirtualizationVirtualDiskObjectType:
 		return struct {

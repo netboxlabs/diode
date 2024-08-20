@@ -1949,11 +1949,11 @@ func NewDataWrapper(dataType string) (ComparableData, error) {
 		return &IpamIPAddressDataWrapper{}, nil
 	case IpamPrefixObjectType:
 		return &IpamPrefixDataWrapper{}, nil
-	case VirtualizationClusterObjectType:
-		return &VirtualizationClusterGroupDataWrapper{}, nil
 	case VirtualizationClusterGroupObjectType:
-		return &VirtualizationClusterTypeDataWrapper{}, nil
+		return &VirtualizationClusterGroupDataWrapper{}, nil
 	case VirtualizationClusterTypeObjectType:
+		return &VirtualizationClusterTypeDataWrapper{}, nil
+	case VirtualizationClusterObjectType:
 		return &VirtualizationClusterDataWrapper{}, nil
 	case VirtualizationVirtualMachineObjectType:
 		return &VirtualizationVirtualMachineDataWrapper{}, nil

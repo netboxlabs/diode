@@ -4,7 +4,7 @@ import "errors"
 
 const (
 	// VirtualizationClusterObjectType represents the Virtualization Cluster object type
-	VirtualizationClusterObjectType = "virtualization.ipaddress"
+	VirtualizationClusterObjectType = "virtualization.cluster"
 
 	// VirtualizationClusterGroupObjectType represents the Virtualization Cluster Group object type
 	VirtualizationClusterGroupObjectType = "virtualization.clustergroup"
