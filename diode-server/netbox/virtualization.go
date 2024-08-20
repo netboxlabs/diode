@@ -6,10 +6,10 @@ const (
 	// VirtualizationClusterObjectType represents the Virtualization Cluster object type
 	VirtualizationClusterObjectType = "virtualization.ipaddress"
 
-	// VirtualizationClusterObjectType represents the Virtualization Cluster Group object type
+	// VirtualizationClusterGroupObjectType represents the Virtualization Cluster Group object type
 	VirtualizationClusterGroupObjectType = "virtualization.clustergroup"
 
-	// VirtualizationClusterObjectType represents the Virtualization Cluster Type object type
+	// VirtualizationClusterTypeObjectType represents the Virtualization Cluster Type object type
 	VirtualizationClusterTypeObjectType = "virtualization.clustertype"
 
 	// VirtualizationVirtualMachineObjectType represents the Virtualization Virtual Machine object type
