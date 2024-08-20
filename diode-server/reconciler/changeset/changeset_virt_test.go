@@ -162,7 +162,7 @@ func TestVirtualizationPrepare(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "[P2] ingest virtualization.clustergroup with name only - existing object found - do nothing",
+			name: "[P2] ingest virtualization.clustertype with name only - existing object found - do nothing",
 			rawIngestEntity: []byte(`{
 				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				"data_type": "virtualization.clustertype",
@@ -179,8 +179,8 @@ func TestVirtualizationPrepare(t *testing.T) {
 					objectID:       0,
 					queryParams:    map[string]string{"q": "Test"},
 					objectChangeID: 0,
-					object: &netbox.VirtualizationClusterGroupDataWrapper{
-						ClusterGroup: &netbox.VirtualizationClusterGroup{
+					object: &netbox.VirtualizationClusterTypeDataWrapper{
+						ClusterType: &netbox.VirtualizationClusterType{
 							ID:   1,
 							Name: "Test",
 							Slug: "test",
