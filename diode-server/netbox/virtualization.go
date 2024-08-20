@@ -14,6 +14,12 @@ const (
 
 	// VirtualizationVirtualMachineObjectType represents the Virtualization Virtual Machine object type
 	VirtualizationVirtualMachineObjectType = "virtualization.virtualmachine"
+
+	// VirtualizationInterfaceObjectType represents the Virtualization Interface object type
+	VirtualizationInterfaceObjectType = "virtualization.interface"
+
+	// VirtualizationVirtualDiskObjectType represents the Virtualization Virtual Disk object type
+	VirtualizationVirtualDiskObjectType = "virtualization.virtualdisk"
 )
 
 // ErrInvalidVirtualizationStatus is returned when the virtualization status is invalid
@@ -91,6 +97,28 @@ type VirtualizationVirtualMachine struct {
 	Tags        []*Tag                 `json:"tags,omitempty"`
 }
 
+// VirtualizationInterface represents a Virtualization Interface
+type VirtualizationInterface struct {
+	ID             int                           `json:"id,omitempty"`
+	VirtualMachine *VirtualizationVirtualMachine `json:"virtual_machine,omitempty"`
+	Name           string                        `json:"name,omitempty"`
+	Enabled        *bool                         `json:"enabled,omitempty"`
+	MTU            *int                          `json:"mtu,omitempty"`
+	MACAddress     *string                       `json:"mac_address,omitempty" mapstructure:"mac_address,omitempty"`
+	Description    *string                       `json:"description,omitempty"`
+	Tags           []*Tag                        `json:"tags,omitempty"`
+}
+
+// VirtualizationVirtualDisk represents a Virtualization Virtual Disk
+type VirtualizationVirtualDisk struct {
+	ID             int                           `json:"id,omitempty"`
+	VirtualMachine *VirtualizationVirtualMachine `json:"virtual_machine,omitempty"`
+	Name           string                        `json:"name,omitempty"`
+	Size           int                           `json:"size,omitempty"`
+	Description    *string                       `json:"description,omitempty"`
+	Tags           []*Tag                        `json:"tags,omitempty"`
+}
+
 // Validate checks if the Virtualization Virtual Machine is valid
 func (vm *VirtualizationVirtualMachine) Validate() error {
 	if vm.Status != nil && !validateVirtualizationStatus(*vm.Status) {
@@ -138,5 +166,22 @@ func NewVirtualizationVirtualMachine() *VirtualizationVirtualMachine {
 		Role:     NewDcimDeviceRole(),
 		Device:   NewDcimDevice(),
 		Platform: NewDcimPlatform(),
+	}
+}
+
+// NewVirtualizationInterface creates a new virtualization interface placeholder
+func NewVirtualizationInterface() *VirtualizationInterface {
+	return &VirtualizationInterface{
+		Name:           "undefined",
+		VirtualMachine: NewVirtualizationVirtualMachine(),
+	}
+}
+
+// NewVirtualizationVirtualDisk creates a new virtualization virtual disk placeholder
+func NewVirtualizationVirtualDisk() *VirtualizationVirtualDisk {
+	return &VirtualizationVirtualDisk{
+		Name:           "undefined",
+		VirtualMachine: NewVirtualizationVirtualMachine(),
+		Size:           0,
 	}
 }

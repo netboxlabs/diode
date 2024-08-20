@@ -1888,6 +1888,388 @@ var _VirtualMachine_Status_InLookup = map[string]struct{}{
 	"decommissioning": {},
 }
 
+// Validate checks the field values on VMInterface with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *VMInterface) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on VMInterface with the rules defined in
+// the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in VMInterfaceMultiError, or
+// nil if none found.
+func (m *VMInterface) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *VMInterface) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if m.GetVirtualMachine() == nil {
+		err := VMInterfaceValidationError{
+			field:  "VirtualMachine",
+			reason: "value is required",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if a := m.GetVirtualMachine(); a != nil {
+
+	}
+
+	if l := utf8.RuneCountInString(m.GetName()); l < 1 || l > 64 {
+		err := VMInterfaceValidationError{
+			field:  "Name",
+			reason: "value length must be between 1 and 64 runes, inclusive",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	for idx, item := range m.GetTags() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, VMInterfaceValidationError{
+						field:  fmt.Sprintf("Tags[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, VMInterfaceValidationError{
+						field:  fmt.Sprintf("Tags[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return VMInterfaceValidationError{
+					field:  fmt.Sprintf("Tags[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if m.Enabled != nil {
+		// no validation rules for Enabled
+	}
+
+	if m.Mtu != nil {
+
+		if val := m.GetMtu(); val < 1 || val > 65536 {
+			err := VMInterfaceValidationError{
+				field:  "Mtu",
+				reason: "value must be inside range [1, 65536]",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+	}
+
+	if m.MacAddress != nil {
+		// no validation rules for MacAddress
+	}
+
+	if m.Description != nil {
+
+		if utf8.RuneCountInString(m.GetDescription()) > 200 {
+			err := VMInterfaceValidationError{
+				field:  "Description",
+				reason: "value length must be at most 200 runes",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return VMInterfaceMultiError(errors)
+	}
+
+	return nil
+}
+
+// VMInterfaceMultiError is an error wrapping multiple validation errors
+// returned by VMInterface.ValidateAll() if the designated constraints aren't met.
+type VMInterfaceMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m VMInterfaceMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m VMInterfaceMultiError) AllErrors() []error { return m }
+
+// VMInterfaceValidationError is the validation error returned by
+// VMInterface.Validate if the designated constraints aren't met.
+type VMInterfaceValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e VMInterfaceValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e VMInterfaceValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e VMInterfaceValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e VMInterfaceValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e VMInterfaceValidationError) ErrorName() string { return "VMInterfaceValidationError" }
+
+// Error satisfies the builtin error interface
+func (e VMInterfaceValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sVMInterface.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = VMInterfaceValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = VMInterfaceValidationError{}
+
+// Validate checks the field values on VirtualDisk with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *VirtualDisk) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on VirtualDisk with the rules defined in
+// the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in VirtualDiskMultiError, or
+// nil if none found.
+func (m *VirtualDisk) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *VirtualDisk) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if m.GetVirtualMachine() == nil {
+		err := VirtualDiskValidationError{
+			field:  "VirtualMachine",
+			reason: "value is required",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if a := m.GetVirtualMachine(); a != nil {
+
+	}
+
+	if l := utf8.RuneCountInString(m.GetName()); l < 1 || l > 100 {
+		err := VirtualDiskValidationError{
+			field:  "Name",
+			reason: "value length must be between 1 and 100 runes, inclusive",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	if m.GetSize() < 0 {
+		err := VirtualDiskValidationError{
+			field:  "Size",
+			reason: "value must be greater than or equal to 0",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
+	for idx, item := range m.GetTags() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, VirtualDiskValidationError{
+						field:  fmt.Sprintf("Tags[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, VirtualDiskValidationError{
+						field:  fmt.Sprintf("Tags[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return VirtualDiskValidationError{
+					field:  fmt.Sprintf("Tags[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if m.Description != nil {
+
+		if utf8.RuneCountInString(m.GetDescription()) > 200 {
+			err := VirtualDiskValidationError{
+				field:  "Description",
+				reason: "value length must be at most 200 runes",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return VirtualDiskMultiError(errors)
+	}
+
+	return nil
+}
+
+// VirtualDiskMultiError is an error wrapping multiple validation errors
+// returned by VirtualDisk.ValidateAll() if the designated constraints aren't met.
+type VirtualDiskMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m VirtualDiskMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m VirtualDiskMultiError) AllErrors() []error { return m }
+
+// VirtualDiskValidationError is the validation error returned by
+// VirtualDisk.Validate if the designated constraints aren't met.
+type VirtualDiskValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e VirtualDiskValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e VirtualDiskValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e VirtualDiskValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e VirtualDiskValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e VirtualDiskValidationError) ErrorName() string { return "VirtualDiskValidationError" }
+
+// Error satisfies the builtin error interface
+func (e VirtualDiskValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sVirtualDisk.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = VirtualDiskValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = VirtualDiskValidationError{}
+
 // Validate checks the field values on IPAddress with the rules defined in the
 // proto definition for this message. If any rules are violated, the first
 // error encountered is returned, or nil if there are no violations.

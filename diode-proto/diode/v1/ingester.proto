@@ -270,6 +270,35 @@ message VirtualMachine {
   repeated Tag tags = 15;
 }
 
+//A Virtual Machine Interface
+message VMInterface {
+  VirtualMachine virtual_machine = 1 [(validate.rules).any.required = true];
+  string name = 2 [(validate.rules).string = {
+    min_len: 1
+    max_len: 64
+  }];
+  optional bool enabled = 3;
+  optional int32 mtu = 4 [(validate.rules).int32 = {
+    gte: 1
+    lte: 65536
+  }];
+  optional string mac_address = 5;
+  optional string description = 6 [(validate.rules).string = {max_len: 200}];
+  repeated Tag tags = 7;
+}
+
+//A Virtual Disk
+message VirtualDisk {
+  VirtualMachine virtual_machine = 1 [(validate.rules).any.required = true];
+  string name = 2 [(validate.rules).string = {
+    min_len: 1
+    max_len: 100
+  }];
+  int32 size = 3 [(validate.rules).int32 = {gte: 0}];
+  optional string description = 4 [(validate.rules).string = {max_len: 200}];
+  repeated Tag tags = 5;
+}
+
 // An IP address.
 message IPAddress {
   string address = 1 [(validate.rules).string.ip = true];

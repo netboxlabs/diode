@@ -1957,6 +1957,10 @@ func NewDataWrapper(dataType string) (ComparableData, error) {
 		return &VirtualizationClusterDataWrapper{}, nil
 	case VirtualizationVirtualMachineObjectType:
 		return &VirtualizationVirtualMachineDataWrapper{}, nil
+	case VirtualizationInterfaceObjectType:
+		return &VirtualizationInterfaceDataWrapper{}, nil
+	case VirtualizationVirtualDiskObjectType:
+		return &VirtualizationVirtualDiskDataWrapper{}, nil
 	default:
 		return nil, fmt.Errorf("unsupported data type %s", dataType)
 	}
