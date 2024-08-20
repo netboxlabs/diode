@@ -271,7 +271,7 @@ message VirtualMachine {
 }
 
 //A Virtual Machine Interface
-message VMInterface {
+message VirtualInterface {
   VirtualMachine virtual_machine = 1 [(validate.rules).any.required = true];
   string name = 2 [(validate.rules).string = {
     min_len: 1
@@ -484,6 +484,8 @@ message Entity {
     ClusterType cluster_type = 12;
     Cluster cluster = 13;
     VirtualMachine virtual_machine = 14;
+    VirtualInterface virtual_interface = 15;
+    VirtualDisk virtual_disk = 16;
   }
 
   // The timestamp of the data discovery at source

@@ -1888,22 +1888,22 @@ var _VirtualMachine_Status_InLookup = map[string]struct{}{
 	"decommissioning": {},
 }
 
-// Validate checks the field values on VMInterface with the rules defined in
-// the proto definition for this message. If any rules are violated, the first
-// error encountered is returned, or nil if there are no violations.
-func (m *VMInterface) Validate() error {
+// Validate checks the field values on VirtualInterface with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// first error encountered is returned, or nil if there are no violations.
+func (m *VirtualInterface) Validate() error {
 	return m.validate(false)
 }
 
-// ValidateAll checks the field values on VMInterface with the rules defined in
-// the proto definition for this message. If any rules are violated, the
-// result is a list of violation errors wrapped in VMInterfaceMultiError, or
-// nil if none found.
-func (m *VMInterface) ValidateAll() error {
+// ValidateAll checks the field values on VirtualInterface with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// VirtualInterfaceMultiError, or nil if none found.
+func (m *VirtualInterface) ValidateAll() error {
 	return m.validate(true)
 }
 
-func (m *VMInterface) validate(all bool) error {
+func (m *VirtualInterface) validate(all bool) error {
 	if m == nil {
 		return nil
 	}
@@ -1911,7 +1911,7 @@ func (m *VMInterface) validate(all bool) error {
 	var errors []error
 
 	if m.GetVirtualMachine() == nil {
-		err := VMInterfaceValidationError{
+		err := VirtualInterfaceValidationError{
 			field:  "VirtualMachine",
 			reason: "value is required",
 		}
@@ -1926,7 +1926,7 @@ func (m *VMInterface) validate(all bool) error {
 	}
 
 	if l := utf8.RuneCountInString(m.GetName()); l < 1 || l > 64 {
-		err := VMInterfaceValidationError{
+		err := VirtualInterfaceValidationError{
 			field:  "Name",
 			reason: "value length must be between 1 and 64 runes, inclusive",
 		}
@@ -1943,7 +1943,7 @@ func (m *VMInterface) validate(all bool) error {
 			switch v := interface{}(item).(type) {
 			case interface{ ValidateAll() error }:
 				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, VMInterfaceValidationError{
+					errors = append(errors, VirtualInterfaceValidationError{
 						field:  fmt.Sprintf("Tags[%v]", idx),
 						reason: "embedded message failed validation",
 						cause:  err,
@@ -1951,7 +1951,7 @@ func (m *VMInterface) validate(all bool) error {
 				}
 			case interface{ Validate() error }:
 				if err := v.Validate(); err != nil {
-					errors = append(errors, VMInterfaceValidationError{
+					errors = append(errors, VirtualInterfaceValidationError{
 						field:  fmt.Sprintf("Tags[%v]", idx),
 						reason: "embedded message failed validation",
 						cause:  err,
@@ -1960,7 +1960,7 @@ func (m *VMInterface) validate(all bool) error {
 			}
 		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
 			if err := v.Validate(); err != nil {
-				return VMInterfaceValidationError{
+				return VirtualInterfaceValidationError{
 					field:  fmt.Sprintf("Tags[%v]", idx),
 					reason: "embedded message failed validation",
 					cause:  err,
@@ -1977,7 +1977,7 @@ func (m *VMInterface) validate(all bool) error {
 	if m.Mtu != nil {
 
 		if val := m.GetMtu(); val < 1 || val > 65536 {
-			err := VMInterfaceValidationError{
+			err := VirtualInterfaceValidationError{
 				field:  "Mtu",
 				reason: "value must be inside range [1, 65536]",
 			}
@@ -1996,7 +1996,7 @@ func (m *VMInterface) validate(all bool) error {
 	if m.Description != nil {
 
 		if utf8.RuneCountInString(m.GetDescription()) > 200 {
-			err := VMInterfaceValidationError{
+			err := VirtualInterfaceValidationError{
 				field:  "Description",
 				reason: "value length must be at most 200 runes",
 			}
@@ -2009,18 +2009,19 @@ func (m *VMInterface) validate(all bool) error {
 	}
 
 	if len(errors) > 0 {
-		return VMInterfaceMultiError(errors)
+		return VirtualInterfaceMultiError(errors)
 	}
 
 	return nil
 }
 
-// VMInterfaceMultiError is an error wrapping multiple validation errors
-// returned by VMInterface.ValidateAll() if the designated constraints aren't met.
-type VMInterfaceMultiError []error
+// VirtualInterfaceMultiError is an error wrapping multiple validation errors
+// returned by VirtualInterface.ValidateAll() if the designated constraints
+// aren't met.
+type VirtualInterfaceMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
-func (m VMInterfaceMultiError) Error() string {
+func (m VirtualInterfaceMultiError) Error() string {
 	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
@@ -2029,11 +2030,11 @@ func (m VMInterfaceMultiError) Error() string {
 }
 
 // AllErrors returns a list of validation violation errors.
-func (m VMInterfaceMultiError) AllErrors() []error { return m }
+func (m VirtualInterfaceMultiError) AllErrors() []error { return m }
 
-// VMInterfaceValidationError is the validation error returned by
-// VMInterface.Validate if the designated constraints aren't met.
-type VMInterfaceValidationError struct {
+// VirtualInterfaceValidationError is the validation error returned by
+// VirtualInterface.Validate if the designated constraints aren't met.
+type VirtualInterfaceValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -2041,22 +2042,22 @@ type VMInterfaceValidationError struct {
 }
 
 // Field function returns field value.
-func (e VMInterfaceValidationError) Field() string { return e.field }
+func (e VirtualInterfaceValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e VMInterfaceValidationError) Reason() string { return e.reason }
+func (e VirtualInterfaceValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e VMInterfaceValidationError) Cause() error { return e.cause }
+func (e VirtualInterfaceValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e VMInterfaceValidationError) Key() bool { return e.key }
+func (e VirtualInterfaceValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e VMInterfaceValidationError) ErrorName() string { return "VMInterfaceValidationError" }
+func (e VirtualInterfaceValidationError) ErrorName() string { return "VirtualInterfaceValidationError" }
 
 // Error satisfies the builtin error interface
-func (e VMInterfaceValidationError) Error() string {
+func (e VirtualInterfaceValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -2068,14 +2069,14 @@ func (e VMInterfaceValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sVMInterface.%s: %s%s",
+		"invalid %sVirtualInterface.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = VMInterfaceValidationError{}
+var _ error = VirtualInterfaceValidationError{}
 
 var _ interface {
 	Field() string
@@ -2083,7 +2084,7 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = VMInterfaceValidationError{}
+} = VirtualInterfaceValidationError{}
 
 // Validate checks the field values on VirtualDisk with the rules defined in
 // the proto definition for this message. If any rules are violated, the first
@@ -4570,6 +4571,88 @@ func (m *Entity) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return EntityValidationError{
 					field:  "VirtualMachine",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *Entity_VirtualInterface:
+		if v == nil {
+			err := EntityValidationError{
+				field:  "Entity",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetVirtualInterface()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "VirtualInterface",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "VirtualInterface",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetVirtualInterface()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return EntityValidationError{
+					field:  "VirtualInterface",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *Entity_VirtualDisk:
+		if v == nil {
+			err := EntityValidationError{
+				field:  "Entity",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetVirtualDisk()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "VirtualDisk",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "VirtualDisk",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetVirtualDisk()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return EntityValidationError{
+					field:  "VirtualDisk",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}

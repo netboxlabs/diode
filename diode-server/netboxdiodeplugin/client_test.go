@@ -347,6 +347,24 @@ func TestRetrieveObjectState(t *testing.T) {
 			shouldError:   false,
 		},
 		{
+			name:               "valid response for Virtualization Cluster Group",
+			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.VirtualizationClusterGroupObjectType, ObjectID: 1},
+			mockServerResponse: `{"object_type":"virtualization.clustergroup","object_change_id":1,"object":{"id":1,"name":"test"}}`,
+			apiKey:             "foobar",
+			response: &netboxdiodeplugin.ObjectState{
+				ObjectType:     netbox.VirtualizationClusterGroupObjectType,
+				ObjectChangeID: 1,
+				Object: &netbox.VirtualizationClusterGroupDataWrapper{
+					ClusterGroup: &netbox.VirtualizationClusterGroup{
+						ID:   1,
+						Name: "test",
+					},
+				},
+			},
+			tlsSkipVerify: true,
+			shouldError:   false,
+		},
+		{
 			name: "valid response for DCIM device with query and additional attributes",
 			params: netboxdiodeplugin.RetrieveObjectStateQueryParams{
 				ObjectType: netbox.DcimDeviceObjectType,

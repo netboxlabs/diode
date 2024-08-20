@@ -1003,28 +1003,28 @@ func (vw *VirtualizationVirtualMachineDataWrapper) SetDefaults() {}
 // VirtualizationInterfaceDataWrapper represents a virtualization interface data wrapper
 type VirtualizationInterfaceDataWrapper struct {
 	BaseDataWrapper
-	VMInterface *VirtualizationInterface
+	VirtualInterface *VirtualizationInterface
 }
 
 func (*VirtualizationInterfaceDataWrapper) comparableData() {}
 
 // Data returns the DeviceRole
 func (vw *VirtualizationInterfaceDataWrapper) Data() any {
-	return vw.VMInterface
+	return vw.VirtualInterface
 }
 
 // IsValid returns true if the DeviceRole is not nil
 func (vw *VirtualizationInterfaceDataWrapper) IsValid() bool {
-	if vw.VMInterface != nil && !vw.hasParent && vw.VMInterface.Name == "" {
-		vw.VMInterface = nil
+	if vw.VirtualInterface != nil && !vw.hasParent && vw.VirtualInterface.Name == "" {
+		vw.VirtualInterface = nil
 	}
-	return vw.VMInterface != nil
+	return vw.VirtualInterface != nil
 }
 
 // Normalise normalises the data
 func (vw *VirtualizationInterfaceDataWrapper) Normalise() {
-	if vw.IsValid() && vw.VMInterface.Tags != nil && len(vw.VMInterface.Tags) == 0 {
-		vw.VMInterface.Tags = nil
+	if vw.IsValid() && vw.VirtualInterface.Tags != nil && len(vw.VirtualInterface.Tags) == 0 {
+		vw.VirtualInterface.Tags = nil
 	}
 	vw.intended = true
 }
@@ -1035,22 +1035,22 @@ func (vw *VirtualizationInterfaceDataWrapper) NestedObjects() ([]ComparableData,
 		return vw.nestedObjects, nil
 	}
 
-	if vw.VMInterface != nil && vw.hasParent && vw.VMInterface.Name == "" {
-		vw.VMInterface = nil
+	if vw.VirtualInterface != nil && vw.hasParent && vw.VirtualInterface.Name == "" {
+		vw.VirtualInterface = nil
 	}
 
 	objects := make([]ComparableData, 0)
 
-	if vw.VMInterface == nil && vw.intended {
+	if vw.VirtualInterface == nil && vw.intended {
 		return objects, nil
 	}
 
-	if vw.VMInterface == nil && vw.hasParent {
-		vw.VMInterface = NewVirtualizationInterface()
+	if vw.VirtualInterface == nil && vw.hasParent {
+		vw.VirtualInterface = NewVirtualizationInterface()
 		vw.placeholder = true
 	}
 
-	virtualMachine := VirtualizationVirtualMachineDataWrapper{VirtualMachine: vw.VMInterface.VirtualMachine, BaseDataWrapper: BaseDataWrapper{placeholder: vw.placeholder, hasParent: true, intended: vw.intended}}
+	virtualMachine := VirtualizationVirtualMachineDataWrapper{VirtualMachine: vw.VirtualInterface.VirtualMachine, BaseDataWrapper: BaseDataWrapper{placeholder: vw.placeholder, hasParent: true, intended: vw.intended}}
 
 	vmo, err := virtualMachine.NestedObjects()
 	if err != nil {
@@ -1059,10 +1059,10 @@ func (vw *VirtualizationInterfaceDataWrapper) NestedObjects() ([]ComparableData,
 
 	objects = append(objects, vmo...)
 
-	vw.VMInterface.VirtualMachine = virtualMachine.VirtualMachine
+	vw.VirtualInterface.VirtualMachine = virtualMachine.VirtualMachine
 
-	if vw.VMInterface.Tags != nil {
-		for _, t := range vw.VMInterface.Tags {
+	if vw.VirtualInterface.Tags != nil {
+		for _, t := range vw.VirtualInterface.Tags {
 			if t.Slug == "" {
 				t.Slug = slug.Make(t.Name)
 			}
@@ -1085,13 +1085,13 @@ func (vw *VirtualizationInterfaceDataWrapper) DataType() string {
 // ObjectStateQueryParams returns the query parameters needed to retrieve its object state
 func (vw *VirtualizationInterfaceDataWrapper) ObjectStateQueryParams() map[string]string {
 	return map[string]string{
-		"q": vw.VMInterface.Name,
+		"q": vw.VirtualInterface.Name,
 	}
 }
 
 // ID returns the ID of the data
 func (vw *VirtualizationInterfaceDataWrapper) ID() int {
-	return vw.VMInterface.ID
+	return vw.VirtualInterface.ID
 }
 
 // Patch creates patches between the actual, intended and current data
@@ -1107,8 +1107,8 @@ func (vw *VirtualizationInterfaceDataWrapper) Patch(cmp ComparableData, intended
 		actualNestedObjectsMap[fmt.Sprintf("%p", obj.Data())] = obj
 	}
 
-	actualVirtualMachine := extractFromObjectsMap(actualNestedObjectsMap, fmt.Sprintf("%p", vw.VMInterface.VirtualMachine))
-	intendedVirtualMachine := extractFromObjectsMap(intendedNestedObjects, fmt.Sprintf("%p", vw.VMInterface.VirtualMachine))
+	actualVirtualMachine := extractFromObjectsMap(actualNestedObjectsMap, fmt.Sprintf("%p", vw.VirtualInterface.VirtualMachine))
+	intendedVirtualMachine := extractFromObjectsMap(intendedNestedObjects, fmt.Sprintf("%p", vw.VirtualInterface.VirtualMachine))
 
 	reconciliationRequired := true
 
@@ -1122,11 +1122,11 @@ func (vw *VirtualizationInterfaceDataWrapper) Patch(cmp ComparableData, intended
 			currentNestedObjectsMap[fmt.Sprintf("%p", obj.Data())] = obj
 		}
 
-		vw.VMInterface.ID = intended.VMInterface.ID
-		vw.VMInterface.Name = intended.VMInterface.Name
+		vw.VirtualInterface.ID = intended.VirtualInterface.ID
+		vw.VirtualInterface.Name = intended.VirtualInterface.Name
 
-		if actualVirtualMachine.IsPlaceholder() && intended.VMInterface.VirtualMachine != nil {
-			intendedVirtualMachine = extractFromObjectsMap(currentNestedObjectsMap, fmt.Sprintf("%p", intended.VMInterface.VirtualMachine))
+		if actualVirtualMachine.IsPlaceholder() && intended.VirtualInterface.VirtualMachine != nil {
+			intendedVirtualMachine = extractFromObjectsMap(currentNestedObjectsMap, fmt.Sprintf("%p", intended.VirtualInterface.VirtualMachine))
 		}
 
 		virtualMachineObjectsToReconcile, virtualMachineErr := actualVirtualMachine.Patch(intendedVirtualMachine, intendedNestedObjects)
@@ -1146,39 +1146,39 @@ func (vw *VirtualizationInterfaceDataWrapper) Patch(cmp ComparableData, intended
 			}
 
 			intendedVirtualMachineID := intendedVirtualMachine.ID()
-			if intended.VMInterface.VirtualMachine != nil {
-				intendedVirtualMachineID = intended.VMInterface.VirtualMachine.ID
+			if intended.VirtualInterface.VirtualMachine != nil {
+				intendedVirtualMachineID = intended.VirtualInterface.VirtualMachine.ID
 			}
 
-			intended.VMInterface.VirtualMachine = &VirtualizationVirtualMachine{
+			intended.VirtualInterface.VirtualMachine = &VirtualizationVirtualMachine{
 				ID: intendedVirtualMachineID,
 			}
 		}
 
-		vw.VMInterface.VirtualMachine = virtualMachine
+		vw.VirtualInterface.VirtualMachine = virtualMachine
 
 		vw.objectsToReconcile = append(vw.objectsToReconcile, virtualMachineObjectsToReconcile...)
 
-		if vw.VMInterface.Enabled == nil {
-			vw.VMInterface.Enabled = intended.VMInterface.Enabled
+		if vw.VirtualInterface.Enabled == nil {
+			vw.VirtualInterface.Enabled = intended.VirtualInterface.Enabled
 		}
 
-		if vw.VMInterface.MTU == nil {
-			vw.VMInterface.MTU = intended.VMInterface.MTU
+		if vw.VirtualInterface.MTU == nil {
+			vw.VirtualInterface.MTU = intended.VirtualInterface.MTU
 		}
 
-		if vw.VMInterface.MACAddress == nil {
-			vw.VMInterface.MACAddress = intended.VMInterface.MACAddress
+		if vw.VirtualInterface.MACAddress == nil {
+			vw.VirtualInterface.MACAddress = intended.VirtualInterface.MACAddress
 		}
 
-		if vw.VMInterface.Description == nil {
-			vw.VMInterface.Description = intended.VMInterface.Description
+		if vw.VirtualInterface.Description == nil {
+			vw.VirtualInterface.Description = intended.VirtualInterface.Description
 		}
 
-		tagsToMerge := mergeTags(vw.VMInterface.Tags, intended.VMInterface.Tags, intendedNestedObjects)
+		tagsToMerge := mergeTags(vw.VirtualInterface.Tags, intended.VirtualInterface.Tags, intendedNestedObjects)
 
 		if len(tagsToMerge) > 0 {
-			vw.VMInterface.Tags = tagsToMerge
+			vw.VirtualInterface.Tags = tagsToMerge
 		}
 
 		actualHash, _ := hashstructure.Hash(vw.Data(), hashstructure.FormatV2, nil)
@@ -1186,14 +1186,14 @@ func (vw *VirtualizationInterfaceDataWrapper) Patch(cmp ComparableData, intended
 
 		reconciliationRequired = actualHash != intendedHash
 	} else {
-		tagsToMerge := mergeTags(vw.VMInterface.Tags, nil, intendedNestedObjects)
+		tagsToMerge := mergeTags(vw.VirtualInterface.Tags, nil, intendedNestedObjects)
 
 		if len(tagsToMerge) > 0 {
-			vw.VMInterface.Tags = tagsToMerge
+			vw.VirtualInterface.Tags = tagsToMerge
 		}
 	}
 
-	for _, t := range vw.VMInterface.Tags {
+	for _, t := range vw.VirtualInterface.Tags {
 		if t.ID == 0 {
 			vw.objectsToReconcile = append(vw.objectsToReconcile, &TagDataWrapper{Tag: t, hasParent: true})
 		}
