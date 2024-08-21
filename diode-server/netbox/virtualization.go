@@ -22,8 +22,13 @@ const (
 	VirtualizationVirtualDiskObjectType = "virtualization.virtualdisk"
 )
 
-// ErrInvalidVirtualizationStatus is returned when the virtualization status is invalid
-var ErrInvalidVirtualizationStatus = errors.New("invalid virtualization status")
+var (
+	// ErrInvalidVirtualizationStatus is returned when the virtualization status is invalid
+	ErrInvalidVirtualizationStatus = errors.New("invalid virtualization status")
+
+	// DefaultVirtualizationStatus is the default status for Virtualization objects
+	DefaultVirtualizationStatus = "active"
+)
 
 var virtualizationStatusMap = map[string]struct{}{
 	"offline":         {},
@@ -159,13 +164,11 @@ func NewVirtualizationCluster() *VirtualizationCluster {
 func NewVirtualizationVirtualMachine() *VirtualizationVirtualMachine {
 	status := "active"
 	return &VirtualizationVirtualMachine{
-		Name:     "undefined",
-		Status:   &status,
-		Site:     NewDcimSite(),
-		Cluster:  NewVirtualizationCluster(),
-		Role:     NewDcimDeviceRole(),
-		Device:   NewDcimDevice(),
-		Platform: NewDcimPlatform(),
+		Name:    "undefined",
+		Status:  &status,
+		Site:    NewDcimSite(),
+		Cluster: NewVirtualizationCluster(),
+		Role:    NewDcimDeviceRole(),
 	}
 }
 

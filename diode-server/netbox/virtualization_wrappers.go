@@ -353,7 +353,7 @@ func (vw *VirtualizationClusterDataWrapper) NestedObjects() ([]ComparableData, e
 
 	clusterType := VirtualizationClusterTypeDataWrapper{ClusterType: vw.Cluster.Type, BaseDataWrapper: BaseDataWrapper{placeholder: vw.placeholder, hasParent: true, intended: vw.intended}}
 
-	cto, err := clusterGroup.NestedObjects()
+	cto, err := clusterType.NestedObjects()
 	if err != nil {
 		return nil, err
 	}
@@ -563,17 +563,78 @@ func (vw *VirtualizationClusterDataWrapper) Patch(cmp ComparableData, intendedNe
 
 		reconciliationRequired = actualHash != intendedHash
 	} else {
+		siteObjectsToReconcile, siteErr := actualSite.Patch(intendedSite, intendedNestedObjects)
+		if siteErr != nil {
+			return nil, siteErr
+		}
+
+		site, err := copyData(actualSite.Data().(*DcimSite))
+		if err != nil {
+			return nil, err
+		}
+		site.Tags = nil
+
+		if !actualSite.HasChanged() {
+			site = &DcimSite{
+				ID: actualSite.ID(),
+			}
+		}
+		vw.Cluster.Site = site
+
+		vw.objectsToReconcile = append(vw.objectsToReconcile, siteObjectsToReconcile...)
+
+		typeObjectsToReconcile, typeErr := actualType.Patch(intendedType, intendedNestedObjects)
+		if typeErr != nil {
+			return nil, typeErr
+		}
+
+		vType, err := copyData(actualType.Data().(*VirtualizationClusterType))
+		if err != nil {
+			return nil, err
+		}
+		vType.Tags = nil
+
+		if !actualType.HasChanged() {
+			vType = &VirtualizationClusterType{
+				ID: actualType.ID(),
+			}
+		}
+		vw.Cluster.Type = vType
+
+		vw.objectsToReconcile = append(vw.objectsToReconcile, typeObjectsToReconcile...)
+
+		groupObjectsToReconcile, groupErr := actualGroup.Patch(intendedGroup, intendedNestedObjects)
+		if groupErr != nil {
+			return nil, groupErr
+		}
+
+		group, err := copyData(actualGroup.Data().(*VirtualizationClusterGroup))
+		if err != nil {
+			return nil, err
+		}
+		group.Tags = nil
+
+		if !actualGroup.HasChanged() {
+			group = &VirtualizationClusterGroup{
+				ID: actualGroup.ID(),
+			}
+		}
+		vw.Cluster.Group = group
+
+		vw.objectsToReconcile = append(vw.objectsToReconcile, groupObjectsToReconcile...)
+
 		tagsToMerge := mergeTags(vw.Cluster.Tags, nil, intendedNestedObjects)
 
 		if len(tagsToMerge) > 0 {
 			vw.Cluster.Tags = tagsToMerge
 		}
-	}
 
-	for _, t := range vw.Cluster.Tags {
-		if t.ID == 0 {
-			vw.objectsToReconcile = append(vw.objectsToReconcile, &TagDataWrapper{Tag: t, hasParent: true})
+		for _, t := range vw.Cluster.Tags {
+			if t.ID == 0 {
+				vw.objectsToReconcile = append(vw.objectsToReconcile, &TagDataWrapper{Tag: t, hasParent: true})
+			}
 		}
+
 	}
 
 	if reconciliationRequired {
@@ -687,16 +748,18 @@ func (vw *VirtualizationVirtualMachineDataWrapper) NestedObjects() ([]Comparable
 
 	vw.VirtualMachine.Role = deviceRole.DeviceRole
 
-	device := DcimDeviceDataWrapper{Device: vw.VirtualMachine.Device, BaseDataWrapper: BaseDataWrapper{placeholder: vw.placeholder, hasParent: true, intended: vw.intended}}
+	if vw.VirtualMachine.Device != nil {
+		device := DcimDeviceDataWrapper{Device: vw.VirtualMachine.Device, BaseDataWrapper: BaseDataWrapper{placeholder: vw.placeholder, hasParent: true, intended: vw.intended}}
 
-	do, err := device.NestedObjects()
-	if err != nil {
-		return nil, err
+		do, err := device.NestedObjects()
+		if err != nil {
+			return nil, err
+		}
+
+		objects = append(objects, do...)
+
+		vw.VirtualMachine.Device = device.Device
 	}
-
-	objects = append(objects, do...)
-
-	vw.VirtualMachine.Device = device.Device
 
 	if vw.VirtualMachine.Tags != nil {
 		for _, t := range vw.VirtualMachine.Tags {
@@ -880,73 +943,87 @@ func (vw *VirtualizationVirtualMachineDataWrapper) Patch(cmp ComparableData, int
 
 		vw.objectsToReconcile = append(vw.objectsToReconcile, roleObjectsToReconcile...)
 
-		if actualDevice.IsPlaceholder() && intended.VirtualMachine.Device != nil {
-			intendedDevice = extractFromObjectsMap(currentNestedObjectsMap, fmt.Sprintf("%p", intended.VirtualMachine.Device))
-		}
-
-		deviceObjectsToReconcile, deviceErr := actualDevice.Patch(intendedDevice, intendedNestedObjects)
-		if deviceErr != nil {
-			return nil, deviceErr
-		}
-
-		device, err := copyData(actualDevice.Data().(*DcimDevice))
-		if err != nil {
-			return nil, err
-		}
-		device.Tags = nil
-
-		if !actualDevice.HasChanged() {
-			device = &DcimDevice{
-				ID: actualDevice.ID(),
+		if actualDevice != nil {
+			if actualDevice.IsPlaceholder() && intended.VirtualMachine.Device != nil {
+				intendedDevice = extractFromObjectsMap(currentNestedObjectsMap, fmt.Sprintf("%p", intended.VirtualMachine.Device))
 			}
 
-			intendedDeviceID := intendedDevice.ID()
-			if intended.VirtualMachine.Device != nil {
-				intendedDeviceID = intended.VirtualMachine.Device.ID
+			deviceObjectsToReconcile, deviceErr := actualDevice.Patch(intendedDevice, intendedNestedObjects)
+			if deviceErr != nil {
+				return nil, deviceErr
 			}
 
-			intended.VirtualMachine.Device = &DcimDevice{
-				ID: intendedDeviceID,
+			device, err := copyData(actualDevice.Data().(*DcimDevice))
+			if err != nil {
+				return nil, err
 			}
-		}
+			device.Tags = nil
 
-		vw.VirtualMachine.Device = device
+			if !actualDevice.HasChanged() {
+				device = &DcimDevice{
+					ID: actualDevice.ID(),
+				}
 
-		vw.objectsToReconcile = append(vw.objectsToReconcile, deviceObjectsToReconcile...)
+				intendedDeviceID := intendedDevice.ID()
+				if intended.VirtualMachine.Device != nil {
+					intendedDeviceID = intended.VirtualMachine.Device.ID
+				}
 
-		if actualPlatform.IsPlaceholder() && intended.VirtualMachine.Platform != nil {
-			intendedPlatform = extractFromObjectsMap(currentNestedObjectsMap, fmt.Sprintf("%p", intended.VirtualMachine.Platform))
-		}
-
-		platformObjectsToReconcile, platformErr := actualPlatform.Patch(intendedPlatform, intendedNestedObjects)
-		if platformErr != nil {
-			return nil, platformErr
-		}
-
-		platform, err := copyData(actualPlatform.Data().(*DcimPlatform))
-		if err != nil {
-			return nil, err
-		}
-		platform.Tags = nil
-
-		if !actualPlatform.HasChanged() {
-			platform = &DcimPlatform{
-				ID: actualPlatform.ID(),
+				intended.VirtualMachine.Device = &DcimDevice{
+					ID: intendedDeviceID,
+				}
 			}
 
-			intendedPlatformID := intendedPlatform.ID()
+			vw.VirtualMachine.Device = device
+
+			vw.objectsToReconcile = append(vw.objectsToReconcile, deviceObjectsToReconcile...)
+		}
+
+		if actualPlatform != nil {
+			if actualPlatform.IsPlaceholder() && intended.VirtualMachine.Platform != nil {
+				intendedPlatform = extractFromObjectsMap(currentNestedObjectsMap, fmt.Sprintf("%p", intended.VirtualMachine.Platform))
+			}
+
+			platformObjectsToReconcile, platformErr := actualPlatform.Patch(intendedPlatform, intendedNestedObjects)
+			if platformErr != nil {
+				return nil, platformErr
+			}
+
+			platform, err := copyData(actualPlatform.Data().(*DcimPlatform))
+			if err != nil {
+				return nil, err
+			}
+			platform.Tags = nil
+
+			if !actualPlatform.HasChanged() {
+				platform = &DcimPlatform{
+					ID: actualPlatform.ID(),
+				}
+
+				intendedPlatformID := intendedPlatform.ID()
+				if intended.VirtualMachine.Platform != nil {
+					intendedPlatformID = intended.VirtualMachine.Platform.ID
+				}
+
+				intended.VirtualMachine.Platform = &DcimPlatform{
+					ID: intendedPlatformID,
+				}
+			}
+
+			vw.VirtualMachine.Platform = platform
+
+			vw.objectsToReconcile = append(vw.objectsToReconcile, platformObjectsToReconcile...)
+		} else {
 			if intended.VirtualMachine.Platform != nil {
-				intendedPlatformID = intended.VirtualMachine.Platform.ID
-			}
-
-			intended.VirtualMachine.Platform = &DcimPlatform{
-				ID: intendedPlatformID,
+				platformID := intended.VirtualMachine.Platform.ID
+				vw.VirtualMachine.Platform = &DcimPlatform{
+					ID: platformID,
+				}
+				intended.VirtualMachine.Platform = &DcimPlatform{
+					ID: platformID,
+				}
 			}
 		}
-
-		vw.VirtualMachine.Platform = platform
-
-		vw.objectsToReconcile = append(vw.objectsToReconcile, platformObjectsToReconcile...)
 
 		if vw.VirtualMachine.Vcpus == nil {
 			vw.VirtualMachine.Vcpus = intended.VirtualMachine.Vcpus
@@ -976,16 +1053,120 @@ func (vw *VirtualizationVirtualMachineDataWrapper) Patch(cmp ComparableData, int
 
 		reconciliationRequired = actualHash != intendedHash
 	} else {
+		siteObjectsToReconcile, siteErr := actualSite.Patch(intendedSite, intendedNestedObjects)
+		if siteErr != nil {
+			return nil, siteErr
+		}
+
+		site, err := copyData(actualSite.Data().(*DcimSite))
+		if err != nil {
+			return nil, err
+		}
+		site.Tags = nil
+
+		if !actualSite.HasChanged() {
+			site = &DcimSite{
+				ID: actualSite.ID(),
+			}
+		}
+		vw.VirtualMachine.Site = site
+
+		vw.objectsToReconcile = append(vw.objectsToReconcile, siteObjectsToReconcile...)
+
+		clusterObjectsToReconcile, clusterErr := actualCluster.Patch(intendedCluster, intendedNestedObjects)
+		if clusterErr != nil {
+			return nil, clusterErr
+		}
+
+		cluster, err := copyData(actualCluster.Data().(*VirtualizationCluster))
+		if err != nil {
+			return nil, err
+		}
+		cluster.Tags = nil
+
+		if !actualCluster.HasChanged() {
+			cluster = &VirtualizationCluster{
+				ID: actualCluster.ID(),
+			}
+		}
+		vw.VirtualMachine.Cluster = cluster
+
+		vw.objectsToReconcile = append(vw.objectsToReconcile, clusterObjectsToReconcile...)
+
+		roleObjectsToReconcile, roleErr := actualRole.Patch(intendedRole, intendedNestedObjects)
+		if roleErr != nil {
+			return nil, roleErr
+		}
+
+		role, err := copyData(actualRole.Data().(*DcimDeviceRole))
+		if err != nil {
+			return nil, err
+		}
+		role.Tags = nil
+
+		if !actualRole.HasChanged() {
+			role = &DcimDeviceRole{
+				ID: actualRole.ID(),
+			}
+		}
+		vw.VirtualMachine.Role = role
+
+		vw.objectsToReconcile = append(vw.objectsToReconcile, roleObjectsToReconcile...)
+
+		if actualPlatform != nil {
+			platformObjectsToReconcile, platformErr := actualPlatform.Patch(intendedPlatform, intendedNestedObjects)
+			if platformErr != nil {
+				return nil, platformErr
+			}
+
+			platform, err := copyData(actualPlatform.Data().(*DcimPlatform))
+			if err != nil {
+				return nil, err
+			}
+			platform.Tags = nil
+
+			if !actualPlatform.HasChanged() {
+				platform = &DcimPlatform{
+					ID: actualPlatform.ID(),
+				}
+			}
+			vw.VirtualMachine.Platform = platform
+
+			vw.objectsToReconcile = append(vw.objectsToReconcile, platformObjectsToReconcile...)
+		}
+
+		if actualDevice != nil {
+			deviceObjectsToReconcile, deviceErr := actualDevice.Patch(intendedDevice, intendedNestedObjects)
+			if deviceErr != nil {
+				return nil, deviceErr
+			}
+
+			device, err := copyData(actualDevice.Data().(*DcimDevice))
+			if err != nil {
+				return nil, err
+			}
+			device.Tags = nil
+
+			if !actualDevice.HasChanged() {
+				device = &DcimDevice{
+					ID: actualDevice.ID(),
+				}
+			}
+			vw.VirtualMachine.Device = device
+
+			vw.objectsToReconcile = append(vw.objectsToReconcile, deviceObjectsToReconcile...)
+		}
+
 		tagsToMerge := mergeTags(vw.VirtualMachine.Tags, nil, intendedNestedObjects)
 
 		if len(tagsToMerge) > 0 {
 			vw.VirtualMachine.Tags = tagsToMerge
 		}
-	}
 
-	for _, t := range vw.VirtualMachine.Tags {
-		if t.ID == 0 {
-			vw.objectsToReconcile = append(vw.objectsToReconcile, &TagDataWrapper{Tag: t, hasParent: true})
+		for _, t := range vw.VirtualMachine.Tags {
+			if t.ID == 0 {
+				vw.objectsToReconcile = append(vw.objectsToReconcile, &TagDataWrapper{Tag: t, hasParent: true})
+			}
 		}
 	}
 
@@ -1186,16 +1367,36 @@ func (vw *VirtualizationInterfaceDataWrapper) Patch(cmp ComparableData, intended
 
 		reconciliationRequired = actualHash != intendedHash
 	} else {
+		virtualMachineObjectsToReconcile, virtualMachineErr := actualVirtualMachine.Patch(intendedVirtualMachine, intendedNestedObjects)
+		if virtualMachineErr != nil {
+			return nil, virtualMachineErr
+		}
+
+		virtualMachine, err := copyData(actualVirtualMachine.Data().(*VirtualizationVirtualMachine))
+		if err != nil {
+			return nil, err
+		}
+		virtualMachine.Tags = nil
+
+		if !actualVirtualMachine.HasChanged() {
+			virtualMachine = &VirtualizationVirtualMachine{
+				ID: actualVirtualMachine.ID(),
+			}
+		}
+		vw.VirtualInterface.VirtualMachine = virtualMachine
+
+		vw.objectsToReconcile = append(vw.objectsToReconcile, virtualMachineObjectsToReconcile...)
+
 		tagsToMerge := mergeTags(vw.VirtualInterface.Tags, nil, intendedNestedObjects)
 
 		if len(tagsToMerge) > 0 {
 			vw.VirtualInterface.Tags = tagsToMerge
 		}
-	}
 
-	for _, t := range vw.VirtualInterface.Tags {
-		if t.ID == 0 {
-			vw.objectsToReconcile = append(vw.objectsToReconcile, &TagDataWrapper{Tag: t, hasParent: true})
+		for _, t := range vw.VirtualInterface.Tags {
+			if t.ID == 0 {
+				vw.objectsToReconcile = append(vw.objectsToReconcile, &TagDataWrapper{Tag: t, hasParent: true})
+			}
 		}
 	}
 
@@ -1384,16 +1585,36 @@ func (vw *VirtualizationVirtualDiskDataWrapper) Patch(cmp ComparableData, intend
 
 		reconciliationRequired = actualHash != intendedHash
 	} else {
+		virtualMachineObjectsToReconcile, virtualMachineErr := actualVirtualMachine.Patch(intendedVirtualMachine, intendedNestedObjects)
+		if virtualMachineErr != nil {
+			return nil, virtualMachineErr
+		}
+
+		virtualMachine, err := copyData(actualVirtualMachine.Data().(*VirtualizationVirtualMachine))
+		if err != nil {
+			return nil, err
+		}
+		virtualMachine.Tags = nil
+
+		if !actualVirtualMachine.HasChanged() {
+			virtualMachine = &VirtualizationVirtualMachine{
+				ID: actualVirtualMachine.ID(),
+			}
+		}
+		vw.VirtualDisk.VirtualMachine = virtualMachine
+
+		vw.objectsToReconcile = append(vw.objectsToReconcile, virtualMachineObjectsToReconcile...)
+
 		tagsToMerge := mergeTags(vw.VirtualDisk.Tags, nil, intendedNestedObjects)
 
 		if len(tagsToMerge) > 0 {
 			vw.VirtualDisk.Tags = tagsToMerge
 		}
-	}
 
-	for _, t := range vw.VirtualDisk.Tags {
-		if t.ID == 0 {
-			vw.objectsToReconcile = append(vw.objectsToReconcile, &TagDataWrapper{Tag: t, hasParent: true})
+		for _, t := range vw.VirtualDisk.Tags {
+			if t.ID == 0 {
+				vw.objectsToReconcile = append(vw.objectsToReconcile, &TagDataWrapper{Tag: t, hasParent: true})
+			}
 		}
 	}
 
