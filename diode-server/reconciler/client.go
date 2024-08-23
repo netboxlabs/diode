@@ -36,6 +36,9 @@ type Client interface {
 
 	// RetrieveIngestionDataSources retrieves ingestion data sources
 	RetrieveIngestionDataSources(context.Context, *pb.RetrieveIngestionDataSourcesRequest, ...grpc.CallOption) (*pb.RetrieveIngestionDataSourcesResponse, error)
+
+	// RetrieveIngestionLogs retrieves ingestion logs
+	RetrieveIngestionLogs(ctx context.Context, req *pb.RetrieveIngestionLogsRequest, opt ...grpc.CallOption) (*pb.RetrieveIngestionLogsResponse, error)
 }
 
 // GRPCClient is a gRPC implementation of the distributor service
