@@ -558,6 +558,12 @@ func (vw *VirtualizationClusterDataWrapper) Patch(cmp ComparableData, intendedNe
 			vw.Cluster.Tags = tagsToMerge
 		}
 
+		for _, t := range vw.Cluster.Tags {
+			if t.ID == 0 {
+				vw.objectsToReconcile = append(vw.objectsToReconcile, &TagDataWrapper{Tag: t, hasParent: true})
+			}
+		}
+
 		actualHash, _ := hashstructure.Hash(vw.Data(), hashstructure.FormatV2, nil)
 		intendedHash, _ := hashstructure.Hash(intended.Data(), hashstructure.FormatV2, nil)
 
@@ -1048,6 +1054,12 @@ func (vw *VirtualizationVirtualMachineDataWrapper) Patch(cmp ComparableData, int
 			vw.VirtualMachine.Tags = tagsToMerge
 		}
 
+		for _, t := range vw.VirtualMachine.Tags {
+			if t.ID == 0 {
+				vw.objectsToReconcile = append(vw.objectsToReconcile, &TagDataWrapper{Tag: t, hasParent: true})
+			}
+		}
+
 		actualHash, _ := hashstructure.Hash(vw.Data(), hashstructure.FormatV2, nil)
 		intendedHash, _ := hashstructure.Hash(intended.Data(), hashstructure.FormatV2, nil)
 
@@ -1362,6 +1374,12 @@ func (vw *VirtualizationInterfaceDataWrapper) Patch(cmp ComparableData, intended
 			vw.VirtualInterface.Tags = tagsToMerge
 		}
 
+		for _, t := range vw.VirtualInterface.Tags {
+			if t.ID == 0 {
+				vw.objectsToReconcile = append(vw.objectsToReconcile, &TagDataWrapper{Tag: t, hasParent: true})
+			}
+		}
+
 		actualHash, _ := hashstructure.Hash(vw.Data(), hashstructure.FormatV2, nil)
 		intendedHash, _ := hashstructure.Hash(intended.Data(), hashstructure.FormatV2, nil)
 
@@ -1578,6 +1596,12 @@ func (vw *VirtualizationVirtualDiskDataWrapper) Patch(cmp ComparableData, intend
 
 		if len(tagsToMerge) > 0 {
 			vw.VirtualDisk.Tags = tagsToMerge
+		}
+
+		for _, t := range vw.VirtualDisk.Tags {
+			if t.ID == 0 {
+				vw.objectsToReconcile = append(vw.objectsToReconcile, &TagDataWrapper{Tag: t, hasParent: true})
+			}
 		}
 
 		actualHash, _ := hashstructure.Hash(vw.Data(), hashstructure.FormatV2, nil)
