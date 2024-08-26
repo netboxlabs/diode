@@ -790,9 +790,19 @@ func (vw *VirtualizationVirtualMachineDataWrapper) DataType() string {
 
 // ObjectStateQueryParams returns the query parameters needed to retrieve its object state
 func (vw *VirtualizationVirtualMachineDataWrapper) ObjectStateQueryParams() map[string]string {
-	return map[string]string{
+	params := map[string]string{
 		"q": vw.VirtualMachine.Name,
 	}
+	if vw.VirtualMachine.Site != nil {
+		params["site__name"] = vw.VirtualMachine.Site.Name
+	} else if vw.VirtualMachine.Cluster != nil {
+		params["cluster__name"] = vw.VirtualMachine.Cluster.Name
+
+		if vw.VirtualMachine.Cluster.Site != nil {
+			params["cluster__site__name"] = vw.VirtualMachine.Cluster.Site.Name
+		}
+	}
+	return params
 }
 
 // ID returns the ID of the data
@@ -1277,9 +1287,17 @@ func (vw *VirtualizationInterfaceDataWrapper) DataType() string {
 
 // ObjectStateQueryParams returns the query parameters needed to retrieve its object state
 func (vw *VirtualizationInterfaceDataWrapper) ObjectStateQueryParams() map[string]string {
-	return map[string]string{
+	params := map[string]string{
 		"q": vw.VirtualInterface.Name,
 	}
+	if vw.VirtualInterface.VirtualMachine != nil {
+		params["virtual_machine__name"] = vw.VirtualInterface.VirtualMachine.Name
+
+		if vw.VirtualInterface.VirtualMachine.Site != nil {
+			params["virtual_machine__site__name"] = vw.VirtualInterface.VirtualMachine.Site.Name
+		}
+	}
+	return params
 }
 
 // ID returns the ID of the data
@@ -1513,9 +1531,17 @@ func (vw *VirtualizationVirtualDiskDataWrapper) DataType() string {
 
 // ObjectStateQueryParams returns the query parameters needed to retrieve its object state
 func (vw *VirtualizationVirtualDiskDataWrapper) ObjectStateQueryParams() map[string]string {
-	return map[string]string{
+	params := map[string]string{
 		"q": vw.VirtualDisk.Name,
 	}
+	if vw.VirtualDisk.VirtualMachine != nil {
+		params["virtual_machine__name"] = vw.VirtualDisk.VirtualMachine.Name
+
+		if vw.VirtualDisk.VirtualMachine.Site != nil {
+			params["virtual_machine__site__name"] = vw.VirtualDisk.VirtualMachine.Site.Name
+		}
+	}
+	return params
 }
 
 // ID returns the ID of the data
