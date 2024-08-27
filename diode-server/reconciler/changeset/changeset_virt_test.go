@@ -405,7 +405,7 @@ func TestVirtualizationPrepare(t *testing.T) {
 				{
 					objectType:     "virtualization.virtualmachine",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "Test"},
+					queryParams:    map[string]string{"q": "Test", "site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.VirtualizationVirtualMachineDataWrapper{
 						VirtualMachine: nil,
@@ -550,7 +550,7 @@ func TestVirtualizationPrepare(t *testing.T) {
 				{
 					objectType:     "virtualization.virtualmachine",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "Test"},
+					queryParams:    map[string]string{"q": "Test", "site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.VirtualizationVirtualMachineDataWrapper{
 						VirtualMachine: &netbox.VirtualizationVirtualMachine{
@@ -710,7 +710,7 @@ func TestVirtualizationPrepare(t *testing.T) {
 				{
 					objectType:     "virtualization.interface",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "Test"},
+					queryParams:    map[string]string{"q": "Test", "virtual_machine__name": "undefined", "virtual_machine__site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.VirtualizationInterfaceDataWrapper{
 						VirtualInterface: nil,
@@ -719,7 +719,7 @@ func TestVirtualizationPrepare(t *testing.T) {
 				{
 					objectType:     "virtualization.virtualmachine",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined"},
+					queryParams:    map[string]string{"q": "undefined", "site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.VirtualizationVirtualMachineDataWrapper{
 						VirtualMachine: nil,
@@ -895,7 +895,7 @@ func TestVirtualizationPrepare(t *testing.T) {
 				{
 					objectType:     "virtualization.interface",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "Test"},
+					queryParams:    map[string]string{"q": "Test", "virtual_machine__name": "undefined", "virtual_machine__site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.VirtualizationInterfaceDataWrapper{
 						VirtualInterface: &netbox.VirtualizationInterface{
@@ -927,7 +927,7 @@ func TestVirtualizationPrepare(t *testing.T) {
 				{
 					objectType:     "virtualization.virtualmachine",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined"},
+					queryParams:    map[string]string{"q": "undefined", "site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.VirtualizationVirtualMachineDataWrapper{
 						VirtualMachine: &netbox.VirtualizationVirtualMachine{
@@ -1082,7 +1082,7 @@ func TestVirtualizationPrepare(t *testing.T) {
 				{
 					objectType:     "virtualization.virtualdisk",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "Test"},
+					queryParams:    map[string]string{"q": "Test", "virtual_machine__name": "undefined", "virtual_machine__site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.VirtualizationVirtualDiskDataWrapper{
 						VirtualDisk: nil,
@@ -1091,7 +1091,7 @@ func TestVirtualizationPrepare(t *testing.T) {
 				{
 					objectType:     "virtualization.virtualmachine",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined"},
+					queryParams:    map[string]string{"q": "undefined", "site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.VirtualizationVirtualMachineDataWrapper{
 						VirtualMachine: nil,
@@ -1267,7 +1267,7 @@ func TestVirtualizationPrepare(t *testing.T) {
 				{
 					objectType:     "virtualization.virtualdisk",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "Test"},
+					queryParams:    map[string]string{"q": "Test", "virtual_machine__name": "undefined", "virtual_machine__site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.VirtualizationVirtualDiskDataWrapper{
 						VirtualDisk: &netbox.VirtualizationVirtualDisk{
@@ -1299,7 +1299,7 @@ func TestVirtualizationPrepare(t *testing.T) {
 				{
 					objectType:     "virtualization.virtualmachine",
 					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined"},
+					queryParams:    map[string]string{"q": "undefined", "site__name": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.VirtualizationVirtualMachineDataWrapper{
 						VirtualMachine: &netbox.VirtualizationVirtualMachine{
