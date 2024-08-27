@@ -109,8 +109,8 @@ func (s *Server) RetrieveIngestionDataSources(_ context.Context, in *reconcilerp
 	return &reconcilerpb.RetrieveIngestionDataSourcesResponse{IngestionDataSources: dataSources}, nil
 }
 
-// RetrieveIngestionDataSources retrieves logs
-func (s *Server) RetrieveIngestionLogs(_ context.Context, in *reconcilerpb.RetrieveIngestionLogsRequest) (*reconcilerpb.RetrieveIngestionLogsResponse, error) {
+// RetrieveIngestionLogs retrieves logs
+func (s *Server) RetrieveIngestionLogs(_ context.Context, _ *reconcilerpb.RetrieveIngestionLogsRequest) (*reconcilerpb.RetrieveIngestionLogsResponse, error) {
 	logs := make([]*reconcilerpb.IngestionLog, 0)
 	return &reconcilerpb.RetrieveIngestionLogsResponse{Logs: logs}, nil
 }
