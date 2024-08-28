@@ -1138,12 +1138,7 @@ func TestVirtualizationPrepare(t *testing.T) {
 					queryParams:    map[string]string{"q": "undefined"},
 					objectChangeID: 0,
 					object: &netbox.DcimSiteDataWrapper{
-						Site: &netbox.DcimSite{
-							ID:     1,
-							Name:   "undefined",
-							Slug:   "undefined",
-							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-						},
+						Site: nil,
 					},
 				},
 				{
@@ -1167,6 +1162,18 @@ func TestVirtualizationPrepare(t *testing.T) {
 					{
 						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
 						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "dcim.site",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.DcimSite{
+							Name:   "undefined",
+							Slug:   "undefined",
+							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						},
+					},
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
 						ObjectType:    "virtualization.cluster",
 						ObjectID:      nil,
 						ObjectVersion: nil,
@@ -1179,7 +1186,9 @@ func TestVirtualizationPrepare(t *testing.T) {
 								ID: 1,
 							},
 							Site: &netbox.DcimSite{
-								ID: 1,
+								Name:   "undefined",
+								Slug:   "undefined",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
 							},
 							Status: strPtr(netbox.DefaultVirtualizationStatus),
 						},
@@ -1201,7 +1210,9 @@ func TestVirtualizationPrepare(t *testing.T) {
 									ID: 1,
 								},
 								Site: &netbox.DcimSite{
-									ID: 1,
+									Name:   "undefined",
+									Slug:   "undefined",
+									Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
 								},
 								Status: strPtr(netbox.DefaultVirtualizationStatus),
 							},
@@ -1209,7 +1220,9 @@ func TestVirtualizationPrepare(t *testing.T) {
 								ID: 1,
 							},
 							Site: &netbox.DcimSite{
-								ID: 1,
+								Name:   "undefined",
+								Slug:   "undefined",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
 							},
 							Status: strPtr(netbox.DefaultVirtualizationStatus),
 						},
@@ -1233,7 +1246,9 @@ func TestVirtualizationPrepare(t *testing.T) {
 										ID: 1,
 									},
 									Site: &netbox.DcimSite{
-										ID: 1,
+										Name:   "undefined",
+										Slug:   "undefined",
+										Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
 									},
 									Status: strPtr(netbox.DefaultVirtualizationStatus),
 								},
@@ -1241,7 +1256,9 @@ func TestVirtualizationPrepare(t *testing.T) {
 									ID: 1,
 								},
 								Site: &netbox.DcimSite{
-									ID: 1,
+									Name:   "undefined",
+									Slug:   "undefined",
+									Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
 								},
 								Status: strPtr(netbox.DefaultVirtualizationStatus),
 							},

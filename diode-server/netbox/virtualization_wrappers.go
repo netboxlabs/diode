@@ -648,6 +648,12 @@ func (vw *VirtualizationClusterDataWrapper) Patch(cmp ComparableData, intendedNe
 		vw.objectsToReconcile = append(vw.objectsToReconcile, vw)
 	}
 
+	dedupObjectsToReconcile, err := dedupObjectsToReconcile(vw.objectsToReconcile)
+	if err != nil {
+		return nil, err
+	}
+	vw.objectsToReconcile = dedupObjectsToReconcile
+
 	return vw.objectsToReconcile, nil
 }
 
@@ -1196,6 +1202,12 @@ func (vw *VirtualizationVirtualMachineDataWrapper) Patch(cmp ComparableData, int
 		vw.hasChanged = true
 		vw.objectsToReconcile = append(vw.objectsToReconcile, vw)
 	}
+
+	dedupObjectsToReconcile, err := dedupObjectsToReconcile(vw.objectsToReconcile)
+	if err != nil {
+		return nil, err
+	}
+	vw.objectsToReconcile = dedupObjectsToReconcile
 
 	return vw.objectsToReconcile, nil
 }
