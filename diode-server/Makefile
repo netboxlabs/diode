@@ -34,8 +34,8 @@ test:
 
 test-coverage:
 	@mkdir -p .coverage
-	@go test -race -cover -json -coverprofile=.coverage/cover.out.tmp ./... | grep -Ev "diodepb|reconcilerpb|cmd|mocks|sentry" | tparse -format=markdown > .coverage/test-report.md
-	@cat .coverage/cover.out.tmp | grep -Ev "diodepb|reconcilerpb|cmd|mocks|sentry" > .coverage/cover.out
+	@go test -race -cover -json -coverprofile=.coverage/cover.out.tmp ./... | grep -Ev "reconcilerpb|cmd|mocks|sentry" | tparse -format=markdown > .coverage/test-report.md
+	@cat .coverage/cover.out.tmp | grep -Ev "reconcilerpb|cmd|mocks|sentry" > .coverage/cover.out
 	@go tool cover -func=.coverage/cover.out | grep total | awk '{print substr($$3, 1, length($$3)-1)}' > .coverage/coverage.txt
 
 .PHONY: $(BUILD_SERVICES)
