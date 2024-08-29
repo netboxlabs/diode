@@ -695,12 +695,12 @@ func TestVirtualizationPrepare(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "[P5] ingest virtualization.interface with name only - existing object not found - create",
+			name: "[P5] ingest virtualization.vminterface with name only - existing object not found - create",
 			rawIngestEntity: []byte(`{
 				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "virtualization.interface",
+				"data_type": "virtualization.vminterface",
 				"entity": {
-					"VirtualInterface": {
+					"VMInterface": {
 						"name": "Test"
 					}
 				},
@@ -708,12 +708,12 @@ func TestVirtualizationPrepare(t *testing.T) {
 			}`),
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
-					objectType:     "virtualization.interface",
+					objectType:     "virtualization.vminterface",
 					objectID:       0,
 					queryParams:    map[string]string{"q": "Test", "virtual_machine__name": "undefined", "virtual_machine__site__name": "undefined"},
 					objectChangeID: 0,
-					object: &netbox.VirtualizationInterfaceDataWrapper{
-						VirtualInterface: nil,
+					object: &netbox.VirtualizationVMInterfaceDataWrapper{
+						VMInterface: nil,
 					},
 				},
 				{
@@ -845,10 +845,10 @@ func TestVirtualizationPrepare(t *testing.T) {
 					{
 						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
 						ChangeType:    changeset.ChangeTypeCreate,
-						ObjectType:    "virtualization.interface",
+						ObjectType:    "virtualization.vminterface",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.VirtualizationInterface{
+						Data: &netbox.VirtualizationVMInterface{
 							Name: "Test",
 							VirtualMachine: &netbox.VirtualizationVirtualMachine{
 								Name: "undefined",
@@ -880,12 +880,12 @@ func TestVirtualizationPrepare(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "[P5] ingest virtualization.interface with name only - existing object found - do nothing",
+			name: "[P5] ingest virtualization.vminterface with name only - existing object found - do nothing",
 			rawIngestEntity: []byte(`{
 				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "virtualization.interface",
+				"data_type": "virtualization.vminterface",
 				"entity": {
-					"VirtualInterface": {
+					"VMInterface": {
 						"name": "Test"
 					}
 				},
@@ -893,12 +893,12 @@ func TestVirtualizationPrepare(t *testing.T) {
 			}`),
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
-					objectType:     "virtualization.interface",
+					objectType:     "virtualization.vminterface",
 					objectID:       0,
 					queryParams:    map[string]string{"q": "Test", "virtual_machine__name": "undefined", "virtual_machine__site__name": "undefined"},
 					objectChangeID: 0,
-					object: &netbox.VirtualizationInterfaceDataWrapper{
-						VirtualInterface: &netbox.VirtualizationInterface{
+					object: &netbox.VirtualizationVMInterfaceDataWrapper{
+						VMInterface: &netbox.VirtualizationVMInterface{
 							ID:   1,
 							Name: "Test",
 							VirtualMachine: &netbox.VirtualizationVirtualMachine{
@@ -1049,12 +1049,12 @@ func TestVirtualizationPrepare(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "[P5] ingest empty virtualization.interface - error",
+			name: "[P5] ingest empty virtualization.vminterface - error",
 			rawIngestEntity: []byte(`{
 				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "virtualization.interface",
+				"data_type": "virtualization.vminterface",
 				"entity": {
-					"VirtualInterface": {}
+					"VMInterface": {}
 				},
 				"state": 0
 			}`),

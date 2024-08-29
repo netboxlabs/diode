@@ -271,7 +271,7 @@ message VirtualMachine {
 }
 
 //A Virtual Machine Interface
-message VirtualInterface {
+message VMInterface {
   VirtualMachine virtual_machine = 1 [(validate.rules).any.required = true];
   string name = 2 [(validate.rules).string = {
     min_len: 1
@@ -484,7 +484,7 @@ message Entity {
     ClusterType cluster_type = 12;
     Cluster cluster = 13;
     VirtualMachine virtual_machine = 14;
-    VirtualInterface virtual_interface = 15;
+    VMInterface vminterface = 15;
     VirtualDisk virtual_disk = 16;
   }
 

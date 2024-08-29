@@ -354,8 +354,8 @@ func extractObjectType(in *diodepb.Entity) (string, error) {
 		return netbox.VirtualizationClusterObjectType, nil
 	case *diodepb.Entity_VirtualMachine:
 		return netbox.VirtualizationVirtualMachineObjectType, nil
-	case *diodepb.Entity_VirtualInterface:
-		return netbox.VirtualizationInterfaceObjectType, nil
+	case *diodepb.Entity_Vminterface:
+		return netbox.VirtualizationVMInterfaceObjectType, nil
 	case *diodepb.Entity_VirtualDisk:
 		return netbox.VirtualizationVirtualDiskObjectType, nil
 	default:

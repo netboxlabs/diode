@@ -1957,8 +1957,8 @@ func NewDataWrapper(dataType string) (ComparableData, error) {
 		return &VirtualizationClusterDataWrapper{}, nil
 	case VirtualizationVirtualMachineObjectType:
 		return &VirtualizationVirtualMachineDataWrapper{}, nil
-	case VirtualizationInterfaceObjectType:
-		return &VirtualizationInterfaceDataWrapper{}, nil
+	case VirtualizationVMInterfaceObjectType:
+		return &VirtualizationVMInterfaceDataWrapper{}, nil
 	case VirtualizationVirtualDiskObjectType:
 		return &VirtualizationVirtualDiskDataWrapper{}, nil
 	default:

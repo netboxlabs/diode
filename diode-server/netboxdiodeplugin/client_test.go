@@ -420,14 +420,14 @@ func TestRetrieveObjectState(t *testing.T) {
 		},
 		{
 			name:               "valid response for Virtualization Interface",
-			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.VirtualizationInterfaceObjectType, ObjectID: 1},
-			mockServerResponse: `{"object_type":"virtualization.interface","object_change_id":1,"object":{"id":1,"name":"test"}}`,
+			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.VirtualizationVMInterfaceObjectType, ObjectID: 1},
+			mockServerResponse: `{"object_type":"virtualization.vminterface","object_change_id":1,"object":{"id":1,"name":"test"}}`,
 			apiKey:             "foobar",
 			response: &netboxdiodeplugin.ObjectState{
-				ObjectType:     netbox.VirtualizationInterfaceObjectType,
+				ObjectType:     netbox.VirtualizationVMInterfaceObjectType,
 				ObjectChangeID: 1,
-				Object: &netbox.VirtualizationInterfaceDataWrapper{
-					VirtualInterface: &netbox.VirtualizationInterface{
+				Object: &netbox.VirtualizationVMInterfaceDataWrapper{
+					VMInterface: &netbox.VirtualizationVMInterface{
 						ID:   1,
 						Name: "test",
 					},

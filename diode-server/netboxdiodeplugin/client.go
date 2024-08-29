@@ -513,11 +513,11 @@ func wrapObjectState(dataType string, object any) (any, error) {
 		}{
 			VirtualMachine: object,
 		}, nil
-	case netbox.VirtualizationInterfaceObjectType:
+	case netbox.VirtualizationVMInterfaceObjectType:
 		return struct {
-			VirtualInterface any
+			VMInterface any
 		}{
-			VirtualInterface: object,
+			VMInterface: object,
 		}, nil
 	case netbox.VirtualizationVirtualDiskObjectType:
 		return struct {

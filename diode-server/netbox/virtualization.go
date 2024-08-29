@@ -15,8 +15,8 @@ const (
 	// VirtualizationVirtualMachineObjectType represents the Virtualization Virtual Machine object type
 	VirtualizationVirtualMachineObjectType = "virtualization.virtualmachine"
 
-	// VirtualizationInterfaceObjectType represents the Virtualization Interface object type
-	VirtualizationInterfaceObjectType = "virtualization.interface"
+	// VirtualizationVMInterfaceObjectType represents the Virtualization Interface object type
+	VirtualizationVMInterfaceObjectType = "virtualization.vminterface"
 
 	// VirtualizationVirtualDiskObjectType represents the Virtualization Virtual Disk object type
 	VirtualizationVirtualDiskObjectType = "virtualization.virtualdisk"
@@ -102,8 +102,8 @@ type VirtualizationVirtualMachine struct {
 	Tags        []*Tag                 `json:"tags,omitempty"`
 }
 
-// VirtualizationInterface represents a Virtualization Interface
-type VirtualizationInterface struct {
+// VirtualizationVMInterface represents a Virtualization Interface
+type VirtualizationVMInterface struct {
 	ID             int                           `json:"id,omitempty"`
 	VirtualMachine *VirtualizationVirtualMachine `json:"virtual_machine,omitempty"`
 	Name           string                        `json:"name,omitempty"`
@@ -172,9 +172,9 @@ func NewVirtualizationVirtualMachine() *VirtualizationVirtualMachine {
 	}
 }
 
-// NewVirtualizationInterface creates a new virtualization interface placeholder
-func NewVirtualizationInterface() *VirtualizationInterface {
-	return &VirtualizationInterface{
+// NewVirtualizationVMInterface creates a new virtualization VM interface placeholder
+func NewVirtualizationVMInterface() *VirtualizationVMInterface {
+	return &VirtualizationVMInterface{
 		Name:           "undefined",
 		VirtualMachine: NewVirtualizationVirtualMachine(),
 	}
