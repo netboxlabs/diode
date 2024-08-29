@@ -1,0 +1,4 @@
+version: v1
+directories:
+  - diode-proto
+  - diode-server/proto
