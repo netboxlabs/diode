@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - protoc             (unknown)
-// source: reconciler/v1/reconciler.proto
+// source: diode/v1/reconciler.proto
 
 package reconcilerpb
 
@@ -19,7 +19,7 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	ReconcilerService_RetrieveIngestionDataSources_FullMethodName = "/reconciler.v1.ReconcilerService/RetrieveIngestionDataSources"
+	ReconcilerService_RetrieveIngestionDataSources_FullMethodName = "/diode.v1.ReconcilerService/RetrieveIngestionDataSources"
 )
 
 // ReconcilerServiceClient is the client API for ReconcilerService service.
@@ -98,7 +98,7 @@ func _ReconcilerService_RetrieveIngestionDataSources_Handler(srv interface{}, ct
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var ReconcilerService_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "reconciler.v1.ReconcilerService",
+	ServiceName: "diode.v1.ReconcilerService",
 	HandlerType: (*ReconcilerServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -107,5 +107,5 @@ var ReconcilerService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "reconciler/v1/reconciler.proto",
+	Metadata: "diode/v1/reconciler.proto",
 }

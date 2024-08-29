@@ -1,0 +1,13 @@
+version: v2
+inputs:
+  - proto_file: diode/v1/reconciler.proto
+plugins:
+  - local: protoc-gen-go
+    out: ../diode-server
+    opt: module=github.com/netboxlabs/diode/diode-server
+  - remote: buf.build/grpc/go:v1.3.0
+    out: ../diode-server
+    opt: module=github.com/netboxlabs/diode/diode-server
+  - remote: buf.build/bufbuild/validate-go:v1.0.4
+    out: ../diode-server
+    opt: module=github.com/netboxlabs/diode/diode-server
