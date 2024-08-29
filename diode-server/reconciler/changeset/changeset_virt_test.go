@@ -1065,9 +1065,193 @@ func TestVirtualizationPrepare(t *testing.T) {
 			},
 			wantErr: true,
 		},
-
 		{
 			name: "[P6] ingest virtualization.virtualdisk with name only - existing object not found - create",
+			rawIngestEntity: []byte(`{
+				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				"data_type": "virtualization.virtualdisk",
+				"entity": {
+					"VirtualDisk": {
+						"name": "Test"
+					}
+				},
+				"state": 0
+			}`),
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "virtualization.virtualdisk",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "Test", "virtual_machine__name": "undefined", "virtual_machine__site__name": "undefined"},
+					objectChangeID: 0,
+					object: &netbox.VirtualizationVirtualDiskDataWrapper{
+						VirtualDisk: nil,
+					},
+				},
+				{
+					objectType:     "virtualization.virtualmachine",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "undefined", "site__name": "undefined"},
+					objectChangeID: 0,
+					object: &netbox.VirtualizationVirtualMachineDataWrapper{
+						VirtualMachine: nil,
+					},
+				},
+				{
+					objectType:     "virtualization.cluster",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "undefined", "site__name": "undefined"},
+					objectChangeID: 0,
+					object: &netbox.VirtualizationClusterDataWrapper{
+						Cluster: nil,
+					},
+				},
+				{
+					objectType:     "virtualization.clustergroup",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "undefined"},
+					objectChangeID: 0,
+					object: &netbox.VirtualizationClusterGroupDataWrapper{
+						ClusterGroup: &netbox.VirtualizationClusterGroup{
+							ID:   1,
+							Name: "undefined",
+							Slug: "undefined",
+						},
+					},
+				},
+				{
+					objectType:     "virtualization.clustertype",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "undefined"},
+					objectChangeID: 0,
+					object: &netbox.VirtualizationClusterTypeDataWrapper{
+						ClusterType: &netbox.VirtualizationClusterType{
+							ID:   1,
+							Name: "undefined",
+							Slug: "undefined",
+						},
+					},
+				},
+				{
+					objectType:     "dcim.site",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "undefined"},
+					objectChangeID: 0,
+					object: &netbox.DcimSiteDataWrapper{
+						Site: &netbox.DcimSite{
+							ID:     1,
+							Name:   "undefined",
+							Slug:   "undefined",
+							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						},
+					},
+				},
+				{
+					objectType:     "dcim.devicerole",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "undefined"},
+					objectChangeID: 0,
+					object: &netbox.DcimDeviceRoleDataWrapper{
+						DeviceRole: &netbox.DcimDeviceRole{
+							ID:    1,
+							Name:  "undefined",
+							Slug:  "undefined",
+							Color: strPtr("000000"),
+						},
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet: []changeset.Change{
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "virtualization.cluster",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.VirtualizationCluster{
+							Name: "undefined",
+							Group: &netbox.VirtualizationClusterGroup{
+								ID: 1,
+							},
+							Type: &netbox.VirtualizationClusterType{
+								ID: 1,
+							},
+							Site: &netbox.DcimSite{
+								ID: 1,
+							},
+							Status: strPtr(netbox.DefaultVirtualizationStatus),
+						},
+					},
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "virtualization.virtualmachine",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.VirtualizationVirtualMachine{
+							Name: "undefined",
+							Cluster: &netbox.VirtualizationCluster{
+								Name: "undefined",
+								Group: &netbox.VirtualizationClusterGroup{
+									ID: 1,
+								},
+								Type: &netbox.VirtualizationClusterType{
+									ID: 1,
+								},
+								Site: &netbox.DcimSite{
+									ID: 1,
+								},
+								Status: strPtr(netbox.DefaultVirtualizationStatus),
+							},
+							Role: &netbox.DcimDeviceRole{
+								ID: 1,
+							},
+							Site: &netbox.DcimSite{
+								ID: 1,
+							},
+							Status: strPtr(netbox.DefaultVirtualizationStatus),
+						},
+					},
+					{
+						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:    changeset.ChangeTypeCreate,
+						ObjectType:    "virtualization.virtualdisk",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data: &netbox.VirtualizationVirtualDisk{
+							Name: "Test",
+							VirtualMachine: &netbox.VirtualizationVirtualMachine{
+								Name: "undefined",
+								Cluster: &netbox.VirtualizationCluster{
+									Name: "undefined",
+									Group: &netbox.VirtualizationClusterGroup{
+										ID: 1,
+									},
+									Type: &netbox.VirtualizationClusterType{
+										ID: 1,
+									},
+									Site: &netbox.DcimSite{
+										ID: 1,
+									},
+									Status: strPtr(netbox.DefaultVirtualizationStatus),
+								},
+								Role: &netbox.DcimDeviceRole{
+									ID: 1,
+								},
+								Site: &netbox.DcimSite{
+									ID: 1,
+								},
+								Status: strPtr(netbox.DefaultVirtualizationStatus),
+							},
+						},
+					},
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "[P6] ingest virtualization.virtualdisk with name only and no existing site - existing object not found - create",
 			rawIngestEntity: []byte(`{
 				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				"data_type": "virtualization.virtualdisk",
