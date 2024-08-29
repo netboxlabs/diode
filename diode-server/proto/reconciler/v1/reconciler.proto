@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package reconciler.v1;
 
+import "diode/v1/ingester.proto";
 import "validate/validate.proto";
 
 option go_package = "github.com/netboxlabs/diode/diode-server/reconciler/v1/reconcilerpb";
@@ -36,26 +37,52 @@ message RetrieveIngestionDataSourcesResponse {
   repeated IngestionDataSource ingestion_data_sources = 1;
 }
 
+// Error message
+message Error {
+  string error = 1; //key value pair of the error
+  string change_id = 2;
+}
+
+// Error details
+message Details {
+  string change_set_id = 1;
+  string result = 2;
+  repeated Error errors = 3;
+}
+
+// ChangeSetError represents an error when applying a change set
+message ChangeSetError {
+  string message = 1;
+  int32 code = 2;
+  Details details = 3;
+}
+
 // An ingestion log
 message IngestionLog {
-  string id = 1; // Unique identifier for the log
-  string state = 2; // State of the log
-  string data_type = 3; // Data type of the log
-  string request_id = 4; // Request ID associated with the log
-  int64 ingestion_ts = 5; // Timestamp of the ingestion
-  string value = 6; // The stored value in the JSON key
+  string data_type = 1;
+  string state = 2;
+  string request_id = 3;
+  int64 ingestion_ts = 4;
+  string producer_app_name = 5;
+  string producer_app_version = 6;
+  string sdk_name = 7;
+  string sdk_version = 8;
+  diode.v1.Entity entity = 9;
+  ChangeSetError error = 10;
 }
 
 // The request to retrieve ingestion logs
 message RetrieveIngestionLogsRequest {
-  int32 number_of_entities = 1; // Override the default page size
-  string state = 2; // Optional filter by state field
+  int32 page_size = 1 [(validate.rules).int32 = {
+    gte: 1
+    lte: 1000
+  }]; // Number of logs per page, default is 100
+  optional string state = 2; // Optional filter by state field
   string data_type = 3; // Optional filter by data type field
   string request_id = 4; // Optional filter by request ID
   int64 ingestion_ts_start = 5; // Optional start of ingestion timestamp range
   int64 ingestion_ts_end = 6; // Optional end of ingestion timestamp range
-  int32 page_size = 7; // Number of logs per page, default is 100
-  string page_token = 8; // Token to fetch the next page of results
+  string page_token = 7; // Token to fetch the next page of results
 }
 
 // The response from the retrieve ingestion logs request
