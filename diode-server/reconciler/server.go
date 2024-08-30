@@ -2,16 +2,26 @@ package reconciler
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net"
+	"strings"
 
 	"github.com/kelseyhightower/envconfig"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
 
 	"github.com/netboxlabs/diode/diode-server/reconciler/v1/reconcilerpb"
+)
+
+var (
+	errMetadataNotFound = errors.New("no request metadata found")
+
+	// ErrUnauthorized is an error for unauthorized requests
+	ErrUnauthorized = errors.New("missing or invalid authorization header")
 )
 
 // Server is a reconciler Server
@@ -23,7 +33,7 @@ type Server struct {
 	grpcListener net.Listener
 	grpcServer   *grpc.Server
 	redisClient  *redis.Client
-	apiKeys      map[string]string
+	apiKeys      APIKeys
 }
 
 // NewServer creates a new reconciler server
@@ -51,7 +61,9 @@ func NewServer(ctx context.Context, logger *slog.Logger) (*Server, error) {
 		return nil, fmt.Errorf("failed to configure data sources: %v", err)
 	}
 
-	grpcServer := grpc.NewServer()
+	auth := newAuthUnaryInterceptor(logger, apiKeys)
+	grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(auth))
+
 	component := &Server{
 		config:       cfg,
 		logger:       logger,
@@ -60,10 +72,25 @@ func NewServer(ctx context.Context, logger *slog.Logger) (*Server, error) {
 		redisClient:  redisClient,
 		apiKeys:      apiKeys,
 	}
+
 	reconcilerpb.RegisterReconcilerServiceServer(grpcServer, component)
 	reflection.Register(grpcServer)
 
 	return component, nil
+}
+
+func newAuthUnaryInterceptor(logger *slog.Logger, apiKeys APIKeys) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, serverInfo *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		md, ok := metadata.FromIncomingContext(ctx)
+		if !ok {
+			return nil, errMetadataNotFound
+		}
+
+		if !isAuthorized(logger, serverInfo.FullMethod, apiKeys, md["authorization"]) {
+			return nil, ErrUnauthorized
+		}
+		return handler(ctx, req)
+	}
 }
 
 // Name returns the name of the server
@@ -117,4 +144,25 @@ func validateRetrieveIngestionDataSourcesRequest(in *reconcilerpb.RetrieveIngest
 		return fmt.Errorf("sdk version is empty")
 	}
 	return nil
+}
+
+func isAuthorized(logger *slog.Logger, rpcMethod string, apiKeys APIKeys, authorization []string) bool {
+	if len(authorization) < 1 {
+		logger.Debug("missing authorization header", "rpcMethod", rpcMethod)
+		return false
+	}
+
+	apiKey := strings.TrimSpace(authorization[0])
+
+	switch rpcMethod {
+	case reconcilerpb.ReconcilerService_RetrieveIngestionDataSources_FullMethodName:
+		ingesterToReconcilerAPIKey, ok := apiKeys["INGESTER_TO_RECONCILER"]
+		if !ok {
+			logger.Debug("missing INGESTER_TO_RECONCILER API key")
+			return false
+		}
+		return apiKey == ingesterToReconcilerAPIKey
+	}
+
+	return false
 }

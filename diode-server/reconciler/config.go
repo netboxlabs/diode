@@ -10,7 +10,8 @@ type Config struct {
 	RedisStreamDB int    `envconfig:"REDIS_STREAM_DB" default:"1"`
 
 	// API keys
-	DiodeToNetBoxAPIKey string `envconfig:"DIODE_TO_NETBOX_API_KEY" required:"true"`
-	NetBoxToDiodeAPIKey string `envconfig:"NETBOX_TO_DIODE_API_KEY" required:"true"`
-	DiodeAPIKey         string `envconfig:"DIODE_API_KEY" required:"true"`
+	DiodeToNetBoxAPIKey        string `envconfig:"DIODE_TO_NETBOX_API_KEY" required:"true"`
+	NetBoxToDiodeAPIKey        string `envconfig:"NETBOX_TO_DIODE_API_KEY" required:"true"`
+	DiodeAPIKey                string `envconfig:"DIODE_API_KEY" required:"true"`
+	IngesterToReconcilerAPIKey string `envconfig:"INGESTER_TO_RECONCILER_API_KEY" required:"true"`
 }
