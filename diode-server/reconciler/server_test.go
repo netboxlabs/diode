@@ -14,8 +14,8 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
 
+	pb "github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 	"github.com/netboxlabs/diode/diode-server/reconciler"
-	pb "github.com/netboxlabs/diode/diode-server/reconciler/v1/reconcilerpb"
 )
 
 func startTestServer(ctx context.Context, t *testing.T, redisAddr string) (*reconciler.Server, *grpc.ClientConn) {

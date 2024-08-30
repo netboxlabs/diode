@@ -14,7 +14,7 @@ import (
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
 
-	"github.com/netboxlabs/diode/diode-server/reconciler/v1/reconcilerpb"
+	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 )
 
 var (

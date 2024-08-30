@@ -1,0 +1,20 @@
+version: v2
+managed:
+  enabled: true
+  override:
+    - file_option: go_package
+      path: diode/v1/ingester.proto
+      value: github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb
+    - file_option: go_package
+      path: diode/v1/reconciler.proto
+      value: github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb
+plugins:
+  - local: protoc-gen-go
+    out: ../
+    opt: module=github.com/netboxlabs/diode
+  - remote: buf.build/grpc/go:v1.3.0
+    out: ../
+    opt: module=github.com/netboxlabs/diode
+  - remote: buf.build/bufbuild/validate-go:v1.0.4
+    out: ../
+    opt: module=github.com/netboxlabs/diode

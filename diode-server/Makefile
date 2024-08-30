@@ -88,5 +88,3 @@ docker-compose-netbox-down:
 clean:
 	@rm -rf $(BUILD_DIR)/*
 
-reconciler-proto-gen:
-	@cd proto/ && buf format -w && buf generate --template buf.gen.yaml
