@@ -349,7 +349,7 @@ func extractObjectType(in *diodepb.Entity) (string, error) {
 	case *diodepb.Entity_ClusterGroup:
 		return netbox.VirtualizationClusterGroupObjectType, nil
 	case *diodepb.Entity_ClusterType:
-		return netbox.VirtualizationClusterGroupObjectType, nil
+		return netbox.VirtualizationClusterTypeObjectType, nil
 	case *diodepb.Entity_Cluster:
 		return netbox.VirtualizationClusterObjectType, nil
 	case *diodepb.Entity_VirtualMachine:

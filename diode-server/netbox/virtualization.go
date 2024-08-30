@@ -105,7 +105,7 @@ type VirtualizationVirtualMachine struct {
 // VirtualizationVMInterface represents a Virtualization Interface
 type VirtualizationVMInterface struct {
 	ID             int                           `json:"id,omitempty"`
-	VirtualMachine *VirtualizationVirtualMachine `json:"virtual_machine,omitempty"`
+	VirtualMachine *VirtualizationVirtualMachine `json:"virtual_machine,omitempty"  mapstructure:"virtual_machine"`
 	Name           string                        `json:"name,omitempty"`
 	Enabled        *bool                         `json:"enabled,omitempty"`
 	MTU            *int                          `json:"mtu,omitempty"`
@@ -117,7 +117,7 @@ type VirtualizationVMInterface struct {
 // VirtualizationVirtualDisk represents a Virtualization Virtual Disk
 type VirtualizationVirtualDisk struct {
 	ID             int                           `json:"id,omitempty"`
-	VirtualMachine *VirtualizationVirtualMachine `json:"virtual_machine,omitempty"`
+	VirtualMachine *VirtualizationVirtualMachine `json:"virtual_machine,omitempty"  mapstructure:"virtual_machine"`
 	Name           string                        `json:"name,omitempty"`
 	Size           int                           `json:"size,omitempty"`
 	Description    *string                       `json:"description,omitempty"`
