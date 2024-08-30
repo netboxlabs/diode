@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package diode.v1;
 
-import "diode/v1/ingester.proto";
 import "validate/validate.proto";
 
 option go_package = "github.com/netboxlabs/diode/diode-server/reconciler/v1/reconcilerpb";
@@ -30,7 +29,6 @@ message RetrieveIngestionDataSourcesRequest {
     max_len: 255
   }];
   string sdk_version = 3 [(validate.rules).string = {pattern: "^(\\d)+\\.(\\d)+\\.(\\d)+$"}];
-  Entity entity = 4;
 }
 
 // The response from the retrieve ingestion data sources request
