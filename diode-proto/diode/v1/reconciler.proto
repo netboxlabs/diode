@@ -40,12 +40,12 @@ message RetrieveIngestionDataSourcesResponse {
 // ChangeSetError represents an error when applying a change set
 message ChangeSetError {
   message Details {
-    string change_set_id = 1;
-    string result = 2;
     message Error {
       string error = 1; //key value pair of the error
       string change_id = 2;
     }
+    string change_set_id = 1;
+    string result = 2;
     repeated Error errors = 3;
   }
   string message = 1;
