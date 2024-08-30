@@ -17,8 +17,8 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
+	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 	"github.com/netboxlabs/diode/diode-server/reconciler"
-	"github.com/netboxlabs/diode/diode-server/reconciler/v1/reconcilerpb"
 	"github.com/netboxlabs/diode/diode-server/sentry"
 )
 
@@ -78,7 +78,10 @@ func New(ctx context.Context, logger *slog.Logger) (*Component, error) {
 		return nil, fmt.Errorf("failed to create reconciler client: %v", err)
 	}
 
-	dataSources, err := reconcilerClient.RetrieveIngestionDataSources(ctx, &reconcilerpb.RetrieveIngestionDataSourcesRequest{})
+	dataSources, err := reconcilerClient.RetrieveIngestionDataSources(
+		metadata.NewOutgoingContext(ctx, metadata.Pairs("authorization", cfg.IngesterToReconcilerAPIKey)),
+		&reconcilerpb.RetrieveIngestionDataSourcesRequest{},
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve ingestion data sources: %v", err)
 	}

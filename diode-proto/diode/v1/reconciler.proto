@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package reconciler.v1;
+package diode.v1;
 
 import "diode/v1/ingester.proto";
 import "validate/validate.proto";
