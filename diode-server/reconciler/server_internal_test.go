@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/netboxlabs/diode/diode-server/reconciler/v1/reconcilerpb"
+	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 )
 
 func TestIsAuthorized(t *testing.T) {
