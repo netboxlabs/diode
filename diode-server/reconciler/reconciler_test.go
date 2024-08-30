@@ -35,6 +35,7 @@ func setupEnv(redisAddr string) {
 	_ = os.Setenv("DIODE_TO_NETBOX_API_KEY", "diode_to_netbox_api_key")
 	_ = os.Setenv("NETBOX_TO_DIODE_API_KEY", "netbox_to_diode_api_key")
 	_ = os.Setenv("DIODE_API_KEY", "diode_api_key")
+	_ = os.Setenv("INGESTER_TO_RECONCILER_API_KEY", "ingester_to_reconciler_api_key")
 }
 
 func teardownEnv() {
@@ -48,4 +49,5 @@ func teardownEnv() {
 	_ = os.Unsetenv("DIODE_TO_NETBOX_API_KEY")
 	_ = os.Unsetenv("NETBOX_TO_DIODE_API_KEY")
 	_ = os.Unsetenv("DIODE_API_KEY")
+	_ = os.Unsetenv("INGESTER_TO_RECONCILER_API_KEY")
 }
