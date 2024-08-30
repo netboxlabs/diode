@@ -16,9 +16,9 @@ import (
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/netboxlabs/diode-sdk-go/diode/v1/diodepb"
+	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
+	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 	"github.com/netboxlabs/diode/diode-server/reconciler"
-	"github.com/netboxlabs/diode/diode-server/reconciler/v1/reconcilerpb"
 	"github.com/netboxlabs/diode/diode-server/sentry"
 )
 

@@ -8,7 +8,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	pb "github.com/netboxlabs/diode/diode-server/reconciler/v1/reconcilerpb"
+	pb "github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 )
 
 const (
