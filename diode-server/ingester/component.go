@@ -78,7 +78,10 @@ func New(ctx context.Context, logger *slog.Logger) (*Component, error) {
 		return nil, fmt.Errorf("failed to create reconciler client: %v", err)
 	}
 
-	dataSources, err := reconcilerClient.RetrieveIngestionDataSources(ctx, &reconcilerpb.RetrieveIngestionDataSourcesRequest{})
+	dataSources, err := reconcilerClient.RetrieveIngestionDataSources(
+		metadata.NewOutgoingContext(ctx, metadata.Pairs("authorization", cfg.IngesterToReconcilerAPIKey)),
+		&reconcilerpb.RetrieveIngestionDataSourcesRequest{},
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve ingestion data sources: %v", err)
 	}
