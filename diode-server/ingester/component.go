@@ -17,8 +17,8 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
+	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 	"github.com/netboxlabs/diode/diode-server/reconciler"
-	"github.com/netboxlabs/diode/diode-server/reconciler/v1/reconcilerpb"
 	"github.com/netboxlabs/diode/diode-server/sentry"
 )
 

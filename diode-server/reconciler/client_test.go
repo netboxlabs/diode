@@ -7,8 +7,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	pb "github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 	"github.com/netboxlabs/diode/diode-server/reconciler"
-	pb "github.com/netboxlabs/diode/diode-server/reconciler/v1/reconcilerpb"
 )
 
 func TestNewClient(t *testing.T) {
