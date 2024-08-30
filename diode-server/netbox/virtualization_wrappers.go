@@ -710,9 +710,10 @@ func (vw *VirtualizationVirtualMachineDataWrapper) NestedObjects() ([]Comparable
 		vw.placeholder = true
 	}
 
-	// Ignore primary IP addresses for time being
+	// Ignore primary IP addresses and device for time being
 	vw.VirtualMachine.PrimaryIPv4 = nil
 	vw.VirtualMachine.PrimaryIPv6 = nil
+	vw.VirtualMachine.Device = nil
 
 	cluster := VirtualizationClusterDataWrapper{Cluster: vw.VirtualMachine.Cluster, BaseDataWrapper: BaseDataWrapper{placeholder: vw.placeholder, hasParent: true, intended: vw.intended}}
 
@@ -759,19 +760,6 @@ func (vw *VirtualizationVirtualMachineDataWrapper) NestedObjects() ([]Comparable
 	objects = append(objects, dro...)
 
 	vw.VirtualMachine.Role = deviceRole.DeviceRole
-
-	if vw.VirtualMachine.Device != nil {
-		device := DcimDeviceDataWrapper{Device: vw.VirtualMachine.Device, BaseDataWrapper: BaseDataWrapper{placeholder: vw.placeholder, hasParent: true, intended: vw.intended}}
-
-		do, err := device.NestedObjects()
-		if err != nil {
-			return nil, err
-		}
-
-		objects = append(objects, do...)
-
-		vw.VirtualMachine.Device = device.Device
-	}
 
 	if vw.VirtualMachine.Tags != nil {
 		for _, t := range vw.VirtualMachine.Tags {
