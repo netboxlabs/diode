@@ -1949,6 +1949,18 @@ func NewDataWrapper(dataType string) (ComparableData, error) {
 		return &IpamIPAddressDataWrapper{}, nil
 	case IpamPrefixObjectType:
 		return &IpamPrefixDataWrapper{}, nil
+	case VirtualizationClusterGroupObjectType:
+		return &VirtualizationClusterGroupDataWrapper{}, nil
+	case VirtualizationClusterTypeObjectType:
+		return &VirtualizationClusterTypeDataWrapper{}, nil
+	case VirtualizationClusterObjectType:
+		return &VirtualizationClusterDataWrapper{}, nil
+	case VirtualizationVirtualMachineObjectType:
+		return &VirtualizationVirtualMachineDataWrapper{}, nil
+	case VirtualizationVMInterfaceObjectType:
+		return &VirtualizationVMInterfaceDataWrapper{}, nil
+	case VirtualizationVirtualDiskObjectType:
+		return &VirtualizationVirtualDiskDataWrapper{}, nil
 	default:
 		return nil, fmt.Errorf("unsupported data type %s", dataType)
 	}
