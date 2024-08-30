@@ -489,6 +489,42 @@ func wrapObjectState(dataType string, object any) (any, error) {
 		}{
 			Prefix: object,
 		}, nil
+	case netbox.VirtualizationClusterGroupObjectType:
+		return struct {
+			ClusterGroup any
+		}{
+			ClusterGroup: object,
+		}, nil
+	case netbox.VirtualizationClusterTypeObjectType:
+		return struct {
+			ClusterType any
+		}{
+			ClusterType: object,
+		}, nil
+	case netbox.VirtualizationClusterObjectType:
+		return struct {
+			Cluster any
+		}{
+			Cluster: object,
+		}, nil
+	case netbox.VirtualizationVirtualMachineObjectType:
+		return struct {
+			VirtualMachine any
+		}{
+			VirtualMachine: object,
+		}, nil
+	case netbox.VirtualizationVMInterfaceObjectType:
+		return struct {
+			VMInterface any
+		}{
+			VMInterface: object,
+		}, nil
+	case netbox.VirtualizationVirtualDiskObjectType:
+		return struct {
+			VirtualDisk any
+		}{
+			VirtualDisk: object,
+		}, nil
 	default:
 		return nil, fmt.Errorf("unsupported data type %s", dataType)
 	}
