@@ -5,7 +5,7 @@ package diode.v1;
 import "diode/v1/ingester.proto";
 import "validate/validate.proto";
 
-option go_package = "github.com/netboxlabs/diode/diode-server/reconciler/v1/reconcilerpb";
+option go_package = "github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb";
 
 // An ingestion data source
 message IngestionDataSource {
