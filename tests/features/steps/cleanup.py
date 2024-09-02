@@ -82,6 +82,24 @@ def delete_prefix(context, prefix):
     ip = get_object_by_name(prefix, endpoint)
     if ip:
         send_delete_request(endpoint, ip.get("id"))
+        
+
+@given('the cluster type "{cluster_type_name}" is deleted')
+def delete_cluster_type(context, cluster_type_name):
+    """Delete the cluster type"""
+    endpoint = "dcim/cluster-types/"
+    cluster_type = get_object_by_name(cluster_type_name, endpoint)
+    if cluster_type:
+        send_delete_request(endpoint, cluster_type.get("id"))
+        
+
+@given('the cluster group "{cluster_group_name}" is deleted')
+def delete_cluster_type(context, cluster_group_name):
+    """Delete the cluster group"""
+    endpoint = "dcim/cluster-groups/"
+    cluster_group = get_object_by_name(cluster_group_name, endpoint)
+    if cluster_group:
+        send_delete_request(endpoint, cluster_group.get("id"))
 
 
 @given('the tag "{tag}" is deleted')
