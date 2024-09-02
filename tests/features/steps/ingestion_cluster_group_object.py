@@ -33,7 +33,7 @@ def check_cluster_group_(context):
     assert context.response is not None
     cluster_group = get_object_by_name(context.cluster_group_name, endpoint)
     assert cluster_group.get("name") == context.cluster_group_name
-    assert cluster_group.get("slug") == "cisco"
+    assert cluster_group.get("slug") == "north-america"
 
 
 @given('cluster group "{cluster_group_name}" already exists in the database')
