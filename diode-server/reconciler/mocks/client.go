@@ -144,6 +144,80 @@ func (_c *Client_RetrieveIngestionDataSources_Call) RunAndReturn(run func(contex
 	return _c
 }
 
+// RetrieveIngestionLogs provides a mock function with given fields: ctx, req, opt
+func (_m *Client) RetrieveIngestionLogs(ctx context.Context, req *reconcilerpb.RetrieveIngestionLogsRequest, opt ...grpc.CallOption) (*reconcilerpb.RetrieveIngestionLogsResponse, error) {
+	_va := make([]interface{}, len(opt))
+	for _i := range opt {
+		_va[_i] = opt[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, req)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	if len(ret) == 0 {
+		panic("no return value specified for RetrieveIngestionLogs")
+	}
+
+	var r0 *reconcilerpb.RetrieveIngestionLogsResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *reconcilerpb.RetrieveIngestionLogsRequest, ...grpc.CallOption) (*reconcilerpb.RetrieveIngestionLogsResponse, error)); ok {
+		return rf(ctx, req, opt...)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *reconcilerpb.RetrieveIngestionLogsRequest, ...grpc.CallOption) *reconcilerpb.RetrieveIngestionLogsResponse); ok {
+		r0 = rf(ctx, req, opt...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*reconcilerpb.RetrieveIngestionLogsResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *reconcilerpb.RetrieveIngestionLogsRequest, ...grpc.CallOption) error); ok {
+		r1 = rf(ctx, req, opt...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Client_RetrieveIngestionLogs_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RetrieveIngestionLogs'
+type Client_RetrieveIngestionLogs_Call struct {
+	*mock.Call
+}
+
+// RetrieveIngestionLogs is a helper method to define mock.On call
+//   - ctx context.Context
+//   - req *reconcilerpb.RetrieveIngestionLogsRequest
+//   - opt ...grpc.CallOption
+func (_e *Client_Expecter) RetrieveIngestionLogs(ctx interface{}, req interface{}, opt ...interface{}) *Client_RetrieveIngestionLogs_Call {
+	return &Client_RetrieveIngestionLogs_Call{Call: _e.mock.On("RetrieveIngestionLogs",
+		append([]interface{}{ctx, req}, opt...)...)}
+}
+
+func (_c *Client_RetrieveIngestionLogs_Call) Run(run func(ctx context.Context, req *reconcilerpb.RetrieveIngestionLogsRequest, opt ...grpc.CallOption)) *Client_RetrieveIngestionLogs_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		variadicArgs := make([]grpc.CallOption, len(args)-2)
+		for i, a := range args[2:] {
+			if a != nil {
+				variadicArgs[i] = a.(grpc.CallOption)
+			}
+		}
+		run(args[0].(context.Context), args[1].(*reconcilerpb.RetrieveIngestionLogsRequest), variadicArgs...)
+	})
+	return _c
+}
+
+func (_c *Client_RetrieveIngestionLogs_Call) Return(_a0 *reconcilerpb.RetrieveIngestionLogsResponse, _a1 error) *Client_RetrieveIngestionLogs_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Client_RetrieveIngestionLogs_Call) RunAndReturn(run func(context.Context, *reconcilerpb.RetrieveIngestionLogsRequest, ...grpc.CallOption) (*reconcilerpb.RetrieveIngestionLogsResponse, error)) *Client_RetrieveIngestionLogs_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewClient creates a new instance of Client. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewClient(t interface {

@@ -2,9 +2,10 @@ syntax = "proto3";
 
 package diode.v1;
 
+import "diode/v1/ingester.proto";
 import "validate/validate.proto";
 
-option go_package = "github.com/netboxlabs/diode/diode-server/reconciler/v1/reconcilerpb";
+option go_package = "github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb";
 
 // An ingestion data source
 message IngestionDataSource {
@@ -36,8 +37,67 @@ message RetrieveIngestionDataSourcesResponse {
   repeated IngestionDataSource ingestion_data_sources = 1;
 }
 
+// ChangeSetError represents an error when applying a change set
+message ChangeSetError {
+  message Details {
+    message Error {
+      string error = 1; //key value pair of the error
+      string change_id = 2;
+    }
+    string change_set_id = 1;
+    string result = 2;
+    repeated Error errors = 3;
+  }
+  string message = 1;
+  int32 code = 2;
+  Details details = 3;
+}
+
+enum State {
+  NEW = 0;
+  RECONCILED = 1;
+  FAILED = 2;
+  NO_CHANGES = 3;
+}
+
+// An ingestion log
+message IngestionLog {
+  string data_type = 1;
+  State state = 2;
+  string request_id = 3;
+  int64 ingestion_ts = 4;
+  string producer_app_name = 5;
+  string producer_app_version = 6;
+  string sdk_name = 7;
+  string sdk_version = 8;
+  diode.v1.Entity entity = 9;
+  ChangeSetError error = 10;
+}
+
+// The request to retrieve ingestion logs
+message RetrieveIngestionLogsRequest {
+  int32 page_size = 1 [(validate.rules).int32 = {
+    gte: 1
+    lte: 1000
+  }]; // Number of logs per page, default is 100
+  optional State state = 2; // Optional filter by state field
+  string data_type = 3; // Optional filter by data type field
+  string request_id = 4; // Optional filter by request ID
+  int64 ingestion_ts_start = 5; // Optional start of ingestion timestamp range
+  int64 ingestion_ts_end = 6; // Optional end of ingestion timestamp range
+  string page_token = 7; // Token to fetch the next page of results
+}
+
+// The response from the retrieve ingestion logs request
+message RetrieveIngestionLogsResponse {
+  repeated IngestionLog logs = 1; // List of ingestion logs
+  string next_page_token = 2; // Token for the next page of results, if any
+}
+
 // Reconciler service API
 service ReconcilerService {
   // Retrieves ingestion data sources
   rpc RetrieveIngestionDataSources(RetrieveIngestionDataSourcesRequest) returns (RetrieveIngestionDataSourcesResponse) {}
+  // Retrieves ingestion logs
+  rpc RetrieveIngestionLogs(RetrieveIngestionLogsRequest) returns (RetrieveIngestionLogsResponse);
 }

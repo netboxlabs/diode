@@ -136,6 +136,12 @@ func (s *Server) RetrieveIngestionDataSources(_ context.Context, in *reconcilerp
 	return &reconcilerpb.RetrieveIngestionDataSourcesResponse{IngestionDataSources: dataSources}, nil
 }
 
+// RetrieveIngestionLogs retrieves logs
+func (s *Server) RetrieveIngestionLogs(_ context.Context, _ *reconcilerpb.RetrieveIngestionLogsRequest) (*reconcilerpb.RetrieveIngestionLogsResponse, error) {
+	logs := make([]*reconcilerpb.IngestionLog, 0)
+	return &reconcilerpb.RetrieveIngestionLogsResponse{Logs: logs}, nil
+}
+
 func validateRetrieveIngestionDataSourcesRequest(in *reconcilerpb.RetrieveIngestionDataSourcesRequest) error {
 	if in.GetSdkName() == "" {
 		return fmt.Errorf("sdk name is empty")
