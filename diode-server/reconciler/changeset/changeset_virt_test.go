@@ -412,41 +412,6 @@ func TestVirtualizationPrepare(t *testing.T) {
 					},
 				},
 				{
-					objectType:     "virtualization.cluster",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined", "site__name": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.VirtualizationClusterDataWrapper{
-						Cluster: nil,
-					},
-				},
-				{
-					objectType:     "virtualization.clustergroup",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.VirtualizationClusterGroupDataWrapper{
-						ClusterGroup: &netbox.VirtualizationClusterGroup{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
-						},
-					},
-				},
-				{
-					objectType:     "virtualization.clustertype",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.VirtualizationClusterTypeDataWrapper{
-						ClusterType: &netbox.VirtualizationClusterType{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
-						},
-					},
-				},
-				{
 					objectType:     "dcim.site",
 					objectID:       0,
 					queryParams:    map[string]string{"q": "undefined"},
@@ -481,44 +446,11 @@ func TestVirtualizationPrepare(t *testing.T) {
 					{
 						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
 						ChangeType:    changeset.ChangeTypeCreate,
-						ObjectType:    "virtualization.cluster",
-						ObjectID:      nil,
-						ObjectVersion: nil,
-						Data: &netbox.VirtualizationCluster{
-							Name: "undefined",
-							Group: &netbox.VirtualizationClusterGroup{
-								ID: 1,
-							},
-							Type: &netbox.VirtualizationClusterType{
-								ID: 1,
-							},
-							Site: &netbox.DcimSite{
-								ID: 1,
-							},
-							Status: strPtr(netbox.DefaultVirtualizationStatus),
-						},
-					},
-					{
-						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
-						ChangeType:    changeset.ChangeTypeCreate,
 						ObjectType:    "virtualization.virtualmachine",
 						ObjectID:      nil,
 						ObjectVersion: nil,
 						Data: &netbox.VirtualizationVirtualMachine{
 							Name: "Test",
-							Cluster: &netbox.VirtualizationCluster{
-								Name: "undefined",
-								Group: &netbox.VirtualizationClusterGroup{
-									ID: 1,
-								},
-								Type: &netbox.VirtualizationClusterType{
-									ID: 1,
-								},
-								Site: &netbox.DcimSite{
-									ID: 1,
-								},
-								Status: strPtr(netbox.DefaultVirtualizationStatus),
-							},
 							Role: &netbox.DcimDeviceRole{
 								ID: 1,
 							},
@@ -726,41 +658,6 @@ func TestVirtualizationPrepare(t *testing.T) {
 					},
 				},
 				{
-					objectType:     "virtualization.cluster",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined", "site__name": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.VirtualizationClusterDataWrapper{
-						Cluster: nil,
-					},
-				},
-				{
-					objectType:     "virtualization.clustergroup",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.VirtualizationClusterGroupDataWrapper{
-						ClusterGroup: &netbox.VirtualizationClusterGroup{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
-						},
-					},
-				},
-				{
-					objectType:     "virtualization.clustertype",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.VirtualizationClusterTypeDataWrapper{
-						ClusterType: &netbox.VirtualizationClusterType{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
-						},
-					},
-				},
-				{
 					objectType:     "dcim.site",
 					objectID:       0,
 					queryParams:    map[string]string{"q": "undefined"},
@@ -795,44 +692,11 @@ func TestVirtualizationPrepare(t *testing.T) {
 					{
 						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
 						ChangeType:    changeset.ChangeTypeCreate,
-						ObjectType:    "virtualization.cluster",
-						ObjectID:      nil,
-						ObjectVersion: nil,
-						Data: &netbox.VirtualizationCluster{
-							Name: "undefined",
-							Group: &netbox.VirtualizationClusterGroup{
-								ID: 1,
-							},
-							Type: &netbox.VirtualizationClusterType{
-								ID: 1,
-							},
-							Site: &netbox.DcimSite{
-								ID: 1,
-							},
-							Status: strPtr(netbox.DefaultVirtualizationStatus),
-						},
-					},
-					{
-						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
-						ChangeType:    changeset.ChangeTypeCreate,
 						ObjectType:    "virtualization.virtualmachine",
 						ObjectID:      nil,
 						ObjectVersion: nil,
 						Data: &netbox.VirtualizationVirtualMachine{
 							Name: "undefined",
-							Cluster: &netbox.VirtualizationCluster{
-								Name: "undefined",
-								Group: &netbox.VirtualizationClusterGroup{
-									ID: 1,
-								},
-								Type: &netbox.VirtualizationClusterType{
-									ID: 1,
-								},
-								Site: &netbox.DcimSite{
-									ID: 1,
-								},
-								Status: strPtr(netbox.DefaultVirtualizationStatus),
-							},
 							Role: &netbox.DcimDeviceRole{
 								ID: 1,
 							},
@@ -852,19 +716,6 @@ func TestVirtualizationPrepare(t *testing.T) {
 							Name: "Test",
 							VirtualMachine: &netbox.VirtualizationVirtualMachine{
 								Name: "undefined",
-								Cluster: &netbox.VirtualizationCluster{
-									Name: "undefined",
-									Group: &netbox.VirtualizationClusterGroup{
-										ID: 1,
-									},
-									Type: &netbox.VirtualizationClusterType{
-										ID: 1,
-									},
-									Site: &netbox.DcimSite{
-										ID: 1,
-									},
-									Status: strPtr(netbox.DefaultVirtualizationStatus),
-								},
 								Role: &netbox.DcimDeviceRole{
 									ID: 1,
 								},
@@ -902,23 +753,8 @@ func TestVirtualizationPrepare(t *testing.T) {
 							ID:   1,
 							Name: "Test",
 							VirtualMachine: &netbox.VirtualizationVirtualMachine{
-								ID:   1,
-								Name: "undefined",
-								Cluster: &netbox.VirtualizationCluster{
-									ID:   1,
-									Name: "undefined",
-									Group: &netbox.VirtualizationClusterGroup{
-										ID:   1,
-										Name: "undefined",
-										Slug: "undefined",
-									},
-									Type: &netbox.VirtualizationClusterType{
-										ID:   1,
-										Name: "undefined",
-										Slug: "undefined",
-									},
-									Status: strPtr(netbox.DefaultVirtualizationStatus),
-								},
+								ID:     1,
+								Name:   "undefined",
 								Status: strPtr(netbox.DefaultVirtualizationStatus),
 							},
 						},
@@ -933,69 +769,6 @@ func TestVirtualizationPrepare(t *testing.T) {
 						VirtualMachine: &netbox.VirtualizationVirtualMachine{
 							ID:   1,
 							Name: "undefined",
-							Cluster: &netbox.VirtualizationCluster{
-								ID:   1,
-								Name: "undefined",
-								Group: &netbox.VirtualizationClusterGroup{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
-								},
-								Type: &netbox.VirtualizationClusterType{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
-								},
-								Status: strPtr(netbox.DefaultVirtualizationStatus),
-							},
-						},
-					},
-				},
-				{
-					objectType:     "virtualization.cluster",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined", "site__name": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.VirtualizationClusterDataWrapper{
-						Cluster: &netbox.VirtualizationCluster{
-							ID:   1,
-							Name: "undefined",
-							Group: &netbox.VirtualizationClusterGroup{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
-							},
-							Type: &netbox.VirtualizationClusterType{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
-							},
-						},
-					},
-				},
-				{
-					objectType:     "virtualization.clustergroup",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.VirtualizationClusterGroupDataWrapper{
-						ClusterGroup: &netbox.VirtualizationClusterGroup{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
-						},
-					},
-				},
-				{
-					objectType:     "virtualization.clustertype",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.VirtualizationClusterTypeDataWrapper{
-						ClusterType: &netbox.VirtualizationClusterType{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
 						},
 					},
 				},
@@ -1097,41 +870,6 @@ func TestVirtualizationPrepare(t *testing.T) {
 					},
 				},
 				{
-					objectType:     "virtualization.cluster",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined", "site__name": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.VirtualizationClusterDataWrapper{
-						Cluster: nil,
-					},
-				},
-				{
-					objectType:     "virtualization.clustergroup",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.VirtualizationClusterGroupDataWrapper{
-						ClusterGroup: &netbox.VirtualizationClusterGroup{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
-						},
-					},
-				},
-				{
-					objectType:     "virtualization.clustertype",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.VirtualizationClusterTypeDataWrapper{
-						ClusterType: &netbox.VirtualizationClusterType{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
-						},
-					},
-				},
-				{
 					objectType:     "dcim.site",
 					objectID:       0,
 					queryParams:    map[string]string{"q": "undefined"},
@@ -1166,44 +904,11 @@ func TestVirtualizationPrepare(t *testing.T) {
 					{
 						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
 						ChangeType:    changeset.ChangeTypeCreate,
-						ObjectType:    "virtualization.cluster",
-						ObjectID:      nil,
-						ObjectVersion: nil,
-						Data: &netbox.VirtualizationCluster{
-							Name: "undefined",
-							Group: &netbox.VirtualizationClusterGroup{
-								ID: 1,
-							},
-							Type: &netbox.VirtualizationClusterType{
-								ID: 1,
-							},
-							Site: &netbox.DcimSite{
-								ID: 1,
-							},
-							Status: strPtr(netbox.DefaultVirtualizationStatus),
-						},
-					},
-					{
-						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
-						ChangeType:    changeset.ChangeTypeCreate,
 						ObjectType:    "virtualization.virtualmachine",
 						ObjectID:      nil,
 						ObjectVersion: nil,
 						Data: &netbox.VirtualizationVirtualMachine{
 							Name: "undefined",
-							Cluster: &netbox.VirtualizationCluster{
-								Name: "undefined",
-								Group: &netbox.VirtualizationClusterGroup{
-									ID: 1,
-								},
-								Type: &netbox.VirtualizationClusterType{
-									ID: 1,
-								},
-								Site: &netbox.DcimSite{
-									ID: 1,
-								},
-								Status: strPtr(netbox.DefaultVirtualizationStatus),
-							},
 							Role: &netbox.DcimDeviceRole{
 								ID: 1,
 							},
@@ -1223,19 +928,6 @@ func TestVirtualizationPrepare(t *testing.T) {
 							Name: "Test",
 							VirtualMachine: &netbox.VirtualizationVirtualMachine{
 								Name: "undefined",
-								Cluster: &netbox.VirtualizationCluster{
-									Name: "undefined",
-									Group: &netbox.VirtualizationClusterGroup{
-										ID: 1,
-									},
-									Type: &netbox.VirtualizationClusterType{
-										ID: 1,
-									},
-									Site: &netbox.DcimSite{
-										ID: 1,
-									},
-									Status: strPtr(netbox.DefaultVirtualizationStatus),
-								},
 								Role: &netbox.DcimDeviceRole{
 									ID: 1,
 								},
@@ -1282,41 +974,6 @@ func TestVirtualizationPrepare(t *testing.T) {
 					},
 				},
 				{
-					objectType:     "virtualization.cluster",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined", "site__name": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.VirtualizationClusterDataWrapper{
-						Cluster: nil,
-					},
-				},
-				{
-					objectType:     "virtualization.clustergroup",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.VirtualizationClusterGroupDataWrapper{
-						ClusterGroup: &netbox.VirtualizationClusterGroup{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
-						},
-					},
-				},
-				{
-					objectType:     "virtualization.clustertype",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.VirtualizationClusterTypeDataWrapper{
-						ClusterType: &netbox.VirtualizationClusterType{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
-						},
-					},
-				},
-				{
 					objectType:     "dcim.site",
 					objectID:       0,
 					queryParams:    map[string]string{"q": "undefined"},
@@ -1358,48 +1015,11 @@ func TestVirtualizationPrepare(t *testing.T) {
 					{
 						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
 						ChangeType:    changeset.ChangeTypeCreate,
-						ObjectType:    "virtualization.cluster",
-						ObjectID:      nil,
-						ObjectVersion: nil,
-						Data: &netbox.VirtualizationCluster{
-							Name: "undefined",
-							Group: &netbox.VirtualizationClusterGroup{
-								ID: 1,
-							},
-							Type: &netbox.VirtualizationClusterType{
-								ID: 1,
-							},
-							Site: &netbox.DcimSite{
-								Name:   "undefined",
-								Slug:   "undefined",
-								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-							},
-							Status: strPtr(netbox.DefaultVirtualizationStatus),
-						},
-					},
-					{
-						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
-						ChangeType:    changeset.ChangeTypeCreate,
 						ObjectType:    "virtualization.virtualmachine",
 						ObjectID:      nil,
 						ObjectVersion: nil,
 						Data: &netbox.VirtualizationVirtualMachine{
 							Name: "undefined",
-							Cluster: &netbox.VirtualizationCluster{
-								Name: "undefined",
-								Group: &netbox.VirtualizationClusterGroup{
-									ID: 1,
-								},
-								Type: &netbox.VirtualizationClusterType{
-									ID: 1,
-								},
-								Site: &netbox.DcimSite{
-									Name:   "undefined",
-									Slug:   "undefined",
-									Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-								},
-								Status: strPtr(netbox.DefaultVirtualizationStatus),
-							},
 							Role: &netbox.DcimDeviceRole{
 								ID: 1,
 							},
@@ -1421,21 +1041,6 @@ func TestVirtualizationPrepare(t *testing.T) {
 							Name: "Test",
 							VirtualMachine: &netbox.VirtualizationVirtualMachine{
 								Name: "undefined",
-								Cluster: &netbox.VirtualizationCluster{
-									Name: "undefined",
-									Group: &netbox.VirtualizationClusterGroup{
-										ID: 1,
-									},
-									Type: &netbox.VirtualizationClusterType{
-										ID: 1,
-									},
-									Site: &netbox.DcimSite{
-										Name:   "undefined",
-										Slug:   "undefined",
-										Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-									},
-									Status: strPtr(netbox.DefaultVirtualizationStatus),
-								},
 								Role: &netbox.DcimDeviceRole{
 									ID: 1,
 								},
@@ -1475,23 +1080,8 @@ func TestVirtualizationPrepare(t *testing.T) {
 							ID:   1,
 							Name: "Test",
 							VirtualMachine: &netbox.VirtualizationVirtualMachine{
-								ID:   1,
-								Name: "undefined",
-								Cluster: &netbox.VirtualizationCluster{
-									ID:   1,
-									Name: "undefined",
-									Group: &netbox.VirtualizationClusterGroup{
-										ID:   1,
-										Name: "undefined",
-										Slug: "undefined",
-									},
-									Type: &netbox.VirtualizationClusterType{
-										ID:   1,
-										Name: "undefined",
-										Slug: "undefined",
-									},
-									Status: strPtr(netbox.DefaultVirtualizationStatus),
-								},
+								ID:     1,
+								Name:   "undefined",
 								Status: strPtr(netbox.DefaultVirtualizationStatus),
 							},
 						},
@@ -1504,87 +1094,9 @@ func TestVirtualizationPrepare(t *testing.T) {
 					objectChangeID: 0,
 					object: &netbox.VirtualizationVirtualMachineDataWrapper{
 						VirtualMachine: &netbox.VirtualizationVirtualMachine{
-							ID:   1,
-							Name: "undefined",
-							Cluster: &netbox.VirtualizationCluster{
-								ID:   1,
-								Name: "undefined",
-								Group: &netbox.VirtualizationClusterGroup{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
-								},
-								Type: &netbox.VirtualizationClusterType{
-									ID:   1,
-									Name: "undefined",
-									Slug: "undefined",
-								},
-								Status: strPtr(netbox.DefaultVirtualizationStatus),
-							},
+							ID:     1,
+							Name:   "undefined",
 							Status: strPtr(netbox.DefaultVirtualizationStatus),
-						},
-					},
-				},
-				{
-					objectType:     "virtualization.cluster",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined", "site__name": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.VirtualizationClusterDataWrapper{
-						Cluster: &netbox.VirtualizationCluster{
-							ID:   1,
-							Name: "undefined",
-							Group: &netbox.VirtualizationClusterGroup{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
-							},
-							Type: &netbox.VirtualizationClusterType{
-								ID:   1,
-								Name: "undefined",
-								Slug: "undefined",
-							},
-							Status: strPtr(netbox.DefaultVirtualizationStatus),
-						},
-					},
-				},
-				{
-					objectType:     "virtualization.clustergroup",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.VirtualizationClusterGroupDataWrapper{
-						ClusterGroup: &netbox.VirtualizationClusterGroup{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
-						},
-					},
-				},
-				{
-					objectType:     "virtualization.clustertype",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.VirtualizationClusterTypeDataWrapper{
-						ClusterType: &netbox.VirtualizationClusterType{
-							ID:   1,
-							Name: "undefined",
-							Slug: "undefined",
-						},
-					},
-				},
-				{
-					objectType:     "dcim.devicerole",
-					objectID:       0,
-					queryParams:    map[string]string{"q": "undefined"},
-					objectChangeID: 0,
-					object: &netbox.DcimDeviceRoleDataWrapper{
-						DeviceRole: &netbox.DcimDeviceRole{
-							ID:    1,
-							Name:  "undefined",
-							Slug:  "undefined",
-							Color: strPtr("000000"),
 						},
 					},
 				},

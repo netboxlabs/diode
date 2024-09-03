@@ -164,11 +164,10 @@ func NewVirtualizationCluster() *VirtualizationCluster {
 func NewVirtualizationVirtualMachine() *VirtualizationVirtualMachine {
 	status := "active"
 	return &VirtualizationVirtualMachine{
-		Name:    "undefined",
-		Status:  &status,
-		Site:    NewDcimSite(),
-		Cluster: NewVirtualizationCluster(),
-		Role:    NewDcimDeviceRole(),
+		Name:   "undefined",
+		Status: &status,
+		Site:   NewDcimSite(),
+		Role:   NewDcimDeviceRole(),
 	}
 }
 

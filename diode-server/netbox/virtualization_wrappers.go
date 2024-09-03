@@ -715,16 +715,18 @@ func (vw *VirtualizationVirtualMachineDataWrapper) NestedObjects() ([]Comparable
 	vw.VirtualMachine.PrimaryIPv6 = nil
 	vw.VirtualMachine.Device = nil
 
-	cluster := VirtualizationClusterDataWrapper{Cluster: vw.VirtualMachine.Cluster, BaseDataWrapper: BaseDataWrapper{placeholder: vw.placeholder, hasParent: true, intended: vw.intended}}
+	if vw.VirtualMachine.Cluster != nil {
+		cluster := VirtualizationClusterDataWrapper{Cluster: vw.VirtualMachine.Cluster, BaseDataWrapper: BaseDataWrapper{placeholder: vw.placeholder, hasParent: true, intended: vw.intended}}
 
-	co, err := cluster.NestedObjects()
-	if err != nil {
-		return nil, err
+		co, err := cluster.NestedObjects()
+		if err != nil {
+			return nil, err
+		}
+
+		objects = append(objects, co...)
+
+		vw.VirtualMachine.Cluster = cluster.Cluster
 	}
-
-	objects = append(objects, co...)
-
-	vw.VirtualMachine.Cluster = cluster.Cluster
 
 	site := DcimSiteDataWrapper{Site: vw.VirtualMachine.Site, BaseDataWrapper: BaseDataWrapper{placeholder: vw.placeholder, hasParent: true, intended: vw.intended}}
 
@@ -885,39 +887,49 @@ func (vw *VirtualizationVirtualMachineDataWrapper) Patch(cmp ComparableData, int
 
 		vw.objectsToReconcile = append(vw.objectsToReconcile, siteObjectsToReconcile...)
 
-		if actualCluster.IsPlaceholder() && intended.VirtualMachine.Cluster != nil {
-			intendedCluster = extractFromObjectsMap(currentNestedObjectsMap, fmt.Sprintf("%p", intended.VirtualMachine.Cluster))
-		}
-
-		clusterObjectsToReconcile, clusterErr := actualCluster.Patch(intendedCluster, intendedNestedObjects)
-		if clusterErr != nil {
-			return nil, clusterErr
-		}
-
-		cluster, err := copyData(actualCluster.Data().(*VirtualizationCluster))
-		if err != nil {
-			return nil, err
-		}
-		cluster.Tags = nil
-
-		if !actualCluster.HasChanged() {
-			cluster = &VirtualizationCluster{
-				ID: actualCluster.ID(),
+		if actualCluster != nil {
+			if actualCluster.IsPlaceholder() && intended.VirtualMachine.Cluster != nil {
+				intendedCluster = extractFromObjectsMap(currentNestedObjectsMap, fmt.Sprintf("%p", intended.VirtualMachine.Cluster))
 			}
 
-			intendedClusterID := intendedCluster.ID()
-			if intended.VirtualMachine.Cluster != nil {
-				intendedClusterID = intended.VirtualMachine.Cluster.ID
+			clusterObjectsToReconcile, clusterErr := actualCluster.Patch(intendedCluster, intendedNestedObjects)
+			if clusterErr != nil {
+				return nil, clusterErr
 			}
 
+			cluster, err := copyData(actualCluster.Data().(*VirtualizationCluster))
+			if err != nil {
+				return nil, err
+			}
+			cluster.Tags = nil
+
+			if !actualCluster.HasChanged() {
+				cluster = &VirtualizationCluster{
+					ID: actualCluster.ID(),
+				}
+
+				intendedClusterID := intendedCluster.ID()
+				if intended.VirtualMachine.Cluster != nil {
+					intendedClusterID = intended.VirtualMachine.Cluster.ID
+				}
+
+				intended.VirtualMachine.Cluster = &VirtualizationCluster{
+					ID: intendedClusterID,
+				}
+			}
+
+			vw.VirtualMachine.Cluster = cluster
+
+			vw.objectsToReconcile = append(vw.objectsToReconcile, clusterObjectsToReconcile...)
+		} else if intended.VirtualMachine.Cluster != nil {
+			clusterID := intended.VirtualMachine.Cluster.ID
+			vw.VirtualMachine.Cluster = &VirtualizationCluster{
+				ID: clusterID,
+			}
 			intended.VirtualMachine.Cluster = &VirtualizationCluster{
-				ID: intendedClusterID,
+				ID: clusterID,
 			}
 		}
-
-		vw.VirtualMachine.Cluster = cluster
-
-		vw.objectsToReconcile = append(vw.objectsToReconcile, clusterObjectsToReconcile...)
 
 		if actualRole.IsPlaceholder() && intended.VirtualMachine.Role != nil {
 			intendedRole = extractFromObjectsMap(currentNestedObjectsMap, fmt.Sprintf("%p", intended.VirtualMachine.Role))
@@ -1023,15 +1035,13 @@ func (vw *VirtualizationVirtualMachineDataWrapper) Patch(cmp ComparableData, int
 			vw.VirtualMachine.Platform = platform
 
 			vw.objectsToReconcile = append(vw.objectsToReconcile, platformObjectsToReconcile...)
-		} else {
-			if intended.VirtualMachine.Platform != nil {
-				platformID := intended.VirtualMachine.Platform.ID
-				vw.VirtualMachine.Platform = &DcimPlatform{
-					ID: platformID,
-				}
-				intended.VirtualMachine.Platform = &DcimPlatform{
-					ID: platformID,
-				}
+		} else if intended.VirtualMachine.Platform != nil {
+			platformID := intended.VirtualMachine.Platform.ID
+			vw.VirtualMachine.Platform = &DcimPlatform{
+				ID: platformID,
+			}
+			intended.VirtualMachine.Platform = &DcimPlatform{
+				ID: platformID,
 			}
 		}
 
@@ -1089,25 +1099,27 @@ func (vw *VirtualizationVirtualMachineDataWrapper) Patch(cmp ComparableData, int
 
 		vw.objectsToReconcile = append(vw.objectsToReconcile, siteObjectsToReconcile...)
 
-		clusterObjectsToReconcile, clusterErr := actualCluster.Patch(intendedCluster, intendedNestedObjects)
-		if clusterErr != nil {
-			return nil, clusterErr
-		}
-
-		cluster, err := copyData(actualCluster.Data().(*VirtualizationCluster))
-		if err != nil {
-			return nil, err
-		}
-		cluster.Tags = nil
-
-		if !actualCluster.HasChanged() {
-			cluster = &VirtualizationCluster{
-				ID: actualCluster.ID(),
+		if actualCluster != nil {
+			clusterObjectsToReconcile, clusterErr := actualCluster.Patch(intendedCluster, intendedNestedObjects)
+			if clusterErr != nil {
+				return nil, clusterErr
 			}
-		}
-		vw.VirtualMachine.Cluster = cluster
 
-		vw.objectsToReconcile = append(vw.objectsToReconcile, clusterObjectsToReconcile...)
+			cluster, err := copyData(actualCluster.Data().(*VirtualizationCluster))
+			if err != nil {
+				return nil, err
+			}
+			cluster.Tags = nil
+
+			if !actualCluster.HasChanged() {
+				cluster = &VirtualizationCluster{
+					ID: actualCluster.ID(),
+				}
+			}
+			vw.VirtualMachine.Cluster = cluster
+
+			vw.objectsToReconcile = append(vw.objectsToReconcile, clusterObjectsToReconcile...)
+		}
 
 		roleObjectsToReconcile, roleErr := actualRole.Patch(intendedRole, intendedNestedObjects)
 		if roleErr != nil {
