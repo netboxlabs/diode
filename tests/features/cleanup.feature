@@ -13,21 +13,25 @@ Scenario: Cleanup
     Given the manufacturer "Cisco" is deleted
     Given the cluster "aws-us-east-1" is deleted
 
-    Given the site "undefined" is deleted
+    Given the device "undefined" is deleted
     Given the device type "undefined" is deleted
     Given the device role "undefined" is deleted
     Given the site "undefined" is deleted
     Given the platform "undefined" is deleted
-    Given the manufacturer "undefined" is deleted
     Given the cluster type "undefined" is deleted
     Given the cluster group "undefined" is deleted
 
-    Given the interface "GigabitEthernet0/0/0" is deleted
+    Given the site "NA-NY" is deleted
+    Given the device type "ISR4321-1" is deleted
 
+    Given the interface "GigabitEthernet0/0/0" is deleted
     Given the IP address "192.168.0.1/32" is deleted
     Given the prefix "192.168.0.0/32" is deleted
 
     Given the cluster type "VMWare" is deleted
-    Given the cluster group "AWS" is deleted
+    Given the cluster type "AWS" is deleted
+    Given the cluster group "North America" is deleted
+    Given the cluster group "NA" is deleted
 
+    Given the manufacturer "undefined" is deleted
     Given the tag "tag 100" is deleted
