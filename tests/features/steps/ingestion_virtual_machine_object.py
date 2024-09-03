@@ -1,3 +1,4 @@
+import time
 from behave import given, when, then
 from netboxlabs.diode.sdk.ingester import (
     VirtualMachine,
@@ -52,6 +53,7 @@ def ingest_virtual_machine_without_site(context):
 @then("the virtual machine is found")
 def assert_virtual_machine_exists(context):
     """Assert that the virtual machine was created."""
+    time.sleep(2)
     assert context.response is not None
 
     params = {
