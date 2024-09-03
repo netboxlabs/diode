@@ -1,3 +1,4 @@
+import time
 from behave import given, when, then
 from netboxlabs.diode.sdk.ingester import Entity, Interface, IPAddress
 from steps.utils import (
@@ -65,6 +66,8 @@ def assert_ip_address_exists(context):
 
     if hasattr(context, "description"):
         params["description"] = context.description
+
+    time.sleep(1)
 
     ip_address = get_object_state(params)
 
