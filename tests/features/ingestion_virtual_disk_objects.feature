@@ -18,7 +18,7 @@ Scenario: Ingestion of existing virtual disk
 @smoke
 @ingestion.virtual_disk
 Scenario: Ingestion of virtual disk object to update the virtual machine, description and size
-    Given virtual disk "Disk-1" with virtual machine "VM-1", description "some string" and size "15232"
-    Then check if the virtual machine "VM-1" related to disk exists in the database and remove it
+    Given virtual disk "Disk-1" with virtual machine "VM-2", description "some string" and size "15232"
+    Then check if the virtual machine "VM-2" related to disk exists in the database and remove it
     When the virtual disk object is ingested with the updates
-    Then the virtual machine "VM-1" is created and the disk updated
+    Then the virtual machine "VM-2" is created and the disk updated

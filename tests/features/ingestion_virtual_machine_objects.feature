@@ -31,11 +31,11 @@ Scenario: Ingestion of a new virtual machine (site provided)
 @smoke
 @ingestion.virtual_machine
 Scenario: Ingestion of existing virtual machine (site provided) with different device role
-    Given virtual machine "vm02" with site "Site B" and role "WAN Router"
+    Given virtual machine "vm02" with site "Site B" and role "Server"
         And virtual machine "vm02" with site "Site B" exists
     When the virtual machine with site and device role is ingested
     Then the virtual machine is found
-        And device role is "WAN Router"
+        And device role is "Server"
 
 @smoke
 @ingestion.virtual_machine
