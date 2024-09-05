@@ -347,6 +347,114 @@ func TestRetrieveObjectState(t *testing.T) {
 			shouldError:   false,
 		},
 		{
+			name:               "valid response for Virtualization Cluster Group",
+			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.VirtualizationClusterGroupObjectType, ObjectID: 1},
+			mockServerResponse: `{"object_type":"virtualization.clustergroup","object_change_id":1,"object":{"id":1,"name":"test"}}`,
+			apiKey:             "foobar",
+			response: &netboxdiodeplugin.ObjectState{
+				ObjectType:     netbox.VirtualizationClusterGroupObjectType,
+				ObjectChangeID: 1,
+				Object: &netbox.VirtualizationClusterGroupDataWrapper{
+					ClusterGroup: &netbox.VirtualizationClusterGroup{
+						ID:   1,
+						Name: "test",
+					},
+				},
+			},
+			tlsSkipVerify: true,
+			shouldError:   false,
+		},
+		{
+			name:               "valid response for Virtualization Cluster Type",
+			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.VirtualizationClusterTypeObjectType, ObjectID: 1},
+			mockServerResponse: `{"object_type":"virtualization.clustertype","object_change_id":1,"object":{"id":1,"name":"test"}}`,
+			apiKey:             "foobar",
+			response: &netboxdiodeplugin.ObjectState{
+				ObjectType:     netbox.VirtualizationClusterTypeObjectType,
+				ObjectChangeID: 1,
+				Object: &netbox.VirtualizationClusterTypeDataWrapper{
+					ClusterType: &netbox.VirtualizationClusterType{
+						ID:   1,
+						Name: "test",
+					},
+				},
+			},
+			tlsSkipVerify: true,
+			shouldError:   false,
+		},
+		{
+			name:               "valid response for Virtualization Cluster",
+			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.VirtualizationClusterObjectType, ObjectID: 1},
+			mockServerResponse: `{"object_type":"virtualization.cluster","object_change_id":1,"object":{"id":1,"name":"test"}}`,
+			apiKey:             "foobar",
+			response: &netboxdiodeplugin.ObjectState{
+				ObjectType:     netbox.VirtualizationClusterObjectType,
+				ObjectChangeID: 1,
+				Object: &netbox.VirtualizationClusterDataWrapper{
+					Cluster: &netbox.VirtualizationCluster{
+						ID:   1,
+						Name: "test",
+					},
+				},
+			},
+			tlsSkipVerify: true,
+			shouldError:   false,
+		},
+		{
+			name:               "valid response for Virtualization Virtual Machine",
+			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.VirtualizationVirtualMachineObjectType, ObjectID: 1},
+			mockServerResponse: `{"object_type":"virtualization.virtualmachine","object_change_id":1,"object":{"id":1,"name":"test"}}`,
+			apiKey:             "foobar",
+			response: &netboxdiodeplugin.ObjectState{
+				ObjectType:     netbox.VirtualizationVirtualMachineObjectType,
+				ObjectChangeID: 1,
+				Object: &netbox.VirtualizationVirtualMachineDataWrapper{
+					VirtualMachine: &netbox.VirtualizationVirtualMachine{
+						ID:   1,
+						Name: "test",
+					},
+				},
+			},
+			tlsSkipVerify: true,
+			shouldError:   false,
+		},
+		{
+			name:               "valid response for Virtualization Interface",
+			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.VirtualizationVMInterfaceObjectType, ObjectID: 1},
+			mockServerResponse: `{"object_type":"virtualization.vminterface","object_change_id":1,"object":{"id":1,"name":"test"}}`,
+			apiKey:             "foobar",
+			response: &netboxdiodeplugin.ObjectState{
+				ObjectType:     netbox.VirtualizationVMInterfaceObjectType,
+				ObjectChangeID: 1,
+				Object: &netbox.VirtualizationVMInterfaceDataWrapper{
+					VMInterface: &netbox.VirtualizationVMInterface{
+						ID:   1,
+						Name: "test",
+					},
+				},
+			},
+			tlsSkipVerify: true,
+			shouldError:   false,
+		},
+		{
+			name:               "valid response for Virtualization Virtual Disk",
+			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.VirtualizationVirtualDiskObjectType, ObjectID: 1},
+			mockServerResponse: `{"object_type":"virtualization.virtualdisk","object_change_id":1,"object":{"id":1,"name":"test"}}`,
+			apiKey:             "foobar",
+			response: &netboxdiodeplugin.ObjectState{
+				ObjectType:     netbox.VirtualizationVirtualDiskObjectType,
+				ObjectChangeID: 1,
+				Object: &netbox.VirtualizationVirtualDiskDataWrapper{
+					VirtualDisk: &netbox.VirtualizationVirtualDisk{
+						ID:   1,
+						Name: "test",
+					},
+				},
+			},
+			tlsSkipVerify: true,
+			shouldError:   false,
+		},
+		{
 			name: "valid response for DCIM device with query and additional attributes",
 			params: netboxdiodeplugin.RetrieveObjectStateQueryParams{
 				ObjectType: netbox.DcimDeviceObjectType,
@@ -574,11 +682,8 @@ func TestApplyChangeSet(t *testing.T) {
 			},
 			mockServerResponse: `{"change_set_id":"00000000-0000-0000-0000-000000000000","result":"error"}`,
 			mockStatusCode:     http.StatusBadRequest,
-			response: &netboxdiodeplugin.ChangeSetResponse{
-				ChangeSetID: "00000000-0000-0000-0000-000000000000",
-				Result:      "error",
-			},
-			shouldError: true,
+			response:           nil,
+			shouldError:        true,
 		},
 		{
 			name:   "unmarshal error",

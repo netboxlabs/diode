@@ -5,6 +5,9 @@
 ## Table of Contents
 
 - [diode/v1/ingester.proto](#diode_v1_ingester-proto)
+    - [Cluster](#diode-v1-Cluster)
+    - [ClusterGroup](#diode-v1-ClusterGroup)
+    - [ClusterType](#diode-v1-ClusterType)
     - [Device](#diode-v1-Device)
     - [DeviceType](#diode-v1-DeviceType)
     - [Entity](#diode-v1-Entity)
@@ -18,6 +21,9 @@
     - [Role](#diode-v1-Role)
     - [Site](#diode-v1-Site)
     - [Tag](#diode-v1-Tag)
+    - [VMInterface](#diode-v1-VMInterface)
+    - [VirtualDisk](#diode-v1-VirtualDisk)
+    - [VirtualMachine](#diode-v1-VirtualMachine)
 
     - [IngesterService](#diode-v1-IngesterService)
 
@@ -27,6 +33,48 @@
 <p align="right"><a href="#top">Top</a></p>
 
 ## diode/v1/ingester.proto
+
+<a name="diode-v1-Cluster"></a>
+
+### Cluster
+
+A Cluster
+
+| Field       | Type                                   | Label    | Description |
+|-------------|----------------------------------------|----------|-------------|
+| name        | [string](#string)                      |          |             |
+| type        | [ClusterType](#diode-v1-ClusterType)   |          |             |
+| group       | [ClusterGroup](#diode-v1-ClusterGroup) |          |             |
+| site        | [Site](#diode-v1-Site)                 |          |             |
+| status      | [string](#string)                      |          |             |
+| description | [string](#string)                      | optional |             |
+| tags        | [Tag](#diode-v1-Tag)                   | repeated |             |
+
+<a name="diode-v1-ClusterGroup"></a>
+
+### ClusterGroup
+
+A Cluster Group
+
+| Field       | Type                 | Label    | Description |
+|-------------|----------------------|----------|-------------|
+| name        | [string](#string)    |          |             |
+| slug        | [string](#string)    |          |             |
+| description | [string](#string)    | optional |             |
+| tags        | [Tag](#diode-v1-Tag) | repeated |             |
+
+<a name="diode-v1-ClusterType"></a>
+
+### ClusterType
+
+A Cluster Type
+
+| Field       | Type                 | Label    | Description |
+|-------------|----------------------|----------|-------------|
+| name        | [string](#string)    |          |             |
+| slug        | [string](#string)    |          |             |
+| description | [string](#string)    | optional |             |
+| tags        | [Tag](#diode-v1-Tag) | repeated |             |
 
 <a name="diode-v1-Device"></a>
 
@@ -73,18 +121,24 @@ A device type
 
 An ingest entity wrapper
 
-| Field        | Type                                                    | Label | Description                                   |
-|--------------|---------------------------------------------------------|-------|-----------------------------------------------|
-| site         | [Site](#diode-v1-Site)                                  |       |                                               |
-| platform     | [Platform](#diode-v1-Platform)                          |       |                                               |
-| manufacturer | [Manufacturer](#diode-v1-Manufacturer)                  |       |                                               |
-| device       | [Device](#diode-v1-Device)                              |       |                                               |
-| device_role  | [Role](#diode-v1-Role)                                  |       |                                               |
-| device_type  | [DeviceType](#diode-v1-DeviceType)                      |       |                                               |
-| interface    | [Interface](#diode-v1-Interface)                        |       |                                               |
-| ip_address   | [IPAddress](#diode-v1-IPAddress)                        |       |                                               |
-| prefix       | [Prefix](#diode-v1-Prefix)                              |       |                                               |
-| timestamp    | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |       | The timestamp of the data discovery at source |
+| Field           | Type                                                    | Label | Description                                   |
+|-----------------|---------------------------------------------------------|-------|-----------------------------------------------|
+| site            | [Site](#diode-v1-Site)                                  |       |                                               |
+| platform        | [Platform](#diode-v1-Platform)                          |       |                                               |
+| manufacturer    | [Manufacturer](#diode-v1-Manufacturer)                  |       |                                               |
+| device          | [Device](#diode-v1-Device)                              |       |                                               |
+| device_role     | [Role](#diode-v1-Role)                                  |       |                                               |
+| device_type     | [DeviceType](#diode-v1-DeviceType)                      |       |                                               |
+| interface       | [Interface](#diode-v1-Interface)                        |       |                                               |
+| ip_address      | [IPAddress](#diode-v1-IPAddress)                        |       |                                               |
+| prefix          | [Prefix](#diode-v1-Prefix)                              |       |                                               |
+| cluster_group   | [ClusterGroup](#diode-v1-ClusterGroup)                  |       |                                               |
+| cluster_type    | [ClusterType](#diode-v1-ClusterType)                    |       |                                               |
+| cluster         | [Cluster](#diode-v1-Cluster)                            |       |                                               |
+| virtual_machine | [VirtualMachine](#diode-v1-VirtualMachine)              |       |                                               |
+| vminterface     | [VMInterface](#diode-v1-VMInterface)                    |       |                                               |
+| virtual_disk    | [VirtualDisk](#diode-v1-VirtualDisk)                    |       |                                               |
+| timestamp       | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |       | The timestamp of the data discovery at source |
 
 <a name="diode-v1-IPAddress"></a>
 
@@ -238,6 +292,60 @@ A tag
 | name  | [string](#string) |       |             |
 | slug  | [string](#string) |       |             |
 | color | [string](#string) |       |             |
+
+<a name="diode-v1-VMInterface"></a>
+
+### VMInterface
+
+A Virtual Machine Interface
+
+| Field           | Type                                       | Label    | Description |
+|-----------------|--------------------------------------------|----------|-------------|
+| virtual_machine | [VirtualMachine](#diode-v1-VirtualMachine) |          |             |
+| name            | [string](#string)                          |          |             |
+| enabled         | [bool](#bool)                              | optional |             |
+| mtu             | [int32](#int32)                            | optional |             |
+| mac_address     | [string](#string)                          | optional |             |
+| description     | [string](#string)                          | optional |             |
+| tags            | [Tag](#diode-v1-Tag)                       | repeated |             |
+
+<a name="diode-v1-VirtualDisk"></a>
+
+### VirtualDisk
+
+A Virtual Disk
+
+| Field           | Type                                       | Label    | Description |
+|-----------------|--------------------------------------------|----------|-------------|
+| virtual_machine | [VirtualMachine](#diode-v1-VirtualMachine) |          |             |
+| name            | [string](#string)                          |          |             |
+| size            | [int32](#int32)                            |          |             |
+| description     | [string](#string)                          | optional |             |
+| tags            | [Tag](#diode-v1-Tag)                       | repeated |             |
+
+<a name="diode-v1-VirtualMachine"></a>
+
+### VirtualMachine
+
+A Virtual Machine
+
+| Field       | Type                             | Label    | Description |
+|-------------|----------------------------------|----------|-------------|
+| name        | [string](#string)                |          |             |
+| status      | [string](#string)                |          |             |
+| site        | [Site](#diode-v1-Site)           |          |             |
+| cluster     | [Cluster](#diode-v1-Cluster)     |          |             |
+| role        | [Role](#diode-v1-Role)           |          |             |
+| device      | [Device](#diode-v1-Device)       |          |             |
+| platform    | [Platform](#diode-v1-Platform)   |          |             |
+| primary_ip4 | [IPAddress](#diode-v1-IPAddress) |          |             |
+| primary_ip6 | [IPAddress](#diode-v1-IPAddress) |          |             |
+| vcpus       | [int32](#int32)                  | optional |             |
+| memory      | [int32](#int32)                  | optional |             |
+| disk        | [int32](#int32)                  | optional |             |
+| description | [string](#string)                | optional |             |
+| comments    | [string](#string)                | optional |             |
+| tags        | [Tag](#diode-v1-Tag)             | repeated |             |
 
 <a name="diode-v1-IngesterService"></a>
 

@@ -8,7 +8,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
-	pb "github.com/netboxlabs/diode/diode-server/reconciler/v1/reconcilerpb"
+	pb "github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 )
 
 const (
@@ -36,6 +36,9 @@ type Client interface {
 
 	// RetrieveIngestionDataSources retrieves ingestion data sources
 	RetrieveIngestionDataSources(context.Context, *pb.RetrieveIngestionDataSourcesRequest, ...grpc.CallOption) (*pb.RetrieveIngestionDataSourcesResponse, error)
+
+	// RetrieveIngestionLogs retrieves ingestion logs
+	RetrieveIngestionLogs(ctx context.Context, req *pb.RetrieveIngestionLogsRequest, opt ...grpc.CallOption) (*pb.RetrieveIngestionLogsResponse, error)
 }
 
 // GRPCClient is a gRPC implementation of the distributor service
@@ -60,6 +63,11 @@ func (g *GRPCClient) RetrieveIngestionDataSources(ctx context.Context, req *pb.R
 	req.SdkName = SDKName
 	req.SdkVersion = SDKVersion
 	return g.client.RetrieveIngestionDataSources(ctx, req, opt...)
+}
+
+// RetrieveIngestionLogs retrieves ingestion logs
+func (g *GRPCClient) RetrieveIngestionLogs(ctx context.Context, req *pb.RetrieveIngestionLogsRequest, opt ...grpc.CallOption) (*pb.RetrieveIngestionLogsResponse, error) {
+	return g.client.RetrieveIngestionLogs(ctx, req, opt...)
 }
 
 // NewClient creates a new reconciler client based on gRPC

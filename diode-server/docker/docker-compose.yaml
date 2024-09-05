@@ -8,7 +8,7 @@ services:
       }
 
       server {
-        listen ${DIODE_NGINX_PORT};
+        listen 80;
         http2 on;
         server_name localhost;
         client_max_body_size 25m;
@@ -36,6 +36,7 @@ services:
       - REDIS_PORT=${REDIS_PORT}
       - RECONCILER_GRPC_HOST=${RECONCILER_GRPC_HOST}
       - RECONCILER_GRPC_PORT=${RECONCILER_GRPC_PORT}
+      - INGESTER_TO_RECONCILER_API_KEY=${INGESTER_TO_RECONCILER_API_KEY}
       - SENTRY_DSN=${SENTRY_DSN}
     restart: always
     ports:
@@ -53,6 +54,7 @@ services:
       - NETBOX_DIODE_PLUGIN_API_BASE_URL=${NETBOX_DIODE_PLUGIN_API_BASE_URL}
       - DIODE_TO_NETBOX_API_KEY=${DIODE_TO_NETBOX_API_KEY}
       - NETBOX_TO_DIODE_API_KEY=${NETBOX_TO_DIODE_API_KEY}
+      - INGESTER_TO_RECONCILER_API_KEY=${INGESTER_TO_RECONCILER_API_KEY}
       - DIODE_API_KEY=${DIODE_API_KEY}
       - LOGGING_LEVEL=${LOGGING_LEVEL}
       - SENTRY_DSN=${SENTRY_DSN}
@@ -65,7 +67,7 @@ services:
     command:
       - sh
       - -c
-      - redis-server --appendonly yes --requirepass $$REDIS_PASSWORD --loadmodule /opt/redis-stack/lib/rejson.so --loadmodule /opt/redis-stack/lib/redisearch.so --port $$REDIS_PORT
+      - redis-server --appendonly yes --dir /data --save 60 1 --requirepass $$REDIS_PASSWORD --loadmodule /opt/redis-stack/lib/rejson.so --loadmodule /opt/redis-stack/lib/redisearch.so --port $$REDIS_PORT
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - REDIS_PORT=${REDIS_PORT}
@@ -76,7 +78,17 @@ services:
     image: redis/redis-stack-server:latest
     links:
       - diode-redis
-    command: redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" -a "$REDIS_PASSWORD" FT.CREATE ingest-entity ON JSON PREFIX 1 "ingest-entity:" SCHEMA $$.data_type AS data_type TEXT $$.state AS state NUMERIC
+    entrypoint:
+      - sh
+      - -c
+      - |
+        redis-cli -h "$REDIS_HOST" -p "$REDIS_PORT" -a "$REDIS_PASSWORD" <<EOF
+        FT.CREATE ingest-entity ON JSON PREFIX 1 "ingest-entity:" SCHEMA \
+        $.data_type AS data_type TEXT \
+        $.state AS state NUMERIC \
+        $.request_id AS request_id TEXT \
+        $.ingestion_ts AS ingestion_ts NUMERIC SORTABLE
+        EOF
 volumes:
   diode-redis-data:
     driver: local

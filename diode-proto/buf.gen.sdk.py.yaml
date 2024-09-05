@@ -1,0 +1,10 @@
+version: v2
+inputs:
+  - proto_file: diode/v1/ingester.proto
+plugins:
+  - remote: buf.build/protocolbuffers/python:v26.1
+    out: ../../diode-sdk-python/netboxlabs/diode/sdk/
+  - remote: buf.build/protocolbuffers/pyi:v26.1
+    out: ../../diode-sdk-python/netboxlabs/diode/sdk/
+  - remote: buf.build/grpc/python:v1.62.1
+    out: ../../diode-sdk-python/netboxlabs/diode/sdk/
