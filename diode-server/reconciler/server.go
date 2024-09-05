@@ -22,8 +22,8 @@ const (
 	// ErrMetadataNotFoundMsg is an error for missing metadata
 	ErrMetadataNotFoundMsg = "no request metadata found"
 
-	// ErrUnauthorizedMsg is an error for unauthorized requests
-	ErrUnauthorizedMsg = "missing or invalid authorization header"
+	// ErrUnauthenticatedMsg is an error for unauthenticated requests
+	ErrUnauthenticatedMsg = "missing or invalid authorization header"
 )
 
 // Server is a reconciler Server
@@ -88,8 +88,8 @@ func newAuthUnaryInterceptor(logger *slog.Logger, apiKeys APIKeys) grpc.UnarySer
 			return nil, status.Errorf(codes.InvalidArgument, ErrMetadataNotFoundMsg)
 		}
 
-		if !isAuthorized(logger, serverInfo.FullMethod, apiKeys, md["authorization"]) {
-			return nil, status.Errorf(codes.Unauthenticated, ErrUnauthorizedMsg)
+		if !isAuthenticated(logger, serverInfo.FullMethod, apiKeys, md["authorization"]) {
+			return nil, status.Errorf(codes.Unauthenticated, ErrUnauthenticatedMsg)
 		}
 		return handler(ctx, req)
 	}
@@ -154,9 +154,10 @@ func validateRetrieveIngestionDataSourcesRequest(in *reconcilerpb.RetrieveIngest
 	return nil
 }
 
-func isAuthorized(logger *slog.Logger, rpcMethod string, apiKeys APIKeys, authorization []string) bool {
+// isAuthenticated checks if the request is authenticated
+func isAuthenticated(logger *slog.Logger, rpcMethod string, apiKeys APIKeys, authorization []string) bool {
 	if len(authorization) < 1 {
-		logger.Debug("missing authorization header", "rpcMethod", rpcMethod)
+		logger.Debug("missing authorization metadata", "rpcMethod", rpcMethod)
 		return false
 	}
 
