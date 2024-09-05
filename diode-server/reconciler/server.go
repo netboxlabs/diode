@@ -2,7 +2,6 @@ package reconciler
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"net"
@@ -19,11 +18,12 @@ import (
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 )
 
-var (
-	errMetadataNotFound = errors.New("no request metadata found")
+const (
+	// ErrMetadataNotFoundMsg is an error for missing metadata
+	ErrMetadataNotFoundMsg = "no request metadata found"
 
-	// ErrUnauthorized is an error for unauthorized requests
-	ErrUnauthorized = errors.New("missing or invalid authorization header")
+	// ErrUnauthorizedMsg is an error for unauthorized requests
+	ErrUnauthorizedMsg = "missing or invalid authorization header"
 )
 
 // Server is a reconciler Server
@@ -85,11 +85,11 @@ func newAuthUnaryInterceptor(logger *slog.Logger, apiKeys APIKeys) grpc.UnarySer
 	return func(ctx context.Context, req interface{}, serverInfo *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		md, ok := metadata.FromIncomingContext(ctx)
 		if !ok {
-			return nil, status.Errorf(codes.InvalidArgument, errMetadataNotFound.Error())
+			return nil, status.Errorf(codes.InvalidArgument, ErrMetadataNotFoundMsg)
 		}
 
 		if !isAuthorized(logger, serverInfo.FullMethod, apiKeys, md["authorization"]) {
-			return nil, status.Errorf(codes.Unauthenticated, ErrUnauthorized.Error())
+			return nil, status.Errorf(codes.Unauthenticated, ErrUnauthorizedMsg)
 		}
 		return handler(ctx, req)
 	}
