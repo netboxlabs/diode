@@ -2,7 +2,6 @@ package reconciler
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"net"
@@ -11,17 +10,20 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/status"
 
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 )
 
-var (
-	errMetadataNotFound = errors.New("no request metadata found")
+const (
+	// ErrMetadataNotFoundMsg is an error for missing metadata
+	ErrMetadataNotFoundMsg = "no request metadata found"
 
-	// ErrUnauthorized is an error for unauthorized requests
-	ErrUnauthorized = errors.New("missing or invalid authorization header")
+	// ErrUnauthenticatedMsg is an error for unauthenticated requests
+	ErrUnauthenticatedMsg = "missing or invalid authorization header"
 )
 
 // Server is a reconciler Server
@@ -83,11 +85,11 @@ func newAuthUnaryInterceptor(logger *slog.Logger, apiKeys APIKeys) grpc.UnarySer
 	return func(ctx context.Context, req interface{}, serverInfo *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		md, ok := metadata.FromIncomingContext(ctx)
 		if !ok {
-			return nil, errMetadataNotFound
+			return nil, status.Errorf(codes.InvalidArgument, ErrMetadataNotFoundMsg)
 		}
 
-		if !isAuthorized(logger, serverInfo.FullMethod, apiKeys, md["authorization"]) {
-			return nil, ErrUnauthorized
+		if !isAuthenticated(logger, serverInfo.FullMethod, apiKeys, md["authorization"]) {
+			return nil, status.Errorf(codes.Unauthenticated, ErrUnauthenticatedMsg)
 		}
 		return handler(ctx, req)
 	}
@@ -152,9 +154,10 @@ func validateRetrieveIngestionDataSourcesRequest(in *reconcilerpb.RetrieveIngest
 	return nil
 }
 
-func isAuthorized(logger *slog.Logger, rpcMethod string, apiKeys APIKeys, authorization []string) bool {
+// isAuthenticated checks if the request is authenticated
+func isAuthenticated(logger *slog.Logger, rpcMethod string, apiKeys APIKeys, authorization []string) bool {
 	if len(authorization) < 1 {
-		logger.Debug("missing authorization header", "rpcMethod", rpcMethod)
+		logger.Debug("missing authorization metadata", "rpcMethod", rpcMethod)
 		return false
 	}
 
@@ -168,6 +171,13 @@ func isAuthorized(logger *slog.Logger, rpcMethod string, apiKeys APIKeys, author
 			return false
 		}
 		return apiKey == ingesterToReconcilerAPIKey
+	case reconcilerpb.ReconcilerService_RetrieveIngestionLogs_FullMethodName:
+		netboxToDiode, ok := apiKeys["NETBOX_TO_DIODE"]
+		if !ok {
+			logger.Debug("missing NETBOX_TO_DIODE API key")
+			return false
+		}
+		return apiKey == netboxToDiode
 	}
 
 	return false
