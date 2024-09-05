@@ -54,6 +54,42 @@ func TestIsAuthorized(t *testing.T) {
 			},
 			isAuthorized: false,
 		},
+		{
+			name:          "retrieve ingestion logs with valid authorization",
+			rpcMethod:     reconcilerpb.ReconcilerService_RetrieveIngestionLogs_FullMethodName,
+			authorization: []string{"test"},
+			apiKeys: map[string]string{
+				"NETBOX_TO_DIODE": "test",
+			},
+			isAuthorized: true,
+		},
+		{
+			name:          "retrieve ingestion logs with invalid authorization",
+			rpcMethod:     reconcilerpb.ReconcilerService_RetrieveIngestionLogs_FullMethodName,
+			authorization: []string{"test0"},
+			apiKeys: map[string]string{
+				"NETBOX_TO_DIODE": "test",
+			},
+			isAuthorized: false,
+		},
+		{
+			name:          "retrieve ingestion logs for server without api key configured",
+			rpcMethod:     reconcilerpb.ReconcilerService_RetrieveIngestionLogs_FullMethodName,
+			authorization: []string{"test"},
+			apiKeys: map[string]string{
+				"DIODE": "foorbar",
+			},
+			isAuthorized: false,
+		},
+		{
+			name:          "authorization for unknown rpc method",
+			rpcMethod:     "/diode.v1.ReconcilerService/UnknownMethod",
+			authorization: []string{"test"},
+			apiKeys: map[string]string{
+				"DIODE": "foorbar",
+			},
+			isAuthorized: false,
+		},
 	}
 
 	for _, tt := range tests {
