@@ -7,21 +7,25 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 	"github.com/redis/go-redis/v9"
 )
 
-type RedisLogsResult struct {
-	ExtraAttributes map[string]interface{} `json:"extra_attributes"`
-	IngestionTs     int64                  `json:"ingestion_ts"`
+type ExtraAttributesWrapper struct {
+	ExtraAttributes string `json:"$"`
+	IngestionTs     string `json:"ingestion_ts"`
+}
+type RedisLogResult struct {
+	ExtraAttributes ExtraAttributesWrapper `json:"extra_attributes"`
 	ID              string                 `json:"id"`
 	Values          []interface{}          `json:"values"`
 }
 
 type RedisLogsResponse struct {
-	Results      []RedisLogsResult `json:"results"`
-	TotalResults int               `json:"total_results"`
+	Results      []RedisLogResult `json:"results"`
+	TotalResults int              `json:"total_results"`
 }
 
 func convertMapInterface(data interface{}) interface{} {
@@ -137,14 +141,20 @@ func retrieveIngestionLogs(ctx context.Context, client *redis.Client, in *reconc
 		return nil, fmt.Errorf("error parsing JSON: %w", err)
 	}
 
-	// for _, logsResult := range response.Results {
-	// 	entity := logsResult.ExtraAttributes["$"]
-	// 	log := &reconcilerpb.IngestionLog{
-	// 		DataType: "",
-	// 	}
-	// 	logs = append(logs, log)
-	// 	ingestionTs = logsResult.IngestionTs
-	// }
+	for _, logsResult := range response.Results {
+		var extraAttr *reconcilerpb.IngestionLog
+		err := json.Unmarshal([]byte(logsResult.ExtraAttributes.ExtraAttributes), &extraAttr)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing ExtraAttributes JSON: %v", err)
+		}
+
+		logs = append(logs, extraAttr)
+
+		ingestionTs, err = strconv.ParseInt(logsResult.ExtraAttributes.IngestionTs, 10, 64)
+		if err != nil {
+			return nil, fmt.Errorf("error converting ingestion timestamp: %w", err)
+		}
+	}
 
 	return &reconcilerpb.RetrieveIngestionLogsResponse{Logs: logs, NextPageToken: encodeInt64ToBase64(ingestionTs)}, nil
 }
