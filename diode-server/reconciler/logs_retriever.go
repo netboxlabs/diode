@@ -90,13 +90,19 @@ func retrieveIngestionLogs(ctx context.Context, client *redis.Client, in *reconc
 	var err error
 	var ingestionTs int64 = 0
 
-	query := "@ingestion_ts:[0 inf]" // Match all entities
+	//Check start TS filter
+	var startTs int64 = 0
+	if in.GetIngestionTsStart() != 0 {
+		startTs = in.GetIngestionTsStart()
+	}
+	query := fmt.Sprintf("@ingestion_ts:[%d inf]", startTs)
+
 	if in.PageToken != "" {
 		ingestionTs, err = decodeBase64ToInt64(in.PageToken)
 		if err != nil {
 			return nil, fmt.Errorf("error decoding page token: %w", err)
 		}
-		query = fmt.Sprintf("@ingestion_ts:[0 %d]", ingestionTs)
+		query = fmt.Sprintf("@ingestion_ts:[%d %d]", startTs, ingestionTs)
 	}
 
 	// Construct the base FT.SEARCH query
@@ -108,10 +114,14 @@ func retrieveIngestionLogs(ctx context.Context, client *redis.Client, in *reconc
 
 	queryIndex := len(queryArgs) - 1
 
-	// Apply optional state filter
+	// Apply optional filters
 	if in.State != nil {
-		stateFilter := fmt.Sprintf("@state:[%d %d]", *in.State, *in.State)
+		stateFilter := fmt.Sprintf("@state:[%d %d]", in.GetState(), in.GetState())
 		queryArgs[queryIndex] = fmt.Sprintf("%s %s", queryArgs[queryIndex], stateFilter)
+	}
+	if in.GetDataType() != "" {
+		dataType := fmt.Sprintf("@data_type:%s", in.GetDataType())
+		queryArgs[queryIndex] = fmt.Sprintf("%s %s", queryArgs[queryIndex], dataType)
 	}
 
 	// Apply sorting by ingestion_ts in descending order
