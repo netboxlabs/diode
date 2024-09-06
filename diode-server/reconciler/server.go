@@ -34,7 +34,7 @@ type Server struct {
 	logger       *slog.Logger
 	grpcListener net.Listener
 	grpcServer   *grpc.Server
-	redisClient  *redis.Client
+	redisClient  RedisClient
 	apiKeys      APIKeys
 }
 

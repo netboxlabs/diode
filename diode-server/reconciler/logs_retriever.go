@@ -10,21 +10,20 @@ import (
 	"strconv"
 
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
-	"github.com/redis/go-redis/v9"
 )
 
-type ExtraAttributesWrapper struct {
+type extraAttributesWrapper struct {
 	ExtraAttributes string `json:"$"`
 	IngestionTs     string `json:"ingestion_ts"`
 }
-type RedisLogResult struct {
-	ExtraAttributes ExtraAttributesWrapper `json:"extra_attributes"`
+type redisLogResult struct {
+	ExtraAttributes extraAttributesWrapper `json:"extra_attributes"`
 	ID              string                 `json:"id"`
 	Values          []interface{}          `json:"values"`
 }
 
-type RedisLogsResponse struct {
-	Results      []RedisLogResult `json:"results"`
+type redisLogsResponse struct {
+	Results      []redisLogResult `json:"results"`
 	TotalResults int              `json:"total_results"`
 }
 
@@ -80,7 +79,7 @@ func decodeBase64ToInt64(encoded string) (int64, error) {
 	return num, nil
 }
 
-func retrieveIngestionLogs(ctx context.Context, client *redis.Client, in *reconcilerpb.RetrieveIngestionLogsRequest) (*reconcilerpb.RetrieveIngestionLogsResponse, error) {
+func retrieveIngestionLogs(ctx context.Context, client RedisClient, in *reconcilerpb.RetrieveIngestionLogsRequest) (*reconcilerpb.RetrieveIngestionLogsResponse, error) {
 	logs := make([]*reconcilerpb.IngestionLog, 0)
 	pageSize := in.GetPageSize()
 	if pageSize == 0 {
@@ -88,10 +87,10 @@ func retrieveIngestionLogs(ctx context.Context, client *redis.Client, in *reconc
 	}
 
 	var err error
-	var ingestionTs int64 = 0
+	var ingestionTs int64
 
 	//Check start TS filter
-	var startTs int64 = 0
+	var startTs int64
 	if in.GetIngestionTsStart() != 0 {
 		startTs = in.GetIngestionTsStart()
 	}
@@ -143,7 +142,7 @@ func retrieveIngestionLogs(ctx context.Context, client *redis.Client, in *reconc
 		return nil, fmt.Errorf("error marshaling logs: %w", err)
 	}
 
-	var response RedisLogsResponse
+	var response redisLogsResponse
 
 	// Unmarshal the result into the struct
 	err = json.Unmarshal([]byte(jsonBytes), &response)

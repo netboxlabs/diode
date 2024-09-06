@@ -1,13 +1,18 @@
 package reconciler
 
 import (
+	"context"
 	"log/slog"
 	"os"
 	"testing"
 
+	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
+	mr "github.com/netboxlabs/diode/diode-server/reconciler/mocks"
 )
 
 func TestIsAuthenticated(t *testing.T) {
@@ -98,4 +103,27 @@ func TestIsAuthenticated(t *testing.T) {
 			assert.Equal(t, tt.isAuthenticated, isAuthenticated(logger, tt.rpcMethod, tt.apiKeys, tt.authorization))
 		})
 	}
+}
+
+func TestRetrieveLogs(t *testing.T) {
+	ctx := context.Background()
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+
+	mockRedisClient := new(mr.RedisClient)
+
+	cmd := redis.NewCmd(ctx)
+
+	query := "@ingestion_ts:[0 inf]"
+	mockRedisClient.On("Do", ctx, "FT.SEARCH", "ingest-entity", query, "SORTBY", "ingestion_ts", "DESC", "LIMIT", 0, mock.Anything).
+		Return(cmd)
+
+	server := &Server{
+		redisClient: mockRedisClient,
+		logger:      logger,
+	}
+
+	var in reconcilerpb.RetrieveIngestionLogsRequest
+
+	_, err := server.RetrieveIngestionLogs(ctx, &in)
+	require.NoError(t, err)
 }
