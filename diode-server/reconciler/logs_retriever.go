@@ -19,7 +19,6 @@ type extraAttributesWrapper struct {
 type redisLogResult struct {
 	ExtraAttributes extraAttributesWrapper `json:"extra_attributes"`
 	ID              string                 `json:"id"`
-	Values          []interface{}          `json:"values"`
 }
 
 type redisLogsResponse struct {
