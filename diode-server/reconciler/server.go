@@ -34,7 +34,7 @@ type Server struct {
 	logger       *slog.Logger
 	grpcListener net.Listener
 	grpcServer   *grpc.Server
-	redisClient  *redis.Client
+	redisClient  RedisClient
 	apiKeys      APIKeys
 }
 
@@ -139,9 +139,8 @@ func (s *Server) RetrieveIngestionDataSources(_ context.Context, in *reconcilerp
 }
 
 // RetrieveIngestionLogs retrieves logs
-func (s *Server) RetrieveIngestionLogs(_ context.Context, _ *reconcilerpb.RetrieveIngestionLogsRequest) (*reconcilerpb.RetrieveIngestionLogsResponse, error) {
-	logs := make([]*reconcilerpb.IngestionLog, 0)
-	return &reconcilerpb.RetrieveIngestionLogsResponse{Logs: logs}, nil
+func (s *Server) RetrieveIngestionLogs(ctx context.Context, in *reconcilerpb.RetrieveIngestionLogsRequest) (*reconcilerpb.RetrieveIngestionLogsResponse, error) {
+	return retrieveIngestionLogs(ctx, s.redisClient, in)
 }
 
 func validateRetrieveIngestionDataSourcesRequest(in *reconcilerpb.RetrieveIngestionDataSourcesRequest) error {
