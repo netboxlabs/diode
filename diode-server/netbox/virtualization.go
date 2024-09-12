@@ -150,7 +150,7 @@ func NewVirtualizationClusterType() *VirtualizationClusterType {
 
 // NewVirtualizationCluster creates a new virtualization cluster placeholder
 func NewVirtualizationCluster() *VirtualizationCluster {
-	status := "active"
+	status := DefaultVirtualizationStatus
 	return &VirtualizationCluster{
 		Name:   "undefined",
 		Type:   NewVirtualizationClusterType(),
@@ -162,7 +162,7 @@ func NewVirtualizationCluster() *VirtualizationCluster {
 
 // NewVirtualizationVirtualMachine creates a new virtualization virtual machine placeholder
 func NewVirtualizationVirtualMachine() *VirtualizationVirtualMachine {
-	status := "active"
+	status := DefaultVirtualizationStatus
 	return &VirtualizationVirtualMachine{
 		Name:   "undefined",
 		Status: &status,
