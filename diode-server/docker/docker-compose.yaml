@@ -58,6 +58,7 @@ services:
       - DIODE_API_KEY=${DIODE_API_KEY}
       - LOGGING_LEVEL=${LOGGING_LEVEL}
       - SENTRY_DSN=${SENTRY_DSN}
+      - MIGRATION_ENABLED=${MIGRATION_ENABLED}
     restart: always
     ports: [ ]
     depends_on:
