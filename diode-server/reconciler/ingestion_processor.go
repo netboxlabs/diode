@@ -243,7 +243,7 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 			errs = append(errs, err)
 
 			ingestionLog.State = reconcilerpb.State(IngestEntityStateReconciliationFailed)
-			ingestionLog.Error = extractIngestionError(p.logger, err)
+			ingestionLog.Error = extractIngestionError(err)
 
 			if _, err = p.writeIngestionLog(ctx, key, ingestionLog); err != nil {
 				errs = append(errs, err)
@@ -286,7 +286,7 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 	return nil
 }
 
-func extractIngestionError(logger *slog.Logger, err error) *reconcilerpb.IngestionError {
+func extractIngestionError(err error) *reconcilerpb.IngestionError {
 	var ingestionErr *reconcilerpb.IngestionError
 	var applyChangeSetErr *netboxdiodeplugin.ApplyChangeSetError
 
