@@ -2,19 +2,21 @@ package reconciler
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
 	"os"
+	"regexp"
 	"strconv"
 
 	"github.com/google/uuid"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/redis/go-redis/v9"
+	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
+	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 	"github.com/netboxlabs/diode/diode-server/netbox"
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
 	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
@@ -59,6 +61,8 @@ type RedisClient interface {
 	XAck(ctx context.Context, stream, group string, ids ...string) *redis.IntCmd
 	XDel(ctx context.Context, stream string, ids ...string) *redis.IntCmd
 	Do(ctx context.Context, args ...interface{}) *redis.Cmd
+	Scan(ctx context.Context, cursor uint64, match string, count int64) *redis.ScanCmd
+	Del(ctx context.Context, keys ...string) *redis.IntCmd
 }
 
 // IngestionProcessor processes ingested data
@@ -210,44 +214,74 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 		key := fmt.Sprintf("ingest-entity:%s-%d-%s", objectType, ingestionTs, uuid.NewString())
 		p.logger.Debug("ingest entity key", "key", key)
 
-		val := map[string]any{
-			"request_id":           ingestReq.GetId(),
-			"producer_app_name":    ingestReq.GetProducerAppName(),
-			"producer_app_version": ingestReq.GetProducerAppVersion(),
-			"sdk_name":             ingestReq.GetSdkName(),
-			"sdk_version":          ingestReq.GetSdkVersion(),
-			"data_type":            objectType,
-			"entity":               v.GetEntity(),
-			"ingestion_ts":         ingestionTs,
-			"state":                IngestEntityStateNew,
+		ingestionLog := &reconcilerpb.IngestionLog{
+			RequestId:          ingestReq.GetId(),
+			ProducerAppName:    ingestReq.GetProducerAppName(),
+			ProducerAppVersion: ingestReq.GetProducerAppVersion(),
+			SdkName:            ingestReq.GetSdkName(),
+			SdkVersion:         ingestReq.GetSdkVersion(),
+			DataType:           objectType,
+			Entity:             v,
+			IngestionTs:        int64(ingestionTs),
+			State:              reconcilerpb.State(IngestEntityStateNew),
 		}
 
-		encodedValue, err := p.writeJSON(ctx, key, val)
-		if err != nil {
+		if _, err = p.writeIngestionLog(ctx, key, ingestionLog); err != nil {
 			errs = append(errs, fmt.Errorf("failed to write JSON: %v", err))
 			continue
 		}
 
-		changeSet, err := p.reconcileEntity(ctx, encodedValue)
+		ingestEntity := changeset.IngestEntity{
+			RequestID: ingestReq.GetId(),
+			DataType:  objectType,
+			Entity:    v.GetEntity(),
+			State:     int(IngestEntityStateNew),
+		}
+
+		changeSet, err := p.reconcileEntity(ctx, ingestEntity)
 		if err != nil {
 			errs = append(errs, err)
 
-			val["state"] = IngestEntityStateReconciliationFailed
-			val["error"] = err
-			if _, err = p.writeJSON(ctx, key, val); err != nil {
+			ingestionLog.State = reconcilerpb.State(IngestEntityStateReconciliationFailed)
+
+			var e *netboxdiodeplugin.ApplyChangeSetError
+			switch {
+			case errors.As(err, &e):
+				changeSetErrors := make([]*reconcilerpb.ChangeSetError_Details_Error, 0)
+
+				detailsErrs := e.Details.Errors.([]*reconcilerpb.ChangeSetError_Details_Error)
+				for _, detailsErr := range detailsErrs {
+					changeSetErrors = append(changeSetErrors, &reconcilerpb.ChangeSetError_Details_Error{
+						Error:    detailsErr.GetError(),
+						ChangeId: detailsErr.GetChangeId(),
+					})
+				}
+
+				ingestionLog.Error = &reconcilerpb.ChangeSetError{
+					Message: e.Message,
+					Code:    int32(e.Code),
+					Details: &reconcilerpb.ChangeSetError_Details{
+						ChangeSetId: e.Details.ChangeSetID,
+						Result:      e.Details.Result,
+						Errors:      changeSetErrors,
+					},
+				}
+			}
+
+			if _, err = p.writeIngestionLog(ctx, key, ingestionLog); err != nil {
 				errs = append(errs, err)
 			}
 			continue
 		}
 
 		if changeSet != nil {
-			val["state"] = IngestEntityStateReconciled
-			val["change_set_id"] = changeSet.ChangeSetID
-
+			ingestionLog.State = reconcilerpb.State(IngestEntityStateReconciled)
+			//TODO: add change set ID to ingestion log
 		} else {
-			val["state"] = IngestEntityStateNoChangesToApply
+			ingestionLog.State = reconcilerpb.State(IngestEntityStateNoChangesToApply)
 		}
-		if _, err = p.writeJSON(ctx, key, val); err != nil {
+
+		if _, err = p.writeIngestionLog(ctx, key, ingestionLog); err != nil {
 			errs = append(errs, fmt.Errorf("failed to write JSON: %v", err))
 			continue
 		}
@@ -275,10 +309,7 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 	return nil
 }
 
-func (p *IngestionProcessor) reconcileEntity(ctx context.Context, encodedValue []byte) (*changeset.ChangeSet, error) {
-	var ingestEntity changeset.IngestEntity
-	_ = json.Unmarshal(encodedValue, &ingestEntity)
-
+func (p *IngestionProcessor) reconcileEntity(ctx context.Context, ingestEntity changeset.IngestEntity) (*changeset.ChangeSet, error) {
 	cs, err := changeset.Prepare(ingestEntity, p.nbClient)
 	if err != nil {
 		tags := map[string]string{
@@ -323,17 +354,27 @@ func (p *IngestionProcessor) reconcileEntity(ctx context.Context, encodedValue [
 	return cs, nil
 }
 
-func (p *IngestionProcessor) writeJSON(ctx context.Context, key string, value map[string]any) ([]byte, error) {
-	encodedValue, err := json.Marshal(value)
+func (p *IngestionProcessor) writeIngestionLog(ctx context.Context, key string, ingestionLog *reconcilerpb.IngestionLog) ([]byte, error) {
+	ingestionLogJSON, err := protojson.Marshal(ingestionLog)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal JSON: %v", err)
 	}
 
-	if _, err = p.redisClient.Do(ctx, "JSON.SET", key, "$", encodedValue).Result(); err != nil {
+	ingestionLogJSON = normalizeIngestionLog(ingestionLogJSON)
+
+	p.logger.Debug("writing ingestion log JSON", "json", string(ingestionLogJSON))
+
+	if _, err := p.redisClient.Do(ctx, "JSON.SET", key, "$", ingestionLogJSON).Result(); err != nil {
 		return nil, fmt.Errorf("failed to set JSON redis key: %v", err)
 	}
 
-	return encodedValue, nil
+	return ingestionLogJSON, nil
+}
+
+func normalizeIngestionLog(l []byte) []byte {
+	//replace ingestionTs string value as integer, see: https://github.com/golang/protobuf/issues/1414
+	re := regexp.MustCompile(`"ingestionTs":"(\d+)"`)
+	return re.ReplaceAll(l, []byte(`"ingestionTs":$1`))
 }
 
 func extractObjectType(in *diodepb.Entity) (string, error) {
