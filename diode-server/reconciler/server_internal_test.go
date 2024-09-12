@@ -206,13 +206,13 @@ func TestRetrieveLogs(t *testing.T) {
 						SdkName:            "diode-sdk-go",
 						SdkVersion:         "0.1.0",
 						Entity:             &diodepb.Entity{},
-						Error: &reconcilerpb.ChangeSetError{
+						Error: &reconcilerpb.IngestionError{
 							Message: "failed to apply change set",
 							Code:    400,
-							Details: &reconcilerpb.ChangeSetError_Details{
+							Details: &reconcilerpb.IngestionError_Details{
 								ChangeSetId: "6304c706-f955-4bcb-a1cc-514293d53d07",
 								Result:      "failed",
-								Errors: []*reconcilerpb.ChangeSetError_Details_Error{
+								Errors: []*reconcilerpb.IngestionError_Details_Error{
 									{
 										ChangeId: "ff9e29b2-7a64-40ba-99a8-21f44768f60a",
 										Error:    "address: Duplicate IP address found in global table: 192.168.1.1/32",
