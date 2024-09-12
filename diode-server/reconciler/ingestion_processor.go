@@ -243,30 +243,7 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 			errs = append(errs, err)
 
 			ingestionLog.State = reconcilerpb.State(IngestEntityStateReconciliationFailed)
-
-			var e *netboxdiodeplugin.ApplyChangeSetError
-			switch {
-			case errors.As(err, &e):
-				changeSetErrors := make([]*reconcilerpb.ChangeSetError_Details_Error, 0)
-
-				detailsErrs := e.Details.Errors.([]*reconcilerpb.ChangeSetError_Details_Error)
-				for _, detailsErr := range detailsErrs {
-					changeSetErrors = append(changeSetErrors, &reconcilerpb.ChangeSetError_Details_Error{
-						Error:    detailsErr.GetError(),
-						ChangeId: detailsErr.GetChangeId(),
-					})
-				}
-
-				ingestionLog.Error = &reconcilerpb.ChangeSetError{
-					Message: e.Message,
-					Code:    int32(e.Code),
-					Details: &reconcilerpb.ChangeSetError_Details{
-						ChangeSetId: e.Details.ChangeSetID,
-						Result:      e.Details.Result,
-						Errors:      changeSetErrors,
-					},
-				}
-			}
+			ingestionLog.Error = extractIngestionError(p.logger, err)
 
 			if _, err = p.writeIngestionLog(ctx, key, ingestionLog); err != nil {
 				errs = append(errs, err)
@@ -307,6 +284,23 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 	}
 
 	return nil
+}
+
+func extractIngestionError(logger *slog.Logger, err error) *reconcilerpb.IngestionError {
+	var ingestionErr *reconcilerpb.IngestionError
+	var applyChangeSetErr *netboxdiodeplugin.ApplyChangeSetError
+
+	switch {
+	case errors.As(err, &applyChangeSetErr):
+		ingestionErr = applyChangeSetErr.ToIngestionError()
+	default:
+		ingestionErr = &reconcilerpb.IngestionError{
+			Message: err.Error(),
+			Code:    0,
+		}
+	}
+
+	return ingestionErr
 }
 
 func (p *IngestionProcessor) reconcileEntity(ctx context.Context, ingestEntity changeset.IngestEntity) (*changeset.ChangeSet, error) {
