@@ -26,6 +26,9 @@ const (
 
 	redisConsumerGroup = "diode-reconciler"
 
+	// RedisIngestEntityIndexName is the name of the redis index for ingest entities
+	RedisIngestEntityIndexName = "ingest-entity"
+
 	// RedisConsumerGroupExistsErrMsg is the error message returned by the redis client when the consumer group already exists
 	RedisConsumerGroupExistsErrMsg = "BUSYGROUP Consumer Group name already exists"
 )
@@ -123,6 +126,13 @@ func (p *IngestionProcessor) Name() string {
 // Start starts the component
 func (p *IngestionProcessor) Start(ctx context.Context) error {
 	p.logger.Info("starting component", "name", p.Name())
+
+	if p.config.MigrationEnabled {
+		if err := migrate(ctx, p.logger, p.redisClient); err != nil {
+			return fmt.Errorf("failed to migrate: %v", err)
+		}
+	}
+
 	return p.consumeIngestionStream(ctx, redisStreamID, redisConsumerGroup, fmt.Sprintf("%s-%s", redisConsumerGroup, p.hostname))
 }
 
