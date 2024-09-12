@@ -7,7 +7,10 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"strconv"
+
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 )
@@ -78,8 +81,7 @@ func decodeBase64ToInt64(encoded string) (int64, error) {
 	return num, nil
 }
 
-func retrieveIngestionLogs(ctx context.Context, client RedisClient, in *reconcilerpb.RetrieveIngestionLogsRequest) (*reconcilerpb.RetrieveIngestionLogsResponse, error) {
-	logs := make([]*reconcilerpb.IngestionLog, 0)
+func retrieveIngestionLogs(ctx context.Context, logger *slog.Logger, client RedisClient, in *reconcilerpb.RetrieveIngestionLogsRequest) (*reconcilerpb.RetrieveIngestionLogsResponse, error) {
 	pageSize := in.GetPageSize()
 	if pageSize == 0 {
 		pageSize = 10 // Default to 10
@@ -128,35 +130,37 @@ func retrieveIngestionLogs(ctx context.Context, client RedisClient, in *reconcil
 	// Apply limit for pagination
 	queryArgs = append(queryArgs, "LIMIT", 0, pageSize)
 
+	logger.Debug("retrieving ingestion logs", "query", queryArgs)
+
 	// Execute the query using Redis
 	result, err := client.Do(ctx, queryArgs...).Result()
 	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve logs: %w", err)
+		return nil, fmt.Errorf("failed to retrieve ingestion logs: %w", err)
 	}
 
 	res := convertMapInterface(result)
 
 	jsonBytes, err := json.Marshal(res)
 	if err != nil {
-		return nil, fmt.Errorf("error marshaling logs: %w", err)
+		return nil, fmt.Errorf("error marshaling ingestion logs: %w", err)
 	}
 
 	var response redisLogsResponse
 
 	// Unmarshal the result into the struct
-	err = json.Unmarshal([]byte(jsonBytes), &response)
-	if err != nil {
+	if err = json.Unmarshal(jsonBytes, &response); err != nil {
 		return nil, fmt.Errorf("error parsing JSON: %w", err)
 	}
 
+	logs := make([]*reconcilerpb.IngestionLog, 0)
+
 	for _, logsResult := range response.Results {
-		var extraAttr *reconcilerpb.IngestionLog
-		err := json.Unmarshal([]byte(logsResult.ExtraAttributes.ExtraAttributes), &extraAttr)
-		if err != nil {
+		ingestionLog := &reconcilerpb.IngestionLog{}
+		if err := protojson.Unmarshal([]byte(logsResult.ExtraAttributes.ExtraAttributes), ingestionLog); err != nil {
 			return nil, fmt.Errorf("error parsing ExtraAttributes JSON: %v", err)
 		}
 
-		logs = append(logs, extraAttr)
+		logs = append(logs, ingestionLog)
 
 		ingestionTs, err = strconv.ParseInt(logsResult.ExtraAttributes.IngestionTs, 10, 64)
 		if err != nil {

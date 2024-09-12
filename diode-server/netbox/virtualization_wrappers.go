@@ -125,6 +125,8 @@ func (vw *VirtualizationClusterGroupDataWrapper) Patch(cmp ComparableData, inten
 
 		reconciliationRequired = actualHash != intendedHash
 	} else {
+		vw.SetDefaults()
+
 		tagsToMerge := mergeTags(vw.ClusterGroup.Tags, nil, intendedNestedObjects)
 
 		if len(tagsToMerge) > 0 {
@@ -266,6 +268,8 @@ func (vw *VirtualizationClusterTypeDataWrapper) Patch(cmp ComparableData, intend
 
 		reconciliationRequired = actualHash != intendedHash
 	} else {
+		vw.SetDefaults()
+
 		tagsToMerge := mergeTags(vw.ClusterType.Tags, nil, intendedNestedObjects)
 
 		if len(tagsToMerge) > 0 {
@@ -569,6 +573,8 @@ func (vw *VirtualizationClusterDataWrapper) Patch(cmp ComparableData, intendedNe
 
 		reconciliationRequired = actualHash != intendedHash
 	} else {
+		vw.SetDefaults()
+
 		siteObjectsToReconcile, siteErr := actualSite.Patch(intendedSite, intendedNestedObjects)
 		if siteErr != nil {
 			return nil, siteErr
@@ -849,7 +855,7 @@ func (vw *VirtualizationVirtualMachineDataWrapper) Patch(cmp ComparableData, int
 		vw.VirtualMachine.ID = intended.VirtualMachine.ID
 		vw.VirtualMachine.Name = intended.VirtualMachine.Name
 
-		if vw.VirtualMachine.Status == nil {
+		if vw.VirtualMachine.Status == nil || *vw.VirtualMachine.Status == "" {
 			vw.VirtualMachine.Status = intended.VirtualMachine.Status
 		}
 
@@ -1079,6 +1085,8 @@ func (vw *VirtualizationVirtualMachineDataWrapper) Patch(cmp ComparableData, int
 
 		reconciliationRequired = actualHash != intendedHash
 	} else {
+		vw.SetDefaults()
+
 		siteObjectsToReconcile, siteErr := actualSite.Patch(intendedSite, intendedNestedObjects)
 		if siteErr != nil {
 			return nil, siteErr
@@ -1415,6 +1423,8 @@ func (vw *VirtualizationVMInterfaceDataWrapper) Patch(cmp ComparableData, intend
 
 		reconciliationRequired = actualHash != intendedHash
 	} else {
+		vw.SetDefaults()
+
 		virtualMachineObjectsToReconcile, virtualMachineErr := actualVirtualMachine.Patch(intendedVirtualMachine, intendedNestedObjects)
 		if virtualMachineErr != nil {
 			return nil, virtualMachineErr
@@ -1647,6 +1657,8 @@ func (vw *VirtualizationVirtualDiskDataWrapper) Patch(cmp ComparableData, intend
 
 		reconciliationRequired = actualHash != intendedHash
 	} else {
+		vw.SetDefaults()
+
 		virtualMachineObjectsToReconcile, virtualMachineErr := actualVirtualMachine.Patch(intendedVirtualMachine, intendedNestedObjects)
 		if virtualMachineErr != nil {
 			return nil, virtualMachineErr

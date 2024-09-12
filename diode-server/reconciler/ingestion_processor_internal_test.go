@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/mock"
@@ -13,6 +14,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
+	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 	"github.com/netboxlabs/diode/diode-server/netbox"
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
 	mnp "github.com/netboxlabs/diode/diode-server/netboxdiodeplugin/mocks"
@@ -22,33 +24,50 @@ import (
 
 func strPtr(s string) *string { return &s }
 
-func TestWriteJSON(t *testing.T) {
+func TestWriteIngestionLog(t *testing.T) {
 	tests := []struct {
-		name     string
-		value    map[string]any
-		hasError bool
-		hasMock  bool
+		name         string
+		ingestionLog *reconcilerpb.IngestionLog
+		hasError     bool
+		hasMock      bool
 	}{
 		{
-			name:     "write successful",
-			value:    map[string]any{"field": "value"},
+			name: "write successful",
+			ingestionLog: &reconcilerpb.IngestionLog{
+				RequestId: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.site",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Site{
+						Site: &diodepb.Site{
+							Name: "Site A",
+						},
+					},
+				},
+			},
 			hasError: false,
 			hasMock:  true,
 		},
 		{
-			name:     "marshal error",
-			value:    map[string]any{"invalid": make(chan int)},
-			hasError: true,
-			hasMock:  false,
-		},
-		{
-			name:     "redis error",
-			value:    map[string]any{"field": "value"},
+			name: "redis error",
+			ingestionLog: &reconcilerpb.IngestionLog{
+				RequestId: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.site",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Site{
+						Site: &diodepb.Site{
+							Name: "Site A",
+						},
+					},
+				},
+				IngestionTs: time.Now().UnixNano(),
+			},
 			hasError: true,
 			hasMock:  true,
 		},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
+
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()
 			key := "test-key"
@@ -57,6 +76,7 @@ func TestWriteJSON(t *testing.T) {
 			mockRedisClient := new(mr.RedisClient)
 			p := &IngestionProcessor{
 				redisClient: mockRedisClient,
+				logger:      slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false})),
 			}
 
 			// Set up the mock expectation
@@ -68,7 +88,7 @@ func TestWriteJSON(t *testing.T) {
 				Return(cmd)
 
 			// Call the method
-			_, err := p.writeJSON(ctx, key, tt.value)
+			_, err := p.writeIngestionLog(ctx, key, tt.ingestionLog)
 
 			if tt.hasError {
 				require.Error(t, err)
@@ -159,18 +179,21 @@ func TestReconcileEntity(t *testing.T) {
 			}
 
 			// Call reconcileEntity
-			encodedValue := []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.site",
-				"entity": {
-					"Site": {
-						"name": "Site A"
-					}
+			ingestEntity := changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.site",
+				Entity: &diodepb.Entity_Site{
+					Site: &diodepb.Site{
+						Name: "Site A",
+					},
 				},
-				"state": 0
-			}`)
+			}
 
-			cs, err := p.reconcileEntity(ctx, encodedValue)
+			//ingestEntityJSON, _ := json.Marshal(ingestEntity)
+			//var ingestEntity2 changeset.IngestEntity
+			//_ = json.Unmarshal(ingestEntityJSON, &ingestEntity2)
+
+			cs, err := p.reconcileEntity(ctx, ingestEntity)
 
 			if tt.expectedError {
 				require.Error(t, err)

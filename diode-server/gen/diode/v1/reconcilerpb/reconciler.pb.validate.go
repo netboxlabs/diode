@@ -439,22 +439,22 @@ var _ interface {
 	ErrorName() string
 } = RetrieveIngestionDataSourcesResponseValidationError{}
 
-// Validate checks the field values on ChangeSetError with the rules defined in
+// Validate checks the field values on IngestionError with the rules defined in
 // the proto definition for this message. If any rules are violated, the first
 // error encountered is returned, or nil if there are no violations.
-func (m *ChangeSetError) Validate() error {
+func (m *IngestionError) Validate() error {
 	return m.validate(false)
 }
 
-// ValidateAll checks the field values on ChangeSetError with the rules defined
+// ValidateAll checks the field values on IngestionError with the rules defined
 // in the proto definition for this message. If any rules are violated, the
-// result is a list of violation errors wrapped in ChangeSetErrorMultiError,
+// result is a list of violation errors wrapped in IngestionErrorMultiError,
 // or nil if none found.
-func (m *ChangeSetError) ValidateAll() error {
+func (m *IngestionError) ValidateAll() error {
 	return m.validate(true)
 }
 
-func (m *ChangeSetError) validate(all bool) error {
+func (m *IngestionError) validate(all bool) error {
 	if m == nil {
 		return nil
 	}
@@ -469,7 +469,7 @@ func (m *ChangeSetError) validate(all bool) error {
 		switch v := interface{}(m.GetDetails()).(type) {
 		case interface{ ValidateAll() error }:
 			if err := v.ValidateAll(); err != nil {
-				errors = append(errors, ChangeSetErrorValidationError{
+				errors = append(errors, IngestionErrorValidationError{
 					field:  "Details",
 					reason: "embedded message failed validation",
 					cause:  err,
@@ -477,7 +477,7 @@ func (m *ChangeSetError) validate(all bool) error {
 			}
 		case interface{ Validate() error }:
 			if err := v.Validate(); err != nil {
-				errors = append(errors, ChangeSetErrorValidationError{
+				errors = append(errors, IngestionErrorValidationError{
 					field:  "Details",
 					reason: "embedded message failed validation",
 					cause:  err,
@@ -486,7 +486,7 @@ func (m *ChangeSetError) validate(all bool) error {
 		}
 	} else if v, ok := interface{}(m.GetDetails()).(interface{ Validate() error }); ok {
 		if err := v.Validate(); err != nil {
-			return ChangeSetErrorValidationError{
+			return IngestionErrorValidationError{
 				field:  "Details",
 				reason: "embedded message failed validation",
 				cause:  err,
@@ -495,19 +495,19 @@ func (m *ChangeSetError) validate(all bool) error {
 	}
 
 	if len(errors) > 0 {
-		return ChangeSetErrorMultiError(errors)
+		return IngestionErrorMultiError(errors)
 	}
 
 	return nil
 }
 
-// ChangeSetErrorMultiError is an error wrapping multiple validation errors
-// returned by ChangeSetError.ValidateAll() if the designated constraints
+// IngestionErrorMultiError is an error wrapping multiple validation errors
+// returned by IngestionError.ValidateAll() if the designated constraints
 // aren't met.
-type ChangeSetErrorMultiError []error
+type IngestionErrorMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
-func (m ChangeSetErrorMultiError) Error() string {
+func (m IngestionErrorMultiError) Error() string {
 	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
@@ -516,11 +516,11 @@ func (m ChangeSetErrorMultiError) Error() string {
 }
 
 // AllErrors returns a list of validation violation errors.
-func (m ChangeSetErrorMultiError) AllErrors() []error { return m }
+func (m IngestionErrorMultiError) AllErrors() []error { return m }
 
-// ChangeSetErrorValidationError is the validation error returned by
-// ChangeSetError.Validate if the designated constraints aren't met.
-type ChangeSetErrorValidationError struct {
+// IngestionErrorValidationError is the validation error returned by
+// IngestionError.Validate if the designated constraints aren't met.
+type IngestionErrorValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -528,22 +528,22 @@ type ChangeSetErrorValidationError struct {
 }
 
 // Field function returns field value.
-func (e ChangeSetErrorValidationError) Field() string { return e.field }
+func (e IngestionErrorValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e ChangeSetErrorValidationError) Reason() string { return e.reason }
+func (e IngestionErrorValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e ChangeSetErrorValidationError) Cause() error { return e.cause }
+func (e IngestionErrorValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e ChangeSetErrorValidationError) Key() bool { return e.key }
+func (e IngestionErrorValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e ChangeSetErrorValidationError) ErrorName() string { return "ChangeSetErrorValidationError" }
+func (e IngestionErrorValidationError) ErrorName() string { return "IngestionErrorValidationError" }
 
 // Error satisfies the builtin error interface
-func (e ChangeSetErrorValidationError) Error() string {
+func (e IngestionErrorValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -555,14 +555,14 @@ func (e ChangeSetErrorValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sChangeSetError.%s: %s%s",
+		"invalid %sIngestionError.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = ChangeSetErrorValidationError{}
+var _ error = IngestionErrorValidationError{}
 
 var _ interface {
 	Field() string
@@ -570,7 +570,7 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = ChangeSetErrorValidationError{}
+} = IngestionErrorValidationError{}
 
 // Validate checks the field values on IngestionLog with the rules defined in
 // the proto definition for this message. If any rules are violated, the first
@@ -1012,22 +1012,22 @@ var _ interface {
 	ErrorName() string
 } = RetrieveIngestionLogsResponseValidationError{}
 
-// Validate checks the field values on ChangeSetError_Details with the rules
+// Validate checks the field values on IngestionError_Details with the rules
 // defined in the proto definition for this message. If any rules are
 // violated, the first error encountered is returned, or nil if there are no violations.
-func (m *ChangeSetError_Details) Validate() error {
+func (m *IngestionError_Details) Validate() error {
 	return m.validate(false)
 }
 
-// ValidateAll checks the field values on ChangeSetError_Details with the rules
+// ValidateAll checks the field values on IngestionError_Details with the rules
 // defined in the proto definition for this message. If any rules are
 // violated, the result is a list of violation errors wrapped in
-// ChangeSetError_DetailsMultiError, or nil if none found.
-func (m *ChangeSetError_Details) ValidateAll() error {
+// IngestionError_DetailsMultiError, or nil if none found.
+func (m *IngestionError_Details) ValidateAll() error {
 	return m.validate(true)
 }
 
-func (m *ChangeSetError_Details) validate(all bool) error {
+func (m *IngestionError_Details) validate(all bool) error {
 	if m == nil {
 		return nil
 	}
@@ -1045,7 +1045,7 @@ func (m *ChangeSetError_Details) validate(all bool) error {
 			switch v := interface{}(item).(type) {
 			case interface{ ValidateAll() error }:
 				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, ChangeSetError_DetailsValidationError{
+					errors = append(errors, IngestionError_DetailsValidationError{
 						field:  fmt.Sprintf("Errors[%v]", idx),
 						reason: "embedded message failed validation",
 						cause:  err,
@@ -1053,7 +1053,7 @@ func (m *ChangeSetError_Details) validate(all bool) error {
 				}
 			case interface{ Validate() error }:
 				if err := v.Validate(); err != nil {
-					errors = append(errors, ChangeSetError_DetailsValidationError{
+					errors = append(errors, IngestionError_DetailsValidationError{
 						field:  fmt.Sprintf("Errors[%v]", idx),
 						reason: "embedded message failed validation",
 						cause:  err,
@@ -1062,7 +1062,7 @@ func (m *ChangeSetError_Details) validate(all bool) error {
 			}
 		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
 			if err := v.Validate(); err != nil {
-				return ChangeSetError_DetailsValidationError{
+				return IngestionError_DetailsValidationError{
 					field:  fmt.Sprintf("Errors[%v]", idx),
 					reason: "embedded message failed validation",
 					cause:  err,
@@ -1073,19 +1073,19 @@ func (m *ChangeSetError_Details) validate(all bool) error {
 	}
 
 	if len(errors) > 0 {
-		return ChangeSetError_DetailsMultiError(errors)
+		return IngestionError_DetailsMultiError(errors)
 	}
 
 	return nil
 }
 
-// ChangeSetError_DetailsMultiError is an error wrapping multiple validation
-// errors returned by ChangeSetError_Details.ValidateAll() if the designated
+// IngestionError_DetailsMultiError is an error wrapping multiple validation
+// errors returned by IngestionError_Details.ValidateAll() if the designated
 // constraints aren't met.
-type ChangeSetError_DetailsMultiError []error
+type IngestionError_DetailsMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
-func (m ChangeSetError_DetailsMultiError) Error() string {
+func (m IngestionError_DetailsMultiError) Error() string {
 	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
@@ -1094,11 +1094,11 @@ func (m ChangeSetError_DetailsMultiError) Error() string {
 }
 
 // AllErrors returns a list of validation violation errors.
-func (m ChangeSetError_DetailsMultiError) AllErrors() []error { return m }
+func (m IngestionError_DetailsMultiError) AllErrors() []error { return m }
 
-// ChangeSetError_DetailsValidationError is the validation error returned by
-// ChangeSetError_Details.Validate if the designated constraints aren't met.
-type ChangeSetError_DetailsValidationError struct {
+// IngestionError_DetailsValidationError is the validation error returned by
+// IngestionError_Details.Validate if the designated constraints aren't met.
+type IngestionError_DetailsValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -1106,24 +1106,24 @@ type ChangeSetError_DetailsValidationError struct {
 }
 
 // Field function returns field value.
-func (e ChangeSetError_DetailsValidationError) Field() string { return e.field }
+func (e IngestionError_DetailsValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e ChangeSetError_DetailsValidationError) Reason() string { return e.reason }
+func (e IngestionError_DetailsValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e ChangeSetError_DetailsValidationError) Cause() error { return e.cause }
+func (e IngestionError_DetailsValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e ChangeSetError_DetailsValidationError) Key() bool { return e.key }
+func (e IngestionError_DetailsValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e ChangeSetError_DetailsValidationError) ErrorName() string {
-	return "ChangeSetError_DetailsValidationError"
+func (e IngestionError_DetailsValidationError) ErrorName() string {
+	return "IngestionError_DetailsValidationError"
 }
 
 // Error satisfies the builtin error interface
-func (e ChangeSetError_DetailsValidationError) Error() string {
+func (e IngestionError_DetailsValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -1135,14 +1135,14 @@ func (e ChangeSetError_DetailsValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sChangeSetError_Details.%s: %s%s",
+		"invalid %sIngestionError_Details.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = ChangeSetError_DetailsValidationError{}
+var _ error = IngestionError_DetailsValidationError{}
 
 var _ interface {
 	Field() string
@@ -1150,24 +1150,24 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = ChangeSetError_DetailsValidationError{}
+} = IngestionError_DetailsValidationError{}
 
-// Validate checks the field values on ChangeSetError_Details_Error with the
+// Validate checks the field values on IngestionError_Details_Error with the
 // rules defined in the proto definition for this message. If any rules are
 // violated, the first error encountered is returned, or nil if there are no violations.
-func (m *ChangeSetError_Details_Error) Validate() error {
+func (m *IngestionError_Details_Error) Validate() error {
 	return m.validate(false)
 }
 
-// ValidateAll checks the field values on ChangeSetError_Details_Error with the
+// ValidateAll checks the field values on IngestionError_Details_Error with the
 // rules defined in the proto definition for this message. If any rules are
 // violated, the result is a list of violation errors wrapped in
-// ChangeSetError_Details_ErrorMultiError, or nil if none found.
-func (m *ChangeSetError_Details_Error) ValidateAll() error {
+// IngestionError_Details_ErrorMultiError, or nil if none found.
+func (m *IngestionError_Details_Error) ValidateAll() error {
 	return m.validate(true)
 }
 
-func (m *ChangeSetError_Details_Error) validate(all bool) error {
+func (m *IngestionError_Details_Error) validate(all bool) error {
 	if m == nil {
 		return nil
 	}
@@ -1179,19 +1179,19 @@ func (m *ChangeSetError_Details_Error) validate(all bool) error {
 	// no validation rules for ChangeId
 
 	if len(errors) > 0 {
-		return ChangeSetError_Details_ErrorMultiError(errors)
+		return IngestionError_Details_ErrorMultiError(errors)
 	}
 
 	return nil
 }
 
-// ChangeSetError_Details_ErrorMultiError is an error wrapping multiple
-// validation errors returned by ChangeSetError_Details_Error.ValidateAll() if
+// IngestionError_Details_ErrorMultiError is an error wrapping multiple
+// validation errors returned by IngestionError_Details_Error.ValidateAll() if
 // the designated constraints aren't met.
-type ChangeSetError_Details_ErrorMultiError []error
+type IngestionError_Details_ErrorMultiError []error
 
 // Error returns a concatenation of all the error messages it wraps.
-func (m ChangeSetError_Details_ErrorMultiError) Error() string {
+func (m IngestionError_Details_ErrorMultiError) Error() string {
 	var msgs []string
 	for _, err := range m {
 		msgs = append(msgs, err.Error())
@@ -1200,12 +1200,12 @@ func (m ChangeSetError_Details_ErrorMultiError) Error() string {
 }
 
 // AllErrors returns a list of validation violation errors.
-func (m ChangeSetError_Details_ErrorMultiError) AllErrors() []error { return m }
+func (m IngestionError_Details_ErrorMultiError) AllErrors() []error { return m }
 
-// ChangeSetError_Details_ErrorValidationError is the validation error returned
-// by ChangeSetError_Details_Error.Validate if the designated constraints
+// IngestionError_Details_ErrorValidationError is the validation error returned
+// by IngestionError_Details_Error.Validate if the designated constraints
 // aren't met.
-type ChangeSetError_Details_ErrorValidationError struct {
+type IngestionError_Details_ErrorValidationError struct {
 	field  string
 	reason string
 	cause  error
@@ -1213,24 +1213,24 @@ type ChangeSetError_Details_ErrorValidationError struct {
 }
 
 // Field function returns field value.
-func (e ChangeSetError_Details_ErrorValidationError) Field() string { return e.field }
+func (e IngestionError_Details_ErrorValidationError) Field() string { return e.field }
 
 // Reason function returns reason value.
-func (e ChangeSetError_Details_ErrorValidationError) Reason() string { return e.reason }
+func (e IngestionError_Details_ErrorValidationError) Reason() string { return e.reason }
 
 // Cause function returns cause value.
-func (e ChangeSetError_Details_ErrorValidationError) Cause() error { return e.cause }
+func (e IngestionError_Details_ErrorValidationError) Cause() error { return e.cause }
 
 // Key function returns key value.
-func (e ChangeSetError_Details_ErrorValidationError) Key() bool { return e.key }
+func (e IngestionError_Details_ErrorValidationError) Key() bool { return e.key }
 
 // ErrorName returns error name.
-func (e ChangeSetError_Details_ErrorValidationError) ErrorName() string {
-	return "ChangeSetError_Details_ErrorValidationError"
+func (e IngestionError_Details_ErrorValidationError) ErrorName() string {
+	return "IngestionError_Details_ErrorValidationError"
 }
 
 // Error satisfies the builtin error interface
-func (e ChangeSetError_Details_ErrorValidationError) Error() string {
+func (e IngestionError_Details_ErrorValidationError) Error() string {
 	cause := ""
 	if e.cause != nil {
 		cause = fmt.Sprintf(" | caused by: %v", e.cause)
@@ -1242,14 +1242,14 @@ func (e ChangeSetError_Details_ErrorValidationError) Error() string {
 	}
 
 	return fmt.Sprintf(
-		"invalid %sChangeSetError_Details_Error.%s: %s%s",
+		"invalid %sIngestionError_Details_Error.%s: %s%s",
 		key,
 		e.field,
 		e.reason,
 		cause)
 }
 
-var _ error = ChangeSetError_Details_ErrorValidationError{}
+var _ error = IngestionError_Details_ErrorValidationError{}
 
 var _ interface {
 	Field() string
@@ -1257,4 +1257,4 @@ var _ interface {
 	Key() bool
 	Cause() error
 	ErrorName() string
-} = ChangeSetError_Details_ErrorValidationError{}
+} = IngestionError_Details_ErrorValidationError{}

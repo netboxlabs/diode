@@ -242,19 +242,19 @@ func (x *RetrieveIngestionDataSourcesResponse) GetIngestionDataSources() []*Inge
 	return nil
 }
 
-// ChangeSetError represents an error when applying a change set
-type ChangeSetError struct {
+// IngestionError represents an error occurring while processing an ingestion entity
+type IngestionError struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	Message string                  `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
 	Code    int32                   `protobuf:"varint,2,opt,name=code,proto3" json:"code,omitempty"`
-	Details *ChangeSetError_Details `protobuf:"bytes,3,opt,name=details,proto3" json:"details,omitempty"`
+	Details *IngestionError_Details `protobuf:"bytes,3,opt,name=details,proto3" json:"details,omitempty"`
 }
 
-func (x *ChangeSetError) Reset() {
-	*x = ChangeSetError{}
+func (x *IngestionError) Reset() {
+	*x = IngestionError{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_diode_v1_reconciler_proto_msgTypes[3]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -262,13 +262,13 @@ func (x *ChangeSetError) Reset() {
 	}
 }
 
-func (x *ChangeSetError) String() string {
+func (x *IngestionError) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ChangeSetError) ProtoMessage() {}
+func (*IngestionError) ProtoMessage() {}
 
-func (x *ChangeSetError) ProtoReflect() protoreflect.Message {
+func (x *IngestionError) ProtoReflect() protoreflect.Message {
 	mi := &file_diode_v1_reconciler_proto_msgTypes[3]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -280,26 +280,26 @@ func (x *ChangeSetError) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ChangeSetError.ProtoReflect.Descriptor instead.
-func (*ChangeSetError) Descriptor() ([]byte, []int) {
+// Deprecated: Use IngestionError.ProtoReflect.Descriptor instead.
+func (*IngestionError) Descriptor() ([]byte, []int) {
 	return file_diode_v1_reconciler_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *ChangeSetError) GetMessage() string {
+func (x *IngestionError) GetMessage() string {
 	if x != nil {
 		return x.Message
 	}
 	return ""
 }
 
-func (x *ChangeSetError) GetCode() int32 {
+func (x *IngestionError) GetCode() int32 {
 	if x != nil {
 		return x.Code
 	}
 	return 0
 }
 
-func (x *ChangeSetError) GetDetails() *ChangeSetError_Details {
+func (x *IngestionError) GetDetails() *IngestionError_Details {
 	if x != nil {
 		return x.Details
 	}
@@ -321,7 +321,7 @@ type IngestionLog struct {
 	SdkName            string          `protobuf:"bytes,7,opt,name=sdk_name,json=sdkName,proto3" json:"sdk_name,omitempty"`
 	SdkVersion         string          `protobuf:"bytes,8,opt,name=sdk_version,json=sdkVersion,proto3" json:"sdk_version,omitempty"`
 	Entity             *diodepb.Entity `protobuf:"bytes,9,opt,name=entity,proto3" json:"entity,omitempty"`
-	Error              *ChangeSetError `protobuf:"bytes,10,opt,name=error,proto3" json:"error,omitempty"`
+	Error              *IngestionError `protobuf:"bytes,10,opt,name=error,proto3" json:"error,omitempty"`
 }
 
 func (x *IngestionLog) Reset() {
@@ -419,7 +419,7 @@ func (x *IngestionLog) GetEntity() *diodepb.Entity {
 	return nil
 }
 
-func (x *IngestionLog) GetError() *ChangeSetError {
+func (x *IngestionLog) GetError() *IngestionError {
 	if x != nil {
 		return x.Error
 	}
@@ -578,18 +578,18 @@ func (x *RetrieveIngestionLogsResponse) GetNextPageToken() string {
 	return ""
 }
 
-type ChangeSetError_Details struct {
+type IngestionError_Details struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
 	ChangeSetId string                          `protobuf:"bytes,1,opt,name=change_set_id,json=changeSetId,proto3" json:"change_set_id,omitempty"`
 	Result      string                          `protobuf:"bytes,2,opt,name=result,proto3" json:"result,omitempty"`
-	Errors      []*ChangeSetError_Details_Error `protobuf:"bytes,3,rep,name=errors,proto3" json:"errors,omitempty"`
+	Errors      []*IngestionError_Details_Error `protobuf:"bytes,3,rep,name=errors,proto3" json:"errors,omitempty"`
 }
 
-func (x *ChangeSetError_Details) Reset() {
-	*x = ChangeSetError_Details{}
+func (x *IngestionError_Details) Reset() {
+	*x = IngestionError_Details{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_diode_v1_reconciler_proto_msgTypes[7]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -597,13 +597,13 @@ func (x *ChangeSetError_Details) Reset() {
 	}
 }
 
-func (x *ChangeSetError_Details) String() string {
+func (x *IngestionError_Details) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ChangeSetError_Details) ProtoMessage() {}
+func (*IngestionError_Details) ProtoMessage() {}
 
-func (x *ChangeSetError_Details) ProtoReflect() protoreflect.Message {
+func (x *IngestionError_Details) ProtoReflect() protoreflect.Message {
 	mi := &file_diode_v1_reconciler_proto_msgTypes[7]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -615,33 +615,33 @@ func (x *ChangeSetError_Details) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ChangeSetError_Details.ProtoReflect.Descriptor instead.
-func (*ChangeSetError_Details) Descriptor() ([]byte, []int) {
+// Deprecated: Use IngestionError_Details.ProtoReflect.Descriptor instead.
+func (*IngestionError_Details) Descriptor() ([]byte, []int) {
 	return file_diode_v1_reconciler_proto_rawDescGZIP(), []int{3, 0}
 }
 
-func (x *ChangeSetError_Details) GetChangeSetId() string {
+func (x *IngestionError_Details) GetChangeSetId() string {
 	if x != nil {
 		return x.ChangeSetId
 	}
 	return ""
 }
 
-func (x *ChangeSetError_Details) GetResult() string {
+func (x *IngestionError_Details) GetResult() string {
 	if x != nil {
 		return x.Result
 	}
 	return ""
 }
 
-func (x *ChangeSetError_Details) GetErrors() []*ChangeSetError_Details_Error {
+func (x *IngestionError_Details) GetErrors() []*IngestionError_Details_Error {
 	if x != nil {
 		return x.Errors
 	}
 	return nil
 }
 
-type ChangeSetError_Details_Error struct {
+type IngestionError_Details_Error struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
@@ -650,8 +650,8 @@ type ChangeSetError_Details_Error struct {
 	ChangeId string `protobuf:"bytes,2,opt,name=change_id,json=changeId,proto3" json:"change_id,omitempty"`
 }
 
-func (x *ChangeSetError_Details_Error) Reset() {
-	*x = ChangeSetError_Details_Error{}
+func (x *IngestionError_Details_Error) Reset() {
+	*x = IngestionError_Details_Error{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_diode_v1_reconciler_proto_msgTypes[8]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -659,13 +659,13 @@ func (x *ChangeSetError_Details_Error) Reset() {
 	}
 }
 
-func (x *ChangeSetError_Details_Error) String() string {
+func (x *IngestionError_Details_Error) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ChangeSetError_Details_Error) ProtoMessage() {}
+func (*IngestionError_Details_Error) ProtoMessage() {}
 
-func (x *ChangeSetError_Details_Error) ProtoReflect() protoreflect.Message {
+func (x *IngestionError_Details_Error) ProtoReflect() protoreflect.Message {
 	mi := &file_diode_v1_reconciler_proto_msgTypes[8]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -677,19 +677,19 @@ func (x *ChangeSetError_Details_Error) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ChangeSetError_Details_Error.ProtoReflect.Descriptor instead.
-func (*ChangeSetError_Details_Error) Descriptor() ([]byte, []int) {
+// Deprecated: Use IngestionError_Details_Error.ProtoReflect.Descriptor instead.
+func (*IngestionError_Details_Error) Descriptor() ([]byte, []int) {
 	return file_diode_v1_reconciler_proto_rawDescGZIP(), []int{3, 0, 0}
 }
 
-func (x *ChangeSetError_Details_Error) GetError() string {
+func (x *IngestionError_Details_Error) GetError() string {
 	if x != nil {
 		return x.Error
 	}
 	return ""
 }
 
-func (x *ChangeSetError_Details_Error) GetChangeId() string {
+func (x *IngestionError_Details_Error) GetChangeId() string {
 	if x != nil {
 		return x.ChangeId
 	}
@@ -729,21 +729,21 @@ var file_diode_v1_reconciler_proto_rawDesc = []byte{
 	0x2e, 0x76, 0x31, 0x2e, 0x49, 0x6e, 0x67, 0x65, 0x73, 0x74, 0x69, 0x6f, 0x6e, 0x44, 0x61, 0x74,
 	0x61, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x14, 0x69, 0x6e, 0x67, 0x65, 0x73, 0x74, 0x69,
 	0x6f, 0x6e, 0x44, 0x61, 0x74, 0x61, 0x53, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x73, 0x22, 0xbe, 0x02,
-	0x0a, 0x0e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x53, 0x65, 0x74, 0x45, 0x72, 0x72, 0x6f, 0x72,
+	0x0a, 0x0e, 0x49, 0x6e, 0x67, 0x65, 0x73, 0x74, 0x69, 0x6f, 0x6e, 0x45, 0x72, 0x72, 0x6f, 0x72,
 	0x12, 0x18, 0x0a, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28,
 	0x09, 0x52, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x63, 0x6f,
 	0x64, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x05, 0x52, 0x04, 0x63, 0x6f, 0x64, 0x65, 0x12, 0x3a,
 	0x0a, 0x07, 0x64, 0x65, 0x74, 0x61, 0x69, 0x6c, 0x73, 0x18, 0x03, 0x20, 0x01, 0x28, 0x0b, 0x32,
-	0x20, 0x2e, 0x64, 0x69, 0x6f, 0x64, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x68, 0x61, 0x6e, 0x67,
-	0x65, 0x53, 0x65, 0x74, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x2e, 0x44, 0x65, 0x74, 0x61, 0x69, 0x6c,
+	0x20, 0x2e, 0x64, 0x69, 0x6f, 0x64, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x49, 0x6e, 0x67, 0x65, 0x73,
+	0x74, 0x69, 0x6f, 0x6e, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x2e, 0x44, 0x65, 0x74, 0x61, 0x69, 0x6c,
 	0x73, 0x52, 0x07, 0x64, 0x65, 0x74, 0x61, 0x69, 0x6c, 0x73, 0x1a, 0xc1, 0x01, 0x0a, 0x07, 0x44,
 	0x65, 0x74, 0x61, 0x69, 0x6c, 0x73, 0x12, 0x22, 0x0a, 0x0d, 0x63, 0x68, 0x61, 0x6e, 0x67, 0x65,
 	0x5f, 0x73, 0x65, 0x74, 0x5f, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0b, 0x63,
 	0x68, 0x61, 0x6e, 0x67, 0x65, 0x53, 0x65, 0x74, 0x49, 0x64, 0x12, 0x16, 0x0a, 0x06, 0x72, 0x65,
 	0x73, 0x75, 0x6c, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x06, 0x72, 0x65, 0x73, 0x75,
 	0x6c, 0x74, 0x12, 0x3e, 0x0a, 0x06, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x73, 0x18, 0x03, 0x20, 0x03,
-	0x28, 0x0b, 0x32, 0x26, 0x2e, 0x64, 0x69, 0x6f, 0x64, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x43, 0x68,
-	0x61, 0x6e, 0x67, 0x65, 0x53, 0x65, 0x74, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x2e, 0x44, 0x65, 0x74,
+	0x28, 0x0b, 0x32, 0x26, 0x2e, 0x64, 0x69, 0x6f, 0x64, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x49, 0x6e,
+	0x67, 0x65, 0x73, 0x74, 0x69, 0x6f, 0x6e, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x2e, 0x44, 0x65, 0x74,
 	0x61, 0x69, 0x6c, 0x73, 0x2e, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x52, 0x06, 0x65, 0x72, 0x72, 0x6f,
 	0x72, 0x73, 0x1a, 0x3a, 0x0a, 0x05, 0x45, 0x72, 0x72, 0x6f, 0x72, 0x12, 0x14, 0x0a, 0x05, 0x65,
 	0x72, 0x72, 0x6f, 0x72, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f,
@@ -772,7 +772,7 @@ var file_diode_v1_reconciler_proto_rawDesc = []byte{
 	0x10, 0x2e, 0x64, 0x69, 0x6f, 0x64, 0x65, 0x2e, 0x76, 0x31, 0x2e, 0x45, 0x6e, 0x74, 0x69, 0x74,
 	0x79, 0x52, 0x06, 0x65, 0x6e, 0x74, 0x69, 0x74, 0x79, 0x12, 0x2e, 0x0a, 0x05, 0x65, 0x72, 0x72,
 	0x6f, 0x72, 0x18, 0x0a, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x18, 0x2e, 0x64, 0x69, 0x6f, 0x64, 0x65,
-	0x2e, 0x76, 0x31, 0x2e, 0x43, 0x68, 0x61, 0x6e, 0x67, 0x65, 0x53, 0x65, 0x74, 0x45, 0x72, 0x72,
+	0x2e, 0x76, 0x31, 0x2e, 0x49, 0x6e, 0x67, 0x65, 0x73, 0x74, 0x69, 0x6f, 0x6e, 0x45, 0x72, 0x72,
 	0x6f, 0x72, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x22, 0xb0, 0x02, 0x0a, 0x1c, 0x52, 0x65,
 	0x74, 0x72, 0x69, 0x65, 0x76, 0x65, 0x49, 0x6e, 0x67, 0x65, 0x73, 0x74, 0x69, 0x6f, 0x6e, 0x4c,
 	0x6f, 0x67, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x27, 0x0a, 0x09, 0x70, 0x61,
@@ -852,23 +852,23 @@ var file_diode_v1_reconciler_proto_goTypes = []any{
 	(*IngestionDataSource)(nil), // 1: diode.v1.IngestionDataSource
 	(*RetrieveIngestionDataSourcesRequest)(nil),  // 2: diode.v1.RetrieveIngestionDataSourcesRequest
 	(*RetrieveIngestionDataSourcesResponse)(nil), // 3: diode.v1.RetrieveIngestionDataSourcesResponse
-	(*ChangeSetError)(nil),                       // 4: diode.v1.ChangeSetError
+	(*IngestionError)(nil),                       // 4: diode.v1.IngestionError
 	(*IngestionLog)(nil),                         // 5: diode.v1.IngestionLog
 	(*RetrieveIngestionLogsRequest)(nil),         // 6: diode.v1.RetrieveIngestionLogsRequest
 	(*RetrieveIngestionLogsResponse)(nil),        // 7: diode.v1.RetrieveIngestionLogsResponse
-	(*ChangeSetError_Details)(nil),               // 8: diode.v1.ChangeSetError.Details
-	(*ChangeSetError_Details_Error)(nil),         // 9: diode.v1.ChangeSetError.Details.Error
+	(*IngestionError_Details)(nil),               // 8: diode.v1.IngestionError.Details
+	(*IngestionError_Details_Error)(nil),         // 9: diode.v1.IngestionError.Details.Error
 	(*diodepb.Entity)(nil),                       // 10: diode.v1.Entity
 }
 var file_diode_v1_reconciler_proto_depIdxs = []int32{
 	1,  // 0: diode.v1.RetrieveIngestionDataSourcesResponse.ingestion_data_sources:type_name -> diode.v1.IngestionDataSource
-	8,  // 1: diode.v1.ChangeSetError.details:type_name -> diode.v1.ChangeSetError.Details
+	8,  // 1: diode.v1.IngestionError.details:type_name -> diode.v1.IngestionError.Details
 	0,  // 2: diode.v1.IngestionLog.state:type_name -> diode.v1.State
 	10, // 3: diode.v1.IngestionLog.entity:type_name -> diode.v1.Entity
-	4,  // 4: diode.v1.IngestionLog.error:type_name -> diode.v1.ChangeSetError
+	4,  // 4: diode.v1.IngestionLog.error:type_name -> diode.v1.IngestionError
 	0,  // 5: diode.v1.RetrieveIngestionLogsRequest.state:type_name -> diode.v1.State
 	5,  // 6: diode.v1.RetrieveIngestionLogsResponse.logs:type_name -> diode.v1.IngestionLog
-	9,  // 7: diode.v1.ChangeSetError.Details.errors:type_name -> diode.v1.ChangeSetError.Details.Error
+	9,  // 7: diode.v1.IngestionError.Details.errors:type_name -> diode.v1.IngestionError.Details.Error
 	2,  // 8: diode.v1.ReconcilerService.RetrieveIngestionDataSources:input_type -> diode.v1.RetrieveIngestionDataSourcesRequest
 	6,  // 9: diode.v1.ReconcilerService.RetrieveIngestionLogs:input_type -> diode.v1.RetrieveIngestionLogsRequest
 	3,  // 10: diode.v1.ReconcilerService.RetrieveIngestionDataSources:output_type -> diode.v1.RetrieveIngestionDataSourcesResponse
@@ -923,7 +923,7 @@ func file_diode_v1_reconciler_proto_init() {
 			}
 		}
 		file_diode_v1_reconciler_proto_msgTypes[3].Exporter = func(v any, i int) any {
-			switch v := v.(*ChangeSetError); i {
+			switch v := v.(*IngestionError); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -971,7 +971,7 @@ func file_diode_v1_reconciler_proto_init() {
 			}
 		}
 		file_diode_v1_reconciler_proto_msgTypes[7].Exporter = func(v any, i int) any {
-			switch v := v.(*ChangeSetError_Details); i {
+			switch v := v.(*IngestionError_Details); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -983,7 +983,7 @@ func file_diode_v1_reconciler_proto_init() {
 			}
 		}
 		file_diode_v1_reconciler_proto_msgTypes[8].Exporter = func(v any, i int) any {
-			switch v := v.(*ChangeSetError_Details_Error); i {
+			switch v := v.(*IngestionError_Details_Error); i {
 			case 0:
 				return &v.state
 			case 1:

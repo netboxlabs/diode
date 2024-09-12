@@ -252,7 +252,7 @@ func (dw *DcimDeviceDataWrapper) Patch(cmp ComparableData, intendedNestedObjects
 		dw.Device.ID = intended.Device.ID
 		dw.Device.Name = intended.Device.Name
 
-		if dw.Device.Status == nil {
+		if dw.Device.Status == nil || *dw.Device.Status == "" {
 			dw.Device.Status = intended.Device.Status
 		}
 
@@ -550,7 +550,7 @@ func (dw *DcimDeviceDataWrapper) Patch(cmp ComparableData, intendedNestedObjects
 
 // SetDefaults sets the default values for the device
 func (dw *DcimDeviceDataWrapper) SetDefaults() {
-	if dw.Device.Status == nil {
+	if dw.Device.Status == nil || *dw.Device.Status == "" {
 		status := DcimDeviceStatusActive
 		dw.Device.Status = &status
 	}
@@ -1790,7 +1790,7 @@ func (dw *DcimSiteDataWrapper) Patch(cmp ComparableData, intendedNestedObjects m
 		dw.Site.Name = intended.Site.Name
 		dw.Site.Slug = intended.Site.Slug
 
-		if dw.Site.Status == nil {
+		if dw.Site.Status == nil || *dw.Site.Status == "" {
 			dw.Site.Status = intended.Site.Status
 		}
 
@@ -1852,7 +1852,7 @@ func (dw *DcimSiteDataWrapper) Patch(cmp ComparableData, intendedNestedObjects m
 
 // SetDefaults sets the default values for the site
 func (dw *DcimSiteDataWrapper) SetDefaults() {
-	if dw.Site.Status == nil {
+	if dw.Site.Status == nil || *dw.Site.Status == "" {
 		status := DcimSiteStatusActive
 		dw.Site.Status = &status
 	}

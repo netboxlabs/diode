@@ -140,7 +140,7 @@ func (s *Server) RetrieveIngestionDataSources(_ context.Context, in *reconcilerp
 
 // RetrieveIngestionLogs retrieves logs
 func (s *Server) RetrieveIngestionLogs(ctx context.Context, in *reconcilerpb.RetrieveIngestionLogsRequest) (*reconcilerpb.RetrieveIngestionLogsResponse, error) {
-	return retrieveIngestionLogs(ctx, s.redisClient, in)
+	return retrieveIngestionLogs(ctx, s.logger, s.redisClient, in)
 }
 
 func validateRetrieveIngestionDataSourcesRequest(in *reconcilerpb.RetrieveIngestionDataSourcesRequest) error {
