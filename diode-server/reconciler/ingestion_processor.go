@@ -362,8 +362,6 @@ func (p *IngestionProcessor) writeIngestionLog(ctx context.Context, key string, 
 
 	ingestionLogJSON = normalizeIngestionLog(ingestionLogJSON)
 
-	p.logger.Debug("writing ingestion log JSON", "json", string(ingestionLogJSON))
-
 	if _, err := p.redisClient.Do(ctx, "JSON.SET", key, "$", ingestionLogJSON).Result(); err != nil {
 		return nil, fmt.Errorf("failed to set JSON redis key: %v", err)
 	}
