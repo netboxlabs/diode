@@ -154,8 +154,17 @@ func TestRetrieveLogs(t *testing.T) {
 						ProducerAppVersion: "0.0.1",
 						SdkName:            "diode-sdk-go",
 						SdkVersion:         "0.1.0",
-						Entity:             &diodepb.Entity{},
-						Error:              nil,
+						Entity: &diodepb.Entity{
+							Entity: &diodepb.Entity_Interface{
+								Interface: &diodepb.Interface{
+									Device: &diodepb.Device{
+										Name: "my_dev",
+									},
+									Name: "Gig 2",
+								},
+							},
+						},
+						Error: nil,
 					},
 					{
 						DataType:           "dcim.device",
@@ -166,8 +175,23 @@ func TestRetrieveLogs(t *testing.T) {
 						ProducerAppVersion: "0.0.1",
 						SdkName:            "diode-sdk-python",
 						SdkVersion:         "0.0.1",
-						Entity:             &diodepb.Entity{},
-						Error:              nil,
+						Entity: &diodepb.Entity{
+							Entity: &diodepb.Entity_Device{
+								Device: &diodepb.Device{
+									Name: "Conference_Room_AP_02",
+									DeviceType: &diodepb.DeviceType{
+										Model: "Cisco Aironet 3802",
+										Manufacturer: &diodepb.Manufacturer{
+											Name: "Cisco",
+										},
+									},
+									Role:   &diodepb.Role{Name: "Wireless_AP"},
+									Serial: strPtr("PQR456789012"),
+									Site:   &diodepb.Site{Name: "HQ"},
+								},
+							},
+						},
+						Error: nil,
 					},
 				},
 				NextPageToken: "F/Jk/zc08gA=",
@@ -205,7 +229,14 @@ func TestRetrieveLogs(t *testing.T) {
 						ProducerAppVersion: "0.1.0",
 						SdkName:            "diode-sdk-go",
 						SdkVersion:         "0.1.0",
-						Entity:             &diodepb.Entity{},
+						Entity: &diodepb.Entity{
+							Entity: &diodepb.Entity_IpAddress{
+								IpAddress: &diodepb.IPAddress{
+									Address:     "192.168.1.1",
+									Description: strPtr("Vendor: HUAWEI TECHNOLOGIES"),
+								},
+							},
+						},
 						Error: &reconcilerpb.IngestionError{
 							Message: "failed to apply change set",
 							Code:    400,
@@ -257,8 +288,17 @@ func TestRetrieveLogs(t *testing.T) {
 						ProducerAppVersion: "0.0.1",
 						SdkName:            "diode-sdk-go",
 						SdkVersion:         "0.1.0",
-						Entity:             &diodepb.Entity{},
-						Error:              nil,
+						Entity: &diodepb.Entity{
+							Entity: &diodepb.Entity_Interface{
+								Interface: &diodepb.Interface{
+									Device: &diodepb.Device{
+										Name: "my_dev",
+									},
+									Name: "Gig 2",
+								},
+							},
+						},
+						Error: nil,
 					},
 				},
 				NextPageToken: "F/JlO7d81QA=",
@@ -296,8 +336,17 @@ func TestRetrieveLogs(t *testing.T) {
 						ProducerAppVersion: "0.0.1",
 						SdkName:            "diode-sdk-go",
 						SdkVersion:         "0.1.0",
-						Entity:             &diodepb.Entity{},
-						Error:              nil,
+						Entity: &diodepb.Entity{
+							Entity: &diodepb.Entity_Interface{
+								Interface: &diodepb.Interface{
+									Device: &diodepb.Device{
+										Name: "my_dev",
+									},
+									Name: "Gig 2",
+								},
+							},
+						},
+						Error: nil,
 					},
 				},
 				NextPageToken: "F/JlO7d81QA=",
@@ -335,8 +384,17 @@ func TestRetrieveLogs(t *testing.T) {
 						ProducerAppVersion: "0.0.1",
 						SdkName:            "diode-sdk-go",
 						SdkVersion:         "0.1.0",
-						Entity:             &diodepb.Entity{},
-						Error:              nil,
+						Entity: &diodepb.Entity{
+							Entity: &diodepb.Entity_Interface{
+								Interface: &diodepb.Interface{
+									Device: &diodepb.Device{
+										Name: "my_dev",
+									},
+									Name: "Gig 2",
+								},
+							},
+						},
+						Error: nil,
 					},
 				},
 				NextPageToken: "F/JlO7d81QA=",
@@ -374,8 +432,17 @@ func TestRetrieveLogs(t *testing.T) {
 						ProducerAppVersion: "0.0.1",
 						SdkName:            "diode-sdk-go",
 						SdkVersion:         "0.1.0",
-						Entity:             &diodepb.Entity{},
-						Error:              nil,
+						Entity: &diodepb.Entity{
+							Entity: &diodepb.Entity_Interface{
+								Interface: &diodepb.Interface{
+									Device: &diodepb.Device{
+										Name: "my_dev",
+									},
+									Name: "Gig 2",
+								},
+							},
+						},
+						Error: nil,
 					},
 				},
 				NextPageToken: "F/JlO7d81QA=",
@@ -489,6 +556,17 @@ func TestRetrieveLogs(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 				require.Equal(t, len(tt.response.Logs), len(response.Logs))
+				for i := range response.Logs {
+					assert.Equal(t, tt.response.Logs[i].DataType, response.Logs[i].DataType)
+					assert.Equal(t, tt.response.Logs[i].State, response.Logs[i].State)
+					assert.Equal(t, tt.response.Logs[i].RequestId, response.Logs[i].RequestId)
+					assert.Equal(t, tt.response.Logs[i].IngestionTs, response.Logs[i].IngestionTs)
+					assert.Equal(t, tt.response.Logs[i].ProducerAppName, response.Logs[i].ProducerAppName)
+					assert.Equal(t, tt.response.Logs[i].ProducerAppVersion, response.Logs[i].ProducerAppVersion)
+					assert.Equal(t, tt.response.Logs[i].SdkName, response.Logs[i].SdkName)
+					assert.Equal(t, tt.response.Logs[i].SdkVersion, response.Logs[i].SdkVersion)
+					assert.Equal(t, tt.response.Logs[i].Entity.String(), response.Logs[i].Entity.String())
+				}
 			}
 		})
 	}
