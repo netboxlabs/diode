@@ -572,6 +572,124 @@ var _ interface {
 	ErrorName() string
 } = IngestionErrorValidationError{}
 
+// Validate checks the field values on Stats with the rules defined in the
+// proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *Stats) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on Stats with the rules defined in the
+// proto definition for this message. If any rules are violated, the result is
+// a list of violation errors wrapped in StatsMultiError, or nil if none found.
+func (m *Stats) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *Stats) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if m.Total != nil {
+		// no validation rules for Total
+	}
+
+	if m.New != nil {
+		// no validation rules for New
+	}
+
+	if m.Reconciled != nil {
+		// no validation rules for Reconciled
+	}
+
+	if m.Failed != nil {
+		// no validation rules for Failed
+	}
+
+	if m.NoChanges != nil {
+		// no validation rules for NoChanges
+	}
+
+	if len(errors) > 0 {
+		return StatsMultiError(errors)
+	}
+
+	return nil
+}
+
+// StatsMultiError is an error wrapping multiple validation errors returned by
+// Stats.ValidateAll() if the designated constraints aren't met.
+type StatsMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m StatsMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m StatsMultiError) AllErrors() []error { return m }
+
+// StatsValidationError is the validation error returned by Stats.Validate if
+// the designated constraints aren't met.
+type StatsValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e StatsValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e StatsValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e StatsValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e StatsValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e StatsValidationError) ErrorName() string { return "StatsValidationError" }
+
+// Error satisfies the builtin error interface
+func (e StatsValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sStats.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = StatsValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = StatsValidationError{}
+
 // Validate checks the field values on IngestionLog with the rules defined in
 // the proto definition for this message. If any rules are violated, the first
 // error encountered is returned, or nil if there are no violations.
@@ -767,17 +885,6 @@ func (m *RetrieveIngestionLogsRequest) validate(all bool) error {
 
 	var errors []error
 
-	if val := m.GetPageSize(); val < 1 || val > 1000 {
-		err := RetrieveIngestionLogsRequestValidationError{
-			field:  "PageSize",
-			reason: "value must be inside range [1, 1000]",
-		}
-		if !all {
-			return err
-		}
-		errors = append(errors, err)
-	}
-
 	// no validation rules for DataType
 
 	// no validation rules for RequestId
@@ -787,6 +894,12 @@ func (m *RetrieveIngestionLogsRequest) validate(all bool) error {
 	// no validation rules for IngestionTsEnd
 
 	// no validation rules for PageToken
+
+	// no validation rules for Summary
+
+	if m.PageSize != nil {
+		// no validation rules for PageSize
+	}
 
 	if m.State != nil {
 		// no validation rules for State
@@ -927,6 +1040,35 @@ func (m *RetrieveIngestionLogsResponse) validate(all bool) error {
 			}
 		}
 
+	}
+
+	if all {
+		switch v := interface{}(m.GetStats()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, RetrieveIngestionLogsResponseValidationError{
+					field:  "Stats",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, RetrieveIngestionLogsResponseValidationError{
+					field:  "Stats",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetStats()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return RetrieveIngestionLogsResponseValidationError{
+				field:  "Stats",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
 	}
 
 	// no validation rules for NextPageToken

@@ -13,6 +13,7 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
+	"github.com/redis/go-redis/v9"
 )
 
 type extraAttributesWrapper struct {
@@ -26,7 +27,7 @@ type redisLogResult struct {
 
 type redisLogsResponse struct {
 	Results      []redisLogResult `json:"results"`
-	TotalResults int              `json:"total_results"`
+	TotalResults int32            `json:"total_results"`
 }
 
 func convertMapInterface(data interface{}) interface{} {
@@ -81,10 +82,55 @@ func decodeBase64ToInt64(encoded string) (int64, error) {
 	return num, nil
 }
 
+func retrieveIngestionStatsSummary(ctx context.Context, logger *slog.Logger, client RedisClient, in *reconcilerpb.RetrieveIngestionLogsRequest) (*reconcilerpb.RetrieveIngestionLogsResponse, error) {
+
+	pipe := client.Pipeline()
+
+	results := make([]*redis.Cmd, 0)
+	results = append(results, pipe.Do(ctx, "FT.SEARCH", "ingest-entity", "*", "LIMIT", 0, 0))
+	for i := 1; i < 5; i++ {
+		results = append(results, pipe.Do(ctx, "FT.SEARCH", "ingest-entity", fmt.Sprintf("@state:[%d %d]", i, i), "LIMIT", 0, 0))
+	}
+
+	_, err := pipe.Exec(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve ingestion logs: %w", err)
+	}
+
+	var stats reconcilerpb.Stats
+
+	for q := range results {
+		res, err := results[q].Result()
+		if err != nil {
+			return nil, fmt.Errorf("failed to retrieve ingestion logs: %w", err)
+		}
+
+		conv := convertMapInterface(res)
+		totalResults, _ := conv.(map[string]interface{})["total_results"].(int32)
+		if q == int(reconcilerpb.State_NEW) {
+			stats.New = &totalResults
+		} else if q == int(reconcilerpb.State_RECONCILED) {
+			stats.Reconciled = &totalResults
+		} else if q == int(reconcilerpb.State_FAILED) {
+			stats.Failed = &totalResults
+		} else if q == int(reconcilerpb.State_NO_CHANGES) {
+			stats.NoChanges = &totalResults
+		} else {
+			stats.Total = &totalResults
+		}
+
+	}
+	return &reconcilerpb.RetrieveIngestionLogsResponse{Logs: nil, Stats: &stats, NextPageToken: "nil"}, nil
+}
+
 func retrieveIngestionLogs(ctx context.Context, logger *slog.Logger, client RedisClient, in *reconcilerpb.RetrieveIngestionLogsRequest) (*reconcilerpb.RetrieveIngestionLogsResponse, error) {
+	if in.GetSummary() {
+		return nil, fmt.Errorf("summary is not supported")
+	}
+
 	pageSize := in.GetPageSize()
-	if pageSize == 0 {
-		pageSize = 10 // Default to 10
+	if in.PageSize == nil {
+		pageSize = 100 // Default to 100
 	}
 
 	var err error
@@ -119,6 +165,7 @@ func retrieveIngestionLogs(ctx context.Context, logger *slog.Logger, client Redi
 		stateFilter := fmt.Sprintf("@state:[%d %d]", in.GetState(), in.GetState())
 		queryArgs[queryIndex] = fmt.Sprintf("%s %s", queryArgs[queryIndex], stateFilter)
 	}
+
 	if in.GetDataType() != "" {
 		dataType := fmt.Sprintf("@data_type:%s", in.GetDataType())
 		queryArgs[queryIndex] = fmt.Sprintf("%s %s", queryArgs[queryIndex], dataType)
@@ -168,5 +215,23 @@ func retrieveIngestionLogs(ctx context.Context, logger *slog.Logger, client Redi
 		}
 	}
 
-	return &reconcilerpb.RetrieveIngestionLogsResponse{Logs: logs, NextPageToken: encodeInt64ToBase64(ingestionTs)}, nil
+	// Fill stats
+	var stats reconcilerpb.Stats
+	if in.State != nil {
+		if in.GetState() == reconcilerpb.State_UNSPECIFIED {
+			stats.Total = &response.TotalResults
+		} else if in.GetState() == reconcilerpb.State_NEW {
+			stats.New = &response.TotalResults
+		} else if in.GetState() == reconcilerpb.State_RECONCILED {
+			stats.Reconciled = &response.TotalResults
+		} else if in.GetState() == reconcilerpb.State_FAILED {
+			stats.Failed = &response.TotalResults
+		} else if in.GetState() == reconcilerpb.State_NO_CHANGES {
+			stats.NoChanges = &response.TotalResults
+		}
+	} else {
+		stats.Total = &response.TotalResults
+	}
+
+	return &reconcilerpb.RetrieveIngestionLogsResponse{Logs: logs, Stats: &stats, NextPageToken: encodeInt64ToBase64(ingestionTs)}, nil
 }
