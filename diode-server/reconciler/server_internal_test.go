@@ -32,7 +32,8 @@ func (m *MockPipeliner) Do(ctx context.Context, args ...interface{}) *redis.Cmd 
 // Exec is a mock of Pipeliner's Exec method.
 func (m *MockPipeliner) Exec(ctx context.Context) ([]redis.Cmder, error) {
 	args := m.Called(ctx)
-	return args.Get(0).([]redis.Cmder), nil
+	cmds := make([]redis.Cmder, 0)
+	return cmds, args.Error(0)
 }
 
 func int32Ptr(n int32) *int32 { return &n }
@@ -765,94 +766,142 @@ func TestRetrieveLogs(t *testing.T) {
 }
 
 func TestRetrieveLogsSummary(t *testing.T) {
-	ctx := context.Background()
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
-
-	expected := &reconcilerpb.Stats{
-		New:        int32Ptr(3),
-		Reconciled: int32Ptr(3),
-		Failed:     int32Ptr(2),
-		NoChanges:  int32Ptr(2),
-		Total:      int32Ptr(10),
+	tests := []struct {
+		name          string
+		expectedTotal interface{}
+		cmdError      bool
+		execError     error
+		hasError      bool
+		errorMsg      string
+	}{
+		{
+			name:          "valid request",
+			expectedTotal: int32(10),
+			cmdError:      false,
+			hasError:      false,
+		},
+		{
+			name:          "query error",
+			expectedTotal: int32(10),
+			cmdError:      true,
+			hasError:      true,
+			errorMsg:      "failed to retrieve ingestion logs: cmd error",
+		},
+		{
+			name:          "query error",
+			expectedTotal: int32(10),
+			cmdError:      false,
+			execError:     errors.New("exec error"),
+			hasError:      true,
+			errorMsg:      "failed to retrieve ingestion logs: exec error",
+		},
+		{
+			name:          "error getting total results",
+			expectedTotal: nil,
+			cmdError:      false,
+			hasError:      true,
+			errorMsg:      "failed to retrieve ingestion logs: failed to parse total_results",
+		},
 	}
+	for i := range tests {
+		tt := &tests[i]
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+			logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
 
-	mockRedisClient := new(mr.RedisClient)
+			expected := &reconcilerpb.Stats{
+				New:        int32Ptr(3),
+				Reconciled: int32Ptr(3),
+				Failed:     int32Ptr(2),
+				NoChanges:  int32Ptr(2),
+				Total:      int32Ptr(10),
+			}
 
-	mockPipeliner := new(MockPipeliner)
+			mockRedisClient := new(mr.RedisClient)
 
-	cmdTotal := redis.NewCmd(ctx)
-	cmdTotal.SetVal(interface{}(map[interface{}]interface{}{
-		"attributes": []interface{}{},
-		"format":     "STRING",
-		"results": []interface{}{
-			map[interface{}]interface{}{},
-		},
-		"total_results": *expected.Total,
-		"warning":       []interface{}{},
-	}))
-	mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "*", "LIMIT", 0, 0}).Return(cmdTotal)
+			mockPipeliner := new(MockPipeliner)
 
-	cmdNew := redis.NewCmd(ctx)
-	cmdNew.SetVal(interface{}(map[interface{}]interface{}{
-		"attributes": []interface{}{},
-		"format":     "STRING",
-		"results": []interface{}{
-			map[interface{}]interface{}{},
-		},
-		"total_results": *expected.New,
-		"warning":       []interface{}{},
-	}))
-	mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "@state:[1 1]", "LIMIT", 0, 0}).Return(cmdNew)
+			cmdTotal := redis.NewCmd(ctx)
+			if tt.cmdError {
+				cmdTotal.SetErr(errors.New("cmd error"))
+			}
+			cmdTotal.SetVal(interface{}(map[interface{}]interface{}{
+				"attributes": []interface{}{},
+				"format":     "STRING",
+				"results": []interface{}{
+					map[interface{}]interface{}{},
+				},
+				"total_results": tt.expectedTotal,
+				"warning":       []interface{}{},
+			}))
+			mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "*", "LIMIT", 0, 0}).Return(cmdTotal)
 
-	cmdReconciled := redis.NewCmd(ctx)
-	cmdReconciled.SetVal(interface{}(map[interface{}]interface{}{
-		"attributes": []interface{}{},
-		"format":     "STRING",
-		"results": []interface{}{
-			map[interface{}]interface{}{},
-		},
-		"total_results": *expected.Reconciled,
-		"warning":       []interface{}{},
-	}))
-	mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "@state:[2 2]", "LIMIT", 0, 0}).Return(cmdReconciled)
+			cmdNew := redis.NewCmd(ctx)
+			cmdNew.SetVal(interface{}(map[interface{}]interface{}{
+				"attributes": []interface{}{},
+				"format":     "STRING",
+				"results": []interface{}{
+					map[interface{}]interface{}{},
+				},
+				"total_results": *expected.New,
+				"warning":       []interface{}{},
+			}))
+			mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "@state:[1 1]", "LIMIT", 0, 0}).Return(cmdNew)
 
-	cmdFailed := redis.NewCmd(ctx)
-	cmdFailed.SetVal(interface{}(map[interface{}]interface{}{
-		"attributes": []interface{}{},
-		"format":     "STRING",
-		"results": []interface{}{
-			map[interface{}]interface{}{},
-		},
-		"total_results": *expected.Failed,
-		"warning":       []interface{}{},
-	}))
-	mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "@state:[3 3]", "LIMIT", 0, 0}).Return(cmdFailed)
+			cmdReconciled := redis.NewCmd(ctx)
+			cmdReconciled.SetVal(interface{}(map[interface{}]interface{}{
+				"attributes": []interface{}{},
+				"format":     "STRING",
+				"results": []interface{}{
+					map[interface{}]interface{}{},
+				},
+				"total_results": *expected.Reconciled,
+				"warning":       []interface{}{},
+			}))
+			mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "@state:[2 2]", "LIMIT", 0, 0}).Return(cmdReconciled)
 
-	cmdNoChanges := redis.NewCmd(ctx)
-	cmdNoChanges.SetVal(interface{}(map[interface{}]interface{}{
-		"attributes": []interface{}{},
-		"format":     "STRING",
-		"results": []interface{}{
-			map[interface{}]interface{}{},
-		},
-		"total_results": *expected.NoChanges,
-		"warning":       []interface{}{},
-	}))
-	mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "@state:[4 4]", "LIMIT", 0, 0}).Return(cmdNoChanges)
+			cmdFailed := redis.NewCmd(ctx)
+			cmdFailed.SetVal(interface{}(map[interface{}]interface{}{
+				"attributes": []interface{}{},
+				"format":     "STRING",
+				"results": []interface{}{
+					map[interface{}]interface{}{},
+				},
+				"total_results": *expected.Failed,
+				"warning":       []interface{}{},
+			}))
+			mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "@state:[3 3]", "LIMIT", 0, 0}).Return(cmdFailed)
 
-	cmds := make([]redis.Cmder, 0)
-	mockPipeliner.On("Exec", ctx).Return(cmds)
-	mockRedisClient.On("Pipeline").Return(mockPipeliner)
+			cmdNoChanges := redis.NewCmd(ctx)
+			cmdNoChanges.SetVal(interface{}(map[interface{}]interface{}{
+				"attributes": []interface{}{},
+				"format":     "STRING",
+				"results": []interface{}{
+					map[interface{}]interface{}{},
+				},
+				"total_results": *expected.NoChanges,
+				"warning":       []interface{}{},
+			}))
+			mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "@state:[4 4]", "LIMIT", 0, 0}).Return(cmdNoChanges)
 
-	in := reconcilerpb.RetrieveIngestionLogsRequest{Summary: true}
+			mockPipeliner.On("Exec", ctx).Return(tt.execError)
+			mockRedisClient.On("Pipeline").Return(mockPipeliner)
 
-	server := &Server{
-		redisClient: mockRedisClient,
-		logger:      logger,
+			in := reconcilerpb.RetrieveIngestionLogsRequest{Summary: true}
+
+			server := &Server{
+				redisClient: mockRedisClient,
+				logger:      logger,
+			}
+
+			response, err := server.RetrieveIngestionLogs(ctx, &in)
+			if tt.hasError {
+				require.Error(t, err)
+				require.Equal(t, err.Error(), tt.errorMsg)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, expected, response.Stats)
+			}
+		})
 	}
-
-	response, err := server.RetrieveIngestionLogs(ctx, &in)
-	require.NoError(t, err)
-
-	require.Equal(t, expected, response.Stats)
 }
