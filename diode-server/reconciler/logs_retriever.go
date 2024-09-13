@@ -82,7 +82,7 @@ func decodeBase64ToInt64(encoded string) (int64, error) {
 	return num, nil
 }
 
-func retrieveIngestionStatsSummary(ctx context.Context, logger *slog.Logger, client RedisClient, in *reconcilerpb.RetrieveIngestionLogsRequest) (*reconcilerpb.RetrieveIngestionLogsResponse, error) {
+func retrieveIngestionStatsSummary(ctx context.Context, client RedisClient) (*reconcilerpb.RetrieveIngestionLogsResponse, error) {
 
 	pipe := client.Pipeline()
 
@@ -120,12 +120,13 @@ func retrieveIngestionStatsSummary(ctx context.Context, logger *slog.Logger, cli
 		}
 
 	}
-	return &reconcilerpb.RetrieveIngestionLogsResponse{Logs: nil, Stats: &stats, NextPageToken: "nil"}, nil
+	return &reconcilerpb.RetrieveIngestionLogsResponse{Logs: nil, Stats: &stats, NextPageToken: ""}, nil
 }
 
 func retrieveIngestionLogs(ctx context.Context, logger *slog.Logger, client RedisClient, in *reconcilerpb.RetrieveIngestionLogsRequest) (*reconcilerpb.RetrieveIngestionLogsResponse, error) {
 	if in.GetSummary() {
-		return nil, fmt.Errorf("summary is not supported")
+		logger.Debug("retrieving ingestion logs summary")
+		return retrieveIngestionStatsSummary(ctx, client)
 	}
 
 	pageSize := in.GetPageSize()
