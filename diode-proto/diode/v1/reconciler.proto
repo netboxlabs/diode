@@ -54,10 +54,11 @@ message IngestionError {
 }
 
 enum State {
-  NEW = 0;
-  RECONCILED = 1;
-  FAILED = 2;
-  NO_CHANGES = 3;
+  UNSPECIFIED = 0;
+  NEW = 1;
+  RECONCILED = 2;
+  FAILED = 3;
+  NO_CHANGES = 4;
 }
 
 // An ingestion log
