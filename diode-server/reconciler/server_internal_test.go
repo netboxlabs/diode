@@ -776,24 +776,22 @@ func TestRetrieveLogsSummary(t *testing.T) {
 	}{
 		{
 			name:          "valid request",
-			expectedTotal: int32(10),
+			expectedTotal: int64(10),
 			cmdError:      false,
 			hasError:      false,
 		},
 		{
-			name:          "query error",
-			expectedTotal: int32(10),
-			cmdError:      true,
-			hasError:      true,
-			errorMsg:      "failed to retrieve ingestion logs: cmd error",
+			name:     "query error",
+			cmdError: true,
+			hasError: true,
+			errorMsg: "failed to retrieve ingestion logs: cmd error",
 		},
 		{
-			name:          "query error",
-			expectedTotal: int32(10),
-			cmdError:      false,
-			execError:     errors.New("exec error"),
-			hasError:      true,
-			errorMsg:      "failed to retrieve ingestion logs: exec error",
+			name:      "exec error",
+			cmdError:  false,
+			execError: errors.New("exec error"),
+			hasError:  true,
+			errorMsg:  "failed to retrieve ingestion logs: exec error",
 		},
 		{
 			name:          "error getting total results",
@@ -843,7 +841,7 @@ func TestRetrieveLogsSummary(t *testing.T) {
 				"results": []interface{}{
 					map[interface{}]interface{}{},
 				},
-				"total_results": *expected.New,
+				"total_results": int64(*expected.New),
 				"warning":       []interface{}{},
 			}))
 			mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "@state:[1 1]", "LIMIT", 0, 0}).Return(cmdNew)
@@ -855,7 +853,7 @@ func TestRetrieveLogsSummary(t *testing.T) {
 				"results": []interface{}{
 					map[interface{}]interface{}{},
 				},
-				"total_results": *expected.Reconciled,
+				"total_results": int64(*expected.Reconciled),
 				"warning":       []interface{}{},
 			}))
 			mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "@state:[2 2]", "LIMIT", 0, 0}).Return(cmdReconciled)
@@ -867,7 +865,7 @@ func TestRetrieveLogsSummary(t *testing.T) {
 				"results": []interface{}{
 					map[interface{}]interface{}{},
 				},
-				"total_results": *expected.Failed,
+				"total_results": int64(*expected.Failed),
 				"warning":       []interface{}{},
 			}))
 			mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "@state:[3 3]", "LIMIT", 0, 0}).Return(cmdFailed)
@@ -879,7 +877,7 @@ func TestRetrieveLogsSummary(t *testing.T) {
 				"results": []interface{}{
 					map[interface{}]interface{}{},
 				},
-				"total_results": *expected.NoChanges,
+				"total_results": int64(*expected.NoChanges),
 				"warning":       []interface{}{},
 			}))
 			mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "@state:[4 4]", "LIMIT", 0, 0}).Return(cmdNoChanges)
