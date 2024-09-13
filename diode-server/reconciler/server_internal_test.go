@@ -17,6 +17,26 @@ import (
 	mr "github.com/netboxlabs/diode/diode-server/reconciler/mocks"
 )
 
+// MockPipeliner is a mock implementation of the redis Pipeliner interface.
+type MockPipeliner struct {
+	mock.Mock
+	redis.Pipeliner
+}
+
+// Do is a mock of Pipeliner's Do method.
+func (m *MockPipeliner) Do(ctx context.Context, args ...interface{}) *redis.Cmd {
+	calledArgs := m.Called(ctx, args)
+	return calledArgs.Get(0).(*redis.Cmd)
+}
+
+// Exec is a mock of Pipeliner's Exec method.
+func (m *MockPipeliner) Exec(ctx context.Context) ([]redis.Cmder, error) {
+	args := m.Called(ctx)
+	return args.Get(0).([]redis.Cmder), nil
+}
+
+func int32Ptr(n int32) *int32 { return &n }
+
 func TestIsAuthenticated(t *testing.T) {
 	tests := []struct {
 		name            string
@@ -194,6 +214,9 @@ func TestRetrieveLogs(t *testing.T) {
 						Error: nil,
 					},
 				},
+				Stats: &reconcilerpb.Stats{
+					Total: int32Ptr(2),
+				},
 				NextPageToken: "F/Jk/zc08gA=",
 			},
 			failCmd:  false,
@@ -253,13 +276,67 @@ func TestRetrieveLogs(t *testing.T) {
 						},
 					},
 				},
+				Stats: &reconcilerpb.Stats{
+					Total: int32Ptr(2),
+				},
 				NextPageToken: "F/JlO7d81QA=",
 			},
 			failCmd:  false,
 			hasError: false,
 		},
 		{
-			name: "filter by state",
+			name: "filter by new state",
+			in:   reconcilerpb.RetrieveIngestionLogsRequest{State: reconcilerpb.State_NEW.Enum()},
+			result: interface{}(map[interface{}]interface{}{
+				"attributes": []interface{}{},
+				"format":     "STRING",
+				"results": []interface{}{
+					map[interface{}]interface{}{
+						"extra_attributes": map[interface{}]interface{}{
+							"$":            `{"dataType":"dcim.interface","entity":{"interface":{"device":{"name":"my_dev"},"name":"Gig 2"}},"ingestionTs":1725552914392208722,"producerAppName":"diode-agent","producerAppVersion":"0.0.1","request_id":"req-id","sdkName":"diode-sdk-go","sdkVersion":"0.1.0","state":1}`,
+							"ingestion_ts": "1725552914392208640",
+						},
+						"id":     "ingest-entity:dcim.interface-1725552914392208722-db0931ec-c119-4702-bd74-4f0bed4e110b",
+						"values": []interface{}{},
+					},
+				},
+				"total_results": 1,
+				"warning":       []interface{}{},
+			}),
+			response: &reconcilerpb.RetrieveIngestionLogsResponse{
+				Logs: []*reconcilerpb.IngestionLog{
+					{
+						DataType:           "dcim.interface",
+						State:              reconcilerpb.State_NEW,
+						RequestId:          "req-id",
+						IngestionTs:        1725552914392208722,
+						ProducerAppName:    "diode-agent",
+						ProducerAppVersion: "0.0.1",
+						SdkName:            "diode-sdk-go",
+						SdkVersion:         "0.1.0",
+						Entity: &diodepb.Entity{
+							Entity: &diodepb.Entity_Interface{
+								Interface: &diodepb.Interface{
+									Device: &diodepb.Device{
+										Name: "my_dev",
+									},
+									Name: "Gig 2",
+								},
+							},
+						},
+						Error: nil,
+					},
+				},
+				Stats: &reconcilerpb.Stats{
+					New: int32Ptr(1),
+				},
+				NextPageToken: "F/JlO7d81QA=",
+			},
+			failCmd:  false,
+			hasError: false,
+		},
+		{
+			name: "filter by reconciled state",
 			in:   reconcilerpb.RetrieveIngestionLogsRequest{State: reconcilerpb.State_RECONCILED.Enum()},
 			result: interface{}(map[interface{}]interface{}{
 				"attributes": []interface{}{},
@@ -300,6 +377,111 @@ func TestRetrieveLogs(t *testing.T) {
 						},
 						Error: nil,
 					},
+				},
+				Stats: &reconcilerpb.Stats{
+					Reconciled: int32Ptr(1),
+				},
+				NextPageToken: "F/JlO7d81QA=",
+			},
+			failCmd:  false,
+			hasError: false,
+		},
+		{
+			name: "filter by failed state",
+			in:   reconcilerpb.RetrieveIngestionLogsRequest{State: reconcilerpb.State_FAILED.Enum()},
+			result: interface{}(map[interface{}]interface{}{
+				"attributes": []interface{}{},
+				"format":     "STRING",
+				"results": []interface{}{
+					map[interface{}]interface{}{
+						"extra_attributes": map[interface{}]interface{}{
+							"$":            `{"dataType":"dcim.interface","entity":{"interface":{"device":{"name":"my_dev"},"name":"Gig 2"}},"ingestionTs":1725552914392208722,"producerAppName":"diode-agent","producerAppVersion":"0.0.1","request_id":"req-id","sdkName":"diode-sdk-go","sdkVersion":"0.1.0","state":3}`,
+							"ingestion_ts": "1725552914392208640",
+						},
+						"id":     "ingest-entity:dcim.interface-1725552914392208722-db0931ec-c119-4702-bd74-4f0bed4e110b",
+						"values": []interface{}{},
+					},
+				},
+				"total_results": 1,
+				"warning":       []interface{}{},
+			}),
+			response: &reconcilerpb.RetrieveIngestionLogsResponse{
+				Logs: []*reconcilerpb.IngestionLog{
+					{
+						DataType:           "dcim.interface",
+						State:              reconcilerpb.State_FAILED,
+						RequestId:          "req-id",
+						IngestionTs:        1725552914392208722,
+						ProducerAppName:    "diode-agent",
+						ProducerAppVersion: "0.0.1",
+						SdkName:            "diode-sdk-go",
+						SdkVersion:         "0.1.0",
+						Entity: &diodepb.Entity{
+							Entity: &diodepb.Entity_Interface{
+								Interface: &diodepb.Interface{
+									Device: &diodepb.Device{
+										Name: "my_dev",
+									},
+									Name: "Gig 2",
+								},
+							},
+						},
+						Error: nil,
+					},
+				},
+				Stats: &reconcilerpb.Stats{
+					Failed: int32Ptr(1),
+				},
+				NextPageToken: "F/JlO7d81QA=",
+			},
+			failCmd:  false,
+			hasError: false,
+		},
+		{
+			name: "filter by no changes state",
+			in:   reconcilerpb.RetrieveIngestionLogsRequest{State: reconcilerpb.State_NO_CHANGES.Enum()},
+			result: interface{}(map[interface{}]interface{}{
+				"attributes": []interface{}{},
+				"format":     "STRING",
+				"results": []interface{}{
+					map[interface{}]interface{}{
+						"extra_attributes": map[interface{}]interface{}{
+							"$":            `{"dataType":"dcim.interface","entity":{"interface":{"device":{"name":"my_dev"},"name":"Gig 2"}},"ingestionTs":1725552914392208722,"producerAppName":"diode-agent","producerAppVersion":"0.0.1","request_id":"req-id","sdkName":"diode-sdk-go","sdkVersion":"0.1.0","state":4}`,
+							"ingestion_ts": "1725552914392208640",
+						},
+						"id":     "ingest-entity:dcim.interface-1725552914392208722-db0931ec-c119-4702-bd74-4f0bed4e110b",
+						"values": []interface{}{},
+					},
+				},
+				"total_results": 1,
+				"warning":       []interface{}{},
+			}),
+			response: &reconcilerpb.RetrieveIngestionLogsResponse{
+				Logs: []*reconcilerpb.IngestionLog{
+					{
+						DataType:           "dcim.interface",
+						State:              reconcilerpb.State_NO_CHANGES,
+						RequestId:          "req-id",
+						IngestionTs:        1725552914392208722,
+						ProducerAppName:    "diode-agent",
+						ProducerAppVersion: "0.0.1",
+						SdkName:            "diode-sdk-go",
+						SdkVersion:         "0.1.0",
+						Entity: &diodepb.Entity{
+							Entity: &diodepb.Entity_Interface{
+								Interface: &diodepb.Interface{
+									Device: &diodepb.Device{
+										Name: "my_dev",
+									},
+									Name: "Gig 2",
+								},
+							},
+						},
+						Error: nil,
+					},
+				},
+				Stats: &reconcilerpb.Stats{
+					NoChanges: int32Ptr(1),
 				},
 				NextPageToken: "F/JlO7d81QA=",
 			},
@@ -349,6 +531,9 @@ func TestRetrieveLogs(t *testing.T) {
 						Error: nil,
 					},
 				},
+				Stats: &reconcilerpb.Stats{
+					Total: int32Ptr(1),
+				},
 				NextPageToken: "F/JlO7d81QA=",
 			},
 			failCmd:  false,
@@ -397,6 +582,9 @@ func TestRetrieveLogs(t *testing.T) {
 						Error: nil,
 					},
 				},
+				Stats: &reconcilerpb.Stats{
+					Total: int32Ptr(1),
+				},
 				NextPageToken: "F/JlO7d81QA=",
 			},
 			failCmd:  false,
@@ -444,6 +632,9 @@ func TestRetrieveLogs(t *testing.T) {
 						},
 						Error: nil,
 					},
+				},
+				Stats: &reconcilerpb.Stats{
+					Total: int32Ptr(1),
 				},
 				NextPageToken: "F/JlO7d81QA=",
 			},
@@ -567,7 +758,101 @@ func TestRetrieveLogs(t *testing.T) {
 					assert.Equal(t, tt.response.Logs[i].SdkVersion, response.Logs[i].SdkVersion)
 					assert.Equal(t, tt.response.Logs[i].Entity.String(), response.Logs[i].Entity.String())
 				}
+				require.Equal(t, tt.response.Stats, response.Stats)
 			}
 		})
 	}
+}
+
+func TestRetrieveLogsSummary(t *testing.T) {
+	ctx := context.Background()
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+
+	expected := &reconcilerpb.Stats{
+		New:        int32Ptr(3),
+		Reconciled: int32Ptr(3),
+		Failed:     int32Ptr(2),
+		NoChanges:  int32Ptr(2),
+		Total:      int32Ptr(10),
+	}
+
+	mockRedisClient := new(mr.RedisClient)
+
+	mockPipeliner := new(MockPipeliner)
+
+	cmdTotal := redis.NewCmd(ctx)
+	cmdTotal.SetVal(interface{}(map[interface{}]interface{}{
+		"attributes": []interface{}{},
+		"format":     "STRING",
+		"results": []interface{}{
+			map[interface{}]interface{}{},
+		},
+		"total_results": *expected.Total,
+		"warning":       []interface{}{},
+	}))
+	mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "*", "LIMIT", 0, 0}).Return(cmdTotal)
+
+	cmdNew := redis.NewCmd(ctx)
+	cmdNew.SetVal(interface{}(map[interface{}]interface{}{
+		"attributes": []interface{}{},
+		"format":     "STRING",
+		"results": []interface{}{
+			map[interface{}]interface{}{},
+		},
+		"total_results": *expected.New,
+		"warning":       []interface{}{},
+	}))
+	mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "@state:[1 1]", "LIMIT", 0, 0}).Return(cmdNew)
+
+	cmdReconciled := redis.NewCmd(ctx)
+	cmdReconciled.SetVal(interface{}(map[interface{}]interface{}{
+		"attributes": []interface{}{},
+		"format":     "STRING",
+		"results": []interface{}{
+			map[interface{}]interface{}{},
+		},
+		"total_results": *expected.Reconciled,
+		"warning":       []interface{}{},
+	}))
+	mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "@state:[2 2]", "LIMIT", 0, 0}).Return(cmdReconciled)
+
+	cmdFailed := redis.NewCmd(ctx)
+	cmdFailed.SetVal(interface{}(map[interface{}]interface{}{
+		"attributes": []interface{}{},
+		"format":     "STRING",
+		"results": []interface{}{
+			map[interface{}]interface{}{},
+		},
+		"total_results": *expected.Failed,
+		"warning":       []interface{}{},
+	}))
+	mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "@state:[3 3]", "LIMIT", 0, 0}).Return(cmdFailed)
+
+	cmdNoChanges := redis.NewCmd(ctx)
+	cmdNoChanges.SetVal(interface{}(map[interface{}]interface{}{
+		"attributes": []interface{}{},
+		"format":     "STRING",
+		"results": []interface{}{
+			map[interface{}]interface{}{},
+		},
+		"total_results": *expected.NoChanges,
+		"warning":       []interface{}{},
+	}))
+	mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "@state:[4 4]", "LIMIT", 0, 0}).Return(cmdNoChanges)
+
+	cmds := make([]redis.Cmder, 0)
+	mockPipeliner.On("Exec", ctx).Return(cmds)
+	mockRedisClient.On("Pipeline").Return(mockPipeliner)
+
+	in := reconcilerpb.RetrieveIngestionLogsRequest{Summary: true}
+
+	server := &Server{
+		redisClient: mockRedisClient,
+		logger:      logger,
+	}
+
+	response, err := server.RetrieveIngestionLogs(ctx, &in)
+	require.NoError(t, err)
+
+	require.Equal(t, expected, response.Stats)
 }

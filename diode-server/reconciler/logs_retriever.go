@@ -106,7 +106,10 @@ func retrieveIngestionStatsSummary(ctx context.Context, client RedisClient) (*re
 		}
 
 		conv := convertMapInterface(res)
-		totalResults, _ := conv.(map[string]interface{})["total_results"].(int32)
+		totalResults, ok := conv.(map[string]interface{})["total_results"].(int32)
+		if !ok {
+			return nil, fmt.Errorf("failed to retrieve ingestion logs: failed to parse total_results")
+		}
 		if q == int(reconcilerpb.State_NEW) {
 			stats.New = &totalResults
 		} else if q == int(reconcilerpb.State_RECONCILED) {
@@ -118,7 +121,6 @@ func retrieveIngestionStatsSummary(ctx context.Context, client RedisClient) (*re
 		} else {
 			stats.Total = &totalResults
 		}
-
 	}
 	return &reconcilerpb.RetrieveIngestionLogsResponse{Logs: nil, Stats: &stats, NextPageToken: ""}, nil
 }
