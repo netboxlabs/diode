@@ -35,23 +35,6 @@ const (
 	RedisConsumerGroupExistsErrMsg = "BUSYGROUP Consumer Group name already exists"
 )
 
-// IngestEntityState represents the state of an ingested entity
-type IngestEntityState int
-
-const (
-	// IngestEntityStateNew is the state of an entity after it has been ingested
-	IngestEntityStateNew IngestEntityState = iota
-
-	// IngestEntityStateReconciled is the state of an entity after it has been reconciled
-	IngestEntityStateReconciled
-
-	// IngestEntityStateReconciliationFailed is the state of an entity after it has failed to be reconciled
-	IngestEntityStateReconciliationFailed
-
-	// IngestEntityStateNoChangesToApply is the state of an entity without changes to apply after reconciliation
-	IngestEntityStateNoChangesToApply
-)
-
 // RedisClient is an interface that represents the methods used from redis.Client
 type RedisClient interface {
 	Ping(ctx context.Context) *redis.StatusCmd
@@ -223,7 +206,7 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 			DataType:           objectType,
 			Entity:             v,
 			IngestionTs:        int64(ingestionTs),
-			State:              reconcilerpb.State(IngestEntityStateNew),
+			State:              reconcilerpb.State_NEW,
 		}
 
 		if _, err = p.writeIngestionLog(ctx, key, ingestionLog); err != nil {
@@ -235,14 +218,14 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 			RequestID: ingestReq.GetId(),
 			DataType:  objectType,
 			Entity:    v.GetEntity(),
-			State:     int(IngestEntityStateNew),
+			State:     int(reconcilerpb.State_NEW),
 		}
 
 		changeSet, err := p.reconcileEntity(ctx, ingestEntity)
 		if err != nil {
 			errs = append(errs, err)
 
-			ingestionLog.State = reconcilerpb.State(IngestEntityStateReconciliationFailed)
+			ingestionLog.State = reconcilerpb.State_FAILED
 			ingestionLog.Error = extractIngestionError(err)
 
 			if _, err = p.writeIngestionLog(ctx, key, ingestionLog); err != nil {
@@ -252,10 +235,10 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 		}
 
 		if changeSet != nil {
-			ingestionLog.State = reconcilerpb.State(IngestEntityStateReconciled)
+			ingestionLog.State = reconcilerpb.State_RECONCILED
 			//TODO: add change set ID to ingestion log
 		} else {
-			ingestionLog.State = reconcilerpb.State(IngestEntityStateNoChangesToApply)
+			ingestionLog.State = reconcilerpb.State_NO_CHANGES
 		}
 
 		if _, err = p.writeIngestionLog(ctx, key, ingestionLog); err != nil {
