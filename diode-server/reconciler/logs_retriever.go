@@ -88,8 +88,8 @@ func retrieveIngestionStatsSummary(ctx context.Context, client RedisClient) (*re
 
 	results := make([]*redis.Cmd, 0)
 	results = append(results, pipe.Do(ctx, "FT.SEARCH", "ingest-entity", "*", "LIMIT", 0, 0))
-	for i := 1; i < 5; i++ {
-		results = append(results, pipe.Do(ctx, "FT.SEARCH", "ingest-entity", fmt.Sprintf("@state:[%d %d]", i, i), "LIMIT", 0, 0))
+	for s := reconcilerpb.State_NEW; s <= reconcilerpb.State_NO_CHANGES; s++ {
+		results = append(results, pipe.Do(ctx, "FT.SEARCH", "ingest-entity", fmt.Sprintf("@state:[%d %d]", s, s), "LIMIT", 0, 0))
 	}
 
 	_, err := pipe.Exec(ctx)
