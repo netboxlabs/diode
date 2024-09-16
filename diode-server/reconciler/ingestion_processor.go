@@ -46,6 +46,7 @@ type RedisClient interface {
 	Do(ctx context.Context, args ...interface{}) *redis.Cmd
 	Scan(ctx context.Context, cursor uint64, match string, count int64) *redis.ScanCmd
 	Del(ctx context.Context, keys ...string) *redis.IntCmd
+	Pipeline() redis.Pipeliner
 }
 
 // IngestionProcessor processes ingested data

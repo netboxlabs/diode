@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"strconv"
 
+	"github.com/redis/go-redis/v9"
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
@@ -26,7 +27,7 @@ type redisLogResult struct {
 
 type redisLogsResponse struct {
 	Results      []redisLogResult `json:"results"`
-	TotalResults int              `json:"total_results"`
+	TotalResults int32            `json:"total_results"`
 }
 
 func convertMapInterface(data interface{}) interface{} {
@@ -81,10 +82,59 @@ func decodeBase64ToInt64(encoded string) (int64, error) {
 	return num, nil
 }
 
+func retrieveIngestionMetrics(ctx context.Context, client RedisClient) (*reconcilerpb.RetrieveIngestionLogsResponse, error) {
+
+	pipe := client.Pipeline()
+
+	results := make([]*redis.Cmd, 0)
+	results = append(results, pipe.Do(ctx, "FT.SEARCH", "ingest-entity", "*", "LIMIT", 0, 0))
+	for s := reconcilerpb.State_NEW; s <= reconcilerpb.State_NO_CHANGES; s++ {
+		results = append(results, pipe.Do(ctx, "FT.SEARCH", "ingest-entity", fmt.Sprintf("@state:[%d %d]", s, s), "LIMIT", 0, 0))
+	}
+
+	_, err := pipe.Exec(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve ingestion logs: %w", err)
+	}
+
+	var metrics reconcilerpb.IngestionMetrics
+
+	for q := range results {
+		res, err := results[q].Result()
+		if err != nil {
+			return nil, fmt.Errorf("failed to retrieve ingestion logs: %w", err)
+		}
+
+		conv := convertMapInterface(res)
+		totalRes, ok := conv.(map[string]interface{})["total_results"].(int64)
+		if !ok {
+			return nil, fmt.Errorf("failed to retrieve ingestion logs: failed to parse total_results")
+		}
+		total := int32(totalRes)
+		if q == int(reconcilerpb.State_NEW) {
+			metrics.New = total
+		} else if q == int(reconcilerpb.State_RECONCILED) {
+			metrics.Reconciled = total
+		} else if q == int(reconcilerpb.State_FAILED) {
+			metrics.Failed = total
+		} else if q == int(reconcilerpb.State_NO_CHANGES) {
+			metrics.NoChanges = total
+		} else {
+			metrics.Total = total
+		}
+	}
+	return &reconcilerpb.RetrieveIngestionLogsResponse{Logs: nil, Metrics: &metrics, NextPageToken: ""}, nil
+}
+
 func retrieveIngestionLogs(ctx context.Context, logger *slog.Logger, client RedisClient, in *reconcilerpb.RetrieveIngestionLogsRequest) (*reconcilerpb.RetrieveIngestionLogsResponse, error) {
+	if in.GetOnlyMetrics() {
+		logger.Debug("retrieving only ingestion metrics")
+		return retrieveIngestionMetrics(ctx, client)
+	}
+
 	pageSize := in.GetPageSize()
-	if pageSize == 0 {
-		pageSize = 10 // Default to 10
+	if in.PageSize == nil {
+		pageSize = 100 // Default to 100
 	}
 
 	var err error
@@ -119,6 +169,7 @@ func retrieveIngestionLogs(ctx context.Context, logger *slog.Logger, client Redi
 		stateFilter := fmt.Sprintf("@state:[%d %d]", in.GetState(), in.GetState())
 		queryArgs[queryIndex] = fmt.Sprintf("%s %s", queryArgs[queryIndex], stateFilter)
 	}
+
 	if in.GetDataType() != "" {
 		dataType := fmt.Sprintf("@data_type:%s", in.GetDataType())
 		queryArgs[queryIndex] = fmt.Sprintf("%s %s", queryArgs[queryIndex], dataType)
@@ -168,5 +219,23 @@ func retrieveIngestionLogs(ctx context.Context, logger *slog.Logger, client Redi
 		}
 	}
 
-	return &reconcilerpb.RetrieveIngestionLogsResponse{Logs: logs, NextPageToken: encodeInt64ToBase64(ingestionTs)}, nil
+	// Fill metrics
+	var metrics reconcilerpb.IngestionMetrics
+	if in.State != nil {
+		if in.GetState() == reconcilerpb.State_UNSPECIFIED {
+			metrics.Total = response.TotalResults
+		} else if in.GetState() == reconcilerpb.State_NEW {
+			metrics.New = response.TotalResults
+		} else if in.GetState() == reconcilerpb.State_RECONCILED {
+			metrics.Reconciled = response.TotalResults
+		} else if in.GetState() == reconcilerpb.State_FAILED {
+			metrics.Failed = response.TotalResults
+		} else if in.GetState() == reconcilerpb.State_NO_CHANGES {
+			metrics.NoChanges = response.TotalResults
+		}
+	} else {
+		metrics.Total = response.TotalResults
+	}
+
+	return &reconcilerpb.RetrieveIngestionLogsResponse{Logs: logs, Metrics: &metrics, NextPageToken: encodeInt64ToBase64(ingestionTs)}, nil
 }
