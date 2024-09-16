@@ -82,7 +82,7 @@ func decodeBase64ToInt64(encoded string) (int64, error) {
 	return num, nil
 }
 
-func retrieveIngestionStatsSummary(ctx context.Context, client RedisClient) (*reconcilerpb.RetrieveIngestionLogsResponse, error) {
+func retrieveIngestionMetrics(ctx context.Context, client RedisClient) (*reconcilerpb.RetrieveIngestionLogsResponse, error) {
 
 	pipe := client.Pipeline()
 
@@ -97,7 +97,7 @@ func retrieveIngestionStatsSummary(ctx context.Context, client RedisClient) (*re
 		return nil, fmt.Errorf("failed to retrieve ingestion logs: %w", err)
 	}
 
-	var stats reconcilerpb.Stats
+	var metrics reconcilerpb.IngestionMetrics
 
 	for q := range results {
 		res, err := results[q].Result()
@@ -112,24 +112,24 @@ func retrieveIngestionStatsSummary(ctx context.Context, client RedisClient) (*re
 		}
 		total := int32(totalRes)
 		if q == int(reconcilerpb.State_NEW) {
-			stats.New = &total
+			metrics.New = total
 		} else if q == int(reconcilerpb.State_RECONCILED) {
-			stats.Reconciled = &total
+			metrics.Reconciled = total
 		} else if q == int(reconcilerpb.State_FAILED) {
-			stats.Failed = &total
+			metrics.Failed = total
 		} else if q == int(reconcilerpb.State_NO_CHANGES) {
-			stats.NoChanges = &total
+			metrics.NoChanges = total
 		} else {
-			stats.Total = &total
+			metrics.Total = total
 		}
 	}
-	return &reconcilerpb.RetrieveIngestionLogsResponse{Logs: nil, Stats: &stats, NextPageToken: ""}, nil
+	return &reconcilerpb.RetrieveIngestionLogsResponse{Logs: nil, Metrics: &metrics, NextPageToken: ""}, nil
 }
 
 func retrieveIngestionLogs(ctx context.Context, logger *slog.Logger, client RedisClient, in *reconcilerpb.RetrieveIngestionLogsRequest) (*reconcilerpb.RetrieveIngestionLogsResponse, error) {
-	if in.GetSummary() {
-		logger.Debug("retrieving ingestion logs summary")
-		return retrieveIngestionStatsSummary(ctx, client)
+	if in.GetOnlyMetrics() {
+		logger.Debug("retrieving only ingestion metrics")
+		return retrieveIngestionMetrics(ctx, client)
 	}
 
 	pageSize := in.GetPageSize()
@@ -219,23 +219,23 @@ func retrieveIngestionLogs(ctx context.Context, logger *slog.Logger, client Redi
 		}
 	}
 
-	// Fill stats
-	var stats reconcilerpb.Stats
+	// Fill metrics
+	var metrics reconcilerpb.IngestionMetrics
 	if in.State != nil {
 		if in.GetState() == reconcilerpb.State_UNSPECIFIED {
-			stats.Total = &response.TotalResults
+			metrics.Total = response.TotalResults
 		} else if in.GetState() == reconcilerpb.State_NEW {
-			stats.New = &response.TotalResults
+			metrics.New = response.TotalResults
 		} else if in.GetState() == reconcilerpb.State_RECONCILED {
-			stats.Reconciled = &response.TotalResults
+			metrics.Reconciled = response.TotalResults
 		} else if in.GetState() == reconcilerpb.State_FAILED {
-			stats.Failed = &response.TotalResults
+			metrics.Failed = response.TotalResults
 		} else if in.GetState() == reconcilerpb.State_NO_CHANGES {
-			stats.NoChanges = &response.TotalResults
+			metrics.NoChanges = response.TotalResults
 		}
 	} else {
-		stats.Total = &response.TotalResults
+		metrics.Total = response.TotalResults
 	}
 
-	return &reconcilerpb.RetrieveIngestionLogsResponse{Logs: logs, Stats: &stats, NextPageToken: encodeInt64ToBase64(ingestionTs)}, nil
+	return &reconcilerpb.RetrieveIngestionLogsResponse{Logs: logs, Metrics: &metrics, NextPageToken: encodeInt64ToBase64(ingestionTs)}, nil
 }

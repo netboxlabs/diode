@@ -36,8 +36,6 @@ func (m *MockPipeliner) Exec(ctx context.Context) ([]redis.Cmder, error) {
 	return cmds, args.Error(0)
 }
 
-func int32Ptr(n int32) *int32 { return &n }
-
 func TestIsAuthenticated(t *testing.T) {
 	tests := []struct {
 		name            string
@@ -215,8 +213,8 @@ func TestRetrieveLogs(t *testing.T) {
 						Error: nil,
 					},
 				},
-				Stats: &reconcilerpb.Stats{
-					Total: int32Ptr(2),
+				Metrics: &reconcilerpb.IngestionMetrics{
+					Total: 2,
 				},
 				NextPageToken: "F/Jk/zc08gA=",
 			},
@@ -277,8 +275,8 @@ func TestRetrieveLogs(t *testing.T) {
 						},
 					},
 				},
-				Stats: &reconcilerpb.Stats{
-					Total: int32Ptr(2),
+				Metrics: &reconcilerpb.IngestionMetrics{
+					Total: 2,
 				},
 				NextPageToken: "F/JlO7d81QA=",
 			},
@@ -328,8 +326,8 @@ func TestRetrieveLogs(t *testing.T) {
 						Error: nil,
 					},
 				},
-				Stats: &reconcilerpb.Stats{
-					New: int32Ptr(1),
+				Metrics: &reconcilerpb.IngestionMetrics{
+					New: 1,
 				},
 				NextPageToken: "F/JlO7d81QA=",
 			},
@@ -379,8 +377,8 @@ func TestRetrieveLogs(t *testing.T) {
 						Error: nil,
 					},
 				},
-				Stats: &reconcilerpb.Stats{
-					Reconciled: int32Ptr(1),
+				Metrics: &reconcilerpb.IngestionMetrics{
+					Reconciled: 1,
 				},
 				NextPageToken: "F/JlO7d81QA=",
 			},
@@ -430,8 +428,8 @@ func TestRetrieveLogs(t *testing.T) {
 						Error: nil,
 					},
 				},
-				Stats: &reconcilerpb.Stats{
-					Failed: int32Ptr(1),
+				Metrics: &reconcilerpb.IngestionMetrics{
+					Failed: 1,
 				},
 				NextPageToken: "F/JlO7d81QA=",
 			},
@@ -481,8 +479,8 @@ func TestRetrieveLogs(t *testing.T) {
 						Error: nil,
 					},
 				},
-				Stats: &reconcilerpb.Stats{
-					NoChanges: int32Ptr(1),
+				Metrics: &reconcilerpb.IngestionMetrics{
+					NoChanges: 1,
 				},
 				NextPageToken: "F/JlO7d81QA=",
 			},
@@ -532,8 +530,8 @@ func TestRetrieveLogs(t *testing.T) {
 						Error: nil,
 					},
 				},
-				Stats: &reconcilerpb.Stats{
-					Total: int32Ptr(1),
+				Metrics: &reconcilerpb.IngestionMetrics{
+					Total: 1,
 				},
 				NextPageToken: "F/JlO7d81QA=",
 			},
@@ -583,8 +581,8 @@ func TestRetrieveLogs(t *testing.T) {
 						Error: nil,
 					},
 				},
-				Stats: &reconcilerpb.Stats{
-					Total: int32Ptr(1),
+				Metrics: &reconcilerpb.IngestionMetrics{
+					Total: 1,
 				},
 				NextPageToken: "F/JlO7d81QA=",
 			},
@@ -634,8 +632,8 @@ func TestRetrieveLogs(t *testing.T) {
 						Error: nil,
 					},
 				},
-				Stats: &reconcilerpb.Stats{
-					Total: int32Ptr(1),
+				Metrics: &reconcilerpb.IngestionMetrics{
+					Total: 1,
 				},
 				NextPageToken: "F/JlO7d81QA=",
 			},
@@ -759,7 +757,7 @@ func TestRetrieveLogs(t *testing.T) {
 					assert.Equal(t, tt.response.Logs[i].SdkVersion, response.Logs[i].SdkVersion)
 					assert.Equal(t, tt.response.Logs[i].Entity.String(), response.Logs[i].Entity.String())
 				}
-				require.Equal(t, tt.response.Stats, response.Stats)
+				require.Equal(t, tt.response.Metrics, response.Metrics)
 			}
 		})
 	}
@@ -807,12 +805,12 @@ func TestRetrieveLogsSummary(t *testing.T) {
 			ctx := context.Background()
 			logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
 
-			expected := &reconcilerpb.Stats{
-				New:        int32Ptr(3),
-				Reconciled: int32Ptr(3),
-				Failed:     int32Ptr(2),
-				NoChanges:  int32Ptr(2),
-				Total:      int32Ptr(10),
+			expected := &reconcilerpb.IngestionMetrics{
+				New:        3,
+				Reconciled: 3,
+				Failed:     2,
+				NoChanges:  2,
+				Total:      10,
 			}
 
 			mockRedisClient := new(mr.RedisClient)
@@ -841,7 +839,7 @@ func TestRetrieveLogsSummary(t *testing.T) {
 				"results": []interface{}{
 					map[interface{}]interface{}{},
 				},
-				"total_results": int64(*expected.New),
+				"total_results": int64(expected.New),
 				"warning":       []interface{}{},
 			}))
 			mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "@state:[1 1]", "LIMIT", 0, 0}).Return(cmdNew)
@@ -853,7 +851,7 @@ func TestRetrieveLogsSummary(t *testing.T) {
 				"results": []interface{}{
 					map[interface{}]interface{}{},
 				},
-				"total_results": int64(*expected.Reconciled),
+				"total_results": int64(expected.Reconciled),
 				"warning":       []interface{}{},
 			}))
 			mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "@state:[2 2]", "LIMIT", 0, 0}).Return(cmdReconciled)
@@ -865,7 +863,7 @@ func TestRetrieveLogsSummary(t *testing.T) {
 				"results": []interface{}{
 					map[interface{}]interface{}{},
 				},
-				"total_results": int64(*expected.Failed),
+				"total_results": int64(expected.Failed),
 				"warning":       []interface{}{},
 			}))
 			mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "@state:[3 3]", "LIMIT", 0, 0}).Return(cmdFailed)
@@ -877,7 +875,7 @@ func TestRetrieveLogsSummary(t *testing.T) {
 				"results": []interface{}{
 					map[interface{}]interface{}{},
 				},
-				"total_results": int64(*expected.NoChanges),
+				"total_results": int64(expected.NoChanges),
 				"warning":       []interface{}{},
 			}))
 			mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "@state:[4 4]", "LIMIT", 0, 0}).Return(cmdNoChanges)
@@ -885,7 +883,7 @@ func TestRetrieveLogsSummary(t *testing.T) {
 			mockPipeliner.On("Exec", ctx).Return(tt.execError)
 			mockRedisClient.On("Pipeline").Return(mockPipeliner)
 
-			in := reconcilerpb.RetrieveIngestionLogsRequest{Summary: true}
+			in := reconcilerpb.RetrieveIngestionLogsRequest{OnlyMetrics: true}
 
 			server := &Server{
 				redisClient: mockRedisClient,
@@ -898,7 +896,7 @@ func TestRetrieveLogsSummary(t *testing.T) {
 				require.Equal(t, err.Error(), tt.errorMsg)
 			} else {
 				require.NoError(t, err)
-				require.Equal(t, expected, response.Stats)
+				require.Equal(t, expected, response.Metrics)
 			}
 		})
 	}

@@ -61,13 +61,13 @@ enum State {
   NO_CHANGES = 4;
 }
 
-// Log Stats
-message Stats {
-  optional int32 total = 1;
-  optional int32 new = 2;
-  optional int32 reconciled = 3;
-  optional int32 failed = 4;
-  optional int32 no_changes = 5;
+// Ingestion metrics
+message IngestionMetrics {
+  int32 total = 1;
+  int32 new = 2;
+  int32 reconciled = 3;
+  int32 failed = 4;
+  int32 no_changes = 5;
 }
 
 // An ingestion log
@@ -93,13 +93,13 @@ message RetrieveIngestionLogsRequest {
   int64 ingestion_ts_start = 5; // Optional start of ingestion timestamp range
   int64 ingestion_ts_end = 6; // Optional end of ingestion timestamp range
   string page_token = 7; // Token to fetch the next page of results
-  bool summary = 8; // Optional flag to return all stats
+  bool only_metrics = 8; // Flag to return only the ingestion metrics
 }
 
 // The response from the retrieve ingestion logs request
 message RetrieveIngestionLogsResponse {
   repeated IngestionLog logs = 1; // List of ingestion logs
-  Stats stats = 2; // Stats for the logs
+  IngestionMetrics metrics = 2; // ingestion metrics
   string next_page_token = 3; // Token for the next page of results, if any
 }
 
