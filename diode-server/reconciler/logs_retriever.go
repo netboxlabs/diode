@@ -12,8 +12,9 @@ import (
 
 	"google.golang.org/protobuf/encoding/protojson"
 
-	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 	"github.com/redis/go-redis/v9"
+
+	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 )
 
 type extraAttributesWrapper struct {
