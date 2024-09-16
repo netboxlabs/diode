@@ -8,9 +8,10 @@ import (
 	"os"
 	"testing"
 
-	"github.com/netboxlabs/diode/diode-server/server"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/netboxlabs/diode/diode-server/server"
 )
 
 func TestNewServer(t *testing.T) {

@@ -15,6 +15,7 @@ linters:
     - govet
     - gosimple
     - bodyclose
+    - gci
 
 issues:
   exclude-use-default: false
@@ -26,3 +27,11 @@ issues:
 
 severity:
   default-severity: error
+
+linters-settings:
+  gci:
+    sections:
+      - standard
+      - default
+      - prefix(github.com/netboxlabs/diode)
+    custom-order: true
