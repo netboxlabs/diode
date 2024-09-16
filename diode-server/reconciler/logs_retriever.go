@@ -10,9 +10,8 @@ import (
 	"log/slog"
 	"strconv"
 
-	"google.golang.org/protobuf/encoding/protojson"
-
 	"github.com/redis/go-redis/v9"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 )
