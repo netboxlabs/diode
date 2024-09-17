@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
-	"strconv"
 
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -49,33 +48,30 @@ func convertMapInterface(data interface{}) interface{} {
 	}
 }
 
-func encodeInt64ToBase64(num int64) string {
+func encodeIntToBase64(num int32) string {
 	// Create a buffer to hold the binary representation
 	buf := new(bytes.Buffer)
 
-	// Write the int64 value as a binary value into the buffer
-	err := binary.Write(buf, binary.BigEndian, num)
-	if err != nil {
-		fmt.Println("Error writing binary:", err)
+	// Write the int value as a binary value into the buffer
+	if err := binary.Write(buf, binary.BigEndian, num); err != nil {
+		fmt.Println("error writing binary:", err)
 	}
 
 	// Encode the binary data to base64
-	encoded := base64.StdEncoding.EncodeToString(buf.Bytes())
-	return encoded
+	return base64.StdEncoding.EncodeToString(buf.Bytes())
 }
 
-func decodeBase64ToInt64(encoded string) (int64, error) {
+func decodeBase64ToInt(encoded string) (int32, error) {
 	// Decode the base64 string back to bytes
-	data, err := base64.StdEncoding.DecodeString(encoded)
+	decoded, err := base64.StdEncoding.DecodeString(encoded)
 	if err != nil {
 		return 0, err
 	}
 
 	// Convert the byte slice back to int64
-	var num int64
-	buf := bytes.NewReader(data)
-	err = binary.Read(buf, binary.BigEndian, &num)
-	if err != nil {
+	buf := bytes.NewReader(decoded)
+	var num int32
+	if err := binary.Read(buf, binary.BigEndian, &num); err != nil {
 		return 0, err
 	}
 
@@ -83,17 +79,20 @@ func decodeBase64ToInt64(encoded string) (int64, error) {
 }
 
 func retrieveIngestionMetrics(ctx context.Context, client RedisClient) (*reconcilerpb.RetrieveIngestionLogsResponse, error) {
-
 	pipe := client.Pipeline()
 
-	results := make([]*redis.Cmd, 0)
-	results = append(results, pipe.Do(ctx, "FT.SEARCH", "ingest-entity", "*", "LIMIT", 0, 0))
+	results := []*redis.Cmd{
+		pipe.Do(ctx, "FT.SEARCH", "ingest-entity", "*", "LIMIT", 0, 0),
+	}
 	for s := reconcilerpb.State_NEW; s <= reconcilerpb.State_NO_CHANGES; s++ {
-		results = append(results, pipe.Do(ctx, "FT.SEARCH", "ingest-entity", fmt.Sprintf("@state:[%d %d]", s, s), "LIMIT", 0, 0))
+		stateName, ok := reconcilerpb.State_name[int32(s)]
+		if !ok {
+			return nil, fmt.Errorf("failed to retrieve ingestion logs: failed to get state name of %d", s)
+		}
+		results = append(results, pipe.Do(ctx, "FT.SEARCH", "ingest-entity", fmt.Sprintf("@state:%s", stateName), "LIMIT", 0, 0))
 	}
 
-	_, err := pipe.Exec(ctx)
-	if err != nil {
+	if _, err := pipe.Exec(ctx); err != nil {
 		return nil, fmt.Errorf("failed to retrieve ingestion logs: %w", err)
 	}
 
@@ -137,23 +136,7 @@ func retrieveIngestionLogs(ctx context.Context, logger *slog.Logger, client Redi
 		pageSize = 100 // Default to 100
 	}
 
-	var err error
-	var ingestionTs int64
-
-	//Check start TS filter
-	var startTs int64
-	if in.GetIngestionTsStart() != 0 {
-		startTs = in.GetIngestionTsStart()
-	}
-	query := fmt.Sprintf("@ingestion_ts:[%d inf]", startTs)
-
-	if in.PageToken != "" {
-		ingestionTs, err = decodeBase64ToInt64(in.PageToken)
-		if err != nil {
-			return nil, fmt.Errorf("error decoding page token: %w", err)
-		}
-		query = fmt.Sprintf("@ingestion_ts:[%d %d]", startTs, ingestionTs)
-	}
+	query := buildQueryFilter(in)
 
 	// Construct the base FT.SEARCH query
 	queryArgs := []interface{}{
@@ -162,24 +145,20 @@ func retrieveIngestionLogs(ctx context.Context, logger *slog.Logger, client Redi
 		query,
 	}
 
-	queryIndex := len(queryArgs) - 1
+	// Apply sorting by id in descending order
+	queryArgs = append(queryArgs, "SORTBY", "id", "DESC")
 
-	// Apply optional filters
-	if in.State != nil {
-		stateFilter := fmt.Sprintf("@state:[%d %d]", in.GetState(), in.GetState())
-		queryArgs[queryIndex] = fmt.Sprintf("%s %s", queryArgs[queryIndex], stateFilter)
-	}
-
-	if in.GetDataType() != "" {
-		dataType := fmt.Sprintf("@data_type:%s", in.GetDataType())
-		queryArgs[queryIndex] = fmt.Sprintf("%s %s", queryArgs[queryIndex], dataType)
-	}
-
-	// Apply sorting by ingestion_ts in descending order
-	queryArgs = append(queryArgs, "SORTBY", "ingestion_ts", "DESC")
+	var err error
 
 	// Apply limit for pagination
-	queryArgs = append(queryArgs, "LIMIT", 0, pageSize)
+	var offset int32
+	if in.PageToken != "" {
+		offset, err = decodeBase64ToInt(in.PageToken)
+		if err != nil {
+			return nil, fmt.Errorf("error decoding page token: %w", err)
+		}
+	}
+	queryArgs = append(queryArgs, "LIMIT", offset, pageSize)
 
 	logger.Debug("retrieving ingestion logs", "query", queryArgs)
 
@@ -212,11 +191,13 @@ func retrieveIngestionLogs(ctx context.Context, logger *slog.Logger, client Redi
 		}
 
 		logs = append(logs, ingestionLog)
+	}
 
-		ingestionTs, err = strconv.ParseInt(logsResult.ExtraAttributes.IngestionTs, 10, 64)
-		if err != nil {
-			return nil, fmt.Errorf("error converting ingestion timestamp: %w", err)
-		}
+	var nextPageToken string
+
+	if len(logs) == int(pageSize) {
+		offset += int32(len(logs))
+		nextPageToken = encodeIntToBase64(offset)
 	}
 
 	// Fill metrics
@@ -237,5 +218,43 @@ func retrieveIngestionLogs(ctx context.Context, logger *slog.Logger, client Redi
 		metrics.Total = response.TotalResults
 	}
 
-	return &reconcilerpb.RetrieveIngestionLogsResponse{Logs: logs, Metrics: &metrics, NextPageToken: encodeInt64ToBase64(ingestionTs)}, nil
+	return &reconcilerpb.RetrieveIngestionLogsResponse{Logs: logs, Metrics: &metrics, NextPageToken: nextPageToken}, nil
+}
+
+func buildQueryFilter(req *reconcilerpb.RetrieveIngestionLogsRequest) string {
+	queryFilter := "*"
+
+	// apply optional filters for ingestion timestamps (start and end)
+	if req.GetIngestionTsStart() > 0 || req.GetIngestionTsEnd() > 0 {
+		ingestionTsFilter := fmt.Sprintf("@ingestion_ts:[%d inf]", req.GetIngestionTsStart())
+
+		if req.GetIngestionTsEnd() > 0 {
+			ingestionTsFilter = fmt.Sprintf("@ingestion_ts:[%d %d]", req.GetIngestionTsStart(), req.GetIngestionTsEnd())
+		}
+
+		if queryFilter == "*" {
+			queryFilter = ingestionTsFilter
+		}
+	}
+
+	// apply optional filters for ingestion state
+	if req.State != nil {
+		stateFilter := fmt.Sprintf("@state:[%d %d]", req.GetState(), req.GetState())
+		if queryFilter == "*" {
+			queryFilter = stateFilter
+		} else {
+			queryFilter = fmt.Sprintf("%s %s", queryFilter, stateFilter)
+		}
+	}
+
+	if req.GetDataType() != "" {
+		dataTypeFilter := fmt.Sprintf("@data_type:%s", req.GetDataType())
+		if queryFilter == "*" {
+			queryFilter = dataTypeFilter
+		} else {
+			queryFilter = fmt.Sprintf("%s %s", queryFilter, dataTypeFilter)
+		}
+	}
+
+	return queryFilter
 }

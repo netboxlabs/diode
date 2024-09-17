@@ -128,12 +128,14 @@ func TestIsAuthenticated(t *testing.T) {
 
 func TestRetrieveLogs(t *testing.T) {
 	tests := []struct {
-		name     string
-		in       reconcilerpb.RetrieveIngestionLogsRequest
-		result   interface{}
-		response *reconcilerpb.RetrieveIngestionLogsResponse
-		failCmd  bool
-		hasError bool
+		name             string
+		in               reconcilerpb.RetrieveIngestionLogsRequest
+		result           interface{}
+		response         *reconcilerpb.RetrieveIngestionLogsResponse
+		queryFilter      string
+		queryLimitOffset int32
+		failCmd          bool
+		hasError         bool
 	}{
 		{
 			name: "valid request",
@@ -144,18 +146,18 @@ func TestRetrieveLogs(t *testing.T) {
 				"results": []interface{}{
 					map[interface{}]interface{}{
 						"extra_attributes": map[interface{}]interface{}{
-							"$":            `{"dataType":"dcim.interface","entity":{"interface":{"device":{"name":"my_dev"},"name":"Gig 2"}},"ingestionTs":1725552914392208722,"producerAppName":"diode-agent","producerAppVersion":"0.0.1","request_id":"req-id","sdkName":"diode-sdk-go","sdkVersion":"0.1.0","state":2}`,
+							"$":            `{"dataType":"dcim.interface","entity":{"interface":{"device":{"name":"my_dev"},"name":"Gig 2"}},"id":"2mAT7vZ38H4ttI0i5dBebwJbSnZ","ingestionTs":1725552914392208722,"producerAppName":"diode-agent","producerAppVersion":"0.0.1","request_id":"req-id","sdkName":"diode-sdk-go","sdkVersion":"0.1.0","state":2}`,
 							"ingestion_ts": "1725552914392208640",
 						},
-						"id":     "ingest-entity:dcim.interface-1725552914392208722-db0931ec-c119-4702-bd74-4f0bed4e110b",
+						"id":     "ingest-entity:dcim.interface-1725552914392208722-2mAT7vZ38H4ttI0i5dBebwJbSnZ",
 						"values": []interface{}{},
 					},
 					map[interface{}]interface{}{
 						"extra_attributes": map[interface{}]interface{}{
-							"$":            `{"dataType":"dcim.device","entity":{"device":{"name":"Conference_Room_AP_02","deviceType":{"model":"Cisco Aironet 3802","manufacturer":{"name":"Cisco"}},"role":{"name":"Wireless_AP"},"serial":"PQR456789012","site":{"name":"HQ"}}},"ingestionTs":1725552654541975975,"producerAppName":"diode-agent","producerAppVersion":"0.0.1","request_id":"bc1052e3-656a-42f0-b364-27b385e02a0c","sdkName":"diode-sdk-python","sdkVersion":"0.0.1","state":2}`,
+							"$":            `{"dataType":"dcim.device","entity":{"device":{"name":"Conference_Room_AP_02","deviceType":{"model":"Cisco Aironet 3802","manufacturer":{"name":"Cisco"}},"role":{"name":"Wireless_AP"},"serial":"PQR456789012","site":{"name":"HQ"}}},"id":"2mC8GVBGFg6NyLsQxuS4IYMB6FI","ingestionTs":1725552654541975975,"producerAppName":"diode-agent","producerAppVersion":"0.0.1","request_id":"bc1052e3-656a-42f0-b364-27b385e02a0c","sdkName":"diode-sdk-python","sdkVersion":"0.0.1","state":2}`,
 							"ingestion_ts": "1725552654541976064",
 						},
-						"id":     "ingest-entity:dcim.device-1725552654541975975-a6123183-1a5b-4331-ad73-4713cbee85bb",
+						"id":     "ingest-entity:dcim.device-1725552654541975975-2mC8GVBGFg6NyLsQxuS4IYMB6FI",
 						"values": []interface{}{},
 					},
 				},
@@ -218,8 +220,10 @@ func TestRetrieveLogs(t *testing.T) {
 				},
 				NextPageToken: "F/Jk/zc08gA=",
 			},
-			failCmd:  false,
-			hasError: false,
+			queryFilter:      "*",
+			queryLimitOffset: 0,
+			failCmd:          false,
+			hasError:         false,
 		},
 		{
 			name: "request with reconciliation error",
@@ -230,10 +234,10 @@ func TestRetrieveLogs(t *testing.T) {
 				"results": []interface{}{
 					map[interface{}]interface{}{
 						"extra_attributes": map[interface{}]interface{}{
-							"$":            `{"dataType":"ipam.ipaddress","entity":{"ip_address":{"address":"192.168.1.1","interface":null,"description":"Vendor: HUAWEI TECHNOLOGIES"}},"error":{"message":"failed to apply change set","code":400,"details":{"change_set_id":"6304c706-f955-4bcb-a1cc-514293d53d07","result":"failed","errors":[{"error":"address: Duplicate IP address found in global table: 192.168.1.1/32","change_id":"ff9e29b2-7a64-40ba-99a8-21f44768f60a"}]}},"ingestionTs":1725046967777525928,"producerAppName":"example-app","producerAppVersion":"0.1.0","request_id":"e03c4892-5b7e-4c39-b5e6-0225a264ab8b","sdkName":"diode-sdk-go","sdkVersion":"0.1.0","state":3}`,
+							"$":            `{"dataType":"ipam.ipaddress","entity":{"ip_address":{"address":"192.168.1.1","interface":null,"description":"Vendor: HUAWEI TECHNOLOGIES"}},"error":{"message":"failed to apply change set","code":400,"details":{"change_set_id":"6304c706-f955-4bcb-a1cc-514293d53d07","result":"failed","errors":[{"error":"address: Duplicate IP address found in global table: 192.168.1.1/32","change_id":"ff9e29b2-7a64-40ba-99a8-21f44768f60a"}]}},"id":"2mC8KCvHNasrYlfxSASk9hatfYC","ingestionTs":1725046967777525928,"producerAppName":"example-app","producerAppVersion":"0.1.0","request_id":"e03c4892-5b7e-4c39-b5e6-0225a264ab8b","sdkName":"diode-sdk-go","sdkVersion":"0.1.0","state":3}`,
 							"ingestion_ts": "1725552914392208640",
 						},
-						"id":     "ingest-entity:ipam.ipaddress-1725046967777525928-5e272f66-61a9-4142-8013-a7aadb7264a8",
+						"id":     "ingest-entity:ipam.ipaddress-1725046967777525928-2mC8KCvHNasrYlfxSASk9hatfYC",
 						"values": []interface{}{},
 					},
 				},
@@ -278,10 +282,12 @@ func TestRetrieveLogs(t *testing.T) {
 				Metrics: &reconcilerpb.IngestionMetrics{
 					Total: 2,
 				},
-				NextPageToken: "F/JlO7d81QA=",
+				NextPageToken: "AAAFlw==",
 			},
-			failCmd:  false,
-			hasError: false,
+			queryFilter:      "*",
+			queryLimitOffset: 0,
+			failCmd:          false,
+			hasError:         false,
 		},
 		{
 			name: "filter by new state",
@@ -292,10 +298,10 @@ func TestRetrieveLogs(t *testing.T) {
 				"results": []interface{}{
 					map[interface{}]interface{}{
 						"extra_attributes": map[interface{}]interface{}{
-							"$":            `{"dataType":"dcim.interface","entity":{"interface":{"device":{"name":"my_dev"},"name":"Gig 2"}},"ingestionTs":1725552914392208722,"producerAppName":"diode-agent","producerAppVersion":"0.0.1","request_id":"req-id","sdkName":"diode-sdk-go","sdkVersion":"0.1.0","state":1}`,
+							"$":            `{"dataType":"dcim.interface","entity":{"interface":{"device":{"name":"my_dev"},"name":"Gig 2"}},"id":"2mC8NYwfIKM5rFDibDBuytASSOi","ingestionTs":1725552914392208722,"producerAppName":"diode-agent","producerAppVersion":"0.0.1","request_id":"req-id","sdkName":"diode-sdk-go","sdkVersion":"0.1.0","state":1}`,
 							"ingestion_ts": "1725552914392208640",
 						},
-						"id":     "ingest-entity:dcim.interface-1725552914392208722-db0931ec-c119-4702-bd74-4f0bed4e110b",
+						"id":     "ingest-entity:dcim.interface-1725552914392208722-2mC8NYwfIKM5rFDibDBuytASSOi",
 						"values": []interface{}{},
 					},
 				},
@@ -329,10 +335,12 @@ func TestRetrieveLogs(t *testing.T) {
 				Metrics: &reconcilerpb.IngestionMetrics{
 					New: 1,
 				},
-				NextPageToken: "F/JlO7d81QA=",
+				NextPageToken: "AAAFlw==",
 			},
-			failCmd:  false,
-			hasError: false,
+			queryFilter:      "@state:[1 1]",
+			queryLimitOffset: 0,
+			failCmd:          false,
+			hasError:         false,
 		},
 		{
 			name: "filter by reconciled state",
@@ -343,10 +351,10 @@ func TestRetrieveLogs(t *testing.T) {
 				"results": []interface{}{
 					map[interface{}]interface{}{
 						"extra_attributes": map[interface{}]interface{}{
-							"$":            `{"dataType":"dcim.interface","entity":{"interface":{"device":{"name":"my_dev"},"name":"Gig 2"}},"ingestionTs":1725552914392208722,"producerAppName":"diode-agent","producerAppVersion":"0.0.1","request_id":"req-id","sdkName":"diode-sdk-go","sdkVersion":"0.1.0","state":2}`,
+							"$":            `{"dataType":"dcim.interface","entity":{"interface":{"device":{"name":"my_dev"},"name":"Gig 2"}},"id":"2mAT7vZ38H4ttI0i5dBebwJbSnZ","ingestionTs":1725552914392208722,"producerAppName":"diode-agent","producerAppVersion":"0.0.1","request_id":"req-id","sdkName":"diode-sdk-go","sdkVersion":"0.1.0","state":2}`,
 							"ingestion_ts": "1725552914392208640",
 						},
-						"id":     "ingest-entity:dcim.interface-1725552914392208722-db0931ec-c119-4702-bd74-4f0bed4e110b",
+						"id":     "ingest-entity:dcim.interface-1725552914392208722-2mAT7vZ38H4ttI0i5dBebwJbSnZ",
 						"values": []interface{}{},
 					},
 				},
@@ -356,6 +364,7 @@ func TestRetrieveLogs(t *testing.T) {
 			response: &reconcilerpb.RetrieveIngestionLogsResponse{
 				Logs: []*reconcilerpb.IngestionLog{
 					{
+						Id:                 "2mAT7vZ38H4ttI0i5dBebwJbSnZ",
 						DataType:           "dcim.interface",
 						State:              reconcilerpb.State_RECONCILED,
 						RequestId:          "req-id",
@@ -380,10 +389,12 @@ func TestRetrieveLogs(t *testing.T) {
 				Metrics: &reconcilerpb.IngestionMetrics{
 					Reconciled: 1,
 				},
-				NextPageToken: "F/JlO7d81QA=",
+				NextPageToken: "AAAFlw==",
 			},
-			failCmd:  false,
-			hasError: false,
+			queryFilter:      "@state:[2 2]",
+			queryLimitOffset: 0,
+			failCmd:          false,
+			hasError:         false,
 		},
 		{
 			name: "filter by failed state",
@@ -394,10 +405,10 @@ func TestRetrieveLogs(t *testing.T) {
 				"results": []interface{}{
 					map[interface{}]interface{}{
 						"extra_attributes": map[interface{}]interface{}{
-							"$":            `{"dataType":"dcim.interface","entity":{"interface":{"device":{"name":"my_dev"},"name":"Gig 2"}},"ingestionTs":1725552914392208722,"producerAppName":"diode-agent","producerAppVersion":"0.0.1","request_id":"req-id","sdkName":"diode-sdk-go","sdkVersion":"0.1.0","state":3}`,
+							"$":            `{"dataType":"dcim.interface","entity":{"interface":{"device":{"name":"my_dev"},"name":"Gig 2"}},"id":"2mAT7vZ38H4ttI0i5dBebwJbSnZ","ingestionTs":1725552914392208722,"producerAppName":"diode-agent","producerAppVersion":"0.0.1","request_id":"req-id","sdkName":"diode-sdk-go","sdkVersion":"0.1.0","state":3}`,
 							"ingestion_ts": "1725552914392208640",
 						},
-						"id":     "ingest-entity:dcim.interface-1725552914392208722-db0931ec-c119-4702-bd74-4f0bed4e110b",
+						"id":     "ingest-entity:dcim.interface-1725552914392208722-2mAT7vZ38H4ttI0i5dBebwJbSnZ",
 						"values": []interface{}{},
 					},
 				},
@@ -407,6 +418,7 @@ func TestRetrieveLogs(t *testing.T) {
 			response: &reconcilerpb.RetrieveIngestionLogsResponse{
 				Logs: []*reconcilerpb.IngestionLog{
 					{
+						Id:                 "2mAT7vZ38H4ttI0i5dBebwJbSnZ",
 						DataType:           "dcim.interface",
 						State:              reconcilerpb.State_FAILED,
 						RequestId:          "req-id",
@@ -431,10 +443,12 @@ func TestRetrieveLogs(t *testing.T) {
 				Metrics: &reconcilerpb.IngestionMetrics{
 					Failed: 1,
 				},
-				NextPageToken: "F/JlO7d81QA=",
+				NextPageToken: "AAAFlw==",
 			},
-			failCmd:  false,
-			hasError: false,
+			queryFilter:      "@state:[3 3]",
+			queryLimitOffset: 0,
+			failCmd:          false,
+			hasError:         false,
 		},
 		{
 			name: "filter by no changes state",
@@ -445,10 +459,10 @@ func TestRetrieveLogs(t *testing.T) {
 				"results": []interface{}{
 					map[interface{}]interface{}{
 						"extra_attributes": map[interface{}]interface{}{
-							"$":            `{"dataType":"dcim.interface","entity":{"interface":{"device":{"name":"my_dev"},"name":"Gig 2"}},"ingestionTs":1725552914392208722,"producerAppName":"diode-agent","producerAppVersion":"0.0.1","request_id":"req-id","sdkName":"diode-sdk-go","sdkVersion":"0.1.0","state":4}`,
+							"$":            `{"dataType":"dcim.interface","entity":{"interface":{"device":{"name":"my_dev"},"name":"Gig 2"}},"id":"2mAT7vZ38H4ttI0i5dBebwJbSnZ","ingestionTs":1725552914392208722,"producerAppName":"diode-agent","producerAppVersion":"0.0.1","request_id":"req-id","sdkName":"diode-sdk-go","sdkVersion":"0.1.0","state":4}`,
 							"ingestion_ts": "1725552914392208640",
 						},
-						"id":     "ingest-entity:dcim.interface-1725552914392208722-db0931ec-c119-4702-bd74-4f0bed4e110b",
+						"id":     "ingest-entity:dcim.interface-1725552914392208722-2mAT7vZ38H4ttI0i5dBebwJbSnZ",
 						"values": []interface{}{},
 					},
 				},
@@ -458,6 +472,7 @@ func TestRetrieveLogs(t *testing.T) {
 			response: &reconcilerpb.RetrieveIngestionLogsResponse{
 				Logs: []*reconcilerpb.IngestionLog{
 					{
+						Id:                 "2mAT7vZ38H4ttI0i5dBebwJbSnZ",
 						DataType:           "dcim.interface",
 						State:              reconcilerpb.State_NO_CHANGES,
 						RequestId:          "req-id",
@@ -482,10 +497,12 @@ func TestRetrieveLogs(t *testing.T) {
 				Metrics: &reconcilerpb.IngestionMetrics{
 					NoChanges: 1,
 				},
-				NextPageToken: "F/JlO7d81QA=",
+				NextPageToken: "AAAFlw==",
 			},
-			failCmd:  false,
-			hasError: false,
+			queryFilter:      "@state:[4 4]",
+			queryLimitOffset: 0,
+			failCmd:          false,
+			hasError:         false,
 		},
 		{
 			name: "filter by data type",
@@ -496,10 +513,10 @@ func TestRetrieveLogs(t *testing.T) {
 				"results": []interface{}{
 					map[interface{}]interface{}{
 						"extra_attributes": map[interface{}]interface{}{
-							"$":            `{"dataType":"dcim.interface","entity":{"interface":{"device":{"name":"my_dev"},"name":"Gig 2"}},"ingestionTs":1725552914392208722,"producerAppName":"diode-agent","producerAppVersion":"0.0.1","request_id":"req-id","sdkName":"diode-sdk-go","sdkVersion":"0.1.0","state":2}`,
+							"$":            `{"dataType":"dcim.interface","entity":{"interface":{"device":{"name":"my_dev"},"name":"Gig 2"}},"id":"2mAT7vZ38H4ttI0i5dBebwJbSnZ","ingestionTs":1725552914392208722,"producerAppName":"diode-agent","producerAppVersion":"0.0.1","request_id":"req-id","sdkName":"diode-sdk-go","sdkVersion":"0.1.0","state":2}`,
 							"ingestion_ts": "1725552914392208640",
 						},
-						"id":     "ingest-entity:dcim.interface-1725552914392208722-db0931ec-c119-4702-bd74-4f0bed4e110b",
+						"id":     "ingest-entity:dcim.interface-1725552914392208722-2mAT7vZ38H4ttI0i5dBebwJbSnZ",
 						"values": []interface{}{},
 					},
 				},
@@ -509,6 +526,7 @@ func TestRetrieveLogs(t *testing.T) {
 			response: &reconcilerpb.RetrieveIngestionLogsResponse{
 				Logs: []*reconcilerpb.IngestionLog{
 					{
+						Id:                 "2mAT7vZ38H4ttI0i5dBebwJbSnZ",
 						DataType:           "dcim.interface",
 						State:              reconcilerpb.State_RECONCILED,
 						RequestId:          "req-id",
@@ -533,10 +551,12 @@ func TestRetrieveLogs(t *testing.T) {
 				Metrics: &reconcilerpb.IngestionMetrics{
 					Total: 1,
 				},
-				NextPageToken: "F/JlO7d81QA=",
+				NextPageToken: "AAAFlw==",
 			},
-			failCmd:  false,
-			hasError: false,
+			queryFilter:      "@data_type:dcim.interface",
+			queryLimitOffset: 0,
+			failCmd:          false,
+			hasError:         false,
 		},
 		{
 			name: "filter by timestamp",
@@ -547,10 +567,10 @@ func TestRetrieveLogs(t *testing.T) {
 				"results": []interface{}{
 					map[interface{}]interface{}{
 						"extra_attributes": map[interface{}]interface{}{
-							"$":            `{"dataType":"dcim.interface","entity":{"interface":{"device":{"name":"my_dev"},"name":"Gig 2"}},"ingestionTs":1725552914392208722,"producerAppName":"diode-agent","producerAppVersion":"0.0.1","request_id":"req-id","sdkName":"diode-sdk-go","sdkVersion":"0.1.0","state":2}`,
+							"$":            `{"dataType":"dcim.interface","entity":{"interface":{"device":{"name":"my_dev"},"name":"Gig 2"}},"id":"2mAT7vZ38H4ttI0i5dBebwJbSnZ","ingestionTs":1725552914392208722,"producerAppName":"diode-agent","producerAppVersion":"0.0.1","request_id":"req-id","sdkName":"diode-sdk-go","sdkVersion":"0.1.0","state":2}`,
 							"ingestion_ts": "1725552914392208640",
 						},
-						"id":     "ingest-entity:dcim.interface-1725552914392208722-db0931ec-c119-4702-bd74-4f0bed4e110b",
+						"id":     "ingest-entity:dcim.interface-1725552914392208722-2mAT7vZ38H4ttI0i5dBebwJbSnZ",
 						"values": []interface{}{},
 					},
 				},
@@ -560,6 +580,7 @@ func TestRetrieveLogs(t *testing.T) {
 			response: &reconcilerpb.RetrieveIngestionLogsResponse{
 				Logs: []*reconcilerpb.IngestionLog{
 					{
+						Id:                 "2mAT7vZ38H4ttI0i5dBebwJbSnZ",
 						DataType:           "dcim.interface",
 						State:              reconcilerpb.State_RECONCILED,
 						RequestId:          "req-id",
@@ -584,24 +605,26 @@ func TestRetrieveLogs(t *testing.T) {
 				Metrics: &reconcilerpb.IngestionMetrics{
 					Total: 1,
 				},
-				NextPageToken: "F/JlO7d81QA=",
+				NextPageToken: "AAAFlw==",
 			},
-			failCmd:  false,
-			hasError: false,
+			queryFilter:      "@ingestion_ts:[1725552914392208639 inf]",
+			queryLimitOffset: 0,
+			failCmd:          false,
+			hasError:         false,
 		},
 		{
 			name: "pagination check",
-			in:   reconcilerpb.RetrieveIngestionLogsRequest{PageToken: "F/Jk/zc08gA="},
+			in:   reconcilerpb.RetrieveIngestionLogsRequest{PageToken: "AAAFlg=="},
 			result: interface{}(map[interface{}]interface{}{
 				"attributes": []interface{}{},
 				"format":     "STRING",
 				"results": []interface{}{
 					map[interface{}]interface{}{
 						"extra_attributes": map[interface{}]interface{}{
-							"$":            `{"dataType":"dcim.interface","entity":{"interface":{"device":{"name":"my_dev"},"name":"Gig 2"}},"ingestionTs":1725552914392208722,"producerAppName":"diode-agent","producerAppVersion":"0.0.1","request_id":"req-id","sdkName":"diode-sdk-go","sdkVersion":"0.1.0","state":2}`,
+							"$":            `{"dataType":"dcim.interface","entity":{"interface":{"device":{"name":"my_dev"},"name":"Gig 2"}},"id":"2mAT7vZ38H4ttI0i5dBebwJbSnZ","ingestionTs":1725552914392208722,"producerAppName":"diode-agent","producerAppVersion":"0.0.1","request_id":"req-id","sdkName":"diode-sdk-go","sdkVersion":"0.1.0","state":2}`,
 							"ingestion_ts": "1725552914392208640",
 						},
-						"id":     "ingest-entity:dcim.interface-1725552914392208722-db0931ec-c119-4702-bd74-4f0bed4e110b",
+						"id":     "ingest-entity:dcim.interface-1725552914392208722-2mAT7vZ38H4ttI0i5dBebwJbSnZ",
 						"values": []interface{}{},
 					},
 				},
@@ -611,6 +634,7 @@ func TestRetrieveLogs(t *testing.T) {
 			response: &reconcilerpb.RetrieveIngestionLogsResponse{
 				Logs: []*reconcilerpb.IngestionLog{
 					{
+						Id:                 "2mAT7vZ38H4ttI0i5dBebwJbSnZ",
 						DataType:           "dcim.interface",
 						State:              reconcilerpb.State_RECONCILED,
 						RequestId:          "req-id",
@@ -635,14 +659,16 @@ func TestRetrieveLogs(t *testing.T) {
 				Metrics: &reconcilerpb.IngestionMetrics{
 					Total: 1,
 				},
-				NextPageToken: "F/JlO7d81QA=",
+				NextPageToken: "AAAFlw==",
 			},
-			failCmd:  false,
-			hasError: false,
+			queryFilter:      "*",
+			queryLimitOffset: 1430,
+			failCmd:          false,
+			hasError:         false,
 		},
 		{
 			name: "error parsing extra attributes",
-			in:   reconcilerpb.RetrieveIngestionLogsRequest{PageToken: "F/Jk/zc08gA="},
+			in:   reconcilerpb.RetrieveIngestionLogsRequest{PageToken: "AAAFlg=="},
 			result: interface{}(map[interface{}]interface{}{
 				"attributes": []interface{}{},
 				"format":     "STRING",
@@ -659,30 +685,10 @@ func TestRetrieveLogs(t *testing.T) {
 				"total_results": 1,
 				"warning":       []interface{}{},
 			}),
-			failCmd:  false,
-			hasError: true,
-		},
-		{
-			name: "error parsing timestamp",
-			in:   reconcilerpb.RetrieveIngestionLogsRequest{PageToken: "F/Jk/zc08gA="},
-			result: interface{}(map[interface{}]interface{}{
-				"attributes": []interface{}{},
-				"format":     "STRING",
-				"results": []interface{}{
-					map[interface{}]interface{}{
-						"extra_attributes": map[interface{}]interface{}{
-							"$":            `{"dataType":"dcim.interface","entity":{"interface":{"device":{"name":"my_dev"},"name":"Gig 2"}},"ingestionTs":1725552914392208722,"producerAppName":"diode-agent","producerAppVersion":"0.0.1","request_id":"req-id","sdkName":"diode-sdk-go","sdkVersion":"0.1.0","state":2}`,
-							"ingestion_ts": "invalid_ts",
-						},
-						"id":     "ingest-entity:dcim.interface-1725552914392208722-db0931ec-c119-4702-bd74-4f0bed4e110b",
-						"values": []interface{}{},
-					},
-				},
-				"total_results": 1,
-				"warning":       []interface{}{},
-			}),
-			failCmd:  false,
-			hasError: true,
+			queryFilter:      "*",
+			queryLimitOffset: 1430,
+			failCmd:          false,
+			hasError:         true,
 		},
 		{
 			name:     "error decoding page token",
@@ -699,24 +705,26 @@ func TestRetrieveLogs(t *testing.T) {
 				"results": []interface{}{
 					map[interface{}]interface{}{
 						"extra_attributes": map[interface{}]interface{}{
-							"$":            `{"dataType":"dcim.interface","entity":{"interface":{"device":{"name":"my_dev"},"name":"Gig 2"}},"ingestionTs":1725552914392208722,"producerAppName":"diode-agent","producerAppVersion":"0.0.1","request_id":"req-id","sdkName":"diode-sdk-go","sdkVersion":"0.1.0","state":2}`,
+							"$":            `{"dataType":"dcim.interface","entity":{"interface":{"device":{"name":"my_dev"},"name":"Gig 2"}},"id":"2mAT7vZ38H4ttI0i5dBebwJbSnZ","ingestionTs":1725552914392208722,"producerAppName":"diode-agent","producerAppVersion":"0.0.1","request_id":"req-id","sdkName":"diode-sdk-go","sdkVersion":"0.1.0","state":2}`,
 							"ingestion_ts": 123,
 						},
-						"id":     "ingest-entity:dcim.interface-1725552914392208722-db0931ec-c119-4702-bd74-4f0bed4e110b",
+						"id":     "ingest-entity:dcim.interface-1725552914392208722-2mAT7vZ38H4ttI0i5dBebwJbSnZ",
 						"values": []interface{}{},
 					},
 				},
 				"total_results": 1,
 				"warning":       []interface{}{},
 			}),
-			failCmd:  false,
-			hasError: true,
+			queryFilter: "*",
+			failCmd:     false,
+			hasError:    true,
 		},
 		{
-			name:     "redis error",
-			in:       reconcilerpb.RetrieveIngestionLogsRequest{},
-			failCmd:  true,
-			hasError: true,
+			name:        "redis error",
+			in:          reconcilerpb.RetrieveIngestionLogsRequest{},
+			queryFilter: "*",
+			failCmd:     true,
+			hasError:    true,
 		},
 	}
 	for i := range tests {
@@ -732,7 +740,7 @@ func TestRetrieveLogs(t *testing.T) {
 			if tt.failCmd {
 				cmd.SetErr(errors.New("error"))
 			}
-			mockRedisClient.On("Do", ctx, "FT.SEARCH", "ingest-entity", mock.Anything, "SORTBY", "ingestion_ts", "DESC", "LIMIT", 0, mock.Anything).
+			mockRedisClient.On("Do", ctx, "FT.SEARCH", "ingest-entity", tt.queryFilter, "SORTBY", "id", "DESC", "LIMIT", tt.queryLimitOffset, int32(100)).
 				Return(cmd)
 
 			server := &Server{
