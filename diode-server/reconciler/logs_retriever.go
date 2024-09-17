@@ -132,7 +132,7 @@ func retrieveIngestionLogs(ctx context.Context, logger *slog.Logger, client Redi
 	}
 
 	pageSize := in.GetPageSize()
-	if in.PageSize == nil {
+	if in.PageSize == nil || pageSize >= 1000 {
 		pageSize = 100 // Default to 100
 	}
 
@@ -155,7 +155,7 @@ func retrieveIngestionLogs(ctx context.Context, logger *slog.Logger, client Redi
 	if in.PageToken != "" {
 		offset, err = decodeBase64ToInt(in.PageToken)
 		if err != nil {
-			return nil, fmt.Errorf("error decoding page token: %w", err)
+			logger.Warn("error decoding page token", "error", err)
 		}
 	}
 	queryArgs = append(queryArgs, "LIMIT", offset, pageSize)
@@ -232,9 +232,7 @@ func buildQueryFilter(req *reconcilerpb.RetrieveIngestionLogsRequest) string {
 			ingestionTsFilter = fmt.Sprintf("@ingestion_ts:[%d %d]", req.GetIngestionTsStart(), req.GetIngestionTsEnd())
 		}
 
-		if queryFilter == "*" {
-			queryFilter = ingestionTsFilter
-		}
+		queryFilter = ingestionTsFilter
 	}
 
 	// apply optional filters for ingestion state

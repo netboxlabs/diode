@@ -691,10 +691,58 @@ func TestRetrieveLogs(t *testing.T) {
 			hasError:         true,
 		},
 		{
-			name:     "error decoding page token",
-			in:       reconcilerpb.RetrieveIngestionLogsRequest{PageToken: "invalid"},
-			failCmd:  false,
-			hasError: true,
+			name: "error decoding page token",
+			in:   reconcilerpb.RetrieveIngestionLogsRequest{PageToken: "invalid"},
+			result: interface{}(map[interface{}]interface{}{
+				"attributes": []interface{}{},
+				"format":     "STRING",
+				"results": []interface{}{
+					map[interface{}]interface{}{
+						"extra_attributes": map[interface{}]interface{}{
+							"$":            `{"dataType":"dcim.interface","entity":{"interface":{"device":{"name":"my_dev"},"name":"Gig 2"}},"id":"2mAT7vZ38H4ttI0i5dBebwJbSnZ","ingestionTs":1725552914392208722,"producerAppName":"diode-agent","producerAppVersion":"0.0.1","request_id":"req-id","sdkName":"diode-sdk-go","sdkVersion":"0.1.0","state":2}`,
+							"ingestion_ts": "1725552914392208640",
+						},
+						"id":     "ingest-entity:dcim.interface-1725552914392208722-2mAT7vZ38H4ttI0i5dBebwJbSnZ",
+						"values": []interface{}{},
+					},
+				},
+				"total_results": 1,
+				"warning":       []interface{}{},
+			}),
+			response: &reconcilerpb.RetrieveIngestionLogsResponse{
+				Logs: []*reconcilerpb.IngestionLog{
+					{
+						Id:                 "2mAT7vZ38H4ttI0i5dBebwJbSnZ",
+						DataType:           "dcim.interface",
+						State:              reconcilerpb.State_RECONCILED,
+						RequestId:          "req-id",
+						IngestionTs:        1725552914392208722,
+						ProducerAppName:    "diode-agent",
+						ProducerAppVersion: "0.0.1",
+						SdkName:            "diode-sdk-go",
+						SdkVersion:         "0.1.0",
+						Entity: &diodepb.Entity{
+							Entity: &diodepb.Entity_Interface{
+								Interface: &diodepb.Interface{
+									Device: &diodepb.Device{
+										Name: "my_dev",
+									},
+									Name: "Gig 2",
+								},
+							},
+						},
+						Error: nil,
+					},
+				},
+				Metrics: &reconcilerpb.IngestionMetrics{
+					Total: 1,
+				},
+				NextPageToken: "AAAFlw==",
+			},
+			queryFilter:      "*",
+			queryLimitOffset: 0,
+			failCmd:          false,
+			hasError:         false,
 		},
 		{
 			name: "error parsing response json",
