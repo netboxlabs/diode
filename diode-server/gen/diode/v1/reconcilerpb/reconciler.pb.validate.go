@@ -704,6 +704,8 @@ func (m *IngestionLog) validate(all bool) error {
 
 	var errors []error
 
+	// no validation rules for Id
+
 	// no validation rules for DataType
 
 	// no validation rules for State
