@@ -771,7 +771,7 @@ func TestRetrieveLogs(t *testing.T) {
 	}
 }
 
-func TestRetrieveLogsSummary(t *testing.T) {
+func TestRetrieveIngestionLogsMetricsOnly(t *testing.T) {
 	tests := []struct {
 		name          string
 		expectedTotal interface{}
@@ -850,7 +850,7 @@ func TestRetrieveLogsSummary(t *testing.T) {
 				"total_results": int64(expected.New),
 				"warning":       []interface{}{},
 			}))
-			mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "@state:[1 1]", "LIMIT", 0, 0}).Return(cmdNew)
+			mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "@state:NEW", "LIMIT", 0, 0}).Return(cmdNew)
 
 			cmdReconciled := redis.NewCmd(ctx)
 			cmdReconciled.SetVal(interface{}(map[interface{}]interface{}{
@@ -862,7 +862,7 @@ func TestRetrieveLogsSummary(t *testing.T) {
 				"total_results": int64(expected.Reconciled),
 				"warning":       []interface{}{},
 			}))
-			mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "@state:[2 2]", "LIMIT", 0, 0}).Return(cmdReconciled)
+			mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "@state:RECONCILED", "LIMIT", 0, 0}).Return(cmdReconciled)
 
 			cmdFailed := redis.NewCmd(ctx)
 			cmdFailed.SetVal(interface{}(map[interface{}]interface{}{
@@ -874,7 +874,7 @@ func TestRetrieveLogsSummary(t *testing.T) {
 				"total_results": int64(expected.Failed),
 				"warning":       []interface{}{},
 			}))
-			mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "@state:[3 3]", "LIMIT", 0, 0}).Return(cmdFailed)
+			mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "@state:FAILED", "LIMIT", 0, 0}).Return(cmdFailed)
 
 			cmdNoChanges := redis.NewCmd(ctx)
 			cmdNoChanges.SetVal(interface{}(map[interface{}]interface{}{
@@ -886,7 +886,7 @@ func TestRetrieveLogsSummary(t *testing.T) {
 				"total_results": int64(expected.NoChanges),
 				"warning":       []interface{}{},
 			}))
-			mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "@state:[4 4]", "LIMIT", 0, 0}).Return(cmdNoChanges)
+			mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "@state:NO_CHANGES", "LIMIT", 0, 0}).Return(cmdNoChanges)
 
 			mockPipeliner.On("Exec", ctx).Return(tt.execError)
 			mockRedisClient.On("Pipeline").Return(mockPipeliner)
