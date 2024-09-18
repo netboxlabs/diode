@@ -72,16 +72,17 @@ message IngestionMetrics {
 
 // An ingestion log
 message IngestionLog {
-  string data_type = 1;
-  State state = 2;
-  string request_id = 3;
-  int64 ingestion_ts = 4;
-  string producer_app_name = 5;
-  string producer_app_version = 6;
-  string sdk_name = 7;
-  string sdk_version = 8;
-  diode.v1.Entity entity = 9;
-  IngestionError error = 10;
+  string id = 1;
+  string data_type = 2;
+  State state = 3;
+  string request_id = 4;
+  int64 ingestion_ts = 5;
+  string producer_app_name = 6;
+  string producer_app_version = 7;
+  string sdk_name = 8;
+  string sdk_version = 9;
+  diode.v1.Entity entity = 10;
+  IngestionError error = 11;
 }
 
 // The request to retrieve ingestion logs

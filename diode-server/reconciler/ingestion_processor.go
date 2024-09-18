@@ -9,9 +9,9 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/google/uuid"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/redis/go-redis/v9"
+	"github.com/segmentio/ksuid"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 
@@ -195,10 +195,13 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 			continue
 		}
 
-		key := fmt.Sprintf("ingest-entity:%s-%d-%s", objectType, ingestionTs, uuid.NewString())
+		ingestionLogID := ksuid.New().String()
+
+		key := fmt.Sprintf("ingest-entity:%s-%d-%s", objectType, ingestionTs, ingestionLogID)
 		p.logger.Debug("ingest entity key", "key", key)
 
 		ingestionLog := &reconcilerpb.IngestionLog{
+			Id:                 ingestionLogID,
 			RequestId:          ingestReq.GetId(),
 			ProducerAppName:    ingestReq.GetProducerAppName(),
 			ProducerAppVersion: ingestReq.GetProducerAppVersion(),
