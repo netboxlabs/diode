@@ -212,12 +212,14 @@ func TestReconcileEntity(t *testing.T) {
 
 func TestHandleStreamMessage(t *testing.T) {
 	tests := []struct {
-		name            string
-		validMsg        bool
-		entities        []*diodepb.Entity
-		mockChangeSet   *changeset.ChangeSet
-		reconcilerError bool
-		expectedError   bool
+		name              string
+		validMsg          bool
+		entities          []*diodepb.Entity
+		mockChangeSet     *changeset.ChangeSet
+		changeSetResponse *netboxdiodeplugin.ChangeSetResponse
+		changeSetError    error
+		reconcilerError   bool
+		expectedError     bool
 	}{
 		{
 			name:     "successful processing",
@@ -231,8 +233,9 @@ func TestHandleStreamMessage(t *testing.T) {
 					},
 				},
 			},
-			reconcilerError: false,
-			expectedError:   false,
+			changeSetResponse: &netboxdiodeplugin.ChangeSetResponse{},
+			reconcilerError:   false,
+			expectedError:     false,
 		},
 		{
 			name:     "unmarshal error",
@@ -257,8 +260,9 @@ func TestHandleStreamMessage(t *testing.T) {
 					},
 				},
 			},
-			reconcilerError: true,
-			expectedError:   false,
+			changeSetResponse: &netboxdiodeplugin.ChangeSetResponse{},
+			reconcilerError:   true,
+			expectedError:     false,
 		},
 		{
 			name:     "no entities",
@@ -268,8 +272,9 @@ func TestHandleStreamMessage(t *testing.T) {
 					Entity: nil,
 				},
 			},
-			reconcilerError: false,
-			expectedError:   false,
+			changeSetResponse: &netboxdiodeplugin.ChangeSetResponse{},
+			reconcilerError:   false,
+			expectedError:     false,
 		},
 		{
 			name:     "change set available",
@@ -287,6 +292,34 @@ func TestHandleStreamMessage(t *testing.T) {
 				ChangeSetID: "cs123",
 				ChangeSet:   []changeset.Change{},
 			},
+			changeSetResponse: &netboxdiodeplugin.ChangeSetResponse{
+				ChangeSetID: "cs123",
+				Result:      "changed",
+			},
+			reconcilerError: false,
+			expectedError:   false,
+		},
+		{
+			name:     "change set apply error",
+			validMsg: true,
+			entities: []*diodepb.Entity{
+				{
+					Entity: &diodepb.Entity_Site{
+						Site: &diodepb.Site{
+							Name: "test-site-name",
+						},
+					},
+				},
+			},
+			mockChangeSet: &changeset.ChangeSet{
+				ChangeSetID: "cs123",
+				ChangeSet:   []changeset.Change{},
+			},
+			changeSetResponse: &netboxdiodeplugin.ChangeSetResponse{
+				ChangeSetID: "cs123",
+				Result:      "changed",
+			},
+			changeSetError:  errors.New("apply error"),
 			reconcilerError: false,
 			expectedError:   false,
 		},
@@ -341,7 +374,7 @@ func TestHandleStreamMessage(t *testing.T) {
 						Site: nil,
 					}}, nil)
 			}
-			mockNbClient.On("ApplyChangeSet", ctx, mock.Anything).Return(&netboxdiodeplugin.ChangeSetResponse{}, nil)
+			mockNbClient.On("ApplyChangeSet", ctx, mock.Anything).Return(tt.changeSetResponse, tt.changeSetError)
 			if tt.entities[0].Entity != nil {
 				mockRedisClient.On("Do", ctx, "JSON.SET", mock.Anything, "$", mock.Anything).Return(redis.NewCmd(ctx))
 			}

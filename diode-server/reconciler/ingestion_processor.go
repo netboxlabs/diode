@@ -346,7 +346,7 @@ func (p *IngestionProcessor) reconcileEntity(ctx context.Context, ingestEntity c
 
 	resp, err := p.nbClient.ApplyChangeSet(ctx, req)
 	if err != nil {
-		return nil, err
+		return cs, err
 	}
 
 	p.logger.Debug("apply change set response", "response", resp)
