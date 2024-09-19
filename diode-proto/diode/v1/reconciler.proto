@@ -70,6 +70,12 @@ message IngestionMetrics {
   int32 no_changes = 5;
 }
 
+// A change set
+message ChangeSet {
+  string id = 1; // A change set ID
+  string data = 2; // An arbitrary JSON object representing the change set
+}
+
 // An ingestion log
 message IngestionLog {
   string id = 1;
@@ -83,6 +89,7 @@ message IngestionLog {
   string sdk_version = 9;
   diode.v1.Entity entity = 10;
   IngestionError error = 11;
+  ChangeSet change_set = 12;
 }
 
 // The request to retrieve ingestion logs
