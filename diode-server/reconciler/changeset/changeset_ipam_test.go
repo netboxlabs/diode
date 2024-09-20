@@ -2,12 +2,12 @@ package changeset_test
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/netbox"
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin/mocks"
@@ -24,28 +24,29 @@ func TestIpamPrepare(t *testing.T) {
 	}
 	tests := []struct {
 		name                 string
-		rawIngestEntity      []byte
+		ingestEntity         changeset.IngestEntity
 		retrieveObjectStates []mockRetrieveObjectState
 		wantChangeSet        changeset.ChangeSet
 		wantErr              bool
 	}{
 		{
 			name: "[P1] ingest ipam.ipaddress with address and interface - existing object not found - create",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "ipam.ipaddress",
-				"entity": {
-					"IpAddress": {
-						"address": "192.168.0.1/22",
-						"AssignedObject": {
-							"Interface": {
-								"name": "GigabitEthernet0/0/0"
-							}
-						}
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "ipam.ipaddress",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_IpAddress{
+						IpAddress: &diodepb.IPAddress{
+							Address: "192.168.0.1/22",
+							AssignedObject: &diodepb.IPAddress_Interface{
+								Interface: &diodepb.Interface{
+									Name: "GigabitEthernet0/0/0",
+								},
+							},
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.site",
@@ -247,21 +248,22 @@ func TestIpamPrepare(t *testing.T) {
 		},
 		{
 			name: "[P1] ingest ipam.ipaddress with address and a new interface - existing IP address and interface not found - create an interface and IP address",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "ipam.ipaddress",
-				"entity": {
-					"IpAddress": {
-						"address": "192.168.0.1/22",
-						"AssignedObject": {
-							"Interface": {
-								"name": "GigabitEthernet0/0/0"
-							}
-						}
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "ipam.ipaddress",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_IpAddress{
+						IpAddress: &diodepb.IPAddress{
+							Address: "192.168.0.1/22",
+							AssignedObject: &diodepb.IPAddress_Interface{
+								Interface: &diodepb.Interface{
+									Name: "GigabitEthernet0/0/0",
+								},
+							},
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.site",
@@ -447,21 +449,22 @@ func TestIpamPrepare(t *testing.T) {
 		},
 		{
 			name: "[P1] ingest ipam.ipaddress with address and a new interface - IP address found assigned to a different interface - create the interface and the IP address",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "ipam.ipaddress",
-				"entity": {
-					"IpAddress": {
-						"address": "192.168.0.1/22",
-						"AssignedObject": {
-							"Interface": {
-								"name": "GigabitEthernet1/0/1"
-							}
-						}
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "ipam.ipaddress",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_IpAddress{
+						IpAddress: &diodepb.IPAddress{
+							Address: "192.168.0.1/22",
+							AssignedObject: &diodepb.IPAddress_Interface{
+								Interface: &diodepb.Interface{
+									Name: "GigabitEthernet1/0/1",
+								},
+							},
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.site",
@@ -695,21 +698,22 @@ func TestIpamPrepare(t *testing.T) {
 		},
 		{
 			name: "[P1] ingest ipam.ipaddress with assigned interface - existing IP address found assigned a different device - create IP address with a new assigned object (interface)",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "ipam.ipaddress",
-				"entity": {
-					"IpAddress": {
-						"address": "192.168.0.1/22",
-						"AssignedObject": {
-							"Interface": {
-								"name": "GigabitEthernet1/0/1"
-							}
-						}
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "ipam.ipaddress",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_IpAddress{
+						IpAddress: &diodepb.IPAddress{
+							Address: "192.168.0.1/22",
+							AssignedObject: &diodepb.IPAddress_Interface{
+								Interface: &diodepb.Interface{
+									Name: "GigabitEthernet1/0/1",
+								},
+							},
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.site",
@@ -969,21 +973,22 @@ func TestIpamPrepare(t *testing.T) {
 		},
 		{
 			name: "[P1] ingest ipam.ipaddress with address and interface - existing IP address found with same interface assigned - no update needed",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "ipam.ipaddress",
-				"entity": {
-					"IpAddress": {
-						"address": "192.168.0.1/22",
-						"AssignedObject": {
-							"Interface": {
-								"name": "GigabitEthernet0/0/0"
-							}
-						}
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "ipam.ipaddress",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_IpAddress{
+						IpAddress: &diodepb.IPAddress{
+							Address: "192.168.0.1/22",
+							AssignedObject: &diodepb.IPAddress_Interface{
+								Interface: &diodepb.Interface{
+									Name: "GigabitEthernet0/0/0",
+								},
+							},
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.site",
@@ -1223,16 +1228,17 @@ func TestIpamPrepare(t *testing.T) {
 		},
 		{
 			name: "[P1] ingest ipam.ipaddress with address only - existing IP address found without interface assigned - no update needed",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "ipam.ipaddress",
-				"entity": {
-					"IpAddress": {
-						"address": "192.168.0.1/22"
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "ipam.ipaddress",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_IpAddress{
+						IpAddress: &diodepb.IPAddress{
+							Address: "192.168.0.1/22",
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "ipam.ipaddress",
@@ -1256,22 +1262,23 @@ func TestIpamPrepare(t *testing.T) {
 		},
 		{
 			name: "[P1] ingest ipam.ipaddress with address and new description - existing IP address found - update IP address with new description",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "ipam.ipaddress",
-				"entity": {
-					"IpAddress": {
-						"address": "192.168.0.1/22",
-						"description": "new description",
-						"AssignedObject": {
-							"Interface": {
-								"name": "GigabitEthernet0/0/0"
-							}
-						}
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "ipam.ipaddress",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_IpAddress{
+						IpAddress: &diodepb.IPAddress{
+							Address:     "192.168.0.1/22",
+							Description: strPtr("new description"),
+							AssignedObject: &diodepb.IPAddress_Interface{
+								Interface: &diodepb.Interface{
+									Name: "GigabitEthernet0/0/0",
+								},
+							},
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.site",
@@ -1533,14 +1540,15 @@ func TestIpamPrepare(t *testing.T) {
 		},
 		{
 			name: "[P1] ingest empty ipam.ipaddress - error",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "ipam.ipaddress",
-				"entity": {
-					"IPAddress": {}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "ipam.ipaddress",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_IpAddress{
+						IpAddress: &diodepb.IPAddress{},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{},
 			wantChangeSet: changeset.ChangeSet{
 				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
@@ -1550,16 +1558,17 @@ func TestIpamPrepare(t *testing.T) {
 		},
 		{
 			name: "[P2] ingest ipam.prefix with prefix only - existing object not found - create prefix and site (placeholder)",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "ipam.prefix",
-				"entity": {
-					"Prefix": {
-						"prefix": "192.168.0.0/32"
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "ipam.prefix",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Prefix{
+						Prefix: &diodepb.Prefix{
+							Prefix: "192.168.0.0/32",
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.site",
@@ -1617,19 +1626,20 @@ func TestIpamPrepare(t *testing.T) {
 		},
 		{
 			name: "[P2] ingest ipam.prefix with prefix only - existing object and its related objects found - do nothing",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "ipam.prefix",
-				"entity": {
-					"Prefix": {
-						"prefix": "192.168.0.0/32",
-						"site": {
-							"name": "undefined"
-						}
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "ipam.prefix",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Prefix{
+						Prefix: &diodepb.Prefix{
+							Prefix: "192.168.0.0/32",
+							Site: &diodepb.Site{
+								Name: "undefined",
+							},
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.site",
@@ -1673,17 +1683,18 @@ func TestIpamPrepare(t *testing.T) {
 		},
 		{
 			name: "[P2] ingest ipam.prefix with empty site",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "ipam.prefix",
-				"entity": {
-					"Prefix": {
-						"prefix": "192.168.0.0/32",
-						"site": {}
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "ipam.prefix",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Prefix{
+						Prefix: &diodepb.Prefix{
+							Prefix: "192.168.0.0/32",
+							Site:   &diodepb.Site{},
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.site",
@@ -1727,21 +1738,22 @@ func TestIpamPrepare(t *testing.T) {
 		},
 		{
 			name: "[P2] ingest ipam.prefix with prefix and a tag - existing object found - create tag and update prefix",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "ipam.prefix",
-				"entity": {
-					"Prefix": {
-						"prefix": "192.168.0.0/32",
-						"tags": [
-							{
-								"name": "tag 100"
-							}
-						]
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "ipam.prefix",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Prefix{
+						Prefix: &diodepb.Prefix{
+							Prefix: "192.168.0.0/32",
+							Tags: []*diodepb.Tag{
+								{
+									Name: "tag 100",
+								},
+							},
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.site",
@@ -1829,10 +1841,6 @@ func TestIpamPrepare(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var ingestEntity changeset.IngestEntity
-			err := json.Unmarshal(tt.rawIngestEntity, &ingestEntity)
-			require.NoError(t, err)
-
 			mockClient := mocks.NewNetBoxAPI(t)
 
 			for _, m := range tt.retrieveObjectStates {
@@ -1848,7 +1856,7 @@ func TestIpamPrepare(t *testing.T) {
 				}, nil)
 			}
 
-			cs, err := changeset.Prepare(ingestEntity, mockClient)
+			cs, err := changeset.Prepare(tt.ingestEntity, mockClient)
 			if tt.wantErr {
 				require.Error(t, err)
 				return

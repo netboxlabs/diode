@@ -2,12 +2,12 @@ package changeset_test
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/netbox"
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin/mocks"
@@ -24,23 +24,24 @@ func TestVirtualizationPrepare(t *testing.T) {
 	}
 	tests := []struct {
 		name                 string
-		rawIngestEntity      []byte
+		ingestEntity         changeset.IngestEntity
 		retrieveObjectStates []mockRetrieveObjectState
 		wantChangeSet        changeset.ChangeSet
 		wantErr              bool
 	}{
 		{
 			name: "[P1] ingest virtualization.clustergroup with name only - existing object not found - create",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "virtualization.clustergroup",
-				"entity": {
-					"ClusterGroup": {
-						"name": "Test"
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "virtualization.clustergroup",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_ClusterGroup{
+						ClusterGroup: &diodepb.ClusterGroup{
+							Name: "Test",
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "virtualization.clustergroup",
@@ -72,16 +73,17 @@ func TestVirtualizationPrepare(t *testing.T) {
 		},
 		{
 			name: "[P1] ingest virtualization.clustergroup with name only - existing object found - do nothing",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "virtualization.clustergroup",
-				"entity": {
-					"ClusterGroup": {
-						"name": "Test"
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "virtualization.clustergroup",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_ClusterGroup{
+						ClusterGroup: &diodepb.ClusterGroup{
+							Name: "Test",
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "virtualization.clustergroup",
@@ -105,14 +107,15 @@ func TestVirtualizationPrepare(t *testing.T) {
 		},
 		{
 			name: "[P1] ingest empty virtualization.clustergroup - error",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "virtualization.clustergroup",
-				"entity": {
-					"ClusterGroup": {}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "virtualization.clustergroup",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_ClusterGroup{
+						ClusterGroup: &diodepb.ClusterGroup{},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{},
 			wantChangeSet: changeset.ChangeSet{
 				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
@@ -122,16 +125,17 @@ func TestVirtualizationPrepare(t *testing.T) {
 		},
 		{
 			name: "[P2] ingest virtualization.clustertype with name only - existing object not found - create",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "virtualization.clustertype",
-				"entity": {
-					"ClusterType": {
-						"name": "Test"
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "virtualization.clustertype",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_ClusterType{
+						ClusterType: &diodepb.ClusterType{
+							Name: "Test",
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "virtualization.clustertype",
@@ -163,16 +167,17 @@ func TestVirtualizationPrepare(t *testing.T) {
 		},
 		{
 			name: "[P2] ingest virtualization.clustertype with name only - existing object found - do nothing",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "virtualization.clustertype",
-				"entity": {
-					"ClusterType": {
-						"name": "Test"
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "virtualization.clustertype",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_ClusterType{
+						ClusterType: &diodepb.ClusterType{
+							Name: "Test",
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "virtualization.clustertype",
@@ -196,14 +201,23 @@ func TestVirtualizationPrepare(t *testing.T) {
 		},
 		{
 			name: "[P2] ingest empty virtualization.clustertype - error",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "virtualization.clustertype",
-				"entity": {
-					"ClusterType": {}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "virtualization.clustertype",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_ClusterType{
+						ClusterType: &diodepb.ClusterType{},
+					},
 				},
-				"state": 0
-			}`),
+			},
+			//rawIngestEntity: []byte(`{
+			//	"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
+			//	"data_type": "virtualization.clustertype",
+			//	"entity": {
+			//		"ClusterType": {}
+			//	},
+			//	"state": 0
+			//}`),
 			retrieveObjectStates: []mockRetrieveObjectState{},
 			wantChangeSet: changeset.ChangeSet{
 				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
@@ -213,16 +227,17 @@ func TestVirtualizationPrepare(t *testing.T) {
 		},
 		{
 			name: "[P3] ingest virtualization.cluster with name only - existing object not found - create",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "virtualization.cluster",
-				"entity": {
-					"Cluster": {
-						"name": "Test"
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "virtualization.cluster",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Cluster{
+						Cluster: &diodepb.Cluster{
+							Name: "Test",
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "virtualization.cluster",
@@ -284,7 +299,8 @@ func TestVirtualizationPrepare(t *testing.T) {
 						ObjectID:      nil,
 						ObjectVersion: nil,
 						Data: &netbox.VirtualizationCluster{
-							Name: "Test",
+							Name:   "Test",
+							Status: strPtr(netbox.DefaultVirtualizationStatus),
 							Group: &netbox.VirtualizationClusterGroup{
 								ID: 1,
 							},
@@ -302,16 +318,17 @@ func TestVirtualizationPrepare(t *testing.T) {
 		},
 		{
 			name: "[P3] ingest virtualization.cluster with name only - existing object found - do nothing",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "virtualization.cluster",
-				"entity": {
-					"Cluster": {
-						"name": "Test"
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "virtualization.cluster",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Cluster{
+						Cluster: &diodepb.Cluster{
+							Name: "Test",
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "virtualization.cluster",
@@ -374,14 +391,15 @@ func TestVirtualizationPrepare(t *testing.T) {
 		},
 		{
 			name: "[P3] ingest empty virtualization.cluster - error",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "virtualization.cluster",
-				"entity": {
-					"Cluster": {}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "virtualization.cluster",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Cluster{
+						Cluster: &diodepb.Cluster{},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{},
 			wantChangeSet: changeset.ChangeSet{
 				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
@@ -391,16 +409,17 @@ func TestVirtualizationPrepare(t *testing.T) {
 		},
 		{
 			name: "[P4] ingest virtualization.virtualmachine with name only - existing object not found - create",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "virtualization.virtualmachine",
-				"entity": {
-					"VirtualMachine": {
-						"name": "Test"
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "virtualization.virtualmachine",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_VirtualMachine{
+						VirtualMachine: &diodepb.VirtualMachine{
+							Name: "Test",
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "virtualization.virtualmachine",
@@ -450,7 +469,8 @@ func TestVirtualizationPrepare(t *testing.T) {
 						ObjectID:      nil,
 						ObjectVersion: nil,
 						Data: &netbox.VirtualizationVirtualMachine{
-							Name: "Test",
+							Name:   "Test",
+							Status: strPtr(netbox.DefaultVirtualizationStatus),
 							Role: &netbox.DcimDeviceRole{
 								ID: 1,
 							},
@@ -465,19 +485,20 @@ func TestVirtualizationPrepare(t *testing.T) {
 		},
 		{
 			name: "[P4] ingest virtualization.virtualmachine with name and cluster - existing objects not found - create",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "virtualization.virtualmachine",
-				"entity": {
-					"VirtualMachine": {
-						"name": "Test",
-						"cluster": {
-							"name": "Cluster-1"
-						}
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "virtualization.virtualmachine",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_VirtualMachine{
+						VirtualMachine: &diodepb.VirtualMachine{
+							Name: "Test",
+							Cluster: &diodepb.Cluster{
+								Name: "Cluster-1",
+							},
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "virtualization.virtualmachine",
@@ -562,7 +583,8 @@ func TestVirtualizationPrepare(t *testing.T) {
 						ObjectID:      nil,
 						ObjectVersion: nil,
 						Data: &netbox.VirtualizationCluster{
-							Name: "Cluster-1",
+							Name:   "Cluster-1",
+							Status: strPtr(netbox.DefaultVirtualizationStatus),
 							Group: &netbox.VirtualizationClusterGroup{
 								ID: 1,
 							},
@@ -581,9 +603,11 @@ func TestVirtualizationPrepare(t *testing.T) {
 						ObjectID:      nil,
 						ObjectVersion: nil,
 						Data: &netbox.VirtualizationVirtualMachine{
-							Name: "Test",
+							Name:   "Test",
+							Status: strPtr(netbox.DefaultVirtualizationStatus),
 							Cluster: &netbox.VirtualizationCluster{
-								Name: "Cluster-1",
+								Name:   "Cluster-1",
+								Status: strPtr(netbox.DefaultVirtualizationStatus),
 								Group: &netbox.VirtualizationClusterGroup{
 									ID: 1,
 								},
@@ -608,19 +632,20 @@ func TestVirtualizationPrepare(t *testing.T) {
 		},
 		{
 			name: "[P4] ingest virtualization.virtualmachine with name and existing cluster - existing vm not found - create",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "virtualization.virtualmachine",
-				"entity": {
-					"VirtualMachine": {
-						"name": "Test",
-						"cluster": {
-							"name": "Cluster-2"
-						}
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "virtualization.virtualmachine",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_VirtualMachine{
+						VirtualMachine: &diodepb.VirtualMachine{
+							Name: "Test",
+							Cluster: &diodepb.Cluster{
+								Name: "Cluster-2",
+							},
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "virtualization.virtualmachine",
@@ -725,7 +750,8 @@ func TestVirtualizationPrepare(t *testing.T) {
 						ObjectID:      nil,
 						ObjectVersion: nil,
 						Data: &netbox.VirtualizationVirtualMachine{
-							Name: "Test",
+							Name:   "Test",
+							Status: strPtr(netbox.DefaultVirtualizationStatus),
 							Cluster: &netbox.VirtualizationCluster{
 								ID: 1,
 							},
@@ -743,19 +769,20 @@ func TestVirtualizationPrepare(t *testing.T) {
 		},
 		{
 			name: "[P4] ingest virtualization.virtualmachine with name and cluster - existing vm found - create cluster",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "virtualization.virtualmachine",
-				"entity": {
-					"VirtualMachine": {
-						"name": "Test",
-						"cluster": {
-							"name": "Cluster-3"
-						}
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "virtualization.virtualmachine",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_VirtualMachine{
+						VirtualMachine: &diodepb.VirtualMachine{
+							Name: "Test",
+							Cluster: &diodepb.Cluster{
+								Name: "Cluster-3",
+							},
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "virtualization.virtualmachine",
@@ -850,7 +877,8 @@ func TestVirtualizationPrepare(t *testing.T) {
 						ObjectID:      nil,
 						ObjectVersion: nil,
 						Data: &netbox.VirtualizationCluster{
-							Name: "Cluster-3",
+							Name:   "Cluster-3",
+							Status: strPtr(netbox.DefaultVirtualizationStatus),
 							Group: &netbox.VirtualizationClusterGroup{
 								ID: 1,
 							},
@@ -872,7 +900,8 @@ func TestVirtualizationPrepare(t *testing.T) {
 							ID:   1,
 							Name: "Test",
 							Cluster: &netbox.VirtualizationCluster{
-								Name: "Cluster-3",
+								Name:   "Cluster-3",
+								Status: strPtr(netbox.DefaultVirtualizationStatus),
 								Group: &netbox.VirtualizationClusterGroup{
 									ID: 1,
 								},
@@ -898,19 +927,20 @@ func TestVirtualizationPrepare(t *testing.T) {
 		},
 		{
 			name: "[P4] ingest virtualization.virtualmachine with name only - existing object found - do nothing",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "virtualization.virtualmachine",
-				"entity": {
-					"VirtualMachine": {
-						"name": "Test",
-						"cluster": {
-							"name": "cluster1"
-						}
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "virtualization.virtualmachine",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_VirtualMachine{
+						VirtualMachine: &diodepb.VirtualMachine{
+							Name: "Test",
+							Cluster: &diodepb.Cluster{
+								Name: "cluster1",
+							},
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "virtualization.virtualmachine",
@@ -1044,14 +1074,15 @@ func TestVirtualizationPrepare(t *testing.T) {
 		},
 		{
 			name: "[P4] ingest empty virtualization.virtualmachine - error",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "virtualization.virtualmachine",
-				"entity": {
-					"VirtualMachine": {}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "virtualization.virtualmachine",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_VirtualMachine{
+						VirtualMachine: &diodepb.VirtualMachine{},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{},
 			wantChangeSet: changeset.ChangeSet{
 				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
@@ -1061,16 +1092,17 @@ func TestVirtualizationPrepare(t *testing.T) {
 		},
 		{
 			name: "[P5] ingest virtualization.vminterface with name only - existing object not found - create",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "virtualization.vminterface",
-				"entity": {
-					"VMInterface": {
-						"name": "Test"
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "virtualization.vminterface",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Vminterface{
+						Vminterface: &diodepb.VMInterface{
+							Name: "Test",
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "virtualization.vminterface",
@@ -1165,16 +1197,17 @@ func TestVirtualizationPrepare(t *testing.T) {
 		},
 		{
 			name: "[P5] ingest virtualization.vminterface with name only - existing object found - do nothing",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "virtualization.vminterface",
-				"entity": {
-					"VMInterface": {
-						"name": "Test"
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "virtualization.vminterface",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Vminterface{
+						Vminterface: &diodepb.VMInterface{
+							Name: "Test",
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "virtualization.vminterface",
@@ -1256,14 +1289,15 @@ func TestVirtualizationPrepare(t *testing.T) {
 		},
 		{
 			name: "[P5] ingest empty virtualization.vminterface - error",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "virtualization.vminterface",
-				"entity": {
-					"VMInterface": {}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "virtualization.vminterface",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Vminterface{
+						Vminterface: &diodepb.VMInterface{},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{},
 			wantChangeSet: changeset.ChangeSet{
 				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
@@ -1273,16 +1307,17 @@ func TestVirtualizationPrepare(t *testing.T) {
 		},
 		{
 			name: "[P6] ingest virtualization.virtualdisk with name only - existing object not found - create",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "virtualization.virtualdisk",
-				"entity": {
-					"VirtualDisk": {
-						"name": "Test"
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "virtualization.virtualdisk",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_VirtualDisk{
+						VirtualDisk: &diodepb.VirtualDisk{
+							Name: "Test",
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "virtualization.virtualdisk",
@@ -1377,16 +1412,17 @@ func TestVirtualizationPrepare(t *testing.T) {
 		},
 		{
 			name: "[P6] ingest virtualization.virtualdisk with name only and no existing site - existing object not found - create",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "virtualization.virtualdisk",
-				"entity": {
-					"VirtualDisk": {
-						"name": "Test"
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "virtualization.virtualdisk",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_VirtualDisk{
+						VirtualDisk: &diodepb.VirtualDisk{
+							Name: "Test",
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "virtualization.virtualdisk",
@@ -1492,16 +1528,17 @@ func TestVirtualizationPrepare(t *testing.T) {
 		},
 		{
 			name: "[P6] ingest virtualization.virtualdisk with name only - existing object found - do nothing",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "virtualization.virtualdisk",
-				"entity": {
-					"VirtualDisk": {
-						"name": "Test"
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "virtualization.virtualdisk",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_VirtualDisk{
+						VirtualDisk: &diodepb.VirtualDisk{
+							Name: "Test",
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "virtualization.virtualdisk",
@@ -1570,14 +1607,15 @@ func TestVirtualizationPrepare(t *testing.T) {
 		},
 		{
 			name: "[P6] ingest empty virtualization.virtualdisk - error",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "virtualization.virtualdisk",
-				"entity": {
-					"VirtualDisk": {}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "virtualization.virtualdisk",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_VirtualDisk{
+						VirtualDisk: &diodepb.VirtualDisk{},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{},
 			wantChangeSet: changeset.ChangeSet{
 				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
@@ -1589,10 +1627,6 @@ func TestVirtualizationPrepare(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var ingestEntity changeset.IngestEntity
-			err := json.Unmarshal(tt.rawIngestEntity, &ingestEntity)
-			require.NoError(t, err)
-
 			mockClient := mocks.NewNetBoxAPI(t)
 
 			for _, m := range tt.retrieveObjectStates {
@@ -1608,7 +1642,7 @@ func TestVirtualizationPrepare(t *testing.T) {
 				}, nil)
 			}
 
-			cs, err := changeset.Prepare(ingestEntity, mockClient)
+			cs, err := changeset.Prepare(tt.ingestEntity, mockClient)
 			if tt.wantErr {
 				require.Error(t, err)
 				return

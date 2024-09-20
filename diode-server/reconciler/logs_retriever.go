@@ -237,7 +237,7 @@ func buildQueryFilter(req *reconcilerpb.RetrieveIngestionLogsRequest) string {
 
 	// apply optional filters for ingestion state
 	if req.State != nil {
-		stateFilter := fmt.Sprintf("@state:[%d %d]", req.GetState(), req.GetState())
+		stateFilter := fmt.Sprintf("@state:%s", req.GetState().String())
 		if queryFilter == "*" {
 			queryFilter = stateFilter
 		} else {
