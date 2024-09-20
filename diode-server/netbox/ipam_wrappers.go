@@ -6,6 +6,8 @@ import (
 
 	"github.com/gosimple/slug"
 	"github.com/mitchellh/hashstructure/v2"
+
+	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 )
 
 // IpamIPAddressDataWrapper represents the IPAM IP address data wrapper
@@ -15,6 +17,16 @@ type IpamIPAddressDataWrapper struct {
 }
 
 func (*IpamIPAddressDataWrapper) comparableData() {}
+
+// FromProtoEntity sets the data from a proto entity
+func (dw *IpamIPAddressDataWrapper) FromProtoEntity(entity *diodepb.Entity) error {
+	ipAddress, err := FromProtoIPAddressEntity(entity)
+	if err != nil {
+		return err
+	}
+	dw.IPAddress = ipAddress
+	return nil
+}
 
 // Data returns the IP address
 func (dw *IpamIPAddressDataWrapper) Data() any {
@@ -337,7 +349,7 @@ func (dw *IpamIPAddressDataWrapper) Patch(cmp ComparableData, intendedNestedObje
 
 // SetDefaults sets the default values for the IP address
 func (dw *IpamIPAddressDataWrapper) SetDefaults() {
-	if dw.IPAddress.Status == nil {
+	if dw.IPAddress.Status == nil || *dw.IPAddress.Status == "" {
 		dw.IPAddress.Status = &DefaultIPAddressStatus
 	}
 }
@@ -349,6 +361,16 @@ type IpamPrefixDataWrapper struct {
 }
 
 func (*IpamPrefixDataWrapper) comparableData() {}
+
+// FromProtoEntity sets the data from a proto entity
+func (dw *IpamPrefixDataWrapper) FromProtoEntity(entity *diodepb.Entity) error {
+	prefix, err := FromProtoPrefixEntity(entity)
+	if err != nil {
+		return err
+	}
+	dw.Prefix = prefix
+	return nil
+}
 
 // Data returns the Prefix
 func (dw *IpamPrefixDataWrapper) Data() any {

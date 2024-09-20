@@ -221,7 +221,7 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 		ingestEntity := changeset.IngestEntity{
 			RequestID: ingestReq.GetId(),
 			DataType:  objectType,
-			Entity:    v.GetEntity(),
+			Entity:    v,
 			State:     int(reconcilerpb.State_NEW),
 		}
 

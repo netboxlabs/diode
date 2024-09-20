@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/mitchellh/mapstructure"
 
+	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/netbox"
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
 )
@@ -156,18 +157,13 @@ func extractIngestEntityData(ingestEntity IngestEntity) (netbox.ComparableData, 
 		return nil, err
 	}
 
-	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
-		Result: &dw,
-		DecodeHook: mapstructure.ComposeDecodeHookFunc(
-			netbox.IpamIPAddressAssignedObjectHookFunc(),
-		),
-	})
-	if err != nil {
-		return nil, err
+	protoEntity, ok := ingestEntity.Entity.(*diodepb.Entity)
+	if !ok {
+		return nil, fmt.Errorf("ingest entity is not a proto entity")
 	}
 
-	if err := decoder.Decode(ingestEntity.Entity); err != nil {
-		return nil, fmt.Errorf("failed to decode ingest entity %w", err)
+	if err = dw.FromProtoEntity(protoEntity); err != nil {
+		return nil, err
 	}
 
 	if !dw.IsValid() {
