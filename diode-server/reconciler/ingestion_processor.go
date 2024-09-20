@@ -1,6 +1,7 @@
 package reconciler
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"encoding/json"
@@ -11,6 +12,7 @@ import (
 	"regexp"
 	"strconv"
 
+	"github.com/andybalholm/brotli"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/redis/go-redis/v9"
 	"github.com/segmentio/ksuid"
@@ -236,11 +238,11 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 
 			if changeSet != nil {
 				ingestionLog.ChangeSet = &reconcilerpb.ChangeSet{Id: changeSet.ChangeSetID}
-				csBase64, err := changeSetToBase64(changeSet)
+				csCompressed, err := compressChangeSet(changeSet)
 				if err != nil {
 					errs = append(errs, err)
 				} else {
-					ingestionLog.ChangeSet.Data = csBase64
+					ingestionLog.ChangeSet.Data = csCompressed
 				}
 			}
 
@@ -253,11 +255,11 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 		if changeSet != nil {
 			ingestionLog.State = reconcilerpb.State_RECONCILED
 			ingestionLog.ChangeSet = &reconcilerpb.ChangeSet{Id: changeSet.ChangeSetID}
-			csBase64, err := changeSetToBase64(changeSet)
+			csCompressed, err := compressChangeSet(changeSet)
 			if err != nil {
 				errs = append(errs, err)
 			} else {
-				ingestionLog.ChangeSet.Data = csBase64
+				ingestionLog.ChangeSet.Data = csCompressed
 			}
 		} else {
 			ingestionLog.State = reconcilerpb.State_NO_CHANGES
@@ -374,13 +376,18 @@ func normalizeIngestionLog(l []byte) []byte {
 	return re.ReplaceAll(l, []byte(`"ingestionTs":$1`))
 }
 
-func changeSetToBase64(cs *changeset.ChangeSet) (string, error) {
+func compressChangeSet(cs *changeset.ChangeSet) (string, error) {
 	csJSON, err := json.Marshal(cs)
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal JSON: %v", err)
 	}
 
-	return base64.StdEncoding.EncodeToString(csJSON), nil
+	var brotliBuf bytes.Buffer
+	brotliWriter := brotli.NewWriter(&brotliBuf)
+	brotliWriter.Write(csJSON)
+	brotliWriter.Close()
+
+	return base64.StdEncoding.EncodeToString(brotliBuf.Bytes()), nil
 }
 
 func extractObjectType(in *diodepb.Entity) (string, error) {
