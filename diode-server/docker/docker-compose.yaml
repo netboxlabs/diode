@@ -3,18 +3,24 @@ services:
   ingress-nginx:
     image: nginx:latest
     command: >
-      /bin/sh -c "echo 'upstream diode {
+      /bin/sh -c "echo 'upstream diode-ingester {
         server diode-ingester:8081;
       }
-
+      upstream diode-reconciler {
+        server diode-reconciler:8081;
+      }
       server {
         listen 80;
         http2 on;
         server_name localhost;
         client_max_body_size 25m;
-        location /diode {
+        location /diode/diode.v1.IngesterService {
           rewrite /diode/(.*) /$$1 break;
-          grpc_pass grpc://diode;
+          grpc_pass grpc://diode-ingester;
+        }
+        location /diode/diode.v1.ReconcilerService {
+          rewrite /diode/(.*) /$$1 break;
+          grpc_pass grpc://diode-reconciler;
         }
       }'
       > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
@@ -39,8 +45,7 @@ services:
       - INGESTER_TO_RECONCILER_API_KEY=${INGESTER_TO_RECONCILER_API_KEY}
       - SENTRY_DSN=${SENTRY_DSN}
     restart: always
-    ports:
-      - "8081:8081"
+    ports: [ ]
     depends_on:
       - diode-redis
       - diode-reconciler
