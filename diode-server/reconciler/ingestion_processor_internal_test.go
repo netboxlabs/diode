@@ -1,13 +1,17 @@
 package reconciler
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
+	"io"
 	"log/slog"
 	"os"
 	"testing"
 	"time"
 
+	"github.com/andybalholm/brotli"
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -458,4 +462,67 @@ func TestConsumeIngestionStream(t *testing.T) {
 			mockRedisClient.AssertExpectations(t)
 		})
 	}
+}
+
+func TestCompressChangeSet(t *testing.T) {
+	cs := changeset.ChangeSet{
+		ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+		ChangeSet: []changeset.Change{
+			{
+				ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b6",
+				ChangeType:    changeset.ChangeTypeCreate,
+				ObjectType:    "extras.tag",
+				ObjectID:      nil,
+				ObjectVersion: nil,
+				Data: &netbox.Tag{
+					Name: "tag 2",
+					Slug: "tag-2",
+				},
+			},
+			{
+				ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeType:    changeset.ChangeTypeUpdate,
+				ObjectType:    "dcim.site",
+				ObjectVersion: nil,
+				Data: &netbox.DcimSite{
+					ID:     1,
+					Name:   "Site A",
+					Slug:   "site-a",
+					Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+					Tags: []*netbox.Tag{
+						{
+							ID:   1,
+							Name: "tag 1",
+							Slug: "tag-1",
+						},
+						{
+							ID:   3,
+							Name: "tag 3",
+							Slug: "tag-3",
+						},
+						{
+							Name: "tag 2",
+							Slug: "tag-2",
+						},
+					},
+				},
+			},
+		},
+	}
+	compressed, err := compressChangeSet(&cs)
+	require.NoError(t, err)
+
+	// Decompress the compressed data
+	r := brotli.NewReader(bytes.NewReader(compressed))
+	var decodedOutput bytes.Buffer
+	n, err := io.Copy(&decodedOutput, r)
+	require.NoError(t, err)
+
+	csJSON, err := json.Marshal(cs)
+	require.NoError(t, err)
+
+	// Assert the decompressed data is the same as the original data
+	require.Equal(t, int64(len(csJSON)), n)
+	require.Equal(t, csJSON, decodedOutput.Bytes())
+	require.Contains(t, decodedOutput.String(), "5663a77e-9bad-4981-afe9-77d8a9f2b8b5")
 }
