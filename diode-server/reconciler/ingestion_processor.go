@@ -1,7 +1,9 @@
 package reconciler
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -9,6 +11,7 @@ import (
 	"regexp"
 	"strconv"
 
+	"github.com/andybalholm/brotli"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/redis/go-redis/v9"
 	"github.com/segmentio/ksuid"
@@ -232,6 +235,16 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 			ingestionLog.State = reconcilerpb.State_FAILED
 			ingestionLog.Error = extractIngestionError(err)
 
+			if changeSet != nil {
+				ingestionLog.ChangeSet = &reconcilerpb.ChangeSet{Id: changeSet.ChangeSetID}
+				csCompressed, err := compressChangeSet(changeSet)
+				if err != nil {
+					errs = append(errs, err)
+				} else {
+					ingestionLog.ChangeSet.Data = csCompressed
+				}
+			}
+
 			if _, err = p.writeIngestionLog(ctx, key, ingestionLog); err != nil {
 				errs = append(errs, err)
 			}
@@ -240,7 +253,13 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 
 		if changeSet != nil {
 			ingestionLog.State = reconcilerpb.State_RECONCILED
-			//TODO: add change set ID to ingestion log
+			ingestionLog.ChangeSet = &reconcilerpb.ChangeSet{Id: changeSet.ChangeSetID}
+			csCompressed, err := compressChangeSet(changeSet)
+			if err != nil {
+				errs = append(errs, err)
+			} else {
+				ingestionLog.ChangeSet.Data = csCompressed
+			}
 		} else {
 			ingestionLog.State = reconcilerpb.State_NO_CHANGES
 		}
@@ -328,7 +347,7 @@ func (p *IngestionProcessor) reconcileEntity(ctx context.Context, ingestEntity c
 
 	resp, err := p.nbClient.ApplyChangeSet(ctx, req)
 	if err != nil {
-		return nil, err
+		return cs, err
 	}
 
 	p.logger.Debug("apply change set response", "response", resp)
@@ -354,6 +373,24 @@ func normalizeIngestionLog(l []byte) []byte {
 	//replace ingestionTs string value as integer, see: https://github.com/golang/protobuf/issues/1414
 	re := regexp.MustCompile(`"ingestionTs":"(\d+)"`)
 	return re.ReplaceAll(l, []byte(`"ingestionTs":$1`))
+}
+
+func compressChangeSet(cs *changeset.ChangeSet) ([]byte, error) {
+	csJSON, err := json.Marshal(cs)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal changeset JSON: %v", err)
+	}
+
+	var brotliBuf bytes.Buffer
+	brotliWriter := brotli.NewWriter(&brotliBuf)
+	if _, err = brotliWriter.Write(csJSON); err != nil {
+		return nil, fmt.Errorf("failed to compress changeset: %v", err)
+	}
+	if err = brotliWriter.Close(); err != nil {
+		return nil, fmt.Errorf("failed to compress changeset: %v", err)
+	}
+
+	return brotliBuf.Bytes(), nil
 }
 
 func extractObjectType(in *diodepb.Entity) (string, error) {
