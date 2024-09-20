@@ -73,7 +73,7 @@ message IngestionMetrics {
 // A change set
 message ChangeSet {
   string id = 1; // A change set ID
-  string data = 2; // Base64 string representing the change set
+  bytes data = 2; // Binary data representing the change set
 }
 
 // An ingestion log

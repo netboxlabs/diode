@@ -3,7 +3,6 @@ package reconciler
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -376,22 +375,22 @@ func normalizeIngestionLog(l []byte) []byte {
 	return re.ReplaceAll(l, []byte(`"ingestionTs":$1`))
 }
 
-func compressChangeSet(cs *changeset.ChangeSet) (string, error) {
+func compressChangeSet(cs *changeset.ChangeSet) ([]byte, error) {
 	csJSON, err := json.Marshal(cs)
 	if err != nil {
-		return "", fmt.Errorf("failed to marshal changeset JSON: %v", err)
+		return nil, fmt.Errorf("failed to marshal changeset JSON: %v", err)
 	}
 
 	var brotliBuf bytes.Buffer
 	brotliWriter := brotli.NewWriter(&brotliBuf)
 	if _, err = brotliWriter.Write(csJSON); err != nil {
-		return "", fmt.Errorf("failed to compress changeset: %v", err)
+		return nil, fmt.Errorf("failed to compress changeset: %v", err)
 	}
 	if err = brotliWriter.Close(); err != nil {
-		return "", fmt.Errorf("failed to compress changeset: %v", err)
+		return nil, fmt.Errorf("failed to compress changeset: %v", err)
 	}
 
-	return base64.StdEncoding.EncodeToString(brotliBuf.Bytes()), nil
+	return brotliBuf.Bytes(), nil
 }
 
 func extractObjectType(in *diodepb.Entity) (string, error) {
