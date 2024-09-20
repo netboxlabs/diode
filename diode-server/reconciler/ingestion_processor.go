@@ -379,13 +379,17 @@ func normalizeIngestionLog(l []byte) []byte {
 func compressChangeSet(cs *changeset.ChangeSet) (string, error) {
 	csJSON, err := json.Marshal(cs)
 	if err != nil {
-		return "", fmt.Errorf("failed to marshal JSON: %v", err)
+		return "", fmt.Errorf("failed to marshal changeset JSON: %v", err)
 	}
 
 	var brotliBuf bytes.Buffer
 	brotliWriter := brotli.NewWriter(&brotliBuf)
-	brotliWriter.Write(csJSON)
-	brotliWriter.Close()
+	if _, err = brotliWriter.Write(csJSON); err != nil {
+		return "", fmt.Errorf("failed to compress changeset: %v", err)
+	}
+	if err = brotliWriter.Close(); err != nil {
+		return "", fmt.Errorf("failed to compress changeset: %v", err)
+	}
 
 	return base64.StdEncoding.EncodeToString(brotliBuf.Bytes()), nil
 }
