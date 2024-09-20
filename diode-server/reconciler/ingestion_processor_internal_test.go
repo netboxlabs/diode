@@ -182,16 +182,14 @@ func TestReconcileEntity(t *testing.T) {
 			ingestEntity := changeset.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.site",
-				Entity: &diodepb.Entity_Site{
-					Site: &diodepb.Site{
-						Name: "Site A",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Site{
+						Site: &diodepb.Site{
+							Name: "Site A",
+						},
 					},
 				},
 			}
-
-			//ingestEntityJSON, _ := json.Marshal(ingestEntity)
-			//var ingestEntity2 changeset.IngestEntity
-			//_ = json.Unmarshal(ingestEntityJSON, &ingestEntity2)
 
 			cs, err := p.reconcileEntity(ctx, ingestEntity)
 

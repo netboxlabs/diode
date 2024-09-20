@@ -6,6 +6,8 @@ import (
 
 	"github.com/gosimple/slug"
 	"github.com/mitchellh/hashstructure/v2"
+
+	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 )
 
 // VirtualizationClusterGroupDataWrapper represents a virtualization cluster group data wrapper
@@ -15,6 +17,16 @@ type VirtualizationClusterGroupDataWrapper struct {
 }
 
 func (*VirtualizationClusterGroupDataWrapper) comparableData() {}
+
+// FromProtoEntity sets the data from a proto entity
+func (vw *VirtualizationClusterGroupDataWrapper) FromProtoEntity(entity *diodepb.Entity) error {
+	clusterGroup, err := FromProtoClusterGroupEntity(entity)
+	if err != nil {
+		return err
+	}
+	vw.ClusterGroup = clusterGroup
+	return nil
+}
 
 // Data returns the DeviceRole
 func (vw *VirtualizationClusterGroupDataWrapper) Data() any {
@@ -159,6 +171,16 @@ type VirtualizationClusterTypeDataWrapper struct {
 
 func (*VirtualizationClusterTypeDataWrapper) comparableData() {}
 
+// FromProtoEntity sets the data from a proto entity
+func (vw *VirtualizationClusterTypeDataWrapper) FromProtoEntity(entity *diodepb.Entity) error {
+	clusterType, err := FromProtoClusterTypeEntity(entity)
+	if err != nil {
+		return err
+	}
+	vw.ClusterType = clusterType
+	return nil
+}
+
 // Data returns the DeviceRole
 func (vw *VirtualizationClusterTypeDataWrapper) Data() any {
 	return vw.ClusterType
@@ -301,6 +323,16 @@ type VirtualizationClusterDataWrapper struct {
 }
 
 func (*VirtualizationClusterDataWrapper) comparableData() {}
+
+// FromProtoEntity sets the data from a proto entity
+func (vw *VirtualizationClusterDataWrapper) FromProtoEntity(entity *diodepb.Entity) error {
+	cluster, err := FromProtoClusterEntity(entity)
+	if err != nil {
+		return err
+	}
+	vw.Cluster = cluster
+	return nil
+}
 
 // Data returns the DeviceRole
 func (vw *VirtualizationClusterDataWrapper) Data() any {
@@ -664,7 +696,12 @@ func (vw *VirtualizationClusterDataWrapper) Patch(cmp ComparableData, intendedNe
 }
 
 // SetDefaults sets the default values for the device type
-func (vw *VirtualizationClusterDataWrapper) SetDefaults() {}
+func (vw *VirtualizationClusterDataWrapper) SetDefaults() {
+	if vw.Cluster.Status == nil || *vw.Cluster.Status == "" {
+		status := "active"
+		vw.Cluster.Status = &status
+	}
+}
 
 // VirtualizationVirtualMachineDataWrapper represents a virtualization virtual machine data wrapper
 type VirtualizationVirtualMachineDataWrapper struct {
@@ -673,6 +710,16 @@ type VirtualizationVirtualMachineDataWrapper struct {
 }
 
 func (*VirtualizationVirtualMachineDataWrapper) comparableData() {}
+
+// FromProtoEntity sets the data from a proto entity
+func (vw *VirtualizationVirtualMachineDataWrapper) FromProtoEntity(entity *diodepb.Entity) error {
+	virtualMachine, err := FromProtoVirtualMachineEntity(entity)
+	if err != nil {
+		return err
+	}
+	vw.VirtualMachine = virtualMachine
+	return nil
+}
 
 // Data returns the DeviceRole
 func (vw *VirtualizationVirtualMachineDataWrapper) Data() any {
@@ -1221,7 +1268,12 @@ func (vw *VirtualizationVirtualMachineDataWrapper) Patch(cmp ComparableData, int
 }
 
 // SetDefaults sets the default values for the device type
-func (vw *VirtualizationVirtualMachineDataWrapper) SetDefaults() {}
+func (vw *VirtualizationVirtualMachineDataWrapper) SetDefaults() {
+	if vw.VirtualMachine.Status == nil || *vw.VirtualMachine.Status == "" {
+		status := "active"
+		vw.VirtualMachine.Status = &status
+	}
+}
 
 // VirtualizationVMInterfaceDataWrapper represents a virtualization VM interface data wrapper
 type VirtualizationVMInterfaceDataWrapper struct {
@@ -1230,6 +1282,16 @@ type VirtualizationVMInterfaceDataWrapper struct {
 }
 
 func (*VirtualizationVMInterfaceDataWrapper) comparableData() {}
+
+// FromProtoEntity sets the data from a proto entity
+func (vw *VirtualizationVMInterfaceDataWrapper) FromProtoEntity(entity *diodepb.Entity) error {
+	vmInterface, err := FromProtoVMInterfaceEntity(entity)
+	if err != nil {
+		return err
+	}
+	vw.VMInterface = vmInterface
+	return nil
+}
 
 // Data returns the DeviceRole
 func (vw *VirtualizationVMInterfaceDataWrapper) Data() any {
@@ -1476,6 +1538,16 @@ type VirtualizationVirtualDiskDataWrapper struct {
 }
 
 func (*VirtualizationVirtualDiskDataWrapper) comparableData() {}
+
+// FromProtoEntity sets the data from a proto entity
+func (vw *VirtualizationVirtualDiskDataWrapper) FromProtoEntity(entity *diodepb.Entity) error {
+	virtualDisk, err := FromProtoVirtualDiskEntity(entity)
+	if err != nil {
+		return err
+	}
+	vw.VirtualDisk = virtualDisk
+	return nil
+}
 
 // Data returns the DeviceRole
 func (vw *VirtualizationVirtualDiskDataWrapper) Data() any {
