@@ -32,6 +32,11 @@ func TestEscapeSpecialChars(t *testing.T) {
 			input: "0.1.0",
 			want:  "0\\.1\\.0",
 		},
+		{
+			name:  "request ID",
+			input: "123e4567-e89b-12d3-a456-426614174000",
+			want:  "123e4567\\-e89b\\-12d3\\-a456\\-426614174000",
+		},
 	}
 
 	for _, tt := range tests {
