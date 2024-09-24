@@ -337,7 +337,7 @@ func TestRetrieveLogs(t *testing.T) {
 				},
 				NextPageToken: "AAAFlw==",
 			},
-			queryFilter:      "@state:NEW",
+			queryFilter:      "@state:{NEW}",
 			queryLimitOffset: 0,
 			failCmd:          false,
 			hasError:         false,
@@ -391,7 +391,7 @@ func TestRetrieveLogs(t *testing.T) {
 				},
 				NextPageToken: "AAAFlw==",
 			},
-			queryFilter:      "@state:RECONCILED",
+			queryFilter:      "@state:{RECONCILED}",
 			queryLimitOffset: 0,
 			failCmd:          false,
 			hasError:         false,
@@ -445,7 +445,7 @@ func TestRetrieveLogs(t *testing.T) {
 				},
 				NextPageToken: "AAAFlw==",
 			},
-			queryFilter:      "@state:FAILED",
+			queryFilter:      "@state:{FAILED}",
 			queryLimitOffset: 0,
 			failCmd:          false,
 			hasError:         false,
@@ -499,7 +499,7 @@ func TestRetrieveLogs(t *testing.T) {
 				},
 				NextPageToken: "AAAFlw==",
 			},
-			queryFilter:      "@state:NO_CHANGES",
+			queryFilter:      "@state:{NO_CHANGES}",
 			queryLimitOffset: 0,
 			failCmd:          false,
 			hasError:         false,
@@ -553,7 +553,7 @@ func TestRetrieveLogs(t *testing.T) {
 				},
 				NextPageToken: "AAAFlw==",
 			},
-			queryFilter:      "@data_type:dcim.interface",
+			queryFilter:      "@data_type:{dcim\\.interface}",
 			queryLimitOffset: 0,
 			failCmd:          false,
 			hasError:         false,
@@ -898,7 +898,7 @@ func TestRetrieveIngestionLogsMetricsOnly(t *testing.T) {
 				"total_results": int64(expected.New),
 				"warning":       []interface{}{},
 			}))
-			mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "@state:NEW", "LIMIT", 0, 0}).Return(cmdNew)
+			mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "@state:{NEW}", "LIMIT", 0, 0}).Return(cmdNew)
 
 			cmdReconciled := redis.NewCmd(ctx)
 			cmdReconciled.SetVal(interface{}(map[interface{}]interface{}{
@@ -910,7 +910,7 @@ func TestRetrieveIngestionLogsMetricsOnly(t *testing.T) {
 				"total_results": int64(expected.Reconciled),
 				"warning":       []interface{}{},
 			}))
-			mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "@state:RECONCILED", "LIMIT", 0, 0}).Return(cmdReconciled)
+			mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "@state:{RECONCILED}", "LIMIT", 0, 0}).Return(cmdReconciled)
 
 			cmdFailed := redis.NewCmd(ctx)
 			cmdFailed.SetVal(interface{}(map[interface{}]interface{}{
@@ -922,7 +922,7 @@ func TestRetrieveIngestionLogsMetricsOnly(t *testing.T) {
 				"total_results": int64(expected.Failed),
 				"warning":       []interface{}{},
 			}))
-			mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "@state:FAILED", "LIMIT", 0, 0}).Return(cmdFailed)
+			mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "@state:{FAILED}", "LIMIT", 0, 0}).Return(cmdFailed)
 
 			cmdNoChanges := redis.NewCmd(ctx)
 			cmdNoChanges.SetVal(interface{}(map[interface{}]interface{}{
@@ -934,7 +934,7 @@ func TestRetrieveIngestionLogsMetricsOnly(t *testing.T) {
 				"total_results": int64(expected.NoChanges),
 				"warning":       []interface{}{},
 			}))
-			mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "@state:NO_CHANGES", "LIMIT", 0, 0}).Return(cmdNoChanges)
+			mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "@state:{NO_CHANGES}", "LIMIT", 0, 0}).Return(cmdNoChanges)
 
 			mockPipeliner.On("Exec", ctx).Return(tt.execError)
 			mockRedisClient.On("Pipeline").Return(mockPipeliner)
