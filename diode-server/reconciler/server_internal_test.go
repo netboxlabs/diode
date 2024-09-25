@@ -291,7 +291,7 @@ func TestRetrieveLogs(t *testing.T) {
 		},
 		{
 			name: "filter by new state",
-			in:   reconcilerpb.RetrieveIngestionLogsRequest{State: reconcilerpb.State_NEW.Enum()},
+			in:   reconcilerpb.RetrieveIngestionLogsRequest{State: reconcilerpb.State_QUEUED.Enum()},
 			result: interface{}(map[interface{}]interface{}{
 				"attributes": []interface{}{},
 				"format":     "STRING",
@@ -312,7 +312,7 @@ func TestRetrieveLogs(t *testing.T) {
 				Logs: []*reconcilerpb.IngestionLog{
 					{
 						DataType:           "dcim.interface",
-						State:              reconcilerpb.State_NEW,
+						State:              reconcilerpb.State_QUEUED,
 						RequestId:          "req-id",
 						IngestionTs:        1725552914392208722,
 						ProducerAppName:    "diode-agent",
@@ -333,11 +333,11 @@ func TestRetrieveLogs(t *testing.T) {
 					},
 				},
 				Metrics: &reconcilerpb.IngestionMetrics{
-					New: 1,
+					Queued: 1,
 				},
 				NextPageToken: "AAAFlw==",
 			},
-			queryFilter:      "@state:{NEW}",
+			queryFilter:      "@state:{QUEUED}",
 			queryLimitOffset: 0,
 			failCmd:          false,
 			hasError:         false,
@@ -862,7 +862,7 @@ func TestRetrieveIngestionLogsMetricsOnly(t *testing.T) {
 			logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
 
 			expected := &reconcilerpb.IngestionMetrics{
-				New:        3,
+				Queued:     3,
 				Reconciled: 3,
 				Failed:     2,
 				NoChanges:  2,
@@ -895,10 +895,10 @@ func TestRetrieveIngestionLogsMetricsOnly(t *testing.T) {
 				"results": []interface{}{
 					map[interface{}]interface{}{},
 				},
-				"total_results": int64(expected.New),
+				"total_results": int64(expected.Queued),
 				"warning":       []interface{}{},
 			}))
-			mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "@state:{NEW}", "LIMIT", 0, 0}).Return(cmdNew)
+			mockPipeliner.On("Do", ctx, []interface{}{"FT.SEARCH", "ingest-entity", "@state:{QUEUED}", "LIMIT", 0, 0}).Return(cmdNew)
 
 			cmdReconciled := redis.NewCmd(ctx)
 			cmdReconciled.SetVal(interface{}(map[interface{}]interface{}{

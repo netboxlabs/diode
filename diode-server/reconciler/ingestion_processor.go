@@ -213,7 +213,7 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 			DataType:           objectType,
 			Entity:             v,
 			IngestionTs:        int64(ingestionTs),
-			State:              reconcilerpb.State_NEW,
+			State:              reconcilerpb.State_QUEUED,
 		}
 
 		if _, err = p.writeIngestionLog(ctx, key, ingestionLog); err != nil {
@@ -225,7 +225,7 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 			RequestID: ingestReq.GetId(),
 			DataType:  objectType,
 			Entity:    v,
-			State:     int(reconcilerpb.State_NEW),
+			State:     int(reconcilerpb.State_QUEUED),
 		}
 
 		changeSet, err := p.reconcileEntity(ctx, ingestEntity)

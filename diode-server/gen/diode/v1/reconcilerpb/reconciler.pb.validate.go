@@ -596,7 +596,7 @@ func (m *IngestionMetrics) validate(all bool) error {
 
 	// no validation rules for Total
 
-	// no validation rules for New
+	// no validation rules for Queued
 
 	// no validation rules for Reconciled
 
