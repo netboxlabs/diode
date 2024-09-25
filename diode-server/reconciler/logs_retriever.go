@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -89,7 +90,8 @@ func retrieveIngestionMetrics(ctx context.Context, client RedisClient) (*reconci
 		if !ok {
 			return nil, fmt.Errorf("failed to retrieve ingestion logs: failed to get state name of %d", s)
 		}
-		results = append(results, pipe.Do(ctx, "FT.SEARCH", "ingest-entity", fmt.Sprintf("@state:%s", stateName), "LIMIT", 0, 0))
+		stateName = escapeSpecialChars(stateName)
+		results = append(results, pipe.Do(ctx, "FT.SEARCH", "ingest-entity", fmt.Sprintf("@state:{%s}", stateName), "LIMIT", 0, 0))
 	}
 
 	if _, err := pipe.Exec(ctx); err != nil {
@@ -237,7 +239,8 @@ func buildQueryFilter(req *reconcilerpb.RetrieveIngestionLogsRequest) string {
 
 	// apply optional filters for ingestion state
 	if req.State != nil {
-		stateFilter := fmt.Sprintf("@state:%s", req.GetState().String())
+		state := escapeSpecialChars(req.GetState().String())
+		stateFilter := fmt.Sprintf("@state:{%s}", state)
 		if queryFilter == "*" {
 			queryFilter = stateFilter
 		} else {
@@ -246,7 +249,8 @@ func buildQueryFilter(req *reconcilerpb.RetrieveIngestionLogsRequest) string {
 	}
 
 	if req.GetDataType() != "" {
-		dataTypeFilter := fmt.Sprintf("@data_type:%s", req.GetDataType())
+		dataType := escapeSpecialChars(req.GetDataType())
+		dataTypeFilter := fmt.Sprintf("@data_type:{%s}", dataType)
 		if queryFilter == "*" {
 			queryFilter = dataTypeFilter
 		} else {
@@ -255,4 +259,15 @@ func buildQueryFilter(req *reconcilerpb.RetrieveIngestionLogsRequest) string {
 	}
 
 	return queryFilter
+}
+
+func escapeSpecialChars(s string) string {
+	//replace ,.<>{}[]"':;!@#$%^&*()-+=~ with double backslash
+	//ref: https://redis.io/docs/latest/develop/interact/search-and-query/advanced-concepts/escaping/
+	oldNew := []string{
+		",", "\\,", ".", "\\.", "<", "\\<", ">", "\\>", "{", "\\{", "}", "\\}", "[", "\\[", "]", "\\]", "\"", "\\\"",
+		"'", "\\'", ":", "\\:", ";", "\\;", "!", "\\!", "@", "\\@", "#", "\\#", "$", "\\$", "%", "\\%", "^", "\\^",
+		"&", "\\&", "*", "\\*", "(", "\\(", ")", "\\)", "-", "\\-", "+", "\\+", "=", "\\=", "~", "\\~",
+	}
+	return strings.NewReplacer(oldNew...).Replace(s)
 }
