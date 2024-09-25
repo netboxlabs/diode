@@ -85,7 +85,7 @@ func retrieveIngestionMetrics(ctx context.Context, client RedisClient) (*reconci
 	results := []*redis.Cmd{
 		pipe.Do(ctx, "FT.SEARCH", "ingest-entity", "*", "LIMIT", 0, 0),
 	}
-	for s := reconcilerpb.State_NEW; s <= reconcilerpb.State_NO_CHANGES; s++ {
+	for s := reconcilerpb.State_QUEUED; s <= reconcilerpb.State_NO_CHANGES; s++ {
 		stateName, ok := reconcilerpb.State_name[int32(s)]
 		if !ok {
 			return nil, fmt.Errorf("failed to retrieve ingestion logs: failed to get state name of %d", s)
@@ -112,8 +112,8 @@ func retrieveIngestionMetrics(ctx context.Context, client RedisClient) (*reconci
 			return nil, fmt.Errorf("failed to retrieve ingestion logs: failed to parse total_results")
 		}
 		total := int32(totalRes)
-		if q == int(reconcilerpb.State_NEW) {
-			metrics.New = total
+		if q == int(reconcilerpb.State_QUEUED) {
+			metrics.Queued = total
 		} else if q == int(reconcilerpb.State_RECONCILED) {
 			metrics.Reconciled = total
 		} else if q == int(reconcilerpb.State_FAILED) {
@@ -207,8 +207,8 @@ func retrieveIngestionLogs(ctx context.Context, logger *slog.Logger, client Redi
 	if in.State != nil {
 		if in.GetState() == reconcilerpb.State_UNSPECIFIED {
 			metrics.Total = response.TotalResults
-		} else if in.GetState() == reconcilerpb.State_NEW {
-			metrics.New = response.TotalResults
+		} else if in.GetState() == reconcilerpb.State_QUEUED {
+			metrics.Queued = response.TotalResults
 		} else if in.GetState() == reconcilerpb.State_RECONCILED {
 			metrics.Reconciled = response.TotalResults
 		} else if in.GetState() == reconcilerpb.State_FAILED {

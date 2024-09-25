@@ -55,7 +55,7 @@ message IngestionError {
 
 enum State {
   UNSPECIFIED = 0;
-  NEW = 1;
+  QUEUED = 1;
   RECONCILED = 2;
   FAILED = 3;
   NO_CHANGES = 4;
@@ -64,7 +64,7 @@ enum State {
 // Ingestion metrics
 message IngestionMetrics {
   int32 total = 1;
-  int32 new = 2;
+  int32 queued = 2;
   int32 reconciled = 3;
   int32 failed = 4;
   int32 no_changes = 5;
