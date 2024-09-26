@@ -1,6 +1,11 @@
 package netbox
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+
+	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
+)
 
 const (
 	// VirtualizationClusterObjectType represents the Virtualization Cluster object type
@@ -150,7 +155,7 @@ func NewVirtualizationClusterType() *VirtualizationClusterType {
 
 // NewVirtualizationCluster creates a new virtualization cluster placeholder
 func NewVirtualizationCluster() *VirtualizationCluster {
-	status := "active"
+	status := DefaultVirtualizationStatus
 	return &VirtualizationCluster{
 		Name:   "undefined",
 		Type:   NewVirtualizationClusterType(),
@@ -162,7 +167,7 @@ func NewVirtualizationCluster() *VirtualizationCluster {
 
 // NewVirtualizationVirtualMachine creates a new virtualization virtual machine placeholder
 func NewVirtualizationVirtualMachine() *VirtualizationVirtualMachine {
-	status := "active"
+	status := DefaultVirtualizationStatus
 	return &VirtualizationVirtualMachine{
 		Name:   "undefined",
 		Status: &status,
@@ -185,5 +190,171 @@ func NewVirtualizationVirtualDisk() *VirtualizationVirtualDisk {
 		Name:           "undefined",
 		VirtualMachine: NewVirtualizationVirtualMachine(),
 		Size:           0,
+	}
+}
+
+// FromProtoClusterEntity converts a diode cluster entity to a cluster
+func FromProtoClusterEntity(entity *diodepb.Entity) (*VirtualizationCluster, error) {
+	if entity == nil || entity.GetCluster() == nil {
+		return nil, fmt.Errorf("entity is nil or not a cluster")
+	}
+
+	return FromProtoCluster(entity.GetCluster()), nil
+}
+
+// FromProtoCluster converts a diode cluster to a virtualization cluster
+func FromProtoCluster(clusterPb *diodepb.Cluster) *VirtualizationCluster {
+	if clusterPb == nil {
+		return nil
+	}
+
+	var status *string
+	if clusterPb.Status != "" {
+		status = &clusterPb.Status
+	}
+
+	return &VirtualizationCluster{
+		Name:        clusterPb.Name,
+		Type:        FromProtoClusterType(clusterPb.Type),
+		Group:       FromProtoClusterGroup(clusterPb.Group),
+		Site:        FromProtoSite(clusterPb.Site),
+		Status:      status,
+		Description: clusterPb.Description,
+		Tags:        FromProtoTags(clusterPb.Tags),
+	}
+}
+
+// FromProtoClusterTypeEntity converts a diode cluster type entity to a cluster type
+func FromProtoClusterTypeEntity(entity *diodepb.Entity) (*VirtualizationClusterType, error) {
+	if entity == nil || entity.GetClusterType() == nil {
+		return nil, fmt.Errorf("entity is nil or not a cluster type")
+	}
+
+	return FromProtoClusterType(entity.GetClusterType()), nil
+}
+
+// FromProtoClusterType converts a diode cluster type to a cluster type
+func FromProtoClusterType(clusterTypePb *diodepb.ClusterType) *VirtualizationClusterType {
+	if clusterTypePb == nil {
+		return nil
+	}
+
+	return &VirtualizationClusterType{
+		Name:        clusterTypePb.Name,
+		Slug:        clusterTypePb.Slug,
+		Description: clusterTypePb.Description,
+		Tags:        FromProtoTags(clusterTypePb.Tags),
+	}
+}
+
+// FromProtoClusterGroupEntity converts a diode cluster group entity to a cluster group
+func FromProtoClusterGroupEntity(entity *diodepb.Entity) (*VirtualizationClusterGroup, error) {
+	if entity == nil || entity.GetClusterGroup() == nil {
+		return nil, fmt.Errorf("entity is nil or not a cluster group")
+	}
+
+	return FromProtoClusterGroup(entity.GetClusterGroup()), nil
+}
+
+// FromProtoClusterGroup converts a diode cluster group to a cluster group
+func FromProtoClusterGroup(clusterGroupPb *diodepb.ClusterGroup) *VirtualizationClusterGroup {
+	if clusterGroupPb == nil {
+		return nil
+	}
+
+	return &VirtualizationClusterGroup{
+		Name:        clusterGroupPb.Name,
+		Slug:        clusterGroupPb.Slug,
+		Description: clusterGroupPb.Description,
+		Tags:        FromProtoTags(clusterGroupPb.Tags),
+	}
+}
+
+// FromProtoVirtualMachineEntity converts a diode virtual machine entity to a virtual machine
+func FromProtoVirtualMachineEntity(entity *diodepb.Entity) (*VirtualizationVirtualMachine, error) {
+	if entity == nil || entity.GetVirtualMachine() == nil {
+		return nil, fmt.Errorf("entity is nil or not a virtual machine")
+	}
+
+	return FromProtoVirtualMachine(entity.GetVirtualMachine()), nil
+}
+
+// FromProtoVirtualMachine converts a diode virtual machine to a virtual machine
+func FromProtoVirtualMachine(virtualMachinePb *diodepb.VirtualMachine) *VirtualizationVirtualMachine {
+	if virtualMachinePb == nil {
+		return nil
+	}
+
+	var status *string
+	if virtualMachinePb.Status != "" {
+		status = &virtualMachinePb.Status
+	}
+
+	return &VirtualizationVirtualMachine{
+		Name:        virtualMachinePb.Name,
+		Status:      status,
+		Site:        FromProtoSite(virtualMachinePb.Site),
+		Cluster:     FromProtoCluster(virtualMachinePb.Cluster),
+		Role:        FromProtoRole(virtualMachinePb.Role),
+		Device:      FromProtoDevice(virtualMachinePb.Device),
+		Platform:    FromProtoPlatform(virtualMachinePb.Platform),
+		PrimaryIPv4: FromProtoIPAddress(virtualMachinePb.PrimaryIp4),
+		PrimaryIPv6: FromProtoIPAddress(virtualMachinePb.PrimaryIp6),
+		Vcpus:       int32PtrToIntPtr(virtualMachinePb.Vcpus),
+		Memory:      int32PtrToIntPtr(virtualMachinePb.Memory),
+		Disk:        int32PtrToIntPtr(virtualMachinePb.Disk),
+		Description: virtualMachinePb.Description,
+		Comments:    virtualMachinePb.Comments,
+		Tags:        FromProtoTags(virtualMachinePb.Tags),
+	}
+}
+
+// FromProtoVMInterfaceEntity converts a diode virtual machine interface entity to a virtual machine interface
+func FromProtoVMInterfaceEntity(entity *diodepb.Entity) (*VirtualizationVMInterface, error) {
+	if entity == nil || entity.GetVminterface() == nil {
+		return nil, fmt.Errorf("entity is nil or not a virtual machine interface")
+	}
+
+	return FromProtoVMInterface(entity.GetVminterface()), nil
+}
+
+// FromProtoVMInterface converts a diode virtual machine interface to a virtual machine interface
+func FromProtoVMInterface(vmInterfacePb *diodepb.VMInterface) *VirtualizationVMInterface {
+	if vmInterfacePb == nil {
+		return nil
+	}
+
+	return &VirtualizationVMInterface{
+		VirtualMachine: FromProtoVirtualMachine(vmInterfacePb.VirtualMachine),
+		Name:           vmInterfacePb.Name,
+		Enabled:        vmInterfacePb.Enabled,
+		MTU:            int32PtrToIntPtr(vmInterfacePb.Mtu),
+		MACAddress:     vmInterfacePb.MacAddress,
+		Description:    vmInterfacePb.Description,
+		Tags:           FromProtoTags(vmInterfacePb.Tags),
+	}
+}
+
+// FromProtoVirtualDiskEntity converts a diode virtual disk entity to a virtual disk
+func FromProtoVirtualDiskEntity(entity *diodepb.Entity) (*VirtualizationVirtualDisk, error) {
+	if entity == nil || entity.GetVirtualDisk() == nil {
+		return nil, fmt.Errorf("entity is nil or not a virtual disk")
+	}
+
+	return FromProtoVirtualDisk(entity.GetVirtualDisk()), nil
+}
+
+// FromProtoVirtualDisk converts a diode virtual disk to a virtual disk
+func FromProtoVirtualDisk(virtualDiskPb *diodepb.VirtualDisk) *VirtualizationVirtualDisk {
+	if virtualDiskPb == nil {
+		return nil
+	}
+
+	return &VirtualizationVirtualDisk{
+		VirtualMachine: FromProtoVirtualMachine(virtualDiskPb.VirtualMachine),
+		Name:           virtualDiskPb.Name,
+		Size:           int(virtualDiskPb.Size),
+		Description:    virtualDiskPb.Description,
+		Tags:           FromProtoTags(virtualDiskPb.Tags),
 	}
 }

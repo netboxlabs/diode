@@ -1,18 +1,24 @@
 package reconciler
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
+	"io"
 	"log/slog"
 	"os"
 	"testing"
+	"time"
 
+	"github.com/andybalholm/brotli"
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
+	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 	"github.com/netboxlabs/diode/diode-server/netbox"
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
 	mnp "github.com/netboxlabs/diode/diode-server/netboxdiodeplugin/mocks"
@@ -22,33 +28,50 @@ import (
 
 func strPtr(s string) *string { return &s }
 
-func TestWriteJSON(t *testing.T) {
+func TestWriteIngestionLog(t *testing.T) {
 	tests := []struct {
-		name     string
-		value    map[string]any
-		hasError bool
-		hasMock  bool
+		name         string
+		ingestionLog *reconcilerpb.IngestionLog
+		hasError     bool
+		hasMock      bool
 	}{
 		{
-			name:     "write successful",
-			value:    map[string]any{"field": "value"},
+			name: "write successful",
+			ingestionLog: &reconcilerpb.IngestionLog{
+				RequestId: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.site",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Site{
+						Site: &diodepb.Site{
+							Name: "Site A",
+						},
+					},
+				},
+			},
 			hasError: false,
 			hasMock:  true,
 		},
 		{
-			name:     "marshal error",
-			value:    map[string]any{"invalid": make(chan int)},
-			hasError: true,
-			hasMock:  false,
-		},
-		{
-			name:     "redis error",
-			value:    map[string]any{"field": "value"},
+			name: "redis error",
+			ingestionLog: &reconcilerpb.IngestionLog{
+				RequestId: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.site",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Site{
+						Site: &diodepb.Site{
+							Name: "Site A",
+						},
+					},
+				},
+				IngestionTs: time.Now().UnixNano(),
+			},
 			hasError: true,
 			hasMock:  true,
 		},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
+
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()
 			key := "test-key"
@@ -57,6 +80,7 @@ func TestWriteJSON(t *testing.T) {
 			mockRedisClient := new(mr.RedisClient)
 			p := &IngestionProcessor{
 				redisClient: mockRedisClient,
+				logger:      slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false})),
 			}
 
 			// Set up the mock expectation
@@ -68,7 +92,7 @@ func TestWriteJSON(t *testing.T) {
 				Return(cmd)
 
 			// Call the method
-			_, err := p.writeJSON(ctx, key, tt.value)
+			_, err := p.writeIngestionLog(ctx, key, tt.ingestionLog)
 
 			if tt.hasError {
 				require.Error(t, err)
@@ -159,18 +183,19 @@ func TestReconcileEntity(t *testing.T) {
 			}
 
 			// Call reconcileEntity
-			encodedValue := []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.site",
-				"entity": {
-					"Site": {
-						"name": "Site A"
-					}
+			ingestEntity := changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.site",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Site{
+						Site: &diodepb.Site{
+							Name: "Site A",
+						},
+					},
 				},
-				"state": 0
-			}`)
+			}
 
-			cs, err := p.reconcileEntity(ctx, encodedValue)
+			cs, err := p.reconcileEntity(ctx, ingestEntity)
 
 			if tt.expectedError {
 				require.Error(t, err)
@@ -189,12 +214,14 @@ func TestReconcileEntity(t *testing.T) {
 
 func TestHandleStreamMessage(t *testing.T) {
 	tests := []struct {
-		name            string
-		validMsg        bool
-		entities        []*diodepb.Entity
-		mockChangeSet   *changeset.ChangeSet
-		reconcilerError bool
-		expectedError   bool
+		name              string
+		validMsg          bool
+		entities          []*diodepb.Entity
+		mockChangeSet     *changeset.ChangeSet
+		changeSetResponse *netboxdiodeplugin.ChangeSetResponse
+		changeSetError    error
+		reconcilerError   bool
+		expectedError     bool
 	}{
 		{
 			name:     "successful processing",
@@ -208,8 +235,9 @@ func TestHandleStreamMessage(t *testing.T) {
 					},
 				},
 			},
-			reconcilerError: false,
-			expectedError:   false,
+			changeSetResponse: &netboxdiodeplugin.ChangeSetResponse{},
+			reconcilerError:   false,
+			expectedError:     false,
 		},
 		{
 			name:     "unmarshal error",
@@ -234,8 +262,9 @@ func TestHandleStreamMessage(t *testing.T) {
 					},
 				},
 			},
-			reconcilerError: true,
-			expectedError:   false,
+			changeSetResponse: &netboxdiodeplugin.ChangeSetResponse{},
+			reconcilerError:   true,
+			expectedError:     false,
 		},
 		{
 			name:     "no entities",
@@ -245,8 +274,9 @@ func TestHandleStreamMessage(t *testing.T) {
 					Entity: nil,
 				},
 			},
-			reconcilerError: false,
-			expectedError:   false,
+			changeSetResponse: &netboxdiodeplugin.ChangeSetResponse{},
+			reconcilerError:   false,
+			expectedError:     false,
 		},
 		{
 			name:     "change set available",
@@ -264,6 +294,34 @@ func TestHandleStreamMessage(t *testing.T) {
 				ChangeSetID: "cs123",
 				ChangeSet:   []changeset.Change{},
 			},
+			changeSetResponse: &netboxdiodeplugin.ChangeSetResponse{
+				ChangeSetID: "cs123",
+				Result:      "changed",
+			},
+			reconcilerError: false,
+			expectedError:   false,
+		},
+		{
+			name:     "change set apply error",
+			validMsg: true,
+			entities: []*diodepb.Entity{
+				{
+					Entity: &diodepb.Entity_Site{
+						Site: &diodepb.Site{
+							Name: "test-site-name",
+						},
+					},
+				},
+			},
+			mockChangeSet: &changeset.ChangeSet{
+				ChangeSetID: "cs123",
+				ChangeSet:   []changeset.Change{},
+			},
+			changeSetResponse: &netboxdiodeplugin.ChangeSetResponse{
+				ChangeSetID: "cs123",
+				Result:      "changed",
+			},
+			changeSetError:  errors.New("apply error"),
 			reconcilerError: false,
 			expectedError:   false,
 		},
@@ -318,7 +376,7 @@ func TestHandleStreamMessage(t *testing.T) {
 						Site: nil,
 					}}, nil)
 			}
-			mockNbClient.On("ApplyChangeSet", ctx, mock.Anything).Return(&netboxdiodeplugin.ChangeSetResponse{}, nil)
+			mockNbClient.On("ApplyChangeSet", ctx, mock.Anything).Return(tt.changeSetResponse, tt.changeSetError)
 			if tt.entities[0].Entity != nil {
 				mockRedisClient.On("Do", ctx, "JSON.SET", mock.Anything, "$", mock.Anything).Return(redis.NewCmd(ctx))
 			}
@@ -404,4 +462,67 @@ func TestConsumeIngestionStream(t *testing.T) {
 			mockRedisClient.AssertExpectations(t)
 		})
 	}
+}
+
+func TestCompressChangeSet(t *testing.T) {
+	cs := changeset.ChangeSet{
+		ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+		ChangeSet: []changeset.Change{
+			{
+				ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b6",
+				ChangeType:    changeset.ChangeTypeCreate,
+				ObjectType:    "extras.tag",
+				ObjectID:      nil,
+				ObjectVersion: nil,
+				Data: &netbox.Tag{
+					Name: "tag 2",
+					Slug: "tag-2",
+				},
+			},
+			{
+				ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeType:    changeset.ChangeTypeUpdate,
+				ObjectType:    "dcim.site",
+				ObjectVersion: nil,
+				Data: &netbox.DcimSite{
+					ID:     1,
+					Name:   "Site A",
+					Slug:   "site-a",
+					Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+					Tags: []*netbox.Tag{
+						{
+							ID:   1,
+							Name: "tag 1",
+							Slug: "tag-1",
+						},
+						{
+							ID:   3,
+							Name: "tag 3",
+							Slug: "tag-3",
+						},
+						{
+							Name: "tag 2",
+							Slug: "tag-2",
+						},
+					},
+				},
+			},
+		},
+	}
+	compressed, err := compressChangeSet(&cs)
+	require.NoError(t, err)
+
+	// Decompress the compressed data
+	r := brotli.NewReader(bytes.NewReader(compressed))
+	var decodedOutput bytes.Buffer
+	n, err := io.Copy(&decodedOutput, r)
+	require.NoError(t, err)
+
+	csJSON, err := json.Marshal(cs)
+	require.NoError(t, err)
+
+	// Assert the decompressed data is the same as the original data
+	require.Equal(t, int64(len(csJSON)), n)
+	require.Equal(t, csJSON, decodedOutput.Bytes())
+	require.Contains(t, decodedOutput.String(), "5663a77e-9bad-4981-afe9-77d8a9f2b8b5")
 }

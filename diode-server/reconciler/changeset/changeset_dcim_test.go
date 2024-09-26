@@ -2,12 +2,12 @@ package changeset_test
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/netbox"
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin/mocks"
@@ -24,23 +24,24 @@ func TestDcimPrepare(t *testing.T) {
 	}
 	tests := []struct {
 		name                 string
-		rawIngestEntity      []byte
+		ingestEntity         changeset.IngestEntity
 		retrieveObjectStates []mockRetrieveObjectState
 		wantChangeSet        changeset.ChangeSet
 		wantErr              bool
 	}{
 		{
 			name: "[P1] ingest dcim.site with name only - existing object not found - create",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.site",
-				"entity": {
-					"Site": {
-						"name": "Site A"
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.site",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Site{
+						Site: &diodepb.Site{
+							Name: "Site A",
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.site",
@@ -73,16 +74,17 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P1] ingest dcim.site with name only - existing object found - do nothing",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.site",
-				"entity": {
-					"Site": {
-						"name": "Site A"
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.site",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Site{
+						Site: &diodepb.Site{
+							Name: "Site A",
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.site",
@@ -107,24 +109,25 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P1] ingest dcim.site with tags - existing object found - update with new tags",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.site",
-				"entity": {
-					"Site": {
-						"name": "Site A",
-						"tags": [
-							{
-								"name": "tag 1"
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.site",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Site{
+						Site: &diodepb.Site{
+							Name: "Site A",
+							Tags: []*diodepb.Tag{
+								{
+									Name: "tag 1",
+								},
+								{
+									Name: "tag 2",
+								},
 							},
-							{
-								"name": "tag 2"
-							}
-						]
-					}
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.site",
@@ -224,14 +227,15 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P1] ingest empty dcim.site - error",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.site",
-				"entity": {
-					"Site": {}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.site",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Site{
+						Site: &diodepb.Site{},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{},
 			wantChangeSet: changeset.ChangeSet{
 				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
@@ -241,16 +245,17 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P2] ingest dcim.devicerole with name only - existing object not found - create",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.devicerole",
-				"entity": {
-					"DeviceRole": {
-						"name": "WAN Router"
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.devicerole",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_DeviceRole{
+						DeviceRole: &diodepb.Role{
+							Name: "WAN Router",
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.devicerole",
@@ -283,16 +288,17 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P2] ingest dcim.devicerole with name only - existing object found - do nothing",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.devicerole",
-				"entity": {
-					"DeviceRole": {
-						"name": "WAN Router"
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.devicerole",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_DeviceRole{
+						DeviceRole: &diodepb.Role{
+							Name: "WAN Router",
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.devicerole",
@@ -317,17 +323,18 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P2] ingest dcim.devicerole with name and new description - existing object found - update",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.devicerole",
-				"entity": {
-					"DeviceRole": {
-						"name": "WAN Router",
-						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.devicerole",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_DeviceRole{
+						DeviceRole: &diodepb.Role{
+							Name:        "WAN Router",
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.devicerole",
@@ -368,18 +375,19 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P2] ingest dcim.devicerole with same color - existing object found - nothing to update",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.devicerole",
-				"entity": {
-					"DeviceRole": {
-						"name": "WAN Router",
-						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-						"color": "111222"
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.devicerole",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_DeviceRole{
+						DeviceRole: &diodepb.Role{
+							Name:        "WAN Router",
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+							Color:       "111222",
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.devicerole",
@@ -405,14 +413,15 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P2] ingest empty dcim.devicerole - error",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.devicerole",
-				"entity": {
-					"DeviceRole": {}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.devicerole",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_DeviceRole{
+						DeviceRole: &diodepb.Role{},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{},
 			wantChangeSet: changeset.ChangeSet{
 				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
@@ -422,16 +431,17 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P3] ingest dcim.manufacturer with name only - existing object not found - create",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.manufacturer",
-				"entity": {
-					"Manufacturer": {
-						"name": "Cisco"
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.manufacturer",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Manufacturer{
+						Manufacturer: &diodepb.Manufacturer{
+							Name: "Cisco",
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.manufacturer",
@@ -463,16 +473,17 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P3] ingest dcim.manufacturer with name only - existing object found - do nothing",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.manufacturer",
-				"entity": {
-					"Manufacturer": {
-						"name": "Cisco"
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.manufacturer",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Manufacturer{
+						Manufacturer: &diodepb.Manufacturer{
+							Name: "Cisco",
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.manufacturer",
@@ -496,14 +507,15 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P3] ingest empty dcim.manufacturer - error",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.manufacturer",
-				"entity": {
-					"Manufacturer": {}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.manufacturer",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Manufacturer{
+						Manufacturer: &diodepb.Manufacturer{},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{},
 			wantChangeSet: changeset.ChangeSet{
 				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
@@ -513,16 +525,17 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P4] ingest dcim.devicetype with model only - existing object not found - create",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.devicetype",
-				"entity": {
-					"DeviceType": {
-						"model": "ISR4321"
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.devicetype",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_DeviceType{
+						DeviceType: &diodepb.DeviceType{
+							Model: "ISR4321",
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.manufacturer",
@@ -578,16 +591,17 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P4] ingest dcim.devicetype with model only - existing object found - do nothing",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.devicetype",
-				"entity": {
-					"DeviceType": {
-						"model": "ISR4321"
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.devicetype",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_DeviceType{
+						DeviceType: &diodepb.DeviceType{
+							Model: "ISR4321",
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.manufacturer",
@@ -630,14 +644,15 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P4] ingest empty dcim.devicetype - error",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.devicetype",
-				"entity": {
-					"DeviceType": {}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.devicetype",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_DeviceType{
+						DeviceType: &diodepb.DeviceType{},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{},
 			wantChangeSet: changeset.ChangeSet{
 				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
@@ -647,21 +662,22 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P5] ingest dcim.devicetype with manufacturer - existing object not found - create manufacturer and devicetype",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.devicetype",
-				"entity": {
-					"DeviceType": {
-						"model": "ISR4321",
-						"manufacturer": {
-							"name": "Cisco"
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.devicetype",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_DeviceType{
+						DeviceType: &diodepb.DeviceType{
+							Model: "ISR4321",
+							Manufacturer: &diodepb.Manufacturer{
+								Name: "Cisco",
+							},
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+							PartNumber:  strPtr("xyz123"),
 						},
-						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-						"part_number": "xyz123"
-					}
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.manufacturer",
@@ -719,37 +735,38 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P5] ingest dcim.devicetype with new manufacturer - existing object found - create manufacturer and update devicetype",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.devicetype",
-				"entity": {
-					"DeviceType": {
-						"model": "ISR4321",
-						"manufacturer": {
-							"name": "Cisco",
-							"tags": [
-								{
-									"name": "tag 1"
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.devicetype",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_DeviceType{
+						DeviceType: &diodepb.DeviceType{
+							Model: "ISR4321",
+							Manufacturer: &diodepb.Manufacturer{
+								Name: "Cisco",
+								Tags: []*diodepb.Tag{
+									{
+										Name: "tag 1",
+									},
+									{
+										Name: "tag 10",
+									},
+									{
+										Name: "tag 11",
+									},
 								},
+							},
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+							PartNumber:  strPtr("xyz123"),
+							Tags: []*diodepb.Tag{
 								{
-									"name": "tag 10"
+									Name: "tag 3",
 								},
-								{
-									"name": "tag 11"
-								}
-							]
+							},
 						},
-						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-						"part_number": "xyz123",
-						"tags": [
-							{
-								"name": "tag 3"
-							}
-						]
-					}
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.manufacturer",
@@ -949,23 +966,24 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P5.2] ingest dcim.devicetype with new manufacturer - existing object found - create manufacturer and update devicetype",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.devicetype",
-				"entity": {
-					"DeviceType": {
-						"model": "ISR4321",
-						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-						"part_number": "xyz123",
-						"tags": [
-							{
-								"name": "tag 3"
-							}
-						]
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.devicetype",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_DeviceType{
+						DeviceType: &diodepb.DeviceType{
+							Model:       "ISR4321",
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+							PartNumber:  strPtr("xyz123"),
+							Tags: []*diodepb.Tag{
+								{
+									Name: "tag 3",
+								},
+							},
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.manufacturer",
@@ -1079,26 +1097,27 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P5.3] ingest dcim.devicetype with new manufacturer - existing object found - update devicetype with new existing manufacturer",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.devicetype",
-				"entity": {
-					"DeviceType": {
-						"model": "ISR4321",
-						"manufacturer": {
-							"name": "Cisco"
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.devicetype",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_DeviceType{
+						DeviceType: &diodepb.DeviceType{
+							Model: "ISR4321",
+							Manufacturer: &diodepb.Manufacturer{
+								Name: "Cisco",
+							},
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+							PartNumber:  strPtr("xyz123"),
+							Tags: []*diodepb.Tag{
+								{
+									Name: "tag 3",
+								},
+							},
 						},
-						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-						"part_number": "xyz123",
-						"tags": [
-							{
-								"name": "tag 3"
-							}
-						]
-					}
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.manufacturer",
@@ -1212,16 +1231,17 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P6] ingest dcim.device with name only - existing object not found - create device and all related objects (using placeholders)",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.device",
-				"entity": {
-					"Device": {
-						"name": "router01"
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.device",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Device{
+						Device: &diodepb.Device{
+							Name: "router01",
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.site",
@@ -1357,16 +1377,17 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P6] ingest dcim.device with name only - existing object and its related objects found - do nothing",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.device",
-				"entity": {
-					"Device": {
-						"name": "router01"
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.device",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Device{
+						Device: &diodepb.Device{
+							Name: "router01",
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.site",
@@ -1471,17 +1492,18 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P6] ingest dcim.device with empty site",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.device",
-				"entity": {
-					"Device": {
-						"name": "router01",
-						"site": {}
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.device",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Device{
+						Device: &diodepb.Device{
+							Name: "router01",
+							Site: &diodepb.Site{},
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.site",
@@ -1586,33 +1608,34 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P7] ingest dcim.device - existing object not found - create device and all related objects",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.device",
-				"entity": {
-					"Device": {
-						"name": "router01",
-						"device_type": {
-							"model": "ISR4321"
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.device",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Device{
+						Device: &diodepb.Device{
+							Name: "router01",
+							DeviceType: &diodepb.DeviceType{
+								Model: "ISR4321",
+							},
+							Role: &diodepb.Role{
+								Name: "WAN Router",
+							},
+							Site: &diodepb.Site{
+								Name: "Site A",
+							},
+							Status:      "active",
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+							Serial:      strPtr("123456"),
+							Tags: []*diodepb.Tag{
+								{
+									Name: "tag 1",
+								},
+							},
 						},
-						"role": {
-							"name": "WAN Router"
-						},
-						"site": {
-							"name": "Site A"
-						},
-						"status": "active",
-						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-						"serial": "123456",
-						"tags": [
-							{
-								"name": "tag 1"
-							}
-						]
-					}
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.site",
@@ -1770,36 +1793,37 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P7] ingest dcim.device with device type having manufacturer defined - existing object not found - create device and all related objects",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.device",
-				"entity": {
-					"Device": {
-						"name": "router01",
-						"device_type": {
-							"model": "ISR4321",
-							"manufacturer": {
-								"name": "Cisco"
-							}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.device",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Device{
+						Device: &diodepb.Device{
+							Name: "router01",
+							DeviceType: &diodepb.DeviceType{
+								Model: "ISR4321",
+								Manufacturer: &diodepb.Manufacturer{
+									Name: "Cisco",
+								},
+							},
+							Role: &diodepb.Role{
+								Name: "WAN Router",
+							},
+							Site: &diodepb.Site{
+								Name: "Site A",
+							},
+							Status:      "active",
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+							Serial:      strPtr("123456"),
+							Tags: []*diodepb.Tag{
+								{
+									Name: "tag 1",
+								},
+							},
 						},
-						"role": {
-							"name": "WAN Router"
-						},
-						"site": {
-							"name": "Site A"
-						},
-						"status": "active",
-						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-						"serial": "123456",
-						"tags": [
-							{
-								"name": "tag 1"
-							}
-						]
-					}
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.site",
@@ -1957,14 +1981,15 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P6] ingest empty dcim.device - error",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.device",
-				"entity": {
-					"Device": {}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.device",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Device{
+						Device: &diodepb.Device{},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{},
 			wantChangeSet: changeset.ChangeSet{
 				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
@@ -1974,33 +1999,34 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P7] ingest dcim.device - existing object found - create missing related objects and update device",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.device",
-				"entity": {
-					"Device": {
-						"name": "router01",
-						"device_type": {
-							"model": "ISR4321"
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.device",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Device{
+						Device: &diodepb.Device{
+							Name: "router01",
+							DeviceType: &diodepb.DeviceType{
+								Model: "ISR4321",
+							},
+							Role: &diodepb.Role{
+								Name: "WAN Router",
+							},
+							Site: &diodepb.Site{
+								Name: "Site A",
+							},
+							Status:      "active",
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+							Serial:      strPtr("123456"),
+							Tags: []*diodepb.Tag{
+								{
+									Name: "tag 1",
+								},
+							},
 						},
-						"role": {
-							"name": "WAN Router"
-						},
-						"site": {
-							"name": "Site A"
-						},
-						"status": "active",
-						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-						"serial": "123456",
-						"tags": [
-							{
-								"name": "tag 1"
-							}
-						]
-					}
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.site",
@@ -2191,31 +2217,32 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P8] ingest dcim.device - existing object not found - create device and all related objects",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.device",
-				"entity": {
-					"Device": {
-						"name": "router01",
-						"device_type": {
-							"model": "ISR4321"
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.device",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Device{
+						Device: &diodepb.Device{
+							Name: "router01",
+							DeviceType: &diodepb.DeviceType{
+								Model: "ISR4321",
+							},
+							Role: &diodepb.Role{
+								Name: "WAN Router",
+							},
+							Site: &diodepb.Site{
+								Name: "Site A",
+							},
+							Platform: &diodepb.Platform{
+								Name: "Cisco IOS 15.6",
+							},
+							Status:      "active",
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+							Serial:      strPtr("123456"),
 						},
-						"role": {
-							"name": "WAN Router"
-						},
-						"site": {
-							"name": "Site A"
-						},
-						"platform": {
-							"name": "Cisco IOS 15.6"
-						},
-						"status": "active",
-						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-						"serial": "123456"
-					}
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.site",
@@ -2377,31 +2404,32 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P8] ingest dcim.device - existing object found - create missing related objects and update device",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.device",
-				"entity": {
-					"Device": {
-						"name": "router01",
-						"device_type": {
-							"model": "ISR4321"
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.device",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Device{
+						Device: &diodepb.Device{
+							Name: "router01",
+							DeviceType: &diodepb.DeviceType{
+								Model: "ISR4321",
+							},
+							Role: &diodepb.Role{
+								Name: "WAN Router",
+							},
+							Site: &diodepb.Site{
+								Name: "Site A",
+							},
+							Platform: &diodepb.Platform{
+								Name: "Cisco IOS 15.6",
+							},
+							Status:      "active",
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+							Serial:      strPtr("123456"),
 						},
-						"role": {
-							"name": "WAN Router"
-						},
-						"site": {
-							"name": "Site A"
-						},
-						"platform": {
-							"name": "Cisco IOS 15.6"
-						},
-						"status": "active",
-						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-						"serial": "123456"
-					}
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.site",
@@ -2578,31 +2606,32 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P8] ingest dcim.device - existing object found - create some missing related objects, use other existing one and update device",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.device",
-				"entity": {
-					"Device": {
-						"name": "router01",
-						"device_type": {
-							"model": "ISR4321"
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.device",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Device{
+						Device: &diodepb.Device{
+							Name: "router01",
+							DeviceType: &diodepb.DeviceType{
+								Model: "ISR4321",
+							},
+							Role: &diodepb.Role{
+								Name: "WAN Router",
+							},
+							Site: &diodepb.Site{
+								Name: "Site A",
+							},
+							Platform: &diodepb.Platform{
+								Name: "Cisco IOS 15.6",
+							},
+							Status:      "active",
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+							Serial:      strPtr("123456-2"),
 						},
-						"role": {
-							"name": "WAN Router"
-						},
-						"site": {
-							"name": "Site A"
-						},
-						"platform": {
-							"name": "Cisco IOS 15.6"
-						},
-						"status": "active",
-						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-						"serial": "123456-2"
-					}
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.site",
@@ -2764,28 +2793,29 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P8.1] ingest dcim.device with partial data - existing object found - create missing related objects and update device",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.device",
-				"entity": {
-					"Device": {
-						"name": "router01",
-						"device_type": {
-							"model": "ISR4321"
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.device",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Device{
+						Device: &diodepb.Device{
+							Name: "router01",
+							DeviceType: &diodepb.DeviceType{
+								Model: "ISR4321",
+							},
+							Role: &diodepb.Role{
+								Name: "WAN Router",
+							},
+							Platform: &diodepb.Platform{
+								Name: "Cisco IOS 15.6",
+							},
+							Status:      "active",
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+							Serial:      strPtr("123456"),
 						},
-						"role": {
-							"name": "WAN Router"
-						},
-						"platform": {
-							"name": "Cisco IOS 15.6"
-						},
-						"status": "active",
-						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-						"serial": "123456"
-					}
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.site",
@@ -2965,31 +2995,32 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P8.2] ingest dcim.device - existing object found - no changes to apply",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.device",
-				"entity": {
-					"Device": {
-						"name": "router01",
-						"device_type": {
-							"model": "ISR4321"
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.device",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Device{
+						Device: &diodepb.Device{
+							Name: "router01",
+							DeviceType: &diodepb.DeviceType{
+								Model: "ISR4321",
+							},
+							Role: &diodepb.Role{
+								Name: "WAN Router",
+							},
+							Site: &diodepb.Site{
+								Name: "Site B",
+							},
+							Platform: &diodepb.Platform{
+								Name: "Cisco IOS 15.6",
+							},
+							Status:      "active",
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+							Serial:      strPtr("123456"),
 						},
-						"role": {
-							"name": "WAN Router"
-						},
-						"site": {
-							"name": "Site B"
-						},
-						"platform": {
-							"name": "Cisco IOS 15.6"
-						},
-						"status": "active",
-						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-						"serial": "123456"
-					}
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.site",
@@ -3124,18 +3155,19 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P9] ingest dcim.site with name, status and description - existing object not found - create",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.site",
-				"entity": {
-					"Site": {
-						"name": "Site A",
-						"status": "active",
-						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.site",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Site{
+						Site: &diodepb.Site{
+							Name:        "Site A",
+							Status:      "active",
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.site",
@@ -3169,18 +3201,19 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P9] ingest dcim.site with name, status and new description - existing object found - update",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.site",
-				"entity": {
-					"Site": {
-						"name": "Site A",
-						"status": "active",
-						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean sed molestie felis."
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.site",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Site{
+						Site: &diodepb.Site{
+							Name:        "Site A",
+							Status:      "active",
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean sed molestie felis."),
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.site",
@@ -3221,17 +3254,18 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P10] ingest dcim.manufacturer with name and description - existing object not found - create",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.manufacturer",
-				"entity": {
-					"Manufacturer": {
-						"name": "Cisco",
-						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.manufacturer",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Manufacturer{
+						Manufacturer: &diodepb.Manufacturer{
+							Name:        "Cisco",
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.manufacturer",
@@ -3264,17 +3298,18 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P10] ingest dcim.manufacturer with name and new description - existing object found - update",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.manufacturer",
-				"entity": {
-					"Manufacturer": {
-						"name": "Cisco",
-						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean sed molestie felis."
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.manufacturer",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Manufacturer{
+						Manufacturer: &diodepb.Manufacturer{
+							Name:        "Cisco",
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean sed molestie felis."),
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.manufacturer",
@@ -3313,18 +3348,19 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P11] ingest dcim.devicerole with name and additional attributes - existing object not found - create",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.devicerole",
-				"entity": {
-					"DeviceRole": {
-						"name": "WAN Router",
-						"color": "509415",
-						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit."
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.devicerole",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_DeviceRole{
+						DeviceRole: &diodepb.Role{
+							Name:        "WAN Router",
+							Color:       "509415",
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.devicerole",
@@ -3358,18 +3394,19 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P11] ingest dcim.devicerole with name and new additional attributes - existing object found - update",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.devicerole",
-				"entity": {
-					"DeviceRole": {
-						"name": "WAN Router",
-						"color": "ffffff",
-						"description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean sed molestie felis."
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.devicerole",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_DeviceRole{
+						DeviceRole: &diodepb.Role{
+							Name:        "WAN Router",
+							Color:       "ffffff",
+							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean sed molestie felis."),
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.devicerole",
@@ -3410,14 +3447,15 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P12] ingest empty dcim.platform - error",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.platform",
-				"entity": {
-					"Platform": {}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.platform",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Platform{
+						Platform: &diodepb.Platform{},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{},
 			wantChangeSet: changeset.ChangeSet{
 				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
@@ -3427,16 +3465,17 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P13] ingest dcim.interface with name only - existing object not found - create",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.interface",
-				"entity": {
-					"Interface": {
-						"name": "GigabitEthernet0/0/0"
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.interface",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Interface{
+						Interface: &diodepb.Interface{
+							Name: "GigabitEthernet0/0/0",
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.interface",
@@ -3593,19 +3632,20 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P13] ingest dcim.interface with name and device - existing object found - do nothing",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.interface",
-				"entity": {
-					"Interface": {
-						"name": "GigabitEthernet0/0/0",
-						"device": {
-							"name": "router01"
-						}
-					}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.interface",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Interface{
+						Interface: &diodepb.Interface{
+							Name: "GigabitEthernet0/0/0",
+							Device: &diodepb.Device{
+								Name: "router01",
+							},
+						},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.interface",
@@ -3770,20 +3810,21 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P13] ingest dcim.interface with name, device and new label - existing object found - update with new label",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.interface",
-				"entity": {
-					"Interface": {
-						"name": "GigabitEthernet0/0/0",
-						"device": {
-							"name": "router01"
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.interface",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Interface{
+						Interface: &diodepb.Interface{
+							Name: "GigabitEthernet0/0/0",
+							Device: &diodepb.Device{
+								Name: "router01",
+							},
+							Label: strPtr("WAN"),
 						},
-						"label": "WAN"
-					}
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.interface",
@@ -3965,14 +4006,15 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P13] ingest empty dcim.interface - error",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.interface",
-				"entity": {
-					"Interface": {}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.interface",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Interface{
+						Interface: &diodepb.Interface{},
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{},
 			wantChangeSet: changeset.ChangeSet{
 				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
@@ -3982,35 +4024,34 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P14] ingest dcim.device with device type and manufacturer - device type and manufacturer objects found - create device with existing device type and manufacturer",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.device",
-				"entity": {
-					"Device": {
-						"name": "Device A",
-						"device_type": {
-							"model": "Device Type A",
-							"manufacturer": {
-								"name": "Manufacturer A"
-							}
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.device",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Device{
+						Device: &diodepb.Device{
+							Name: "Device A",
+							DeviceType: &diodepb.DeviceType{
+								Model: "Device Type A",
+								Manufacturer: &diodepb.Manufacturer{
+									Name: "Manufacturer A",
+								},
+							},
+							Role: &diodepb.Role{
+								Name: "Role ABC",
+							},
+							Platform: &diodepb.Platform{
+								Name: "Platform A",
+								Manufacturer: &diodepb.Manufacturer{
+									Name: "Manufacturer A",
+								},
+							},
+							Serial: strPtr("123456"),
+							Site:   &diodepb.Site{Name: "Site ABC"},
 						},
-						"role": {
-							"name": "Role ABC"
-						},
-						"platform": {
-							"name": "Platform A",
-							"manufacturer": {
-								"name": "Manufacturer A"
-							}
-						},
-						"serial": "123456",
-						"site": {
-							"name": "Site ABC"
-						}
-					}
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.site",
@@ -4144,23 +4185,24 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P15] ingest dcim.interface with name, mtu, device with site - device exists for platform Arista - create interface with existing device and platform",
-			rawIngestEntity: []byte(`{
-				"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				"data_type": "dcim.interface",
-				"entity": {
-					"Interface": {
-						"name": "Ethernet2",
-						"device": {
-							"name": "CEOS1",
-							"site": {
-                                "name": "default_namespace"
-                            }
+			ingestEntity: changeset.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "dcim.interface",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Interface{
+						Interface: &diodepb.Interface{
+							Name: "Ethernet2",
+							Device: &diodepb.Device{
+								Name: "CEOS1",
+								Site: &diodepb.Site{
+									Name: "default_namespace",
+								},
+							},
+							Mtu: int32Ptr(1500),
 						},
-						"mtu": 1500
-					}
+					},
 				},
-				"state": 0
-			}`),
+			},
 			retrieveObjectStates: []mockRetrieveObjectState{
 				{
 					objectType:     "dcim.interface",
@@ -4289,10 +4331,6 @@ func TestDcimPrepare(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var ingestEntity changeset.IngestEntity
-			err := json.Unmarshal(tt.rawIngestEntity, &ingestEntity)
-			require.NoError(t, err)
-
 			mockClient := mocks.NewNetBoxAPI(t)
 
 			for _, m := range tt.retrieveObjectStates {
@@ -4308,7 +4346,7 @@ func TestDcimPrepare(t *testing.T) {
 				}, nil)
 			}
 
-			cs, err := changeset.Prepare(ingestEntity, mockClient)
+			cs, err := changeset.Prepare(tt.ingestEntity, mockClient)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
@@ -4329,3 +4367,4 @@ func TestDcimPrepare(t *testing.T) {
 
 func strPtr(s string) *string { return &s }
 func intPtr(d int) *int       { return &d }
+func int32Ptr(d int32) *int32 { return &d }

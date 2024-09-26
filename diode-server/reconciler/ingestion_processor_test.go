@@ -160,6 +160,48 @@ func TestIngestionProcessorStart(t *testing.T) {
 					},
 				},
 			},
+			{
+				Entity: &diodepb.Entity_ClusterGroup{
+					ClusterGroup: &diodepb.ClusterGroup{
+						Name: "test-cluster-group",
+					},
+				},
+			},
+			{
+				Entity: &diodepb.Entity_ClusterType{
+					ClusterType: &diodepb.ClusterType{
+						Name: "test-cluster-type",
+					},
+				},
+			},
+			{
+				Entity: &diodepb.Entity_Cluster{
+					Cluster: &diodepb.Cluster{
+						Name: "test-cluster",
+					},
+				},
+			},
+			{
+				Entity: &diodepb.Entity_VirtualMachine{
+					VirtualMachine: &diodepb.VirtualMachine{
+						Name: "test-vm",
+					},
+				},
+			},
+			{
+				Entity: &diodepb.Entity_Vminterface{
+					Vminterface: &diodepb.VMInterface{
+						Name: "test-vm-interface",
+					},
+				},
+			},
+			{
+				Entity: &diodepb.Entity_VirtualDisk{
+					VirtualDisk: &diodepb.VirtualDisk{
+						Name: "test-virtual-disk",
+					},
+				},
+			},
 		},
 	}
 	reqBytes, err := proto.Marshal(ingestReq)

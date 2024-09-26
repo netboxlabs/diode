@@ -37,8 +37,8 @@ message RetrieveIngestionDataSourcesResponse {
   repeated IngestionDataSource ingestion_data_sources = 1;
 }
 
-// ChangeSetError represents an error when applying a change set
-message ChangeSetError {
+// IngestionError represents an error occurring while processing an ingestion entity
+message IngestionError {
   message Details {
     message Error {
       string error = 1; //key value pair of the error
@@ -54,44 +54,61 @@ message ChangeSetError {
 }
 
 enum State {
-  NEW = 0;
-  RECONCILED = 1;
-  FAILED = 2;
-  NO_CHANGES = 3;
+  UNSPECIFIED = 0;
+  QUEUED = 1;
+  RECONCILED = 2;
+  FAILED = 3;
+  NO_CHANGES = 4;
+}
+
+// Ingestion metrics
+message IngestionMetrics {
+  int32 total = 1;
+  int32 queued = 2;
+  int32 reconciled = 3;
+  int32 failed = 4;
+  int32 no_changes = 5;
+}
+
+// A change set
+message ChangeSet {
+  string id = 1; // A change set ID
+  bytes data = 2; // Binary data representing the change set
 }
 
 // An ingestion log
 message IngestionLog {
-  string data_type = 1;
-  State state = 2;
-  string request_id = 3;
-  int64 ingestion_ts = 4;
-  string producer_app_name = 5;
-  string producer_app_version = 6;
-  string sdk_name = 7;
-  string sdk_version = 8;
-  diode.v1.Entity entity = 9;
-  ChangeSetError error = 10;
+  string id = 1;
+  string data_type = 2;
+  State state = 3;
+  string request_id = 4;
+  int64 ingestion_ts = 5;
+  string producer_app_name = 6;
+  string producer_app_version = 7;
+  string sdk_name = 8;
+  string sdk_version = 9;
+  diode.v1.Entity entity = 10;
+  IngestionError error = 11;
+  ChangeSet change_set = 12;
 }
 
 // The request to retrieve ingestion logs
 message RetrieveIngestionLogsRequest {
-  int32 page_size = 1 [(validate.rules).int32 = {
-    gte: 1
-    lte: 1000
-  }]; // Number of logs per page, default is 100
+  optional int32 page_size = 1; // Number of logs per page, default is 100
   optional State state = 2; // Optional filter by state field
   string data_type = 3; // Optional filter by data type field
   string request_id = 4; // Optional filter by request ID
   int64 ingestion_ts_start = 5; // Optional start of ingestion timestamp range
   int64 ingestion_ts_end = 6; // Optional end of ingestion timestamp range
   string page_token = 7; // Token to fetch the next page of results
+  bool only_metrics = 8; // Flag to return only the ingestion metrics
 }
 
 // The response from the retrieve ingestion logs request
 message RetrieveIngestionLogsResponse {
   repeated IngestionLog logs = 1; // List of ingestion logs
-  string next_page_token = 2; // Token for the next page of results, if any
+  IngestionMetrics metrics = 2; // ingestion metrics
+  string next_page_token = 3; // Token for the next page of results, if any
 }
 
 // Reconciler service API

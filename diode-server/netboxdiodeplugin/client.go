@@ -19,6 +19,7 @@ import (
 
 	"github.com/mitchellh/mapstructure"
 
+	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 	"github.com/netboxlabs/diode/diode-server/netbox"
 )
 
@@ -106,6 +107,38 @@ func NewApplyChangeSetError(msg string, code int, response ChangeSetResponse) er
 		Code:    code,
 		Details: response,
 	}
+}
+
+// ToIngestionError converts ApplyChangeSetError to *reconcilerpb.IngestionError
+func (e *ApplyChangeSetError) ToIngestionError() *reconcilerpb.IngestionError {
+	changeSetErrors := make([]*reconcilerpb.IngestionError_Details_Error, 0)
+
+	ingestionErr := &reconcilerpb.IngestionError{
+		Message: e.Message,
+		Code:    int32(e.Code),
+		Details: &reconcilerpb.IngestionError_Details{
+			ChangeSetId: e.Details.ChangeSetID,
+			Result:      e.Details.Result,
+		},
+	}
+
+	if len(e.Details.Errors) > 0 {
+		for _, detailsErr := range e.Details.Errors {
+			changeID := detailsErr["change_id"]
+			for errKey, errValue := range detailsErr {
+				if errKey == "change_id" {
+					continue
+				}
+				changeSetErrors = append(changeSetErrors, &reconcilerpb.IngestionError_Details_Error{
+					ChangeId: changeID,
+					Error:    errValue,
+				})
+			}
+		}
+		ingestionErr.Details.Errors = changeSetErrors
+	}
+
+	return ingestionErr
 }
 
 // NetBoxAPI is the interface for the NetBox Diode plugin API
@@ -372,9 +405,9 @@ type Change struct {
 
 // ChangeSetResponse represents an apply change set response
 type ChangeSetResponse struct {
-	ChangeSetID string `json:"change_set_id"`
-	Result      string `json:"result"`
-	Errors      any    `json:"errors"`
+	ChangeSetID string              `json:"change_set_id"`
+	Result      string              `json:"result"`
+	Errors      []map[string]string `json:"errors"`
 }
 
 // ApplyChangeSet applies a change set

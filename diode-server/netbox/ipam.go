@@ -8,6 +8,8 @@ import (
 
 	"github.com/iancoleman/strcase"
 	"github.com/mitchellh/mapstructure"
+
+	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 )
 
 const (
@@ -129,6 +131,68 @@ func IpamIPAddressAssignedObjectHookFunc() mapstructure.DecodeHookFunc {
 	}
 }
 
+// FromProtoIPAddressEntity converts a diode IP address entity to a IPAM IP address
+func FromProtoIPAddressEntity(entity *diodepb.Entity) (*IpamIPAddress, error) {
+	if entity == nil || entity.GetIpAddress() == nil {
+		return nil, fmt.Errorf("entity is nil or not an IP address")
+	}
+
+	return FromProtoIPAddress(entity.GetIpAddress()), nil
+}
+
+// FromProtoIPAddress converts a diode IP address to a IPAM IP address
+func FromProtoIPAddress(ipaddressPb *diodepb.IPAddress) *IpamIPAddress {
+	if ipaddressPb == nil {
+		return nil
+	}
+
+	var status *string
+	if ipaddressPb.Status != "" {
+		status = &ipaddressPb.Status
+	}
+
+	var role *string
+	if ipaddressPb.Role != "" {
+		role = &ipaddressPb.Role
+	}
+
+	return &IpamIPAddress{
+		Address:        ipaddressPb.Address,
+		AssignedObject: FromProtoIPAddressAssignedObject(ipaddressPb.AssignedObject),
+		Status:         status,
+		Role:           role,
+		DNSName:        ipaddressPb.DnsName,
+		Description:    ipaddressPb.Description,
+		Comments:       ipaddressPb.Comments,
+		Tags:           FromProtoTags(ipaddressPb.Tags),
+	}
+}
+
+// FromProtoIPAddressAssignedObject converts a diode IP address assigned object to an IPAM IP address assigned object
+func FromProtoIPAddressAssignedObject(assignedObjectPb any) IPAddressAssignedObject {
+	if assignedObjectPb == nil {
+		return nil
+	}
+
+	switch assignedObjectPb := assignedObjectPb.(type) {
+	case *diodepb.IPAddress_Interface:
+		return FromProtoIPAddressInterface(assignedObjectPb)
+	default:
+		return nil
+	}
+}
+
+// FromProtoIPAddressInterface converts a diode IP address interface to an IPAM IP address interface
+func FromProtoIPAddressInterface(interfacePb *diodepb.IPAddress_Interface) *IPAddressInterface {
+	if interfacePb == nil {
+		return nil
+	}
+
+	return &IPAddressInterface{
+		Interface: FromProtoInterface(interfacePb.Interface),
+	}
+}
+
 // IpamPrefix represents an IPAM Prefix
 type IpamPrefix struct {
 	ID           int       `json:"id,omitempty"`
@@ -160,4 +224,36 @@ func (p *IpamPrefix) Validate() error {
 		return ErrInvalidIPrefixStatus
 	}
 	return nil
+}
+
+// FromProtoPrefixEntity converts a diode prefix entity to a IPAM prefix
+func FromProtoPrefixEntity(entity *diodepb.Entity) (*IpamPrefix, error) {
+	if entity == nil || entity.GetPrefix() == nil {
+		return nil, fmt.Errorf("entity is nil or not a prefix")
+	}
+
+	return FromProtoPrefix(entity.GetPrefix()), nil
+}
+
+// FromProtoPrefix converts a diode prefix to a IPAM prefix
+func FromProtoPrefix(prefixPb *diodepb.Prefix) *IpamPrefix {
+	if prefixPb == nil {
+		return nil
+	}
+
+	var status *string
+	if prefixPb.Status != "" {
+		status = &prefixPb.Status
+	}
+
+	return &IpamPrefix{
+		Prefix:       prefixPb.Prefix,
+		Site:         FromProtoSite(prefixPb.Site),
+		Status:       status,
+		IsPool:       prefixPb.IsPool,
+		MarkUtilized: prefixPb.MarkUtilized,
+		Description:  prefixPb.Description,
+		Comments:     prefixPb.Comments,
+		Tags:         FromProtoTags(prefixPb.Tags),
+	}
 }

@@ -1,0 +1,10 @@
+version: v2
+inputs:
+  - proto_file: diode/v1/reconciler.proto
+plugins:
+  - remote: buf.build/protocolbuffers/python:v26.1
+    out: ../../diode-netbox-plugin/netbox_diode_plugin/reconciler/sdk/
+  - remote: buf.build/protocolbuffers/pyi:v26.1
+    out: ../../diode-netbox-plugin/netbox_diode_plugin/reconciler/sdk/
+  - remote: buf.build/grpc/python:v1.62.1
+    out: ../../diode-netbox-plugin/netbox_diode_plugin/reconciler/sdk/
