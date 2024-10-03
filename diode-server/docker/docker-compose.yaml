@@ -36,7 +36,6 @@ services:
   diode-ingester:
     image: netboxlabs/diode-ingester:${DIODE_TAG:-latest}
     environment:
-      - API_KEY=${RECONCILER_API_KEY}
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
