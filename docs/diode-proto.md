@@ -355,7 +355,7 @@ A Virtual Machine
 
 | Extension    | Type | Base                          | Number | Description |
 |--------------|------|-------------------------------|--------|-------------|
-| entity_label | bool | .google.protobuf.FieldOptions | 50000  |             |
+| entity_label | bool | .google.protobuf.FieldOptions | 50001  |             |
 
 <a name="diode-v1-IngesterService"></a>
 
