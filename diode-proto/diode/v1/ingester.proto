@@ -2,14 +2,22 @@ syntax = "proto3";
 
 package diode.v1;
 
+import "google/protobuf/descriptor.proto";
 import "google/protobuf/timestamp.proto";
 import "validate/validate.proto";
 
 option go_package = "github.com/netboxlabs/diode-sdk-go/diode/v1/diodepb";
 
+extend google.protobuf.FieldOptions {
+  optional bool entity_label = 50000;
+}
+
 // A device
 message Device {
-  string name = 1 [(validate.rules).string = {max_len: 64}];
+  string name = 1 [
+    (validate.rules).string = {max_len: 64},
+    (diode.v1.entity_label) = true
+  ];
   optional string device_fqdn = 2 [(validate.rules).string = {
     min_len: 1
     max_len: 255
@@ -41,10 +49,13 @@ message Device {
 // An interface
 message Interface {
   Device device = 1 [(validate.rules).any.required = true];
-  string name = 2 [(validate.rules).string = {
-    min_len: 1
-    max_len: 64
-  }];
+  string name = 2 [
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 64
+    },
+    (diode.v1.entity_label) = true
+  ];
   optional string label = 3 [(validate.rules).string = {
     min_len: 1
     max_len: 64
@@ -191,10 +202,13 @@ message Interface {
 
 //A Cluster
 message Cluster {
-  string name = 1 [(validate.rules).string = {
-    min_len: 1
-    max_len: 100
-  }];
+  string name = 1 [
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 100
+    },
+    (diode.v1.entity_label) = true
+  ];
   ClusterType type = 2;
   ClusterGroup group = 3;
   Site site = 4;
@@ -214,10 +228,13 @@ message Cluster {
 
 //A Cluster Type
 message ClusterType {
-  string name = 1 [(validate.rules).string = {
-    min_len: 1
-    max_len: 100
-  }];
+  string name = 1 [
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 100
+    },
+    (diode.v1.entity_label) = true
+  ];
   string slug = 2 [(validate.rules).string = {
     min_len: 1
     max_len: 100
@@ -229,10 +246,13 @@ message ClusterType {
 
 //A Cluster Group
 message ClusterGroup {
-  string name = 1 [(validate.rules).string = {
-    min_len: 1
-    max_len: 100
-  }];
+  string name = 1 [
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 100
+    },
+    (diode.v1.entity_label) = true
+  ];
   string slug = 2 [(validate.rules).string = {
     min_len: 1
     max_len: 100
@@ -244,7 +264,10 @@ message ClusterGroup {
 
 //A Virtual Machine
 message VirtualMachine {
-  string name = 1 [(validate.rules).string = {max_len: 64}];
+  string name = 1 [
+    (validate.rules).string = {max_len: 64},
+    (diode.v1.entity_label) = true
+  ];
   string status = 2 [(validate.rules).string = {
     in: [
       "offline",
@@ -273,10 +296,13 @@ message VirtualMachine {
 //A Virtual Machine Interface
 message VMInterface {
   VirtualMachine virtual_machine = 1 [(validate.rules).any.required = true];
-  string name = 2 [(validate.rules).string = {
-    min_len: 1
-    max_len: 64
-  }];
+  string name = 2 [
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 64
+    },
+    (diode.v1.entity_label) = true
+  ];
   optional bool enabled = 3;
   optional int32 mtu = 4 [(validate.rules).int32 = {
     gte: 1
@@ -290,10 +316,13 @@ message VMInterface {
 //A Virtual Disk
 message VirtualDisk {
   VirtualMachine virtual_machine = 1 [(validate.rules).any.required = true];
-  string name = 2 [(validate.rules).string = {
-    min_len: 1
-    max_len: 100
-  }];
+  string name = 2 [
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 100
+    },
+    (diode.v1.entity_label) = true
+  ];
   int32 size = 3 [(validate.rules).int32 = {gte: 0}];
   optional string description = 4 [(validate.rules).string = {max_len: 200}];
   repeated Tag tags = 5;
@@ -301,7 +330,10 @@ message VirtualDisk {
 
 // An IP address.
 message IPAddress {
-  string address = 1 [(validate.rules).string.ip = true];
+  string address = 1 [
+    (validate.rules).string.ip = true,
+    (diode.v1.entity_label) = true
+  ];
   oneof assigned_object {
     Interface interface = 2;
   }
@@ -337,10 +369,13 @@ message IPAddress {
 
 // A device type
 message DeviceType {
-  string model = 1 [(validate.rules).string = {
-    min_len: 1
-    max_len: 100
-  }];
+  string model = 1 [
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 100
+    },
+    (diode.v1.entity_label) = true
+  ];
   string slug = 2 [(validate.rules).string = {
     min_len: 1
     max_len: 100
@@ -355,10 +390,13 @@ message DeviceType {
 
 // A manufacturer
 message Manufacturer {
-  string name = 1 [(validate.rules).string = {
-    min_len: 1
-    max_len: 100
-  }];
+  string name = 1 [
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 100
+    },
+    (diode.v1.entity_label) = true
+  ];
   string slug = 2 [(validate.rules).string = {
     min_len: 1
     max_len: 100
@@ -370,10 +408,13 @@ message Manufacturer {
 
 // A platform
 message Platform {
-  string name = 1 [(validate.rules).string = {
-    min_len: 1
-    max_len: 100
-  }];
+  string name = 1 [
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 100
+    },
+    (diode.v1.entity_label) = true
+  ];
   string slug = 2 [(validate.rules).string = {
     min_len: 1
     max_len: 100
@@ -386,7 +427,10 @@ message Platform {
 
 // An IPAM prefix.
 message Prefix {
-  string prefix = 1 [(validate.rules).string.ip = true];
+  string prefix = 1 [
+    (validate.rules).string.ip = true,
+    (diode.v1.entity_label) = true
+  ];
   Site site = 2;
   string status = 3 [(validate.rules).string = {
     in: [
@@ -405,10 +449,13 @@ message Prefix {
 
 // A role
 message Role {
-  string name = 1 [(validate.rules).string = {
-    min_len: 1
-    max_len: 100
-  }];
+  string name = 1 [
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 100
+    },
+    (diode.v1.entity_label) = true
+  ];
   string slug = 2 [(validate.rules).string = {
     min_len: 1
     max_len: 100
@@ -425,10 +472,13 @@ message Role {
 
 // A site
 message Site {
-  string name = 1 [(validate.rules).string = {
-    min_len: 1
-    max_len: 100
-  }];
+  string name = 1 [
+    (validate.rules).string = {
+      min_len: 1
+      max_len: 100
+    },
+    (diode.v1.entity_label) = true
+  ];
   string slug = 2 [(validate.rules).string = {
     min_len: 1
     max_len: 100
