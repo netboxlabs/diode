@@ -9,7 +9,7 @@ import "validate/validate.proto";
 option go_package = "github.com/netboxlabs/diode-sdk-go/diode/v1/diodepb";
 
 extend google.protobuf.FieldOptions {
-  optional bool entity_label = 50000;
+  optional bool entity_label = 50001;
 }
 
 // A device
