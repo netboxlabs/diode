@@ -1,0 +1,22 @@
+{{- $certManager := index .Values "cert-manager" -}}
+{{- if and $certManager.enabled .Values.certIssuer.enabled }}
+apiVersion: cert-manager.io/v1
+kind: {{ .Values.certIssuer.kind }}
+metadata:
+  name: {{ .Values.certIssuer.name }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  acme:
+    # The ACME server URL
+    server: "https://acme-{{- if not .Values.certIssuer.prod }}staging-{{- end }}v02.api.letsencrypt.org/directory"
+    # Email address used for ACME registration
+    email: {{ .Values.certIssuer.email }}
+    # Name of a secret used to store the ACME account private key
+    privateKeySecretRef:
+      name: {{ .Values.certIssuer.name }}
+    # Solvers that will be used to obtain the certificate
+    {{- with .Values.certIssuer.solvers }}
+    solvers:
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+{{- end }}

@@ -1,0 +1,47 @@
+{{- $ingressNginx := index .Values "ingress-nginx" -}}
+{{- $certManager := index .Values "cert-manager" -}}
+{{- if $ingressNginx.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name}}-ingress-nginx
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+    {{- if and $certManager.enabled .Values.certIssuer.enabled }}
+    {{ if eq .Values.certIssuer.kind "Issuer" }}
+    cert-manager.io/issuer: {{ .Values.certIssuer.name }}
+    {{- else }}
+    cert-manager.io/cluster-issuer: {{ .Values.certIssuer.name }}
+    {{- end }}
+    {{- end }}
+    {{- if $ingressNginx.controller.allowSnippetAnnotations }}
+    {{- end }}
+spec:
+  ingressClassName: {{ $ingressNginx.ingressClass }}
+  {{- if and $certManager.enabled $ingressNginx.hostname }}
+  tls:
+    - hosts:
+        - {{ $ingressNginx.hostname }}
+      secretName: {{ .Release.Name }}-ingress-tls
+  {{- end }}
+  rules:
+    - host: {{ $ingressNginx.hostname }}
+      http:
+        paths:
+          - path: /diode/(diode.v1.IngesterService.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Values.diodeIngester.serviceName }}
+                port:
+                  number: {{ .Values.diodeIngester.containerPort }}
+          - path: /diode/(diode.v1.ReconcilerService.*)
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Values.diodeReconciler.serviceName }}
+                port:
+                  number: {{ .Values.diodeReconciler.containerPort }}
+{{- end }}

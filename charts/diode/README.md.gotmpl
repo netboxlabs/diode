@@ -1,0 +1,41 @@
+{{ template "chart.header" . }}
+{{ template "chart.description" . }}
+
+{{ template "chart.versionBadge" . }}{{ template "chart.typeBadge" . }}{{ template "chart.appVersionBadge" . }}
+
+## Installing the Chart
+
+{{- define "cert-manager-version" }}
+{{- range .Dependencies }}
+{{- if eq .Name "cert-manager" }}
+{{- .Version }}
+{{- end }}
+{{- end }}
+{{- end }}
+
+Install custom resource definitions for cert-manager (if enabled):
+
+```console
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v{{ template "cert-manager-version" . }}/cert-manager.crds.yaml
+```
+
+Create namespaces for ingress-nginx and cert-manager:
+
+```console
+kubectl create namespace diode-ingress
+kubectl create namespace diode-cert-manager
+```
+
+Install the chart with the release name `my-release`:
+
+```console
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm repo add jetstack https://charts.jetstack.io
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo add diode https://netboxlabs.github.io/diode/charts
+helm install my-release diode/{{ template "chart.name" . }} --namespace my-namespace --create-namespace
+```
+
+{{ template "chart.requirementsSection" . }}
+
+{{ template "chart.valuesSection" . }}
