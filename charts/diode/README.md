@@ -29,13 +29,6 @@ helm repo add diode https://netboxlabs.github.io/diode/charts
 helm install my-release diode/diode --namespace my-namespace --create-namespace
 ```
 
-# Create namespaces
-
-```console
-kubectl create namespace diode-ingress
-kubectl create namespace diode-cert-manager
-```
-
 ## Requirements
 
 | Repository | Name | Version |

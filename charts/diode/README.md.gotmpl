@@ -36,13 +36,6 @@ helm repo add diode https://netboxlabs.github.io/diode/charts
 helm install my-release diode/{{ template "chart.name" . }} --namespace my-namespace --create-namespace
 ```
 
-# Create namespaces
-
-```console
-kubectl create namespace diode-ingress
-kubectl create namespace diode-cert-manager
-```
-
 {{ template "chart.requirementsSection" . }}
 
 {{ template "chart.valuesSection" . }}
