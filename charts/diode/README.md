@@ -18,16 +18,19 @@ kubectl create namespace diode-cert-manager
 ```
 
 Install the chart with the release name `my-release`:
-
 ```console
-$ helm repo add diode https://netboxlabs.github.io/diode
-$ helm install my-release diode/diode --namespace my-namespace --create-namespace
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm repo add jetstack https://charts.jetstack.io
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo add diode https://netboxlabs.github.io/diode
+helm install my-release diode/diode --namespace my-namespace --create-namespace
 ```
 
 # Create namespaces
-
+```console
 kubectl create namespace diode-ingress
 kubectl create namespace diode-cert-manager
+```
 
 ## Requirements
 
