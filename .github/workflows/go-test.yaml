@@ -5,9 +5,11 @@ on:
       - "!release"
     paths:
       - "diode-server/**"
+      - "!diode-server/docker/**"
   pull_request:
     paths:
       - "diode-server/**"
+      - "!diode-server/docker/**"
 
 concurrency:
   group: ${{ github.workflow }}
