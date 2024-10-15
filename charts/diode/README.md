@@ -59,7 +59,7 @@ helm install my-release diode/diode --namespace my-namespace --create-namespace
 | diodeIngester.image.pullPolicy | string | `"IfNotPresent"` | image pull policy |
 | diodeIngester.image.repository | string | `"netboxlabs/diode-ingester"` | image repository |
 | diodeIngester.image.securityContext | object | `{}` | security context for the container |
-| diodeIngester.image.tag | string | `"latest"` | image tag |
+| diodeIngester.image.tag | string | `"v0.6.0"` | image tag |
 | diodeIngester.nodeSelector | object | `{}` | node selector for the pod |
 | diodeIngester.podAnnotations | object | `{}` | additional pod annotations |
 | diodeIngester.podLabels | object | `{}` | additional pod labels |
@@ -83,7 +83,7 @@ helm install my-release diode/diode --namespace my-namespace --create-namespace
 | diodeReconciler.image.pullPolicy | string | `"IfNotPresent"` | image pull policy |
 | diodeReconciler.image.repository | string | `"netboxlabs/diode-reconciler"` | image repository |
 | diodeReconciler.image.securityContext | object | `{}` | security context for the container |
-| diodeReconciler.image.tag | string | `"latest"` | image tag |
+| diodeReconciler.image.tag | string | `"v0.6.0"` | image tag |
 | diodeReconciler.nodeSelector | object | `{}` | node selector for the pod |
 | diodeReconciler.podAnnotations | object | `{}` | additional pod annotations |
 | diodeReconciler.podLabels | object | `{}` | additional pod labels |
