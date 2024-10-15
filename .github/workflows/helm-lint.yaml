@@ -29,5 +29,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup Helm
         uses: azure/setup-helm@v4.2.0
+      - name: Build dependencies
+        run: helm dependency build diode
       - name: Run helm lint
         run: helm lint diode
