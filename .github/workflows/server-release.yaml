@@ -3,6 +3,9 @@ on:
   workflow_dispatch:
   push:
     branches: [ release ]
+    paths:
+      - "diode-server/**"
+      - "!diode-server/docker/**"
 
 concurrency:
   group: ${{ github.workflow }}

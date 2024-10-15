@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.diodeIngester.serviceName }}-config
+  namespace: {{ .Release.Namespace }}
+data:
+  RECONCILER_GRPC_HOST: {{ .Values.diodeIngester.config.reconcilerGrpcHost | quote }}
+  RECONCILER_GRPC_PORT: {{ .Values.diodeIngester.config.reconcilerGrpcPort | quote }}
+  REDIS_HOST: {{ include "diode.redis.host" . | quote }}
+  REDIS_PORT: {{ include "diode.redis.port" . | quote }}
+  SENTRY_DSN: {{ .Values.diodeIngester.config.sentryDsn | quote }}

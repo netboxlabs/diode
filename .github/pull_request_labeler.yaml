@@ -74,14 +74,6 @@ diode-server:
           - 'diode-server/*'
           - 'diode-server/**/*'
 
-diode-distributor:
-  - changed-files:
-      - any-glob-to-any-file:
-          - 'diode-server/cmd/distributor/*'
-          - 'diode-server/cmd/distributor/**/*'
-          - 'diode-server/distributor/*'
-          - 'diode-server/distributor/**/*'
-
 diode-ingester:
   - changed-files:
       - any-glob-to-any-file:
@@ -97,3 +89,9 @@ diode-reconciler:
           - 'diode-server/cmd/reconciler/**/*'
           - 'diode-server/reconciler/*'
           - 'diode-server/reconciler/**/*'
+
+diode-chart:
+  - changed-files:
+      - any-glob-to-any-file:
+          - 'charts/*'
+          - 'charts/**/*'

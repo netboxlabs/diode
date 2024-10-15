@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.diodeReconciler.serviceName }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.diodeReconciler.serviceName }}
+spec:
+  replicas: {{ .Values.diodeReconciler.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.diodeReconciler.serviceName }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (printf "%s/%s-configmap.yaml" $.Template.BasePath .Values.diodeReconciler.serviceName) . | sha256sum }}
+        {{- if not .Values.diodeReconciler.existingSecret }}
+        checksum/secret: {{ include (printf "%s/%s-secret.yaml" $.Template.BasePath .Values.diodeReconciler.serviceName ) . | sha256sum }}
+        {{- end }}
+        {{- with .Values.diodeReconciler.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        app: {{ .Values.diodeReconciler.serviceName }}
+        {{- with .Values.diodeReconciler.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ .Values.diodeReconciler.serviceAccount.name }}
+      {{- with .Values.diodeReconciler.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.diodeReconciler.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.diodeReconciler.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.diodeReconciler.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: {{ include "diode-reconciler.secret" . }}
+          secret:
+            secretName: {{ include "diode-reconciler.secret" . }}
+      initContainers:
+        {{- if .Values.redis.enabled }}
+        - name: wait-for-redis
+          image: busybox:latest
+          command: [ 'sh', '-c', 'until nc -z {{ include "diode.redis.host" . }} {{ include "diode.redis.port" . }}; do echo "Waiting for Redis"; sleep 3; done; echo "Redis is up and running";' ]
+        {{- end }}
+      containers:
+        - name: diode-ingester
+          image: "{{ .Values.diodeReconciler.image.repository }}:{{ .Values.diodeReconciler.image.tag }}"
+          imagePullPolicy: {{ .Values.diodeReconciler.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.diodeReconciler.containerPort | default 8081 }}
+          {{- with .Values.diodeReconciler.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.diodeReconciler.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - mountPath: /{{ include "diode-reconciler.secret" . }}
+              name: {{ include "diode-reconciler.secret" . }}
+              readOnly: true
+          envFrom:
+            - configMapRef:
+                name: {{ .Values.diodeReconciler.serviceName }}-config
+            - secretRef:
+                name: {{ include "diode-reconciler.secret" . }}

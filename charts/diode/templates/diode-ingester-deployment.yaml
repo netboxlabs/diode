@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.diodeIngester.serviceName }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.diodeIngester.serviceName }}
+spec:
+  replicas: {{ .Values.diodeIngester.replicas }}
+  selector:
+    matchLabels:
+      app: {{ .Values.diodeIngester.serviceName }}
+  template:
+    metadata:
+      annotations:
+        checksum/config-ingester: {{ include (printf "%s/%s-configmap.yaml" $.Template.BasePath .Values.diodeIngester.serviceName) . | sha256sum }}
+        checksum/config-reconciler: {{ include (printf "%s/%s-configmap.yaml" $.Template.BasePath .Values.diodeReconciler.serviceName) . | sha256sum }}
+        {{- if not .Values.diodeIngester.existingSecret }}
+        checksum/secret-ingester: {{ include (printf "%s/%s-secret.yaml" $.Template.BasePath .Values.diodeIngester.serviceName ) . | sha256sum }}
+        {{- end }}
+        {{- if not .Values.diodeReconciler.existingSecret }}
+        checksum/secret-reconciler: {{ include (printf "%s/%s-secret.yaml" $.Template.BasePath .Values.diodeReconciler.serviceName ) . | sha256sum }}
+        {{- end }}
+        {{- with .Values.diodeIngester.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        app: {{ .Values.diodeIngester.serviceName }}
+        {{- with .Values.diodeIngester.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ .Values.diodeIngester.serviceAccount.name }}
+      {{- with .Values.diodeIngester.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.diodeIngester.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.diodeIngester.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.diodeIngester.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      volumes:
+        - name: {{ include "diode-ingester.secret" . }}
+          secret:
+            secretName: {{ include "diode-ingester.secret" . }}
+      initContainers:
+        {{- if .Values.redis.enabled }}
+        - name: wait-for-redis
+          image: busybox:latest
+          command: [ 'sh', '-c', 'until nc -z {{ include "diode.redis.host" . }} {{ include "diode.redis.port" . }}; do echo "Waiting for Redis"; sleep 3; done; echo "Redis is up and running";' ]
+        {{- end }}
+        - name: wait-for-diode-reconciler
+          image: busybox:latest
+          command: [ 'sh', '-c', 'until nc -z {{ .Values.diodeReconciler.serviceName }} {{ .Values.diodeReconciler.containerPort | default 8081 }}; do echo "Waiting for Diode Reconciler"; sleep 3; done; echo "Diode Reconciler is up and running";' ]
+      containers:
+        - name: diode-ingester
+          image: "{{ .Values.diodeIngester.image.repository }}:{{ .Values.diodeIngester.image.tag }}"
+          imagePullPolicy: {{ .Values.diodeIngester.image.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.diodeIngester.containerPort | default 8081 }}
+          {{- with .Values.diodeIngester.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.diodeIngester.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - mountPath: /{{ include "diode-ingester.secret" . }}
+              name: {{ include "diode-ingester.secret" . }}
+              readOnly: true
+          envFrom:
+            - configMapRef:
+                name: {{ .Values.diodeIngester.serviceName }}-config
+            - secretRef:
+                name: {{ include "diode-ingester.secret" . }}
