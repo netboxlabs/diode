@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.diodeReconciler.serviceName }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Values.diodeReconciler.serviceName }}
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ .Values.diodeReconciler.serviceName }}
+  ports:
+    - name: grpc
+      port: {{ .Values.diodeReconciler.containerPort }}
+      targetPort: {{ .Values.diodeReconciler.containerPort }}
+      protocol: TCP

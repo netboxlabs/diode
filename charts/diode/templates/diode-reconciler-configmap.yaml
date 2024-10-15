@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.diodeReconciler.serviceName }}-config
+  namespace: {{ .Release.Namespace }}
+data:
+  REDIS_HOST: {{ include "diode.redis.host" . | quote }}
+  REDIS_PORT: {{ include "diode.redis.port" . | quote }}
+  NETBOX_DIODE_PLUGIN_API_BASE_URL: {{ .Values.diodeReconciler.config.netboxDiodePluginAPIBaseURL | quote }}
+  NETBOX_DIODE_PLUGIN_SKIP_TLS_VERIFY: {{ .Values.diodeReconciler.config.netboxDiodePluginSkipTLSVerify | quote }}
+  LOGGING_LEVEL: {{ .Values.diodeReconciler.config.loggingLevel | quote }}
+  MIGRATION_ENABLED: {{ .Values.diodeReconciler.config.migrationEnabled | quote }}
+  SENTRY_DSN: {{ .Values.diodeReconciler.config.sentryDsn | quote }}
