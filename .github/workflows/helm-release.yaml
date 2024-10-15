@@ -1,0 +1,36 @@
+name: Helm - release
+on:
+  push:
+    branches:
+      - "!release"
+    paths:
+      - "charts/**"
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  helm-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: charts
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+      - name: Setup Helm
+        uses: azure/setup-helm@v4.2.0
+      - name: Run chart-releaser
+        uses: helm/chart-releaser-action@v1.6.0
+        env:
+          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
