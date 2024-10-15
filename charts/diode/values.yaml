@@ -6,7 +6,7 @@ diodeIngester:
     # -- image repository
     repository: netboxlabs/diode-ingester
     # -- image tag
-    tag: latest
+    tag: v0.6.0
     # -- image pull policy
     pullPolicy: IfNotPresent
     # -- security context for the container
@@ -64,7 +64,7 @@ diodeReconciler:
     # -- image repository
     repository: netboxlabs/diode-reconciler
     # -- image tag
-    tag: latest
+    tag: v0.6.0
     # -- image pull policy
     pullPolicy: IfNotPresent
     # -- security context for the container
