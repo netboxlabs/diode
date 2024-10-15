@@ -20,9 +20,9 @@ jobs:
   helm-release:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    defaults:
-      run:
-        working-directory: charts
+#    defaults:
+#      run:
+#        working-directory: charts
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,4 +32,4 @@ jobs:
         uses: helm/chart-releaser-action@v1.6.0
         env:
           CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          CR_SKIP_EXISTING: true
+          charts_dir: charts
