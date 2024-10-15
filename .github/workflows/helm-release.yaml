@@ -1,11 +1,8 @@
 name: Helm - release
 on:
+  workflow_dispatch:
   push:
-    branches:
-      - "!release"
-    paths:
-      - "charts/**"
-  pull_request:
+    branches: [ release ]
     paths:
       - "charts/**"
 
