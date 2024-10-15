@@ -14,17 +14,20 @@
 {{- end }}
 
 Install custom resource definitions for cert-manager (if enabled):
+
 ```console
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v{{ template "cert-manager-version" . }}/cert-manager.crds.yaml
 ```
 
 Create namespaces for ingress-nginx and cert-manager:
+
 ```console
 kubectl create namespace diode-ingress
 kubectl create namespace diode-cert-manager
 ```
 
 Install the chart with the release name `my-release`:
+
 ```console
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 helm repo add jetstack https://charts.jetstack.io
@@ -34,6 +37,7 @@ helm install my-release diode/{{ template "chart.name" . }} --namespace my-names
 ```
 
 # Create namespaces
+
 ```console
 kubectl create namespace diode-ingress
 kubectl create namespace diode-cert-manager

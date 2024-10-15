@@ -7,17 +7,20 @@ A Helm chart for Diode
 ## Installing the Chart
 
 Install custom resource definitions for cert-manager (if enabled):
+
 ```console
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.16.1/cert-manager.crds.yaml
 ```
 
 Create namespaces for ingress-nginx and cert-manager:
+
 ```console
 kubectl create namespace diode-ingress
 kubectl create namespace diode-cert-manager
 ```
 
 Install the chart with the release name `my-release`:
+
 ```console
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 helm repo add jetstack https://charts.jetstack.io
@@ -27,6 +30,7 @@ helm install my-release diode/diode --namespace my-namespace --create-namespace
 ```
 
 # Create namespaces
+
 ```console
 kubectl create namespace diode-ingress
 kubectl create namespace diode-cert-manager
