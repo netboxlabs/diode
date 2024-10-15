@@ -22,7 +22,7 @@ Install the chart with the release name `my-release`:
 helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 helm repo add jetstack https://charts.jetstack.io
 helm repo add bitnami https://charts.bitnami.com/bitnami
-helm repo add diode https://netboxlabs.github.io/diode
+helm repo add diode https://netboxlabs.github.io/diode/charts
 helm install my-release diode/diode --namespace my-namespace --create-namespace
 ```
 
