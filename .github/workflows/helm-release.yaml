@@ -30,6 +30,8 @@ jobs:
           fetch-depth: 0
       - name: Setup Helm
         uses: azure/setup-helm@v4.2.0
+      - name: Update helm dependencies
+        run: helm dependency update diode
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@v1.6.0
         env:
