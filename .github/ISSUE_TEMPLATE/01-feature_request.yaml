@@ -23,7 +23,8 @@ body:
     attributes:
       label: Proposed feature or enhancement
       description: >
-        Describe in detail the new feature or enhancement you are proposing. The more detail you provide here, the greater chance your proposal has of being discussed.
+        Describe in detail the new feature or enhancement you are proposing. The more detail you provide here, 
+        the greater chance your proposal has of being discussed.
     validations:
       required: true
   - type: textarea
