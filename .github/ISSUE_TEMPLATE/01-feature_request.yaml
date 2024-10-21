@@ -1,0 +1,35 @@
+---
+name: ✨ Feature Request
+description: Propose a new Diode feature or enhancement
+labels: ["enhancement", "status: needs triage"]
+body:
+  - type: input
+    attributes:
+      label: Diode version
+      description: What version of Diode are you currently running?
+      placeholder: v0.6.0
+    validations:
+      required: true
+  - type: dropdown
+    attributes:
+      label: Feature type
+      options:
+        - New ingestion entity type or new field of existing entity type
+        - New functionality
+        - Change to existing functionality
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Proposed feature or enhancement
+      description: >
+        Describe in detail the new feature or enhancement you are proposing. The more detail you provide here, the greater chance your proposal has of being discussed.
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Use case
+      description: >
+        Explain how adding this feature or enhancement would benefit Diode users. What need does it address?
+    validations:
+      required: true
