@@ -3,6 +3,13 @@ name: 🐛 Bug Report
 description: Report a reproducible bug in the current release of Diode
 labels: ["bug", "status: needs triage"]
 body:
+  - type: input
+    attributes:
+      label: Diode version
+      description: What version of Diode are you currently running?
+      placeholder: v0.6.0
+    validations:
+      required: true
   - type: dropdown
     attributes:
       label: Deployment type
@@ -11,13 +18,6 @@ body:
       options:
         - docker compose
         - helm chart
-    validations:
-      required: true
-  - type: input
-    attributes:
-      label: Diode version
-      description: What version of Diode are you currently running?
-      placeholder: v0.6.0
     validations:
       required: true
   - type: input
@@ -40,6 +40,20 @@ body:
       label: Diode SDK version
       description: What version of Diode SDK are you currently running?
       placeholder: v0.2.0
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Diode NetBox Plugin version
+      description: What version of Diode NetBox Plugin are you currently running?
+      placeholder: v0.6.0
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: NetBox version
+      description: What version of NetBox are you currently running?
+      placeholder: v4.1.3
     validations:
       required: true
   - type: textarea
