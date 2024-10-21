@@ -39,7 +39,7 @@ body:
     attributes:
       label: Diode SDK version
       description: What version of Diode SDK are you currently running?
-      placeholder: v0.2.0
+      placeholder: v0.4.0
     validations:
       required: true
   - type: input
