@@ -25,6 +25,8 @@
     - [VirtualDisk](#diode-v1-VirtualDisk)
     - [VirtualMachine](#diode-v1-VirtualMachine)
 
+    - [File-level Extensions](#diode_v1_ingester-proto-extensions)
+
     - [IngesterService](#diode-v1-IngesterService)
 
 - [Scalar Value Types](#scalar-value-types)
@@ -346,6 +348,14 @@ A Virtual Machine
 | description | [string](#string)                | optional |             |
 | comments    | [string](#string)                | optional |             |
 | tags        | [Tag](#diode-v1-Tag)             | repeated |             |
+
+<a name="diode_v1_ingester-proto-extensions"></a>
+
+### File-level Extensions
+
+| Extension    | Type | Base                          | Number | Description |
+|--------------|------|-------------------------------|--------|-------------|
+| entity_label | bool | .google.protobuf.FieldOptions | 50001  |             |
 
 <a name="diode-v1-IngesterService"></a>
 
