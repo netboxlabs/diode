@@ -22,7 +22,9 @@ import (
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 	"github.com/netboxlabs/diode/diode-server/netbox"
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
+	"github.com/netboxlabs/diode/diode-server/reconciler/applier"
 	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
+	"github.com/netboxlabs/diode/diode-server/reconciler/differ"
 	"github.com/netboxlabs/diode/diode-server/sentry"
 )
 
@@ -221,29 +223,27 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 			continue
 		}
 
-		ingestEntity := changeset.IngestEntity{
+		ingestEntity := differ.IngestEntity{
 			RequestID: ingestReq.GetId(),
 			DataType:  objectType,
 			Entity:    v,
 			State:     int(reconcilerpb.State_QUEUED),
 		}
 
-		changeSet, err := p.reconcileEntity(ctx, ingestEntity)
+		changeSet, err := differ.Diff(ingestEntity, p.nbClient)
 		if err != nil {
-			errs = append(errs, err)
+			tags := map[string]string{
+				"request_id": ingestEntity.RequestID,
+			}
+			contextMap := map[string]any{
+				"request_id": ingestEntity.RequestID,
+				"data_type":  ingestEntity.DataType,
+			}
+			sentry.CaptureError(err, tags, "Ingest Entity", contextMap)
+			errs = append(errs, fmt.Errorf("failed to prepare change set: %v", err))
 
 			ingestionLog.State = reconcilerpb.State_FAILED
 			ingestionLog.Error = extractIngestionError(err)
-
-			if changeSet != nil {
-				ingestionLog.ChangeSet = &reconcilerpb.ChangeSet{Id: changeSet.ChangeSetID}
-				csCompressed, err := compressChangeSet(changeSet)
-				if err != nil {
-					errs = append(errs, err)
-				} else {
-					ingestionLog.ChangeSet.Data = csCompressed
-				}
-			}
 
 			if _, err = p.writeIngestionLog(ctx, key, ingestionLog); err != nil {
 				errs = append(errs, err)
@@ -251,8 +251,7 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 			continue
 		}
 
-		if changeSet != nil {
-			ingestionLog.State = reconcilerpb.State_RECONCILED
+		if len(changeSet.ChangeSet) > 0 {
 			ingestionLog.ChangeSet = &reconcilerpb.ChangeSet{Id: changeSet.ChangeSetID}
 			csCompressed, err := compressChangeSet(changeSet)
 			if err != nil {
@@ -260,8 +259,23 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 			} else {
 				ingestionLog.ChangeSet.Data = csCompressed
 			}
+
+			if err := applier.ApplyChangeSet(ctx, p.logger, *changeSet, p.nbClient); err != nil {
+				errs = append(errs, fmt.Errorf("failed to apply change set: %v", err))
+
+				ingestionLog.State = reconcilerpb.State_FAILED
+				ingestionLog.Error = extractIngestionError(err)
+
+				if _, err = p.writeIngestionLog(ctx, key, ingestionLog); err != nil {
+					errs = append(errs, err)
+				}
+				continue
+			}
+
+			ingestionLog.State = reconcilerpb.State_RECONCILED
 		} else {
 			ingestionLog.State = reconcilerpb.State_NO_CHANGES
+			p.logger.Debug("no changes to apply", "request_id", ingestEntity.RequestID)
 		}
 
 		if _, err = p.writeIngestionLog(ctx, key, ingestionLog); err != nil {
@@ -307,51 +321,6 @@ func extractIngestionError(err error) *reconcilerpb.IngestionError {
 	}
 
 	return ingestionErr
-}
-
-func (p *IngestionProcessor) reconcileEntity(ctx context.Context, ingestEntity changeset.IngestEntity) (*changeset.ChangeSet, error) {
-	cs, err := changeset.Prepare(ingestEntity, p.nbClient)
-	if err != nil {
-		tags := map[string]string{
-			"request_id": ingestEntity.RequestID,
-		}
-		contextMap := map[string]any{
-			"request_id": ingestEntity.RequestID,
-			"data_type":  ingestEntity.DataType,
-		}
-		sentry.CaptureError(err, tags, "Ingest Entity", contextMap)
-		return nil, fmt.Errorf("failed to prepare change set: %v", err)
-	}
-
-	if len(cs.ChangeSet) == 0 {
-		p.logger.Debug("no changes to apply", "request_id", ingestEntity.RequestID)
-		return nil, nil
-	}
-
-	changes := make([]netboxdiodeplugin.Change, 0)
-	for _, change := range cs.ChangeSet {
-		changes = append(changes, netboxdiodeplugin.Change{
-			ChangeID:      change.ChangeID,
-			ChangeType:    change.ChangeType,
-			ObjectType:    change.ObjectType,
-			ObjectID:      change.ObjectID,
-			ObjectVersion: change.ObjectVersion,
-			Data:          change.Data,
-		})
-	}
-
-	req := netboxdiodeplugin.ChangeSetRequest{
-		ChangeSetID: cs.ChangeSetID,
-		ChangeSet:   changes,
-	}
-
-	resp, err := p.nbClient.ApplyChangeSet(ctx, req)
-	if err != nil {
-		return cs, err
-	}
-
-	p.logger.Debug("apply change set response", "response", resp)
-	return cs, nil
 }
 
 func (p *IngestionProcessor) writeIngestionLog(ctx context.Context, key string, ingestionLog *reconcilerpb.IngestionLog) ([]byte, error) {

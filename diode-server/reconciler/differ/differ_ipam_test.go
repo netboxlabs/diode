@@ -1,4 +1,4 @@
-package changeset_test
+package differ_test
 
 import (
 	"context"
@@ -12,6 +12,7 @@ import (
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin/mocks"
 	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
+	"github.com/netboxlabs/diode/diode-server/reconciler/differ"
 )
 
 func TestIpamPrepare(t *testing.T) {
@@ -24,14 +25,14 @@ func TestIpamPrepare(t *testing.T) {
 	}
 	tests := []struct {
 		name                 string
-		ingestEntity         changeset.IngestEntity
+		ingestEntity         differ.IngestEntity
 		retrieveObjectStates []mockRetrieveObjectState
 		wantChangeSet        changeset.ChangeSet
 		wantErr              bool
 	}{
 		{
 			name: "[P1] ingest ipam.ipaddress with address and interface - existing object not found - create",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "ipam.ipaddress",
 				Entity: &diodepb.Entity{
@@ -248,7 +249,7 @@ func TestIpamPrepare(t *testing.T) {
 		},
 		{
 			name: "[P1] ingest ipam.ipaddress with address and a new interface - existing IP address and interface not found - create an interface and IP address",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "ipam.ipaddress",
 				Entity: &diodepb.Entity{
@@ -449,7 +450,7 @@ func TestIpamPrepare(t *testing.T) {
 		},
 		{
 			name: "[P1] ingest ipam.ipaddress with address and a new interface - IP address found assigned to a different interface - create the interface and the IP address",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "ipam.ipaddress",
 				Entity: &diodepb.Entity{
@@ -698,7 +699,7 @@ func TestIpamPrepare(t *testing.T) {
 		},
 		{
 			name: "[P1] ingest ipam.ipaddress with assigned interface - existing IP address found assigned a different device - create IP address with a new assigned object (interface)",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "ipam.ipaddress",
 				Entity: &diodepb.Entity{
@@ -973,7 +974,7 @@ func TestIpamPrepare(t *testing.T) {
 		},
 		{
 			name: "[P1] ingest ipam.ipaddress with address and interface - existing IP address found with same interface assigned - no update needed",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "ipam.ipaddress",
 				Entity: &diodepb.Entity{
@@ -1228,7 +1229,7 @@ func TestIpamPrepare(t *testing.T) {
 		},
 		{
 			name: "[P1] ingest ipam.ipaddress with address only - existing IP address found without interface assigned - no update needed",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "ipam.ipaddress",
 				Entity: &diodepb.Entity{
@@ -1262,7 +1263,7 @@ func TestIpamPrepare(t *testing.T) {
 		},
 		{
 			name: "[P1] ingest ipam.ipaddress with address and new description - existing IP address found - update IP address with new description",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "ipam.ipaddress",
 				Entity: &diodepb.Entity{
@@ -1540,7 +1541,7 @@ func TestIpamPrepare(t *testing.T) {
 		},
 		{
 			name: "[P1] ingest empty ipam.ipaddress - error",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "ipam.ipaddress",
 				Entity: &diodepb.Entity{
@@ -1558,7 +1559,7 @@ func TestIpamPrepare(t *testing.T) {
 		},
 		{
 			name: "[P2] ingest ipam.prefix with prefix only - existing object not found - create prefix and site (placeholder)",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "ipam.prefix",
 				Entity: &diodepb.Entity{
@@ -1626,7 +1627,7 @@ func TestIpamPrepare(t *testing.T) {
 		},
 		{
 			name: "[P2] ingest ipam.prefix with prefix only - existing object and its related objects found - do nothing",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "ipam.prefix",
 				Entity: &diodepb.Entity{
@@ -1683,7 +1684,7 @@ func TestIpamPrepare(t *testing.T) {
 		},
 		{
 			name: "[P2] ingest ipam.prefix with empty site",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "ipam.prefix",
 				Entity: &diodepb.Entity{
@@ -1738,7 +1739,7 @@ func TestIpamPrepare(t *testing.T) {
 		},
 		{
 			name: "[P2] ingest ipam.prefix with prefix and a tag - existing object found - create tag and update prefix",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "ipam.prefix",
 				Entity: &diodepb.Entity{
@@ -1856,7 +1857,7 @@ func TestIpamPrepare(t *testing.T) {
 				}, nil)
 			}
 
-			cs, err := changeset.Prepare(tt.ingestEntity, mockClient)
+			cs, err := differ.Diff(tt.ingestEntity, mockClient)
 			if tt.wantErr {
 				require.Error(t, err)
 				return

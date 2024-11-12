@@ -1,4 +1,4 @@
-package changeset_test
+package differ_test
 
 import (
 	"context"
@@ -12,6 +12,7 @@ import (
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin/mocks"
 	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
+	"github.com/netboxlabs/diode/diode-server/reconciler/differ"
 )
 
 func TestDcimPrepare(t *testing.T) {
@@ -24,14 +25,14 @@ func TestDcimPrepare(t *testing.T) {
 	}
 	tests := []struct {
 		name                 string
-		ingestEntity         changeset.IngestEntity
+		ingestEntity         differ.IngestEntity
 		retrieveObjectStates []mockRetrieveObjectState
 		wantChangeSet        changeset.ChangeSet
 		wantErr              bool
 	}{
 		{
 			name: "[P1] ingest dcim.site with name only - existing object not found - create",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.site",
 				Entity: &diodepb.Entity{
@@ -74,7 +75,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P1] ingest dcim.site with name only - existing object found - do nothing",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.site",
 				Entity: &diodepb.Entity{
@@ -109,7 +110,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P1] ingest dcim.site with tags - existing object found - update with new tags",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.site",
 				Entity: &diodepb.Entity{
@@ -227,7 +228,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P1] ingest empty dcim.site - error",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.site",
 				Entity: &diodepb.Entity{
@@ -245,7 +246,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P2] ingest dcim.devicerole with name only - existing object not found - create",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.devicerole",
 				Entity: &diodepb.Entity{
@@ -288,7 +289,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P2] ingest dcim.devicerole with name only - existing object found - do nothing",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.devicerole",
 				Entity: &diodepb.Entity{
@@ -323,7 +324,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P2] ingest dcim.devicerole with name and new description - existing object found - update",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.devicerole",
 				Entity: &diodepb.Entity{
@@ -375,7 +376,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P2] ingest dcim.devicerole with same color - existing object found - nothing to update",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.devicerole",
 				Entity: &diodepb.Entity{
@@ -413,7 +414,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P2] ingest empty dcim.devicerole - error",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.devicerole",
 				Entity: &diodepb.Entity{
@@ -431,7 +432,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P3] ingest dcim.manufacturer with name only - existing object not found - create",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.manufacturer",
 				Entity: &diodepb.Entity{
@@ -473,7 +474,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P3] ingest dcim.manufacturer with name only - existing object found - do nothing",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.manufacturer",
 				Entity: &diodepb.Entity{
@@ -507,7 +508,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P3] ingest empty dcim.manufacturer - error",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.manufacturer",
 				Entity: &diodepb.Entity{
@@ -525,7 +526,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P4] ingest dcim.devicetype with model only - existing object not found - create",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.devicetype",
 				Entity: &diodepb.Entity{
@@ -591,7 +592,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P4] ingest dcim.devicetype with model only - existing object found - do nothing",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.devicetype",
 				Entity: &diodepb.Entity{
@@ -644,7 +645,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P4] ingest empty dcim.devicetype - error",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.devicetype",
 				Entity: &diodepb.Entity{
@@ -662,7 +663,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P5] ingest dcim.devicetype with manufacturer - existing object not found - create manufacturer and devicetype",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.devicetype",
 				Entity: &diodepb.Entity{
@@ -735,7 +736,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P5] ingest dcim.devicetype with new manufacturer - existing object found - create manufacturer and update devicetype",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.devicetype",
 				Entity: &diodepb.Entity{
@@ -966,7 +967,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P5.2] ingest dcim.devicetype with new manufacturer - existing object found - create manufacturer and update devicetype",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.devicetype",
 				Entity: &diodepb.Entity{
@@ -1097,7 +1098,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P5.3] ingest dcim.devicetype with new manufacturer - existing object found - update devicetype with new existing manufacturer",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.devicetype",
 				Entity: &diodepb.Entity{
@@ -1231,7 +1232,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P6] ingest dcim.device with name only - existing object not found - create device and all related objects (using placeholders)",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.device",
 				Entity: &diodepb.Entity{
@@ -1377,7 +1378,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P6] ingest dcim.device with name only - existing object and its related objects found - do nothing",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.device",
 				Entity: &diodepb.Entity{
@@ -1492,7 +1493,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P6] ingest dcim.device with empty site",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.device",
 				Entity: &diodepb.Entity{
@@ -1608,7 +1609,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P7] ingest dcim.device - existing object not found - create device and all related objects",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.device",
 				Entity: &diodepb.Entity{
@@ -1793,7 +1794,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P7] ingest dcim.device with device type having manufacturer defined - existing object not found - create device and all related objects",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.device",
 				Entity: &diodepb.Entity{
@@ -1981,7 +1982,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P6] ingest empty dcim.device - error",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.device",
 				Entity: &diodepb.Entity{
@@ -1999,7 +2000,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P7] ingest dcim.device - existing object found - create missing related objects and update device",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.device",
 				Entity: &diodepb.Entity{
@@ -2217,7 +2218,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P8] ingest dcim.device - existing object not found - create device and all related objects",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.device",
 				Entity: &diodepb.Entity{
@@ -2404,7 +2405,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P8] ingest dcim.device - existing object found - create missing related objects and update device",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.device",
 				Entity: &diodepb.Entity{
@@ -2606,7 +2607,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P8] ingest dcim.device - existing object found - create some missing related objects, use other existing one and update device",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.device",
 				Entity: &diodepb.Entity{
@@ -2793,7 +2794,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P8.1] ingest dcim.device with partial data - existing object found - create missing related objects and update device",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.device",
 				Entity: &diodepb.Entity{
@@ -2995,7 +2996,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P8.2] ingest dcim.device - existing object found - no changes to apply",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.device",
 				Entity: &diodepb.Entity{
@@ -3155,7 +3156,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P9] ingest dcim.site with name, status and description - existing object not found - create",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.site",
 				Entity: &diodepb.Entity{
@@ -3201,7 +3202,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P9] ingest dcim.site with name, status and new description - existing object found - update",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.site",
 				Entity: &diodepb.Entity{
@@ -3254,7 +3255,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P10] ingest dcim.manufacturer with name and description - existing object not found - create",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.manufacturer",
 				Entity: &diodepb.Entity{
@@ -3298,7 +3299,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P10] ingest dcim.manufacturer with name and new description - existing object found - update",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.manufacturer",
 				Entity: &diodepb.Entity{
@@ -3348,7 +3349,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P11] ingest dcim.devicerole with name and additional attributes - existing object not found - create",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.devicerole",
 				Entity: &diodepb.Entity{
@@ -3394,7 +3395,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P11] ingest dcim.devicerole with name and new additional attributes - existing object found - update",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.devicerole",
 				Entity: &diodepb.Entity{
@@ -3447,7 +3448,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P12] ingest empty dcim.platform - error",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.platform",
 				Entity: &diodepb.Entity{
@@ -3465,7 +3466,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P13] ingest dcim.interface with name only - existing object not found - create",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.interface",
 				Entity: &diodepb.Entity{
@@ -3632,7 +3633,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P13] ingest dcim.interface with name and device - existing object found - do nothing",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.interface",
 				Entity: &diodepb.Entity{
@@ -3810,7 +3811,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P13] ingest dcim.interface with name, device and new label - existing object found - update with new label",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.interface",
 				Entity: &diodepb.Entity{
@@ -4006,7 +4007,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P13] ingest empty dcim.interface - error",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.interface",
 				Entity: &diodepb.Entity{
@@ -4024,7 +4025,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P14] ingest dcim.device with device type and manufacturer - device type and manufacturer objects found - create device with existing device type and manufacturer",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.device",
 				Entity: &diodepb.Entity{
@@ -4185,7 +4186,7 @@ func TestDcimPrepare(t *testing.T) {
 		},
 		{
 			name: "[P15] ingest dcim.interface with name, mtu, device with site - device exists for platform Arista - create interface with existing device and platform",
-			ingestEntity: changeset.IngestEntity{
+			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				DataType:  "dcim.interface",
 				Entity: &diodepb.Entity{
@@ -4346,7 +4347,7 @@ func TestDcimPrepare(t *testing.T) {
 				}, nil)
 			}
 
-			cs, err := changeset.Prepare(tt.ingestEntity, mockClient)
+			cs, err := differ.Diff(tt.ingestEntity, mockClient)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
