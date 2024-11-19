@@ -249,8 +249,10 @@ func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChan
 	go func() {
 		defer func() {
 			p.logger.Debug("generating changesets done")
-			if doneChan != nil {
+			if applyChangeSetChan != nil {
 				close(applyChangeSetChan)
+			}
+			if doneChan != nil {
 				doneChan <- struct{}{}
 			}
 		}()

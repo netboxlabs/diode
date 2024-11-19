@@ -445,11 +445,12 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 		ingestionLog                    *reconcilerpb.IngestionLog
 		mockRetrieveObjectStateResponse *netboxdiodeplugin.ObjectState
 		mockApplyChangeSetResponse      *netboxdiodeplugin.ChangeSetResponse
+		autoApplyChangesets             bool
 		expectedStatus                  reconcilerpb.State
 		expectedError                   bool
 	}{
 		{
-			name: "successful",
+			name: "generate and apply changeset",
 			ingestionLog: &reconcilerpb.IngestionLog{
 				Id:                 ksuid.New().String(),
 				RequestId:          "cfa0f129-125c-440d-9e41-e87583cd7d89",
@@ -479,8 +480,40 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 				ChangeSetID: "00000000-0000-0000-0000-000000000000",
 				Result:      "success",
 			},
-			expectedStatus: reconcilerpb.State_RECONCILED,
-			expectedError:  false,
+			autoApplyChangesets: true,
+			expectedStatus:      reconcilerpb.State_RECONCILED,
+			expectedError:       false,
+		},
+		{
+			name: "generate changeset only",
+			ingestionLog: &reconcilerpb.IngestionLog{
+				Id:                 ksuid.New().String(),
+				RequestId:          "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ProducerAppName:    "test-app",
+				ProducerAppVersion: "0.1.0",
+				SdkName:            "diode-sdk-go",
+				SdkVersion:         "0.2.0",
+				DataType:           "dcim.site",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Site{
+						Site: &diodepb.Site{
+							Name: "Site A",
+						},
+					},
+				},
+				IngestionTs: time.Now().UnixNano(),
+				State:       reconcilerpb.State_QUEUED,
+			},
+			mockRetrieveObjectStateResponse: &netboxdiodeplugin.ObjectState{
+				ObjectType: "dcim.site",
+				ObjectID:   0,
+				Object: &netbox.DcimSiteDataWrapper{
+					Site: nil,
+				},
+			},
+			autoApplyChangesets: false,
+			expectedStatus:      reconcilerpb.State_QUEUED,
+			expectedError:       false,
 		},
 	}
 
@@ -496,7 +529,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 				nbClient:    mockNbClient,
 				logger:      logger,
 				Config: Config{
-					AutoApplyChangesets:        true,
+					AutoApplyChangesets:        tt.autoApplyChangesets,
 					ReconcilerRateLimiterRPS:   20,
 					ReconcilerRateLimiterBurst: 1,
 				},
@@ -512,17 +545,24 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 				Return(cmd)
 
 			mockNbClient.On("RetrieveObjectState", ctx, mock.Anything).Return(tt.mockRetrieveObjectStateResponse, nil)
-			mockNbClient.On("ApplyChangeSet", ctx, mock.Anything).Return(tt.mockApplyChangeSetResponse, nil)
+			if tt.autoApplyChangesets {
+				mockNbClient.On("ApplyChangeSet", ctx, mock.Anything).Return(tt.mockApplyChangeSetResponse, nil)
+			}
 
 			bufCapacity := 1
 
 			generateChangeSetChannel := make(chan IngestionLogToProcess, bufCapacity)
-			applyChangeSetChannel := make(chan IngestionLogToProcess, bufCapacity)
+			var applyChangeSetChannel chan IngestionLogToProcess
+			if tt.autoApplyChangesets {
+				applyChangeSetChannel = make(chan IngestionLogToProcess, bufCapacity)
+			}
 			generateChangeSetDone := make(chan struct{})
 			applyChangeSetDone := make(chan struct{})
 
 			p.GenerateChangeSet(ctx, generateChangeSetChannel, applyChangeSetChannel, generateChangeSetDone)
-			p.ApplyChangeSet(ctx, applyChangeSetChannel, applyChangeSetDone)
+			if tt.autoApplyChangesets {
+				p.ApplyChangeSet(ctx, applyChangeSetChannel, applyChangeSetDone)
+			}
 
 			generateChangeSetChannel <- IngestionLogToProcess{
 				key:          redisKey,
@@ -531,7 +571,9 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 			close(generateChangeSetChannel)
 
 			<-generateChangeSetDone
-			<-applyChangeSetDone
+			if tt.autoApplyChangesets {
+				<-applyChangeSetDone
+			}
 
 			mockRedisClient.AssertExpectations(t)
 			require.NotNil(t, tt.ingestionLog.ChangeSet)
