@@ -353,7 +353,7 @@ func (p *IngestionProcessor) ApplyChangeSet(ctx context.Context, applyChan <-cha
 			p.logger.Debug("applying changeset", "ingestionLogID", ingestionLog.ingestionLog.GetId(), "changeSetID", ingestionLog.changeSet.ChangeSetID)
 
 			if err := applier.ApplyChangeSet(ctx, p.logger, *ingestionLog.changeSet, p.nbClient); err != nil {
-				ingestionLog.errors = append(ingestionLog.errors, fmt.Errorf("failed to apply change set: %v", err))
+				ingestionLog.errors = append(ingestionLog.errors, fmt.Errorf("failed to apply changeset: %v", err))
 
 				ingestionLog.ingestionLog.State = reconcilerpb.State_FAILED
 				ingestionLog.ingestionLog.Error = extractIngestionError(err)
