@@ -17,6 +17,7 @@ require (
 	github.com/redis/go-redis/v9 v9.5.1
 	github.com/segmentio/ksuid v1.0.4
 	github.com/stretchr/testify v1.9.0
+	golang.org/x/time v0.3.0
 	google.golang.org/grpc v1.63.2
 	google.golang.org/protobuf v1.33.0
 )

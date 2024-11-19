@@ -41,6 +41,11 @@ func TestMigrate(t *testing.T) {
 			processor := &IngestionProcessor{
 				redisClient: mockRedisClient,
 				logger:      slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false})),
+				Config: Config{
+					AutoApplyChangesets:        true,
+					ReconcilerRateLimiterRPS:   20,
+					ReconcilerRateLimiterBurst: 1,
+				},
 			}
 
 			ctx := context.Background()
