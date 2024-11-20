@@ -44,6 +44,8 @@ def send_get_request(endpoint, params=None):
 
 def send_delete_request(endpoint, id):
     """Send a request to the API with the given endpoint and headers. Return the response."""
+    if endpoint.endswith("/"):
+        endpoint = endpoint[:-1]
     try:
         response = requests.delete(f"{api_root_path}/{endpoint}/{id}/", headers=headers)
     except Exception as e:
