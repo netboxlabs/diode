@@ -450,7 +450,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 		expectedError                   bool
 	}{
 		{
-			name: "generate and apply changeset",
+			name: "generate and apply change set",
 			ingestionLog: &reconcilerpb.IngestionLog{
 				Id:                 ksuid.New().String(),
 				RequestId:          "cfa0f129-125c-440d-9e41-e87583cd7d89",
@@ -485,7 +485,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 			expectedError:       false,
 		},
 		{
-			name: "generate changeset only",
+			name: "generate change set only",
 			ingestionLog: &reconcilerpb.IngestionLog{
 				Id:                 ksuid.New().String(),
 				RequestId:          "cfa0f129-125c-440d-9e41-e87583cd7d89",

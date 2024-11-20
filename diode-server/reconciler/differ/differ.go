@@ -29,7 +29,7 @@ type ObjectState struct {
 	Object         any    `json:"object"`
 }
 
-// Diff compares ingested entity with the intended state in NetBox and returns a changeset
+// Diff compares ingested entity with the intended state in NetBox and returns a change set
 func Diff(entity IngestEntity, netboxAPI netboxdiodeplugin.NetBoxAPI) (*changeset.ChangeSet, error) {
 	// extract ingested entity (actual)
 	actual, err := extractIngestEntityData(entity)
@@ -73,7 +73,7 @@ func Diff(entity IngestEntity, netboxAPI netboxdiodeplugin.NetBoxAPI) (*changese
 		return nil, err
 	}
 
-	// process objectsToReconcile and prepare changeset to return
+	// process objectsToReconcile and prepare change set to return
 	changes := make([]changeset.Change, 0)
 
 	for _, obj := range objectsToReconcile {

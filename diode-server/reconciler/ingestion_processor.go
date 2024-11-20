@@ -242,13 +242,13 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 	return nil
 }
 
-// GenerateChangeSet generates a changeset for an ingestion log
+// GenerateChangeSet generates a change set for an ingestion log
 func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChangeSetChan <-chan IngestionLogToProcess, applyChangeSetChan chan<- IngestionLogToProcess, doneChan chan<- struct{}) {
 	limiter := rate.NewLimiter(rate.Limit(p.Config.ReconcilerRateLimiterRPS), p.Config.ReconcilerRateLimiterBurst)
 
 	go func() {
 		defer func() {
-			p.logger.Debug("generating changesets done")
+			p.logger.Debug("generating change sets done")
 			if applyChangeSetChan != nil {
 				close(applyChangeSetChan)
 			}
@@ -263,7 +263,7 @@ func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChan
 				return
 			}
 
-			p.logger.Debug("generating changeset", "ingestionLogID", ingestionLog.ingestionLog.GetId())
+			p.logger.Debug("generating change set", "ingestionLogID", ingestionLog.ingestionLog.GetId())
 
 			ingestEntity := differ.IngestEntity{
 				RequestID: ingestionLog.ingestionLog.GetId(),
@@ -329,18 +329,18 @@ func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChan
 					ingestionLog.errors = append(ingestionLog.errors, err)
 				}
 			}
-			p.logger.Debug("changeset generated", "ingestionLogID", ingestionLog.ingestionLog.GetId(), "changeSetID", ingestionLog.changeSet.ChangeSetID)
+			p.logger.Debug("change set generated", "ingestionLogID", ingestionLog.ingestionLog.GetId(), "changeSetID", ingestionLog.changeSet.ChangeSetID)
 		}
 	}()
 }
 
-// ApplyChangeSet applies a changeset for an ingestion log
+// ApplyChangeSet applies a change set for an ingestion log
 func (p *IngestionProcessor) ApplyChangeSet(ctx context.Context, applyChan <-chan IngestionLogToProcess, doneChan chan<- struct{}) {
 	limiter := rate.NewLimiter(rate.Limit(p.Config.ReconcilerRateLimiterRPS), p.Config.ReconcilerRateLimiterBurst)
 
 	go func() {
 		defer func() {
-			p.logger.Debug("applying changesets done")
+			p.logger.Debug("applying change sets done")
 			if doneChan != nil {
 				doneChan <- struct{}{}
 			}
@@ -352,10 +352,10 @@ func (p *IngestionProcessor) ApplyChangeSet(ctx context.Context, applyChan <-cha
 				return
 			}
 
-			p.logger.Debug("applying changeset", "ingestionLogID", ingestionLog.ingestionLog.GetId(), "changeSetID", ingestionLog.changeSet.ChangeSetID)
+			p.logger.Debug("applying change set", "ingestionLogID", ingestionLog.ingestionLog.GetId(), "changeSetID", ingestionLog.changeSet.ChangeSetID)
 
 			if err := applier.ApplyChangeSet(ctx, p.logger, *ingestionLog.changeSet, p.nbClient); err != nil {
-				ingestionLog.errors = append(ingestionLog.errors, fmt.Errorf("failed to apply changeset: %v", err))
+				ingestionLog.errors = append(ingestionLog.errors, fmt.Errorf("failed to apply chang eset: %v", err))
 
 				ingestionLog.ingestionLog.State = reconcilerpb.State_FAILED
 				ingestionLog.ingestionLog.Error = extractIngestionError(err)
@@ -370,7 +370,7 @@ func (p *IngestionProcessor) ApplyChangeSet(ctx context.Context, applyChan <-cha
 			if _, err := p.writeIngestionLog(ctx, ingestionLog.key, ingestionLog.ingestionLog); err != nil {
 				ingestionLog.errors = append(ingestionLog.errors, err)
 			}
-			p.logger.Debug("changeset applied", "ingestionLogID", ingestionLog.ingestionLog.GetId(), "changeSetID", ingestionLog.changeSet.ChangeSetID)
+			p.logger.Debug("change set applied", "ingestionLogID", ingestionLog.ingestionLog.GetId(), "changeSetID", ingestionLog.changeSet.ChangeSetID)
 		}
 	}()
 }
@@ -466,16 +466,16 @@ func normalizeIngestionLog(l []byte) []byte {
 func compressChangeSet(cs *changeset.ChangeSet) ([]byte, error) {
 	csJSON, err := json.Marshal(cs)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal changeset JSON: %v", err)
+		return nil, fmt.Errorf("failed to marshal change set JSON: %v", err)
 	}
 
 	var brotliBuf bytes.Buffer
 	brotliWriter := brotli.NewWriter(&brotliBuf)
 	if _, err = brotliWriter.Write(csJSON); err != nil {
-		return nil, fmt.Errorf("failed to compress changeset: %v", err)
+		return nil, fmt.Errorf("failed to compress change set: %v", err)
 	}
 	if err = brotliWriter.Close(); err != nil {
-		return nil, fmt.Errorf("failed to compress changeset: %v", err)
+		return nil, fmt.Errorf("failed to compress change set: %v", err)
 	}
 
 	return brotliBuf.Bytes(), nil
