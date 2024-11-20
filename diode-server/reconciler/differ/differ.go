@@ -30,7 +30,7 @@ type ObjectState struct {
 }
 
 // Diff compares ingested entity with the intended state in NetBox and returns a change set
-func Diff(entity IngestEntity, netboxAPI netboxdiodeplugin.NetBoxAPI) (*changeset.ChangeSet, error) {
+func Diff(ctx context.Context, entity IngestEntity, netboxAPI netboxdiodeplugin.NetBoxAPI) (*changeset.ChangeSet, error) {
 	// extract ingested entity (actual)
 	actual, err := extractIngestEntityData(entity)
 	if err != nil {
@@ -52,7 +52,7 @@ func Diff(entity IngestEntity, netboxAPI netboxdiodeplugin.NetBoxAPI) (*changese
 	// retrieve root object all its nested objects from NetBox (intended)
 	intendedNestedObjectsMap := make(map[string]netbox.ComparableData)
 	for _, obj := range actualNestedObjects {
-		intended, err := retrieveObjectState(netboxAPI, obj)
+		intended, err := retrieveObjectState(ctx, netboxAPI, obj)
 		if err != nil {
 			return nil, err
 		}
@@ -99,13 +99,13 @@ func Diff(entity IngestEntity, netboxAPI netboxdiodeplugin.NetBoxAPI) (*changese
 	return &changeset.ChangeSet{ChangeSetID: uuid.NewString(), ChangeSet: changes}, nil
 }
 
-func retrieveObjectState(netboxAPI netboxdiodeplugin.NetBoxAPI, change netbox.ComparableData) (netbox.ComparableData, error) {
+func retrieveObjectState(ctx context.Context, netboxAPI netboxdiodeplugin.NetBoxAPI, change netbox.ComparableData) (netbox.ComparableData, error) {
 	params := netboxdiodeplugin.RetrieveObjectStateQueryParams{
 		ObjectID:   0,
 		ObjectType: change.DataType(),
 		Params:     change.ObjectStateQueryParams(),
 	}
-	resp, err := netboxAPI.RetrieveObjectState(context.Background(), params)
+	resp, err := netboxAPI.RetrieveObjectState(ctx, params)
 	if err != nil {
 		return nil, err
 	}

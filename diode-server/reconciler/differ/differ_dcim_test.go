@@ -4332,10 +4332,11 @@ func TestDcimPrepare(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
 			mockClient := mocks.NewNetBoxAPI(t)
 
 			for _, m := range tt.retrieveObjectStates {
-				mockClient.EXPECT().RetrieveObjectState(context.Background(), netboxdiodeplugin.RetrieveObjectStateQueryParams{
+				mockClient.EXPECT().RetrieveObjectState(ctx, netboxdiodeplugin.RetrieveObjectStateQueryParams{
 					ObjectType: m.objectType,
 					ObjectID:   m.objectID,
 					Params:     m.queryParams,
@@ -4347,7 +4348,7 @@ func TestDcimPrepare(t *testing.T) {
 				}, nil)
 			}
 
-			cs, err := differ.Diff(tt.ingestEntity, mockClient)
+			cs, err := differ.Diff(ctx, tt.ingestEntity, mockClient)
 			if tt.wantErr {
 				require.Error(t, err)
 				return

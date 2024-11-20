@@ -248,7 +248,6 @@ func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChan
 
 	go func() {
 		defer func() {
-			p.logger.Debug("generating change sets done")
 			if applyChangeSetChan != nil {
 				close(applyChangeSetChan)
 			}
@@ -257,49 +256,43 @@ func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChan
 			}
 		}()
 
-		for ingestionLog := range generateChangeSetChan {
-			if err := limiter.Wait(ctx); err != nil {
-				p.logger.Debug("rate limiter wait", "error", err)
+		for {
+			select {
+			case <-ctx.Done():
+				p.logger.Debug("context cancelled", "error", ctx.Err())
 				return
-			}
-
-			p.logger.Debug("generating change set", "ingestionLogID", ingestionLog.ingestionLog.GetId())
-
-			ingestEntity := differ.IngestEntity{
-				RequestID: ingestionLog.ingestionLog.GetId(),
-				DataType:  ingestionLog.ingestionLog.GetDataType(),
-				Entity:    ingestionLog.ingestionLog.GetEntity(),
-				State:     int(ingestionLog.ingestionLog.GetState()),
-			}
-
-			changeSet, err := differ.Diff(ingestEntity, p.nbClient)
-			if err != nil {
-				tags := map[string]string{
-					"request_id": ingestEntity.RequestID,
+			case ingestionLog, ok := <-generateChangeSetChan:
+				if !ok {
+					return
 				}
-				contextMap := map[string]any{
-					"request_id": ingestEntity.RequestID,
-					"data_type":  ingestEntity.DataType,
+				if err := limiter.Wait(ctx); err != nil {
+					p.logger.Debug("rate limiter wait", "error", err)
+					return
 				}
-				sentry.CaptureError(err, tags, "Ingest Entity", contextMap)
-				ingestionLog.errors = append(ingestionLog.errors, fmt.Errorf("failed to prepare change set: %v", err))
 
-				ingestionLog.ingestionLog.State = reconcilerpb.State_FAILED
-				ingestionLog.ingestionLog.Error = extractIngestionError(err)
+				p.logger.Debug("generating change set", "ingestionLogID", ingestionLog.ingestionLog.GetId())
 
-				if _, err = p.writeIngestionLog(ctx, ingestionLog.key, ingestionLog.ingestionLog); err != nil {
-					ingestionLog.errors = append(ingestionLog.errors, err)
+				ingestEntity := differ.IngestEntity{
+					RequestID: ingestionLog.ingestionLog.GetId(),
+					DataType:  ingestionLog.ingestionLog.GetDataType(),
+					Entity:    ingestionLog.ingestionLog.GetEntity(),
+					State:     int(ingestionLog.ingestionLog.GetState()),
 				}
-				return
-			}
 
-			ingestionLog.changeSet = changeSet
-
-			if len(changeSet.ChangeSet) > 0 {
-				csCompressed, err := compressChangeSet(changeSet)
+				changeSet, err := differ.Diff(ctx, ingestEntity, p.nbClient)
 				if err != nil {
+					tags := map[string]string{
+						"request_id": ingestEntity.RequestID,
+					}
+					contextMap := map[string]any{
+						"request_id": ingestEntity.RequestID,
+						"data_type":  ingestEntity.DataType,
+					}
+					sentry.CaptureError(err, tags, "Ingest Entity", contextMap)
+					ingestionLog.errors = append(ingestionLog.errors, fmt.Errorf("failed to prepare change set: %v", err))
+
 					ingestionLog.ingestionLog.State = reconcilerpb.State_FAILED
-					ingestionLog.errors = append(ingestionLog.errors, err)
+					ingestionLog.ingestionLog.Error = extractIngestionError(err)
 
 					if _, err = p.writeIngestionLog(ctx, ingestionLog.key, ingestionLog.ingestionLog); err != nil {
 						ingestionLog.errors = append(ingestionLog.errors, err)
@@ -307,29 +300,44 @@ func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChan
 					return
 				}
 
-				ingestionLog.ingestionLog.ChangeSet = &reconcilerpb.ChangeSet{
-					Id:   changeSet.ChangeSetID,
-					Data: csCompressed,
-				}
+				ingestionLog.changeSet = changeSet
 
-				if _, err = p.writeIngestionLog(ctx, ingestionLog.key, ingestionLog.ingestionLog); err != nil {
-					ingestionLog.errors = append(ingestionLog.errors, err)
-				}
+				if len(changeSet.ChangeSet) > 0 {
+					csCompressed, err := compressChangeSet(changeSet)
+					if err != nil {
+						ingestionLog.ingestionLog.State = reconcilerpb.State_FAILED
+						ingestionLog.errors = append(ingestionLog.errors, err)
 
-				if applyChangeSetChan != nil {
-					applyChangeSetChan <- IngestionLogToProcess{
-						key:          ingestionLog.key,
-						ingestionLog: ingestionLog.ingestionLog,
-						changeSet:    ingestionLog.changeSet,
+						if _, err = p.writeIngestionLog(ctx, ingestionLog.key, ingestionLog.ingestionLog); err != nil {
+							ingestionLog.errors = append(ingestionLog.errors, err)
+						}
+						return
+					}
+
+					ingestionLog.ingestionLog.ChangeSet = &reconcilerpb.ChangeSet{
+						Id:   changeSet.ChangeSetID,
+						Data: csCompressed,
+					}
+
+					if _, err = p.writeIngestionLog(ctx, ingestionLog.key, ingestionLog.ingestionLog); err != nil {
+						ingestionLog.errors = append(ingestionLog.errors, err)
+					}
+
+					if applyChangeSetChan != nil {
+						applyChangeSetChan <- IngestionLogToProcess{
+							key:          ingestionLog.key,
+							ingestionLog: ingestionLog.ingestionLog,
+							changeSet:    ingestionLog.changeSet,
+						}
+					}
+				} else {
+					ingestionLog.ingestionLog.State = reconcilerpb.State_NO_CHANGES
+					if _, err = p.writeIngestionLog(ctx, ingestionLog.key, ingestionLog.ingestionLog); err != nil {
+						ingestionLog.errors = append(ingestionLog.errors, err)
 					}
 				}
-			} else {
-				ingestionLog.ingestionLog.State = reconcilerpb.State_NO_CHANGES
-				if _, err = p.writeIngestionLog(ctx, ingestionLog.key, ingestionLog.ingestionLog); err != nil {
-					ingestionLog.errors = append(ingestionLog.errors, err)
-				}
+				p.logger.Debug("change set generated", "ingestionLogID", ingestionLog.ingestionLog.GetId(), "changeSetID", ingestionLog.changeSet.ChangeSetID)
 			}
-			p.logger.Debug("change set generated", "ingestionLogID", ingestionLog.ingestionLog.GetId(), "changeSetID", ingestionLog.changeSet.ChangeSetID)
 		}
 	}()
 }
@@ -340,37 +348,45 @@ func (p *IngestionProcessor) ApplyChangeSet(ctx context.Context, applyChan <-cha
 
 	go func() {
 		defer func() {
-			p.logger.Debug("applying change sets done")
 			if doneChan != nil {
 				doneChan <- struct{}{}
 			}
 		}()
 
-		for ingestionLog := range applyChan {
-			if err := limiter.Wait(ctx); err != nil {
-				p.logger.Debug("rate limiter wait", "error", err)
+		for {
+			select {
+			case <-ctx.Done():
+				p.logger.Debug("context cancelled", "error", ctx.Err())
 				return
-			}
+			case ingestionLog, ok := <-applyChan:
+				if !ok {
+					return
+				}
+				if err := limiter.Wait(ctx); err != nil {
+					p.logger.Debug("rate limiter wait", "error", err)
+					return
+				}
 
-			p.logger.Debug("applying change set", "ingestionLogID", ingestionLog.ingestionLog.GetId(), "changeSetID", ingestionLog.changeSet.ChangeSetID)
+				p.logger.Debug("applying change set", "ingestionLogID", ingestionLog.ingestionLog.GetId(), "changeSetID", ingestionLog.changeSet.ChangeSetID)
 
-			if err := applier.ApplyChangeSet(ctx, p.logger, *ingestionLog.changeSet, p.nbClient); err != nil {
-				ingestionLog.errors = append(ingestionLog.errors, fmt.Errorf("failed to apply chang eset: %v", err))
+				if err := applier.ApplyChangeSet(ctx, p.logger, *ingestionLog.changeSet, p.nbClient); err != nil {
+					ingestionLog.errors = append(ingestionLog.errors, fmt.Errorf("failed to apply chang eset: %v", err))
 
-				ingestionLog.ingestionLog.State = reconcilerpb.State_FAILED
-				ingestionLog.ingestionLog.Error = extractIngestionError(err)
+					ingestionLog.ingestionLog.State = reconcilerpb.State_FAILED
+					ingestionLog.ingestionLog.Error = extractIngestionError(err)
 
-				if _, err = p.writeIngestionLog(ctx, ingestionLog.key, ingestionLog.ingestionLog); err != nil {
+					if _, err = p.writeIngestionLog(ctx, ingestionLog.key, ingestionLog.ingestionLog); err != nil {
+						ingestionLog.errors = append(ingestionLog.errors, err)
+					}
+					return
+				}
+
+				ingestionLog.ingestionLog.State = reconcilerpb.State_RECONCILED
+				if _, err := p.writeIngestionLog(ctx, ingestionLog.key, ingestionLog.ingestionLog); err != nil {
 					ingestionLog.errors = append(ingestionLog.errors, err)
 				}
-				return
+				p.logger.Debug("change set applied", "ingestionLogID", ingestionLog.ingestionLog.GetId(), "changeSetID", ingestionLog.changeSet.ChangeSetID)
 			}
-
-			ingestionLog.ingestionLog.State = reconcilerpb.State_RECONCILED
-			if _, err := p.writeIngestionLog(ctx, ingestionLog.key, ingestionLog.ingestionLog); err != nil {
-				ingestionLog.errors = append(ingestionLog.errors, err)
-			}
-			p.logger.Debug("change set applied", "ingestionLogID", ingestionLog.ingestionLog.GetId(), "changeSetID", ingestionLog.changeSet.ChangeSetID)
 		}
 	}()
 }
