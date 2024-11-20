@@ -289,6 +289,8 @@ func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChan
 						"data_type":  ingestEntity.DataType,
 					}
 					sentry.CaptureError(err, tags, "Ingest Entity", contextMap)
+					p.logger.Debug("failed to prepare change set", "ingestionLogID", ingestionLog.ingestionLog.GetId(), "error", err)
+
 					ingestionLog.errors = append(ingestionLog.errors, fmt.Errorf("failed to prepare change set: %v", err))
 
 					ingestionLog.ingestionLog.State = reconcilerpb.State_FAILED
@@ -297,7 +299,7 @@ func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChan
 					if _, err = p.writeIngestionLog(ctx, ingestionLog.key, ingestionLog.ingestionLog); err != nil {
 						ingestionLog.errors = append(ingestionLog.errors, err)
 					}
-					return
+					break
 				}
 
 				ingestionLog.changeSet = changeSet
@@ -311,7 +313,7 @@ func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChan
 						if _, err = p.writeIngestionLog(ctx, ingestionLog.key, ingestionLog.ingestionLog); err != nil {
 							ingestionLog.errors = append(ingestionLog.errors, err)
 						}
-						return
+						break
 					}
 
 					ingestionLog.ingestionLog.ChangeSet = &reconcilerpb.ChangeSet{
@@ -370,6 +372,7 @@ func (p *IngestionProcessor) ApplyChangeSet(ctx context.Context, applyChan <-cha
 				p.logger.Debug("applying change set", "ingestionLogID", ingestionLog.ingestionLog.GetId(), "changeSetID", ingestionLog.changeSet.ChangeSetID)
 
 				if err := applier.ApplyChangeSet(ctx, p.logger, *ingestionLog.changeSet, p.nbClient); err != nil {
+					p.logger.Debug("failed to apply change set", "ingestionLogID", ingestionLog.ingestionLog.GetId(), "changeSetID", ingestionLog.changeSet.ChangeSetID, "error", err)
 					ingestionLog.errors = append(ingestionLog.errors, fmt.Errorf("failed to apply chang eset: %v", err))
 
 					ingestionLog.ingestionLog.State = reconcilerpb.State_FAILED
@@ -378,7 +381,7 @@ func (p *IngestionProcessor) ApplyChangeSet(ctx context.Context, applyChan <-cha
 					if _, err = p.writeIngestionLog(ctx, ingestionLog.key, ingestionLog.ingestionLog); err != nil {
 						ingestionLog.errors = append(ingestionLog.errors, err)
 					}
-					return
+					break
 				}
 
 				ingestionLog.ingestionLog.State = reconcilerpb.State_RECONCILED
