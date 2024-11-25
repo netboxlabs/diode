@@ -108,7 +108,7 @@ func startTestComponent(ctx context.Context, t *testing.T) (*ingester.Component,
 		return listener.Dial()
 	}
 
-	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(bufDialer), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient("://bufnet", grpc.WithContextDialer(bufDialer), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	require.NoError(t, err)
 
 	select {

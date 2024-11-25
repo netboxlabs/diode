@@ -39,7 +39,7 @@ func startTestServer(ctx context.Context, t *testing.T, redisAddr string) (*reco
 		return listener.Dial()
 	}
 
-	conn, err := grpc.DialContext(ctx, "bufnet", grpc.WithContextDialer(bufDialer), grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient("://bufnet", grpc.WithContextDialer(bufDialer), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	require.NoError(t, err)
 
 	select {
