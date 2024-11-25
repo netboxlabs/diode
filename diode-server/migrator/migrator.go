@@ -33,7 +33,7 @@ func NewMigrator(logger *slog.Logger, dialect string, db *sql.DB, migrationsPath
 	migrationsFS := os.DirFS(migrationsPath)
 	provider, err := goose.NewProvider(goose.Dialect(dialect), db, migrationsFS)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create goose provider: %w", err)
+		return nil, fmt.Errorf("failed to create migration provider: %w", err)
 	}
 
 	return &Migrator{
