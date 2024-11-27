@@ -17,7 +17,7 @@ on:
         value: ${{ jobs.get-next-version.outputs.short-sha }}
 
 env:
-  GH_TOKEN: ${{ secrets.ORB_CI_GH_TOKEN }}
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   SLACK_SEMANTIC_RELEASE_WEBHOOK: ${{ secrets.SLACK_OBSERVABILITY_RELEASE_WEBHOOK }}
 
 jobs:
