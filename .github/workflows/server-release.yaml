@@ -16,6 +16,9 @@ env:
   SEMANTIC_RELEASE_PACKAGE: ${{ github.repository }}
   GO_VERSION: '1.23'
 
+permissions:
+  contents: write
+
 jobs:
   setup:
     name: Setup

@@ -20,6 +20,9 @@ env:
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   SLACK_SEMANTIC_RELEASE_WEBHOOK: ${{ secrets.SLACK_OBSERVABILITY_RELEASE_WEBHOOK }}
 
+permissions:
+  contents: write
+
 jobs:
   get-next-version:
     name: Semantic release get next version
