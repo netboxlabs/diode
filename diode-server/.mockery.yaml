@@ -2,6 +2,7 @@ mockname: "{{.InterfaceName}}"
 structname: "{{.InterfaceName}}.go"
 filename: "{{.InterfaceName | lower }}.go"
 with-expecter: true
+issue-845-fix: True
 packages:
   github.com/netboxlabs/diode/diode-server/netboxdiodeplugin:
     config:
