@@ -1,5 +1,3 @@
-.PHONY: deps lint test test-coverage build-all docker-all docker-compose-up docker-compose-down clean reconciler-proto-gen
-
 SERVICES         := $(shell find ./cmd/* -type d -exec basename {} \;)
 BUILD_SERVICES   = $(addprefix build-,$(SERVICES))
 DOCKER_SERVICES  = $(addprefix docker-,$(SERVICES))
@@ -23,15 +21,19 @@ else
   DOCKER_COMPOSE := docker-compose
 endif
 
+.PHONY: deps
 deps:
 	@go mod tidy
 
+.PHONY: lint
 lint:
 	@golangci-lint run ./... --config ../.github/golangci.yaml
 
+.PHONY: test
 test:
 	@go test -race ./...
 
+.PHONY: test-coverage
 test-coverage:
 	@mkdir -p .coverage
 	@go test -race -cover -json -coverprofile=.coverage/cover.out.tmp ./... | grep -Ev "diodepb|reconcilerpb|cmd|mocks|sentry" | tparse -format=markdown > .coverage/test-report.md
@@ -44,6 +46,7 @@ $(BUILD_SERVICES):
 	@CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(GOARCH) GOARM=$(GOARM)
 	@go build -ldflags "$(LD_FLAGS)" -o $(BUILD_DIR)/$(SVC) ./cmd/$(SVC)
 
+.PHONY: build-all
 build-all: $(BUILD_SERVICES)
 
 .PHONY: $(DOCKER_SERVICES)
@@ -61,11 +64,14 @@ $(DOCKER_SERVICES):
   	  --tag=$(ORG_NAME)/$(REPO_NAME)-$(SVC):$(DIODE_VERSION)-$(COMMIT_SHA) \
   	  -f docker/Dockerfile .
 
+.PHONY: docker-all
 docker-all: $(DOCKER_SERVICES)
 
+.PHONY: docker-compose-up
 docker-compose-up:
 	$(DOCKER_COMPOSE) --env-file docker/sample.env -f docker/docker-compose.yaml up -d --build
 
+.PHONY: docker-compose-down
 docker-compose-down:
 	$(DOCKER_COMPOSE) --env-file docker/sample.env -f docker/docker-compose.yaml down --remove-orphans
 
@@ -79,12 +85,22 @@ docker-compose-dev-down:
 	@DIODE_VERSION=$(DIODE_VERSION) COMMIT_SHA=$(COMMIT_SHA) DIODE_TAG=$(DIODE_VERSION)-$(COMMIT_SHA) PROJECT_NAME=diode-dev \
 	$(DOCKER_COMPOSE) --env-file docker/sample.env -f docker/docker-compose.yaml -f docker/docker-compose.dev.yaml down --remove-orphans
 
+.PHONY: docker-compose-netbox-up
 docker-compose-netbox-up:
 	$(DOCKER_COMPOSE) -f docker/docker-compose.netbox.yaml up -d --build
 
+.PHONY: docker-compose-netbox-down
 docker-compose-netbox-down:
 	$(DOCKER_COMPOSE) -f docker/docker-compose.netbox.yaml down
 
+.PHONY: clean
 clean:
 	@rm -rf $(BUILD_DIR)/*
 
+.PHONY: gen-mocks
+gen-mocks:
+	mockery
+
+.PHONY: gen-dbstore
+gen-dbstore:
+	sqlc generate
