@@ -57,12 +57,14 @@ type RedisClient interface {
 
 // IngestionProcessor processes ingested data
 type IngestionProcessor struct {
-	Config            Config
-	logger            *slog.Logger
-	hostname          string
-	redisClient       RedisClient
-	redisStreamClient RedisClient
-	nbClient          netboxdiodeplugin.NetBoxAPI
+	Config                 Config
+	logger                 *slog.Logger
+	hostname               string
+	redisClient            RedisClient
+	redisStreamClient      RedisClient
+	nbClient               netboxdiodeplugin.NetBoxAPI
+	ingestionLogRepository IngestionLogRepository
+	changeSetRepository    ChangeSetRepository
 }
 
 // IngestionLogToProcess represents an ingestion log to process
@@ -74,7 +76,7 @@ type IngestionLogToProcess struct {
 }
 
 // NewIngestionProcessor creates a new ingestion processor
-func NewIngestionProcessor(ctx context.Context, logger *slog.Logger) (*IngestionProcessor, error) {
+func NewIngestionProcessor(ctx context.Context, logger *slog.Logger, ingestionLogRepo IngestionLogRepository, changeSetRepo ChangeSetRepository) (*IngestionProcessor, error) {
 	var cfg Config
 	envconfig.MustProcess("", &cfg)
 
@@ -109,12 +111,14 @@ func NewIngestionProcessor(ctx context.Context, logger *slog.Logger) (*Ingestion
 	}
 
 	component := &IngestionProcessor{
-		Config:            cfg,
-		logger:            logger,
-		hostname:          hostname,
-		redisClient:       redisClient,
-		redisStreamClient: redisStreamClient,
-		nbClient:          nbClient,
+		Config:                 cfg,
+		logger:                 logger,
+		hostname:               hostname,
+		redisClient:            redisClient,
+		redisStreamClient:      redisStreamClient,
+		nbClient:               nbClient,
+		ingestionLogRepository: ingestionLogRepo,
+		changeSetRepository:    changeSetRepo,
 	}
 
 	return component, nil

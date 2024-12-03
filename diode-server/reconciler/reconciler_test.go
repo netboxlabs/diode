@@ -40,6 +40,11 @@ func setupEnv(redisAddr string) {
 	_ = os.Setenv("AUTO_APPLY_CHANGESETS", "true")
 	_ = os.Setenv("RECONCILER_RATE_LIMITER_RPS", "20")
 	_ = os.Setenv("RECONCILER_RATE_LIMITER_BURST", "1")
+	_ = os.Setenv("POSTGRES_HOST", "localhost")
+	_ = os.Setenv("POSTGRES_PORT", "5432")
+	_ = os.Setenv("POSTGRES_DB_NAME", "diode")
+	_ = os.Setenv("POSTGRES_USER", "diode")
+	_ = os.Setenv("POSTGRES_PASSWORD", "diode")
 }
 
 func teardownEnv() {
@@ -58,4 +63,9 @@ func teardownEnv() {
 	_ = os.Unsetenv("AUTO_APPLY_CHANGESETS")
 	_ = os.Unsetenv("RECONCILER_RATE_LIMITER_RPS")
 	_ = os.Unsetenv("RECONCILER_RATE_LIMITER_BURST")
+	_ = os.Unsetenv("POSTGRES_HOST")
+	_ = os.Unsetenv("POSTGRES_PORT")
+	_ = os.Unsetenv("POSTGRES_DB_NAME")
+	_ = os.Unsetenv("POSTGRES_USER")
+	_ = os.Unsetenv("POSTGRES_PASSWORD")
 }

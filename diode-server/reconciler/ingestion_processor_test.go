@@ -15,6 +15,7 @@ import (
 
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/reconciler"
+	"github.com/netboxlabs/diode/diode-server/reconciler/mocks"
 )
 
 func TestNewIngestionProcessor(t *testing.T) {
@@ -25,8 +26,11 @@ func TestNewIngestionProcessor(t *testing.T) {
 	setupEnv(s.Addr())
 	defer teardownEnv()
 
+	ingestionLogRepoMock := mocks.NewIngestionLogRepository(t)
+	changeSetRepoMock := mocks.NewChangeSetRepository(t)
+
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
-	processor, err := reconciler.NewIngestionProcessor(ctx, logger)
+	processor, err := reconciler.NewIngestionProcessor(ctx, logger, ingestionLogRepoMock, changeSetRepoMock)
 	require.NoError(t, err)
 	require.NotNil(t, processor)
 
@@ -42,10 +46,13 @@ func TestIngestionProcessorStart(t *testing.T) {
 	setupEnv(s.Addr())
 	defer teardownEnv()
 
+	ingestionLogRepoMock := mocks.NewIngestionLogRepository(t)
+	changeSetRepoMock := mocks.NewChangeSetRepository(t)
+
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	ctx := context.Background()
 
-	processor, err := reconciler.NewIngestionProcessor(ctx, logger)
+	processor, err := reconciler.NewIngestionProcessor(ctx, logger, ingestionLogRepoMock, changeSetRepoMock)
 	require.NoError(t, err)
 	require.NotNil(t, processor)
 
