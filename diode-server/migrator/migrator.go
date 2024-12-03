@@ -51,13 +51,21 @@ func (m *Migrator) Run(ctx context.Context, op Operation) error {
 		if err != nil && !errors.Is(err, goose.ErrAlreadyApplied) {
 			return fmt.Errorf("failed to apply migrations: %w", err)
 		}
+		if len(results) == 0 {
+			m.logger.Debug("no migrations to apply")
+			return nil
+		}
 		m.logger.Debug("applied migrations", "results", results)
 	case OperationDown:
-		results, err := m.provider.Down(ctx)
+		result, err := m.provider.Down(ctx)
 		if err != nil && !errors.Is(err, goose.ErrNoNextVersion) {
 			return fmt.Errorf("failed to rollback migrations: %w", err)
 		}
-		m.logger.Debug("rolled back migrations", "results", results)
+		if result == nil {
+			m.logger.Debug("no migrations to rollback")
+			return nil
+		}
+		m.logger.Debug("rolled back migrations", "result", result)
 	default:
 		return fmt.Errorf("unsupported operation: %s", op)
 	}
