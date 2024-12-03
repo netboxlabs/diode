@@ -55,8 +55,8 @@ cd /opt/diode
 Download the default `docker-compose.yaml` and `.env` files from this repository:
 
 ```bash
-curl -o docker-compose.yaml https://raw.githubusercontent.com/netboxlabs/diode/develop/diode-server/docker/docker-compose.yaml
-curl -o .env https://raw.githubusercontent.com/netboxlabs/diode/develop/diode-server/docker/sample.env
+curl -o docker-compose.yaml https://raw.githubusercontent.com/netboxlabs/diode/release/diode-server/docker/docker-compose.yaml
+curl -o .env https://raw.githubusercontent.com/netboxlabs/diode/release/diode-server/docker/sample.env
 ```
 
 Edit the `.env` to match your environment:
