@@ -12,6 +12,11 @@ type Config struct {
 	AutoApplyChangesets        bool   `envconfig:"AUTO_APPLY_CHANGESETS" default:"true"`
 	ReconcilerRateLimiterRPS   int    `envconfig:"RECONCILER_RATE_LIMITER_RPS" default:"20"`
 	ReconcilerRateLimiterBurst int    `envconfig:"RECONCILER_RATE_LIMITER_BURST" default:"1"`
+	PostgresHost               string `envconfig:"POSTGRES_HOST"`
+	PostgresPort               int    `envconfig:"POSTGRES_PORT"`
+	PostgresDBName             string `envconfig:"POSTGRES_DB_NAME"`
+	PostgresUser               string `envconfig:"POSTGRES_USER"`
+	PostgresPassword           string `envconfig:"POSTGRES_PASSWORD"`
 
 	// API keys
 	DiodeToNetBoxAPIKey        string `envconfig:"DIODE_TO_NETBOX_API_KEY" required:"true"`
