@@ -66,10 +66,21 @@ services:
       - MIGRATION_ENABLED=${MIGRATION_ENABLED}
       - RECONCILER_RATE_LIMITER_RPS=${RECONCILER_RATE_LIMITER_RPS}
       - RECONCILER_RATE_LIMITER_BURST=${RECONCILER_RATE_LIMITER_BURST}
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT}
+      - POSTGRES_DB_NAME=${POSTGRES_DB_NAME}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     restart: always
     ports: [ ]
+    volumes:
+      - ../dbstore/postgres/migrations:/etc/diode/migrations:z,ro
     depends_on:
-      - diode-redis
+      diode-redis:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+
   diode-redis:
     image: redis/redis-stack-server:latest
     command:
@@ -82,6 +93,26 @@ services:
     ports: [ ]
     volumes:
       - diode-redis-data:/data
+
+  postgres:
+    image: docker.io/postgres:16-alpine
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB_NAME}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_USER=${POSTGRES_USER}
+    ports:
+      - ${POSTGRES_PORT:-5432}:5432
+    healthcheck:
+      test: pg_isready -q -t 2 -d $$POSTGRES_DB -U $$POSTGRES_USER
+      start_period: 20s
+      interval: 1s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - diode-postgres-data:/var/lib/postgresql/data
+
 volumes:
   diode-redis-data:
+    driver: local
+  diode-postgres-data:
     driver: local
