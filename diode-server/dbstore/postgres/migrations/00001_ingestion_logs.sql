@@ -13,9 +13,9 @@ CREATE TABLE IF NOT EXISTS ingestion_logs
     producer_app_version VARCHAR(255),
     sdk_name             VARCHAR(255),
     sdk_version          VARCHAR(255),
-    entity               JSONB,              -- protojson output
+    entity               JSONB,
     error                JSONB,
-    source_metadata      JSONB,              -- kv for source metadata that came from agent, i.e. source, hostname, ip
+    source_metadata      JSONB,
     created_at           TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at           TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
