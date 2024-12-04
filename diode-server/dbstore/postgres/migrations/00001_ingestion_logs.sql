@@ -3,7 +3,7 @@
 -- Create the ingestion_logs table
 CREATE TABLE IF NOT EXISTS ingestion_logs
 (
-    id                   SERIAL PRIMARY KEY,
+    id                   INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     ingestion_log_ksuid  CHAR(27) NOT NULL,
     data_type            VARCHAR(255),
     state                INTEGER,
@@ -21,10 +21,10 @@ CREATE TABLE IF NOT EXISTS ingestion_logs
 );
 
 -- Create indices
-CREATE INDEX IF NOT EXISTS idx_ingestion_logs_ingestion_log_ksuid ON ingestion_logs(ingestion_log_ksuid);
-CREATE INDEX IF NOT EXISTS idx_ingestion_logs_data_type ON ingestion_logs(data_type);
-CREATE INDEX IF NOT EXISTS idx_ingestion_logs_state ON ingestion_logs(state);
-CREATE INDEX IF NOT EXISTS idx_ingestion_logs_request_id ON ingestion_logs(request_id);
+CREATE INDEX IF NOT EXISTS idx_ingestion_logs_ingestion_log_ksuid ON ingestion_logs (ingestion_log_ksuid);
+CREATE INDEX IF NOT EXISTS idx_ingestion_logs_data_type ON ingestion_logs (data_type);
+CREATE INDEX IF NOT EXISTS idx_ingestion_logs_state ON ingestion_logs (state);
+CREATE INDEX IF NOT EXISTS idx_ingestion_logs_request_id ON ingestion_logs (request_id);
 
 -- +goose Down
 
