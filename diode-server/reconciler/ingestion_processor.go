@@ -439,6 +439,12 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 			continue
 		}
 
+		if err = p.ingestionLogRepository.CreateIngestionLog(ctx, ingestionLog, nil); err != nil {
+			p.logger.Debug("failed to create ingestion log in ingestion log repo", "error", err)
+			errs = append(errs, fmt.Errorf("failed to create ingestion log: %v", err))
+			continue
+		}
+
 		generateIngestionLogChan <- IngestionLogToProcess{
 			key:          key,
 			ingestionLog: ingestionLog,
