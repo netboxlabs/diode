@@ -4,7 +4,7 @@
 CREATE TABLE IF NOT EXISTS ingestion_logs
 (
     id                   INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    ingestion_log_ksuid  CHAR(27) NOT NULL,
+    ingestion_log_ksuid  VARCHAR(27) NOT NULL,
     data_type            VARCHAR(255),
     state                INTEGER,
     request_id           VARCHAR(255),
