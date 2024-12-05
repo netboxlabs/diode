@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS change_sets
 (
     id               INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
     change_set_ksuid VARCHAR(27) NOT NULL,
-    ingestion_log_id INTEGER  NOT NULL,
+    ingestion_log_id INTEGER     NOT NULL,
     branch_name      VARCHAR(255),
     created_at       TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at       TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -18,7 +18,7 @@ CREATE INDEX IF NOT EXISTS idx_change_sets_change_set_ksuid ON change_sets (chan
 CREATE TABLE IF NOT EXISTS changes
 (
     id              INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    change_ksuid    VARCHAR(27)     NOT NULL,
+    change_ksuid    VARCHAR(27)  NOT NULL,
     change_set_id   INTEGER      NOT NULL,
     change_type     VARCHAR(50)  NOT NULL,
     object_type     VARCHAR(100) NOT NULL,
