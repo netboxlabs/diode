@@ -26,6 +26,7 @@ install-dev-tools:
 	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	@go install github.com/vektra/mockery/v2@latest
 	@go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
+	@go install github.com/mfridman/tparse@latest
 
 .PHONY: deps
 deps:
