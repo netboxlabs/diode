@@ -24,6 +24,7 @@ coverage.txt
 # diode-server
 diode-server/.coverage/
 diode-server/build/
+diode-server/docker/dev.env
 
 # Python
 __pycache__/
