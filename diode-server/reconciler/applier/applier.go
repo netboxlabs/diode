@@ -9,7 +9,7 @@ import (
 )
 
 // ApplyChangeSet applies a change set to NetBox
-func ApplyChangeSet(ctx context.Context, logger *slog.Logger, cs changeset.ChangeSet, nbClient netboxdiodeplugin.NetBoxAPI) error {
+func ApplyChangeSet(ctx context.Context, logger *slog.Logger, cs changeset.ChangeSet, branchID string, nbClient netboxdiodeplugin.NetBoxAPI) error {
 	changes := make([]netboxdiodeplugin.Change, 0)
 	for _, change := range cs.ChangeSet {
 		changes = append(changes, netboxdiodeplugin.Change{
@@ -25,6 +25,8 @@ func ApplyChangeSet(ctx context.Context, logger *slog.Logger, cs changeset.Chang
 	req := netboxdiodeplugin.ChangeSetRequest{
 		ChangeSetID: cs.ChangeSetID,
 		ChangeSet:   changes,
+		// TODO(mfiedorowicz): take branch from ChangeSet, remove parameter
+		BranchID: branchID,
 	}
 
 	resp, err := nbClient.ApplyChangeSet(ctx, req)

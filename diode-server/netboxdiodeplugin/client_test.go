@@ -203,6 +203,25 @@ func TestRetrieveObjectState(t *testing.T) {
 			shouldError:   false,
 		},
 		{
+			name:               "valid response for DCIM site with branch",
+			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.DcimSiteObjectType, ObjectID: 1, BranchID: "branch_id"},
+			mockServerResponse: `{"object_type":"dcim.site","object_change_id":1,"object":{"id":1,"name":"site 01", "slug": "site-01"}}`,
+			apiKey:             "foobar",
+			response: &netboxdiodeplugin.ObjectState{
+				ObjectType:     netbox.DcimSiteObjectType,
+				ObjectChangeID: 1,
+				Object: &netbox.DcimSiteDataWrapper{
+					Site: &netbox.DcimSite{
+						ID:   1,
+						Name: "site 01",
+						Slug: "site-01",
+					},
+				},
+			},
+			tlsSkipVerify: true,
+			shouldError:   false,
+		},
+		{
 			name:               "valid response for DCIM DeviceRole",
 			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.DcimDeviceRoleObjectType, ObjectID: 1},
 			mockServerResponse: `{"object_type":"dcim.devicerole","object_change_id":1,"object":{"id":1,"name":"test"}}`,
@@ -552,6 +571,11 @@ func TestRetrieveObjectState(t *testing.T) {
 				assert.Equal(t, r.URL.Query().Get("object_id"), objectID)
 				assert.Equal(t, r.Header.Get("Authorization"), fmt.Sprintf("Token %s", tt.apiKey))
 				assert.Equal(t, r.Header.Get("User-Agent"), fmt.Sprintf("%s/%s", netboxdiodeplugin.SDKName, netboxdiodeplugin.SDKVersion))
+				if tt.params.BranchID != "" {
+					assert.Equal(t, r.URL.Query().Get("_branch"), tt.params.BranchID)
+				} else {
+					assert.False(t, r.URL.Query().Has("_branch"))
+				}
 				_, _ = w.Write([]byte(tt.mockServerResponse))
 			}
 
@@ -610,6 +634,33 @@ func TestApplyChangeSet(t *testing.T) {
 						ObjectType:    "dcim.device",
 						ObjectID:      ptrInt(1),
 						ObjectVersion: ptrInt(2),
+						Data: &netbox.DcimDevice{
+							Name: "test",
+						},
+					},
+				},
+			},
+			mockServerResponse: `{"change_set_id":"00000000-0000-0000-0000-000000000000","result":"success"}`,
+			mockStatusCode:     http.StatusOK,
+			response: &netboxdiodeplugin.ChangeSetResponse{
+				ChangeSetID: "00000000-0000-0000-0000-000000000000",
+				Result:      "success",
+			},
+			shouldError: false,
+		},
+		{
+			name:   "valid apply change set response with branch",
+			apiKey: "foobar",
+			changeSetRequest: netboxdiodeplugin.ChangeSetRequest{
+				ChangeSetID: "00000000-0000-0000-0000-000000000000",
+				BranchID:    "test-branch",
+				ChangeSet: []netboxdiodeplugin.Change{
+					{
+						ChangeID:      "00000000-0000-0000-0000-000000000001",
+						ChangeType:    "create",
+						ObjectType:    "dcim.device",
+						ObjectID:      nil,
+						ObjectVersion: nil,
 						Data: &netbox.DcimDevice{
 							Name: "test",
 						},
@@ -722,6 +773,11 @@ func TestApplyChangeSet(t *testing.T) {
 				assert.Equal(t, r.Header.Get("Authorization"), fmt.Sprintf("Token %s", tt.apiKey))
 				assert.Equal(t, r.Header.Get("User-Agent"), fmt.Sprintf("%s/%s", netboxdiodeplugin.SDKName, netboxdiodeplugin.SDKVersion))
 				assert.Equal(t, r.Header.Get("Content-Type"), "application/json")
+				if tt.changeSetRequest.BranchID != "" {
+					assert.Equal(t, r.Header.Get("X-Netbox-Branch"), tt.changeSetRequest.BranchID)
+				} else {
+					assert.Len(t, r.Header.Values("X-Netbox-Branch"), 0)
+				}
 				w.WriteHeader(tt.mockStatusCode)
 				_, _ = w.Write([]byte(tt.mockServerResponse))
 			}
