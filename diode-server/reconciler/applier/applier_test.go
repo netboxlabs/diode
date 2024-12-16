@@ -61,7 +61,7 @@ func TestApplyChangeSet(t *testing.T) {
 
 	mockNetBoxAPI.On("ApplyChangeSet", ctx, req).Return(resp, nil)
 
-	err := applier.ApplyChangeSet(ctx, logger, cs, mockNetBoxAPI)
+	err := applier.ApplyChangeSet(ctx, logger, cs, "", mockNetBoxAPI)
 	assert.NoError(t, err)
 	mockNetBoxAPI.AssertExpectations(t)
 }

@@ -282,7 +282,7 @@ func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChan
 					State:     int(ingestionLog.ingestionLog.GetState()),
 				}
 
-				changeSet, err := differ.Diff(ctx, ingestEntity, p.nbClient)
+				changeSet, err := differ.Diff(ctx, ingestEntity, "", p.nbClient)
 				if err != nil {
 					tags := map[string]string{
 						"request_id": ingestEntity.RequestID,
@@ -357,7 +357,7 @@ func (p *IngestionProcessor) ApplyChangeSet(ctx context.Context, applyChan <-cha
 
 				p.logger.Debug("applying change set", "ingestionLogID", ingestionLog.ingestionLog.GetId(), "changeSetID", ingestionLog.changeSet.ChangeSetID)
 
-				if err := applier.ApplyChangeSet(ctx, p.logger, *ingestionLog.changeSet, p.nbClient); err != nil {
+				if err := applier.ApplyChangeSet(ctx, p.logger, *ingestionLog.changeSet, "", p.nbClient); err != nil {
 					p.logger.Debug("failed to apply change set", "ingestionLogID", ingestionLog.ingestionLog.GetId(), "changeSetID", ingestionLog.changeSet.ChangeSetID, "error", err)
 					ingestionLog.errors = append(ingestionLog.errors, fmt.Errorf("failed to apply chang eset: %v", err))
 

@@ -1858,7 +1858,7 @@ func TestIpamPrepare(t *testing.T) {
 				}, nil)
 			}
 
-			cs, err := differ.Diff(ctx, tt.ingestEntity, mockClient)
+			cs, err := differ.Diff(ctx, tt.ingestEntity, "", mockClient)
 			if tt.wantErr {
 				require.Error(t, err)
 				return
