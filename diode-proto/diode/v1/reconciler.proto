@@ -113,17 +113,16 @@ message RetrieveIngestionLogsResponse {
 
 // The request to take action on an ingestion log
 message ActionIngestionLogRequest {
-  message DiffAction {}
-  message ApplyAction {}
-  message RejectAction {}
-
-  oneof action {
-    DiffAction diff = 1;
-    ApplyAction apply = 2;
-    RejectAction reject = 3;
+  enum Action {
+    ACTION_UNSPECIFIED = 0;
+    ACTION_DIFF = 1;
+    ACTION_APPLY = 2;
+    ACTION_REJECT = 3;
   }
-  string ingestion_log_id = 4;
-  optional string branch_id = 5;
+
+  Action action = 1;
+  string ingestion_log_id = 2;
+  optional string branch_id = 3;
 }
 
 // The response from the ActionIngestionLog request
