@@ -111,16 +111,16 @@ message RetrieveIngestionLogsResponse {
   string next_page_token = 3; // Token for the next page of results, if any
 }
 
+enum ActionType {
+  ACTION_UNSPECIFIED = 0;
+  ACTION_DIFF = 1;
+  ACTION_APPLY = 2;
+  ACTION_REJECT = 3;
+}
+
 // The request to take action on an ingestion log
 message ActionIngestionLogRequest {
-  enum Action {
-    ACTION_UNSPECIFIED = 0;
-    ACTION_DIFF = 1;
-    ACTION_APPLY = 2;
-    ACTION_REJECT = 3;
-  }
-
-  Action action = 1;
+  ActionType action = 1;
   string ingestion_log_id = 2;
   optional string branch_id = 3;
 }
