@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion7
 const (
 	ReconcilerService_RetrieveIngestionDataSources_FullMethodName = "/diode.v1.ReconcilerService/RetrieveIngestionDataSources"
 	ReconcilerService_RetrieveIngestionLogs_FullMethodName        = "/diode.v1.ReconcilerService/RetrieveIngestionLogs"
+	ReconcilerService_ActionIngestionLog_FullMethodName           = "/diode.v1.ReconcilerService/ActionIngestionLog"
 )
 
 // ReconcilerServiceClient is the client API for ReconcilerService service.
@@ -31,6 +32,8 @@ type ReconcilerServiceClient interface {
 	RetrieveIngestionDataSources(ctx context.Context, in *RetrieveIngestionDataSourcesRequest, opts ...grpc.CallOption) (*RetrieveIngestionDataSourcesResponse, error)
 	// Retrieves ingestion logs
 	RetrieveIngestionLogs(ctx context.Context, in *RetrieveIngestionLogsRequest, opts ...grpc.CallOption) (*RetrieveIngestionLogsResponse, error)
+	// Takes action on an ingestion log
+	ActionIngestionLog(ctx context.Context, in *ActionIngestionLogRequest, opts ...grpc.CallOption) (*ActionIngestionLogResponse, error)
 }
 
 type reconcilerServiceClient struct {
@@ -59,6 +62,15 @@ func (c *reconcilerServiceClient) RetrieveIngestionLogs(ctx context.Context, in 
 	return out, nil
 }
 
+func (c *reconcilerServiceClient) ActionIngestionLog(ctx context.Context, in *ActionIngestionLogRequest, opts ...grpc.CallOption) (*ActionIngestionLogResponse, error) {
+	out := new(ActionIngestionLogResponse)
+	err := c.cc.Invoke(ctx, ReconcilerService_ActionIngestionLog_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ReconcilerServiceServer is the server API for ReconcilerService service.
 // All implementations must embed UnimplementedReconcilerServiceServer
 // for forward compatibility
@@ -67,6 +79,8 @@ type ReconcilerServiceServer interface {
 	RetrieveIngestionDataSources(context.Context, *RetrieveIngestionDataSourcesRequest) (*RetrieveIngestionDataSourcesResponse, error)
 	// Retrieves ingestion logs
 	RetrieveIngestionLogs(context.Context, *RetrieveIngestionLogsRequest) (*RetrieveIngestionLogsResponse, error)
+	// Takes action on an ingestion log
+	ActionIngestionLog(context.Context, *ActionIngestionLogRequest) (*ActionIngestionLogResponse, error)
 	mustEmbedUnimplementedReconcilerServiceServer()
 }
 
@@ -79,6 +93,9 @@ func (UnimplementedReconcilerServiceServer) RetrieveIngestionDataSources(context
 }
 func (UnimplementedReconcilerServiceServer) RetrieveIngestionLogs(context.Context, *RetrieveIngestionLogsRequest) (*RetrieveIngestionLogsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RetrieveIngestionLogs not implemented")
+}
+func (UnimplementedReconcilerServiceServer) ActionIngestionLog(context.Context, *ActionIngestionLogRequest) (*ActionIngestionLogResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ActionIngestionLog not implemented")
 }
 func (UnimplementedReconcilerServiceServer) mustEmbedUnimplementedReconcilerServiceServer() {}
 
@@ -129,6 +146,24 @@ func _ReconcilerService_RetrieveIngestionLogs_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ReconcilerService_ActionIngestionLog_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ActionIngestionLogRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReconcilerServiceServer).ActionIngestionLog(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReconcilerService_ActionIngestionLog_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReconcilerServiceServer).ActionIngestionLog(ctx, req.(*ActionIngestionLogRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ReconcilerService_ServiceDesc is the grpc.ServiceDesc for ReconcilerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -143,6 +178,10 @@ var ReconcilerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RetrieveIngestionLogs",
 			Handler:    _ReconcilerService_RetrieveIngestionLogs_Handler,
+		},
+		{
+			MethodName: "ActionIngestionLog",
+			Handler:    _ReconcilerService_ActionIngestionLog_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
