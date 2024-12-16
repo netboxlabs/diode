@@ -15,6 +15,7 @@ import (
 	"os"
 	"reflect"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/mitchellh/mapstructure"
@@ -42,6 +43,11 @@ const (
 	defaultBaseURL = "http://127.0.0.1:8080/api/plugins/diode"
 
 	defaultHTTPTimeoutSeconds = 5
+
+	// NetBoxBranchHeader is an HTTP header that indicates the NetBox branch to target
+	NetBoxBranchHeader = "X-NetBox-Branch"
+	// NetBoxBranchParam is a query parameter that indicates the NetBox branch to target
+	NetBoxBranchParam = "_branch"
 )
 
 var (
@@ -265,6 +271,7 @@ type ObjectState struct {
 type RetrieveObjectStateQueryParams struct {
 	ObjectType string
 	ObjectID   int
+	BranchID   string
 	Params     map[string]string
 }
 
@@ -279,6 +286,10 @@ func (c *Client) RetrieveObjectState(ctx context.Context, params RetrieveObjectS
 	queryParams.Set("object_type", params.ObjectType)
 	if params.ObjectID > 0 {
 		queryParams.Set("object_id", strconv.Itoa(params.ObjectID))
+	}
+	branchID := strings.TrimSpace(params.BranchID)
+	if branchID != "" {
+		queryParams.Set(NetBoxBranchParam, branchID)
 	}
 	for k, v := range params.Params {
 		queryParams.Set(k, v)
@@ -391,6 +402,7 @@ func statusMapToStringHookFunc() mapstructure.DecodeHookFunc {
 type ChangeSetRequest struct {
 	ChangeSetID string   `json:"change_set_id"`
 	ChangeSet   []Change `json:"change_set"`
+	BranchID    string   `json:"-"` // Supplied as header
 }
 
 // Change represents a change
@@ -429,6 +441,11 @@ func (c *Client) ApplyChangeSet(ctx context.Context, payload ChangeSetRequest) (
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
+
+	branchID := strings.TrimSpace(payload.BranchID)
+	if branchID != "" {
+		req.Header.Set(NetBoxBranchHeader, branchID)
+	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
