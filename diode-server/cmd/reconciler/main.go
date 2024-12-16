@@ -66,7 +66,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	//TODO: instantiate prometheus server
+	// TODO: instantiate prometheus server
 
 	if err := s.Run(); err != nil {
 		s.Logger().Error("server failure", "serverName", s.Name(), "error", err)

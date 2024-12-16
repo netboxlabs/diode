@@ -743,7 +743,6 @@ func TestVirtualizationPrepare(t *testing.T) {
 			wantChangeSet: changeset.ChangeSet{
 				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
 				ChangeSet: []changeset.Change{
-
 					{
 						ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
 						ChangeType:    changeset.ChangeTypeCreate,
