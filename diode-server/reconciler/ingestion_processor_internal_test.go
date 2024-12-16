@@ -276,12 +276,14 @@ func TestHandleStreamMessage(t *testing.T) {
 			if tt.reconcilerError {
 				mockNbClient.On("RetrieveObjectState", ctx, mock.Anything).Return(&netboxdiodeplugin.ObjectState{}, errors.New("prepare error"))
 			} else {
-				mockNbClient.On("RetrieveObjectState", ctx, mock.Anything).Return(&netboxdiodeplugin.ObjectState{ObjectType: "dcim.site",
+				mockNbClient.On("RetrieveObjectState", ctx, mock.Anything).Return(&netboxdiodeplugin.ObjectState{
+					ObjectType:     "dcim.site",
 					ObjectID:       0,
 					ObjectChangeID: 0,
 					Object: &netbox.DcimSiteDataWrapper{
 						Site: nil,
-					}}, nil)
+					},
+				}, nil)
 			}
 			mockNbClient.On("ApplyChangeSet", ctx, mock.Anything).Return(tt.changeSetResponse, tt.changeSetError)
 			if tt.entities[0].Entity != nil {

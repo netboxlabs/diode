@@ -39,7 +39,6 @@ type Component interface {
 
 // New returns a new Server
 func New(ctx context.Context, name string) *Server {
-
 	var cfg Config
 	envconfig.MustProcess("", &cfg)
 
