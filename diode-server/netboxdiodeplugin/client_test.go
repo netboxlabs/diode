@@ -572,9 +572,9 @@ func TestRetrieveObjectState(t *testing.T) {
 				assert.Equal(t, r.Header.Get("Authorization"), fmt.Sprintf("Token %s", tt.apiKey))
 				assert.Equal(t, r.Header.Get("User-Agent"), fmt.Sprintf("%s/%s", netboxdiodeplugin.SDKName, netboxdiodeplugin.SDKVersion))
 				if tt.params.BranchID != "" {
-					assert.Equal(t, r.URL.Query().Get("_branch"), tt.params.BranchID)
+					assert.Equal(t, r.URL.Query().Get(netboxdiodeplugin.NetBoxBranchParam), tt.params.BranchID)
 				} else {
-					assert.False(t, r.URL.Query().Has("_branch"))
+					assert.False(t, r.URL.Query().Has(netboxdiodeplugin.NetBoxBranchParam))
 				}
 				_, _ = w.Write([]byte(tt.mockServerResponse))
 			}
@@ -774,9 +774,9 @@ func TestApplyChangeSet(t *testing.T) {
 				assert.Equal(t, r.Header.Get("User-Agent"), fmt.Sprintf("%s/%s", netboxdiodeplugin.SDKName, netboxdiodeplugin.SDKVersion))
 				assert.Equal(t, r.Header.Get("Content-Type"), "application/json")
 				if tt.changeSetRequest.BranchID != "" {
-					assert.Equal(t, r.Header.Get("X-Netbox-Branch"), tt.changeSetRequest.BranchID)
+					assert.Equal(t, r.Header.Get(netboxdiodeplugin.NetBoxBranchHeader), tt.changeSetRequest.BranchID)
 				} else {
-					assert.Len(t, r.Header.Values("X-Netbox-Branch"), 0)
+					assert.Len(t, r.Header.Values(netboxdiodeplugin.NetBoxBranchHeader), 0)
 				}
 				w.WriteHeader(tt.mockStatusCode)
 				_, _ = w.Write([]byte(tt.mockServerResponse))

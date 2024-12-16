@@ -289,7 +289,7 @@ func (c *Client) RetrieveObjectState(ctx context.Context, params RetrieveObjectS
 	}
 	branchID := strings.TrimSpace(params.BranchID)
 	if branchID != "" {
-		queryParams.Set(NetboxBranchParam, branchID)
+		queryParams.Set(NetBoxBranchParam, branchID)
 	}
 	for k, v := range params.Params {
 		queryParams.Set(k, v)
@@ -444,7 +444,7 @@ func (c *Client) ApplyChangeSet(ctx context.Context, payload ChangeSetRequest) (
 
 	branchID := strings.TrimSpace(payload.BranchID)
 	if branchID != "" {
-		req.Header.Set(NetboxBranchHeader, branchID)
+		req.Header.Set(NetBoxBranchHeader, branchID)
 	}
 
 	resp, err := c.httpClient.Do(req)
