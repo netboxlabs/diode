@@ -1280,6 +1280,407 @@ var _ interface {
 	ErrorName() string
 } = RetrieveIngestionLogsResponseValidationError{}
 
+// Validate checks the field values on ActionIngestionLogRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *ActionIngestionLogRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ActionIngestionLogRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ActionIngestionLogRequestMultiError, or nil if none found.
+func (m *ActionIngestionLogRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ActionIngestionLogRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for IngestionLogId
+
+	switch v := m.Action.(type) {
+	case *ActionIngestionLogRequest_Diff:
+		if v == nil {
+			err := ActionIngestionLogRequestValidationError{
+				field:  "Action",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetDiff()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ActionIngestionLogRequestValidationError{
+						field:  "Diff",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ActionIngestionLogRequestValidationError{
+						field:  "Diff",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetDiff()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ActionIngestionLogRequestValidationError{
+					field:  "Diff",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *ActionIngestionLogRequest_Apply:
+		if v == nil {
+			err := ActionIngestionLogRequestValidationError{
+				field:  "Action",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetApply()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ActionIngestionLogRequestValidationError{
+						field:  "Apply",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ActionIngestionLogRequestValidationError{
+						field:  "Apply",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetApply()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ActionIngestionLogRequestValidationError{
+					field:  "Apply",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *ActionIngestionLogRequest_Reject:
+		if v == nil {
+			err := ActionIngestionLogRequestValidationError{
+				field:  "Action",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetReject()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ActionIngestionLogRequestValidationError{
+						field:  "Reject",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ActionIngestionLogRequestValidationError{
+						field:  "Reject",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetReject()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ActionIngestionLogRequestValidationError{
+					field:  "Reject",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	default:
+		_ = v // ensures v is used
+	}
+
+	if m.BranchId != nil {
+		// no validation rules for BranchId
+	}
+
+	if len(errors) > 0 {
+		return ActionIngestionLogRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// ActionIngestionLogRequestMultiError is an error wrapping multiple validation
+// errors returned by ActionIngestionLogRequest.ValidateAll() if the
+// designated constraints aren't met.
+type ActionIngestionLogRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ActionIngestionLogRequestMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ActionIngestionLogRequestMultiError) AllErrors() []error { return m }
+
+// ActionIngestionLogRequestValidationError is the validation error returned by
+// ActionIngestionLogRequest.Validate if the designated constraints aren't met.
+type ActionIngestionLogRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ActionIngestionLogRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ActionIngestionLogRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ActionIngestionLogRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ActionIngestionLogRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ActionIngestionLogRequestValidationError) ErrorName() string {
+	return "ActionIngestionLogRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ActionIngestionLogRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sActionIngestionLogRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ActionIngestionLogRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ActionIngestionLogRequestValidationError{}
+
+// Validate checks the field values on ActionIngestionLogResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *ActionIngestionLogResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ActionIngestionLogResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ActionIngestionLogResponseMultiError, or nil if none found.
+func (m *ActionIngestionLogResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ActionIngestionLogResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetLog()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, ActionIngestionLogResponseValidationError{
+					field:  "Log",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, ActionIngestionLogResponseValidationError{
+					field:  "Log",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetLog()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return ActionIngestionLogResponseValidationError{
+				field:  "Log",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	for idx, item := range m.GetErrors() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ActionIngestionLogResponseValidationError{
+						field:  fmt.Sprintf("Errors[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ActionIngestionLogResponseValidationError{
+						field:  fmt.Sprintf("Errors[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ActionIngestionLogResponseValidationError{
+					field:  fmt.Sprintf("Errors[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return ActionIngestionLogResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// ActionIngestionLogResponseMultiError is an error wrapping multiple
+// validation errors returned by ActionIngestionLogResponse.ValidateAll() if
+// the designated constraints aren't met.
+type ActionIngestionLogResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ActionIngestionLogResponseMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ActionIngestionLogResponseMultiError) AllErrors() []error { return m }
+
+// ActionIngestionLogResponseValidationError is the validation error returned
+// by ActionIngestionLogResponse.Validate if the designated constraints aren't met.
+type ActionIngestionLogResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ActionIngestionLogResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ActionIngestionLogResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ActionIngestionLogResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ActionIngestionLogResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ActionIngestionLogResponseValidationError) ErrorName() string {
+	return "ActionIngestionLogResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ActionIngestionLogResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sActionIngestionLogResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ActionIngestionLogResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ActionIngestionLogResponseValidationError{}
+
 // Validate checks the field values on IngestionError_Details with the rules
 // defined in the proto definition for this message. If any rules are
 // violated, the first error encountered is returned, or nil if there are no violations.
@@ -1526,3 +1927,428 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = IngestionError_Details_ErrorValidationError{}
+
+// Validate checks the field values on ActionIngestionLogRequest_DiffAction
+// with the rules defined in the proto definition for this message. If any
+// rules are violated, the first error encountered is returned, or nil if
+// there are no violations.
+func (m *ActionIngestionLogRequest_DiffAction) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ActionIngestionLogRequest_DiffAction
+// with the rules defined in the proto definition for this message. If any
+// rules are violated, the result is a list of violation errors wrapped in
+// ActionIngestionLogRequest_DiffActionMultiError, or nil if none found.
+func (m *ActionIngestionLogRequest_DiffAction) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ActionIngestionLogRequest_DiffAction) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if len(errors) > 0 {
+		return ActionIngestionLogRequest_DiffActionMultiError(errors)
+	}
+
+	return nil
+}
+
+// ActionIngestionLogRequest_DiffActionMultiError is an error wrapping multiple
+// validation errors returned by
+// ActionIngestionLogRequest_DiffAction.ValidateAll() if the designated
+// constraints aren't met.
+type ActionIngestionLogRequest_DiffActionMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ActionIngestionLogRequest_DiffActionMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ActionIngestionLogRequest_DiffActionMultiError) AllErrors() []error { return m }
+
+// ActionIngestionLogRequest_DiffActionValidationError is the validation error
+// returned by ActionIngestionLogRequest_DiffAction.Validate if the designated
+// constraints aren't met.
+type ActionIngestionLogRequest_DiffActionValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ActionIngestionLogRequest_DiffActionValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ActionIngestionLogRequest_DiffActionValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ActionIngestionLogRequest_DiffActionValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ActionIngestionLogRequest_DiffActionValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ActionIngestionLogRequest_DiffActionValidationError) ErrorName() string {
+	return "ActionIngestionLogRequest_DiffActionValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ActionIngestionLogRequest_DiffActionValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sActionIngestionLogRequest_DiffAction.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ActionIngestionLogRequest_DiffActionValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ActionIngestionLogRequest_DiffActionValidationError{}
+
+// Validate checks the field values on ActionIngestionLogRequest_ApplyAction
+// with the rules defined in the proto definition for this message. If any
+// rules are violated, the first error encountered is returned, or nil if
+// there are no violations.
+func (m *ActionIngestionLogRequest_ApplyAction) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ActionIngestionLogRequest_ApplyAction
+// with the rules defined in the proto definition for this message. If any
+// rules are violated, the result is a list of violation errors wrapped in
+// ActionIngestionLogRequest_ApplyActionMultiError, or nil if none found.
+func (m *ActionIngestionLogRequest_ApplyAction) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ActionIngestionLogRequest_ApplyAction) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if len(errors) > 0 {
+		return ActionIngestionLogRequest_ApplyActionMultiError(errors)
+	}
+
+	return nil
+}
+
+// ActionIngestionLogRequest_ApplyActionMultiError is an error wrapping
+// multiple validation errors returned by
+// ActionIngestionLogRequest_ApplyAction.ValidateAll() if the designated
+// constraints aren't met.
+type ActionIngestionLogRequest_ApplyActionMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ActionIngestionLogRequest_ApplyActionMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ActionIngestionLogRequest_ApplyActionMultiError) AllErrors() []error { return m }
+
+// ActionIngestionLogRequest_ApplyActionValidationError is the validation error
+// returned by ActionIngestionLogRequest_ApplyAction.Validate if the
+// designated constraints aren't met.
+type ActionIngestionLogRequest_ApplyActionValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ActionIngestionLogRequest_ApplyActionValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ActionIngestionLogRequest_ApplyActionValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ActionIngestionLogRequest_ApplyActionValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ActionIngestionLogRequest_ApplyActionValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ActionIngestionLogRequest_ApplyActionValidationError) ErrorName() string {
+	return "ActionIngestionLogRequest_ApplyActionValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ActionIngestionLogRequest_ApplyActionValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sActionIngestionLogRequest_ApplyAction.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ActionIngestionLogRequest_ApplyActionValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ActionIngestionLogRequest_ApplyActionValidationError{}
+
+// Validate checks the field values on ActionIngestionLogRequest_RejectAction
+// with the rules defined in the proto definition for this message. If any
+// rules are violated, the first error encountered is returned, or nil if
+// there are no violations.
+func (m *ActionIngestionLogRequest_RejectAction) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on
+// ActionIngestionLogRequest_RejectAction with the rules defined in the proto
+// definition for this message. If any rules are violated, the result is a
+// list of violation errors wrapped in
+// ActionIngestionLogRequest_RejectActionMultiError, or nil if none found.
+func (m *ActionIngestionLogRequest_RejectAction) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ActionIngestionLogRequest_RejectAction) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if len(errors) > 0 {
+		return ActionIngestionLogRequest_RejectActionMultiError(errors)
+	}
+
+	return nil
+}
+
+// ActionIngestionLogRequest_RejectActionMultiError is an error wrapping
+// multiple validation errors returned by
+// ActionIngestionLogRequest_RejectAction.ValidateAll() if the designated
+// constraints aren't met.
+type ActionIngestionLogRequest_RejectActionMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ActionIngestionLogRequest_RejectActionMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ActionIngestionLogRequest_RejectActionMultiError) AllErrors() []error { return m }
+
+// ActionIngestionLogRequest_RejectActionValidationError is the validation
+// error returned by ActionIngestionLogRequest_RejectAction.Validate if the
+// designated constraints aren't met.
+type ActionIngestionLogRequest_RejectActionValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ActionIngestionLogRequest_RejectActionValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ActionIngestionLogRequest_RejectActionValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ActionIngestionLogRequest_RejectActionValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ActionIngestionLogRequest_RejectActionValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ActionIngestionLogRequest_RejectActionValidationError) ErrorName() string {
+	return "ActionIngestionLogRequest_RejectActionValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ActionIngestionLogRequest_RejectActionValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sActionIngestionLogRequest_RejectAction.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ActionIngestionLogRequest_RejectActionValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ActionIngestionLogRequest_RejectActionValidationError{}
+
+// Validate checks the field values on ActionIngestionLogResponse_Error with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the first error encountered is returned, or nil if there are
+// no violations.
+func (m *ActionIngestionLogResponse_Error) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ActionIngestionLogResponse_Error with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the result is a list of violation errors wrapped in
+// ActionIngestionLogResponse_ErrorMultiError, or nil if none found.
+func (m *ActionIngestionLogResponse_Error) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ActionIngestionLogResponse_Error) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Message
+
+	// no validation rules for Code
+
+	if len(errors) > 0 {
+		return ActionIngestionLogResponse_ErrorMultiError(errors)
+	}
+
+	return nil
+}
+
+// ActionIngestionLogResponse_ErrorMultiError is an error wrapping multiple
+// validation errors returned by
+// ActionIngestionLogResponse_Error.ValidateAll() if the designated
+// constraints aren't met.
+type ActionIngestionLogResponse_ErrorMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ActionIngestionLogResponse_ErrorMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ActionIngestionLogResponse_ErrorMultiError) AllErrors() []error { return m }
+
+// ActionIngestionLogResponse_ErrorValidationError is the validation error
+// returned by ActionIngestionLogResponse_Error.Validate if the designated
+// constraints aren't met.
+type ActionIngestionLogResponse_ErrorValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ActionIngestionLogResponse_ErrorValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ActionIngestionLogResponse_ErrorValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ActionIngestionLogResponse_ErrorValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ActionIngestionLogResponse_ErrorValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ActionIngestionLogResponse_ErrorValidationError) ErrorName() string {
+	return "ActionIngestionLogResponse_ErrorValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ActionIngestionLogResponse_ErrorValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sActionIngestionLogResponse_Error.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ActionIngestionLogResponse_ErrorValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ActionIngestionLogResponse_ErrorValidationError{}
