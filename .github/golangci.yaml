@@ -16,6 +16,7 @@ linters:
     - gosimple
     - bodyclose
     - gci
+    - gofumpt
 
 issues:
   exclude-use-default: false
@@ -35,3 +36,5 @@ linters-settings:
       - default
       - prefix(github.com/netboxlabs/diode)
     custom-order: true
+  go-fumpt:
+    extra-rules: true

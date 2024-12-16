@@ -478,7 +478,8 @@ func TestRetrieveObjectState(t *testing.T) {
 			params: netboxdiodeplugin.RetrieveObjectStateQueryParams{
 				ObjectType: netbox.DcimDeviceObjectType,
 				ObjectID:   1,
-				Params:     map[string]string{"q": "dev1", "attr_name": "site.id", "attr_value": "2"}},
+				Params:     map[string]string{"q": "dev1", "attr_name": "site.id", "attr_value": "2"},
+			},
 			mockServerResponse: `{"object_type":"dcim.device","object_change_id":1,"object":{"id":1,"name":"dev1", "site": {"id": 2}}}`,
 			apiKey:             "foobar",
 			response: &netboxdiodeplugin.ObjectState{

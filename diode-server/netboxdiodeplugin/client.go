@@ -373,8 +373,8 @@ func statusMapToStringHookFunc() mapstructure.DecodeHookFunc {
 	return func(
 		f reflect.Kind,
 		t reflect.Kind,
-		data interface{}) (interface{}, error) {
-
+		data interface{},
+	) (interface{}, error) {
 		if f != reflect.Map {
 			return data, nil
 		}

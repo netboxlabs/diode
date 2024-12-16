@@ -466,7 +466,7 @@ func (p *IngestionProcessor) writeIngestionLog(ctx context.Context, key string, 
 }
 
 func normalizeIngestionLog(l []byte) []byte {
-	//replace ingestionTs string value as integer, see: https://github.com/golang/protobuf/issues/1414
+	// replace ingestionTs string value as integer, see: https://github.com/golang/protobuf/issues/1414
 	re := regexp.MustCompile(`"ingestionTs":"(\d+)"`)
 	return re.ReplaceAll(l, []byte(`"ingestionTs":$1`))
 }
