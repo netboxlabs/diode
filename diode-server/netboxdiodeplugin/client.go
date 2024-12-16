@@ -44,10 +44,10 @@ const (
 
 	defaultHTTPTimeoutSeconds = 5
 
-	// NetboxBranchHeader is an HTTP header that indicates the netbox branch to target
-	NetboxBranchHeader = "X-Netbox-Branch"
-	// NetboxBranchParam is a query parameter that indicates the netbox branch to target
-	NetboxBranchParam = "_branch"
+	// NetBoxBranchHeader is an HTTP header that indicates the NetBox branch to target
+	NetBoxBranchHeader = "X-NetBox-Branch"
+	// NetBoxBranchParam is a query parameter that indicates the NetBox branch to target
+	NetBoxBranchParam = "_branch"
 )
 
 var (
