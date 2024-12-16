@@ -112,10 +112,10 @@ message RetrieveIngestionLogsResponse {
 }
 
 enum ActionType {
-  UNSPECIFIED_ACTION = 0;
-  DIFF = 1;
-  APPLY = 2;
-  REJECT = 3;
+  ACTION_UNSPECIFIED = 0;
+  ACTION_DIFF = 1;
+  ACTION_APPLY = 2;
+  ACTION_REJECT = 3;
 }
 
 // The request to take action on an ingestion log
