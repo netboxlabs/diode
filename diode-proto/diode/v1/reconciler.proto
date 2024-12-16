@@ -111,10 +111,37 @@ message RetrieveIngestionLogsResponse {
   string next_page_token = 3; // Token for the next page of results, if any
 }
 
+enum ActionType {
+  ACTION_UNSPECIFIED = 0;
+  ACTION_DIFF = 1;
+  ACTION_APPLY = 2;
+  ACTION_REJECT = 3;
+}
+
+// The request to take action on an ingestion log
+message ActionIngestionLogRequest {
+  ActionType action = 1;
+  string ingestion_log_id = 2;
+  optional string branch_id = 3;
+}
+
+// The response from the ActionIngestionLog request
+message ActionIngestionLogResponse {
+  message Error {
+    string message = 1;
+    int32 code = 2;
+  }
+
+  IngestionLog log = 1;
+  repeated Error errors = 2;
+}
+
 // Reconciler service API
 service ReconcilerService {
   // Retrieves ingestion data sources
   rpc RetrieveIngestionDataSources(RetrieveIngestionDataSourcesRequest) returns (RetrieveIngestionDataSourcesResponse) {}
   // Retrieves ingestion logs
   rpc RetrieveIngestionLogs(RetrieveIngestionLogsRequest) returns (RetrieveIngestionLogsResponse);
+  // Takes action on an ingestion log
+  rpc ActionIngestionLog(ActionIngestionLogRequest) returns (ActionIngestionLogResponse);
 }
