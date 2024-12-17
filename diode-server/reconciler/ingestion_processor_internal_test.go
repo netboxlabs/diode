@@ -290,7 +290,6 @@ func TestHandleStreamMessage(t *testing.T) {
 			}
 			mockNbClient.On("ApplyChangeSet", ctx, mock.Anything).Return(tt.changeSetResponse, tt.changeSetError)
 			if tt.entities[0].Entity != nil {
-				mockRedisClient.On("Do", ctx, "JSON.SET", mock.Anything, "$", mock.Anything).Return(redis.NewCmd(ctx))
 				mockIngestionLogRepo.On("CreateIngestionLog", ctx, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
 			}
 			mockRedisStreamClient.On("XAck", ctx, mock.Anything, mock.Anything, mock.Anything).Return(redis.NewIntCmd(ctx))
@@ -304,7 +303,6 @@ func TestHandleStreamMessage(t *testing.T) {
 			}
 
 			if tt.validMsg {
-				mockRedisClient.AssertExpectations(t)
 				mockIngestionLogRepo.AssertExpectations(t)
 			}
 		})
@@ -552,7 +550,6 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 				cmd.SetErr(errors.New("error"))
 			}
 			redisKey := fmt.Sprintf("ingest-entity:%s-%d-%s", tt.ingestionLog.DataType, tt.ingestionLog.IngestionTs, tt.ingestionLog.Id)
-			mockRedisClient.On("Do", ctx, "JSON.SET", redisKey, "$", mock.Anything).Return(cmd)
 			ingestionLogID := int32(1)
 
 			mockNbClient.On("RetrieveObjectState", ctx, mock.Anything).Return(tt.mockRetrieveObjectStateResponse, nil)
@@ -560,6 +557,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 				mockIngestionLogRepo.On("UpdateIngestionLogStateWithError", ctx, ingestionLogID, tt.expectedStatus, mock.Anything).Return(nil)
 				mockNbClient.On("ApplyChangeSet", ctx, mock.Anything).Return(tt.mockApplyChangeSetResponse, nil)
 			}
+			mockChangeSetRepo.On("CreateChangeSet", ctx, mock.Anything, ingestionLogID).Return(int32Ptr(1), nil)
 
 			bufCapacity := 1
 
@@ -588,9 +586,8 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 				<-applyChangeSetDone
 			}
 
-			mockRedisClient.AssertExpectations(t)
 			mockIngestionLogRepo.AssertExpectations(t)
-			require.NotNil(t, tt.ingestionLog.ChangeSet)
+			mockChangeSetRepo.AssertExpectations(t)
 			require.Equal(t, tt.expectedStatus, tt.ingestionLog.State)
 		})
 	}

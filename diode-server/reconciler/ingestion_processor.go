@@ -369,6 +369,7 @@ func (p *IngestionProcessor) ApplyChangeSet(ctx context.Context, applyChan <-cha
 					break
 				}
 
+				ingestionLog.ingestionLog.State = reconcilerpb.State_RECONCILED
 				if err := p.ingestionLogRepository.UpdateIngestionLogStateWithError(ctx, ingestionLog.ingestionLogID, reconcilerpb.State_RECONCILED, nil); err != nil {
 					ingestionLog.errors = append(ingestionLog.errors, err)
 				}

@@ -40,7 +40,7 @@ func retrieveIngestionMetrics(ctx context.Context, ingestionLogRepo IngestionLog
 	return &reconcilerpb.RetrieveIngestionLogsResponse{Metrics: &metrics}, nil
 }
 
-func retrieveIngestionLogs(ctx context.Context, logger *slog.Logger, ingestionLogRepo IngestionLogRepository, changeSetRepo ChangeSetRepository, in *reconcilerpb.RetrieveIngestionLogsRequest) (*reconcilerpb.RetrieveIngestionLogsResponse, error) {
+func retrieveIngestionLogs(ctx context.Context, logger *slog.Logger, ingestionLogRepo IngestionLogRepository, _ ChangeSetRepository, in *reconcilerpb.RetrieveIngestionLogsRequest) (*reconcilerpb.RetrieveIngestionLogsResponse, error) {
 	if in.GetOnlyMetrics() {
 		logger.Debug("retrieving only ingestion metrics")
 		return retrieveIngestionMetrics(ctx, ingestionLogRepo)
