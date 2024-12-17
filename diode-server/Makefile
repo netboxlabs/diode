@@ -36,6 +36,10 @@ deps:
 lint:
 	@golangci-lint run ./... --config ../.github/golangci.yaml
 
+.PHONY: fix-lint
+fix-lint:
+	@golangci-lint run ./... --config ../.github/golangci.yaml --fix
+
 .PHONY: test
 test:
 	@go test -race ./...

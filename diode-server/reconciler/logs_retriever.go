@@ -262,8 +262,8 @@ func buildQueryFilter(req *reconcilerpb.RetrieveIngestionLogsRequest) string {
 }
 
 func escapeSpecialChars(s string) string {
-	//replace ,.<>{}[]"':;!@#$%^&*()-+=~ with double backslash
-	//ref: https://redis.io/docs/latest/develop/interact/search-and-query/advanced-concepts/escaping/
+	// replace ,.<>{}[]"':;!@#$%^&*()-+=~ with double backslash
+	// ref: https://redis.io/docs/latest/develop/interact/search-and-query/advanced-concepts/escaping/
 	oldNew := []string{
 		",", "\\,", ".", "\\.", "<", "\\<", ">", "\\>", "{", "\\{", "}", "\\}", "[", "\\[", "]", "\\]", "\"", "\\\"",
 		"'", "\\'", ":", "\\:", ";", "\\;", "!", "\\!", "@", "\\@", "#", "\\#", "$", "\\$", "%", "\\%", "^", "\\^",
