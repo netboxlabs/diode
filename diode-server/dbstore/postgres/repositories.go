@@ -247,7 +247,6 @@ func (r *ChangeSetRepository) CreateChangeSet(ctx context.Context, changeSet cha
 		params.BranchID = pgtype.Text{String: *changeSet.BranchID, Valid: true}
 	}
 	cs, err := qtx.CreateChangeSet(ctx, params)
-
 	if err != nil {
 		rollback()
 		return nil, fmt.Errorf("failed to create change set: %w", err)
