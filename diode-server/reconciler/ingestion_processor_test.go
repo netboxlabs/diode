@@ -2,7 +2,6 @@ package reconciler_test
 
 import (
 	"context"
-	"github.com/stretchr/testify/mock"
 	"log/slog"
 	"os"
 	"testing"
@@ -11,6 +10,7 @@ import (
 	"github.com/alicebob/miniredis/v2"
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
