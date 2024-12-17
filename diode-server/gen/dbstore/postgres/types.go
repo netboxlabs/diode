@@ -10,7 +10,7 @@ import (
 
 type Change struct {
 	ID             int32              `json:"id"`
-	ChangeKsuid    string             `json:"change_ksuid"`
+	ChangeUuid     string             `json:"change_uuid"`
 	ChangeSetID    int32              `json:"change_set_id"`
 	ChangeType     string             `json:"change_type"`
 	ObjectType     string             `json:"object_type"`
@@ -24,16 +24,30 @@ type Change struct {
 
 type ChangeSet struct {
 	ID             int32              `json:"id"`
-	ChangeSetKsuid string             `json:"change_set_ksuid"`
+	ChangeSetUuid  string             `json:"change_set_uuid"`
 	IngestionLogID int32              `json:"ingestion_log_id"`
-	BranchName     pgtype.Text        `json:"branch_name"`
+	BranchID       pgtype.Text        `json:"branch_id"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+}
+
+type ChangesView struct {
+	ID             pgtype.Int4        `json:"id"`
+	ChangeUuid     pgtype.Text        `json:"change_uuid"`
+	ChangeSetID    pgtype.Int4        `json:"change_set_id"`
+	ChangeType     pgtype.Text        `json:"change_type"`
+	ObjectType     pgtype.Text        `json:"object_type"`
+	ObjectID       pgtype.Int4        `json:"object_id"`
+	ObjectVersion  pgtype.Int4        `json:"object_version"`
+	Data           []byte             `json:"data"`
+	SequenceNumber pgtype.Int4        `json:"sequence_number"`
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
 }
 
 type IngestionLog struct {
 	ID                 int32              `json:"id"`
-	IngestionLogKsuid  string             `json:"ingestion_log_ksuid"`
+	IngestionLogUuid   string             `json:"ingestion_log_uuid"`
 	DataType           pgtype.Text        `json:"data_type"`
 	State              pgtype.Int4        `json:"state"`
 	RequestID          pgtype.Text        `json:"request_id"`

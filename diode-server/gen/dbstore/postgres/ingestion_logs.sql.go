@@ -11,14 +11,46 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const countIngestionLogsPerState = `-- name: CountIngestionLogsPerState :many
+SELECT state, COUNT(*) AS count
+FROM ingestion_logs
+GROUP BY state
+`
+
+type CountIngestionLogsPerStateRow struct {
+	State pgtype.Int4 `json:"state"`
+	Count int64       `json:"count"`
+}
+
+func (q *Queries) CountIngestionLogsPerState(ctx context.Context) ([]CountIngestionLogsPerStateRow, error) {
+	rows, err := q.db.Query(ctx, countIngestionLogsPerState)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []CountIngestionLogsPerStateRow
+	for rows.Next() {
+		var i CountIngestionLogsPerStateRow
+		if err := rows.Scan(&i.State, &i.Count); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const createIngestionLog = `-- name: CreateIngestionLog :one
-INSERT INTO ingestion_logs (ingestion_log_ksuid, data_type, state, request_id, ingestion_ts, producer_app_name,
+INSERT INTO ingestion_logs (ingestion_log_uuid, data_type, state, request_id, ingestion_ts, producer_app_name,
                             producer_app_version, sdk_name, sdk_version, entity, source_metadata)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id, ingestion_log_ksuid, data_type, state, request_id, ingestion_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+RETURNING id, ingestion_log_uuid, data_type, state, request_id, ingestion_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at
 `
 
 type CreateIngestionLogParams struct {
-	IngestionLogKsuid  string      `json:"ingestion_log_ksuid"`
+	IngestionLogUuid   string      `json:"ingestion_log_uuid"`
 	DataType           pgtype.Text `json:"data_type"`
 	State              pgtype.Int4 `json:"state"`
 	RequestID          pgtype.Text `json:"request_id"`
@@ -33,7 +65,7 @@ type CreateIngestionLogParams struct {
 
 func (q *Queries) CreateIngestionLog(ctx context.Context, arg CreateIngestionLogParams) (IngestionLog, error) {
 	row := q.db.QueryRow(ctx, createIngestionLog,
-		arg.IngestionLogKsuid,
+		arg.IngestionLogUuid,
 		arg.DataType,
 		arg.State,
 		arg.RequestID,
@@ -48,7 +80,7 @@ func (q *Queries) CreateIngestionLog(ctx context.Context, arg CreateIngestionLog
 	var i IngestionLog
 	err := row.Scan(
 		&i.ID,
-		&i.IngestionLogKsuid,
+		&i.IngestionLogUuid,
 		&i.DataType,
 		&i.State,
 		&i.RequestID,
@@ -64,4 +96,174 @@ func (q *Queries) CreateIngestionLog(ctx context.Context, arg CreateIngestionLog
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const retrieveIngestionLogs = `-- name: RetrieveIngestionLogs :many
+SELECT id, ingestion_log_uuid, data_type, state, request_id, ingestion_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at
+FROM ingestion_logs
+WHERE (state = $1 OR $1 IS NULL)
+  AND (data_type = $2 OR $2 IS NULL)
+  AND (ingestion_ts >= $3 OR $3 IS NULL)
+  AND (ingestion_ts <= $4 OR $4 IS NULL)
+ORDER BY id DESC
+LIMIT $6 OFFSET $5
+`
+
+type RetrieveIngestionLogsParams struct {
+	State            pgtype.Int4 `json:"state"`
+	DataType         pgtype.Text `json:"data_type"`
+	IngestionTsStart pgtype.Int8 `json:"ingestion_ts_start"`
+	IngestionTsEnd   pgtype.Int8 `json:"ingestion_ts_end"`
+	Offset           int32       `json:"offset"`
+	Limit            int32       `json:"limit"`
+}
+
+func (q *Queries) RetrieveIngestionLogs(ctx context.Context, arg RetrieveIngestionLogsParams) ([]IngestionLog, error) {
+	rows, err := q.db.Query(ctx, retrieveIngestionLogs,
+		arg.State,
+		arg.DataType,
+		arg.IngestionTsStart,
+		arg.IngestionTsEnd,
+		arg.Offset,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []IngestionLog
+	for rows.Next() {
+		var i IngestionLog
+		if err := rows.Scan(
+			&i.ID,
+			&i.IngestionLogUuid,
+			&i.DataType,
+			&i.State,
+			&i.RequestID,
+			&i.IngestionTs,
+			&i.ProducerAppName,
+			&i.ProducerAppVersion,
+			&i.SdkName,
+			&i.SdkVersion,
+			&i.Entity,
+			&i.Error,
+			&i.SourceMetadata,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const retrieveIngestionLogsWithChangeSets = `-- name: RetrieveIngestionLogsWithChangeSets :many
+SELECT ingestion_logs.id, ingestion_logs.ingestion_log_uuid, ingestion_logs.data_type, ingestion_logs.state, ingestion_logs.request_id, ingestion_logs.ingestion_ts, ingestion_logs.producer_app_name, ingestion_logs.producer_app_version, ingestion_logs.sdk_name, ingestion_logs.sdk_version, ingestion_logs.entity, ingestion_logs.error, ingestion_logs.source_metadata, ingestion_logs.created_at, ingestion_logs.updated_at, change_sets.id, change_sets.change_set_uuid, change_sets.ingestion_log_id, change_sets.branch_id, change_sets.created_at, change_sets.updated_at, changes_view.id, changes_view.change_uuid, changes_view.change_set_id, changes_view.change_type, changes_view.object_type, changes_view.object_id, changes_view.object_version, changes_view.data, changes_view.sequence_number, changes_view.created_at, changes_view.updated_at
+FROM ingestion_logs
+         LEFT JOIN change_sets on ingestion_logs.id = change_sets.ingestion_log_id
+         LEFT JOIN changes_view on change_sets.id = changes_view.change_set_id
+WHERE (ingestion_logs.state = $1 OR $1 IS NULL)
+  AND (ingestion_logs.data_type = $2 OR $2 IS NULL)
+  AND (ingestion_logs.ingestion_ts >= $3 OR $3 IS NULL)
+  AND (ingestion_logs.ingestion_ts <= $4 OR $4 IS NULL)
+ORDER BY ingestion_logs.id DESC, changes_view.sequence_number ASC
+LIMIT $6 OFFSET $5
+`
+
+type RetrieveIngestionLogsWithChangeSetsParams struct {
+	State            pgtype.Int4 `json:"state"`
+	DataType         pgtype.Text `json:"data_type"`
+	IngestionTsStart pgtype.Int8 `json:"ingestion_ts_start"`
+	IngestionTsEnd   pgtype.Int8 `json:"ingestion_ts_end"`
+	Offset           int32       `json:"offset"`
+	Limit            int32       `json:"limit"`
+}
+
+type RetrieveIngestionLogsWithChangeSetsRow struct {
+	IngestionLog IngestionLog `json:"ingestion_log"`
+	ChangeSet    ChangeSet    `json:"change_set"`
+	ChangesView  ChangesView  `json:"changes_view"`
+}
+
+func (q *Queries) RetrieveIngestionLogsWithChangeSets(ctx context.Context, arg RetrieveIngestionLogsWithChangeSetsParams) ([]RetrieveIngestionLogsWithChangeSetsRow, error) {
+	rows, err := q.db.Query(ctx, retrieveIngestionLogsWithChangeSets,
+		arg.State,
+		arg.DataType,
+		arg.IngestionTsStart,
+		arg.IngestionTsEnd,
+		arg.Offset,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []RetrieveIngestionLogsWithChangeSetsRow
+	for rows.Next() {
+		var i RetrieveIngestionLogsWithChangeSetsRow
+		if err := rows.Scan(
+			&i.IngestionLog.ID,
+			&i.IngestionLog.IngestionLogUuid,
+			&i.IngestionLog.DataType,
+			&i.IngestionLog.State,
+			&i.IngestionLog.RequestID,
+			&i.IngestionLog.IngestionTs,
+			&i.IngestionLog.ProducerAppName,
+			&i.IngestionLog.ProducerAppVersion,
+			&i.IngestionLog.SdkName,
+			&i.IngestionLog.SdkVersion,
+			&i.IngestionLog.Entity,
+			&i.IngestionLog.Error,
+			&i.IngestionLog.SourceMetadata,
+			&i.IngestionLog.CreatedAt,
+			&i.IngestionLog.UpdatedAt,
+			&i.ChangeSet.ID,
+			&i.ChangeSet.ChangeSetUuid,
+			&i.ChangeSet.IngestionLogID,
+			&i.ChangeSet.BranchID,
+			&i.ChangeSet.CreatedAt,
+			&i.ChangeSet.UpdatedAt,
+			&i.ChangesView.ID,
+			&i.ChangesView.ChangeUuid,
+			&i.ChangesView.ChangeSetID,
+			&i.ChangesView.ChangeType,
+			&i.ChangesView.ObjectType,
+			&i.ChangesView.ObjectID,
+			&i.ChangesView.ObjectVersion,
+			&i.ChangesView.Data,
+			&i.ChangesView.SequenceNumber,
+			&i.ChangesView.CreatedAt,
+			&i.ChangesView.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const updateIngestionLogStateWithError = `-- name: UpdateIngestionLogStateWithError :exec
+UPDATE ingestion_logs
+SET state = $2,
+    error = $3
+WHERE id = $1
+RETURNING id, ingestion_log_uuid, data_type, state, request_id, ingestion_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at
+`
+
+type UpdateIngestionLogStateWithErrorParams struct {
+	ID    int32       `json:"id"`
+	State pgtype.Int4 `json:"state"`
+	Error []byte      `json:"error"`
+}
+
+func (q *Queries) UpdateIngestionLogStateWithError(ctx context.Context, arg UpdateIngestionLogStateWithErrorParams) error {
+	_, err := q.db.Exec(ctx, updateIngestionLogStateWithError, arg.ID, arg.State, arg.Error)
+	return err
 }

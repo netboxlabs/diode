@@ -13,14 +13,14 @@ import (
 
 const createChange = `-- name: CreateChange :one
 
-INSERT INTO changes (change_ksuid, change_set_id, change_type, object_type, object_id, object_version, data,
+INSERT INTO changes (change_uuid, change_set_id, change_type, object_type, object_id, object_version, data,
                      sequence_number)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-RETURNING id, change_ksuid, change_set_id, change_type, object_type, object_id, object_version, data, sequence_number, created_at, updated_at
+RETURNING id, change_uuid, change_set_id, change_type, object_type, object_id, object_version, data, sequence_number, created_at, updated_at
 `
 
 type CreateChangeParams struct {
-	ChangeKsuid    string      `json:"change_ksuid"`
+	ChangeUuid     string      `json:"change_uuid"`
 	ChangeSetID    int32       `json:"change_set_id"`
 	ChangeType     string      `json:"change_type"`
 	ObjectType     string      `json:"object_type"`
@@ -32,7 +32,7 @@ type CreateChangeParams struct {
 
 func (q *Queries) CreateChange(ctx context.Context, arg CreateChangeParams) (Change, error) {
 	row := q.db.QueryRow(ctx, createChange,
-		arg.ChangeKsuid,
+		arg.ChangeUuid,
 		arg.ChangeSetID,
 		arg.ChangeType,
 		arg.ObjectType,
@@ -44,7 +44,7 @@ func (q *Queries) CreateChange(ctx context.Context, arg CreateChangeParams) (Cha
 	var i Change
 	err := row.Scan(
 		&i.ID,
-		&i.ChangeKsuid,
+		&i.ChangeUuid,
 		&i.ChangeSetID,
 		&i.ChangeType,
 		&i.ObjectType,
@@ -60,25 +60,25 @@ func (q *Queries) CreateChange(ctx context.Context, arg CreateChangeParams) (Cha
 
 const createChangeSet = `-- name: CreateChangeSet :one
 
-INSERT INTO change_sets (change_set_ksuid, ingestion_log_id, branch_name)
+INSERT INTO change_sets (change_set_uuid, ingestion_log_id, branch_id)
 VALUES ($1, $2, $3)
-RETURNING id, change_set_ksuid, ingestion_log_id, branch_name, created_at, updated_at
+RETURNING id, change_set_uuid, ingestion_log_id, branch_id, created_at, updated_at
 `
 
 type CreateChangeSetParams struct {
-	ChangeSetKsuid string      `json:"change_set_ksuid"`
+	ChangeSetUuid  string      `json:"change_set_uuid"`
 	IngestionLogID int32       `json:"ingestion_log_id"`
-	BranchName     pgtype.Text `json:"branch_name"`
+	BranchID       pgtype.Text `json:"branch_id"`
 }
 
 func (q *Queries) CreateChangeSet(ctx context.Context, arg CreateChangeSetParams) (ChangeSet, error) {
-	row := q.db.QueryRow(ctx, createChangeSet, arg.ChangeSetKsuid, arg.IngestionLogID, arg.BranchName)
+	row := q.db.QueryRow(ctx, createChangeSet, arg.ChangeSetUuid, arg.IngestionLogID, arg.BranchID)
 	var i ChangeSet
 	err := row.Scan(
 		&i.ID,
-		&i.ChangeSetKsuid,
+		&i.ChangeSetUuid,
 		&i.IngestionLogID,
-		&i.BranchName,
+		&i.BranchID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
