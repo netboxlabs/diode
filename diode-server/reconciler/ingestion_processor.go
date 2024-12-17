@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
-	"regexp"
 	"strconv"
 
 	"github.com/google/uuid"
@@ -14,7 +13,6 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/segmentio/ksuid"
 	"golang.org/x/time/rate"
-	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
@@ -441,27 +439,6 @@ func extractIngestionError(err error) *reconcilerpb.IngestionError {
 	}
 
 	return ingestionErr
-}
-
-func (p *IngestionProcessor) writeIngestionLog(ctx context.Context, key string, ingestionLog *reconcilerpb.IngestionLog) ([]byte, error) {
-	ingestionLogJSON, err := protojson.Marshal(ingestionLog)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal JSON: %v", err)
-	}
-
-	ingestionLogJSON = normalizeIngestionLog(ingestionLogJSON)
-
-	if _, err := p.redisClient.Do(ctx, "JSON.SET", key, "$", ingestionLogJSON).Result(); err != nil {
-		return nil, fmt.Errorf("failed to set JSON redis key: %v", err)
-	}
-
-	return ingestionLogJSON, nil
-}
-
-func normalizeIngestionLog(l []byte) []byte {
-	// replace ingestionTs string value as integer, see: https://github.com/golang/protobuf/issues/1414
-	re := regexp.MustCompile(`"ingestionTs":"(\d+)"`)
-	return re.ReplaceAll(l, []byte(`"ingestionTs":$1`))
 }
 
 func extractObjectType(in *diodepb.Entity) (string, error) {
