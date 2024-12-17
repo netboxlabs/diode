@@ -2,6 +2,7 @@ package reconciler_test
 
 import (
 	"context"
+	"github.com/stretchr/testify/mock"
 	"log/slog"
 	"os"
 	"testing"
@@ -17,6 +18,8 @@ import (
 	"github.com/netboxlabs/diode/diode-server/reconciler"
 	"github.com/netboxlabs/diode/diode-server/reconciler/mocks"
 )
+
+func int32Ptr(i int32) *int32 { return &i }
 
 func TestNewIngestionProcessor(t *testing.T) {
 	ctx := context.Background()
@@ -222,6 +225,9 @@ func TestIngestionProcessorStart(t *testing.T) {
 	// Wait server
 	time.Sleep(50 * time.Millisecond)
 
+	ingestionLogRepoMock.On("CreateIngestionLog", ctx, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
+	ingestionLogRepoMock.On("UpdateIngestionLogStateWithError", ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
 	redisClient := redis.NewClient(&redis.Options{
 		Addr: s.Addr(),
 		DB:   1,
@@ -244,4 +250,5 @@ func TestIngestionProcessorStart(t *testing.T) {
 	// Stop the processor
 	err = processor.Stop()
 	assert.NoError(t, err)
+	ingestionLogRepoMock.AssertExpectations(t)
 }
