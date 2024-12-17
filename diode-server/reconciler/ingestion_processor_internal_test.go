@@ -28,6 +28,7 @@ import (
 	mr "github.com/netboxlabs/diode/diode-server/reconciler/mocks"
 )
 
+func int32Ptr(i int32) *int32 { return &i }
 func strPtr(s string) *string { return &s }
 
 func TestWriteIngestionLog(t *testing.T) {
@@ -235,6 +236,8 @@ func TestHandleStreamMessage(t *testing.T) {
 			mockRedisClient := new(mr.RedisClient)
 			mockRedisStreamClient := new(mr.RedisClient)
 			mockNbClient := new(mnp.NetBoxAPI)
+			mockIngestionLogRepo := new(mr.IngestionLogRepository)
+			mockChangeSetRepo := new(mr.ChangeSetRepository)
 			logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
 
 			p := &IngestionProcessor{
@@ -247,6 +250,8 @@ func TestHandleStreamMessage(t *testing.T) {
 					ReconcilerRateLimiterRPS:   20,
 					ReconcilerRateLimiterBurst: 1,
 				},
+				ingestionLogRepository: mockIngestionLogRepo,
+				changeSetRepository:    mockChangeSetRepo,
 			}
 
 			request := redis.XMessage{}
@@ -286,6 +291,7 @@ func TestHandleStreamMessage(t *testing.T) {
 			mockNbClient.On("ApplyChangeSet", ctx, mock.Anything).Return(tt.changeSetResponse, tt.changeSetError)
 			if tt.entities[0].Entity != nil {
 				mockRedisClient.On("Do", ctx, "JSON.SET", mock.Anything, "$", mock.Anything).Return(redis.NewCmd(ctx))
+				mockIngestionLogRepo.On("CreateIngestionLog", ctx, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
 			}
 			mockRedisStreamClient.On("XAck", ctx, mock.Anything, mock.Anything, mock.Anything).Return(redis.NewIntCmd(ctx))
 			mockRedisStreamClient.On("XDel", ctx, mock.Anything, mock.Anything).Return(redis.NewIntCmd(ctx))
@@ -299,6 +305,7 @@ func TestHandleStreamMessage(t *testing.T) {
 
 			if tt.validMsg {
 				mockRedisClient.AssertExpectations(t)
+				mockIngestionLogRepo.AssertExpectations(t)
 			}
 		})
 	}
@@ -421,7 +428,7 @@ func TestCompressChangeSet(t *testing.T) {
 			},
 		},
 	}
-	compressed, err := compressChangeSet(&cs)
+	compressed, err := changeset.CompressChangeSet(&cs)
 	require.NoError(t, err)
 
 	// Decompress the compressed data
@@ -522,6 +529,8 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 			ctx := context.Background()
 			mockRedisClient := new(mr.RedisClient)
 			mockNbClient := new(mnp.NetBoxAPI)
+			mockIngestionLogRepo := new(mr.IngestionLogRepository)
+			mockChangeSetRepo := new(mr.ChangeSetRepository)
 			logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
 
 			p := &IngestionProcessor{
@@ -533,6 +542,8 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 					ReconcilerRateLimiterRPS:   20,
 					ReconcilerRateLimiterBurst: 1,
 				},
+				ingestionLogRepository: mockIngestionLogRepo,
+				changeSetRepository:    mockChangeSetRepo,
 			}
 
 			// Set up the mock expectation
@@ -541,11 +552,12 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 				cmd.SetErr(errors.New("error"))
 			}
 			redisKey := fmt.Sprintf("ingest-entity:%s-%d-%s", tt.ingestionLog.DataType, tt.ingestionLog.IngestionTs, tt.ingestionLog.Id)
-			mockRedisClient.On("Do", ctx, "JSON.SET", redisKey, "$", mock.Anything).
-				Return(cmd)
+			mockRedisClient.On("Do", ctx, "JSON.SET", redisKey, "$", mock.Anything).Return(cmd)
+			ingestionLogID := int32(1)
 
 			mockNbClient.On("RetrieveObjectState", ctx, mock.Anything).Return(tt.mockRetrieveObjectStateResponse, nil)
 			if tt.autoApplyChangesets {
+				mockIngestionLogRepo.On("UpdateIngestionLogStateWithError", ctx, ingestionLogID, tt.expectedStatus, mock.Anything).Return(nil)
 				mockNbClient.On("ApplyChangeSet", ctx, mock.Anything).Return(tt.mockApplyChangeSetResponse, nil)
 			}
 
@@ -565,8 +577,9 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 			}
 
 			generateChangeSetChannel <- IngestionLogToProcess{
-				key:          redisKey,
-				ingestionLog: tt.ingestionLog,
+				key:            redisKey,
+				ingestionLogID: ingestionLogID,
+				ingestionLog:   tt.ingestionLog,
 			}
 			close(generateChangeSetChannel)
 
@@ -576,6 +589,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 			}
 
 			mockRedisClient.AssertExpectations(t)
+			mockIngestionLogRepo.AssertExpectations(t)
 			require.NotNil(t, tt.ingestionLog.ChangeSet)
 			require.Equal(t, tt.expectedStatus, tt.ingestionLog.State)
 		})

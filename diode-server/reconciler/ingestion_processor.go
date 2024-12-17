@@ -1,9 +1,7 @@
 package reconciler
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -11,7 +9,7 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/andybalholm/brotli"
+	"github.com/google/uuid"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/redis/go-redis/v9"
 	"github.com/segmentio/ksuid"
@@ -69,10 +67,11 @@ type IngestionProcessor struct {
 
 // IngestionLogToProcess represents an ingestion log to process
 type IngestionLogToProcess struct {
-	key          string
-	ingestionLog *reconcilerpb.IngestionLog
-	changeSet    *changeset.ChangeSet
-	errors       []error
+	key            string
+	ingestionLogID int32
+	ingestionLog   *reconcilerpb.IngestionLog
+	changeSet      *changeset.ChangeSet
+	errors         []error
 }
 
 // NewIngestionProcessor creates a new ingestion processor
@@ -297,10 +296,9 @@ func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChan
 
 					ingestionLog.errors = append(ingestionLog.errors, fmt.Errorf("failed to prepare change set: %v", err))
 
-					ingestionLog.ingestionLog.State = reconcilerpb.State_FAILED
-					ingestionLog.ingestionLog.Error = extractIngestionError(err)
+					ingestionErr := extractIngestionError(err)
 
-					if _, err = p.writeIngestionLog(ctx, ingestionLog.key, ingestionLog.ingestionLog); err != nil {
+					if err = p.ingestionLogRepository.UpdateIngestionLogStateWithError(ctx, ingestionLog.ingestionLogID, reconcilerpb.State_FAILED, ingestionErr); err != nil {
 						ingestionLog.errors = append(ingestionLog.errors, err)
 					}
 					break
@@ -308,37 +306,21 @@ func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChan
 
 				ingestionLog.changeSet = changeSet
 
+				if _, err = p.changeSetRepository.CreateChangeSet(ctx, *changeSet, ingestionLog.ingestionLogID); err != nil {
+					ingestionLog.errors = append(ingestionLog.errors, fmt.Errorf("failed to create change set: %v", err))
+				}
+
 				if len(changeSet.ChangeSet) > 0 {
-					csCompressed, err := compressChangeSet(changeSet)
-					if err != nil {
-						ingestionLog.ingestionLog.State = reconcilerpb.State_FAILED
-						ingestionLog.errors = append(ingestionLog.errors, err)
-
-						if _, err = p.writeIngestionLog(ctx, ingestionLog.key, ingestionLog.ingestionLog); err != nil {
-							ingestionLog.errors = append(ingestionLog.errors, err)
-						}
-						break
-					}
-
-					ingestionLog.ingestionLog.ChangeSet = &reconcilerpb.ChangeSet{
-						Id:   changeSet.ChangeSetID,
-						Data: csCompressed,
-					}
-
-					if _, err = p.writeIngestionLog(ctx, ingestionLog.key, ingestionLog.ingestionLog); err != nil {
-						ingestionLog.errors = append(ingestionLog.errors, err)
-					}
-
 					if applyChangeSetChan != nil {
 						applyChangeSetChan <- IngestionLogToProcess{
-							key:          ingestionLog.key,
-							ingestionLog: ingestionLog.ingestionLog,
-							changeSet:    ingestionLog.changeSet,
+							key:            ingestionLog.key,
+							ingestionLogID: ingestionLog.ingestionLogID,
+							ingestionLog:   ingestionLog.ingestionLog,
+							changeSet:      ingestionLog.changeSet,
 						}
 					}
 				} else {
-					ingestionLog.ingestionLog.State = reconcilerpb.State_NO_CHANGES
-					if _, err = p.writeIngestionLog(ctx, ingestionLog.key, ingestionLog.ingestionLog); err != nil {
+					if err := p.ingestionLogRepository.UpdateIngestionLogStateWithError(ctx, ingestionLog.ingestionLogID, reconcilerpb.State_NO_CHANGES, nil); err != nil {
 						ingestionLog.errors = append(ingestionLog.errors, err)
 					}
 				}
@@ -379,17 +361,15 @@ func (p *IngestionProcessor) ApplyChangeSet(ctx context.Context, applyChan <-cha
 					p.logger.Debug("failed to apply change set", "ingestionLogID", ingestionLog.ingestionLog.GetId(), "changeSetID", ingestionLog.changeSet.ChangeSetID, "error", err)
 					ingestionLog.errors = append(ingestionLog.errors, fmt.Errorf("failed to apply chang eset: %v", err))
 
-					ingestionLog.ingestionLog.State = reconcilerpb.State_FAILED
-					ingestionLog.ingestionLog.Error = extractIngestionError(err)
+					ingestionErr := extractIngestionError(err)
 
-					if _, err = p.writeIngestionLog(ctx, ingestionLog.key, ingestionLog.ingestionLog); err != nil {
+					if err := p.ingestionLogRepository.UpdateIngestionLogStateWithError(ctx, ingestionLog.ingestionLogID, reconcilerpb.State_FAILED, ingestionErr); err != nil {
 						ingestionLog.errors = append(ingestionLog.errors, err)
 					}
 					break
 				}
 
-				ingestionLog.ingestionLog.State = reconcilerpb.State_RECONCILED
-				if _, err := p.writeIngestionLog(ctx, ingestionLog.key, ingestionLog.ingestionLog); err != nil {
+				if err := p.ingestionLogRepository.UpdateIngestionLogStateWithError(ctx, ingestionLog.ingestionLogID, reconcilerpb.State_RECONCILED, nil); err != nil {
 					ingestionLog.errors = append(ingestionLog.errors, err)
 				}
 				p.logger.Debug("change set applied", "ingestionLogID", ingestionLog.ingestionLog.GetId(), "changeSetID", ingestionLog.changeSet.ChangeSetID)
@@ -416,13 +396,13 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 			continue
 		}
 
-		ingestionLogID := ksuid.New().String()
+		ingestionLogKSUID := ksuid.New().String()
 
-		key := fmt.Sprintf("ingest-entity:%s-%d-%s", objectType, ingestionTs, ingestionLogID)
+		key := fmt.Sprintf("ingest-entity:%s-%d-%s", objectType, ingestionTs, ingestionLogKSUID)
 		p.logger.Debug("ingest entity key", "key", key)
 
 		ingestionLog := &reconcilerpb.IngestionLog{
-			Id:                 ingestionLogID,
+			Id:                 ingestionLogKSUID,
 			RequestId:          ingestReq.GetId(),
 			ProducerAppName:    ingestReq.GetProducerAppName(),
 			ProducerAppVersion: ingestReq.GetProducerAppVersion(),
@@ -434,20 +414,18 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 			State:              reconcilerpb.State_QUEUED,
 		}
 
-		if _, err = p.writeIngestionLog(ctx, key, ingestionLog); err != nil {
-			errs = append(errs, fmt.Errorf("failed to write JSON: %v", err))
-			continue
-		}
+		ingestionLog.Id = uuid.NewString()
 
-		if err = p.ingestionLogRepository.CreateIngestionLog(ctx, ingestionLog, nil); err != nil {
-			p.logger.Debug("failed to create ingestion log in ingestion log repo", "error", err)
+		ingestionLogID, err := p.ingestionLogRepository.CreateIngestionLog(ctx, ingestionLog, nil)
+		if err != nil {
 			errs = append(errs, fmt.Errorf("failed to create ingestion log: %v", err))
 			continue
 		}
 
 		generateIngestionLogChan <- IngestionLogToProcess{
-			key:          key,
-			ingestionLog: ingestionLog,
+			key:            key,
+			ingestionLogID: *ingestionLogID,
+			ingestionLog:   ingestionLog,
 		}
 	}
 
@@ -490,24 +468,6 @@ func normalizeIngestionLog(l []byte) []byte {
 	//replace ingestionTs string value as integer, see: https://github.com/golang/protobuf/issues/1414
 	re := regexp.MustCompile(`"ingestionTs":"(\d+)"`)
 	return re.ReplaceAll(l, []byte(`"ingestionTs":$1`))
-}
-
-func compressChangeSet(cs *changeset.ChangeSet) ([]byte, error) {
-	csJSON, err := json.Marshal(cs)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal change set JSON: %v", err)
-	}
-
-	var brotliBuf bytes.Buffer
-	brotliWriter := brotli.NewWriter(&brotliBuf)
-	if _, err = brotliWriter.Write(csJSON); err != nil {
-		return nil, fmt.Errorf("failed to compress change set: %v", err)
-	}
-	if err = brotliWriter.Close(); err != nil {
-		return nil, fmt.Errorf("failed to compress change set: %v", err)
-	}
-
-	return brotliBuf.Bytes(), nil
 }
 
 func extractObjectType(in *diodepb.Entity) (string, error) {

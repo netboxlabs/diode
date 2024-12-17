@@ -55,7 +55,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	gRPCServer, err := reconciler.NewServer(ctx, s.Logger())
+	gRPCServer, err := reconciler.NewServer(ctx, s.Logger(), ingestionLogRepo, changeSetRepo)
 	if err != nil {
 		s.Logger().Error("failed to instantiate gRPC server", "error", err)
 		os.Exit(1)
