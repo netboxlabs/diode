@@ -29,9 +29,11 @@ func main() {
 
 	dbURL := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", cfg.PostgresHost, cfg.PostgresPort, cfg.PostgresUser, cfg.PostgresPassword, cfg.PostgresDBName)
 
-	if err := runDBMigrations(ctx, s.Logger(), dbURL); err != nil {
-		s.Logger().Error("failed to run db migrations", "error", err)
-		os.Exit(1)
+	if cfg.MigrationEnabled {
+		if err := runDBMigrations(ctx, s.Logger(), dbURL); err != nil {
+			s.Logger().Error("failed to run db migrations", "error", err)
+			os.Exit(1)
+		}
 	}
 
 	dbPool, err := pgxpool.New(ctx, dbURL)
