@@ -1,5 +1,8 @@
 name: ${PROJECT_NAME:-diode}
 services:
+  diode-reconciler:
+    extra_hosts:
+    - "host.docker.internal:host-gateway"
   redis-commander:
     hostname: redis-commander
     image: ghcr.io/joeferner/redis-commander:latest
