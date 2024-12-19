@@ -27,13 +27,13 @@ ORDER BY id DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: RetrieveIngestionLogsWithChangeSets :many
-SELECT sqlc.embed(ingestion_logs), sqlc.embed(change_sets), sqlc.embed(changes_view)
+SELECT sqlc.embed(ingestion_logs), sqlc.embed(v_ingestion_logs_change_sets), sqlc.embed(v_change_sets_changes)
 FROM ingestion_logs
-         LEFT JOIN change_sets on ingestion_logs.id = change_sets.ingestion_log_id
-         LEFT JOIN changes_view on change_sets.id = changes_view.change_set_id
+         LEFT JOIN v_ingestion_logs_change_sets on ingestion_logs.id = v_ingestion_logs_change_sets.ingestion_log_id
+         LEFT JOIN v_change_sets_changes on v_ingestion_logs_change_sets.id = v_change_sets_changes.change_set_id
 WHERE (ingestion_logs.state = sqlc.narg('state') OR sqlc.narg('state') IS NULL)
   AND (ingestion_logs.data_type = sqlc.narg('data_type') OR sqlc.narg('data_type') IS NULL)
   AND (ingestion_logs.ingestion_ts >= sqlc.narg('ingestion_ts_start') OR sqlc.narg('ingestion_ts_start') IS NULL)
   AND (ingestion_logs.ingestion_ts <= sqlc.narg('ingestion_ts_end') OR sqlc.narg('ingestion_ts_end') IS NULL)
-ORDER BY ingestion_logs.id DESC, changes_view.sequence_number ASC
+ORDER BY ingestion_logs.id DESC, v_change_sets_changes.sequence_number ASC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');

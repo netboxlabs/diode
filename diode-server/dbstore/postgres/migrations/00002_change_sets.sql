@@ -42,7 +42,16 @@ ALTER TABLE change_sets
 ALTER TABLE changes
     ADD CONSTRAINT fk_changes_change_sets FOREIGN KEY (change_set_id) REFERENCES change_sets (id);
 
-CREATE VIEW changes_view AS
+-- Create a view to join ingestion_logs with change_sets
+CREATE VIEW v_ingestion_logs_change_sets AS
+(
+SELECT change_sets.*
+FROM ingestion_logs
+         LEFT JOIN change_sets on ingestion_logs.id = change_sets.ingestion_log_id
+    );
+
+-- Create a view to join change_sets with changes
+CREATE VIEW v_change_sets_changes AS
 (
 SELECT changes.*
 FROM change_sets
@@ -51,8 +60,11 @@ FROM change_sets
 
 -- +goose Down
 
--- Drop the changes_view view
-DROP VIEW IF EXISTS changes_view;
+-- Drop the v_ingestion_logs_change_sets view
+DROP VIEW IF EXISTS v_ingestion_logs_change_sets;
+
+-- Drop the v_change_sets_with_changes view
+DROP VIEW IF EXISTS v_change_sets_with_changes;
 
 -- Drop the changes table
 DROP TABLE changes;

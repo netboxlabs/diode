@@ -31,20 +31,6 @@ type ChangeSet struct {
 	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
 }
 
-type ChangesView struct {
-	ID             pgtype.Int4        `json:"id"`
-	ChangeUuid     pgtype.Text        `json:"change_uuid"`
-	ChangeSetID    pgtype.Int4        `json:"change_set_id"`
-	ChangeType     pgtype.Text        `json:"change_type"`
-	ObjectType     pgtype.Text        `json:"object_type"`
-	ObjectID       pgtype.Int4        `json:"object_id"`
-	ObjectVersion  pgtype.Int4        `json:"object_version"`
-	Data           []byte             `json:"data"`
-	SequenceNumber pgtype.Int4        `json:"sequence_number"`
-	CreatedAt      pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
-}
-
 type IngestionLog struct {
 	ID                 int32              `json:"id"`
 	IngestionLogUuid   string             `json:"ingestion_log_uuid"`
@@ -61,4 +47,27 @@ type IngestionLog struct {
 	SourceMetadata     []byte             `json:"source_metadata"`
 	CreatedAt          pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
+}
+
+type VChangeSetsChange struct {
+	ID             pgtype.Int4        `json:"id"`
+	ChangeUuid     pgtype.Text        `json:"change_uuid"`
+	ChangeSetID    pgtype.Int4        `json:"change_set_id"`
+	ChangeType     pgtype.Text        `json:"change_type"`
+	ObjectType     pgtype.Text        `json:"object_type"`
+	ObjectID       pgtype.Int4        `json:"object_id"`
+	ObjectVersion  pgtype.Int4        `json:"object_version"`
+	Data           []byte             `json:"data"`
+	SequenceNumber pgtype.Int4        `json:"sequence_number"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+}
+
+type VIngestionLogsChangeSet struct {
+	ID             pgtype.Int4        `json:"id"`
+	ChangeSetUuid  pgtype.Text        `json:"change_set_uuid"`
+	IngestionLogID pgtype.Int4        `json:"ingestion_log_id"`
+	BranchID       pgtype.Text        `json:"branch_id"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
 }
