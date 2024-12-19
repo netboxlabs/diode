@@ -43,10 +43,9 @@ func main() {
 	}
 	defer dbPool.Close()
 
-	ingestionLogRepo := postgres.NewIngestionLogRepository(dbPool)
-	changeSetRepo := postgres.NewChangeSetRepository(dbPool)
+	repository := postgres.NewRepository(dbPool)
 
-	ingestionProcessor, err := reconciler.NewIngestionProcessor(ctx, s.Logger(), ingestionLogRepo, changeSetRepo)
+	ingestionProcessor, err := reconciler.NewIngestionProcessor(ctx, s.Logger(), repository)
 	if err != nil {
 		s.Logger().Error("failed to instantiate ingestion processor", "error", err)
 		os.Exit(1)
@@ -57,7 +56,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	gRPCServer, err := reconciler.NewServer(ctx, s.Logger(), ingestionLogRepo, changeSetRepo)
+	gRPCServer, err := reconciler.NewServer(ctx, s.Logger(), repository)
 	if err != nil {
 		s.Logger().Error("failed to instantiate gRPC server", "error", err)
 		os.Exit(1)

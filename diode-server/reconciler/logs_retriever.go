@@ -11,10 +11,10 @@ import (
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 )
 
-func retrieveIngestionMetrics(ctx context.Context, ingestionLogRepo IngestionLogRepository) (*reconcilerpb.RetrieveIngestionLogsResponse, error) {
+func retrieveIngestionMetrics(ctx context.Context, repository Repository) (*reconcilerpb.RetrieveIngestionLogsResponse, error) {
 	var metrics reconcilerpb.IngestionMetrics
 
-	ingestionLogsPerState, err := ingestionLogRepo.CountIngestionLogsPerState(ctx)
+	ingestionLogsPerState, err := repository.CountIngestionLogsPerState(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -40,10 +40,10 @@ func retrieveIngestionMetrics(ctx context.Context, ingestionLogRepo IngestionLog
 	return &reconcilerpb.RetrieveIngestionLogsResponse{Metrics: &metrics}, nil
 }
 
-func retrieveIngestionLogs(ctx context.Context, logger *slog.Logger, ingestionLogRepo IngestionLogRepository, _ ChangeSetRepository, in *reconcilerpb.RetrieveIngestionLogsRequest) (*reconcilerpb.RetrieveIngestionLogsResponse, error) {
+func retrieveIngestionLogs(ctx context.Context, logger *slog.Logger, repository Repository, in *reconcilerpb.RetrieveIngestionLogsRequest) (*reconcilerpb.RetrieveIngestionLogsResponse, error) {
 	if in.GetOnlyMetrics() {
 		logger.Debug("retrieving only ingestion metrics")
-		return retrieveIngestionMetrics(ctx, ingestionLogRepo)
+		return retrieveIngestionMetrics(ctx, repository)
 	}
 
 	pageSize := in.GetPageSize()
@@ -60,7 +60,7 @@ func retrieveIngestionLogs(ctx context.Context, logger *slog.Logger, ingestionLo
 		offset = decodedPageToken
 	}
 
-	logs, err := ingestionLogRepo.RetrieveIngestionLogs(ctx, in, pageSize, offset)
+	logs, err := repository.RetrieveIngestionLogs(ctx, in, pageSize, offset)
 	if err != nil {
 		return nil, fmt.Errorf("failed to retrieve ingestion logs: %w", err)
 	}

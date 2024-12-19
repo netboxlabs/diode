@@ -15,22 +15,22 @@ import (
 	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
 )
 
-// IngestionLogRepository allows interacting with ingestion logs.
-type IngestionLogRepository struct {
+// Repository is an interface for interacting with ingestion logs and change sets.
+type Repository struct {
 	pool    *pgxpool.Pool
 	queries *postgres.Queries
 }
 
-// NewIngestionLogRepository creates a new IngestionLogRepository.
-func NewIngestionLogRepository(pool *pgxpool.Pool) *IngestionLogRepository {
-	return &IngestionLogRepository{
+// NewRepository creates a new Repository.
+func NewRepository(pool *pgxpool.Pool) *Repository {
+	return &Repository{
 		pool:    pool,
 		queries: postgres.New(pool),
 	}
 }
 
 // CreateIngestionLog creates a new ingestion log.
-func (r *IngestionLogRepository) CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb.IngestionLog, sourceMetadata []byte) (*int32, error) {
+func (r *Repository) CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb.IngestionLog, sourceMetadata []byte) (*int32, error) {
 	entityJSON, err := protojson.Marshal(ingestionLog.Entity)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal entity: %w", err)
@@ -57,7 +57,7 @@ func (r *IngestionLogRepository) CreateIngestionLog(ctx context.Context, ingesti
 }
 
 // UpdateIngestionLogStateWithError updates an ingestion log with a new state and error.
-func (r *IngestionLogRepository) UpdateIngestionLogStateWithError(ctx context.Context, id int32, state reconcilerpb.State, ingestionError *reconcilerpb.IngestionError) error {
+func (r *Repository) UpdateIngestionLogStateWithError(ctx context.Context, id int32, state reconcilerpb.State, ingestionError *reconcilerpb.IngestionError) error {
 	params := postgres.UpdateIngestionLogStateWithErrorParams{
 		ID:    id,
 		State: pgtype.Int4{Int32: int32(state), Valid: true},
@@ -74,7 +74,7 @@ func (r *IngestionLogRepository) UpdateIngestionLogStateWithError(ctx context.Co
 }
 
 // CountIngestionLogsPerState counts ingestion logs per state.
-func (r *IngestionLogRepository) CountIngestionLogsPerState(ctx context.Context) (map[reconcilerpb.State]int32, error) {
+func (r *Repository) CountIngestionLogsPerState(ctx context.Context) (map[reconcilerpb.State]int32, error) {
 	counts, err := r.queries.CountIngestionLogsPerState(ctx)
 	if err != nil {
 		return nil, err
@@ -88,7 +88,7 @@ func (r *IngestionLogRepository) CountIngestionLogsPerState(ctx context.Context)
 }
 
 // RetrieveIngestionLogs retrieves ingestion logs.
-func (r *IngestionLogRepository) RetrieveIngestionLogs(ctx context.Context, filter *reconcilerpb.RetrieveIngestionLogsRequest, limit int32, offset int32) ([]*reconcilerpb.IngestionLog, error) {
+func (r *Repository) RetrieveIngestionLogs(ctx context.Context, filter *reconcilerpb.RetrieveIngestionLogsRequest, limit int32, offset int32) ([]*reconcilerpb.IngestionLog, error) {
 	params := postgres.RetrieveIngestionLogsWithChangeSetsParams{
 		Limit:  limit,
 		Offset: offset,
@@ -215,22 +215,8 @@ func (r *IngestionLogRepository) RetrieveIngestionLogs(ctx context.Context, filt
 	return ingestionLogs, nil
 }
 
-// ChangeSetRepository allows interacting with change sets.
-type ChangeSetRepository struct {
-	pool    *pgxpool.Pool
-	queries *postgres.Queries
-}
-
-// NewChangeSetRepository creates a new ChangeSetRepository.
-func NewChangeSetRepository(pool *pgxpool.Pool) *ChangeSetRepository {
-	return &ChangeSetRepository{
-		pool:    pool,
-		queries: postgres.New(pool),
-	}
-}
-
 // CreateChangeSet creates a new change set.
-func (r *ChangeSetRepository) CreateChangeSet(ctx context.Context, changeSet changeset.ChangeSet, ingestionLogID int32) (*int32, error) {
+func (r *Repository) CreateChangeSet(ctx context.Context, changeSet changeset.ChangeSet, ingestionLogID int32) (*int32, error) {
 	tx, err := r.pool.Begin(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("failed to start transaction: %w", err)

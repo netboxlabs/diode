@@ -152,8 +152,7 @@ func TestHandleStreamMessage(t *testing.T) {
 			mockRedisClient := new(mr.RedisClient)
 			mockRedisStreamClient := new(mr.RedisClient)
 			mockNbClient := new(mnp.NetBoxAPI)
-			mockIngestionLogRepo := new(mr.IngestionLogRepository)
-			mockChangeSetRepo := new(mr.ChangeSetRepository)
+			mockRepository := new(mr.Repository)
 			logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
 
 			p := &IngestionProcessor{
@@ -166,8 +165,7 @@ func TestHandleStreamMessage(t *testing.T) {
 					ReconcilerRateLimiterRPS:   20,
 					ReconcilerRateLimiterBurst: 1,
 				},
-				ingestionLogRepository: mockIngestionLogRepo,
-				changeSetRepository:    mockChangeSetRepo,
+				repository: mockRepository,
 			}
 
 			request := redis.XMessage{}
@@ -208,7 +206,7 @@ func TestHandleStreamMessage(t *testing.T) {
 			}
 			mockNbClient.On("ApplyChangeSet", ctx, mock.Anything).Return(tt.changeSetResponse, tt.changeSetError)
 			if tt.entities[0].Entity != nil {
-				mockIngestionLogRepo.On("CreateIngestionLog", ctx, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
+				mockRepository.On("CreateIngestionLog", ctx, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
 			}
 			mockRedisStreamClient.On("XAck", ctx, mock.Anything, mock.Anything, mock.Anything).Return(redis.NewIntCmd(ctx))
 			mockRedisStreamClient.On("XDel", ctx, mock.Anything, mock.Anything).Return(redis.NewIntCmd(ctx))
@@ -221,7 +219,7 @@ func TestHandleStreamMessage(t *testing.T) {
 			}
 
 			if tt.validMsg {
-				mockIngestionLogRepo.AssertExpectations(t)
+				mockRepository.AssertExpectations(t)
 			}
 		})
 	}
@@ -445,8 +443,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 			ctx := context.Background()
 			mockRedisClient := new(mr.RedisClient)
 			mockNbClient := new(mnp.NetBoxAPI)
-			mockIngestionLogRepo := new(mr.IngestionLogRepository)
-			mockChangeSetRepo := new(mr.ChangeSetRepository)
+			mockRepository := new(mr.Repository)
 			logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
 
 			p := &IngestionProcessor{
@@ -458,8 +455,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 					ReconcilerRateLimiterRPS:   20,
 					ReconcilerRateLimiterBurst: 1,
 				},
-				ingestionLogRepository: mockIngestionLogRepo,
-				changeSetRepository:    mockChangeSetRepo,
+				repository: mockRepository,
 			}
 
 			// Set up the mock expectation
@@ -472,10 +468,10 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 
 			mockNbClient.On("RetrieveObjectState", ctx, mock.Anything).Return(tt.mockRetrieveObjectStateResponse, nil)
 			if tt.autoApplyChangesets {
-				mockIngestionLogRepo.On("UpdateIngestionLogStateWithError", ctx, ingestionLogID, tt.expectedStatus, mock.Anything).Return(nil)
+				mockRepository.On("UpdateIngestionLogStateWithError", ctx, ingestionLogID, tt.expectedStatus, mock.Anything).Return(nil)
 				mockNbClient.On("ApplyChangeSet", ctx, mock.Anything).Return(tt.mockApplyChangeSetResponse, nil)
 			}
-			mockChangeSetRepo.On("CreateChangeSet", ctx, mock.Anything, ingestionLogID).Return(int32Ptr(1), nil)
+			mockRepository.On("CreateChangeSet", ctx, mock.Anything, ingestionLogID).Return(int32Ptr(1), nil)
 
 			bufCapacity := 1
 
@@ -504,8 +500,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 				<-applyChangeSetDone
 			}
 
-			mockIngestionLogRepo.AssertExpectations(t)
-			mockChangeSetRepo.AssertExpectations(t)
+			mockRepository.AssertExpectations(t)
 			require.Equal(t, tt.expectedStatus, tt.ingestionLog.State)
 		})
 	}

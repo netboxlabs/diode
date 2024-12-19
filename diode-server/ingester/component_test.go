@@ -71,9 +71,8 @@ const bufSize = 1024 * 1024
 
 func startReconcilerServer(ctx context.Context, t *testing.T) *reconciler.Server {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
-	ingestionLogRepoMock := mocks.NewIngestionLogRepository(t)
-	changeSetRepoMock := mocks.NewChangeSetRepository(t)
-	server, err := reconciler.NewServer(ctx, logger, ingestionLogRepoMock, changeSetRepoMock)
+	mockRepository := mocks.NewRepository(t)
+	server, err := reconciler.NewServer(ctx, logger, mockRepository)
 	require.NoError(t, err)
 
 	errChan := make(chan error, 1)

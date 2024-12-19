@@ -53,14 +53,13 @@ type RedisClient interface {
 
 // IngestionProcessor processes ingested data
 type IngestionProcessor struct {
-	Config                 Config
-	logger                 *slog.Logger
-	hostname               string
-	redisClient            RedisClient
-	redisStreamClient      RedisClient
-	nbClient               netboxdiodeplugin.NetBoxAPI
-	ingestionLogRepository IngestionLogRepository
-	changeSetRepository    ChangeSetRepository
+	Config            Config
+	logger            *slog.Logger
+	hostname          string
+	redisClient       RedisClient
+	redisStreamClient RedisClient
+	nbClient          netboxdiodeplugin.NetBoxAPI
+	repository        Repository
 }
 
 // IngestionLogToProcess represents an ingestion log to process
@@ -73,7 +72,7 @@ type IngestionLogToProcess struct {
 }
 
 // NewIngestionProcessor creates a new ingestion processor
-func NewIngestionProcessor(ctx context.Context, logger *slog.Logger, ingestionLogRepo IngestionLogRepository, changeSetRepo ChangeSetRepository) (*IngestionProcessor, error) {
+func NewIngestionProcessor(ctx context.Context, logger *slog.Logger, repository Repository) (*IngestionProcessor, error) {
 	var cfg Config
 	envconfig.MustProcess("", &cfg)
 
@@ -108,14 +107,13 @@ func NewIngestionProcessor(ctx context.Context, logger *slog.Logger, ingestionLo
 	}
 
 	component := &IngestionProcessor{
-		Config:                 cfg,
-		logger:                 logger,
-		hostname:               hostname,
-		redisClient:            redisClient,
-		redisStreamClient:      redisStreamClient,
-		nbClient:               nbClient,
-		ingestionLogRepository: ingestionLogRepo,
-		changeSetRepository:    changeSetRepo,
+		Config:            cfg,
+		logger:            logger,
+		hostname:          hostname,
+		redisClient:       redisClient,
+		redisStreamClient: redisStreamClient,
+		nbClient:          nbClient,
+		repository:        repository,
 	}
 
 	return component, nil
@@ -289,7 +287,7 @@ func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChan
 
 					ingestionErr := extractIngestionError(err)
 
-					if err = p.ingestionLogRepository.UpdateIngestionLogStateWithError(ctx, ingestionLog.ingestionLogID, reconcilerpb.State_FAILED, ingestionErr); err != nil {
+					if err = p.repository.UpdateIngestionLogStateWithError(ctx, ingestionLog.ingestionLogID, reconcilerpb.State_FAILED, ingestionErr); err != nil {
 						ingestionLog.errors = append(ingestionLog.errors, err)
 					}
 					break
@@ -297,7 +295,7 @@ func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChan
 
 				ingestionLog.changeSet = changeSet
 
-				if _, err = p.changeSetRepository.CreateChangeSet(ctx, *changeSet, ingestionLog.ingestionLogID); err != nil {
+				if _, err = p.repository.CreateChangeSet(ctx, *changeSet, ingestionLog.ingestionLogID); err != nil {
 					ingestionLog.errors = append(ingestionLog.errors, fmt.Errorf("failed to create change set: %v", err))
 				}
 
@@ -311,7 +309,7 @@ func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChan
 						}
 					}
 				} else {
-					if err := p.ingestionLogRepository.UpdateIngestionLogStateWithError(ctx, ingestionLog.ingestionLogID, reconcilerpb.State_NO_CHANGES, nil); err != nil {
+					if err := p.repository.UpdateIngestionLogStateWithError(ctx, ingestionLog.ingestionLogID, reconcilerpb.State_NO_CHANGES, nil); err != nil {
 						ingestionLog.errors = append(ingestionLog.errors, err)
 					}
 				}
@@ -354,14 +352,14 @@ func (p *IngestionProcessor) ApplyChangeSet(ctx context.Context, applyChan <-cha
 
 					ingestionErr := extractIngestionError(err)
 
-					if err := p.ingestionLogRepository.UpdateIngestionLogStateWithError(ctx, ingestionLog.ingestionLogID, reconcilerpb.State_FAILED, ingestionErr); err != nil {
+					if err := p.repository.UpdateIngestionLogStateWithError(ctx, ingestionLog.ingestionLogID, reconcilerpb.State_FAILED, ingestionErr); err != nil {
 						ingestionLog.errors = append(ingestionLog.errors, err)
 					}
 					break
 				}
 
 				ingestionLog.ingestionLog.State = reconcilerpb.State_RECONCILED
-				if err := p.ingestionLogRepository.UpdateIngestionLogStateWithError(ctx, ingestionLog.ingestionLogID, reconcilerpb.State_RECONCILED, nil); err != nil {
+				if err := p.repository.UpdateIngestionLogStateWithError(ctx, ingestionLog.ingestionLogID, reconcilerpb.State_RECONCILED, nil); err != nil {
 					ingestionLog.errors = append(ingestionLog.errors, err)
 				}
 				p.logger.Debug("change set applied", "ingestionLogID", ingestionLog.ingestionLog.GetId(), "changeSetID", ingestionLog.changeSet.ChangeSetID)
@@ -408,7 +406,7 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 
 		ingestionLog.Id = uuid.NewString()
 
-		ingestionLogID, err := p.ingestionLogRepository.CreateIngestionLog(ctx, ingestionLog, nil)
+		ingestionLogID, err := p.repository.CreateIngestionLog(ctx, ingestionLog, nil)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("failed to create ingestion log: %v", err))
 			continue

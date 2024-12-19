@@ -30,18 +30,17 @@ const (
 type Server struct {
 	reconcilerpb.UnimplementedReconcilerServiceServer
 
-	config                 Config
-	logger                 *slog.Logger
-	grpcListener           net.Listener
-	grpcServer             *grpc.Server
-	redisClient            RedisClient
-	ingestionLogRepository IngestionLogRepository
-	changeSetRepository    ChangeSetRepository
-	apiKeys                APIKeys
+	config       Config
+	logger       *slog.Logger
+	grpcListener net.Listener
+	grpcServer   *grpc.Server
+	redisClient  RedisClient
+	repository   Repository
+	apiKeys      APIKeys
 }
 
 // NewServer creates a new reconciler server
-func NewServer(ctx context.Context, logger *slog.Logger, ingestionLogRepo IngestionLogRepository, changeSetRepo ChangeSetRepository) (*Server, error) {
+func NewServer(ctx context.Context, logger *slog.Logger, repository Repository) (*Server, error) {
 	var cfg Config
 	envconfig.MustProcess("", &cfg)
 
@@ -69,14 +68,13 @@ func NewServer(ctx context.Context, logger *slog.Logger, ingestionLogRepo Ingest
 	grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(auth))
 
 	component := &Server{
-		config:                 cfg,
-		logger:                 logger,
-		grpcListener:           grpcListener,
-		grpcServer:             grpcServer,
-		redisClient:            redisClient,
-		ingestionLogRepository: ingestionLogRepo,
-		changeSetRepository:    changeSetRepo,
-		apiKeys:                apiKeys,
+		config:       cfg,
+		logger:       logger,
+		grpcListener: grpcListener,
+		grpcServer:   grpcServer,
+		redisClient:  redisClient,
+		repository:   repository,
+		apiKeys:      apiKeys,
 	}
 
 	reconcilerpb.RegisterReconcilerServiceServer(grpcServer, component)
@@ -144,7 +142,7 @@ func (s *Server) RetrieveIngestionDataSources(_ context.Context, in *reconcilerp
 
 // RetrieveIngestionLogs retrieves logs
 func (s *Server) RetrieveIngestionLogs(ctx context.Context, in *reconcilerpb.RetrieveIngestionLogsRequest) (*reconcilerpb.RetrieveIngestionLogsResponse, error) {
-	return retrieveIngestionLogs(ctx, s.logger, s.ingestionLogRepository, s.changeSetRepository, in)
+	return retrieveIngestionLogs(ctx, s.logger, s.repository, in)
 }
 
 func validateRetrieveIngestionDataSourcesRequest(in *reconcilerpb.RetrieveIngestionDataSourcesRequest) error {

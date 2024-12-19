@@ -728,14 +728,12 @@ func TestRetrieveLogs(t *testing.T) {
 			ctx := context.Background()
 			logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
 
-			mockRedisClient := new(mr.RedisClient)
-			mockIngestionLogRepo := new(mr.IngestionLogRepository)
-			mockChangeSetRepo := new(mr.ChangeSetRepository)
+			mockRedisClient := mr.NewRedisClient(t)
+			mockRepository := mr.NewRepository(t)
 			server := &Server{
-				redisClient:            mockRedisClient,
-				logger:                 logger,
-				ingestionLogRepository: mockIngestionLogRepo,
-				changeSetRepository:    mockChangeSetRepo,
+				redisClient: mockRedisClient,
+				logger:      logger,
+				repository:  mockRepository,
 			}
 
 			var retrieveErr error
@@ -744,7 +742,7 @@ func TestRetrieveLogs(t *testing.T) {
 			}
 
 			if !tt.hasError {
-				mockIngestionLogRepo.On("RetrieveIngestionLogs", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(tt.ingestionLogs, retrieveErr)
+				mockRepository.On("RetrieveIngestionLogs", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(tt.ingestionLogs, retrieveErr)
 			}
 
 			response, err := server.RetrieveIngestionLogs(ctx, &tt.in)
@@ -766,7 +764,7 @@ func TestRetrieveLogs(t *testing.T) {
 				}
 				require.Equal(t, tt.response.Metrics, response.Metrics)
 			}
-			mockIngestionLogRepo.AssertExpectations(t)
+			mockRepository.AssertExpectations(t)
 		})
 	}
 }
@@ -814,14 +812,12 @@ func TestRetrieveIngestionLogsMetricsOnly(t *testing.T) {
 				Total:      10,
 			}
 
-			mockRedisClient := new(mr.RedisClient)
-			mockIngestionLogRepo := new(mr.IngestionLogRepository)
-			mockChangeSetRepo := new(mr.ChangeSetRepository)
+			mockRedisClient := mr.NewRedisClient(t)
+			mockRepository := mr.NewRepository(t)
 			server := &Server{
-				redisClient:            mockRedisClient,
-				logger:                 logger,
-				ingestionLogRepository: mockIngestionLogRepo,
-				changeSetRepository:    mockChangeSetRepo,
+				redisClient: mockRedisClient,
+				logger:      logger,
+				repository:  mockRepository,
 			}
 
 			ingestionLogStateMetricsMap := map[reconcilerpb.State]int32{
@@ -836,7 +832,7 @@ func TestRetrieveIngestionLogsMetricsOnly(t *testing.T) {
 				countErr = errors.New(tt.errorMsg)
 			}
 
-			mockIngestionLogRepo.On("CountIngestionLogsPerState", ctx).Return(ingestionLogStateMetricsMap, countErr)
+			mockRepository.On("CountIngestionLogsPerState", ctx).Return(ingestionLogStateMetricsMap, countErr)
 
 			in := reconcilerpb.RetrieveIngestionLogsRequest{OnlyMetrics: true}
 
@@ -848,7 +844,7 @@ func TestRetrieveIngestionLogsMetricsOnly(t *testing.T) {
 				require.NoError(t, err)
 				require.Equal(t, expected, response.Metrics)
 			}
-			mockIngestionLogRepo.AssertExpectations(t)
+			mockRepository.AssertExpectations(t)
 		})
 	}
 }

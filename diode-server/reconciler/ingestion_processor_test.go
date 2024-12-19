@@ -29,11 +29,10 @@ func TestNewIngestionProcessor(t *testing.T) {
 	setupEnv(s.Addr())
 	defer teardownEnv()
 
-	ingestionLogRepoMock := mocks.NewIngestionLogRepository(t)
-	changeSetRepoMock := mocks.NewChangeSetRepository(t)
+	mockRepository := mocks.NewRepository(t)
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
-	processor, err := reconciler.NewIngestionProcessor(ctx, logger, ingestionLogRepoMock, changeSetRepoMock)
+	processor, err := reconciler.NewIngestionProcessor(ctx, logger, mockRepository)
 	require.NoError(t, err)
 	require.NotNil(t, processor)
 
@@ -49,13 +48,12 @@ func TestIngestionProcessorStart(t *testing.T) {
 	setupEnv(s.Addr())
 	defer teardownEnv()
 
-	ingestionLogRepoMock := mocks.NewIngestionLogRepository(t)
-	changeSetRepoMock := mocks.NewChangeSetRepository(t)
+	mockRepository := mocks.NewRepository(t)
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	ctx := context.Background()
 
-	processor, err := reconciler.NewIngestionProcessor(ctx, logger, ingestionLogRepoMock, changeSetRepoMock)
+	processor, err := reconciler.NewIngestionProcessor(ctx, logger, mockRepository)
 	require.NoError(t, err)
 	require.NotNil(t, processor)
 
@@ -225,8 +223,8 @@ func TestIngestionProcessorStart(t *testing.T) {
 	// Wait server
 	time.Sleep(50 * time.Millisecond)
 
-	ingestionLogRepoMock.On("CreateIngestionLog", ctx, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
-	ingestionLogRepoMock.On("UpdateIngestionLogStateWithError", ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mockRepository.On("CreateIngestionLog", ctx, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
+	mockRepository.On("UpdateIngestionLogStateWithError", ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	redisClient := redis.NewClient(&redis.Options{
 		Addr: s.Addr(),
@@ -250,5 +248,5 @@ func TestIngestionProcessorStart(t *testing.T) {
 	// Stop the processor
 	err = processor.Stop()
 	assert.NoError(t, err)
-	ingestionLogRepoMock.AssertExpectations(t)
+	mockRepository.AssertExpectations(t)
 }
