@@ -42,29 +42,19 @@ ALTER TABLE change_sets
 ALTER TABLE changes
     ADD CONSTRAINT fk_changes_change_sets FOREIGN KEY (change_set_id) REFERENCES change_sets (id);
 
--- Create a view to join ingestion_logs with change_sets
-CREATE VIEW v_ingestion_logs_change_sets AS
-(
-SELECT change_sets.*
+-- Create a view to join ingestion_logs with aggregated change_set and changes
+CREATE VIEW v_ingestion_logs_with_change_set AS
+SELECT ingestion_logs.*, row_to_json(change_sets.*) AS change_set, JSON_AGG(changes.* ORDER BY changes.sequence_number ASC) FILTER ( WHERE changes.id IS NOT NULL ) AS changes
 FROM ingestion_logs
          LEFT JOIN change_sets on ingestion_logs.id = change_sets.ingestion_log_id
-    );
-
--- Create a view to join change_sets with changes
-CREATE VIEW v_change_sets_changes AS
-(
-SELECT changes.*
-FROM change_sets
          LEFT JOIN changes on change_sets.id = changes.change_set_id
-    );
+GROUP BY ingestion_logs.id, change_sets.id
+ORDER BY ingestion_logs.id DESC, change_sets.id DESC;
 
 -- +goose Down
 
--- Drop the v_ingestion_logs_change_sets view
-DROP VIEW IF EXISTS v_ingestion_logs_change_sets;
-
--- Drop the v_change_sets_with_changes view
-DROP VIEW IF EXISTS v_change_sets_with_changes;
+-- Drop the v_ingestion_logs_with_change_sets view
+DROP VIEW IF EXISTS v_ingestion_logs_with_change_sets;
 
 -- Drop the changes table
 DROP TABLE changes;

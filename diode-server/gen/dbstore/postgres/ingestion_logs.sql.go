@@ -162,15 +162,13 @@ func (q *Queries) RetrieveIngestionLogs(ctx context.Context, arg RetrieveIngesti
 }
 
 const retrieveIngestionLogsWithChangeSets = `-- name: RetrieveIngestionLogsWithChangeSets :many
-SELECT ingestion_logs.id, ingestion_logs.ingestion_log_uuid, ingestion_logs.data_type, ingestion_logs.state, ingestion_logs.request_id, ingestion_logs.ingestion_ts, ingestion_logs.producer_app_name, ingestion_logs.producer_app_version, ingestion_logs.sdk_name, ingestion_logs.sdk_version, ingestion_logs.entity, ingestion_logs.error, ingestion_logs.source_metadata, ingestion_logs.created_at, ingestion_logs.updated_at, v_ingestion_logs_change_sets.id, v_ingestion_logs_change_sets.change_set_uuid, v_ingestion_logs_change_sets.ingestion_log_id, v_ingestion_logs_change_sets.branch_id, v_ingestion_logs_change_sets.created_at, v_ingestion_logs_change_sets.updated_at, v_change_sets_changes.id, v_change_sets_changes.change_uuid, v_change_sets_changes.change_set_id, v_change_sets_changes.change_type, v_change_sets_changes.object_type, v_change_sets_changes.object_id, v_change_sets_changes.object_version, v_change_sets_changes.data, v_change_sets_changes.sequence_number, v_change_sets_changes.created_at, v_change_sets_changes.updated_at
-FROM ingestion_logs
-         LEFT JOIN v_ingestion_logs_change_sets on ingestion_logs.id = v_ingestion_logs_change_sets.ingestion_log_id
-         LEFT JOIN v_change_sets_changes on v_ingestion_logs_change_sets.id = v_change_sets_changes.change_set_id
-WHERE (ingestion_logs.state = $1 OR $1 IS NULL)
-  AND (ingestion_logs.data_type = $2 OR $2 IS NULL)
-  AND (ingestion_logs.ingestion_ts >= $3 OR $3 IS NULL)
-  AND (ingestion_logs.ingestion_ts <= $4 OR $4 IS NULL)
-ORDER BY ingestion_logs.id DESC, v_change_sets_changes.sequence_number ASC
+SELECT v_ingestion_logs_with_change_set.id, v_ingestion_logs_with_change_set.ingestion_log_uuid, v_ingestion_logs_with_change_set.data_type, v_ingestion_logs_with_change_set.state, v_ingestion_logs_with_change_set.request_id, v_ingestion_logs_with_change_set.ingestion_ts, v_ingestion_logs_with_change_set.producer_app_name, v_ingestion_logs_with_change_set.producer_app_version, v_ingestion_logs_with_change_set.sdk_name, v_ingestion_logs_with_change_set.sdk_version, v_ingestion_logs_with_change_set.entity, v_ingestion_logs_with_change_set.error, v_ingestion_logs_with_change_set.source_metadata, v_ingestion_logs_with_change_set.created_at, v_ingestion_logs_with_change_set.updated_at, v_ingestion_logs_with_change_set.change_set, v_ingestion_logs_with_change_set.changes
+FROM v_ingestion_logs_with_change_set
+WHERE (v_ingestion_logs_with_change_set.state = $1 OR $1 IS NULL)
+  AND (v_ingestion_logs_with_change_set.data_type = $2 OR $2 IS NULL)
+  AND (v_ingestion_logs_with_change_set.ingestion_ts >= $3 OR $3 IS NULL)
+  AND (v_ingestion_logs_with_change_set.ingestion_ts <= $4 OR $4 IS NULL)
+ORDER BY v_ingestion_logs_with_change_set.id DESC
 LIMIT $6 OFFSET $5
 `
 
@@ -183,13 +181,7 @@ type RetrieveIngestionLogsWithChangeSetsParams struct {
 	Limit            int32       `json:"limit"`
 }
 
-type RetrieveIngestionLogsWithChangeSetsRow struct {
-	IngestionLog            IngestionLog            `json:"ingestion_log"`
-	VIngestionLogsChangeSet VIngestionLogsChangeSet `json:"vingestion_logs_change_set"`
-	VChangeSetsChange       VChangeSetsChange       `json:"vchange_sets_change"`
-}
-
-func (q *Queries) RetrieveIngestionLogsWithChangeSets(ctx context.Context, arg RetrieveIngestionLogsWithChangeSetsParams) ([]RetrieveIngestionLogsWithChangeSetsRow, error) {
+func (q *Queries) RetrieveIngestionLogsWithChangeSets(ctx context.Context, arg RetrieveIngestionLogsWithChangeSetsParams) ([]VIngestionLogsWithChangeSet, error) {
 	rows, err := q.db.Query(ctx, retrieveIngestionLogsWithChangeSets,
 		arg.State,
 		arg.DataType,
@@ -202,42 +194,27 @@ func (q *Queries) RetrieveIngestionLogsWithChangeSets(ctx context.Context, arg R
 		return nil, err
 	}
 	defer rows.Close()
-	var items []RetrieveIngestionLogsWithChangeSetsRow
+	var items []VIngestionLogsWithChangeSet
 	for rows.Next() {
-		var i RetrieveIngestionLogsWithChangeSetsRow
+		var i VIngestionLogsWithChangeSet
 		if err := rows.Scan(
-			&i.IngestionLog.ID,
-			&i.IngestionLog.IngestionLogUuid,
-			&i.IngestionLog.DataType,
-			&i.IngestionLog.State,
-			&i.IngestionLog.RequestID,
-			&i.IngestionLog.IngestionTs,
-			&i.IngestionLog.ProducerAppName,
-			&i.IngestionLog.ProducerAppVersion,
-			&i.IngestionLog.SdkName,
-			&i.IngestionLog.SdkVersion,
-			&i.IngestionLog.Entity,
-			&i.IngestionLog.Error,
-			&i.IngestionLog.SourceMetadata,
-			&i.IngestionLog.CreatedAt,
-			&i.IngestionLog.UpdatedAt,
-			&i.VIngestionLogsChangeSet.ID,
-			&i.VIngestionLogsChangeSet.ChangeSetUuid,
-			&i.VIngestionLogsChangeSet.IngestionLogID,
-			&i.VIngestionLogsChangeSet.BranchID,
-			&i.VIngestionLogsChangeSet.CreatedAt,
-			&i.VIngestionLogsChangeSet.UpdatedAt,
-			&i.VChangeSetsChange.ID,
-			&i.VChangeSetsChange.ChangeUuid,
-			&i.VChangeSetsChange.ChangeSetID,
-			&i.VChangeSetsChange.ChangeType,
-			&i.VChangeSetsChange.ObjectType,
-			&i.VChangeSetsChange.ObjectID,
-			&i.VChangeSetsChange.ObjectVersion,
-			&i.VChangeSetsChange.Data,
-			&i.VChangeSetsChange.SequenceNumber,
-			&i.VChangeSetsChange.CreatedAt,
-			&i.VChangeSetsChange.UpdatedAt,
+			&i.ID,
+			&i.IngestionLogUuid,
+			&i.DataType,
+			&i.State,
+			&i.RequestID,
+			&i.IngestionTs,
+			&i.ProducerAppName,
+			&i.ProducerAppVersion,
+			&i.SdkName,
+			&i.SdkVersion,
+			&i.Entity,
+			&i.Error,
+			&i.SourceMetadata,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.ChangeSet,
+			&i.Changes,
 		); err != nil {
 			return nil, err
 		}

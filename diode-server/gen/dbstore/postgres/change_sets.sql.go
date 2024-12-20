@@ -26,7 +26,7 @@ type CreateChangeParams struct {
 	ObjectType     string      `json:"object_type"`
 	ObjectID       pgtype.Int4 `json:"object_id"`
 	ObjectVersion  pgtype.Int4 `json:"object_version"`
-	Data           []byte      `json:"data"`
+	Data           any         `json:"data"`
 	SequenceNumber pgtype.Int4 `json:"sequence_number"`
 }
 

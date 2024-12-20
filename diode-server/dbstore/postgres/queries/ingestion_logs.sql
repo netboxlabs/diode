@@ -27,13 +27,12 @@ ORDER BY id DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: RetrieveIngestionLogsWithChangeSets :many
-SELECT sqlc.embed(ingestion_logs), sqlc.embed(v_ingestion_logs_change_sets), sqlc.embed(v_change_sets_changes)
-FROM ingestion_logs
-         LEFT JOIN v_ingestion_logs_change_sets on ingestion_logs.id = v_ingestion_logs_change_sets.ingestion_log_id
-         LEFT JOIN v_change_sets_changes on v_ingestion_logs_change_sets.id = v_change_sets_changes.change_set_id
-WHERE (ingestion_logs.state = sqlc.narg('state') OR sqlc.narg('state') IS NULL)
-  AND (ingestion_logs.data_type = sqlc.narg('data_type') OR sqlc.narg('data_type') IS NULL)
-  AND (ingestion_logs.ingestion_ts >= sqlc.narg('ingestion_ts_start') OR sqlc.narg('ingestion_ts_start') IS NULL)
-  AND (ingestion_logs.ingestion_ts <= sqlc.narg('ingestion_ts_end') OR sqlc.narg('ingestion_ts_end') IS NULL)
-ORDER BY ingestion_logs.id DESC, v_change_sets_changes.sequence_number ASC
+SELECT v_ingestion_logs_with_change_set.*
+FROM v_ingestion_logs_with_change_set
+WHERE (v_ingestion_logs_with_change_set.state = sqlc.narg('state') OR sqlc.narg('state') IS NULL)
+  AND (v_ingestion_logs_with_change_set.data_type = sqlc.narg('data_type') OR sqlc.narg('data_type') IS NULL)
+  AND (v_ingestion_logs_with_change_set.ingestion_ts >= sqlc.narg('ingestion_ts_start') OR sqlc.narg('ingestion_ts_start') IS NULL)
+  AND (v_ingestion_logs_with_change_set.ingestion_ts <= sqlc.narg('ingestion_ts_end') OR sqlc.narg('ingestion_ts_end') IS NULL)
+ORDER BY v_ingestion_logs_with_change_set.id DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
+
