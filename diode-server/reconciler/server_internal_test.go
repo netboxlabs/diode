@@ -108,15 +108,19 @@ func TestIsAuthenticated(t *testing.T) {
 
 func TestRetrieveLogs(t *testing.T) {
 	tests := []struct {
-		name          string
-		in            reconcilerpb.RetrieveIngestionLogsRequest
-		ingestionLogs []*reconcilerpb.IngestionLog
-		response      *reconcilerpb.RetrieveIngestionLogsResponse
-		hasError      bool
+		name                  string
+		in                    reconcilerpb.RetrieveIngestionLogsRequest
+		ingestionLogsPerState map[reconcilerpb.State]int32
+		ingestionLogs         []*reconcilerpb.IngestionLog
+		response              *reconcilerpb.RetrieveIngestionLogsResponse
+		hasError              bool
 	}{
 		{
 			name: "valid request",
 			in:   reconcilerpb.RetrieveIngestionLogsRequest{},
+			ingestionLogsPerState: map[reconcilerpb.State]int32{
+				reconcilerpb.State_RECONCILED: 2,
+			},
 			ingestionLogs: []*reconcilerpb.IngestionLog{
 				{
 					Id:                 "2mAT7vZ38H4ttI0i5dBebwJbSnZ",
@@ -220,7 +224,8 @@ func TestRetrieveLogs(t *testing.T) {
 					},
 				},
 				Metrics: &reconcilerpb.IngestionMetrics{
-					Total: 2,
+					Total:      2,
+					Reconciled: 2,
 				},
 				NextPageToken: "F/Jk/zc08gA=",
 			},
@@ -229,6 +234,9 @@ func TestRetrieveLogs(t *testing.T) {
 		{
 			name: "request with reconciliation error",
 			in:   reconcilerpb.RetrieveIngestionLogsRequest{},
+			ingestionLogsPerState: map[reconcilerpb.State]int32{
+				reconcilerpb.State_FAILED: 1,
+			},
 			ingestionLogs: []*reconcilerpb.IngestionLog{
 				{
 					DataType:           "ipam.ipaddress",
@@ -299,7 +307,8 @@ func TestRetrieveLogs(t *testing.T) {
 					},
 				},
 				Metrics: &reconcilerpb.IngestionMetrics{
-					Total: 1,
+					Total:  1,
+					Failed: 1,
 				},
 				NextPageToken: "AAAFlw==",
 			},
@@ -308,6 +317,9 @@ func TestRetrieveLogs(t *testing.T) {
 		{
 			name: "filter by new state",
 			in:   reconcilerpb.RetrieveIngestionLogsRequest{State: reconcilerpb.State_QUEUED.Enum()},
+			ingestionLogsPerState: map[reconcilerpb.State]int32{
+				reconcilerpb.State_QUEUED: 1,
+			},
 			ingestionLogs: []*reconcilerpb.IngestionLog{
 				{
 					DataType:           "dcim.interface",
@@ -356,6 +368,7 @@ func TestRetrieveLogs(t *testing.T) {
 					},
 				},
 				Metrics: &reconcilerpb.IngestionMetrics{
+					Total:  1,
 					Queued: 1,
 				},
 				NextPageToken: "AAAFlw==",
@@ -365,6 +378,9 @@ func TestRetrieveLogs(t *testing.T) {
 		{
 			name: "filter by reconciled state",
 			in:   reconcilerpb.RetrieveIngestionLogsRequest{State: reconcilerpb.State_RECONCILED.Enum()},
+			ingestionLogsPerState: map[reconcilerpb.State]int32{
+				reconcilerpb.State_RECONCILED: 1,
+			},
 			ingestionLogs: []*reconcilerpb.IngestionLog{
 				{
 					Id:                 "2mAT7vZ38H4ttI0i5dBebwJbSnZ",
@@ -415,6 +431,7 @@ func TestRetrieveLogs(t *testing.T) {
 					},
 				},
 				Metrics: &reconcilerpb.IngestionMetrics{
+					Total:      1,
 					Reconciled: 1,
 				},
 				NextPageToken: "AAAFlw==",
@@ -424,6 +441,9 @@ func TestRetrieveLogs(t *testing.T) {
 		{
 			name: "filter by failed state",
 			in:   reconcilerpb.RetrieveIngestionLogsRequest{State: reconcilerpb.State_FAILED.Enum()},
+			ingestionLogsPerState: map[reconcilerpb.State]int32{
+				reconcilerpb.State_FAILED: 1,
+			},
 			ingestionLogs: []*reconcilerpb.IngestionLog{
 				{
 					Id:                 "2mAT7vZ38H4ttI0i5dBebwJbSnZ",
@@ -474,6 +494,7 @@ func TestRetrieveLogs(t *testing.T) {
 					},
 				},
 				Metrics: &reconcilerpb.IngestionMetrics{
+					Total:  1,
 					Failed: 1,
 				},
 				NextPageToken: "AAAFlw==",
@@ -483,6 +504,9 @@ func TestRetrieveLogs(t *testing.T) {
 		{
 			name: "filter by no changes state",
 			in:   reconcilerpb.RetrieveIngestionLogsRequest{State: reconcilerpb.State_NO_CHANGES.Enum()},
+			ingestionLogsPerState: map[reconcilerpb.State]int32{
+				reconcilerpb.State_NO_CHANGES: 1,
+			},
 			ingestionLogs: []*reconcilerpb.IngestionLog{
 				{
 					Id:                 "2mAT7vZ38H4ttI0i5dBebwJbSnZ",
@@ -533,6 +557,7 @@ func TestRetrieveLogs(t *testing.T) {
 					},
 				},
 				Metrics: &reconcilerpb.IngestionMetrics{
+					Total:     1,
 					NoChanges: 1,
 				},
 				NextPageToken: "AAAFlw==",
@@ -542,6 +567,9 @@ func TestRetrieveLogs(t *testing.T) {
 		{
 			name: "filter by data type",
 			in:   reconcilerpb.RetrieveIngestionLogsRequest{DataType: "dcim.interface"},
+			ingestionLogsPerState: map[reconcilerpb.State]int32{
+				reconcilerpb.State_RECONCILED: 1,
+			},
 			ingestionLogs: []*reconcilerpb.IngestionLog{
 				{
 					Id:                 "2mAT7vZ38H4ttI0i5dBebwJbSnZ",
@@ -592,7 +620,8 @@ func TestRetrieveLogs(t *testing.T) {
 					},
 				},
 				Metrics: &reconcilerpb.IngestionMetrics{
-					Total: 1,
+					Total:      1,
+					Reconciled: 1,
 				},
 				NextPageToken: "AAAFlw==",
 			},
@@ -601,6 +630,9 @@ func TestRetrieveLogs(t *testing.T) {
 		{
 			name: "filter by timestamp",
 			in:   reconcilerpb.RetrieveIngestionLogsRequest{IngestionTsStart: 1725552914392208639},
+			ingestionLogsPerState: map[reconcilerpb.State]int32{
+				reconcilerpb.State_RECONCILED: 1,
+			},
 			ingestionLogs: []*reconcilerpb.IngestionLog{
 				{
 					Id:                 "2mAT7vZ38H4ttI0i5dBebwJbSnZ",
@@ -651,7 +683,8 @@ func TestRetrieveLogs(t *testing.T) {
 					},
 				},
 				Metrics: &reconcilerpb.IngestionMetrics{
-					Total: 1,
+					Total:      1,
+					Reconciled: 1,
 				},
 				NextPageToken: "AAAFlw==",
 			},
@@ -660,6 +693,9 @@ func TestRetrieveLogs(t *testing.T) {
 		{
 			name: "pagination check",
 			in:   reconcilerpb.RetrieveIngestionLogsRequest{PageToken: "AAAFlg=="},
+			ingestionLogsPerState: map[reconcilerpb.State]int32{
+				reconcilerpb.State_RECONCILED: 1,
+			},
 			ingestionLogs: []*reconcilerpb.IngestionLog{
 				{
 					Id:                 "2mAT7vZ38H4ttI0i5dBebwJbSnZ",
@@ -710,7 +746,8 @@ func TestRetrieveLogs(t *testing.T) {
 					},
 				},
 				Metrics: &reconcilerpb.IngestionMetrics{
-					Total: 1,
+					Total:      1,
+					Reconciled: 1,
 				},
 				NextPageToken: "AAAFlw==",
 			},
@@ -740,6 +777,8 @@ func TestRetrieveLogs(t *testing.T) {
 			if tt.hasError {
 				retrieveErr = errors.New("failed to retrieve ingestion logs")
 			}
+
+			mockRepository.On("CountIngestionLogsPerState", ctx).Return(tt.ingestionLogsPerState, nil)
 
 			if !tt.hasError {
 				mockRepository.On("RetrieveIngestionLogs", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(tt.ingestionLogs, retrieveErr)

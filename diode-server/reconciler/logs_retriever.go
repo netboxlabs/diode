@@ -41,9 +41,14 @@ func retrieveIngestionMetrics(ctx context.Context, repository Repository) (*reco
 }
 
 func retrieveIngestionLogs(ctx context.Context, logger *slog.Logger, repository Repository, in *reconcilerpb.RetrieveIngestionLogsRequest) (*reconcilerpb.RetrieveIngestionLogsResponse, error) {
+	ingestionLogsMetricsResponse, err := retrieveIngestionMetrics(ctx, repository)
+	if err != nil {
+		return nil, err
+	}
+
 	if in.GetOnlyMetrics() {
 		logger.Debug("retrieving only ingestion metrics")
-		return retrieveIngestionMetrics(ctx, repository)
+		return ingestionLogsMetricsResponse, nil
 	}
 
 	pageSize := in.GetPageSize()
@@ -73,25 +78,9 @@ func retrieveIngestionLogs(ctx context.Context, logger *slog.Logger, repository 
 	}
 
 	// Fill metrics
-	var metrics reconcilerpb.IngestionMetrics
-	total := int32(len(logs))
-	if in.State != nil {
-		if in.GetState() == reconcilerpb.State_UNSPECIFIED {
-			metrics.Total = total
-		} else if in.GetState() == reconcilerpb.State_QUEUED {
-			metrics.Queued = total
-		} else if in.GetState() == reconcilerpb.State_RECONCILED {
-			metrics.Reconciled = total
-		} else if in.GetState() == reconcilerpb.State_FAILED {
-			metrics.Failed = total
-		} else if in.GetState() == reconcilerpb.State_NO_CHANGES {
-			metrics.NoChanges = total
-		}
-	} else {
-		metrics.Total = total
-	}
+	metrics := ingestionLogsMetricsResponse.GetMetrics()
 
-	return &reconcilerpb.RetrieveIngestionLogsResponse{Logs: logs, Metrics: &metrics, NextPageToken: nextPageToken}, nil
+	return &reconcilerpb.RetrieveIngestionLogsResponse{Logs: logs, Metrics: metrics, NextPageToken: nextPageToken}, nil
 }
 
 func decodeBase64ToInt(encoded string) (int32, error) {

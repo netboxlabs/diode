@@ -111,61 +111,9 @@ func (r *Repository) RetrieveIngestionLogs(ctx context.Context, filter *reconcil
 		return nil, err
 	}
 
-	changeSetsMap := make(map[int32]*changeset.ChangeSet)
-	for _, row := range rawIngestionLogs {
-		if !row.VIngestionLogsChangeSet.ID.Valid || !row.VChangeSetsChange.ChangeUuid.Valid {
-			continue
-		}
-
-		var changeData map[string]any
-		if row.VChangeSetsChange.Data != nil {
-			if err := json.Unmarshal(row.VChangeSetsChange.Data, &changeData); err != nil {
-				return nil, fmt.Errorf("failed to unmarshal change data: %w", err)
-			}
-		}
-
-		change := changeset.Change{
-			ChangeID:   row.VChangeSetsChange.ChangeUuid.String,
-			ChangeType: row.VChangeSetsChange.ChangeType.String,
-			ObjectType: row.VChangeSetsChange.ObjectType.String,
-			Data:       changeData,
-		}
-		objID := int(row.VChangeSetsChange.ObjectID.Int32)
-		if row.VChangeSetsChange.ObjectID.Valid {
-			change.ObjectID = &objID
-		}
-		objVersion := int(row.VChangeSetsChange.ObjectVersion.Int32)
-		if row.VChangeSetsChange.ObjectVersion.Valid {
-			change.ObjectVersion = &objVersion
-		}
-
-		changeSet, ok := changeSetsMap[row.VIngestionLogsChangeSet.ID.Int32]
-		if !ok {
-			changes := make([]changeset.Change, 0)
-			changes = append(changes, change)
-
-			changeSet = &changeset.ChangeSet{
-				ChangeSetID: row.VIngestionLogsChangeSet.ChangeSetUuid.String,
-				ChangeSet:   changes,
-			}
-			if row.VIngestionLogsChangeSet.BranchID.Valid {
-				changeSet.BranchID = &row.VIngestionLogsChangeSet.BranchID.String
-			}
-			changeSetsMap[row.VIngestionLogsChangeSet.ID.Int32] = changeSet
-			continue
-		}
-
-		changeSet.ChangeSet = append(changeSet.ChangeSet, change)
-	}
-
 	ingestionLogs := make([]*reconcilerpb.IngestionLog, 0, len(rawIngestionLogs))
-	ingestionLogsMap := make(map[int32]*reconcilerpb.IngestionLog)
 	for _, row := range rawIngestionLogs {
-		if _, ok := ingestionLogsMap[row.IngestionLog.ID]; ok {
-			continue
-		}
-
-		ingestionLog := row.IngestionLog
+		ingestionLog := row
 		entity := &diodepb.Entity{}
 		if err := protojson.Unmarshal(ingestionLog.Entity, entity); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal entity: %w", err)
@@ -191,10 +139,40 @@ func (r *Repository) RetrieveIngestionLogs(ctx context.Context, filter *reconcil
 			Error:              &ingestionErr,
 		}
 
-		changeSet, ok := changeSetsMap[row.VIngestionLogsChangeSet.ID.Int32]
-		if ok {
+		if row.Changes != nil {
+			var dbChanges []postgres.Change
+			if err := json.Unmarshal(row.Changes, &dbChanges); err != nil {
+				return nil, fmt.Errorf("failed to unmarshal changes: %w", err)
+			}
+
+			changes := make([]changeset.Change, 0, len(dbChanges))
+			for _, dbChange := range dbChanges {
+				change := changeset.Change{
+					ChangeID:   dbChange.ChangeUuid,
+					ChangeType: dbChange.ChangeType,
+					ObjectType: dbChange.ObjectType,
+					Data:       dbChange.Data,
+				}
+
+				objID := int(dbChange.ObjectID.Int32)
+				if dbChange.ObjectID.Valid {
+					change.ObjectID = &objID
+				}
+				objVersion := int(dbChange.ObjectVersion.Int32)
+				if dbChange.ObjectVersion.Valid {
+					change.ObjectVersion = &objVersion
+				}
+
+				changes = append(changes, change)
+			}
+
+			changeSet := &changeset.ChangeSet{
+				ChangeSetID: row.ChangeSet.ChangeSetUuid,
+				ChangeSet:   changes,
+			}
+
 			var compressedChangeSet []byte
-			if len(changeSet.ChangeSet) > 0 {
+			if len(changes) > 0 {
 				b, err := changeset.CompressChangeSet(changeSet)
 				if err != nil {
 					return nil, fmt.Errorf("failed to compress change set: %w", err)
@@ -203,12 +181,11 @@ func (r *Repository) RetrieveIngestionLogs(ctx context.Context, filter *reconcil
 			}
 
 			log.ChangeSet = &reconcilerpb.ChangeSet{
-				Id:   row.VIngestionLogsChangeSet.ChangeSetUuid.String,
+				Id:   row.ChangeSet.ChangeSetUuid,
 				Data: compressedChangeSet,
 			}
 		}
 
-		ingestionLogsMap[ingestionLog.ID] = log
 		ingestionLogs = append(ingestionLogs, log)
 	}
 
