@@ -18,7 +18,6 @@ require (
 	github.com/oklog/run v1.1.0
 	github.com/pressly/goose/v3 v3.23.0
 	github.com/redis/go-redis/v9 v9.5.1
-	github.com/segmentio/ksuid v1.0.4
 	github.com/stretchr/testify v1.9.0
 	golang.org/x/time v0.5.0
 	google.golang.org/grpc v1.64.1

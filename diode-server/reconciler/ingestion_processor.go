@@ -11,7 +11,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/redis/go-redis/v9"
-	"github.com/segmentio/ksuid"
 	"golang.org/x/time/rate"
 	"google.golang.org/protobuf/proto"
 
@@ -64,9 +63,9 @@ type IngestionProcessor struct {
 
 // IngestionLogToProcess represents an ingestion log to process
 type IngestionLogToProcess struct {
-	key            string
 	ingestionLogID int32
 	ingestionLog   *reconcilerpb.IngestionLog
+	changeSetID    int32
 	changeSet      *changeset.ChangeSet
 	errors         []error
 }
@@ -253,7 +252,7 @@ func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChan
 			case <-ctx.Done():
 				p.logger.Debug("context cancelled", "error", ctx.Err())
 				return
-			case ingestionLog, ok := <-generateChangeSetChan:
+			case msg, ok := <-generateChangeSetChan:
 				if !ok {
 					return
 				}
@@ -262,13 +261,11 @@ func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChan
 					return
 				}
 
-				p.logger.Debug("generating change set", "ingestionLogID", ingestionLog.ingestionLog.GetId())
-
 				ingestEntity := differ.IngestEntity{
-					RequestID: ingestionLog.ingestionLog.GetId(),
-					DataType:  ingestionLog.ingestionLog.GetDataType(),
-					Entity:    ingestionLog.ingestionLog.GetEntity(),
-					State:     int(ingestionLog.ingestionLog.GetState()),
+					RequestID: msg.ingestionLog.GetId(),
+					DataType:  msg.ingestionLog.GetDataType(),
+					Entity:    msg.ingestionLog.GetEntity(),
+					State:     int(msg.ingestionLog.GetState()),
 				}
 
 				changeSet, err := differ.Diff(ctx, ingestEntity, "", p.nbClient)
@@ -281,39 +278,40 @@ func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChan
 						"data_type":  ingestEntity.DataType,
 					}
 					sentry.CaptureError(err, tags, "Ingest Entity", contextMap)
-					p.logger.Debug("failed to prepare change set", "ingestionLogID", ingestionLog.ingestionLog.GetId(), "error", err)
+					p.logger.Debug("failed to prepare change set", "ingestionLogID", msg.ingestionLog.GetId(), "error", err)
 
-					ingestionLog.errors = append(ingestionLog.errors, fmt.Errorf("failed to prepare change set: %v", err))
+					msg.errors = append(msg.errors, fmt.Errorf("failed to prepare change set: %v", err))
 
 					ingestionErr := extractIngestionError(err)
 
-					if err = p.repository.UpdateIngestionLogStateWithError(ctx, ingestionLog.ingestionLogID, reconcilerpb.State_FAILED, ingestionErr); err != nil {
-						ingestionLog.errors = append(ingestionLog.errors, err)
+					if err = p.repository.UpdateIngestionLogStateWithError(ctx, msg.ingestionLogID, reconcilerpb.State_FAILED, ingestionErr); err != nil {
+						msg.errors = append(msg.errors, err)
 					}
 					break
 				}
 
-				ingestionLog.changeSet = changeSet
+				msg.changeSet = changeSet
 
-				if _, err = p.repository.CreateChangeSet(ctx, *changeSet, ingestionLog.ingestionLogID); err != nil {
-					ingestionLog.errors = append(ingestionLog.errors, fmt.Errorf("failed to create change set: %v", err))
+				id, err := p.repository.CreateChangeSet(ctx, *changeSet, msg.ingestionLogID)
+				if err != nil {
+					msg.errors = append(msg.errors, fmt.Errorf("failed to create change set: %v", err))
 				}
 
 				if len(changeSet.ChangeSet) > 0 {
 					if applyChangeSetChan != nil {
 						applyChangeSetChan <- IngestionLogToProcess{
-							key:            ingestionLog.key,
-							ingestionLogID: ingestionLog.ingestionLogID,
-							ingestionLog:   ingestionLog.ingestionLog,
-							changeSet:      ingestionLog.changeSet,
+							ingestionLogID: msg.ingestionLogID,
+							ingestionLog:   msg.ingestionLog,
+							changeSetID:    *id,
+							changeSet:      msg.changeSet,
 						}
 					}
 				} else {
-					if err := p.repository.UpdateIngestionLogStateWithError(ctx, ingestionLog.ingestionLogID, reconcilerpb.State_NO_CHANGES, nil); err != nil {
-						ingestionLog.errors = append(ingestionLog.errors, err)
+					if err := p.repository.UpdateIngestionLogStateWithError(ctx, msg.ingestionLogID, reconcilerpb.State_NO_CHANGES, nil); err != nil {
+						msg.errors = append(msg.errors, err)
 					}
 				}
-				p.logger.Debug("change set generated", "ingestionLogID", ingestionLog.ingestionLog.GetId(), "changeSetID", ingestionLog.changeSet.ChangeSetID)
+				p.logger.Debug("change set generated", "id", id, "externalID", msg.changeSet.ChangeSetID, "ingestionLogID", msg.ingestionLogID)
 			}
 		}
 	}()
@@ -335,7 +333,7 @@ func (p *IngestionProcessor) ApplyChangeSet(ctx context.Context, applyChan <-cha
 			case <-ctx.Done():
 				p.logger.Debug("context cancelled", "error", ctx.Err())
 				return
-			case ingestionLog, ok := <-applyChan:
+			case msg, ok := <-applyChan:
 				if !ok {
 					return
 				}
@@ -344,25 +342,23 @@ func (p *IngestionProcessor) ApplyChangeSet(ctx context.Context, applyChan <-cha
 					return
 				}
 
-				p.logger.Debug("applying change set", "ingestionLogID", ingestionLog.ingestionLog.GetId(), "changeSetID", ingestionLog.changeSet.ChangeSetID)
-
-				if err := applier.ApplyChangeSet(ctx, p.logger, *ingestionLog.changeSet, "", p.nbClient); err != nil {
-					p.logger.Debug("failed to apply change set", "ingestionLogID", ingestionLog.ingestionLog.GetId(), "changeSetID", ingestionLog.changeSet.ChangeSetID, "error", err)
-					ingestionLog.errors = append(ingestionLog.errors, fmt.Errorf("failed to apply chang eset: %v", err))
+				if err := applier.ApplyChangeSet(ctx, p.logger, *msg.changeSet, "", p.nbClient); err != nil {
+					p.logger.Debug("failed to apply change set", "id", msg.changeSetID, "externalID", msg.changeSet.ChangeSetID, "ingestionLogID", msg.ingestionLogID, "error", err)
+					msg.errors = append(msg.errors, fmt.Errorf("failed to apply change set: %v", err))
 
 					ingestionErr := extractIngestionError(err)
 
-					if err := p.repository.UpdateIngestionLogStateWithError(ctx, ingestionLog.ingestionLogID, reconcilerpb.State_FAILED, ingestionErr); err != nil {
-						ingestionLog.errors = append(ingestionLog.errors, err)
+					if err := p.repository.UpdateIngestionLogStateWithError(ctx, msg.ingestionLogID, reconcilerpb.State_FAILED, ingestionErr); err != nil {
+						msg.errors = append(msg.errors, err)
 					}
 					break
 				}
 
-				ingestionLog.ingestionLog.State = reconcilerpb.State_RECONCILED
-				if err := p.repository.UpdateIngestionLogStateWithError(ctx, ingestionLog.ingestionLogID, reconcilerpb.State_RECONCILED, nil); err != nil {
-					ingestionLog.errors = append(ingestionLog.errors, err)
+				msg.ingestionLog.State = reconcilerpb.State_RECONCILED
+				if err := p.repository.UpdateIngestionLogStateWithError(ctx, msg.ingestionLogID, reconcilerpb.State_RECONCILED, nil); err != nil {
+					msg.errors = append(msg.errors, err)
 				}
-				p.logger.Debug("change set applied", "ingestionLogID", ingestionLog.ingestionLog.GetId(), "changeSetID", ingestionLog.changeSet.ChangeSetID)
+				p.logger.Debug("change set applied", "id", msg.changeSetID, "externalID", msg.changeSet.ChangeSetID, "ingestionLogID", msg.ingestionLogID)
 			}
 		}
 	}()
@@ -386,13 +382,8 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 			continue
 		}
 
-		ingestionLogKSUID := ksuid.New().String()
-
-		key := fmt.Sprintf("ingest-entity:%s-%d-%s", objectType, ingestionTs, ingestionLogKSUID)
-		p.logger.Debug("ingest entity key", "key", key)
-
 		ingestionLog := &reconcilerpb.IngestionLog{
-			Id:                 ingestionLogKSUID,
+			Id:                 uuid.NewString(),
 			RequestId:          ingestReq.GetId(),
 			ProducerAppName:    ingestReq.GetProducerAppName(),
 			ProducerAppVersion: ingestReq.GetProducerAppVersion(),
@@ -404,17 +395,15 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 			State:              reconcilerpb.State_QUEUED,
 		}
 
-		ingestionLog.Id = uuid.NewString()
-
-		ingestionLogID, err := p.repository.CreateIngestionLog(ctx, ingestionLog, nil)
+		id, err := p.repository.CreateIngestionLog(ctx, ingestionLog, nil)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("failed to create ingestion log: %v", err))
 			continue
 		}
+		p.logger.Debug("created ingestion log", "id", id, "externalID", ingestionLog.GetId())
 
 		generateIngestionLogChan <- IngestionLogToProcess{
-			key:            key,
-			ingestionLogID: *ingestionLogID,
+			ingestionLogID: *id,
 			ingestionLog:   ingestionLog,
 		}
 	}

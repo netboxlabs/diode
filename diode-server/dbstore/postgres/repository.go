@@ -36,7 +36,7 @@ func (r *Repository) CreateIngestionLog(ctx context.Context, ingestionLog *recon
 		return nil, fmt.Errorf("failed to marshal entity: %w", err)
 	}
 	params := postgres.CreateIngestionLogParams{
-		IngestionLogUuid:   ingestionLog.Id,
+		ExternalID:         ingestionLog.Id,
 		DataType:           pgtype.Text{String: ingestionLog.DataType, Valid: true},
 		State:              pgtype.Int4{Int32: int32(ingestionLog.State), Valid: true},
 		RequestID:          pgtype.Text{String: ingestionLog.RequestId, Valid: true},
@@ -126,7 +126,7 @@ func (r *Repository) RetrieveIngestionLogs(ctx context.Context, filter *reconcil
 		}
 
 		log := &reconcilerpb.IngestionLog{
-			Id:                 ingestionLog.IngestionLogUuid,
+			Id:                 ingestionLog.ExternalID,
 			DataType:           ingestionLog.DataType.String,
 			State:              reconcilerpb.State(ingestionLog.State.Int32),
 			RequestId:          ingestionLog.RequestID.String,
@@ -148,7 +148,7 @@ func (r *Repository) RetrieveIngestionLogs(ctx context.Context, filter *reconcil
 			changes := make([]changeset.Change, 0, len(dbChanges))
 			for _, dbChange := range dbChanges {
 				change := changeset.Change{
-					ChangeID:   dbChange.ChangeUuid,
+					ChangeID:   dbChange.ExternalID,
 					ChangeType: dbChange.ChangeType,
 					ObjectType: dbChange.ObjectType,
 					Data:       dbChange.Data,
@@ -167,7 +167,7 @@ func (r *Repository) RetrieveIngestionLogs(ctx context.Context, filter *reconcil
 			}
 
 			changeSet := &changeset.ChangeSet{
-				ChangeSetID: row.ChangeSet.ChangeSetUuid,
+				ChangeSetID: row.ChangeSet.ExternalID,
 				ChangeSet:   changes,
 			}
 
@@ -181,7 +181,7 @@ func (r *Repository) RetrieveIngestionLogs(ctx context.Context, filter *reconcil
 			}
 
 			log.ChangeSet = &reconcilerpb.ChangeSet{
-				Id:   row.ChangeSet.ChangeSetUuid,
+				Id:   row.ChangeSet.ExternalID,
 				Data: compressedChangeSet,
 			}
 		}
@@ -207,7 +207,7 @@ func (r *Repository) CreateChangeSet(ctx context.Context, changeSet changeset.Ch
 
 	qtx := r.queries.WithTx(tx)
 	params := postgres.CreateChangeSetParams{
-		ChangeSetUuid:  changeSet.ChangeSetID,
+		ExternalID:     changeSet.ChangeSetID,
 		IngestionLogID: ingestionLogID,
 	}
 	if changeSet.BranchID != nil {
@@ -227,7 +227,7 @@ func (r *Repository) CreateChangeSet(ctx context.Context, changeSet changeset.Ch
 		}
 
 		changeParams := postgres.CreateChangeParams{
-			ChangeUuid:     change.ChangeID,
+			ExternalID:     change.ChangeID,
 			ChangeSetID:    cs.ID,
 			ChangeType:     change.ChangeType,
 			ObjectType:     change.ObjectType,

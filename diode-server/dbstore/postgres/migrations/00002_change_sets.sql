@@ -4,7 +4,7 @@
 CREATE TABLE IF NOT EXISTS change_sets
 (
     id               INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    change_set_uuid  VARCHAR(255) NOT NULL,
+    external_id      VARCHAR(255) NOT NULL,
     ingestion_log_id INTEGER      NOT NULL,
     branch_id        VARCHAR(255),
     created_at       TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -12,13 +12,14 @@ CREATE TABLE IF NOT EXISTS change_sets
 );
 
 -- Create indices
-CREATE INDEX IF NOT EXISTS idx_change_sets_change_set_uuid ON change_sets (change_set_uuid);
+CREATE INDEX IF NOT EXISTS idx_change_sets_external_id ON change_sets (external_id);
+CREATE INDEX IF NOT EXISTS idx_change_sets_ingestion_log_id ON change_sets (ingestion_log_id);
 
 -- Create the changes table
 CREATE TABLE IF NOT EXISTS changes
 (
     id              INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    change_uuid     VARCHAR(255) NOT NULL,
+    external_id     VARCHAR(255) NOT NULL,
     change_set_id   INTEGER      NOT NULL,
     change_type     VARCHAR(50)  NOT NULL,
     object_type     VARCHAR(100) NOT NULL,
@@ -31,7 +32,7 @@ CREATE TABLE IF NOT EXISTS changes
 );
 
 -- Create indices
-CREATE INDEX IF NOT EXISTS idx_changes_change_uuid ON changes (change_uuid);
+CREATE INDEX IF NOT EXISTS idx_changes_external_id ON changes (external_id);
 CREATE INDEX IF NOT EXISTS idx_changes_change_set_id ON changes (change_set_id);
 CREATE INDEX IF NOT EXISTS idx_changes_change_type ON changes (change_type);
 CREATE INDEX IF NOT EXISTS idx_changes_object_type ON changes (object_type);
@@ -44,7 +45,9 @@ ALTER TABLE changes
 
 -- Create a view to join ingestion_logs with aggregated change_set and changes
 CREATE VIEW v_ingestion_logs_with_change_set AS
-SELECT ingestion_logs.*, row_to_json(change_sets.*) AS change_set, JSON_AGG(changes.* ORDER BY changes.sequence_number ASC) FILTER ( WHERE changes.id IS NOT NULL ) AS changes
+SELECT ingestion_logs.*,
+       row_to_json(change_sets.*)                                                                       AS change_set,
+       JSON_AGG(changes.* ORDER BY changes.sequence_number ASC) FILTER ( WHERE changes.id IS NOT NULL ) AS changes
 FROM ingestion_logs
          LEFT JOIN change_sets on ingestion_logs.id = change_sets.ingestion_log_id
          LEFT JOIN changes on change_sets.id = changes.change_set_id

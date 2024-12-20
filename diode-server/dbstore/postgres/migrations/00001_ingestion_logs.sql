@@ -4,7 +4,7 @@
 CREATE TABLE IF NOT EXISTS ingestion_logs
 (
     id                   INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    ingestion_log_uuid   VARCHAR(255) NOT NULL,
+    external_id          VARCHAR(255) NOT NULL,
     data_type            VARCHAR(255),
     state                INTEGER,
     request_id           VARCHAR(255),
@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS ingestion_logs
 );
 
 -- Create indices
-CREATE INDEX IF NOT EXISTS idx_ingestion_logs_ingestion_log_uuid ON ingestion_logs (ingestion_log_uuid);
+CREATE INDEX IF NOT EXISTS idx_ingestion_logs_external_id ON ingestion_logs (external_id);
 CREATE INDEX IF NOT EXISTS idx_ingestion_logs_data_type ON ingestion_logs (data_type);
 CREATE INDEX IF NOT EXISTS idx_ingestion_logs_state ON ingestion_logs (state);
 CREATE INDEX IF NOT EXISTS idx_ingestion_logs_request_id ON ingestion_logs (request_id);

@@ -1,5 +1,5 @@
 -- name: CreateIngestionLog :one
-INSERT INTO ingestion_logs (ingestion_log_uuid, data_type, state, request_id, ingestion_ts, producer_app_name,
+INSERT INTO ingestion_logs (external_id, data_type, state, request_id, ingestion_ts, producer_app_name,
                             producer_app_version, sdk_name, sdk_version, entity, source_metadata)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
 RETURNING *;
@@ -31,8 +31,9 @@ SELECT v_ingestion_logs_with_change_set.*
 FROM v_ingestion_logs_with_change_set
 WHERE (v_ingestion_logs_with_change_set.state = sqlc.narg('state') OR sqlc.narg('state') IS NULL)
   AND (v_ingestion_logs_with_change_set.data_type = sqlc.narg('data_type') OR sqlc.narg('data_type') IS NULL)
-  AND (v_ingestion_logs_with_change_set.ingestion_ts >= sqlc.narg('ingestion_ts_start') OR sqlc.narg('ingestion_ts_start') IS NULL)
-  AND (v_ingestion_logs_with_change_set.ingestion_ts <= sqlc.narg('ingestion_ts_end') OR sqlc.narg('ingestion_ts_end') IS NULL)
+  AND (v_ingestion_logs_with_change_set.ingestion_ts >= sqlc.narg('ingestion_ts_start') OR
+       sqlc.narg('ingestion_ts_start') IS NULL)
+  AND (v_ingestion_logs_with_change_set.ingestion_ts <= sqlc.narg('ingestion_ts_end') OR
+       sqlc.narg('ingestion_ts_end') IS NULL)
 ORDER BY v_ingestion_logs_with_change_set.id DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
-

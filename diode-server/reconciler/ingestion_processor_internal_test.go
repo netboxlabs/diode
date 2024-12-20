@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"log/slog"
 	"os"
@@ -13,8 +12,8 @@ import (
 	"time"
 
 	"github.com/andybalholm/brotli"
+	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
-	"github.com/segmentio/ksuid"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
@@ -373,7 +372,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 		{
 			name: "generate and apply change set",
 			ingestionLog: &reconcilerpb.IngestionLog{
-				Id:                 ksuid.New().String(),
+				Id:                 uuid.NewString(),
 				RequestId:          "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				ProducerAppName:    "test-app",
 				ProducerAppVersion: "0.1.0",
@@ -408,7 +407,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 		{
 			name: "generate change set only",
 			ingestionLog: &reconcilerpb.IngestionLog{
-				Id:                 ksuid.New().String(),
+				Id:                 uuid.NewString(),
 				RequestId:          "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				ProducerAppName:    "test-app",
 				ProducerAppVersion: "0.1.0",
@@ -458,12 +457,6 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 				repository: mockRepository,
 			}
 
-			// Set up the mock expectation
-			cmd := redis.NewCmd(ctx)
-			if tt.expectedError {
-				cmd.SetErr(errors.New("error"))
-			}
-			redisKey := fmt.Sprintf("ingest-entity:%s-%d-%s", tt.ingestionLog.DataType, tt.ingestionLog.IngestionTs, tt.ingestionLog.Id)
 			ingestionLogID := int32(1)
 
 			mockNbClient.On("RetrieveObjectState", ctx, mock.Anything).Return(tt.mockRetrieveObjectStateResponse, nil)
@@ -489,7 +482,6 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 			}
 
 			generateChangeSetChannel <- IngestionLogToProcess{
-				key:            redisKey,
 				ingestionLogID: ingestionLogID,
 				ingestionLog:   tt.ingestionLog,
 			}

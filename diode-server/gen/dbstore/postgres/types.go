@@ -10,7 +10,7 @@ import (
 
 type Change struct {
 	ID             int32              `json:"id"`
-	ChangeUuid     string             `json:"change_uuid"`
+	ExternalID     string             `json:"external_id"`
 	ChangeSetID    int32              `json:"change_set_id"`
 	ChangeType     string             `json:"change_type"`
 	ObjectType     string             `json:"object_type"`
@@ -24,7 +24,7 @@ type Change struct {
 
 type ChangeSet struct {
 	ID             int32              `json:"id"`
-	ChangeSetUuid  string             `json:"change_set_uuid"`
+	ExternalID     string             `json:"external_id"`
 	IngestionLogID int32              `json:"ingestion_log_id"`
 	BranchID       pgtype.Text        `json:"branch_id"`
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
@@ -33,7 +33,7 @@ type ChangeSet struct {
 
 type IngestionLog struct {
 	ID                 int32              `json:"id"`
-	IngestionLogUuid   string             `json:"ingestion_log_uuid"`
+	ExternalID         string             `json:"external_id"`
 	DataType           pgtype.Text        `json:"data_type"`
 	State              pgtype.Int4        `json:"state"`
 	RequestID          pgtype.Text        `json:"request_id"`
@@ -51,7 +51,7 @@ type IngestionLog struct {
 
 type VIngestionLogsWithChangeSet struct {
 	ID                 int32              `json:"id"`
-	IngestionLogUuid   string             `json:"ingestion_log_uuid"`
+	ExternalID         string             `json:"external_id"`
 	DataType           pgtype.Text        `json:"data_type"`
 	State              pgtype.Int4        `json:"state"`
 	RequestID          pgtype.Text        `json:"request_id"`
