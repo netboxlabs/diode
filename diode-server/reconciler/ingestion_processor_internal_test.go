@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"log/slog"
 	"os"
@@ -13,8 +12,8 @@ import (
 	"time"
 
 	"github.com/andybalholm/brotli"
+	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
-	"github.com/segmentio/ksuid"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
@@ -28,91 +27,8 @@ import (
 	mr "github.com/netboxlabs/diode/diode-server/reconciler/mocks"
 )
 
+func int32Ptr(i int32) *int32 { return &i }
 func strPtr(s string) *string { return &s }
-
-func TestWriteIngestionLog(t *testing.T) {
-	tests := []struct {
-		name         string
-		ingestionLog *reconcilerpb.IngestionLog
-		hasError     bool
-		hasMock      bool
-	}{
-		{
-			name: "write successful",
-			ingestionLog: &reconcilerpb.IngestionLog{
-				RequestId: "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				DataType:  "dcim.site",
-				Entity: &diodepb.Entity{
-					Entity: &diodepb.Entity_Site{
-						Site: &diodepb.Site{
-							Name: "Site A",
-						},
-					},
-				},
-			},
-			hasError: false,
-			hasMock:  true,
-		},
-		{
-			name: "redis error",
-			ingestionLog: &reconcilerpb.IngestionLog{
-				RequestId: "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				DataType:  "dcim.site",
-				Entity: &diodepb.Entity{
-					Entity: &diodepb.Entity_Site{
-						Site: &diodepb.Site{
-							Name: "Site A",
-						},
-					},
-				},
-				IngestionTs: time.Now().UnixNano(),
-			},
-			hasError: true,
-			hasMock:  true,
-		},
-	}
-	for i := range tests {
-		tt := tests[i]
-
-		t.Run(tt.name, func(t *testing.T) {
-			ctx := context.Background()
-			key := "test-key"
-
-			// Create a mock Redis client
-			mockRedisClient := new(mr.RedisClient)
-			p := &IngestionProcessor{
-				redisClient: mockRedisClient,
-				logger:      slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false})),
-				Config: Config{
-					AutoApplyChangesets:        true,
-					ReconcilerRateLimiterRPS:   20,
-					ReconcilerRateLimiterBurst: 1,
-				},
-			}
-
-			// Set up the mock expectation
-			cmd := redis.NewCmd(ctx)
-			if tt.hasError {
-				cmd.SetErr(errors.New("error"))
-			}
-			mockRedisClient.On("Do", ctx, "JSON.SET", "test-key", "$", mock.Anything).
-				Return(cmd)
-
-			// Call the method
-			_, err := p.writeIngestionLog(ctx, key, tt.ingestionLog)
-
-			if tt.hasError {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-			}
-			// Assert the expectations
-			if tt.hasMock {
-				mockRedisClient.AssertExpectations(t)
-			}
-		})
-	}
-}
 
 func TestHandleStreamMessage(t *testing.T) {
 	tests := []struct {
@@ -235,6 +151,7 @@ func TestHandleStreamMessage(t *testing.T) {
 			mockRedisClient := new(mr.RedisClient)
 			mockRedisStreamClient := new(mr.RedisClient)
 			mockNbClient := new(mnp.NetBoxAPI)
+			mockRepository := new(mr.Repository)
 			logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
 
 			p := &IngestionProcessor{
@@ -247,6 +164,7 @@ func TestHandleStreamMessage(t *testing.T) {
 					ReconcilerRateLimiterRPS:   20,
 					ReconcilerRateLimiterBurst: 1,
 				},
+				repository: mockRepository,
 			}
 
 			request := redis.XMessage{}
@@ -287,7 +205,7 @@ func TestHandleStreamMessage(t *testing.T) {
 			}
 			mockNbClient.On("ApplyChangeSet", ctx, mock.Anything).Return(tt.changeSetResponse, tt.changeSetError)
 			if tt.entities[0].Entity != nil {
-				mockRedisClient.On("Do", ctx, "JSON.SET", mock.Anything, "$", mock.Anything).Return(redis.NewCmd(ctx))
+				mockRepository.On("CreateIngestionLog", ctx, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
 			}
 			mockRedisStreamClient.On("XAck", ctx, mock.Anything, mock.Anything, mock.Anything).Return(redis.NewIntCmd(ctx))
 			mockRedisStreamClient.On("XDel", ctx, mock.Anything, mock.Anything).Return(redis.NewIntCmd(ctx))
@@ -300,7 +218,7 @@ func TestHandleStreamMessage(t *testing.T) {
 			}
 
 			if tt.validMsg {
-				mockRedisClient.AssertExpectations(t)
+				mockRepository.AssertExpectations(t)
 			}
 		})
 	}
@@ -423,7 +341,7 @@ func TestCompressChangeSet(t *testing.T) {
 			},
 		},
 	}
-	compressed, err := compressChangeSet(&cs)
+	compressed, err := changeset.CompressChangeSet(&cs)
 	require.NoError(t, err)
 
 	// Decompress the compressed data
@@ -454,7 +372,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 		{
 			name: "generate and apply change set",
 			ingestionLog: &reconcilerpb.IngestionLog{
-				Id:                 ksuid.New().String(),
+				Id:                 uuid.NewString(),
 				RequestId:          "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				ProducerAppName:    "test-app",
 				ProducerAppVersion: "0.1.0",
@@ -489,7 +407,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 		{
 			name: "generate change set only",
 			ingestionLog: &reconcilerpb.IngestionLog{
-				Id:                 ksuid.New().String(),
+				Id:                 uuid.NewString(),
 				RequestId:          "cfa0f129-125c-440d-9e41-e87583cd7d89",
 				ProducerAppName:    "test-app",
 				ProducerAppVersion: "0.1.0",
@@ -524,6 +442,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 			ctx := context.Background()
 			mockRedisClient := new(mr.RedisClient)
 			mockNbClient := new(mnp.NetBoxAPI)
+			mockRepository := new(mr.Repository)
 			logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
 
 			p := &IngestionProcessor{
@@ -535,21 +454,17 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 					ReconcilerRateLimiterRPS:   20,
 					ReconcilerRateLimiterBurst: 1,
 				},
+				repository: mockRepository,
 			}
 
-			// Set up the mock expectation
-			cmd := redis.NewCmd(ctx)
-			if tt.expectedError {
-				cmd.SetErr(errors.New("error"))
-			}
-			redisKey := fmt.Sprintf("ingest-entity:%s-%d-%s", tt.ingestionLog.DataType, tt.ingestionLog.IngestionTs, tt.ingestionLog.Id)
-			mockRedisClient.On("Do", ctx, "JSON.SET", redisKey, "$", mock.Anything).
-				Return(cmd)
+			ingestionLogID := int32(1)
 
 			mockNbClient.On("RetrieveObjectState", ctx, mock.Anything).Return(tt.mockRetrieveObjectStateResponse, nil)
 			if tt.autoApplyChangesets {
+				mockRepository.On("UpdateIngestionLogStateWithError", ctx, ingestionLogID, tt.expectedStatus, mock.Anything).Return(nil)
 				mockNbClient.On("ApplyChangeSet", ctx, mock.Anything).Return(tt.mockApplyChangeSetResponse, nil)
 			}
+			mockRepository.On("CreateChangeSet", ctx, mock.Anything, ingestionLogID).Return(int32Ptr(1), nil)
 
 			bufCapacity := 1
 
@@ -567,8 +482,8 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 			}
 
 			generateChangeSetChannel <- IngestionLogToProcess{
-				key:          redisKey,
-				ingestionLog: tt.ingestionLog,
+				ingestionLogID: ingestionLogID,
+				ingestionLog:   tt.ingestionLog,
 			}
 			close(generateChangeSetChannel)
 
@@ -577,8 +492,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 				<-applyChangeSetDone
 			}
 
-			mockRedisClient.AssertExpectations(t)
-			require.NotNil(t, tt.ingestionLog.ChangeSet)
+			mockRepository.AssertExpectations(t)
 			require.Equal(t, tt.expectedStatus, tt.ingestionLog.State)
 		})
 	}

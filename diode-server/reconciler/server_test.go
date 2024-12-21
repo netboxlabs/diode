@@ -16,6 +16,7 @@ import (
 
 	pb "github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 	"github.com/netboxlabs/diode/diode-server/reconciler"
+	"github.com/netboxlabs/diode/diode-server/reconciler/mocks"
 )
 
 func startTestServer(ctx context.Context, t *testing.T, redisAddr string) (*reconciler.Server, *grpc.ClientConn) {
@@ -26,7 +27,8 @@ func startTestServer(ctx context.Context, t *testing.T, redisAddr string) (*reco
 	s := grpc.NewServer()
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
-	server, err := reconciler.NewServer(ctx, logger)
+	mockRepository := mocks.NewRepository(t)
+	server, err := reconciler.NewServer(ctx, logger, mockRepository)
 	require.NoError(t, err)
 
 	pb.RegisterReconcilerServiceServer(s, server)
@@ -60,7 +62,8 @@ func TestNewServer(t *testing.T) {
 	defer teardownEnv()
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
-	server, err := reconciler.NewServer(ctx, logger)
+	mockRepository := mocks.NewRepository(t)
+	server, err := reconciler.NewServer(ctx, logger, mockRepository)
 	require.NoError(t, err)
 	require.NotNil(t, server)
 

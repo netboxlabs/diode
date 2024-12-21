@@ -29,9 +29,11 @@ func main() {
 
 	dbURL := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", cfg.PostgresHost, cfg.PostgresPort, cfg.PostgresUser, cfg.PostgresPassword, cfg.PostgresDBName)
 
-	if err := runDBMigrations(ctx, s.Logger(), dbURL); err != nil {
-		s.Logger().Error("failed to run db migrations", "error", err)
-		os.Exit(1)
+	if cfg.MigrationEnabled {
+		if err := runDBMigrations(ctx, s.Logger(), dbURL); err != nil {
+			s.Logger().Error("failed to run db migrations", "error", err)
+			os.Exit(1)
+		}
 	}
 
 	dbPool, err := pgxpool.New(ctx, dbURL)
@@ -41,10 +43,9 @@ func main() {
 	}
 	defer dbPool.Close()
 
-	ingestionLogRepo := postgres.NewIngestionLogRepository(dbPool)
-	changeSetRepo := postgres.NewChangeSetRepository(dbPool)
+	repository := postgres.NewRepository(dbPool)
 
-	ingestionProcessor, err := reconciler.NewIngestionProcessor(ctx, s.Logger(), ingestionLogRepo, changeSetRepo)
+	ingestionProcessor, err := reconciler.NewIngestionProcessor(ctx, s.Logger(), repository)
 	if err != nil {
 		s.Logger().Error("failed to instantiate ingestion processor", "error", err)
 		os.Exit(1)
@@ -55,7 +56,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	gRPCServer, err := reconciler.NewServer(ctx, s.Logger())
+	gRPCServer, err := reconciler.NewServer(ctx, s.Logger(), repository)
 	if err != nil {
 		s.Logger().Error("failed to instantiate gRPC server", "error", err)
 		os.Exit(1)

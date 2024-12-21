@@ -10,6 +10,7 @@ import (
 	"github.com/alicebob/miniredis/v2"
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
 
@@ -17,6 +18,8 @@ import (
 	"github.com/netboxlabs/diode/diode-server/reconciler"
 	"github.com/netboxlabs/diode/diode-server/reconciler/mocks"
 )
+
+func int32Ptr(i int32) *int32 { return &i }
 
 func TestNewIngestionProcessor(t *testing.T) {
 	ctx := context.Background()
@@ -26,11 +29,10 @@ func TestNewIngestionProcessor(t *testing.T) {
 	setupEnv(s.Addr())
 	defer teardownEnv()
 
-	ingestionLogRepoMock := mocks.NewIngestionLogRepository(t)
-	changeSetRepoMock := mocks.NewChangeSetRepository(t)
+	mockRepository := mocks.NewRepository(t)
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
-	processor, err := reconciler.NewIngestionProcessor(ctx, logger, ingestionLogRepoMock, changeSetRepoMock)
+	processor, err := reconciler.NewIngestionProcessor(ctx, logger, mockRepository)
 	require.NoError(t, err)
 	require.NotNil(t, processor)
 
@@ -46,13 +48,12 @@ func TestIngestionProcessorStart(t *testing.T) {
 	setupEnv(s.Addr())
 	defer teardownEnv()
 
-	ingestionLogRepoMock := mocks.NewIngestionLogRepository(t)
-	changeSetRepoMock := mocks.NewChangeSetRepository(t)
+	mockRepository := mocks.NewRepository(t)
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	ctx := context.Background()
 
-	processor, err := reconciler.NewIngestionProcessor(ctx, logger, ingestionLogRepoMock, changeSetRepoMock)
+	processor, err := reconciler.NewIngestionProcessor(ctx, logger, mockRepository)
 	require.NoError(t, err)
 	require.NotNil(t, processor)
 
@@ -222,6 +223,9 @@ func TestIngestionProcessorStart(t *testing.T) {
 	// Wait server
 	time.Sleep(50 * time.Millisecond)
 
+	mockRepository.On("CreateIngestionLog", ctx, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
+	mockRepository.On("UpdateIngestionLogStateWithError", ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
 	redisClient := redis.NewClient(&redis.Options{
 		Addr: s.Addr(),
 		DB:   1,
@@ -244,4 +248,5 @@ func TestIngestionProcessorStart(t *testing.T) {
 	// Stop the processor
 	err = processor.Stop()
 	assert.NoError(t, err)
+	mockRepository.AssertExpectations(t)
 }

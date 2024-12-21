@@ -10,3 +10,10 @@ sql:
         sql_package: "pgx/v5"
         output_models_file_name: "types.go"
         emit_json_tags: true
+        overrides:
+          - column: v_ingestion_logs_with_change_set.change_set
+            go_type:
+              type: ChangeSet
+          - column: changes.data
+            go_type:
+              type: any

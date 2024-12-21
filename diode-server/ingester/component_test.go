@@ -18,6 +18,7 @@ import (
 	pb "github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/ingester"
 	"github.com/netboxlabs/diode/diode-server/reconciler"
+	"github.com/netboxlabs/diode/diode-server/reconciler/mocks"
 )
 
 func getFreePort() (string, error) {
@@ -70,7 +71,8 @@ const bufSize = 1024 * 1024
 
 func startReconcilerServer(ctx context.Context, t *testing.T) *reconciler.Server {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
-	server, err := reconciler.NewServer(ctx, logger)
+	mockRepository := mocks.NewRepository(t)
+	server, err := reconciler.NewServer(ctx, logger, mockRepository)
 	require.NoError(t, err)
 
 	errChan := make(chan error, 1)

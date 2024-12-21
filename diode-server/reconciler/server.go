@@ -35,11 +35,12 @@ type Server struct {
 	grpcListener net.Listener
 	grpcServer   *grpc.Server
 	redisClient  RedisClient
+	repository   Repository
 	apiKeys      APIKeys
 }
 
 // NewServer creates a new reconciler server
-func NewServer(ctx context.Context, logger *slog.Logger) (*Server, error) {
+func NewServer(ctx context.Context, logger *slog.Logger, repository Repository) (*Server, error) {
 	var cfg Config
 	envconfig.MustProcess("", &cfg)
 
@@ -72,6 +73,7 @@ func NewServer(ctx context.Context, logger *slog.Logger) (*Server, error) {
 		grpcListener: grpcListener,
 		grpcServer:   grpcServer,
 		redisClient:  redisClient,
+		repository:   repository,
 		apiKeys:      apiKeys,
 	}
 
@@ -140,7 +142,7 @@ func (s *Server) RetrieveIngestionDataSources(_ context.Context, in *reconcilerp
 
 // RetrieveIngestionLogs retrieves logs
 func (s *Server) RetrieveIngestionLogs(ctx context.Context, in *reconcilerpb.RetrieveIngestionLogsRequest) (*reconcilerpb.RetrieveIngestionLogsResponse, error) {
-	return retrieveIngestionLogs(ctx, s.logger, s.redisClient, in)
+	return retrieveIngestionLogs(ctx, s.logger, s.repository, in)
 }
 
 func validateRetrieveIngestionDataSourcesRequest(in *reconcilerpb.RetrieveIngestionDataSourcesRequest) error {
