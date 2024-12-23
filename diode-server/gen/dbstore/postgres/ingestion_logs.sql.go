@@ -98,6 +98,35 @@ func (q *Queries) CreateIngestionLog(ctx context.Context, arg CreateIngestionLog
 	return i, err
 }
 
+const retrieveIngestionLogByExternalID = `-- name: RetrieveIngestionLogByExternalID :one
+SELECT id, external_id, data_type, state, request_id, ingestion_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at
+FROM ingestion_logs
+WHERE external_id = $1
+`
+
+func (q *Queries) RetrieveIngestionLogByExternalID(ctx context.Context, externalID string) (IngestionLog, error) {
+	row := q.db.QueryRow(ctx, retrieveIngestionLogByExternalID, externalID)
+	var i IngestionLog
+	err := row.Scan(
+		&i.ID,
+		&i.ExternalID,
+		&i.DataType,
+		&i.State,
+		&i.RequestID,
+		&i.IngestionTs,
+		&i.ProducerAppName,
+		&i.ProducerAppVersion,
+		&i.SdkName,
+		&i.SdkVersion,
+		&i.Entity,
+		&i.Error,
+		&i.SourceMetadata,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const retrieveIngestionLogs = `-- name: RetrieveIngestionLogs :many
 SELECT id, external_id, data_type, state, request_id, ingestion_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at
 FROM ingestion_logs
