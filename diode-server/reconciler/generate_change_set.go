@@ -14,7 +14,7 @@ import (
 
 func generateChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, branchID string, nbClient netboxdiodeplugin.NetBoxAPI, repository Repository, logger *slog.Logger) (*int32, *changeset.ChangeSet, error) {
 	ingestEntity := differ.IngestEntity{
-		RequestID: ingestionLog.GetId(), // ???(ltucker): GetRequestId() ?
+		RequestID: ingestionLog.GetRequestId(),
 		DataType:  ingestionLog.GetDataType(),
 		Entity:    ingestionLog.GetEntity(),
 		State:     int(ingestionLog.GetState()),
