@@ -9,8 +9,8 @@ import (
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 )
 
-// ToProtobuf converts sqlc structure to analogous protobuf
-func (log IngestionLog) ToProtobuf() (*reconcilerpb.IngestionLog, error) {
+// ToProto converts sqlc structure to analogous protobuf
+func (log IngestionLog) ToProto() (*reconcilerpb.IngestionLog, error) {
 	entity := &diodepb.Entity{}
 	if err := protojson.Unmarshal(log.Entity, entity); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal entity: %w", err)
