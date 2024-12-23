@@ -62,7 +62,7 @@ func (r *Repository) RetrieveIngestionLogByExternalID(ctx context.Context, uuid 
 	if err != nil {
 		return nil, nil, err
 	}
-	log, err := ingestionLog.ToProtobuf()
+	log, err := ingestionLog.ToProto()
 	if err != nil {
 		return nil, nil, err
 	}
