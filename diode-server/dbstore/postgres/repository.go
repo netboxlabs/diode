@@ -62,40 +62,11 @@ func (r *Repository) RetrieveIngestionLogByExternalID(ctx context.Context, uuid 
 	if err != nil {
 		return nil, nil, err
 	}
-	log, err := pgToProtoIngestionLog(ingestionLog)
+	log, err := ingestionLog.ToProtobuf()
 	if err != nil {
 		return nil, nil, err
 	}
 	return &ingestionLog.ID, log, nil
-}
-
-func pgToProtoIngestionLog(ingestionLog postgres.IngestionLog) (*reconcilerpb.IngestionLog, error) {
-	entity := &diodepb.Entity{}
-	if err := protojson.Unmarshal(ingestionLog.Entity, entity); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal entity: %w", err)
-	}
-	var ingestionErr reconcilerpb.IngestionError
-	if ingestionLog.Error != nil {
-		if err := protojson.Unmarshal(ingestionLog.Error, &ingestionErr); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal error: %w", err)
-		}
-	}
-
-	log := &reconcilerpb.IngestionLog{
-		Id:                 ingestionLog.ExternalID,
-		DataType:           ingestionLog.DataType.String,
-		State:              reconcilerpb.State(ingestionLog.State.Int32),
-		RequestId:          ingestionLog.RequestID.String,
-		IngestionTs:        ingestionLog.IngestionTs.Int64,
-		ProducerAppName:    ingestionLog.ProducerAppName.String,
-		ProducerAppVersion: ingestionLog.ProducerAppVersion.String,
-		SdkName:            ingestionLog.SdkName.String,
-		SdkVersion:         ingestionLog.SdkVersion.String,
-		Entity:             entity,
-		Error:              &ingestionErr,
-	}
-
-	return log, nil
 }
 
 // UpdateIngestionLogStateWithError updates an ingestion log with a new state and error.
