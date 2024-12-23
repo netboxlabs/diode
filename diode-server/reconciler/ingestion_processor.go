@@ -20,7 +20,6 @@ import (
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
 	"github.com/netboxlabs/diode/diode-server/reconciler/applier"
 	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
-	"github.com/netboxlabs/diode/diode-server/reconciler/differ"
 	"github.com/netboxlabs/diode/diode-server/sentry"
 )
 
@@ -261,57 +260,21 @@ func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChan
 					return
 				}
 
-				ingestEntity := differ.IngestEntity{
-					RequestID: msg.ingestionLog.GetId(),
-					DataType:  msg.ingestionLog.GetDataType(),
-					Entity:    msg.ingestionLog.GetEntity(),
-					State:     int(msg.ingestionLog.GetState()),
-				}
-
-				changeSet, err := differ.Diff(ctx, ingestEntity, "", p.nbClient)
+				id, changeSet, err := generateChangeSet(ctx, msg.ingestionLogID, msg.ingestionLog, "", p.nbClient, p.repository, p.logger)
 				if err != nil {
-					tags := map[string]string{
-						"request_id": ingestEntity.RequestID,
-					}
-					contextMap := map[string]any{
-						"request_id": ingestEntity.RequestID,
-						"data_type":  ingestEntity.DataType,
-					}
-					sentry.CaptureError(err, tags, "Ingest Entity", contextMap)
-					p.logger.Debug("failed to prepare change set", "ingestionLogID", msg.ingestionLog.GetId(), "error", err)
-
-					msg.errors = append(msg.errors, fmt.Errorf("failed to prepare change set: %v", err))
-
-					ingestionErr := extractIngestionError(err)
-
-					if err = p.repository.UpdateIngestionLogStateWithError(ctx, msg.ingestionLogID, reconcilerpb.State_FAILED, ingestionErr); err != nil {
-						msg.errors = append(msg.errors, err)
-					}
-					break
+					p.logger.Error("error generating changeset", "error", err)
 				}
 
-				msg.changeSet = changeSet
-
-				id, err := p.repository.CreateChangeSet(ctx, *changeSet, msg.ingestionLogID)
-				if err != nil {
-					msg.errors = append(msg.errors, fmt.Errorf("failed to create change set: %v", err))
-				}
-
-				if len(changeSet.ChangeSet) > 0 {
+				if changeSet != nil && len(changeSet.ChangeSet) > 0 {
 					if applyChangeSetChan != nil {
 						applyChangeSetChan <- IngestionLogToProcess{
 							ingestionLogID: msg.ingestionLogID,
 							ingestionLog:   msg.ingestionLog,
 							changeSetID:    *id,
-							changeSet:      msg.changeSet,
+							changeSet:      changeSet,
 						}
 					}
-				} else {
-					if err := p.repository.UpdateIngestionLogStateWithError(ctx, msg.ingestionLogID, reconcilerpb.State_NO_CHANGES, nil); err != nil {
-						msg.errors = append(msg.errors, err)
-					}
 				}
-				p.logger.Debug("change set generated", "id", id, "externalID", msg.changeSet.ChangeSetID, "ingestionLogID", msg.ingestionLogID)
 			}
 		}
 	}()
@@ -342,10 +305,9 @@ func (p *IngestionProcessor) ApplyChangeSet(ctx context.Context, applyChan <-cha
 					return
 				}
 
-				if err := applier.ApplyChangeSet(ctx, p.logger, *msg.changeSet, "", p.nbClient); err != nil {
+				if err := applier.ApplyChangeSet(ctx, p.logger, *msg.changeSet, p.nbClient); err != nil {
 					p.logger.Debug("failed to apply change set", "id", msg.changeSetID, "externalID", msg.changeSet.ChangeSetID, "ingestionLogID", msg.ingestionLogID, "error", err)
 					msg.errors = append(msg.errors, fmt.Errorf("failed to apply change set: %v", err))
-
 					ingestionErr := extractIngestionError(err)
 
 					if err := p.repository.UpdateIngestionLogStateWithError(ctx, msg.ingestionLogID, reconcilerpb.State_FAILED, ingestionErr); err != nil {

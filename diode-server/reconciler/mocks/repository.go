@@ -203,6 +203,74 @@ func (_c *Repository_CreateIngestionLog_Call) RunAndReturn(run func(context.Cont
 	return _c
 }
 
+// RetrieveIngestionLogByExternalID provides a mock function with given fields: ctx, uuid
+func (_m *Repository) RetrieveIngestionLogByExternalID(ctx context.Context, uuid string) (*int32, *reconcilerpb.IngestionLog, error) {
+	ret := _m.Called(ctx, uuid)
+
+	if len(ret) == 0 {
+		panic("no return value specified for RetrieveIngestionLogByExternalID")
+	}
+
+	var r0 *int32
+	var r1 *reconcilerpb.IngestionLog
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*int32, *reconcilerpb.IngestionLog, error)); ok {
+		return rf(ctx, uuid)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) *int32); ok {
+		r0 = rf(ctx, uuid)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*int32)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) *reconcilerpb.IngestionLog); ok {
+		r1 = rf(ctx, uuid)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*reconcilerpb.IngestionLog)
+		}
+	}
+
+	if rf, ok := ret.Get(2).(func(context.Context, string) error); ok {
+		r2 = rf(ctx, uuid)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
+// Repository_RetrieveIngestionLogByExternalID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RetrieveIngestionLogByExternalID'
+type Repository_RetrieveIngestionLogByExternalID_Call struct {
+	*mock.Call
+}
+
+// RetrieveIngestionLogByExternalID is a helper method to define mock.On call
+//   - ctx context.Context
+//   - uuid string
+func (_e *Repository_Expecter) RetrieveIngestionLogByExternalID(ctx interface{}, uuid interface{}) *Repository_RetrieveIngestionLogByExternalID_Call {
+	return &Repository_RetrieveIngestionLogByExternalID_Call{Call: _e.mock.On("RetrieveIngestionLogByExternalID", ctx, uuid)}
+}
+
+func (_c *Repository_RetrieveIngestionLogByExternalID_Call) Run(run func(ctx context.Context, uuid string)) *Repository_RetrieveIngestionLogByExternalID_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *Repository_RetrieveIngestionLogByExternalID_Call) Return(_a0 *int32, _a1 *reconcilerpb.IngestionLog, _a2 error) *Repository_RetrieveIngestionLogByExternalID_Call {
+	_c.Call.Return(_a0, _a1, _a2)
+	return _c
+}
+
+func (_c *Repository_RetrieveIngestionLogByExternalID_Call) RunAndReturn(run func(context.Context, string) (*int32, *reconcilerpb.IngestionLog, error)) *Repository_RetrieveIngestionLogByExternalID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // RetrieveIngestionLogs provides a mock function with given fields: ctx, filter, limit, offset
 func (_m *Repository) RetrieveIngestionLogs(ctx context.Context, filter *reconcilerpb.RetrieveIngestionLogsRequest, limit int32, offset int32) ([]*reconcilerpb.IngestionLog, error) {
 	ret := _m.Called(ctx, filter, limit, offset)

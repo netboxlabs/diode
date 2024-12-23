@@ -56,6 +56,19 @@ func (r *Repository) CreateIngestionLog(ctx context.Context, ingestionLog *recon
 	return &createdIngestionLog.ID, nil
 }
 
+// RetrieveIngestionLogByExternalID looks up an ingestion log using its external identifier (uuid)
+func (r *Repository) RetrieveIngestionLogByExternalID(ctx context.Context, uuid string) (*int32, *reconcilerpb.IngestionLog, error) {
+	ingestionLog, err := r.queries.RetrieveIngestionLogByExternalID(ctx, uuid)
+	if err != nil {
+		return nil, nil, err
+	}
+	log, err := ingestionLog.ToProto()
+	if err != nil {
+		return nil, nil, err
+	}
+	return &ingestionLog.ID, log, nil
+}
+
 // UpdateIngestionLogStateWithError updates an ingestion log with a new state and error.
 func (r *Repository) UpdateIngestionLogStateWithError(ctx context.Context, id int32, state reconcilerpb.State, ingestionError *reconcilerpb.IngestionError) error {
 	params := postgres.UpdateIngestionLogStateWithErrorParams{

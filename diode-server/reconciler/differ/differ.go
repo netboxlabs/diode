@@ -93,11 +93,14 @@ func Diff(ctx context.Context, entity IngestEntity, branchID string, netboxAPI n
 			ObjectID:      objectID,
 			ObjectVersion: nil,
 			Data:          obj.Data(),
-			// TODO(mfiedorowicz): include branchID
 		})
 	}
 
-	return &changeset.ChangeSet{ChangeSetID: uuid.NewString(), ChangeSet: changes}, nil
+	cs := &changeset.ChangeSet{ChangeSetID: uuid.NewString(), ChangeSet: changes}
+	if branchID != "" {
+		cs.BranchID = &branchID
+	}
+	return cs, nil
 }
 
 func retrieveObjectState(ctx context.Context, netboxAPI netboxdiodeplugin.NetBoxAPI, change netbox.ComparableData, branchID string) (netbox.ComparableData, error) {

@@ -26,6 +26,11 @@ WHERE (state = sqlc.narg('state') OR sqlc.narg('state') IS NULL)
 ORDER BY id DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
+-- name: RetrieveIngestionLogByExternalID :one
+SELECT *
+FROM ingestion_logs
+WHERE external_id = $1;
+
 -- name: RetrieveIngestionLogsWithChangeSets :many
 SELECT v_ingestion_logs_with_change_set.*
 FROM v_ingestion_logs_with_change_set
