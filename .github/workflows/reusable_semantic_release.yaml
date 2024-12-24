@@ -27,12 +27,12 @@ jobs:
       group: semantic-release
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+      - uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4
         with:
           node-version: "21.4.0"
       - name: Write package.json
-        uses: DamianReeves/write-file-action@master
+        uses: DamianReeves/write-file-action@6929a9a6d1807689191dcc8bbe62b54d70a32b42 # v1.3
         with:
           path: ${{ inputs.app_dir }}/package.json
           write-mode: overwrite
@@ -46,7 +46,7 @@ jobs:
               }
             }
       - name: Write .releaserc.json
-        uses: DamianReeves/write-file-action@master
+        uses: DamianReeves/write-file-action@6929a9a6d1807689191dcc8bbe62b54d70a32b42 # v1.3
         with:
           path: ${{ inputs.app_dir }}/.releaserc.json
           write-mode: overwrite
