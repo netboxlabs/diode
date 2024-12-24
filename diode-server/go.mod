@@ -1,6 +1,6 @@
 module github.com/netboxlabs/diode/diode-server
 
-go 1.23
+go 1.23.4
 
 require (
 	github.com/alicebob/miniredis/v2 v2.33.0
