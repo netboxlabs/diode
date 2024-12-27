@@ -36,7 +36,7 @@ jobs:
         with:
           node-version: "lts/*"
       - name: Write package.json
-        uses: DamianReeves/write-file-action@master
+        uses: DamianReeves/write-file-action@6929a9a6d1807689191dcc8bbe62b54d70a32b42 # v1.3
         with:
           path: ${{ inputs.app_dir }}/package.json
           write-mode: overwrite
@@ -53,7 +53,7 @@ jobs:
               }
             }
       - name: Write .releaserc.json
-        uses: DamianReeves/write-file-action@master
+        uses: DamianReeves/write-file-action@6929a9a6d1807689191dcc8bbe62b54d70a32b42 # v1.3
         with:
           path: ${{ inputs.app_dir }}/.releaserc.json
           write-mode: overwrite
