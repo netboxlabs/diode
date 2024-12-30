@@ -18,7 +18,6 @@ import (
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 	"github.com/netboxlabs/diode/diode-server/netbox"
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
-	"github.com/netboxlabs/diode/diode-server/reconciler/applier"
 	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
 	"github.com/netboxlabs/diode/diode-server/sentry"
 )
@@ -66,7 +65,6 @@ type IngestionLogToProcess struct {
 	ingestionLog   *reconcilerpb.IngestionLog
 	changeSetID    int32
 	changeSet      *changeset.ChangeSet
-	errors         []error
 }
 
 // NewIngestionProcessor creates a new ingestion processor
@@ -260,7 +258,7 @@ func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChan
 					return
 				}
 
-				id, changeSet, err := generateChangeSet(ctx, msg.ingestionLogID, msg.ingestionLog, "", p.nbClient, p.repository, p.logger)
+				id, changeSet, err := GenerateChangeSet(ctx, msg.ingestionLogID, msg.ingestionLog, "", p.nbClient, p.repository, p.logger)
 				if err != nil {
 					p.logger.Error("error generating changeset", "error", err)
 				}
@@ -305,22 +303,9 @@ func (p *IngestionProcessor) ApplyChangeSet(ctx context.Context, applyChan <-cha
 					return
 				}
 
-				if err := applier.ApplyChangeSet(ctx, p.logger, *msg.changeSet, p.nbClient); err != nil {
-					p.logger.Debug("failed to apply change set", "id", msg.changeSetID, "externalID", msg.changeSet.ChangeSetID, "ingestionLogID", msg.ingestionLogID, "error", err)
-					msg.errors = append(msg.errors, fmt.Errorf("failed to apply change set: %v", err))
-					ingestionErr := extractIngestionError(err)
-
-					if err := p.repository.UpdateIngestionLogStateWithError(ctx, msg.ingestionLogID, reconcilerpb.State_FAILED, ingestionErr); err != nil {
-						msg.errors = append(msg.errors, err)
-					}
-					break
+				if err := ApplyChangeSet(ctx, msg.ingestionLogID, msg.ingestionLog, msg.changeSetID, msg.changeSet, p.nbClient, p.repository, p.logger); err != nil {
+					p.logger.Error("error applying changeset", "error", err)
 				}
-
-				msg.ingestionLog.State = reconcilerpb.State_RECONCILED
-				if err := p.repository.UpdateIngestionLogStateWithError(ctx, msg.ingestionLogID, reconcilerpb.State_RECONCILED, nil); err != nil {
-					msg.errors = append(msg.errors, err)
-				}
-				p.logger.Debug("change set applied", "id", msg.changeSetID, "externalID", msg.changeSet.ChangeSetID, "ingestionLogID", msg.ingestionLogID)
 			}
 		}
 	}()
