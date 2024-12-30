@@ -115,6 +115,11 @@ func (s *Server) Stop() error {
 	return s.redisClient.Close()
 }
 
+// GRPCServer returns the grpc.Server managed by this Server
+func (s *Server) GRPCServer() *grpc.Server {
+	return s.grpcServer
+}
+
 // RetrieveIngestionDataSources retrieves ingestion data sources
 func (s *Server) RetrieveIngestionDataSources(_ context.Context, in *reconcilerpb.RetrieveIngestionDataSourcesRequest) (*reconcilerpb.RetrieveIngestionDataSourcesResponse, error) {
 	if err := validateRetrieveIngestionDataSourcesRequest(in); err != nil {
