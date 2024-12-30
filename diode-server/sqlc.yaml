@@ -14,6 +14,7 @@ sql:
           - column: v_ingestion_logs_with_change_set.change_set
             go_type:
               type: ChangeSet
+              pointer: true
           - column: changes.data
             go_type:
               type: any
