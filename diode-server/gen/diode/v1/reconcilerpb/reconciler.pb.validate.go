@@ -708,6 +708,10 @@ func (m *ChangeSet) validate(all bool) error {
 
 	// no validation rules for Data
 
+	if m.BranchId != nil {
+		// no validation rules for BranchId
+	}
+
 	if len(errors) > 0 {
 		return ChangeSetMultiError(errors)
 	}

@@ -18,3 +18,6 @@ plugins:
   - remote: buf.build/bufbuild/validate-go:v1.0.4
     out: ../
     opt: module=github.com/netboxlabs/diode
+  - remote: buf.build/community/pseudomuto-doc:v1.5.1
+    out: ../docs/
+    opt: markdown,diode-proto.md

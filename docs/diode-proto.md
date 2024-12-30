@@ -27,6 +27,23 @@
 
     - [IngesterService](#diode-v1-IngesterService)
 
+- [diode/v1/reconciler.proto](#diode_v1_reconciler-proto)
+    - [ChangeSet](#diode-v1-ChangeSet)
+    - [IngestionDataSource](#diode-v1-IngestionDataSource)
+    - [IngestionError](#diode-v1-IngestionError)
+    - [IngestionError.Details](#diode-v1-IngestionError-Details)
+    - [IngestionError.Details.Error](#diode-v1-IngestionError-Details-Error)
+    - [IngestionLog](#diode-v1-IngestionLog)
+    - [IngestionMetrics](#diode-v1-IngestionMetrics)
+    - [RetrieveIngestionDataSourcesRequest](#diode-v1-RetrieveIngestionDataSourcesRequest)
+    - [RetrieveIngestionDataSourcesResponse](#diode-v1-RetrieveIngestionDataSourcesResponse)
+    - [RetrieveIngestionLogsRequest](#diode-v1-RetrieveIngestionLogsRequest)
+    - [RetrieveIngestionLogsResponse](#diode-v1-RetrieveIngestionLogsResponse)
+
+    - [State](#diode-v1-State)
+
+    - [ReconcilerService](#diode-v1-ReconcilerService)
+
 - [Scalar Value Types](#scalar-value-types)
 
 <a name="diode_v1_ingester-proto"></a>
@@ -356,6 +373,175 @@ Ingestion API
 | Method Name | Request Type                             | Response Type                              | Description                  |
 |-------------|------------------------------------------|--------------------------------------------|------------------------------|
 | Ingest      | [IngestRequest](#diode-v1-IngestRequest) | [IngestResponse](#diode-v1-IngestResponse) | Ingests data into the system |
+
+<a name="diode_v1_reconciler-proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## diode/v1/reconciler.proto
+
+<a name="diode-v1-ChangeSet"></a>
+
+### ChangeSet
+
+A change set
+
+| Field     | Type              | Label    | Description                                          |
+|-----------|-------------------|----------|------------------------------------------------------|
+| id        | [string](#string) |          | A change set ID                                      |
+| data      | [bytes](#bytes)   |          | Binary data representing the change set              |
+| branch_id | [string](#string) | optional | branch ID against which the change set was generated |
+
+<a name="diode-v1-IngestionDataSource"></a>
+
+### IngestionDataSource
+
+An ingestion data source
+
+| Field   | Type              | Label | Description |
+|---------|-------------------|-------|-------------|
+| name    | [string](#string) |       |             |
+| api_key | [string](#string) |       |             |
+
+<a name="diode-v1-IngestionError"></a>
+
+### IngestionError
+
+IngestionError represents an error occurring while processing an ingestion entity
+
+| Field   | Type                                                       | Label | Description |
+|---------|------------------------------------------------------------|-------|-------------|
+| message | [string](#string)                                          |       |             |
+| code    | [int32](#int32)                                            |       |             |
+| details | [IngestionError.Details](#diode-v1-IngestionError-Details) |       |             |
+
+<a name="diode-v1-IngestionError-Details"></a>
+
+### IngestionError.Details
+
+| Field         | Type                                                                   | Label    | Description |
+|---------------|------------------------------------------------------------------------|----------|-------------|
+| change_set_id | [string](#string)                                                      |          |             |
+| result        | [string](#string)                                                      |          |             |
+| errors        | [IngestionError.Details.Error](#diode-v1-IngestionError-Details-Error) | repeated |             |
+
+<a name="diode-v1-IngestionError-Details-Error"></a>
+
+### IngestionError.Details.Error
+
+| Field     | Type              | Label | Description                 |
+|-----------|-------------------|-------|-----------------------------|
+| error     | [string](#string) |       | key value pair of the error |
+| change_id | [string](#string) |       |                             |
+
+<a name="diode-v1-IngestionLog"></a>
+
+### IngestionLog
+
+An ingestion log
+
+| Field                | Type                                       | Label | Description |
+|----------------------|--------------------------------------------|-------|-------------|
+| id                   | [string](#string)                          |       |             |
+| data_type            | [string](#string)                          |       |             |
+| state                | [State](#diode-v1-State)                   |       |             |
+| request_id           | [string](#string)                          |       |             |
+| ingestion_ts         | [int64](#int64)                            |       |             |
+| producer_app_name    | [string](#string)                          |       |             |
+| producer_app_version | [string](#string)                          |       |             |
+| sdk_name             | [string](#string)                          |       |             |
+| sdk_version          | [string](#string)                          |       |             |
+| entity               | [Entity](#diode-v1-Entity)                 |       |             |
+| error                | [IngestionError](#diode-v1-IngestionError) |       |             |
+| change_set           | [ChangeSet](#diode-v1-ChangeSet)           |       |             |
+
+<a name="diode-v1-IngestionMetrics"></a>
+
+### IngestionMetrics
+
+Ingestion metrics
+
+| Field      | Type            | Label | Description |
+|------------|-----------------|-------|-------------|
+| total      | [int32](#int32) |       |             |
+| queued     | [int32](#int32) |       |             |
+| reconciled | [int32](#int32) |       |             |
+| failed     | [int32](#int32) |       |             |
+| no_changes | [int32](#int32) |       |             |
+
+<a name="diode-v1-RetrieveIngestionDataSourcesRequest"></a>
+
+### RetrieveIngestionDataSourcesRequest
+
+The request to retrieve ingestion data sources
+
+| Field       | Type              | Label | Description |
+|-------------|-------------------|-------|-------------|
+| name        | [string](#string) |       |             |
+| sdk_name    | [string](#string) |       |             |
+| sdk_version | [string](#string) |       |             |
+
+<a name="diode-v1-RetrieveIngestionDataSourcesResponse"></a>
+
+### RetrieveIngestionDataSourcesResponse
+
+The response from the retrieve ingestion data sources request
+
+| Field                  | Type                                                 | Label    | Description |
+|------------------------|------------------------------------------------------|----------|-------------|
+| ingestion_data_sources | [IngestionDataSource](#diode-v1-IngestionDataSource) | repeated |             |
+
+<a name="diode-v1-RetrieveIngestionLogsRequest"></a>
+
+### RetrieveIngestionLogsRequest
+
+The request to retrieve ingestion logs
+
+| Field              | Type                     | Label    | Description                                 |
+|--------------------|--------------------------|----------|---------------------------------------------|
+| page_size          | [int32](#int32)          | optional | Number of logs per page, default is 100     |
+| state              | [State](#diode-v1-State) | optional | Optional filter by state field              |
+| data_type          | [string](#string)        |          | Optional filter by data type field          |
+| request_id         | [string](#string)        |          | Optional filter by request ID               |
+| ingestion_ts_start | [int64](#int64)          |          | Optional start of ingestion timestamp range |
+| ingestion_ts_end   | [int64](#int64)          |          | Optional end of ingestion timestamp range   |
+| page_token         | [string](#string)        |          | Token to fetch the next page of results     |
+| only_metrics       | [bool](#bool)            |          | Flag to return only the ingestion metrics   |
+
+<a name="diode-v1-RetrieveIngestionLogsResponse"></a>
+
+### RetrieveIngestionLogsResponse
+
+The response from the retrieve ingestion logs request
+
+| Field           | Type                                           | Label    | Description                                |
+|-----------------|------------------------------------------------|----------|--------------------------------------------|
+| logs            | [IngestionLog](#diode-v1-IngestionLog)         | repeated | List of ingestion logs                     |
+| metrics         | [IngestionMetrics](#diode-v1-IngestionMetrics) |          | ingestion metrics                          |
+| next_page_token | [string](#string)                              |          | Token for the next page of results, if any |
+
+<a name="diode-v1-State"></a>
+
+### State
+
+| Name        | Number | Description |
+|-------------|--------|-------------|
+| UNSPECIFIED | 0      |             |
+| QUEUED      | 1      |             |
+| RECONCILED  | 2      |             |
+| FAILED      | 3      |             |
+| NO_CHANGES  | 4      |             |
+| IGNORED     | 5      |             |
+
+<a name="diode-v1-ReconcilerService"></a>
+
+### ReconcilerService
+
+Reconciler service API
+
+| Method Name                  | Request Type                                                                         | Response Type                                                                          | Description                      |
+|------------------------------|--------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|----------------------------------|
+| RetrieveIngestionDataSources | [RetrieveIngestionDataSourcesRequest](#diode-v1-RetrieveIngestionDataSourcesRequest) | [RetrieveIngestionDataSourcesResponse](#diode-v1-RetrieveIngestionDataSourcesResponse) | Retrieves ingestion data sources |
+| RetrieveIngestionLogs        | [RetrieveIngestionLogsRequest](#diode-v1-RetrieveIngestionLogsRequest)               | [RetrieveIngestionLogsResponse](#diode-v1-RetrieveIngestionLogsResponse)               | Retrieves ingestion logs         |
 
 ## Scalar Value Types
 

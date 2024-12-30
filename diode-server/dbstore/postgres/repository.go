@@ -179,9 +179,15 @@ func (r *Repository) RetrieveIngestionLogs(ctx context.Context, filter *reconcil
 				changes = append(changes, change)
 			}
 
+			var branchID *string
+			if row.ChangeSet.BranchID.Valid {
+				branchID = &row.ChangeSet.BranchID.String
+			}
+
 			changeSet := &changeset.ChangeSet{
 				ChangeSetID: row.ChangeSet.ExternalID,
 				ChangeSet:   changes,
+				BranchID:    branchID,
 			}
 
 			var compressedChangeSet []byte
@@ -194,8 +200,9 @@ func (r *Repository) RetrieveIngestionLogs(ctx context.Context, filter *reconcil
 			}
 
 			log.ChangeSet = &reconcilerpb.ChangeSet{
-				Id:   row.ChangeSet.ExternalID,
-				Data: compressedChangeSet,
+				Id:       row.ChangeSet.ExternalID,
+				Data:     compressedChangeSet,
+				BranchId: branchID,
 			}
 		}
 
