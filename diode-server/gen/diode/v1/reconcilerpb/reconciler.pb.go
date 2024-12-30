@@ -380,9 +380,9 @@ func (x *IngestionMetrics) GetNoChanges() int32 {
 // A change set
 type ChangeSet struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`     // A change set ID
-	Data          []byte                 `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"` // Binary data representing the change set
-	BranchId      *string                `protobuf:"bytes,3,opt,name=branch_id,json=branchId,proto3,oneof" json:"branch_id,omitempty"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                                   // A change set ID
+	Data          []byte                 `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`                               // Binary data representing the change set
+	BranchId      *string                `protobuf:"bytes,3,opt,name=branch_id,json=branchId,proto3,oneof" json:"branch_id,omitempty"` // branch ID against which the change set was generated
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

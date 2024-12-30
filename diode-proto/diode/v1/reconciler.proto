@@ -75,7 +75,7 @@ message IngestionMetrics {
 message ChangeSet {
   string id = 1; // A change set ID
   bytes data = 2; // Binary data representing the change set
-  optional string branch_id = 3;
+  optional string branch_id = 3; // branch ID against which the change set was generated
 }
 
 // An ingestion log
