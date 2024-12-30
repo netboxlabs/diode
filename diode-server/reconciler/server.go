@@ -177,7 +177,7 @@ func isAuthenticated(logger *slog.Logger, rpcMethod string, apiKeys APIKeys, aut
 			return false
 		}
 		return apiKey == ingesterToReconcilerAPIKey
-	case reconcilerpb.ReconcilerService_RetrieveIngestionLogs_FullMethodName:
+	default:
 		netboxToDiode, ok := apiKeys["NETBOX_TO_DIODE"]
 		if !ok {
 			logger.Debug("missing NETBOX_TO_DIODE API key")
@@ -185,6 +185,4 @@ func isAuthenticated(logger *slog.Logger, rpcMethod string, apiKeys APIKeys, aut
 		}
 		return apiKey == netboxToDiode
 	}
-
-	return false
 }
