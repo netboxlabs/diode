@@ -65,6 +65,6 @@ type VIngestionLogsWithChangeSet struct {
 	SourceMetadata     []byte             `json:"source_metadata"`
 	CreatedAt          pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
-	ChangeSet          ChangeSet          `json:"change_set"`
+	ChangeSet          *ChangeSet         `json:"change_set"`
 	Changes            []byte             `json:"changes"`
 }
