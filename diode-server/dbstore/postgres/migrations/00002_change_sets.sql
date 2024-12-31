@@ -45,7 +45,7 @@ ALTER TABLE changes
 
 -- Create a view to join ingestion_logs with aggregated change_set and changes
 CREATE VIEW v_ingestion_logs_with_change_set AS
-SELECT ingestion_logs.*,
+SELECT DISTINCT ON (ingestion_logs.id) ingestion_logs.*,
        row_to_json(change_sets.*)                                                                       AS change_set,
        JSON_AGG(changes.* ORDER BY changes.sequence_number ASC) FILTER ( WHERE changes.id IS NOT NULL ) AS changes
 FROM ingestion_logs
