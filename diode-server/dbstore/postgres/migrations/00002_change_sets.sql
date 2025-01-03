@@ -26,7 +26,6 @@ CREATE TABLE IF NOT EXISTS changes
     object_type     VARCHAR(255) NOT NULL,
     object_id       INTEGER,
     object_version  INTEGER,
-    deviation_name  VARCHAR(255),
     data            JSONB,
     sequence_number INTEGER,
     created_at      TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,

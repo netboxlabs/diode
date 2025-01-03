@@ -13,10 +13,10 @@ import (
 
 const createChange = `-- name: CreateChange :one
 
-INSERT INTO changes (external_id, change_set_id, change_type, object_type, object_id, object_version, deviation_name, data,
+INSERT INTO changes (external_id, change_set_id, change_type, object_type, object_id, object_version, data,
                      sequence_number)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-RETURNING id, external_id, change_set_id, change_type, object_type, object_id, object_version, deviation_name, data, sequence_number, created_at, updated_at
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+RETURNING id, external_id, change_set_id, change_type, object_type, object_id, object_version, data, sequence_number, created_at, updated_at
 `
 
 type CreateChangeParams struct {
@@ -26,7 +26,6 @@ type CreateChangeParams struct {
 	ObjectType     string      `json:"object_type"`
 	ObjectID       pgtype.Int4 `json:"object_id"`
 	ObjectVersion  pgtype.Int4 `json:"object_version"`
-	DeviationName  pgtype.Text `json:"deviation_name"`
 	Data           any         `json:"data"`
 	SequenceNumber pgtype.Int4 `json:"sequence_number"`
 }
@@ -39,7 +38,6 @@ func (q *Queries) CreateChange(ctx context.Context, arg CreateChangeParams) (Cha
 		arg.ObjectType,
 		arg.ObjectID,
 		arg.ObjectVersion,
-		arg.DeviationName,
 		arg.Data,
 		arg.SequenceNumber,
 	)
@@ -52,7 +50,6 @@ func (q *Queries) CreateChange(ctx context.Context, arg CreateChangeParams) (Cha
 		&i.ObjectType,
 		&i.ObjectID,
 		&i.ObjectVersion,
-		&i.DeviationName,
 		&i.Data,
 		&i.SequenceNumber,
 		&i.CreatedAt,

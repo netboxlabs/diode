@@ -171,9 +171,6 @@ func (r *Repository) RetrieveIngestionLogs(ctx context.Context, filter *reconcil
 					ObjectType: dbChange.ObjectType,
 					Data:       dbChange.Data,
 				}
-				if dbChange.DeviationName.Valid {
-					change.DeviationName = dbChange.DeviationName.String
-				}
 
 				objID := int(dbChange.ObjectID.Int32)
 				if dbChange.ObjectID.Valid {
@@ -278,9 +275,6 @@ func (r *Repository) CreateChangeSet(ctx context.Context, changeSet changeset.Ch
 		}
 		if change.ObjectVersion != nil {
 			changeParams.ObjectVersion = pgtype.Int4{Int32: int32(*change.ObjectVersion), Valid: true}
-		}
-		if change.DeviationName != "" {
-			changeParams.DeviationName = pgtype.Text{String: change.DeviationName, Valid: true}
 		}
 
 		if _, err = qtx.CreateChange(ctx, changeParams); err != nil {

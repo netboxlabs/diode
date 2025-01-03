@@ -16,7 +16,6 @@ type Change struct {
 	ObjectType     string             `json:"object_type"`
 	ObjectID       pgtype.Int4        `json:"object_id"`
 	ObjectVersion  pgtype.Int4        `json:"object_version"`
-	DeviationName  pgtype.Text        `json:"deviation_name"`
 	Data           any                `json:"data"`
 	SequenceNumber pgtype.Int4        `json:"sequence_number"`
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`

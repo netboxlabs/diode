@@ -6,7 +6,7 @@ RETURNING *;
 
 -- name: CreateChange :one
 
-INSERT INTO changes (external_id, change_set_id, change_type, object_type, object_id, object_version, deviation_name, data,
+INSERT INTO changes (external_id, change_set_id, change_type, object_type, object_id, object_version, data,
                      sequence_number)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 RETURNING *;

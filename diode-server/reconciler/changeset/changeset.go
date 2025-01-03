@@ -32,7 +32,6 @@ type Change struct {
 	ObjectID      *int   `json:"object_id,omitempty"`
 	ObjectVersion *int   `json:"object_version,omitempty"`
 	Data          any    `json:"data"`
-	DeviationName string `json:"deviation_name"`
 }
 
 // CompressChangeSet compresses a change set

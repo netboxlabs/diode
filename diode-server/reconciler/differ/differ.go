@@ -73,24 +73,18 @@ func Diff(ctx context.Context, entity IngestEntity, branchID string, netboxAPI n
 		return nil, err
 	}
 
-	var deviationName string
-
 	// process objectsToReconcile and prepare change set to return
 	changes := make([]changeset.Change, 0)
 
 	for _, obj := range objectsToReconcile {
 		operation := changeset.ChangeTypeCreate
-		deviationOperationName := "discovered"
 		var objectID *int
 
 		id := obj.ID()
 		if id > 0 {
 			objectID = &id
 			operation = changeset.ChangeTypeUpdate
-			deviationOperationName = "modified"
 		}
-
-		deviationName = fmt.Sprintf("%s %s %s", obj.ObjectTypeName(), obj.PrimaryValue(), deviationOperationName)
 
 		changes = append(changes, changeset.Change{
 			ChangeID:      uuid.NewString(),
@@ -99,17 +93,12 @@ func Diff(ctx context.Context, entity IngestEntity, branchID string, netboxAPI n
 			ObjectID:      objectID,
 			ObjectVersion: nil,
 			Data:          obj.Data(),
-			DeviationName: deviationName,
 		})
 	}
 
-	if len(changes) > 0 {
-		// get last change (primary change) to determine change set deviation name
-		primaryChange := changes[len(changes)-1]
-		deviationName = primaryChange.DeviationName
-	}
+	deviationName := genDeviationName(objectsToReconcile)
 
-	cs := &changeset.ChangeSet{ChangeSetID: uuid.NewString(), ChangeSet: changes, DeviationName: &deviationName}
+	cs := &changeset.ChangeSet{ChangeSetID: uuid.NewString(), ChangeSet: changes, DeviationName: deviationName}
 	if branchID != "" {
 		cs.BranchID = &branchID
 	}
@@ -200,4 +189,21 @@ func extractNetBoxObjectStateData(obj ObjectState) (netbox.ComparableData, error
 	dw.Normalise()
 
 	return dw, nil
+}
+
+func genDeviationName(objects []netbox.ComparableData) *string {
+	if len(objects) == 0 {
+		return nil
+	}
+
+	primaryObject := objects[len(objects)-1]
+	deviationName := fmt.Sprintf("%s %s", primaryObject.ObjectTypeName(), primaryObject.PrimaryValue())
+
+	if primaryObject.ID() > 0 {
+		deviationName += " modified"
+	} else {
+		deviationName += " discovered"
+	}
+
+	return &deviationName
 }
