@@ -55,6 +55,13 @@ func GenerateChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *
 		}
 	}
 
+	ingestionLog.State = reconcilerpb.State_OPEN
+	if err := repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, reconcilerpb.State_OPEN, nil); err != nil {
+		logger.Warn("failed to update ingestion log state (error ignored)", "ingestionLogID", ingestionLogID, "error", err)
+		// TODO(ltucker): This should be in a transaction.  Can leave an inconsistent state marked on the ingestion log.
+		// return nil, err
+	}
+
 	logger.Debug("change set generated", "id", changeSetID, "externalID", changeSet.ChangeSetID, "ingestionLogID", ingestionLogID)
 	return changeSetID, changeSet, nil
 }

@@ -387,7 +387,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 					},
 				},
 				IngestionTs: time.Now().UnixNano(),
-				State:       reconcilerpb.State_OPEN,
+				State:       reconcilerpb.State_QUEUED,
 			},
 			mockRetrieveObjectStateResponse: &netboxdiodeplugin.ObjectState{
 				ObjectType: "dcim.site",
@@ -459,6 +459,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 
 			ingestionLogID := int32(1)
 
+			mockRepository.On("UpdateIngestionLogStateWithError", ctx, ingestionLogID, reconcilerpb.State_OPEN, mock.Anything).Return(nil)
 			mockNbClient.On("RetrieveObjectState", ctx, mock.Anything).Return(tt.mockRetrieveObjectStateResponse, nil)
 			if tt.autoApplyChangesets {
 				mockRepository.On("UpdateIngestionLogStateWithError", ctx, ingestionLogID, tt.expectedStatus, mock.Anything).Return(nil)

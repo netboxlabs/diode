@@ -315,15 +315,15 @@ func TestRetrieveLogs(t *testing.T) {
 			hasError: false,
 		},
 		{
-			name: "filter by open state",
-			in:   reconcilerpb.RetrieveIngestionLogsRequest{State: reconcilerpb.State_OPEN.Enum()},
+			name: "filter by queued state",
+			in:   reconcilerpb.RetrieveIngestionLogsRequest{State: reconcilerpb.State_QUEUED.Enum()},
 			ingestionLogsPerState: map[reconcilerpb.State]int32{
-				reconcilerpb.State_OPEN: 1,
+				reconcilerpb.State_QUEUED: 1,
 			},
 			ingestionLogs: []*reconcilerpb.IngestionLog{
 				{
 					ObjectType:         "dcim.interface",
-					State:              reconcilerpb.State_OPEN,
+					State:              reconcilerpb.State_QUEUED,
 					RequestId:          "req-id",
 					IngestionTs:        1725552914392208722,
 					ProducerAppName:    "diode-agent",
@@ -347,7 +347,7 @@ func TestRetrieveLogs(t *testing.T) {
 				Logs: []*reconcilerpb.IngestionLog{
 					{
 						ObjectType:         "dcim.interface",
-						State:              reconcilerpb.State_OPEN,
+						State:              reconcilerpb.State_QUEUED,
 						RequestId:          "req-id",
 						IngestionTs:        1725552914392208722,
 						ProducerAppName:    "diode-agent",
@@ -860,7 +860,7 @@ func TestRetrieveIngestionLogsMetricsOnly(t *testing.T) {
 			}
 
 			ingestionLogStateMetricsMap := map[reconcilerpb.State]int32{
-				reconcilerpb.State_OPEN:       expected.Queued,
+				reconcilerpb.State_QUEUED:     expected.Queued,
 				reconcilerpb.State_APPLIED:    expected.Reconciled,
 				reconcilerpb.State_FAILED:     expected.Failed,
 				reconcilerpb.State_NO_CHANGES: expected.NoChanges,

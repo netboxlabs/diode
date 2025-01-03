@@ -340,7 +340,7 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 			ObjectType:         objectType,
 			Entity:             v,
 			IngestionTs:        int64(ingestionTs),
-			State:              reconcilerpb.State_OPEN,
+			State:              reconcilerpb.State_QUEUED,
 		}
 
 		id, err := p.repository.CreateIngestionLog(ctx, ingestionLog, nil)
