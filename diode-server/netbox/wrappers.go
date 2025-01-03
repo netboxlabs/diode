@@ -13,6 +13,9 @@ import (
 const (
 	// ExtrasTagObjectType represents the tag object type
 	ExtrasTagObjectType = "extras.tag"
+
+	// ExtrasTagObjectTypeName represents the tag object name
+	ExtrasTagObjectTypeName = "Tag"
 )
 
 // ComparableData is an interface for NetBox comparable data
@@ -57,6 +60,9 @@ type ComparableData interface {
 
 	// HasChanged returns true if the data has changed
 	HasChanged() bool
+
+	// PrimaryValue returns the primary value of the data
+	PrimaryValue() string
 }
 
 // BaseDataWrapper is the base struct for all data wrappers
@@ -133,6 +139,11 @@ func (dw *TagDataWrapper) ObjectType() string {
 	return ExtrasTagObjectType
 }
 
+// ObjectTypeName returns the object type name
+func (dw *TagDataWrapper) ObjectTypeName() string {
+	return ExtrasTagObjectTypeName
+}
+
 // ObjectStateQueryParams returns the query parameters needed to retrieve its object state
 func (dw *TagDataWrapper) ObjectStateQueryParams() map[string]string {
 	return map[string]string{
@@ -167,6 +178,11 @@ func (dw *TagDataWrapper) Patch(cmp ComparableData, _ map[string]ComparableData)
 
 // SetDefaults sets the default values for the platform
 func (dw *TagDataWrapper) SetDefaults() {}
+
+// PrimaryValue returns the primary value of the data
+func (dw *TagDataWrapper) PrimaryValue() string {
+	return dw.Tag.Name
+}
 
 // FromProtoTags converts a slice of diode tags to a slice of NetBox tags
 func FromProtoTags(tagsPb []*diodepb.Tag) []*Tag {

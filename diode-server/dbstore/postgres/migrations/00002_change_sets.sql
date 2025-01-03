@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS change_sets
     external_id      VARCHAR(255) NOT NULL,
     ingestion_log_id INTEGER      NOT NULL,
     branch_id        VARCHAR(255),
+    deviation_name   VARCHAR(255),
     created_at       TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at       TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -22,9 +23,10 @@ CREATE TABLE IF NOT EXISTS changes
     external_id     VARCHAR(255) NOT NULL,
     change_set_id   INTEGER      NOT NULL,
     change_type     VARCHAR(50)  NOT NULL,
-    object_type     VARCHAR(100) NOT NULL,
+    object_type     VARCHAR(255) NOT NULL,
     object_id       INTEGER,
     object_version  INTEGER,
+    deviation_name  VARCHAR(255),
     data            JSONB,
     sequence_number INTEGER,
     created_at      TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,

@@ -73,30 +73,43 @@ func Diff(ctx context.Context, entity IngestEntity, branchID string, netboxAPI n
 		return nil, err
 	}
 
+	var deviationName string
+
 	// process objectsToReconcile and prepare change set to return
 	changes := make([]changeset.Change, 0)
 
 	for _, obj := range objectsToReconcile {
 		operation := changeset.ChangeTypeCreate
+		deviationOperationName := "discovered"
 		var objectID *int
 
 		id := obj.ID()
 		if id > 0 {
 			objectID = &id
 			operation = changeset.ChangeTypeUpdate
+			deviationOperationName = "modified"
 		}
+
+		deviationName = fmt.Sprintf("%s %s %s", obj.ObjectTypeName(), obj.PrimaryValue(), deviationOperationName)
 
 		changes = append(changes, changeset.Change{
 			ChangeID:      uuid.NewString(),
 			ChangeType:    operation,
-			ObjectType:    obj.DataType(),
+			ObjectType:    obj.ObjectType(),
 			ObjectID:      objectID,
 			ObjectVersion: nil,
 			Data:          obj.Data(),
+			DeviationName: deviationName,
 		})
 	}
 
-	cs := &changeset.ChangeSet{ChangeSetID: uuid.NewString(), ChangeSet: changes}
+	if len(changes) > 0 {
+		// get last change (primary change) to determine change set deviation name
+		primaryChange := changes[len(changes)-1]
+		deviationName = primaryChange.DeviationName
+	}
+
+	cs := &changeset.ChangeSet{ChangeSetID: uuid.NewString(), ChangeSet: changes, DeviationName: &deviationName}
 	if branchID != "" {
 		cs.BranchID = &branchID
 	}

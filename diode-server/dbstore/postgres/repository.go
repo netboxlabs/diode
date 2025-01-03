@@ -171,6 +171,9 @@ func (r *Repository) RetrieveIngestionLogs(ctx context.Context, filter *reconcil
 					ObjectType: dbChange.ObjectType,
 					Data:       dbChange.Data,
 				}
+				if dbChange.DeviationName.Valid {
+					change.DeviationName = dbChange.DeviationName.String
+				}
 
 				objID := int(dbChange.ObjectID.Int32)
 				if dbChange.ObjectID.Valid {
@@ -189,10 +192,16 @@ func (r *Repository) RetrieveIngestionLogs(ctx context.Context, filter *reconcil
 				branchID = &row.ChangeSet.BranchID.String
 			}
 
+			var deviationName *string
+			if row.ChangeSet.DeviationName.Valid {
+				deviationName = &row.ChangeSet.DeviationName.String
+			}
+
 			changeSet := &changeset.ChangeSet{
-				ChangeSetID: row.ChangeSet.ExternalID,
-				ChangeSet:   changes,
-				BranchID:    branchID,
+				ChangeSetID:   row.ChangeSet.ExternalID,
+				ChangeSet:     changes,
+				BranchID:      branchID,
+				DeviationName: deviationName,
 			}
 
 			var compressedChangeSet []byte
@@ -205,9 +214,10 @@ func (r *Repository) RetrieveIngestionLogs(ctx context.Context, filter *reconcil
 			}
 
 			log.ChangeSet = &reconcilerpb.ChangeSet{
-				Id:       row.ChangeSet.ExternalID,
-				Data:     compressedChangeSet,
-				BranchId: branchID,
+				Id:            row.ChangeSet.ExternalID,
+				Data:          compressedChangeSet,
+				BranchId:      branchID,
+				DeviationName: deviationName,
 			}
 		}
 
@@ -238,6 +248,10 @@ func (r *Repository) CreateChangeSet(ctx context.Context, changeSet changeset.Ch
 	if changeSet.BranchID != nil {
 		params.BranchID = pgtype.Text{String: *changeSet.BranchID, Valid: true}
 	}
+	if changeSet.DeviationName != nil {
+		params.DeviationName = pgtype.Text{String: *changeSet.DeviationName, Valid: true}
+	}
+
 	cs, err := qtx.CreateChangeSet(ctx, params)
 	if err != nil {
 		rollback()
@@ -264,6 +278,9 @@ func (r *Repository) CreateChangeSet(ctx context.Context, changeSet changeset.Ch
 		}
 		if change.ObjectVersion != nil {
 			changeParams.ObjectVersion = pgtype.Int4{Int32: int32(*change.ObjectVersion), Valid: true}
+		}
+		if change.DeviationName != "" {
+			changeParams.DeviationName = pgtype.Text{String: change.DeviationName, Valid: true}
 		}
 
 		if _, err = qtx.CreateChange(ctx, changeParams); err != nil {

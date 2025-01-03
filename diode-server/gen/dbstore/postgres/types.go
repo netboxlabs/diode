@@ -16,6 +16,7 @@ type Change struct {
 	ObjectType     string             `json:"object_type"`
 	ObjectID       pgtype.Int4        `json:"object_id"`
 	ObjectVersion  pgtype.Int4        `json:"object_version"`
+	DeviationName  pgtype.Text        `json:"deviation_name"`
 	Data           any                `json:"data"`
 	SequenceNumber pgtype.Int4        `json:"sequence_number"`
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
@@ -27,6 +28,7 @@ type ChangeSet struct {
 	ExternalID     string             `json:"external_id"`
 	IngestionLogID int32              `json:"ingestion_log_id"`
 	BranchID       pgtype.Text        `json:"branch_id"`
+	DeviationName  pgtype.Text        `json:"deviation_name"`
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
 }

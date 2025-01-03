@@ -385,11 +385,12 @@ Ingestion API
 
 A change set
 
-| Field     | Type              | Label    | Description                                          |
-|-----------|-------------------|----------|------------------------------------------------------|
-| id        | [string](#string) |          | A change set ID                                      |
-| data      | [bytes](#bytes)   |          | Binary data representing the change set              |
-| branch_id | [string](#string) | optional | branch ID against which the change set was generated |
+| Field          | Type              | Label    | Description                                          |
+|----------------|-------------------|----------|------------------------------------------------------|
+| id             | [string](#string) |          | A change set ID                                      |
+| data           | [bytes](#bytes)   |          | Binary data representing the change set              |
+| branch_id      | [string](#string) | optional | branch ID against which the change set was generated |
+| deviation_name | [string](#string) | optional | deviation name                                       |
 
 <a name="diode-v1-IngestionDataSource"></a>
 

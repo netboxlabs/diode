@@ -712,6 +712,10 @@ func (m *ChangeSet) validate(all bool) error {
 		// no validation rules for BranchId
 	}
 
+	if m.DeviationName != nil {
+		// no validation rules for DeviationName
+	}
+
 	if len(errors) > 0 {
 		return ChangeSetMultiError(errors)
 	}
@@ -916,6 +920,8 @@ func (m *IngestionLog) validate(all bool) error {
 		}
 	}
 
+	// no validation rules for ObjectType
+
 	if len(errors) > 0 {
 		return IngestionLogMultiError(errors)
 	}
@@ -1026,6 +1032,8 @@ func (m *RetrieveIngestionLogsRequest) validate(all bool) error {
 	// no validation rules for PageToken
 
 	// no validation rules for OnlyMetrics
+
+	// no validation rules for ObjectType
 
 	if m.PageSize != nil {
 		// no validation rules for PageSize

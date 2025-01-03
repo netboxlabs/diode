@@ -142,6 +142,11 @@ func (dw *DcimDeviceDataWrapper) ObjectType() string {
 	return DcimDeviceObjectType
 }
 
+// ObjectTypeName returns the object type name
+func (dw *DcimDeviceDataWrapper) ObjectTypeName() string {
+	return DcimDeviceObjectTypeName
+}
+
 // ObjectStateQueryParams returns the query parameters needed to retrieve its object state
 func (dw *DcimDeviceDataWrapper) ObjectStateQueryParams() map[string]string {
 	params := map[string]string{
@@ -501,6 +506,11 @@ func (dw *DcimDeviceDataWrapper) SetDefaults() {
 	}
 }
 
+// PrimaryValue returns the primary value of the data
+func (dw *DcimDeviceDataWrapper) PrimaryValue() string {
+	return dw.Device.Name
+}
+
 // DcimDeviceRoleDataWrapper represents a DCIM device role data wrapper
 type DcimDeviceRoleDataWrapper struct {
 	BaseDataWrapper
@@ -584,6 +594,11 @@ func (dw *DcimDeviceRoleDataWrapper) NestedObjects() ([]ComparableData, error) {
 // ObjectType returns the object type
 func (dw *DcimDeviceRoleDataWrapper) ObjectType() string {
 	return DcimDeviceRoleObjectType
+}
+
+// ObjectTypeName returns the object type name
+func (dw *DcimDeviceRoleDataWrapper) ObjectTypeName() string {
+	return DcimDeviceRoleObjectTypeName
 }
 
 // ObjectStateQueryParams returns the query parameters needed to retrieve its object state
@@ -673,6 +688,11 @@ func (dw *DcimDeviceRoleDataWrapper) SetDefaults() {
 	}
 }
 
+// PrimaryValue returns the primary value of the data
+func (dw *DcimDeviceRoleDataWrapper) PrimaryValue() string {
+	return dw.DeviceRole.Name
+}
+
 // DcimDeviceTypeDataWrapper represents a DCIM device type data wrapper
 type DcimDeviceTypeDataWrapper struct {
 	BaseDataWrapper
@@ -715,6 +735,11 @@ func (dw *DcimDeviceTypeDataWrapper) Normalise() {
 // ObjectType returns the object type
 func (dw *DcimDeviceTypeDataWrapper) ObjectType() string {
 	return DcimDeviceTypeObjectType
+}
+
+// ObjectTypeName returns the object type name
+func (dw *DcimDeviceTypeDataWrapper) ObjectTypeName() string {
+	return DcimDeviceTypeObjectTypeName
 }
 
 // ObjectStateQueryParams returns the query parameters needed to retrieve its object state
@@ -928,6 +953,11 @@ func (dw *DcimDeviceTypeDataWrapper) Patch(cmp ComparableData, intendedNestedObj
 // SetDefaults sets the default values for the device type
 func (dw *DcimDeviceTypeDataWrapper) SetDefaults() {}
 
+// PrimaryValue returns the primary value of the data
+func (dw *DcimDeviceTypeDataWrapper) PrimaryValue() string {
+	return dw.DeviceType.Model
+}
+
 // DcimInterfaceDataWrapper represents a DCIM interface data wrapper
 type DcimInterfaceDataWrapper struct {
 	BaseDataWrapper
@@ -1025,6 +1055,11 @@ func (dw *DcimInterfaceDataWrapper) NestedObjects() ([]ComparableData, error) {
 // ObjectType returns the object type
 func (dw *DcimInterfaceDataWrapper) ObjectType() string {
 	return DcimInterfaceObjectType
+}
+
+// ObjectTypeName returns the object type name
+func (dw *DcimInterfaceDataWrapper) ObjectTypeName() string {
+	return DcimInterfaceObjectTypeName
 }
 
 // ObjectStateQueryParams returns the query parameters needed to retrieve its object state
@@ -1233,6 +1268,11 @@ func (dw *DcimInterfaceDataWrapper) SetDefaults() {
 	}
 }
 
+// PrimaryValue returns the primary value of the data
+func (dw *DcimInterfaceDataWrapper) PrimaryValue() string {
+	return dw.Interface.Name
+}
+
 // DcimManufacturerDataWrapper represents a DCIM manufacturer data wrapper
 type DcimManufacturerDataWrapper struct {
 	BaseDataWrapper
@@ -1316,6 +1356,11 @@ func (dw *DcimManufacturerDataWrapper) NestedObjects() ([]ComparableData, error)
 // ObjectType returns the object type
 func (dw *DcimManufacturerDataWrapper) ObjectType() string {
 	return DcimManufacturerObjectType
+}
+
+// ObjectTypeName returns the object type name
+func (dw *DcimManufacturerDataWrapper) ObjectTypeName() string {
+	return DcimManufacturerObjectTypeName
 }
 
 // ObjectStateQueryParams returns the query parameters needed to retrieve its object state
@@ -1419,6 +1464,11 @@ func mergeTags(actualTags []*Tag, intendedTags []*Tag, intendedNestedObjects map
 // SetDefaults sets the default values for the manufacturer
 func (dw *DcimManufacturerDataWrapper) SetDefaults() {}
 
+// PrimaryValue returns the primary value of the data
+func (dw *DcimManufacturerDataWrapper) PrimaryValue() string {
+	return dw.Manufacturer.Name
+}
+
 // DcimPlatformDataWrapper represents a DCIM platform data wrapper
 type DcimPlatformDataWrapper struct {
 	BaseDataWrapper
@@ -1515,6 +1565,11 @@ func (dw *DcimPlatformDataWrapper) NestedObjects() ([]ComparableData, error) {
 // ObjectType returns the object type
 func (dw *DcimPlatformDataWrapper) ObjectType() string {
 	return DcimPlatformObjectType
+}
+
+// ObjectTypeName returns the object type name
+func (dw *DcimPlatformDataWrapper) ObjectTypeName() string {
+	return DcimPlatformObjectTypeName
 }
 
 // ObjectStateQueryParams returns the query parameters needed to retrieve its object state
@@ -1679,6 +1734,11 @@ func (dw *DcimPlatformDataWrapper) Patch(cmp ComparableData, intendedNestedObjec
 // SetDefaults sets the default values for the platform
 func (dw *DcimPlatformDataWrapper) SetDefaults() {}
 
+// PrimaryValue returns the primary value of the data
+func (dw *DcimPlatformDataWrapper) PrimaryValue() string {
+	return dw.Platform.Name
+}
+
 // DcimSiteDataWrapper represents a DCIM site data wrapper
 type DcimSiteDataWrapper struct {
 	BaseDataWrapper
@@ -1762,6 +1822,11 @@ func (dw *DcimSiteDataWrapper) NestedObjects() ([]ComparableData, error) {
 // ObjectType returns the object type
 func (dw *DcimSiteDataWrapper) ObjectType() string {
 	return DcimSiteObjectType
+}
+
+// ObjectTypeName returns the object type name
+func (dw *DcimSiteDataWrapper) ObjectTypeName() string {
+	return DcimSiteObjectTypeName
 }
 
 // ObjectStateQueryParams returns the query parameters needed to retrieve its object state
@@ -1861,4 +1926,9 @@ func (dw *DcimSiteDataWrapper) SetDefaults() {
 		status := DcimSiteStatusActive
 		dw.Site.Status = &status
 	}
+}
+
+// PrimaryValue returns the primary value of the data
+func (dw *DcimSiteDataWrapper) PrimaryValue() string {
+	return dw.Site.Name
 }

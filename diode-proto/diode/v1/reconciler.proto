@@ -76,6 +76,7 @@ message ChangeSet {
   string id = 1; // A change set ID
   bytes data = 2; // Binary data representing the change set
   optional string branch_id = 3; // branch ID against which the change set was generated
+  optional string deviation_name = 4; // deviation name
 }
 
 // An ingestion log
