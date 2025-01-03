@@ -124,7 +124,7 @@ func TestRetrieveLogs(t *testing.T) {
 			ingestionLogs: []*reconcilerpb.IngestionLog{
 				{
 					Id:                 "2mAT7vZ38H4ttI0i5dBebwJbSnZ",
-					DataType:           "dcim.interface",
+					ObjectType:         "dcim.interface",
 					State:              reconcilerpb.State_RECONCILED,
 					RequestId:          "req-id",
 					IngestionTs:        1725552914392208722,
@@ -146,7 +146,7 @@ func TestRetrieveLogs(t *testing.T) {
 				},
 				{
 					Id:                 "2mC8GVBGFg6NyLsQxuS4IYMB6FI",
-					DataType:           "dcim.device",
+					ObjectType:         "dcim.device",
 					State:              reconcilerpb.State_RECONCILED,
 					RequestId:          "bc1052e3-656a-42f0-b364-27b385e02a0c",
 					IngestionTs:        1725552654541975975,
@@ -175,7 +175,7 @@ func TestRetrieveLogs(t *testing.T) {
 			response: &reconcilerpb.RetrieveIngestionLogsResponse{
 				Logs: []*reconcilerpb.IngestionLog{
 					{
-						DataType:           "dcim.interface",
+						ObjectType:         "dcim.interface",
 						State:              reconcilerpb.State_RECONCILED,
 						RequestId:          "req-id",
 						IngestionTs:        1725552914392208722,
@@ -196,7 +196,7 @@ func TestRetrieveLogs(t *testing.T) {
 						Error: nil,
 					},
 					{
-						DataType:           "dcim.device",
+						ObjectType:         "dcim.device",
 						State:              reconcilerpb.State_RECONCILED,
 						RequestId:          "bc1052e3-656a-42f0-b364-27b385e02a0c",
 						IngestionTs:        1725552654541975975,
@@ -239,7 +239,7 @@ func TestRetrieveLogs(t *testing.T) {
 			},
 			ingestionLogs: []*reconcilerpb.IngestionLog{
 				{
-					DataType:           "ipam.ipaddress",
+					ObjectType:         "ipam.ipaddress",
 					State:              reconcilerpb.State_FAILED,
 					RequestId:          "e03c4892-5b7e-4c39-b5e6-0225a264ab8b",
 					IngestionTs:        1725046967777525928,
@@ -274,7 +274,7 @@ func TestRetrieveLogs(t *testing.T) {
 			response: &reconcilerpb.RetrieveIngestionLogsResponse{
 				Logs: []*reconcilerpb.IngestionLog{
 					{
-						DataType:           "ipam.ipaddress",
+						ObjectType:         "ipam.ipaddress",
 						State:              reconcilerpb.State_FAILED,
 						RequestId:          "e03c4892-5b7e-4c39-b5e6-0225a264ab8b",
 						IngestionTs:        1725046967777525928,
@@ -322,7 +322,7 @@ func TestRetrieveLogs(t *testing.T) {
 			},
 			ingestionLogs: []*reconcilerpb.IngestionLog{
 				{
-					DataType:           "dcim.interface",
+					ObjectType:         "dcim.interface",
 					State:              reconcilerpb.State_QUEUED,
 					RequestId:          "req-id",
 					IngestionTs:        1725552914392208722,
@@ -346,7 +346,7 @@ func TestRetrieveLogs(t *testing.T) {
 			response: &reconcilerpb.RetrieveIngestionLogsResponse{
 				Logs: []*reconcilerpb.IngestionLog{
 					{
-						DataType:           "dcim.interface",
+						ObjectType:         "dcim.interface",
 						State:              reconcilerpb.State_QUEUED,
 						RequestId:          "req-id",
 						IngestionTs:        1725552914392208722,
@@ -384,7 +384,7 @@ func TestRetrieveLogs(t *testing.T) {
 			ingestionLogs: []*reconcilerpb.IngestionLog{
 				{
 					Id:                 "2mAT7vZ38H4ttI0i5dBebwJbSnZ",
-					DataType:           "dcim.interface",
+					ObjectType:         "dcim.interface",
 					State:              reconcilerpb.State_RECONCILED,
 					RequestId:          "req-id",
 					IngestionTs:        1725552914392208722,
@@ -409,7 +409,7 @@ func TestRetrieveLogs(t *testing.T) {
 				Logs: []*reconcilerpb.IngestionLog{
 					{
 						Id:                 "2mAT7vZ38H4ttI0i5dBebwJbSnZ",
-						DataType:           "dcim.interface",
+						ObjectType:         "dcim.interface",
 						State:              reconcilerpb.State_RECONCILED,
 						RequestId:          "req-id",
 						IngestionTs:        1725552914392208722,
@@ -447,7 +447,7 @@ func TestRetrieveLogs(t *testing.T) {
 			ingestionLogs: []*reconcilerpb.IngestionLog{
 				{
 					Id:                 "2mAT7vZ38H4ttI0i5dBebwJbSnZ",
-					DataType:           "dcim.interface",
+					ObjectType:         "dcim.interface",
 					State:              reconcilerpb.State_FAILED,
 					RequestId:          "req-id",
 					IngestionTs:        1725552914392208722,
@@ -472,7 +472,7 @@ func TestRetrieveLogs(t *testing.T) {
 				Logs: []*reconcilerpb.IngestionLog{
 					{
 						Id:                 "2mAT7vZ38H4ttI0i5dBebwJbSnZ",
-						DataType:           "dcim.interface",
+						ObjectType:         "dcim.interface",
 						State:              reconcilerpb.State_FAILED,
 						RequestId:          "req-id",
 						IngestionTs:        1725552914392208722,
@@ -510,7 +510,7 @@ func TestRetrieveLogs(t *testing.T) {
 			ingestionLogs: []*reconcilerpb.IngestionLog{
 				{
 					Id:                 "2mAT7vZ38H4ttI0i5dBebwJbSnZ",
-					DataType:           "dcim.interface",
+					ObjectType:         "dcim.interface",
 					State:              reconcilerpb.State_NO_CHANGES,
 					RequestId:          "req-id",
 					IngestionTs:        1725552914392208722,
@@ -535,7 +535,7 @@ func TestRetrieveLogs(t *testing.T) {
 				Logs: []*reconcilerpb.IngestionLog{
 					{
 						Id:                 "2mAT7vZ38H4ttI0i5dBebwJbSnZ",
-						DataType:           "dcim.interface",
+						ObjectType:         "dcim.interface",
 						State:              reconcilerpb.State_NO_CHANGES,
 						RequestId:          "req-id",
 						IngestionTs:        1725552914392208722,
@@ -566,14 +566,14 @@ func TestRetrieveLogs(t *testing.T) {
 		},
 		{
 			name: "filter by data type",
-			in:   reconcilerpb.RetrieveIngestionLogsRequest{DataType: "dcim.interface"},
+			in:   reconcilerpb.RetrieveIngestionLogsRequest{ObjectType: "dcim.interface"},
 			ingestionLogsPerState: map[reconcilerpb.State]int32{
 				reconcilerpb.State_RECONCILED: 1,
 			},
 			ingestionLogs: []*reconcilerpb.IngestionLog{
 				{
 					Id:                 "2mAT7vZ38H4ttI0i5dBebwJbSnZ",
-					DataType:           "dcim.interface",
+					ObjectType:         "dcim.interface",
 					State:              reconcilerpb.State_RECONCILED,
 					RequestId:          "req-id",
 					IngestionTs:        1725552914392208722,
@@ -598,7 +598,7 @@ func TestRetrieveLogs(t *testing.T) {
 				Logs: []*reconcilerpb.IngestionLog{
 					{
 						Id:                 "2mAT7vZ38H4ttI0i5dBebwJbSnZ",
-						DataType:           "dcim.interface",
+						ObjectType:         "dcim.interface",
 						State:              reconcilerpb.State_RECONCILED,
 						RequestId:          "req-id",
 						IngestionTs:        1725552914392208722,
@@ -636,7 +636,7 @@ func TestRetrieveLogs(t *testing.T) {
 			ingestionLogs: []*reconcilerpb.IngestionLog{
 				{
 					Id:                 "2mAT7vZ38H4ttI0i5dBebwJbSnZ",
-					DataType:           "dcim.interface",
+					ObjectType:         "dcim.interface",
 					State:              reconcilerpb.State_RECONCILED,
 					RequestId:          "req-id",
 					IngestionTs:        1725552914392208722,
@@ -661,7 +661,7 @@ func TestRetrieveLogs(t *testing.T) {
 				Logs: []*reconcilerpb.IngestionLog{
 					{
 						Id:                 "2mAT7vZ38H4ttI0i5dBebwJbSnZ",
-						DataType:           "dcim.interface",
+						ObjectType:         "dcim.interface",
 						State:              reconcilerpb.State_RECONCILED,
 						RequestId:          "req-id",
 						IngestionTs:        1725552914392208722,
@@ -699,7 +699,7 @@ func TestRetrieveLogs(t *testing.T) {
 			ingestionLogs: []*reconcilerpb.IngestionLog{
 				{
 					Id:                 "2mAT7vZ38H4ttI0i5dBebwJbSnZ",
-					DataType:           "dcim.interface",
+					ObjectType:         "dcim.interface",
 					State:              reconcilerpb.State_RECONCILED,
 					RequestId:          "req-id",
 					IngestionTs:        1725552914392208722,
@@ -724,7 +724,7 @@ func TestRetrieveLogs(t *testing.T) {
 				Logs: []*reconcilerpb.IngestionLog{
 					{
 						Id:                 "2mAT7vZ38H4ttI0i5dBebwJbSnZ",
-						DataType:           "dcim.interface",
+						ObjectType:         "dcim.interface",
 						State:              reconcilerpb.State_RECONCILED,
 						RequestId:          "req-id",
 						IngestionTs:        1725552914392208722,
@@ -791,7 +791,7 @@ func TestRetrieveLogs(t *testing.T) {
 				require.NoError(t, err)
 				require.Equal(t, len(tt.response.Logs), len(response.Logs))
 				for i := range response.Logs {
-					assert.Equal(t, tt.response.Logs[i].DataType, response.Logs[i].DataType)
+					assert.Equal(t, tt.response.Logs[i].ObjectType, response.Logs[i].ObjectType)
 					assert.Equal(t, tt.response.Logs[i].State, response.Logs[i].State)
 					assert.Equal(t, tt.response.Logs[i].RequestId, response.Logs[i].RequestId)
 					assert.Equal(t, tt.response.Logs[i].IngestionTs, response.Logs[i].IngestionTs)

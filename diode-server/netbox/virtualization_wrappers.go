@@ -90,9 +90,14 @@ func (vw *VirtualizationClusterGroupDataWrapper) NestedObjects() ([]ComparableDa
 	return objects, nil
 }
 
-// DataType returns the data type
-func (vw *VirtualizationClusterGroupDataWrapper) DataType() string {
+// ObjectType returns the object type
+func (vw *VirtualizationClusterGroupDataWrapper) ObjectType() string {
 	return VirtualizationClusterGroupObjectType
+}
+
+// ObjectTypeName returns the object type name
+func (vw *VirtualizationClusterGroupDataWrapper) ObjectTypeName() string {
+	return VirtualizationClusterGroupObjectTypeName
 }
 
 // ObjectStateQueryParams returns the query parameters needed to retrieve its object state
@@ -162,6 +167,11 @@ func (vw *VirtualizationClusterGroupDataWrapper) Patch(cmp ComparableData, inten
 
 // SetDefaults sets the default values for the device type
 func (vw *VirtualizationClusterGroupDataWrapper) SetDefaults() {}
+
+// PrimaryValue returns the primary value of the data
+func (vw *VirtualizationClusterGroupDataWrapper) PrimaryValue() string {
+	return vw.ClusterGroup.Name
+}
 
 // VirtualizationClusterTypeDataWrapper represents a virtualization cluster type data wrapper
 type VirtualizationClusterTypeDataWrapper struct {
@@ -243,9 +253,14 @@ func (vw *VirtualizationClusterTypeDataWrapper) NestedObjects() ([]ComparableDat
 	return objects, nil
 }
 
-// DataType returns the data type
-func (vw *VirtualizationClusterTypeDataWrapper) DataType() string {
+// ObjectType returns the object type
+func (vw *VirtualizationClusterTypeDataWrapper) ObjectType() string {
 	return VirtualizationClusterTypeObjectType
+}
+
+// ObjectTypeName returns the object type name
+func (vw *VirtualizationClusterTypeDataWrapper) ObjectTypeName() string {
+	return VirtualizationClusterTypeObjectTypeName
 }
 
 // ObjectStateQueryParams returns the query parameters needed to retrieve its object state
@@ -315,6 +330,11 @@ func (vw *VirtualizationClusterTypeDataWrapper) Patch(cmp ComparableData, intend
 
 // SetDefaults sets the default values for the device type
 func (vw *VirtualizationClusterTypeDataWrapper) SetDefaults() {}
+
+// PrimaryValue returns the primary value of the data
+func (vw *VirtualizationClusterTypeDataWrapper) PrimaryValue() string {
+	return vw.ClusterType.Name
+}
 
 // VirtualizationClusterDataWrapper represents a virtualization cluster data wrapper
 type VirtualizationClusterDataWrapper struct {
@@ -425,9 +445,14 @@ func (vw *VirtualizationClusterDataWrapper) NestedObjects() ([]ComparableData, e
 	return objects, nil
 }
 
-// DataType returns the data type
-func (vw *VirtualizationClusterDataWrapper) DataType() string {
+// ObjectType returns the object type
+func (vw *VirtualizationClusterDataWrapper) ObjectType() string {
 	return VirtualizationClusterObjectType
+}
+
+// ObjectTypeName returns the object type name
+func (vw *VirtualizationClusterDataWrapper) ObjectTypeName() string {
+	return VirtualizationClusterObjectTypeName
 }
 
 // ObjectStateQueryParams returns the query parameters needed to retrieve its object state
@@ -703,6 +728,11 @@ func (vw *VirtualizationClusterDataWrapper) SetDefaults() {
 	}
 }
 
+// PrimaryValue returns the primary value of the data
+func (vw *VirtualizationClusterDataWrapper) PrimaryValue() string {
+	return vw.Cluster.Name
+}
+
 // VirtualizationVirtualMachineDataWrapper represents a virtualization virtual machine data wrapper
 type VirtualizationVirtualMachineDataWrapper struct {
 	BaseDataWrapper
@@ -832,9 +862,14 @@ func (vw *VirtualizationVirtualMachineDataWrapper) NestedObjects() ([]Comparable
 	return objects, nil
 }
 
-// DataType returns the data type
-func (vw *VirtualizationVirtualMachineDataWrapper) DataType() string {
+// ObjectType returns the object type
+func (vw *VirtualizationVirtualMachineDataWrapper) ObjectType() string {
 	return VirtualizationVirtualMachineObjectType
+}
+
+// ObjectTypeName returns the object type name
+func (vw *VirtualizationVirtualMachineDataWrapper) ObjectTypeName() string {
+	return VirtualizationVirtualMachineObjectTypeName
 }
 
 // ObjectStateQueryParams returns the query parameters needed to retrieve its object state
@@ -1275,6 +1310,11 @@ func (vw *VirtualizationVirtualMachineDataWrapper) SetDefaults() {
 	}
 }
 
+// PrimaryValue returns the primary value of the data
+func (vw *VirtualizationVirtualMachineDataWrapper) PrimaryValue() string {
+	return vw.VirtualMachine.Name
+}
+
 // VirtualizationVMInterfaceDataWrapper represents a virtualization VM interface data wrapper
 type VirtualizationVMInterfaceDataWrapper struct {
 	BaseDataWrapper
@@ -1362,9 +1402,14 @@ func (vw *VirtualizationVMInterfaceDataWrapper) NestedObjects() ([]ComparableDat
 	return objects, nil
 }
 
-// DataType returns the data type
-func (vw *VirtualizationVMInterfaceDataWrapper) DataType() string {
+// ObjectType returns the object type
+func (vw *VirtualizationVMInterfaceDataWrapper) ObjectType() string {
 	return VirtualizationVMInterfaceObjectType
+}
+
+// ObjectTypeName returns the object type name
+func (vw *VirtualizationVMInterfaceDataWrapper) ObjectTypeName() string {
+	return VirtualizationVMInterfaceObjectTypeName
 }
 
 // ObjectStateQueryParams returns the query parameters needed to retrieve its object state
@@ -1531,6 +1576,11 @@ func (vw *VirtualizationVMInterfaceDataWrapper) Patch(cmp ComparableData, intend
 // SetDefaults sets the default values for the device type
 func (vw *VirtualizationVMInterfaceDataWrapper) SetDefaults() {}
 
+// PrimaryValue returns the primary value of the data
+func (vw *VirtualizationVMInterfaceDataWrapper) PrimaryValue() string {
+	return vw.VMInterface.Name
+}
+
 // VirtualizationVirtualDiskDataWrapper represents a virtualization disk data wrapper
 type VirtualizationVirtualDiskDataWrapper struct {
 	BaseDataWrapper
@@ -1618,9 +1668,14 @@ func (vw *VirtualizationVirtualDiskDataWrapper) NestedObjects() ([]ComparableDat
 	return objects, nil
 }
 
-// DataType returns the data type
-func (vw *VirtualizationVirtualDiskDataWrapper) DataType() string {
+// ObjectType returns the object type
+func (vw *VirtualizationVirtualDiskDataWrapper) ObjectType() string {
 	return VirtualizationVirtualDiskObjectType
+}
+
+// ObjectTypeName returns the object type name
+func (vw *VirtualizationVirtualDiskDataWrapper) ObjectTypeName() string {
+	return VirtualizationVirtualDiskObjectTypeName
 }
 
 // ObjectStateQueryParams returns the query parameters needed to retrieve its object state
@@ -1774,3 +1829,8 @@ func (vw *VirtualizationVirtualDiskDataWrapper) Patch(cmp ComparableData, intend
 
 // SetDefaults sets the default values for the device type
 func (vw *VirtualizationVirtualDiskDataWrapper) SetDefaults() {}
+
+// PrimaryValue returns the primary value of the data
+func (vw *VirtualizationVirtualDiskDataWrapper) PrimaryValue() string {
+	return vw.VirtualDisk.Name
+}

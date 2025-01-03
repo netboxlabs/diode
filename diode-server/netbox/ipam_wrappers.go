@@ -114,9 +114,14 @@ func (dw *IpamIPAddressDataWrapper) NestedObjects() ([]ComparableData, error) {
 	return objects, nil
 }
 
-// DataType returns the data type
-func (dw *IpamIPAddressDataWrapper) DataType() string {
+// ObjectType returns the object type
+func (dw *IpamIPAddressDataWrapper) ObjectType() string {
 	return IpamIPAddressObjectType
+}
+
+// ObjectTypeName returns the object type name
+func (dw *IpamIPAddressDataWrapper) ObjectTypeName() string {
+	return IpamIPAddressObjectTypeName
 }
 
 // ObjectStateQueryParams returns the query parameters needed to retrieve its object state
@@ -354,6 +359,11 @@ func (dw *IpamIPAddressDataWrapper) SetDefaults() {
 	}
 }
 
+// PrimaryValue returns the primary value of the data
+func (dw *IpamIPAddressDataWrapper) PrimaryValue() string {
+	return dw.IPAddress.Address
+}
+
 // IpamPrefixDataWrapper represents the IPAM Prefix data wrapper
 type IpamPrefixDataWrapper struct {
 	BaseDataWrapper
@@ -447,9 +457,14 @@ func (dw *IpamPrefixDataWrapper) NestedObjects() ([]ComparableData, error) {
 	return objects, nil
 }
 
-// DataType returns the data type
-func (dw *IpamPrefixDataWrapper) DataType() string {
+// ObjectType returns the object type
+func (dw *IpamPrefixDataWrapper) ObjectType() string {
 	return IpamPrefixObjectType
+}
+
+// ObjectTypeName returns the object type name
+func (dw *IpamPrefixDataWrapper) ObjectTypeName() string {
+	return IpamPrefixObjectTypeName
 }
 
 // ObjectStateQueryParams returns the query parameters needed to retrieve its object state
@@ -605,4 +620,9 @@ func (dw *IpamPrefixDataWrapper) SetDefaults() {
 	if dw.Prefix.Status == nil {
 		dw.Prefix.Status = &DefaultPrefixStatus
 	}
+}
+
+// PrimaryValue returns the primary value of the data
+func (dw *IpamPrefixDataWrapper) PrimaryValue() string {
+	return dw.Prefix.Prefix
 }

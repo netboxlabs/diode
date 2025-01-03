@@ -33,8 +33,8 @@ func TestVirtualizationPrepare(t *testing.T) {
 		{
 			name: "[P1] ingest virtualization.clustergroup with name only - existing object not found - create",
 			ingestEntity: differ.IngestEntity{
-				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				DataType:  "virtualization.clustergroup",
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "virtualization.clustergroup",
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_ClusterGroup{
 						ClusterGroup: &diodepb.ClusterGroup{
@@ -75,8 +75,8 @@ func TestVirtualizationPrepare(t *testing.T) {
 		{
 			name: "[P1] ingest virtualization.clustergroup with name only - existing object found - do nothing",
 			ingestEntity: differ.IngestEntity{
-				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				DataType:  "virtualization.clustergroup",
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "virtualization.clustergroup",
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_ClusterGroup{
 						ClusterGroup: &diodepb.ClusterGroup{
@@ -109,8 +109,8 @@ func TestVirtualizationPrepare(t *testing.T) {
 		{
 			name: "[P1] ingest empty virtualization.clustergroup - error",
 			ingestEntity: differ.IngestEntity{
-				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				DataType:  "virtualization.clustergroup",
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "virtualization.clustergroup",
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_ClusterGroup{
 						ClusterGroup: &diodepb.ClusterGroup{},
@@ -127,8 +127,8 @@ func TestVirtualizationPrepare(t *testing.T) {
 		{
 			name: "[P2] ingest virtualization.clustertype with name only - existing object not found - create",
 			ingestEntity: differ.IngestEntity{
-				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				DataType:  "virtualization.clustertype",
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "virtualization.clustertype",
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_ClusterType{
 						ClusterType: &diodepb.ClusterType{
@@ -169,8 +169,8 @@ func TestVirtualizationPrepare(t *testing.T) {
 		{
 			name: "[P2] ingest virtualization.clustertype with name only - existing object found - do nothing",
 			ingestEntity: differ.IngestEntity{
-				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				DataType:  "virtualization.clustertype",
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "virtualization.clustertype",
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_ClusterType{
 						ClusterType: &diodepb.ClusterType{
@@ -203,8 +203,8 @@ func TestVirtualizationPrepare(t *testing.T) {
 		{
 			name: "[P2] ingest empty virtualization.clustertype - error",
 			ingestEntity: differ.IngestEntity{
-				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				DataType:  "virtualization.clustertype",
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "virtualization.clustertype",
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_ClusterType{
 						ClusterType: &diodepb.ClusterType{},
@@ -213,7 +213,7 @@ func TestVirtualizationPrepare(t *testing.T) {
 			},
 			//rawIngestEntity: []byte(`{
 			//	"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-			//	"data_type": "virtualization.clustertype",
+			//	"object_type": "virtualization.clustertype",
 			//	"entity": {
 			//		"ClusterType": {}
 			//	},
@@ -229,8 +229,8 @@ func TestVirtualizationPrepare(t *testing.T) {
 		{
 			name: "[P3] ingest virtualization.cluster with name only - existing object not found - create",
 			ingestEntity: differ.IngestEntity{
-				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				DataType:  "virtualization.cluster",
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "virtualization.cluster",
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_Cluster{
 						Cluster: &diodepb.Cluster{
@@ -320,8 +320,8 @@ func TestVirtualizationPrepare(t *testing.T) {
 		{
 			name: "[P3] ingest virtualization.cluster with name only - existing object found - do nothing",
 			ingestEntity: differ.IngestEntity{
-				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				DataType:  "virtualization.cluster",
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "virtualization.cluster",
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_Cluster{
 						Cluster: &diodepb.Cluster{
@@ -393,8 +393,8 @@ func TestVirtualizationPrepare(t *testing.T) {
 		{
 			name: "[P3] ingest empty virtualization.cluster - error",
 			ingestEntity: differ.IngestEntity{
-				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				DataType:  "virtualization.cluster",
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "virtualization.cluster",
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_Cluster{
 						Cluster: &diodepb.Cluster{},
@@ -411,8 +411,8 @@ func TestVirtualizationPrepare(t *testing.T) {
 		{
 			name: "[P4] ingest virtualization.virtualmachine with name only - existing object not found - create",
 			ingestEntity: differ.IngestEntity{
-				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				DataType:  "virtualization.virtualmachine",
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "virtualization.virtualmachine",
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_VirtualMachine{
 						VirtualMachine: &diodepb.VirtualMachine{
@@ -487,8 +487,8 @@ func TestVirtualizationPrepare(t *testing.T) {
 		{
 			name: "[P4] ingest virtualization.virtualmachine with name and cluster - existing objects not found - create",
 			ingestEntity: differ.IngestEntity{
-				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				DataType:  "virtualization.virtualmachine",
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "virtualization.virtualmachine",
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_VirtualMachine{
 						VirtualMachine: &diodepb.VirtualMachine{
@@ -634,8 +634,8 @@ func TestVirtualizationPrepare(t *testing.T) {
 		{
 			name: "[P4] ingest virtualization.virtualmachine with name and existing cluster - existing vm not found - create",
 			ingestEntity: differ.IngestEntity{
-				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				DataType:  "virtualization.virtualmachine",
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "virtualization.virtualmachine",
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_VirtualMachine{
 						VirtualMachine: &diodepb.VirtualMachine{
@@ -770,8 +770,8 @@ func TestVirtualizationPrepare(t *testing.T) {
 		{
 			name: "[P4] ingest virtualization.virtualmachine with name and cluster - existing vm found - create cluster",
 			ingestEntity: differ.IngestEntity{
-				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				DataType:  "virtualization.virtualmachine",
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "virtualization.virtualmachine",
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_VirtualMachine{
 						VirtualMachine: &diodepb.VirtualMachine{
@@ -928,8 +928,8 @@ func TestVirtualizationPrepare(t *testing.T) {
 		{
 			name: "[P4] ingest virtualization.virtualmachine with name only - existing object found - do nothing",
 			ingestEntity: differ.IngestEntity{
-				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				DataType:  "virtualization.virtualmachine",
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "virtualization.virtualmachine",
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_VirtualMachine{
 						VirtualMachine: &diodepb.VirtualMachine{
@@ -1075,8 +1075,8 @@ func TestVirtualizationPrepare(t *testing.T) {
 		{
 			name: "[P4] ingest empty virtualization.virtualmachine - error",
 			ingestEntity: differ.IngestEntity{
-				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				DataType:  "virtualization.virtualmachine",
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "virtualization.virtualmachine",
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_VirtualMachine{
 						VirtualMachine: &diodepb.VirtualMachine{},
@@ -1093,8 +1093,8 @@ func TestVirtualizationPrepare(t *testing.T) {
 		{
 			name: "[P5] ingest virtualization.vminterface with name only - existing object not found - create",
 			ingestEntity: differ.IngestEntity{
-				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				DataType:  "virtualization.vminterface",
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "virtualization.vminterface",
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_Vminterface{
 						Vminterface: &diodepb.VMInterface{
@@ -1198,8 +1198,8 @@ func TestVirtualizationPrepare(t *testing.T) {
 		{
 			name: "[P5] ingest virtualization.vminterface with name only - existing object found - do nothing",
 			ingestEntity: differ.IngestEntity{
-				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				DataType:  "virtualization.vminterface",
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "virtualization.vminterface",
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_Vminterface{
 						Vminterface: &diodepb.VMInterface{
@@ -1290,8 +1290,8 @@ func TestVirtualizationPrepare(t *testing.T) {
 		{
 			name: "[P5] ingest empty virtualization.vminterface - error",
 			ingestEntity: differ.IngestEntity{
-				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				DataType:  "virtualization.vminterface",
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "virtualization.vminterface",
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_Vminterface{
 						Vminterface: &diodepb.VMInterface{},
@@ -1308,8 +1308,8 @@ func TestVirtualizationPrepare(t *testing.T) {
 		{
 			name: "[P6] ingest virtualization.virtualdisk with name only - existing object not found - create",
 			ingestEntity: differ.IngestEntity{
-				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				DataType:  "virtualization.virtualdisk",
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "virtualization.virtualdisk",
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_VirtualDisk{
 						VirtualDisk: &diodepb.VirtualDisk{
@@ -1413,8 +1413,8 @@ func TestVirtualizationPrepare(t *testing.T) {
 		{
 			name: "[P6] ingest virtualization.virtualdisk with name only and no existing site - existing object not found - create",
 			ingestEntity: differ.IngestEntity{
-				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				DataType:  "virtualization.virtualdisk",
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "virtualization.virtualdisk",
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_VirtualDisk{
 						VirtualDisk: &diodepb.VirtualDisk{
@@ -1529,8 +1529,8 @@ func TestVirtualizationPrepare(t *testing.T) {
 		{
 			name: "[P6] ingest virtualization.virtualdisk with name only - existing object found - do nothing",
 			ingestEntity: differ.IngestEntity{
-				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				DataType:  "virtualization.virtualdisk",
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "virtualization.virtualdisk",
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_VirtualDisk{
 						VirtualDisk: &diodepb.VirtualDisk{
@@ -1608,8 +1608,8 @@ func TestVirtualizationPrepare(t *testing.T) {
 		{
 			name: "[P6] ingest empty virtualization.virtualdisk - error",
 			ingestEntity: differ.IngestEntity{
-				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				DataType:  "virtualization.virtualdisk",
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "virtualization.virtualdisk",
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_VirtualDisk{
 						VirtualDisk: &diodepb.VirtualDisk{},

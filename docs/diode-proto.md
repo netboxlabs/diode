@@ -385,11 +385,12 @@ Ingestion API
 
 A change set
 
-| Field     | Type              | Label    | Description                                          |
-|-----------|-------------------|----------|------------------------------------------------------|
-| id        | [string](#string) |          | A change set ID                                      |
-| data      | [bytes](#bytes)   |          | Binary data representing the change set              |
-| branch_id | [string](#string) | optional | branch ID against which the change set was generated |
+| Field          | Type              | Label    | Description                                          |
+|----------------|-------------------|----------|------------------------------------------------------|
+| id             | [string](#string) |          | A change set ID                                      |
+| data           | [bytes](#bytes)   |          | Binary data representing the change set              |
+| branch_id      | [string](#string) | optional | branch ID against which the change set was generated |
+| deviation_name | [string](#string) | optional | deviation name                                       |
 
 <a name="diode-v1-IngestionDataSource"></a>
 
@@ -439,20 +440,21 @@ IngestionError represents an error occurring while processing an ingestion entit
 
 An ingestion log
 
-| Field                | Type                                       | Label | Description |
-|----------------------|--------------------------------------------|-------|-------------|
-| id                   | [string](#string)                          |       |             |
-| data_type            | [string](#string)                          |       |             |
-| state                | [State](#diode-v1-State)                   |       |             |
-| request_id           | [string](#string)                          |       |             |
-| ingestion_ts         | [int64](#int64)                            |       |             |
-| producer_app_name    | [string](#string)                          |       |             |
-| producer_app_version | [string](#string)                          |       |             |
-| sdk_name             | [string](#string)                          |       |             |
-| sdk_version          | [string](#string)                          |       |             |
-| entity               | [Entity](#diode-v1-Entity)                 |       |             |
-| error                | [IngestionError](#diode-v1-IngestionError) |       |             |
-| change_set           | [ChangeSet](#diode-v1-ChangeSet)           |       |             |
+| Field                | Type                                       | Label | Description     |
+|----------------------|--------------------------------------------|-------|-----------------|
+| id                   | [string](#string)                          |       |                 |
+| data_type            | [string](#string)                          |       | **Deprecated.** |
+| state                | [State](#diode-v1-State)                   |       |                 |
+| request_id           | [string](#string)                          |       |                 |
+| ingestion_ts         | [int64](#int64)                            |       |                 |
+| producer_app_name    | [string](#string)                          |       |                 |
+| producer_app_version | [string](#string)                          |       |                 |
+| sdk_name             | [string](#string)                          |       |                 |
+| sdk_version          | [string](#string)                          |       |                 |
+| entity               | [Entity](#diode-v1-Entity)                 |       |                 |
+| error                | [IngestionError](#diode-v1-IngestionError) |       |                 |
+| change_set           | [ChangeSet](#diode-v1-ChangeSet)           |       |                 |
+| object_type          | [string](#string)                          |       |                 |
 
 <a name="diode-v1-IngestionMetrics"></a>
 
@@ -496,16 +498,17 @@ The response from the retrieve ingestion data sources request
 
 The request to retrieve ingestion logs
 
-| Field              | Type                     | Label    | Description                                 |
-|--------------------|--------------------------|----------|---------------------------------------------|
-| page_size          | [int32](#int32)          | optional | Number of logs per page, default is 100     |
-| state              | [State](#diode-v1-State) | optional | Optional filter by state field              |
-| data_type          | [string](#string)        |          | Optional filter by data type field          |
-| request_id         | [string](#string)        |          | Optional filter by request ID               |
-| ingestion_ts_start | [int64](#int64)          |          | Optional start of ingestion timestamp range |
-| ingestion_ts_end   | [int64](#int64)          |          | Optional end of ingestion timestamp range   |
-| page_token         | [string](#string)        |          | Token to fetch the next page of results     |
-| only_metrics       | [bool](#bool)            |          | Flag to return only the ingestion metrics   |
+| Field              | Type                     | Label    | Description                                        |
+|--------------------|--------------------------|----------|----------------------------------------------------|
+| page_size          | [int32](#int32)          | optional | Number of logs per page, default is 100            |
+| state              | [State](#diode-v1-State) | optional | Optional filter by state field                     |
+| data_type          | [string](#string)        |          | **Deprecated.** Optional filter by data type field |
+| request_id         | [string](#string)        |          | Optional filter by request ID                      |
+| ingestion_ts_start | [int64](#int64)          |          | Optional start of ingestion timestamp range        |
+| ingestion_ts_end   | [int64](#int64)          |          | Optional end of ingestion timestamp range          |
+| page_token         | [string](#string)        |          | Token to fetch the next page of results            |
+| only_metrics       | [bool](#bool)            |          | Flag to return only the ingestion metrics          |
+| object_type        | [string](#string)        |          | Optional filter by object type                     |
 
 <a name="diode-v1-RetrieveIngestionLogsResponse"></a>
 

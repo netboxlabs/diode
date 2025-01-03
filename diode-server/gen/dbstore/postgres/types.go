@@ -27,6 +27,7 @@ type ChangeSet struct {
 	ExternalID     string             `json:"external_id"`
 	IngestionLogID int32              `json:"ingestion_log_id"`
 	BranchID       pgtype.Text        `json:"branch_id"`
+	DeviationName  pgtype.Text        `json:"deviation_name"`
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
 }
@@ -34,7 +35,7 @@ type ChangeSet struct {
 type IngestionLog struct {
 	ID                 int32              `json:"id"`
 	ExternalID         string             `json:"external_id"`
-	DataType           pgtype.Text        `json:"data_type"`
+	ObjectType         pgtype.Text        `json:"object_type"`
 	State              pgtype.Int4        `json:"state"`
 	RequestID          pgtype.Text        `json:"request_id"`
 	IngestionTs        pgtype.Int8        `json:"ingestion_ts"`
@@ -52,7 +53,7 @@ type IngestionLog struct {
 type VIngestionLogsWithChangeSet struct {
 	ID                 int32              `json:"id"`
 	ExternalID         string             `json:"external_id"`
-	DataType           pgtype.Text        `json:"data_type"`
+	ObjectType         pgtype.Text        `json:"object_type"`
 	State              pgtype.Int4        `json:"state"`
 	RequestID          pgtype.Text        `json:"request_id"`
 	IngestionTs        pgtype.Int8        `json:"ingestion_ts"`

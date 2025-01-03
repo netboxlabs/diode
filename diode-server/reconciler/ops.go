@@ -16,10 +16,10 @@ import (
 // GenerateChangeSet creates a change set based on current NetBox state with optional branch
 func GenerateChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, branchID string, nbClient netboxdiodeplugin.NetBoxAPI, repository Repository, logger *slog.Logger) (*int32, *changeset.ChangeSet, error) {
 	ingestEntity := differ.IngestEntity{
-		RequestID: ingestionLog.GetRequestId(),
-		DataType:  ingestionLog.GetDataType(),
-		Entity:    ingestionLog.GetEntity(),
-		State:     int(ingestionLog.GetState()),
+		RequestID:  ingestionLog.GetRequestId(),
+		ObjectType: ingestionLog.GetObjectType(),
+		Entity:     ingestionLog.GetEntity(),
+		State:      int(ingestionLog.GetState()),
 	}
 
 	changeSet, err := differ.Diff(ctx, ingestEntity, branchID, nbClient)
@@ -28,8 +28,8 @@ func GenerateChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *
 			"request_id": ingestEntity.RequestID,
 		}
 		contextMap := map[string]any{
-			"request_id": ingestEntity.RequestID,
-			"data_type":  ingestEntity.DataType,
+			"request_id":  ingestEntity.RequestID,
+			"object_type": ingestEntity.ObjectType,
 		}
 		sentry.CaptureError(err, tags, "Ingest Entity", contextMap)
 		ingestionErr := extractIngestionError(err)

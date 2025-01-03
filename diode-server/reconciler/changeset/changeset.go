@@ -18,9 +18,10 @@ const (
 
 // ChangeSet represents a change set
 type ChangeSet struct {
-	ChangeSetID string   `json:"change_set_id"`
-	ChangeSet   []Change `json:"change_set"`
-	BranchID    *string  `json:"branch_id,omitempty"`
+	ChangeSetID   string   `json:"change_set_id"`
+	ChangeSet     []Change `json:"change_set"`
+	BranchID      *string  `json:"branch_id,omitempty"`
+	DeviationName *string  `json:"deviation_name,omitempty"`
 }
 
 // Change represents a change for the change set

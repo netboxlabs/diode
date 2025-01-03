@@ -378,7 +378,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 				ProducerAppVersion: "0.1.0",
 				SdkName:            "diode-sdk-go",
 				SdkVersion:         "0.2.0",
-				DataType:           "dcim.site",
+				ObjectType:         "dcim.site",
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_Site{
 						Site: &diodepb.Site{
@@ -413,7 +413,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 				ProducerAppVersion: "0.1.0",
 				SdkName:            "diode-sdk-go",
 				SdkVersion:         "0.2.0",
-				DataType:           "dcim.site",
+				ObjectType:         "dcim.site",
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_Site{
 						Site: &diodepb.Site{

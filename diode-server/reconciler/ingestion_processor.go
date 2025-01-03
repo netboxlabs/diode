@@ -336,7 +336,8 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 			ProducerAppVersion: ingestReq.GetProducerAppVersion(),
 			SdkName:            ingestReq.GetSdkName(),
 			SdkVersion:         ingestReq.GetSdkVersion(),
-			DataType:           objectType,
+			DataType:           objectType, // backwards compatibility
+			ObjectType:         objectType,
 			Entity:             v,
 			IngestionTs:        int64(ingestionTs),
 			State:              reconcilerpb.State_QUEUED,

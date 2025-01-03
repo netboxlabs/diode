@@ -33,8 +33,8 @@ func TestIpamPrepare(t *testing.T) {
 		{
 			name: "[P1] ingest ipam.ipaddress with address and interface - existing object not found - create",
 			ingestEntity: differ.IngestEntity{
-				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				DataType:  "ipam.ipaddress",
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "ipam.ipaddress",
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_IpAddress{
 						IpAddress: &diodepb.IPAddress{
@@ -250,8 +250,8 @@ func TestIpamPrepare(t *testing.T) {
 		{
 			name: "[P1] ingest ipam.ipaddress with address and a new interface - existing IP address and interface not found - create an interface and IP address",
 			ingestEntity: differ.IngestEntity{
-				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				DataType:  "ipam.ipaddress",
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "ipam.ipaddress",
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_IpAddress{
 						IpAddress: &diodepb.IPAddress{
@@ -451,8 +451,8 @@ func TestIpamPrepare(t *testing.T) {
 		{
 			name: "[P1] ingest ipam.ipaddress with address and a new interface - IP address found assigned to a different interface - create the interface and the IP address",
 			ingestEntity: differ.IngestEntity{
-				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				DataType:  "ipam.ipaddress",
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "ipam.ipaddress",
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_IpAddress{
 						IpAddress: &diodepb.IPAddress{
@@ -700,8 +700,8 @@ func TestIpamPrepare(t *testing.T) {
 		{
 			name: "[P1] ingest ipam.ipaddress with assigned interface - existing IP address found assigned a different device - create IP address with a new assigned object (interface)",
 			ingestEntity: differ.IngestEntity{
-				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				DataType:  "ipam.ipaddress",
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "ipam.ipaddress",
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_IpAddress{
 						IpAddress: &diodepb.IPAddress{
@@ -975,8 +975,8 @@ func TestIpamPrepare(t *testing.T) {
 		{
 			name: "[P1] ingest ipam.ipaddress with address and interface - existing IP address found with same interface assigned - no update needed",
 			ingestEntity: differ.IngestEntity{
-				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				DataType:  "ipam.ipaddress",
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "ipam.ipaddress",
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_IpAddress{
 						IpAddress: &diodepb.IPAddress{
@@ -1230,8 +1230,8 @@ func TestIpamPrepare(t *testing.T) {
 		{
 			name: "[P1] ingest ipam.ipaddress with address only - existing IP address found without interface assigned - no update needed",
 			ingestEntity: differ.IngestEntity{
-				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				DataType:  "ipam.ipaddress",
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "ipam.ipaddress",
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_IpAddress{
 						IpAddress: &diodepb.IPAddress{
@@ -1264,8 +1264,8 @@ func TestIpamPrepare(t *testing.T) {
 		{
 			name: "[P1] ingest ipam.ipaddress with address and new description - existing IP address found - update IP address with new description",
 			ingestEntity: differ.IngestEntity{
-				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				DataType:  "ipam.ipaddress",
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "ipam.ipaddress",
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_IpAddress{
 						IpAddress: &diodepb.IPAddress{
@@ -1542,8 +1542,8 @@ func TestIpamPrepare(t *testing.T) {
 		{
 			name: "[P1] ingest empty ipam.ipaddress - error",
 			ingestEntity: differ.IngestEntity{
-				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				DataType:  "ipam.ipaddress",
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "ipam.ipaddress",
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_IpAddress{
 						IpAddress: &diodepb.IPAddress{},
@@ -1560,8 +1560,8 @@ func TestIpamPrepare(t *testing.T) {
 		{
 			name: "[P2] ingest ipam.prefix with prefix only - existing object not found - create prefix and site (placeholder)",
 			ingestEntity: differ.IngestEntity{
-				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				DataType:  "ipam.prefix",
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "ipam.prefix",
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_Prefix{
 						Prefix: &diodepb.Prefix{
@@ -1628,8 +1628,8 @@ func TestIpamPrepare(t *testing.T) {
 		{
 			name: "[P2] ingest ipam.prefix with prefix only - existing object and its related objects found - do nothing",
 			ingestEntity: differ.IngestEntity{
-				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				DataType:  "ipam.prefix",
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "ipam.prefix",
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_Prefix{
 						Prefix: &diodepb.Prefix{
@@ -1685,8 +1685,8 @@ func TestIpamPrepare(t *testing.T) {
 		{
 			name: "[P2] ingest ipam.prefix with empty site",
 			ingestEntity: differ.IngestEntity{
-				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				DataType:  "ipam.prefix",
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "ipam.prefix",
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_Prefix{
 						Prefix: &diodepb.Prefix{
@@ -1740,8 +1740,8 @@ func TestIpamPrepare(t *testing.T) {
 		{
 			name: "[P2] ingest ipam.prefix with prefix and a tag - existing object found - create tag and update prefix",
 			ingestEntity: differ.IngestEntity{
-				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				DataType:  "ipam.prefix",
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "ipam.prefix",
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_Prefix{
 						Prefix: &diodepb.Prefix{

@@ -37,7 +37,7 @@ func (r *Repository) CreateIngestionLog(ctx context.Context, ingestionLog *recon
 	}
 	params := postgres.CreateIngestionLogParams{
 		ExternalID:         ingestionLog.Id,
-		DataType:           pgtype.Text{String: ingestionLog.DataType, Valid: true},
+		ObjectType:         pgtype.Text{String: ingestionLog.ObjectType, Valid: true},
 		State:              pgtype.Int4{Int32: int32(ingestionLog.State), Valid: true},
 		RequestID:          pgtype.Text{String: ingestionLog.RequestId, Valid: true},
 		IngestionTs:        pgtype.Int8{Int64: ingestionLog.IngestionTs, Valid: true},
@@ -109,8 +109,13 @@ func (r *Repository) RetrieveIngestionLogs(ctx context.Context, filter *reconcil
 	if filter.State != nil {
 		params.State = pgtype.Int4{Int32: int32(*filter.State), Valid: true}
 	}
+
+	// backwards compatibility (dataType -> objectType)
 	if filter.DataType != "" {
-		params.DataType = pgtype.Text{String: filter.DataType, Valid: true}
+		params.ObjectType = pgtype.Text{String: filter.DataType, Valid: true}
+	}
+	if filter.ObjectType != "" {
+		params.ObjectType = pgtype.Text{String: filter.ObjectType, Valid: true}
 	}
 	if filter.IngestionTsStart > 0 {
 		params.IngestionTsStart = pgtype.Int8{Int64: filter.IngestionTsStart, Valid: true}
@@ -140,7 +145,7 @@ func (r *Repository) RetrieveIngestionLogs(ctx context.Context, filter *reconcil
 
 		log := &reconcilerpb.IngestionLog{
 			Id:                 ingestionLog.ExternalID,
-			DataType:           ingestionLog.DataType.String,
+			ObjectType:         ingestionLog.ObjectType.String,
 			State:              reconcilerpb.State(ingestionLog.State.Int32),
 			RequestId:          ingestionLog.RequestID.String,
 			IngestionTs:        ingestionLog.IngestionTs.Int64,
@@ -184,10 +189,16 @@ func (r *Repository) RetrieveIngestionLogs(ctx context.Context, filter *reconcil
 				branchID = &row.ChangeSet.BranchID.String
 			}
 
+			var deviationName *string
+			if row.ChangeSet.DeviationName.Valid {
+				deviationName = &row.ChangeSet.DeviationName.String
+			}
+
 			changeSet := &changeset.ChangeSet{
-				ChangeSetID: row.ChangeSet.ExternalID,
-				ChangeSet:   changes,
-				BranchID:    branchID,
+				ChangeSetID:   row.ChangeSet.ExternalID,
+				ChangeSet:     changes,
+				BranchID:      branchID,
+				DeviationName: deviationName,
 			}
 
 			var compressedChangeSet []byte
@@ -200,9 +211,10 @@ func (r *Repository) RetrieveIngestionLogs(ctx context.Context, filter *reconcil
 			}
 
 			log.ChangeSet = &reconcilerpb.ChangeSet{
-				Id:       row.ChangeSet.ExternalID,
-				Data:     compressedChangeSet,
-				BranchId: branchID,
+				Id:            row.ChangeSet.ExternalID,
+				Data:          compressedChangeSet,
+				BranchId:      branchID,
+				DeviationName: deviationName,
 			}
 		}
 
@@ -233,6 +245,10 @@ func (r *Repository) CreateChangeSet(ctx context.Context, changeSet changeset.Ch
 	if changeSet.BranchID != nil {
 		params.BranchID = pgtype.Text{String: *changeSet.BranchID, Valid: true}
 	}
+	if changeSet.DeviationName != nil {
+		params.DeviationName = pgtype.Text{String: *changeSet.DeviationName, Valid: true}
+	}
+
 	cs, err := qtx.CreateChangeSet(ctx, params)
 	if err != nil {
 		rollback()

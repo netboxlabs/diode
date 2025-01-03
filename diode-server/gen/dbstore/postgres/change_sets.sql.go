@@ -60,25 +60,32 @@ func (q *Queries) CreateChange(ctx context.Context, arg CreateChangeParams) (Cha
 
 const createChangeSet = `-- name: CreateChangeSet :one
 
-INSERT INTO change_sets (external_id, ingestion_log_id, branch_id)
-VALUES ($1, $2, $3)
-RETURNING id, external_id, ingestion_log_id, branch_id, created_at, updated_at
+INSERT INTO change_sets (external_id, ingestion_log_id, branch_id, deviation_name)
+VALUES ($1, $2, $3, $4)
+RETURNING id, external_id, ingestion_log_id, branch_id, deviation_name, created_at, updated_at
 `
 
 type CreateChangeSetParams struct {
 	ExternalID     string      `json:"external_id"`
 	IngestionLogID int32       `json:"ingestion_log_id"`
 	BranchID       pgtype.Text `json:"branch_id"`
+	DeviationName  pgtype.Text `json:"deviation_name"`
 }
 
 func (q *Queries) CreateChangeSet(ctx context.Context, arg CreateChangeSetParams) (ChangeSet, error) {
-	row := q.db.QueryRow(ctx, createChangeSet, arg.ExternalID, arg.IngestionLogID, arg.BranchID)
+	row := q.db.QueryRow(ctx, createChangeSet,
+		arg.ExternalID,
+		arg.IngestionLogID,
+		arg.BranchID,
+		arg.DeviationName,
+	)
 	var i ChangeSet
 	err := row.Scan(
 		&i.ID,
 		&i.ExternalID,
 		&i.IngestionLogID,
 		&i.BranchID,
+		&i.DeviationName,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

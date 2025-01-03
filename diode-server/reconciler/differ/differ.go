@@ -15,10 +15,10 @@ import (
 
 // IngestEntity represents an ingest entity
 type IngestEntity struct {
-	RequestID string `json:"request_id"`
-	DataType  string `json:"data_type"`
-	Entity    any    `json:"entity"`
-	State     int    `json:"state"`
+	RequestID  string `json:"request_id"`
+	ObjectType string `json:"object_type"`
+	Entity     any    `json:"entity"`
+	State      int    `json:"state"`
 }
 
 // ObjectState represents a object state
@@ -62,7 +62,7 @@ func Diff(ctx context.Context, entity IngestEntity, branchID string, netboxAPI n
 	// map out retrieved root object and all its nested objects (current)
 	var current netbox.ComparableData
 	for _, obj := range actualNestedObjects {
-		if obj.DataType() == entity.DataType {
+		if obj.ObjectType() == entity.ObjectType {
 			current = intendedNestedObjectsMap[fmt.Sprintf("%p", obj.Data())]
 			break
 		}
@@ -89,14 +89,16 @@ func Diff(ctx context.Context, entity IngestEntity, branchID string, netboxAPI n
 		changes = append(changes, changeset.Change{
 			ChangeID:      uuid.NewString(),
 			ChangeType:    operation,
-			ObjectType:    obj.DataType(),
+			ObjectType:    obj.ObjectType(),
 			ObjectID:      objectID,
 			ObjectVersion: nil,
 			Data:          obj.Data(),
 		})
 	}
 
-	cs := &changeset.ChangeSet{ChangeSetID: uuid.NewString(), ChangeSet: changes}
+	deviationName := genDeviationName(objectsToReconcile)
+
+	cs := &changeset.ChangeSet{ChangeSetID: uuid.NewString(), ChangeSet: changes, DeviationName: deviationName}
 	if branchID != "" {
 		cs.BranchID = &branchID
 	}
@@ -106,7 +108,7 @@ func Diff(ctx context.Context, entity IngestEntity, branchID string, netboxAPI n
 func retrieveObjectState(ctx context.Context, netboxAPI netboxdiodeplugin.NetBoxAPI, change netbox.ComparableData, branchID string) (netbox.ComparableData, error) {
 	params := netboxdiodeplugin.RetrieveObjectStateQueryParams{
 		ObjectID:   0,
-		ObjectType: change.DataType(),
+		ObjectType: change.ObjectType(),
 		BranchID:   branchID,
 		Params:     change.ObjectStateQueryParams(),
 	}
@@ -118,7 +120,7 @@ func retrieveObjectState(ctx context.Context, netboxAPI netboxdiodeplugin.NetBox
 	if resp.Object.IsValid() {
 		objectState := &ObjectState{
 			ObjectID:       resp.ObjectID,
-			ObjectType:     change.DataType(),
+			ObjectType:     change.ObjectType(),
 			ObjectChangeID: resp.ObjectChangeID,
 			Object:         resp.Object,
 		}
@@ -134,7 +136,7 @@ func extractIngestEntityData(ingestEntity IngestEntity) (netbox.ComparableData, 
 		return nil, fmt.Errorf("ingest entity is nil")
 	}
 
-	dw, err := netbox.NewDataWrapper(ingestEntity.DataType)
+	dw, err := netbox.NewDataWrapper(ingestEntity.ObjectType)
 	if err != nil {
 		return nil, err
 	}
@@ -187,4 +189,21 @@ func extractNetBoxObjectStateData(obj ObjectState) (netbox.ComparableData, error
 	dw.Normalise()
 
 	return dw, nil
+}
+
+func genDeviationName(objects []netbox.ComparableData) *string {
+	if len(objects) == 0 {
+		return nil
+	}
+
+	primaryObject := objects[len(objects)-1]
+	deviationName := fmt.Sprintf("%s %s", primaryObject.ObjectTypeName(), primaryObject.PrimaryValue())
+
+	if primaryObject.ID() > 0 {
+		deviationName += " modified"
+	} else {
+		deviationName += " discovered"
+	}
+
+	return &deviationName
 }

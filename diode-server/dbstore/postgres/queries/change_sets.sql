@@ -1,7 +1,7 @@
 -- name: CreateChangeSet :one
 
-INSERT INTO change_sets (external_id, ingestion_log_id, branch_id)
-VALUES ($1, $2, $3)
+INSERT INTO change_sets (external_id, ingestion_log_id, branch_id, deviation_name)
+VALUES ($1, $2, $3, $4)
 RETURNING *;
 
 -- name: CreateChange :one
