@@ -529,11 +529,12 @@ The response from the retrieve ingestion logs request
 | Name        | Number | Description |
 |-------------|--------|-------------|
 | UNSPECIFIED | 0      |             |
-| QUEUED      | 1      |             |
-| RECONCILED  | 2      |             |
+| OPEN        | 1      |             |
+| APPLIED     | 2      |             |
 | FAILED      | 3      |             |
 | NO_CHANGES  | 4      |             |
 | IGNORED     | 5      |             |
+| ERRORED     | 6      |             |
 
 <a name="diode-v1-ReconcilerService"></a>
 

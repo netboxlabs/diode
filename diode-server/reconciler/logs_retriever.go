@@ -24,9 +24,9 @@ func retrieveIngestionMetrics(ctx context.Context, repository Repository) (*reco
 	for state, count := range ingestionLogsPerState {
 		totalIngestionLogs += count
 		switch state {
-		case reconcilerpb.State_QUEUED:
+		case reconcilerpb.State_OPEN:
 			metrics.Queued = count
-		case reconcilerpb.State_RECONCILED:
+		case reconcilerpb.State_APPLIED:
 			metrics.Reconciled = count
 		case reconcilerpb.State_FAILED:
 			metrics.Failed = count

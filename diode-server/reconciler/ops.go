@@ -71,8 +71,8 @@ func ApplyChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *rec
 		return err
 	}
 
-	ingestionLog.State = reconcilerpb.State_RECONCILED
-	if err := repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, reconcilerpb.State_RECONCILED, nil); err != nil {
+	ingestionLog.State = reconcilerpb.State_APPLIED
+	if err := repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, reconcilerpb.State_APPLIED, nil); err != nil {
 		logger.Warn("failed to update ingestion log state (error ignored)", "ingestionLogID", ingestionLogID, "error", err)
 		// TODO(ltucker): This should be in a transaction.  Can leave an inconsistent state marked on the ingestion log.
 		// return nil, err

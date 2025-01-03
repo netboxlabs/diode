@@ -387,7 +387,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 					},
 				},
 				IngestionTs: time.Now().UnixNano(),
-				State:       reconcilerpb.State_QUEUED,
+				State:       reconcilerpb.State_OPEN,
 			},
 			mockRetrieveObjectStateResponse: &netboxdiodeplugin.ObjectState{
 				ObjectType: "dcim.site",
@@ -401,7 +401,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 				Result:      "success",
 			},
 			autoApplyChangesets: true,
-			expectedStatus:      reconcilerpb.State_RECONCILED,
+			expectedStatus:      reconcilerpb.State_APPLIED,
 			expectedError:       false,
 		},
 		{
@@ -422,7 +422,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 					},
 				},
 				IngestionTs: time.Now().UnixNano(),
-				State:       reconcilerpb.State_QUEUED,
+				State:       reconcilerpb.State_OPEN,
 			},
 			mockRetrieveObjectStateResponse: &netboxdiodeplugin.ObjectState{
 				ObjectType: "dcim.site",
@@ -432,7 +432,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 				},
 			},
 			autoApplyChangesets: false,
-			expectedStatus:      reconcilerpb.State_QUEUED,
+			expectedStatus:      reconcilerpb.State_OPEN,
 			expectedError:       false,
 		},
 	}
