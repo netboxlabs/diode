@@ -117,7 +117,7 @@ func (vw *VirtualizationClusterGroupDataWrapper) Patch(cmp ComparableData, inten
 	intended, ok := cmp.(*VirtualizationClusterGroupDataWrapper)
 
 	if !ok && intended != nil {
-		return nil, errors.New("invalid data type")
+		return nil, errors.New("invalid object type")
 	}
 
 	reconciliationRequired := true
@@ -280,7 +280,7 @@ func (vw *VirtualizationClusterTypeDataWrapper) Patch(cmp ComparableData, intend
 	intended, ok := cmp.(*VirtualizationClusterTypeDataWrapper)
 
 	if !ok && intended != nil {
-		return nil, errors.New("invalid data type")
+		return nil, errors.New("invalid object type")
 	}
 
 	reconciliationRequired := true
@@ -475,7 +475,7 @@ func (vw *VirtualizationClusterDataWrapper) ID() int {
 func (vw *VirtualizationClusterDataWrapper) Patch(cmp ComparableData, intendedNestedObjects map[string]ComparableData) ([]ComparableData, error) {
 	intended, ok := cmp.(*VirtualizationClusterDataWrapper)
 	if !ok && intended != nil {
-		return nil, errors.New("invalid data type")
+		return nil, errors.New("invalid object type")
 	}
 
 	actualNestedObjectsMap := make(map[string]ComparableData)
@@ -899,7 +899,7 @@ func (vw *VirtualizationVirtualMachineDataWrapper) Patch(cmp ComparableData, int
 	intended, ok := cmp.(*VirtualizationVirtualMachineDataWrapper)
 
 	if !ok && intended != nil {
-		return nil, errors.New("invalid data type")
+		return nil, errors.New("invalid object type")
 	}
 
 	actualNestedObjectsMap := make(map[string]ComparableData)
@@ -1437,7 +1437,7 @@ func (vw *VirtualizationVMInterfaceDataWrapper) Patch(cmp ComparableData, intend
 	intended, ok := cmp.(*VirtualizationVMInterfaceDataWrapper)
 
 	if !ok && intended != nil {
-		return nil, errors.New("invalid data type")
+		return nil, errors.New("invalid object type")
 	}
 
 	actualNestedObjectsMap := make(map[string]ComparableData)
@@ -1703,7 +1703,7 @@ func (vw *VirtualizationVirtualDiskDataWrapper) Patch(cmp ComparableData, intend
 	intended, ok := cmp.(*VirtualizationVirtualDiskDataWrapper)
 
 	if !ok && intended != nil {
-		return nil, errors.New("invalid data type")
+		return nil, errors.New("invalid object type")
 	}
 
 	actualNestedObjectsMap := make(map[string]ComparableData)

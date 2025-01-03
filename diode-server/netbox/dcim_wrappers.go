@@ -167,7 +167,7 @@ func (dw *DcimDeviceDataWrapper) ID() int {
 func (dw *DcimDeviceDataWrapper) Patch(cmp ComparableData, intendedNestedObjects map[string]ComparableData) ([]ComparableData, error) {
 	intended, ok := cmp.(*DcimDeviceDataWrapper)
 	if !ok && intended != nil {
-		return nil, errors.New("invalid data type")
+		return nil, errors.New("invalid object type")
 	}
 
 	actualNestedObjectsMap := make(map[string]ComparableData)
@@ -617,7 +617,7 @@ func (dw *DcimDeviceRoleDataWrapper) ID() int {
 func (dw *DcimDeviceRoleDataWrapper) Patch(cmp ComparableData, intendedNestedObjects map[string]ComparableData) ([]ComparableData, error) {
 	intended, ok := cmp.(*DcimDeviceRoleDataWrapper)
 	if !ok && intended != nil {
-		return nil, errors.New("invalid data type")
+		return nil, errors.New("invalid object type")
 	}
 
 	actualNestedObjectsMap := make(map[string]ComparableData)
@@ -818,7 +818,7 @@ func (dw *DcimDeviceTypeDataWrapper) NestedObjects() ([]ComparableData, error) {
 func (dw *DcimDeviceTypeDataWrapper) Patch(cmp ComparableData, intendedNestedObjects map[string]ComparableData) ([]ComparableData, error) {
 	intended, ok := cmp.(*DcimDeviceTypeDataWrapper)
 	if !ok && intended != nil {
-		return nil, errors.New("invalid data type")
+		return nil, errors.New("invalid object type")
 	}
 
 	actualNestedObjectsMap := make(map[string]ComparableData)
@@ -1097,7 +1097,7 @@ func (dw *DcimInterfaceDataWrapper) hash() string {
 func (dw *DcimInterfaceDataWrapper) Patch(cmp ComparableData, intendedNestedObjects map[string]ComparableData) ([]ComparableData, error) {
 	intended, ok := cmp.(*DcimInterfaceDataWrapper)
 	if !ok && intended != nil {
-		return nil, errors.New("invalid data type")
+		return nil, errors.New("invalid object type")
 	}
 
 	actualNestedObjectsMap := make(map[string]ComparableData)
@@ -1380,7 +1380,7 @@ func (dw *DcimManufacturerDataWrapper) Patch(cmp ComparableData, intendedNestedO
 	intended, ok := cmp.(*DcimManufacturerDataWrapper)
 
 	if !ok && intended != nil {
-		return nil, errors.New("invalid data type")
+		return nil, errors.New("invalid object type")
 	}
 
 	reconciliationRequired := true
@@ -1592,7 +1592,7 @@ func (dw *DcimPlatformDataWrapper) ID() int {
 func (dw *DcimPlatformDataWrapper) Patch(cmp ComparableData, intendedNestedObjects map[string]ComparableData) ([]ComparableData, error) {
 	intended, ok := cmp.(*DcimPlatformDataWrapper)
 	if !ok && intended != nil {
-		return nil, errors.New("invalid data type")
+		return nil, errors.New("invalid object type")
 	}
 
 	actualNestedObjectsMap := make(map[string]ComparableData)
@@ -1845,7 +1845,7 @@ func (dw *DcimSiteDataWrapper) ID() int {
 func (dw *DcimSiteDataWrapper) Patch(cmp ComparableData, intendedNestedObjects map[string]ComparableData) ([]ComparableData, error) {
 	intended, ok := cmp.(*DcimSiteDataWrapper)
 	if !ok && intended != nil {
-		return nil, errors.New("invalid data type")
+		return nil, errors.New("invalid object type")
 	}
 
 	actualNestedObjectsMap := make(map[string]ComparableData)

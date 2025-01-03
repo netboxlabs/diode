@@ -170,7 +170,7 @@ func (dw *TagDataWrapper) IsPlaceholder() bool {
 func (dw *TagDataWrapper) Patch(cmp ComparableData, _ map[string]ComparableData) ([]ComparableData, error) {
 	d2, ok := cmp.(*TagDataWrapper)
 	if !ok && d2 != nil {
-		return nil, errors.New("invalid data type")
+		return nil, errors.New("invalid object type")
 	}
 
 	return nil, nil
@@ -202,9 +202,9 @@ func FromProtoTags(tagsPb []*diodepb.Tag) []*Tag {
 	return tags
 }
 
-// NewDataWrapper creates a new data wrapper for the given data type
-func NewDataWrapper(dataType string) (ComparableData, error) {
-	switch dataType {
+// NewDataWrapper creates a new data wrapper for the given object type
+func NewDataWrapper(objectType string) (ComparableData, error) {
+	switch objectType {
 	case DcimDeviceObjectType:
 		return &DcimDeviceDataWrapper{}, nil
 	case DcimDeviceRoleObjectType:
@@ -238,7 +238,7 @@ func NewDataWrapper(dataType string) (ComparableData, error) {
 	case VirtualizationVirtualDiskObjectType:
 		return &VirtualizationVirtualDiskDataWrapper{}, nil
 	default:
-		return nil, fmt.Errorf("unsupported data type %s", dataType)
+		return nil, fmt.Errorf("unsupported object type %s", objectType)
 	}
 }
 
