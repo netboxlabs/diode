@@ -137,8 +137,8 @@ func (dw *DcimDeviceDataWrapper) NestedObjects() ([]ComparableData, error) {
 	return objects, nil
 }
 
-// DataType returns the data type
-func (dw *DcimDeviceDataWrapper) DataType() string {
+// ObjectType returns the object type
+func (dw *DcimDeviceDataWrapper) ObjectType() string {
 	return DcimDeviceObjectType
 }
 
@@ -581,8 +581,8 @@ func (dw *DcimDeviceRoleDataWrapper) NestedObjects() ([]ComparableData, error) {
 	return objects, nil
 }
 
-// DataType returns the data type
-func (dw *DcimDeviceRoleDataWrapper) DataType() string {
+// ObjectType returns the object type
+func (dw *DcimDeviceRoleDataWrapper) ObjectType() string {
 	return DcimDeviceRoleObjectType
 }
 
@@ -712,8 +712,8 @@ func (dw *DcimDeviceTypeDataWrapper) Normalise() {
 	dw.intended = true
 }
 
-// DataType returns the data type
-func (dw *DcimDeviceTypeDataWrapper) DataType() string {
+// ObjectType returns the object type
+func (dw *DcimDeviceTypeDataWrapper) ObjectType() string {
 	return DcimDeviceTypeObjectType
 }
 
@@ -1022,8 +1022,8 @@ func (dw *DcimInterfaceDataWrapper) NestedObjects() ([]ComparableData, error) {
 	return objects, nil
 }
 
-// DataType returns the data type
-func (dw *DcimInterfaceDataWrapper) DataType() string {
+// ObjectType returns the object type
+func (dw *DcimInterfaceDataWrapper) ObjectType() string {
 	return DcimInterfaceObjectType
 }
 
@@ -1313,8 +1313,8 @@ func (dw *DcimManufacturerDataWrapper) NestedObjects() ([]ComparableData, error)
 	return objects, nil
 }
 
-// DataType returns the data type
-func (dw *DcimManufacturerDataWrapper) DataType() string {
+// ObjectType returns the object type
+func (dw *DcimManufacturerDataWrapper) ObjectType() string {
 	return DcimManufacturerObjectType
 }
 
@@ -1512,8 +1512,8 @@ func (dw *DcimPlatformDataWrapper) NestedObjects() ([]ComparableData, error) {
 	return objects, nil
 }
 
-// DataType returns the data type
-func (dw *DcimPlatformDataWrapper) DataType() string {
+// ObjectType returns the object type
+func (dw *DcimPlatformDataWrapper) ObjectType() string {
 	return DcimPlatformObjectType
 }
 
@@ -1759,8 +1759,8 @@ func (dw *DcimSiteDataWrapper) NestedObjects() ([]ComparableData, error) {
 	return objects, nil
 }
 
-// DataType returns the data type
-func (dw *DcimSiteDataWrapper) DataType() string {
+// ObjectType returns the object type
+func (dw *DcimSiteDataWrapper) ObjectType() string {
 	return DcimSiteObjectType
 }
 

@@ -90,8 +90,8 @@ func (vw *VirtualizationClusterGroupDataWrapper) NestedObjects() ([]ComparableDa
 	return objects, nil
 }
 
-// DataType returns the data type
-func (vw *VirtualizationClusterGroupDataWrapper) DataType() string {
+// ObjectType returns the object type
+func (vw *VirtualizationClusterGroupDataWrapper) ObjectType() string {
 	return VirtualizationClusterGroupObjectType
 }
 
@@ -243,8 +243,8 @@ func (vw *VirtualizationClusterTypeDataWrapper) NestedObjects() ([]ComparableDat
 	return objects, nil
 }
 
-// DataType returns the data type
-func (vw *VirtualizationClusterTypeDataWrapper) DataType() string {
+// ObjectType returns the object type
+func (vw *VirtualizationClusterTypeDataWrapper) ObjectType() string {
 	return VirtualizationClusterTypeObjectType
 }
 
@@ -425,8 +425,8 @@ func (vw *VirtualizationClusterDataWrapper) NestedObjects() ([]ComparableData, e
 	return objects, nil
 }
 
-// DataType returns the data type
-func (vw *VirtualizationClusterDataWrapper) DataType() string {
+// ObjectType returns the object type
+func (vw *VirtualizationClusterDataWrapper) ObjectType() string {
 	return VirtualizationClusterObjectType
 }
 
@@ -832,8 +832,8 @@ func (vw *VirtualizationVirtualMachineDataWrapper) NestedObjects() ([]Comparable
 	return objects, nil
 }
 
-// DataType returns the data type
-func (vw *VirtualizationVirtualMachineDataWrapper) DataType() string {
+// ObjectType returns the object type
+func (vw *VirtualizationVirtualMachineDataWrapper) ObjectType() string {
 	return VirtualizationVirtualMachineObjectType
 }
 
@@ -1362,8 +1362,8 @@ func (vw *VirtualizationVMInterfaceDataWrapper) NestedObjects() ([]ComparableDat
 	return objects, nil
 }
 
-// DataType returns the data type
-func (vw *VirtualizationVMInterfaceDataWrapper) DataType() string {
+// ObjectType returns the object type
+func (vw *VirtualizationVMInterfaceDataWrapper) ObjectType() string {
 	return VirtualizationVMInterfaceObjectType
 }
 
@@ -1618,8 +1618,8 @@ func (vw *VirtualizationVirtualDiskDataWrapper) NestedObjects() ([]ComparableDat
 	return objects, nil
 }
 
-// DataType returns the data type
-func (vw *VirtualizationVirtualDiskDataWrapper) DataType() string {
+// ObjectType returns the object type
+func (vw *VirtualizationVirtualDiskDataWrapper) ObjectType() string {
 	return VirtualizationVirtualDiskObjectType
 }
 

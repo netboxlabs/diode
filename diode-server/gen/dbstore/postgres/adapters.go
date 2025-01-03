@@ -24,7 +24,8 @@ func (log IngestionLog) ToProto() (*reconcilerpb.IngestionLog, error) {
 
 	pblog := &reconcilerpb.IngestionLog{
 		Id:                 log.ExternalID,
-		DataType:           log.DataType.String,
+		DataType:           log.ObjectType.String, // backwards compatibility
+		ObjectType:         log.ObjectType.String,
 		State:              reconcilerpb.State(log.State.Int32),
 		RequestId:          log.RequestID.String,
 		IngestionTs:        log.IngestionTs.Int64,

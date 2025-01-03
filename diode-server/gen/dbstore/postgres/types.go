@@ -34,7 +34,7 @@ type ChangeSet struct {
 type IngestionLog struct {
 	ID                 int32              `json:"id"`
 	ExternalID         string             `json:"external_id"`
-	DataType           pgtype.Text        `json:"data_type"`
+	ObjectType         pgtype.Text        `json:"object_type"`
 	State              pgtype.Int4        `json:"state"`
 	RequestID          pgtype.Text        `json:"request_id"`
 	IngestionTs        pgtype.Int8        `json:"ingestion_ts"`
@@ -52,7 +52,7 @@ type IngestionLog struct {
 type VIngestionLogsWithChangeSet struct {
 	ID                 int32              `json:"id"`
 	ExternalID         string             `json:"external_id"`
-	DataType           pgtype.Text        `json:"data_type"`
+	ObjectType         pgtype.Text        `json:"object_type"`
 	State              pgtype.Int4        `json:"state"`
 	RequestID          pgtype.Text        `json:"request_id"`
 	IngestionTs        pgtype.Int8        `json:"ingestion_ts"`

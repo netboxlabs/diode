@@ -440,19 +440,21 @@ func (x *ChangeSet) GetBranchId() string {
 
 // An ingestion log
 type IngestionLog struct {
-	state              protoimpl.MessageState `protogen:"open.v1"`
-	Id                 string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	DataType           string                 `protobuf:"bytes,2,opt,name=data_type,json=dataType,proto3" json:"data_type,omitempty"`
-	State              State                  `protobuf:"varint,3,opt,name=state,proto3,enum=diode.v1.State" json:"state,omitempty"`
-	RequestId          string                 `protobuf:"bytes,4,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
-	IngestionTs        int64                  `protobuf:"varint,5,opt,name=ingestion_ts,json=ingestionTs,proto3" json:"ingestion_ts,omitempty"`
-	ProducerAppName    string                 `protobuf:"bytes,6,opt,name=producer_app_name,json=producerAppName,proto3" json:"producer_app_name,omitempty"`
-	ProducerAppVersion string                 `protobuf:"bytes,7,opt,name=producer_app_version,json=producerAppVersion,proto3" json:"producer_app_version,omitempty"`
-	SdkName            string                 `protobuf:"bytes,8,opt,name=sdk_name,json=sdkName,proto3" json:"sdk_name,omitempty"`
-	SdkVersion         string                 `protobuf:"bytes,9,opt,name=sdk_version,json=sdkVersion,proto3" json:"sdk_version,omitempty"`
-	Entity             *diodepb.Entity        `protobuf:"bytes,10,opt,name=entity,proto3" json:"entity,omitempty"`
-	Error              *IngestionError        `protobuf:"bytes,11,opt,name=error,proto3" json:"error,omitempty"`
-	ChangeSet          *ChangeSet             `protobuf:"bytes,12,opt,name=change_set,json=changeSet,proto3" json:"change_set,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	// Deprecated: Marked as deprecated in diode/v1/reconciler.proto.
+	DataType           string          `protobuf:"bytes,2,opt,name=data_type,json=dataType,proto3" json:"data_type,omitempty"`
+	State              State           `protobuf:"varint,3,opt,name=state,proto3,enum=diode.v1.State" json:"state,omitempty"`
+	RequestId          string          `protobuf:"bytes,4,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
+	IngestionTs        int64           `protobuf:"varint,5,opt,name=ingestion_ts,json=ingestionTs,proto3" json:"ingestion_ts,omitempty"`
+	ProducerAppName    string          `protobuf:"bytes,6,opt,name=producer_app_name,json=producerAppName,proto3" json:"producer_app_name,omitempty"`
+	ProducerAppVersion string          `protobuf:"bytes,7,opt,name=producer_app_version,json=producerAppVersion,proto3" json:"producer_app_version,omitempty"`
+	SdkName            string          `protobuf:"bytes,8,opt,name=sdk_name,json=sdkName,proto3" json:"sdk_name,omitempty"`
+	SdkVersion         string          `protobuf:"bytes,9,opt,name=sdk_version,json=sdkVersion,proto3" json:"sdk_version,omitempty"`
+	Entity             *diodepb.Entity `protobuf:"bytes,10,opt,name=entity,proto3" json:"entity,omitempty"`
+	Error              *IngestionError `protobuf:"bytes,11,opt,name=error,proto3" json:"error,omitempty"`
+	ChangeSet          *ChangeSet      `protobuf:"bytes,12,opt,name=change_set,json=changeSet,proto3" json:"change_set,omitempty"`
+	ObjectType         string          `protobuf:"bytes,13,opt,name=object_type,json=objectType,proto3" json:"object_type,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -494,6 +496,7 @@ func (x *IngestionLog) GetId() string {
 	return ""
 }
 
+// Deprecated: Marked as deprecated in diode/v1/reconciler.proto.
 func (x *IngestionLog) GetDataType() string {
 	if x != nil {
 		return x.DataType
@@ -571,17 +574,26 @@ func (x *IngestionLog) GetChangeSet() *ChangeSet {
 	return nil
 }
 
+func (x *IngestionLog) GetObjectType() string {
+	if x != nil {
+		return x.ObjectType
+	}
+	return ""
+}
+
 // The request to retrieve ingestion logs
 type RetrieveIngestionLogsRequest struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	PageSize         *int32                 `protobuf:"varint,1,opt,name=page_size,json=pageSize,proto3,oneof" json:"page_size,omitempty"`                     // Number of logs per page, default is 100
-	State            *State                 `protobuf:"varint,2,opt,name=state,proto3,enum=diode.v1.State,oneof" json:"state,omitempty"`                       // Optional filter by state field
-	DataType         string                 `protobuf:"bytes,3,opt,name=data_type,json=dataType,proto3" json:"data_type,omitempty"`                            // Optional filter by data type field
-	RequestId        string                 `protobuf:"bytes,4,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`                         // Optional filter by request ID
-	IngestionTsStart int64                  `protobuf:"varint,5,opt,name=ingestion_ts_start,json=ingestionTsStart,proto3" json:"ingestion_ts_start,omitempty"` // Optional start of ingestion timestamp range
-	IngestionTsEnd   int64                  `protobuf:"varint,6,opt,name=ingestion_ts_end,json=ingestionTsEnd,proto3" json:"ingestion_ts_end,omitempty"`       // Optional end of ingestion timestamp range
-	PageToken        string                 `protobuf:"bytes,7,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`                         // Token to fetch the next page of results
-	OnlyMetrics      bool                   `protobuf:"varint,8,opt,name=only_metrics,json=onlyMetrics,proto3" json:"only_metrics,omitempty"`                  // Flag to return only the ingestion metrics
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	PageSize *int32                 `protobuf:"varint,1,opt,name=page_size,json=pageSize,proto3,oneof" json:"page_size,omitempty"` // Number of logs per page, default is 100
+	State    *State                 `protobuf:"varint,2,opt,name=state,proto3,enum=diode.v1.State,oneof" json:"state,omitempty"`   // Optional filter by state field
+	// Deprecated: Marked as deprecated in diode/v1/reconciler.proto.
+	DataType         string `protobuf:"bytes,3,opt,name=data_type,json=dataType,proto3" json:"data_type,omitempty"`                            // Optional filter by data type field
+	RequestId        string `protobuf:"bytes,4,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`                         // Optional filter by request ID
+	IngestionTsStart int64  `protobuf:"varint,5,opt,name=ingestion_ts_start,json=ingestionTsStart,proto3" json:"ingestion_ts_start,omitempty"` // Optional start of ingestion timestamp range
+	IngestionTsEnd   int64  `protobuf:"varint,6,opt,name=ingestion_ts_end,json=ingestionTsEnd,proto3" json:"ingestion_ts_end,omitempty"`       // Optional end of ingestion timestamp range
+	PageToken        string `protobuf:"bytes,7,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`                         // Token to fetch the next page of results
+	OnlyMetrics      bool   `protobuf:"varint,8,opt,name=only_metrics,json=onlyMetrics,proto3" json:"only_metrics,omitempty"`                  // Flag to return only the ingestion metrics
+	ObjectType       string `protobuf:"bytes,9,opt,name=object_type,json=objectType,proto3" json:"object_type,omitempty"`                      // Optional filter by object type
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -630,6 +642,7 @@ func (x *RetrieveIngestionLogsRequest) GetState() State {
 	return State_UNSPECIFIED
 }
 
+// Deprecated: Marked as deprecated in diode/v1/reconciler.proto.
 func (x *RetrieveIngestionLogsRequest) GetDataType() string {
 	if x != nil {
 		return x.DataType
@@ -670,6 +683,13 @@ func (x *RetrieveIngestionLogsRequest) GetOnlyMetrics() bool {
 		return x.OnlyMetrics
 	}
 	return false
+}
+
+func (x *RetrieveIngestionLogsRequest) GetObjectType() string {
+	if x != nil {
+		return x.ObjectType
+	}
+	return ""
 }
 
 // The response from the retrieve ingestion logs request

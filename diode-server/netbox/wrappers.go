@@ -34,8 +34,11 @@ type ComparableData interface {
 	// NestedObjects returns all nested objects
 	NestedObjects() ([]ComparableData, error)
 
-	// DataType returns the data type
-	DataType() string
+	// ObjectType returns the object type
+	ObjectType() string
+
+	// ObjectTypeName returns the object type name
+	ObjectTypeName() string
 
 	// ObjectStateQueryParams returns the query parameters needed to retrieve its object state
 	ObjectStateQueryParams() map[string]string
@@ -125,8 +128,8 @@ func (dw *TagDataWrapper) NestedObjects() ([]ComparableData, error) {
 	return nil, nil
 }
 
-// DataType returns the data type
-func (dw *TagDataWrapper) DataType() string {
+// ObjectType returns the object type
+func (dw *TagDataWrapper) ObjectType() string {
 	return ExtrasTagObjectType
 }
 

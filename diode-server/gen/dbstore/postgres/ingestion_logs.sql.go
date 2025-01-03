@@ -43,15 +43,15 @@ func (q *Queries) CountIngestionLogsPerState(ctx context.Context) ([]CountIngest
 }
 
 const createIngestionLog = `-- name: CreateIngestionLog :one
-INSERT INTO ingestion_logs (external_id, data_type, state, request_id, ingestion_ts, producer_app_name,
+INSERT INTO ingestion_logs (external_id, object_type, state, request_id, ingestion_ts, producer_app_name,
                             producer_app_version, sdk_name, sdk_version, entity, source_metadata)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-RETURNING id, external_id, data_type, state, request_id, ingestion_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at
+RETURNING id, external_id, object_type, state, request_id, ingestion_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at
 `
 
 type CreateIngestionLogParams struct {
 	ExternalID         string      `json:"external_id"`
-	DataType           pgtype.Text `json:"data_type"`
+	ObjectType         pgtype.Text `json:"object_type"`
 	State              pgtype.Int4 `json:"state"`
 	RequestID          pgtype.Text `json:"request_id"`
 	IngestionTs        pgtype.Int8 `json:"ingestion_ts"`
@@ -66,7 +66,7 @@ type CreateIngestionLogParams struct {
 func (q *Queries) CreateIngestionLog(ctx context.Context, arg CreateIngestionLogParams) (IngestionLog, error) {
 	row := q.db.QueryRow(ctx, createIngestionLog,
 		arg.ExternalID,
-		arg.DataType,
+		arg.ObjectType,
 		arg.State,
 		arg.RequestID,
 		arg.IngestionTs,
@@ -81,7 +81,7 @@ func (q *Queries) CreateIngestionLog(ctx context.Context, arg CreateIngestionLog
 	err := row.Scan(
 		&i.ID,
 		&i.ExternalID,
-		&i.DataType,
+		&i.ObjectType,
 		&i.State,
 		&i.RequestID,
 		&i.IngestionTs,
@@ -99,7 +99,7 @@ func (q *Queries) CreateIngestionLog(ctx context.Context, arg CreateIngestionLog
 }
 
 const retrieveIngestionLogByExternalID = `-- name: RetrieveIngestionLogByExternalID :one
-SELECT id, external_id, data_type, state, request_id, ingestion_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at
+SELECT id, external_id, object_type, state, request_id, ingestion_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at
 FROM ingestion_logs
 WHERE external_id = $1
 `
@@ -110,7 +110,7 @@ func (q *Queries) RetrieveIngestionLogByExternalID(ctx context.Context, external
 	err := row.Scan(
 		&i.ID,
 		&i.ExternalID,
-		&i.DataType,
+		&i.ObjectType,
 		&i.State,
 		&i.RequestID,
 		&i.IngestionTs,
@@ -128,10 +128,10 @@ func (q *Queries) RetrieveIngestionLogByExternalID(ctx context.Context, external
 }
 
 const retrieveIngestionLogs = `-- name: RetrieveIngestionLogs :many
-SELECT id, external_id, data_type, state, request_id, ingestion_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at
+SELECT id, external_id, object_type, state, request_id, ingestion_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at
 FROM ingestion_logs
 WHERE (state = $1 OR $1 IS NULL)
-  AND (data_type = $2 OR $2 IS NULL)
+  AND (object_type = $2 OR $2 IS NULL)
   AND (ingestion_ts >= $3 OR $3 IS NULL)
   AND (ingestion_ts <= $4 OR $4 IS NULL)
 ORDER BY id DESC
@@ -140,7 +140,7 @@ LIMIT $6 OFFSET $5
 
 type RetrieveIngestionLogsParams struct {
 	State            pgtype.Int4 `json:"state"`
-	DataType         pgtype.Text `json:"data_type"`
+	ObjectType       pgtype.Text `json:"object_type"`
 	IngestionTsStart pgtype.Int8 `json:"ingestion_ts_start"`
 	IngestionTsEnd   pgtype.Int8 `json:"ingestion_ts_end"`
 	Offset           int32       `json:"offset"`
@@ -150,7 +150,7 @@ type RetrieveIngestionLogsParams struct {
 func (q *Queries) RetrieveIngestionLogs(ctx context.Context, arg RetrieveIngestionLogsParams) ([]IngestionLog, error) {
 	rows, err := q.db.Query(ctx, retrieveIngestionLogs,
 		arg.State,
-		arg.DataType,
+		arg.ObjectType,
 		arg.IngestionTsStart,
 		arg.IngestionTsEnd,
 		arg.Offset,
@@ -166,7 +166,7 @@ func (q *Queries) RetrieveIngestionLogs(ctx context.Context, arg RetrieveIngesti
 		if err := rows.Scan(
 			&i.ID,
 			&i.ExternalID,
-			&i.DataType,
+			&i.ObjectType,
 			&i.State,
 			&i.RequestID,
 			&i.IngestionTs,
@@ -191,10 +191,10 @@ func (q *Queries) RetrieveIngestionLogs(ctx context.Context, arg RetrieveIngesti
 }
 
 const retrieveIngestionLogsWithChangeSets = `-- name: RetrieveIngestionLogsWithChangeSets :many
-SELECT v_ingestion_logs_with_change_set.id, v_ingestion_logs_with_change_set.external_id, v_ingestion_logs_with_change_set.data_type, v_ingestion_logs_with_change_set.state, v_ingestion_logs_with_change_set.request_id, v_ingestion_logs_with_change_set.ingestion_ts, v_ingestion_logs_with_change_set.producer_app_name, v_ingestion_logs_with_change_set.producer_app_version, v_ingestion_logs_with_change_set.sdk_name, v_ingestion_logs_with_change_set.sdk_version, v_ingestion_logs_with_change_set.entity, v_ingestion_logs_with_change_set.error, v_ingestion_logs_with_change_set.source_metadata, v_ingestion_logs_with_change_set.created_at, v_ingestion_logs_with_change_set.updated_at, v_ingestion_logs_with_change_set.change_set, v_ingestion_logs_with_change_set.changes
+SELECT v_ingestion_logs_with_change_set.id, v_ingestion_logs_with_change_set.external_id, v_ingestion_logs_with_change_set.object_type, v_ingestion_logs_with_change_set.state, v_ingestion_logs_with_change_set.request_id, v_ingestion_logs_with_change_set.ingestion_ts, v_ingestion_logs_with_change_set.producer_app_name, v_ingestion_logs_with_change_set.producer_app_version, v_ingestion_logs_with_change_set.sdk_name, v_ingestion_logs_with_change_set.sdk_version, v_ingestion_logs_with_change_set.entity, v_ingestion_logs_with_change_set.error, v_ingestion_logs_with_change_set.source_metadata, v_ingestion_logs_with_change_set.created_at, v_ingestion_logs_with_change_set.updated_at, v_ingestion_logs_with_change_set.change_set, v_ingestion_logs_with_change_set.changes
 FROM v_ingestion_logs_with_change_set
 WHERE (v_ingestion_logs_with_change_set.state = $1 OR $1 IS NULL)
-  AND (v_ingestion_logs_with_change_set.data_type = $2 OR $2 IS NULL)
+  AND (v_ingestion_logs_with_change_set.object_type = $2 OR $2 IS NULL)
   AND (v_ingestion_logs_with_change_set.ingestion_ts >= $3 OR
        $3 IS NULL)
   AND (v_ingestion_logs_with_change_set.ingestion_ts <= $4 OR
@@ -205,7 +205,7 @@ LIMIT $6 OFFSET $5
 
 type RetrieveIngestionLogsWithChangeSetsParams struct {
 	State            pgtype.Int4 `json:"state"`
-	DataType         pgtype.Text `json:"data_type"`
+	ObjectType       pgtype.Text `json:"object_type"`
 	IngestionTsStart pgtype.Int8 `json:"ingestion_ts_start"`
 	IngestionTsEnd   pgtype.Int8 `json:"ingestion_ts_end"`
 	Offset           int32       `json:"offset"`
@@ -215,7 +215,7 @@ type RetrieveIngestionLogsWithChangeSetsParams struct {
 func (q *Queries) RetrieveIngestionLogsWithChangeSets(ctx context.Context, arg RetrieveIngestionLogsWithChangeSetsParams) ([]VIngestionLogsWithChangeSet, error) {
 	rows, err := q.db.Query(ctx, retrieveIngestionLogsWithChangeSets,
 		arg.State,
-		arg.DataType,
+		arg.ObjectType,
 		arg.IngestionTsStart,
 		arg.IngestionTsEnd,
 		arg.Offset,
@@ -231,7 +231,7 @@ func (q *Queries) RetrieveIngestionLogsWithChangeSets(ctx context.Context, arg R
 		if err := rows.Scan(
 			&i.ID,
 			&i.ExternalID,
-			&i.DataType,
+			&i.ObjectType,
 			&i.State,
 			&i.RequestID,
 			&i.IngestionTs,
@@ -262,7 +262,7 @@ UPDATE ingestion_logs
 SET state = $2,
     error = $3
 WHERE id = $1
-RETURNING id, external_id, data_type, state, request_id, ingestion_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at
+RETURNING id, external_id, object_type, state, request_id, ingestion_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at
 `
 
 type UpdateIngestionLogStateWithErrorParams struct {

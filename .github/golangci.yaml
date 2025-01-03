@@ -25,6 +25,8 @@ issues:
       text: "package-comments: should have a package comment"
       linters:
         - revive
+    - path: /*.go
+      text: 'SA1019: filter.DataType is deprecated: Marked as deprecated in diode/v1/reconciler.proto.'
 
 severity:
   default-severity: error

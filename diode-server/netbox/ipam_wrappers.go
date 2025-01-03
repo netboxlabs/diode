@@ -114,8 +114,8 @@ func (dw *IpamIPAddressDataWrapper) NestedObjects() ([]ComparableData, error) {
 	return objects, nil
 }
 
-// DataType returns the data type
-func (dw *IpamIPAddressDataWrapper) DataType() string {
+// ObjectType returns the object type
+func (dw *IpamIPAddressDataWrapper) ObjectType() string {
 	return IpamIPAddressObjectType
 }
 
@@ -447,8 +447,8 @@ func (dw *IpamPrefixDataWrapper) NestedObjects() ([]ComparableData, error) {
 	return objects, nil
 }
 
-// DataType returns the data type
-func (dw *IpamPrefixDataWrapper) DataType() string {
+// ObjectType returns the object type
+func (dw *IpamPrefixDataWrapper) ObjectType() string {
 	return IpamPrefixObjectType
 }
 

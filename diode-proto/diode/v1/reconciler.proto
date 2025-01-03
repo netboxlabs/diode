@@ -81,7 +81,7 @@ message ChangeSet {
 // An ingestion log
 message IngestionLog {
   string id = 1;
-  string data_type = 2;
+  string data_type = 2 [deprecated = true];
   State state = 3;
   string request_id = 4;
   int64 ingestion_ts = 5;
@@ -92,18 +92,20 @@ message IngestionLog {
   diode.v1.Entity entity = 10;
   IngestionError error = 11;
   ChangeSet change_set = 12;
+  string object_type = 13;
 }
 
 // The request to retrieve ingestion logs
 message RetrieveIngestionLogsRequest {
   optional int32 page_size = 1; // Number of logs per page, default is 100
   optional State state = 2; // Optional filter by state field
-  string data_type = 3; // Optional filter by data type field
+  string data_type = 3 [deprecated = true]; // Optional filter by data type field
   string request_id = 4; // Optional filter by request ID
   int64 ingestion_ts_start = 5; // Optional start of ingestion timestamp range
   int64 ingestion_ts_end = 6; // Optional end of ingestion timestamp range
   string page_token = 7; // Token to fetch the next page of results
   bool only_metrics = 8; // Flag to return only the ingestion metrics
+  string object_type = 9; // Optional filter by object type
 }
 
 // The response from the retrieve ingestion logs request
