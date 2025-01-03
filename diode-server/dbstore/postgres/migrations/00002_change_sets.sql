@@ -40,9 +40,9 @@ CREATE INDEX IF NOT EXISTS idx_changes_object_type ON changes (object_type);
 
 -- Add foreign key constraints
 ALTER TABLE change_sets
-    ADD CONSTRAINT fk_change_sets_ingestion_logs FOREIGN KEY (ingestion_log_id) REFERENCES ingestion_logs (id);
+    ADD CONSTRAINT fk_change_sets_ingestion_logs FOREIGN KEY (ingestion_log_id) REFERENCES ingestion_logs (id) ON DELETE CASCADE;
 ALTER TABLE changes
-    ADD CONSTRAINT fk_changes_change_sets FOREIGN KEY (change_set_id) REFERENCES change_sets (id);
+    ADD CONSTRAINT fk_changes_change_sets FOREIGN KEY (change_set_id) REFERENCES change_sets (id) ON DELETE CASCADE;
 
 -- Create a view to join ingestion_logs with aggregated change_set and changes
 CREATE VIEW v_ingestion_logs_with_change_set AS
