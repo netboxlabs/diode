@@ -409,6 +409,80 @@ func TestVirtualizationPrepare(t *testing.T) {
 			wantErr: true,
 		},
 		{
+			name: "[P3] ingest virtualization.cluster with name only - existing object found with status - do nothing",
+			ingestEntity: differ.IngestEntity{
+				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				DataType:  "virtualization.cluster",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Cluster{
+						Cluster: &diodepb.Cluster{
+							Name: "Test",
+						},
+					},
+				},
+			},
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "virtualization.cluster",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "Test", "site__name": "undefined"},
+					objectChangeID: 0,
+					object: &netbox.VirtualizationClusterDataWrapper{
+						Cluster: &netbox.VirtualizationCluster{
+							ID:     1,
+							Name:   "Test",
+							Status: strPtr(netbox.DefaultVirtualizationStatus),
+						},
+					},
+				},
+				{
+					objectType:     "virtualization.clustergroup",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "undefined"},
+					objectChangeID: 0,
+					object: &netbox.VirtualizationClusterGroupDataWrapper{
+						ClusterGroup: &netbox.VirtualizationClusterGroup{
+							ID:   1,
+							Name: "undefined",
+							Slug: "undefined",
+						},
+					},
+				},
+				{
+					objectType:     "virtualization.clustertype",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "undefined"},
+					objectChangeID: 0,
+					object: &netbox.VirtualizationClusterTypeDataWrapper{
+						ClusterType: &netbox.VirtualizationClusterType{
+							ID:   1,
+							Name: "undefined",
+							Slug: "undefined",
+						},
+					},
+				},
+				{
+					objectType:     "dcim.site",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "undefined"},
+					objectChangeID: 0,
+					object: &netbox.DcimSiteDataWrapper{
+						Site: &netbox.DcimSite{
+							ID:     1,
+							Name:   "undefined",
+							Slug:   "undefined",
+							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						},
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet:   []changeset.Change{},
+			},
+			wantErr: false,
+		},
+		{
 			name: "[P4] ingest virtualization.virtualmachine with name only - existing object not found - create",
 			ingestEntity: differ.IngestEntity{
 				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
