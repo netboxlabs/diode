@@ -526,14 +526,16 @@ The response from the retrieve ingestion logs request
 
 ### State
 
-| Name        | Number | Description |
-|-------------|--------|-------------|
-| UNSPECIFIED | 0      |             |
-| QUEUED      | 1      |             |
-| RECONCILED  | 2      |             |
-| FAILED      | 3      |             |
-| NO_CHANGES  | 4      |             |
-| IGNORED     | 5      |             |
+| Name              | Number | Description |
+|-------------------|--------|-------------|
+| STATE_UNSPECIFIED | 0      |             |
+| QUEUED            | 1      |             |
+| OPEN              | 2      |             |
+| APPLIED           | 3      |             |
+| FAILED            | 4      |             |
+| NO_CHANGES        | 5      |             |
+| IGNORED           | 6      |             |
+| ERRORED           | 7      |             |
 
 <a name="diode-v1-ReconcilerService"></a>
 

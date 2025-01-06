@@ -119,13 +119,13 @@ func TestRetrieveLogs(t *testing.T) {
 			name: "valid request",
 			in:   reconcilerpb.RetrieveIngestionLogsRequest{},
 			ingestionLogsPerState: map[reconcilerpb.State]int32{
-				reconcilerpb.State_RECONCILED: 2,
+				reconcilerpb.State_APPLIED: 2,
 			},
 			ingestionLogs: []*reconcilerpb.IngestionLog{
 				{
 					Id:                 "2mAT7vZ38H4ttI0i5dBebwJbSnZ",
 					ObjectType:         "dcim.interface",
-					State:              reconcilerpb.State_RECONCILED,
+					State:              reconcilerpb.State_APPLIED,
 					RequestId:          "req-id",
 					IngestionTs:        1725552914392208722,
 					ProducerAppName:    "diode-agent",
@@ -147,7 +147,7 @@ func TestRetrieveLogs(t *testing.T) {
 				{
 					Id:                 "2mC8GVBGFg6NyLsQxuS4IYMB6FI",
 					ObjectType:         "dcim.device",
-					State:              reconcilerpb.State_RECONCILED,
+					State:              reconcilerpb.State_APPLIED,
 					RequestId:          "bc1052e3-656a-42f0-b364-27b385e02a0c",
 					IngestionTs:        1725552654541975975,
 					ProducerAppName:    "diode-agent",
@@ -176,7 +176,7 @@ func TestRetrieveLogs(t *testing.T) {
 				Logs: []*reconcilerpb.IngestionLog{
 					{
 						ObjectType:         "dcim.interface",
-						State:              reconcilerpb.State_RECONCILED,
+						State:              reconcilerpb.State_APPLIED,
 						RequestId:          "req-id",
 						IngestionTs:        1725552914392208722,
 						ProducerAppName:    "diode-agent",
@@ -197,7 +197,7 @@ func TestRetrieveLogs(t *testing.T) {
 					},
 					{
 						ObjectType:         "dcim.device",
-						State:              reconcilerpb.State_RECONCILED,
+						State:              reconcilerpb.State_APPLIED,
 						RequestId:          "bc1052e3-656a-42f0-b364-27b385e02a0c",
 						IngestionTs:        1725552654541975975,
 						ProducerAppName:    "diode-agent",
@@ -315,7 +315,7 @@ func TestRetrieveLogs(t *testing.T) {
 			hasError: false,
 		},
 		{
-			name: "filter by new state",
+			name: "filter by queued state",
 			in:   reconcilerpb.RetrieveIngestionLogsRequest{State: reconcilerpb.State_QUEUED.Enum()},
 			ingestionLogsPerState: map[reconcilerpb.State]int32{
 				reconcilerpb.State_QUEUED: 1,
@@ -376,16 +376,16 @@ func TestRetrieveLogs(t *testing.T) {
 			hasError: false,
 		},
 		{
-			name: "filter by reconciled state",
-			in:   reconcilerpb.RetrieveIngestionLogsRequest{State: reconcilerpb.State_RECONCILED.Enum()},
+			name: "filter by applied state",
+			in:   reconcilerpb.RetrieveIngestionLogsRequest{State: reconcilerpb.State_APPLIED.Enum()},
 			ingestionLogsPerState: map[reconcilerpb.State]int32{
-				reconcilerpb.State_RECONCILED: 1,
+				reconcilerpb.State_APPLIED: 1,
 			},
 			ingestionLogs: []*reconcilerpb.IngestionLog{
 				{
 					Id:                 "2mAT7vZ38H4ttI0i5dBebwJbSnZ",
 					ObjectType:         "dcim.interface",
-					State:              reconcilerpb.State_RECONCILED,
+					State:              reconcilerpb.State_APPLIED,
 					RequestId:          "req-id",
 					IngestionTs:        1725552914392208722,
 					ProducerAppName:    "diode-agent",
@@ -410,7 +410,7 @@ func TestRetrieveLogs(t *testing.T) {
 					{
 						Id:                 "2mAT7vZ38H4ttI0i5dBebwJbSnZ",
 						ObjectType:         "dcim.interface",
-						State:              reconcilerpb.State_RECONCILED,
+						State:              reconcilerpb.State_APPLIED,
 						RequestId:          "req-id",
 						IngestionTs:        1725552914392208722,
 						ProducerAppName:    "diode-agent",
@@ -565,16 +565,16 @@ func TestRetrieveLogs(t *testing.T) {
 			hasError: false,
 		},
 		{
-			name: "filter by data type",
+			name: "filter by object type",
 			in:   reconcilerpb.RetrieveIngestionLogsRequest{ObjectType: "dcim.interface"},
 			ingestionLogsPerState: map[reconcilerpb.State]int32{
-				reconcilerpb.State_RECONCILED: 1,
+				reconcilerpb.State_APPLIED: 1,
 			},
 			ingestionLogs: []*reconcilerpb.IngestionLog{
 				{
 					Id:                 "2mAT7vZ38H4ttI0i5dBebwJbSnZ",
 					ObjectType:         "dcim.interface",
-					State:              reconcilerpb.State_RECONCILED,
+					State:              reconcilerpb.State_APPLIED,
 					RequestId:          "req-id",
 					IngestionTs:        1725552914392208722,
 					ProducerAppName:    "diode-agent",
@@ -599,7 +599,7 @@ func TestRetrieveLogs(t *testing.T) {
 					{
 						Id:                 "2mAT7vZ38H4ttI0i5dBebwJbSnZ",
 						ObjectType:         "dcim.interface",
-						State:              reconcilerpb.State_RECONCILED,
+						State:              reconcilerpb.State_APPLIED,
 						RequestId:          "req-id",
 						IngestionTs:        1725552914392208722,
 						ProducerAppName:    "diode-agent",
@@ -631,13 +631,13 @@ func TestRetrieveLogs(t *testing.T) {
 			name: "filter by timestamp",
 			in:   reconcilerpb.RetrieveIngestionLogsRequest{IngestionTsStart: 1725552914392208639},
 			ingestionLogsPerState: map[reconcilerpb.State]int32{
-				reconcilerpb.State_RECONCILED: 1,
+				reconcilerpb.State_APPLIED: 1,
 			},
 			ingestionLogs: []*reconcilerpb.IngestionLog{
 				{
 					Id:                 "2mAT7vZ38H4ttI0i5dBebwJbSnZ",
 					ObjectType:         "dcim.interface",
-					State:              reconcilerpb.State_RECONCILED,
+					State:              reconcilerpb.State_APPLIED,
 					RequestId:          "req-id",
 					IngestionTs:        1725552914392208722,
 					ProducerAppName:    "diode-agent",
@@ -662,7 +662,7 @@ func TestRetrieveLogs(t *testing.T) {
 					{
 						Id:                 "2mAT7vZ38H4ttI0i5dBebwJbSnZ",
 						ObjectType:         "dcim.interface",
-						State:              reconcilerpb.State_RECONCILED,
+						State:              reconcilerpb.State_APPLIED,
 						RequestId:          "req-id",
 						IngestionTs:        1725552914392208722,
 						ProducerAppName:    "diode-agent",
@@ -694,13 +694,13 @@ func TestRetrieveLogs(t *testing.T) {
 			name: "pagination check",
 			in:   reconcilerpb.RetrieveIngestionLogsRequest{PageToken: "AAAFlg=="},
 			ingestionLogsPerState: map[reconcilerpb.State]int32{
-				reconcilerpb.State_RECONCILED: 1,
+				reconcilerpb.State_APPLIED: 1,
 			},
 			ingestionLogs: []*reconcilerpb.IngestionLog{
 				{
 					Id:                 "2mAT7vZ38H4ttI0i5dBebwJbSnZ",
 					ObjectType:         "dcim.interface",
-					State:              reconcilerpb.State_RECONCILED,
+					State:              reconcilerpb.State_APPLIED,
 					RequestId:          "req-id",
 					IngestionTs:        1725552914392208722,
 					ProducerAppName:    "diode-agent",
@@ -725,7 +725,7 @@ func TestRetrieveLogs(t *testing.T) {
 					{
 						Id:                 "2mAT7vZ38H4ttI0i5dBebwJbSnZ",
 						ObjectType:         "dcim.interface",
-						State:              reconcilerpb.State_RECONCILED,
+						State:              reconcilerpb.State_APPLIED,
 						RequestId:          "req-id",
 						IngestionTs:        1725552914392208722,
 						ProducerAppName:    "diode-agent",
@@ -861,7 +861,7 @@ func TestRetrieveIngestionLogsMetricsOnly(t *testing.T) {
 
 			ingestionLogStateMetricsMap := map[reconcilerpb.State]int32{
 				reconcilerpb.State_QUEUED:     expected.Queued,
-				reconcilerpb.State_RECONCILED: expected.Reconciled,
+				reconcilerpb.State_APPLIED:    expected.Reconciled,
 				reconcilerpb.State_FAILED:     expected.Failed,
 				reconcilerpb.State_NO_CHANGES: expected.NoChanges,
 			}

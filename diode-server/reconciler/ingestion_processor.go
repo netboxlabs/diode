@@ -325,7 +325,7 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 
 		objectType, err := extractObjectType(v)
 		if err != nil {
-			errs = append(errs, fmt.Errorf("failed to extract data type for index %d: %v", i, err))
+			errs = append(errs, fmt.Errorf("failed to extract object type for index %d: %v", i, err))
 			continue
 		}
 
@@ -409,6 +409,6 @@ func extractObjectType(in *diodepb.Entity) (string, error) {
 	case *diodepb.Entity_VirtualDisk:
 		return netbox.VirtualizationVirtualDiskObjectType, nil
 	default:
-		return "", fmt.Errorf("unknown data type")
+		return "", fmt.Errorf("unknown object type")
 	}
 }
