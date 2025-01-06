@@ -486,6 +486,10 @@ func (vw *VirtualizationClusterDataWrapper) Patch(cmp ComparableData, intendedNe
 			vw.Cluster.Description = intended.Cluster.Description
 		}
 
+		if vw.Cluster.Status == nil || *vw.Cluster.Status == "" {
+			vw.Cluster.Status = intended.Cluster.Status
+		}
+
 		if actualSite.IsPlaceholder() && intended.Cluster.Site != nil {
 			intendedSite = extractFromObjectsMap(currentNestedObjectsMap, fmt.Sprintf("%p", intended.Cluster.Site))
 		}
