@@ -532,6 +532,14 @@ func (dw *IpamPrefixDataWrapper) Patch(cmp ComparableData, intendedNestedObjects
 			dw.Prefix.Status = intended.Prefix.Status
 		}
 
+		if dw.Prefix.IsPool == nil {
+			dw.Prefix.IsPool = intended.Prefix.IsPool
+		}
+
+		if dw.Prefix.MarkUtilized == nil {
+			dw.Prefix.MarkUtilized = intended.Prefix.MarkUtilized
+		}
+
 		if dw.Prefix.Description == nil {
 			dw.Prefix.Description = intended.Prefix.Description
 		}
