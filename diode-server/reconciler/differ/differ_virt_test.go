@@ -403,8 +403,8 @@ func TestVirtualizationPrepare(t *testing.T) {
 		{
 			name: "[P3] ingest virtualization.cluster with name only - existing object found with status - do nothing",
 			ingestEntity: differ.IngestEntity{
-				RequestID:   "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				ObjectType:  "virtualization.cluster",
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "virtualization.cluster",
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_Cluster{
 						Cluster: &diodepb.Cluster{
@@ -1159,8 +1159,8 @@ func TestVirtualizationPrepare(t *testing.T) {
 		{
 			name: "[P5] ingest virtualization.vminterface with name only - existing object not found - create",
 			ingestEntity: differ.IngestEntity{
-				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				DataType:  "virtualization.vminterface",
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "virtualization.vminterface",
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_Vminterface{
 						Vminterface: &diodepb.VMInterface{
@@ -1356,8 +1356,8 @@ func TestVirtualizationPrepare(t *testing.T) {
 		{
 			name: "[P5] ingest empty virtualization.vminterface - error",
 			ingestEntity: differ.IngestEntity{
-				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				DataType:  "virtualization.vminterface",
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "virtualization.vminterface",
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_Vminterface{
 						Vminterface: &diodepb.VMInterface{},

@@ -1841,8 +1841,8 @@ func TestIpamPrepare(t *testing.T) {
 		{
 			name: "[P2] ingest ipam.prefix with prefix only - existing object with is pool and mark utilised found - do nothing",
 			ingestEntity: differ.IngestEntity{
-				RequestID: "cfa0f129-125c-440d-9e41-e87583cd7d89",
-				DataType:  "ipam.prefix",
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "ipam.prefix",
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_Prefix{
 						Prefix: &diodepb.Prefix{
