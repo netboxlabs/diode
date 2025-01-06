@@ -174,7 +174,7 @@ func (dw *IpamIPAddressDataWrapper) hash() string {
 func (dw *IpamIPAddressDataWrapper) Patch(cmp ComparableData, intendedNestedObjects map[string]ComparableData) ([]ComparableData, error) {
 	intended, ok := cmp.(*IpamIPAddressDataWrapper)
 	if !ok && intended != nil {
-		return nil, errors.New("invalid data type")
+		return nil, errors.New("invalid object type")
 	}
 
 	actualNestedObjectsMap := make(map[string]ComparableData)
@@ -483,7 +483,7 @@ func (dw *IpamPrefixDataWrapper) ID() int {
 func (dw *IpamPrefixDataWrapper) Patch(cmp ComparableData, intendedNestedObjects map[string]ComparableData) ([]ComparableData, error) {
 	intended, ok := cmp.(*IpamPrefixDataWrapper)
 	if !ok && intended != nil {
-		return nil, errors.New("invalid data type")
+		return nil, errors.New("invalid object type")
 	}
 
 	actualNestedObjectsMap := make(map[string]ComparableData)

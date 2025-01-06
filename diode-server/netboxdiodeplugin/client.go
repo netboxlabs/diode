@@ -477,8 +477,8 @@ func (c *Client) ApplyChangeSet(ctx context.Context, payload ChangeSetRequest) (
 	return &changeSetResponse, nil
 }
 
-func wrapObjectState(dataType string, object any) (any, error) {
-	switch dataType {
+func wrapObjectState(objectType string, object any) (any, error) {
+	switch objectType {
 	case netbox.DcimDeviceObjectType:
 		return struct {
 			Device any
@@ -576,6 +576,6 @@ func wrapObjectState(dataType string, object any) (any, error) {
 			VirtualDisk: object,
 		}, nil
 	default:
-		return nil, fmt.Errorf("unsupported data type %s", dataType)
+		return nil, fmt.Errorf("unsupported object type %s", objectType)
 	}
 }
