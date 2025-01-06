@@ -211,14 +211,6 @@ func TestVirtualizationPrepare(t *testing.T) {
 					},
 				},
 			},
-			//rawIngestEntity: []byte(`{
-			//	"request_id": "cfa0f129-125c-440d-9e41-e87583cd7d89",
-			//	"data_type": "virtualization.clustertype",
-			//	"entity": {
-			//		"ClusterType": {}
-			//	},
-			//	"state": 0
-			//}`),
 			retrieveObjectStates: []mockRetrieveObjectState{},
 			wantChangeSet: changeset.ChangeSet{
 				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
