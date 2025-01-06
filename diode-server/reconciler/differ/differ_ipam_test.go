@@ -1838,6 +1838,65 @@ func TestIpamPrepare(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "[P2] ingest ipam.prefix with prefix only - existing object with is pool and mark utilised found - do nothing",
+			ingestEntity: differ.IngestEntity{
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "ipam.prefix",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Prefix{
+						Prefix: &diodepb.Prefix{
+							Prefix: "192.168.0.0/32",
+							Site: &diodepb.Site{
+								Name: "undefined",
+							},
+						},
+					},
+				},
+			},
+			retrieveObjectStates: []mockRetrieveObjectState{
+				{
+					objectType:     "dcim.site",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "undefined"},
+					objectChangeID: 0,
+					object: &netbox.DcimSiteDataWrapper{
+						Site: &netbox.DcimSite{
+							ID:     1,
+							Name:   "undefined",
+							Slug:   "undefined",
+							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+						},
+					},
+				},
+				{
+					objectType:     "ipam.prefix",
+					objectID:       0,
+					queryParams:    map[string]string{"q": "192.168.0.0/32"},
+					objectChangeID: 0,
+					object: &netbox.IpamPrefixDataWrapper{
+						Prefix: &netbox.IpamPrefix{
+							ID:     1,
+							Prefix: "192.168.0.0/32",
+							Site: &netbox.DcimSite{
+								ID:     1,
+								Name:   "undefined",
+								Slug:   "undefined",
+								Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
+							},
+							Status:       &netbox.DefaultPrefixStatus,
+							IsPool:       boolPtr(true),
+							MarkUtilized: boolPtr(false),
+						},
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ChangeSet:   []changeset.Change{},
+			},
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -1875,4 +1934,8 @@ func TestIpamPrepare(t *testing.T) {
 			}
 		})
 	}
+}
+
+func boolPtr(b bool) *bool {
+	return &b
 }
