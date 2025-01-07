@@ -87,7 +87,7 @@ func runDBMigrations(ctx context.Context, logger *slog.Logger, dbURL string) err
 		}
 	}()
 
-	m, err := migrator.NewMigrator(logger, "postgres", db, "/etc/diode/migrations")
+	m, err := migrator.NewMigrator(logger, "postgres", db, "/etc/diode/migrations", "")
 	if err != nil {
 		return fmt.Errorf("failed to create migrator: %v", err)
 	}

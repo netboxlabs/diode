@@ -49,6 +49,7 @@ func TestMigrator_Run(t *testing.T) {
 				"sqlite3",
 				db,
 				"testdata/migrations",
+				"",
 			)
 			require.NoError(t, err)
 
