@@ -13,8 +13,29 @@ import (
 	"github.com/netboxlabs/diode/diode-server/sentry"
 )
 
+// Ops high level operations performed during ingestion processing
+type Ops struct {
+	repository Repository
+	nbClient   netboxdiodeplugin.NetBoxAPI
+	logger     *slog.Logger
+}
+
+// NewOps creates a new Ops
+func NewOps(repository Repository, nbClient netboxdiodeplugin.NetBoxAPI, logger *slog.Logger) *Ops {
+	return &Ops{
+		repository: repository,
+		nbClient:   nbClient,
+		logger:     logger,
+	}
+}
+
+// CreateIngestionLog creates a record for a newly received ingestion log
+func (o *Ops) CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb.IngestionLog, sourceMetadata []byte) (*int32, error) {
+	return o.repository.CreateIngestionLog(ctx, ingestionLog, sourceMetadata)
+}
+
 // GenerateChangeSet creates a change set based on current NetBox state with optional branch
-func GenerateChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, branchID string, nbClient netboxdiodeplugin.NetBoxAPI, repository Repository, logger *slog.Logger) (*int32, *changeset.ChangeSet, error) {
+func (o *Ops) GenerateChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, branchID string) (*int32, *changeset.ChangeSet, error) {
 	ingestEntity := differ.IngestEntity{
 		RequestID:  ingestionLog.GetRequestId(),
 		ObjectType: ingestionLog.GetObjectType(),
@@ -22,7 +43,7 @@ func GenerateChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *
 		State:      int(ingestionLog.GetState()),
 	}
 
-	changeSet, err := differ.Diff(ctx, ingestEntity, branchID, nbClient)
+	changeSet, err := differ.Diff(ctx, ingestEntity, branchID, o.nbClient)
 	if err != nil {
 		tags := map[string]string{
 			"request_id": ingestEntity.RequestID,
@@ -35,56 +56,56 @@ func GenerateChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *
 		ingestionErr := extractIngestionError(err)
 
 		ingestionLog.State = reconcilerpb.State_FAILED
-		if err2 := repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, reconcilerpb.State_FAILED, ingestionErr); err2 != nil {
+		if err2 := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, reconcilerpb.State_FAILED, ingestionErr); err2 != nil {
 			err = errors.Join(err, err2)
 		}
 		return nil, nil, err
 	}
 
-	changeSetID, err := repository.CreateChangeSet(ctx, *changeSet, ingestionLogID)
+	changeSetID, err := o.repository.CreateChangeSet(ctx, *changeSet, ingestionLogID)
 	if err != nil {
 		return nil, nil, err
 	}
 
 	if len(changeSet.ChangeSet) == 0 {
 		ingestionLog.State = reconcilerpb.State_NO_CHANGES
-		if err := repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, reconcilerpb.State_NO_CHANGES, nil); err != nil {
-			logger.Warn("failed to update ingestion log state (error ignored)", "ingestionLogID", ingestionLogID, "error", err)
+		if err := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, reconcilerpb.State_NO_CHANGES, nil); err != nil {
+			o.logger.Warn("failed to update ingestion log state (error ignored)", "ingestionLogID", ingestionLogID, "error", err)
 			// TODO(ltucker): This should be in a transaction.  Can leave an inconsistent state marked on the ingestion log.
 			// return nil, err
 		}
 	}
 
 	ingestionLog.State = reconcilerpb.State_OPEN
-	if err := repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, reconcilerpb.State_OPEN, nil); err != nil {
-		logger.Warn("failed to update ingestion log state (error ignored)", "ingestionLogID", ingestionLogID, "error", err)
+	if err := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, reconcilerpb.State_OPEN, nil); err != nil {
+		o.logger.Warn("failed to update ingestion log state (error ignored)", "ingestionLogID", ingestionLogID, "error", err)
 		// TODO(ltucker): This should be in a transaction.  Can leave an inconsistent state marked on the ingestion log.
 		// return nil, err
 	}
 
-	logger.Debug("change set generated", "id", changeSetID, "externalID", changeSet.ChangeSetID, "ingestionLogID", ingestionLogID)
+	o.logger.Debug("change set generated", "id", changeSetID, "externalID", changeSet.ChangeSetID, "ingestionLogID", ingestionLogID)
 	return changeSetID, changeSet, nil
 }
 
 // ApplyChangeSet applies change set to NetBox and updates related states
-func ApplyChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, changeSetID int32, changeSet *changeset.ChangeSet, nbClient netboxdiodeplugin.NetBoxAPI, repository Repository, logger *slog.Logger) error {
-	if err := applier.ApplyChangeSet(ctx, logger, *changeSet, nbClient); err != nil {
-		logger.Debug("failed to apply change set", "id", changeSetID, "externalID", changeSet.ChangeSetID, "ingestionLogID", ingestionLogID, "error", err)
+func (o *Ops) ApplyChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, changeSetID int32, changeSet *changeset.ChangeSet) error {
+	if err := applier.ApplyChangeSet(ctx, o.logger, *changeSet, o.nbClient); err != nil {
+		o.logger.Debug("failed to apply change set", "id", changeSetID, "externalID", changeSet.ChangeSetID, "ingestionLogID", ingestionLogID, "error", err)
 		ingestionErr := extractIngestionError(err)
 
-		if err2 := repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, reconcilerpb.State_FAILED, ingestionErr); err2 != nil {
+		if err2 := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, reconcilerpb.State_FAILED, ingestionErr); err2 != nil {
 			err = errors.Join(err, err2)
 		}
 		return err
 	}
 
 	ingestionLog.State = reconcilerpb.State_APPLIED
-	if err := repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, reconcilerpb.State_APPLIED, nil); err != nil {
-		logger.Warn("failed to update ingestion log state (error ignored)", "ingestionLogID", ingestionLogID, "error", err)
+	if err := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, reconcilerpb.State_APPLIED, nil); err != nil {
+		o.logger.Warn("failed to update ingestion log state (error ignored)", "ingestionLogID", ingestionLogID, "error", err)
 		// TODO(ltucker): This should be in a transaction.  Can leave an inconsistent state marked on the ingestion log.
 		// return nil, err
 	}
 
-	logger.Debug("change set applied", "id", changeSetID, "externalID", changeSet.ChangeSetID, "ingestionLogID", ingestionLogID)
+	o.logger.Debug("change set applied", "id", changeSetID, "externalID", changeSet.ChangeSetID, "ingestionLogID", ingestionLogID)
 	return nil
 }
