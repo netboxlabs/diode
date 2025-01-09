@@ -28,15 +28,17 @@
     - [IngesterService](#diode-v1-IngesterService)
 
 - [diode/v1/reconciler.proto](#diode_v1_reconciler-proto)
+    - [Change](#diode-v1-Change)
     - [ChangeSet](#diode-v1-ChangeSet)
-    - [IngestionDataSource](#diode-v1-IngestionDataSource)
+    - [Deviation](#diode-v1-Deviation)
+    - [DeviationError](#diode-v1-DeviationError)
     - [IngestionError](#diode-v1-IngestionError)
     - [IngestionError.Details](#diode-v1-IngestionError-Details)
     - [IngestionError.Details.Error](#diode-v1-IngestionError-Details-Error)
     - [IngestionLog](#diode-v1-IngestionLog)
     - [IngestionMetrics](#diode-v1-IngestionMetrics)
-    - [RetrieveIngestionDataSourcesRequest](#diode-v1-RetrieveIngestionDataSourcesRequest)
-    - [RetrieveIngestionDataSourcesResponse](#diode-v1-RetrieveIngestionDataSourcesResponse)
+    - [RetrieveDeviationsRequest](#diode-v1-RetrieveDeviationsRequest)
+    - [RetrieveDeviationsResponse](#diode-v1-RetrieveDeviationsResponse)
     - [RetrieveIngestionLogsRequest](#diode-v1-RetrieveIngestionLogsRequest)
     - [RetrieveIngestionLogsResponse](#diode-v1-RetrieveIngestionLogsResponse)
 
@@ -379,6 +381,21 @@ Ingestion API
 
 ## diode/v1/reconciler.proto
 
+<a name="diode-v1-Change"></a>
+
+### Change
+
+A change
+
+| Field       | Type              | Label | Description |
+|-------------|-------------------|-------|-------------|
+| id          | [string](#string) |       |             |
+| object_type | [string](#string) |       |             |
+| object_name | [string](#string) |       |             |
+| change_type | [string](#string) |       |             |
+| before      | [bytes](#bytes)   |       |             |
+| after       | [bytes](#bytes)   |       |             |
+
 <a name="diode-v1-ChangeSet"></a>
 
 ### ChangeSet
@@ -392,16 +409,36 @@ A change set
 | branch_id      | [string](#string) | optional | branch ID against which the change set was generated |
 | deviation_name | [string](#string) | optional | deviation name                                       |
 
-<a name="diode-v1-IngestionDataSource"></a>
+<a name="diode-v1-Deviation"></a>
 
-### IngestionDataSource
+### Deviation
 
-An ingestion data source
+A deviation
+
+| Field           | Type                                       | Label    | Description |
+|-----------------|--------------------------------------------|----------|-------------|
+| id              | [string](#string)                          |          |             |
+| ingestion_ts    | [int64](#int64)                            |          |             |
+| last_update_ts  | [int64](#int64)                            |          |             |
+| name            | [string](#string)                          |          |             |
+| source          | [string](#string)                          |          |             |
+| state           | [State](#diode-v1-State)                   |          |             |
+| object_type     | [string](#string)                          |          |             |
+| branch_id       | [string](#string)                          | optional |             |
+| ingested_entity | [Entity](#diode-v1-Entity)                 |          |             |
+| error           | [DeviationError](#diode-v1-DeviationError) |          |             |
+| changes         | [Change](#diode-v1-Change)                 | repeated |             |
+
+<a name="diode-v1-DeviationError"></a>
+
+### DeviationError
+
+Deviation error
 
 | Field   | Type              | Label | Description |
 |---------|-------------------|-------|-------------|
-| name    | [string](#string) |       |             |
-| api_key | [string](#string) |       |             |
+| message | [string](#string) |       |             |
+| code    | [int32](#int32)   |       |             |
 
 <a name="diode-v1-IngestionError"></a>
 
@@ -470,27 +507,33 @@ Ingestion metrics
 | failed     | [int32](#int32) |       |             |
 | no_changes | [int32](#int32) |       |             |
 
-<a name="diode-v1-RetrieveIngestionDataSourcesRequest"></a>
+<a name="diode-v1-RetrieveDeviationsRequest"></a>
 
-### RetrieveIngestionDataSourcesRequest
+### RetrieveDeviationsRequest
 
-The request to retrieve ingestion data sources
+The request to retrieve deviations
 
-| Field       | Type              | Label | Description |
-|-------------|-------------------|-------|-------------|
-| name        | [string](#string) |       |             |
-| sdk_name    | [string](#string) |       |             |
-| sdk_version | [string](#string) |       |             |
+| Field              | Type                     | Label    | Description                                   |
+|--------------------|--------------------------|----------|-----------------------------------------------|
+| page_size          | [int32](#int32)          | optional | Number of deviations per page, default is 100 |
+| page_token         | [string](#string)        |          | Token to fetch the next page of results       |
+| ingestion_ts_start | [int64](#int64)          |          | Optional start of ingestion timestamp range   |
+| ingestion_ts_end   | [int64](#int64)          |          | Optional end of ingestion timestamp range     |
+| state              | [State](#diode-v1-State) | repeated | Optional filter by states                     |
+| object_type        | [string](#string)        | repeated | Optional filter by object types               |
+| branch_id          | [string](#string)        | repeated | Optional filter by branch IDs                 |
+| site               | [string](#string)        | repeated | Optional filter by site                       |
 
-<a name="diode-v1-RetrieveIngestionDataSourcesResponse"></a>
+<a name="diode-v1-RetrieveDeviationsResponse"></a>
 
-### RetrieveIngestionDataSourcesResponse
+### RetrieveDeviationsResponse
 
-The response from the retrieve ingestion data sources request
+The response from the retrieve deviations request
 
-| Field                  | Type                                                 | Label    | Description |
-|------------------------|------------------------------------------------------|----------|-------------|
-| ingestion_data_sources | [IngestionDataSource](#diode-v1-IngestionDataSource) | repeated |             |
+| Field           | Type                             | Label    | Description                                |
+|-----------------|----------------------------------|----------|--------------------------------------------|
+| deviations      | [Deviation](#diode-v1-Deviation) | repeated | List of deviations                         |
+| next_page_token | [string](#string)                |          | Token for the next page of results, if any |
 
 <a name="diode-v1-RetrieveIngestionLogsRequest"></a>
 
@@ -543,10 +586,10 @@ The response from the retrieve ingestion logs request
 
 Reconciler service API
 
-| Method Name                  | Request Type                                                                         | Response Type                                                                          | Description                      |
-|------------------------------|--------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|----------------------------------|
-| RetrieveIngestionDataSources | [RetrieveIngestionDataSourcesRequest](#diode-v1-RetrieveIngestionDataSourcesRequest) | [RetrieveIngestionDataSourcesResponse](#diode-v1-RetrieveIngestionDataSourcesResponse) | Retrieves ingestion data sources |
-| RetrieveIngestionLogs        | [RetrieveIngestionLogsRequest](#diode-v1-RetrieveIngestionLogsRequest)               | [RetrieveIngestionLogsResponse](#diode-v1-RetrieveIngestionLogsResponse)               | Retrieves ingestion logs         |
+| Method Name           | Request Type                                                           | Response Type                                                            | Description              |
+|-----------------------|------------------------------------------------------------------------|--------------------------------------------------------------------------|--------------------------|
+| RetrieveIngestionLogs | [RetrieveIngestionLogsRequest](#diode-v1-RetrieveIngestionLogsRequest) | [RetrieveIngestionLogsResponse](#diode-v1-RetrieveIngestionLogsResponse) | Retrieves ingestion logs |
+| RetrieveDeviations    | [RetrieveDeviationsRequest](#diode-v1-RetrieveDeviationsRequest)       | [RetrieveDeviationsResponse](#diode-v1-RetrieveDeviationsResponse)       | Retrieve deviations      |
 
 ## Scalar Value Types
 

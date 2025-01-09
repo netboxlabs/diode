@@ -59,10 +59,7 @@ func NewServer(ctx context.Context, logger *slog.Logger, repository Repository) 
 		return nil, fmt.Errorf("failed to listen on port %d: %v", cfg.GRPCPort, err)
 	}
 
-	apiKeys, err := loadAPIKeys(ctx, cfg, redisClient)
-	if err != nil {
-		return nil, fmt.Errorf("failed to configure data sources: %v", err)
-	}
+	apiKeys := loadAPIKeys(cfg)
 
 	auth := newAuthUnaryInterceptor(logger, apiKeys)
 	grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(auth))
@@ -120,44 +117,24 @@ func (s *Server) GRPCServer() *grpc.Server {
 	return s.grpcServer
 }
 
-// RetrieveIngestionDataSources retrieves ingestion data sources
-func (s *Server) RetrieveIngestionDataSources(_ context.Context, in *reconcilerpb.RetrieveIngestionDataSourcesRequest) (*reconcilerpb.RetrieveIngestionDataSourcesResponse, error) {
-	if err := validateRetrieveIngestionDataSourcesRequest(in); err != nil {
-		return nil, err
-	}
-
-	dataSources := make([]*reconcilerpb.IngestionDataSource, 0)
-	filterByName := in.Name != ""
-
-	if filterByName {
-		if _, ok := s.apiKeys[in.Name]; !ok || in.Name != "DIODE" {
-			return nil, fmt.Errorf("data source %s not found", in.Name)
-		}
-		dataSources = append(dataSources, &reconcilerpb.IngestionDataSource{Name: in.Name, ApiKey: s.apiKeys[in.Name]})
-		return &reconcilerpb.RetrieveIngestionDataSourcesResponse{IngestionDataSources: dataSources}, nil
-	}
-
-	for name, key := range s.apiKeys {
-		if name == "DIODE" {
-			dataSources = append(dataSources, &reconcilerpb.IngestionDataSource{Name: name, ApiKey: key})
-		}
-	}
-	return &reconcilerpb.RetrieveIngestionDataSourcesResponse{IngestionDataSources: dataSources}, nil
-}
-
 // RetrieveIngestionLogs retrieves logs
 func (s *Server) RetrieveIngestionLogs(ctx context.Context, in *reconcilerpb.RetrieveIngestionLogsRequest) (*reconcilerpb.RetrieveIngestionLogsResponse, error) {
 	return retrieveIngestionLogs(ctx, s.logger, s.repository, in)
 }
 
-func validateRetrieveIngestionDataSourcesRequest(in *reconcilerpb.RetrieveIngestionDataSourcesRequest) error {
-	if in.GetSdkName() == "" {
-		return fmt.Errorf("sdk name is empty")
+// RetrieveDeviations retrieves deviations
+func (s *Server) RetrieveDeviations(_ context.Context, _ *reconcilerpb.RetrieveDeviationsRequest) (*reconcilerpb.RetrieveDeviationsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "RetrieveDeviations not implemented")
+}
+
+// APIKeys is a map of API keys
+type APIKeys map[string]string
+
+func loadAPIKeys(cfg Config) APIKeys {
+	return map[string]string{
+		"DIODE_TO_NETBOX": cfg.DiodeToNetBoxAPIKey,
+		"NETBOX_TO_DIODE": cfg.NetBoxToDiodeAPIKey,
 	}
-	if in.GetSdkVersion() == "" {
-		return fmt.Errorf("sdk version is empty")
-	}
-	return nil
 }
 
 // isAuthenticated checks if the request is authenticated
@@ -169,20 +146,10 @@ func isAuthenticated(logger *slog.Logger, rpcMethod string, apiKeys APIKeys, aut
 
 	apiKey := strings.TrimSpace(authorization[0])
 
-	switch rpcMethod {
-	case reconcilerpb.ReconcilerService_RetrieveIngestionDataSources_FullMethodName:
-		ingesterToReconcilerAPIKey, ok := apiKeys["INGESTER_TO_RECONCILER"]
-		if !ok {
-			logger.Debug("missing INGESTER_TO_RECONCILER API key")
-			return false
-		}
-		return apiKey == ingesterToReconcilerAPIKey
-	default:
-		netboxToDiode, ok := apiKeys["NETBOX_TO_DIODE"]
-		if !ok {
-			logger.Debug("missing NETBOX_TO_DIODE API key")
-			return false
-		}
-		return apiKey == netboxToDiode
+	netboxToDiode, ok := apiKeys["NETBOX_TO_DIODE"]
+	if !ok {
+		logger.Debug("missing NETBOX_TO_DIODE API key")
+		return false
 	}
+	return apiKey == netboxToDiode
 }

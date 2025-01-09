@@ -19,8 +19,6 @@ type Config struct {
 	PostgresPassword           string `envconfig:"POSTGRES_PASSWORD"`
 
 	// API keys
-	DiodeToNetBoxAPIKey        string `envconfig:"DIODE_TO_NETBOX_API_KEY" required:"true"`
-	NetBoxToDiodeAPIKey        string `envconfig:"NETBOX_TO_DIODE_API_KEY" required:"true"`
-	DiodeAPIKey                string `envconfig:"DIODE_API_KEY" required:"true"`
-	IngesterToReconcilerAPIKey string `envconfig:"INGESTER_TO_RECONCILER_API_KEY" required:"true"`
+	DiodeToNetBoxAPIKey string `envconfig:"DIODE_TO_NETBOX_API_KEY" required:"true"`
+	NetBoxToDiodeAPIKey string `envconfig:"NETBOX_TO_DIODE_API_KEY" required:"true"`
 }

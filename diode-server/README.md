@@ -65,7 +65,6 @@ Edit the `.env` to match your environment:
 * `DIODE_TO_NETBOX_API_KEY`: API key generated with the Diode NetBox plugin installation
 * `DIODE_API_KEY`: API key generated with the Diode NetBox plugin installation
 * `NETBOX_TO_DIODE_API_KEY`: API key generated with the Diode NetBox plugin installation
-* `INGESTER_TO_RECONCILER_API_KEY`: API key to authorize RPC calls between the Ingester and Reconciler services (at
   least 40 characters, example generation with shell command: `openssl rand -base64 40 | head -c 40`)
 * `MIGRATION_ENABLED`: Set to `false` to disable the migration, default: `true`
 * `RECONCILER_RATE_LIMITER_RPS`: Rate limit for the reconciler service for generating and applying change sets concurrently, default: `20`
