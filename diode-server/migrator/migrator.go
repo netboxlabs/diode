@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/pressly/goose/v3"
+	goosedb "github.com/pressly/goose/v3/database"
 )
 
 // Operation is the type of migration operation
@@ -29,9 +30,16 @@ type Migrator struct {
 }
 
 // NewMigrator creates a new migrator
-func NewMigrator(logger *slog.Logger, dialect string, db *sql.DB, migrationsPath string) (*Migrator, error) {
+func NewMigrator(logger *slog.Logger, dialect string, db *sql.DB, migrationsPath string, migrationsTable string) (*Migrator, error) {
 	migrationsFS := os.DirFS(migrationsPath)
-	provider, err := goose.NewProvider(goose.Dialect(dialect), db, migrationsFS)
+	if migrationsTable == "" {
+		migrationsTable = goose.DefaultTablename
+	}
+	store, err := goosedb.NewStore(goose.Dialect(dialect), migrationsTable)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create migration store: %w", err)
+	}
+	provider, err := goose.NewProvider("", db, migrationsFS, goose.WithStore(store))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create migration provider: %w", err)
 	}

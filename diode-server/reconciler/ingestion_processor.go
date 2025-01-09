@@ -55,8 +55,7 @@ type IngestionProcessor struct {
 	hostname          string
 	redisClient       RedisClient
 	redisStreamClient RedisClient
-	nbClient          netboxdiodeplugin.NetBoxAPI
-	repository        Repository
+	ops               IngestionProcessorOps
 }
 
 // IngestionLogToProcess represents an ingestion log to process
@@ -67,8 +66,15 @@ type IngestionLogToProcess struct {
 	changeSet      *changeset.ChangeSet
 }
 
+// IngestionProcessorOps represents the basic operations that the ingestion processor performs
+type IngestionProcessorOps interface {
+	CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb.IngestionLog, sourceMetadata []byte) (*int32, error)
+	GenerateChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, branchID string) (*int32, *changeset.ChangeSet, error)
+	ApplyChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, changeSetID int32, changeSet *changeset.ChangeSet) error
+}
+
 // NewIngestionProcessor creates a new ingestion processor
-func NewIngestionProcessor(ctx context.Context, logger *slog.Logger, repository Repository) (*IngestionProcessor, error) {
+func NewIngestionProcessor(ctx context.Context, logger *slog.Logger, ops IngestionProcessorOps) (*IngestionProcessor, error) {
 	var cfg Config
 	envconfig.MustProcess("", &cfg)
 
@@ -97,19 +103,13 @@ func NewIngestionProcessor(ctx context.Context, logger *slog.Logger, repository 
 		return nil, fmt.Errorf("failed to get hostname: %v", err)
 	}
 
-	nbClient, err := netboxdiodeplugin.NewClient(logger, cfg.DiodeToNetBoxAPIKey)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create netbox diode plugin client: %v", err)
-	}
-
 	component := &IngestionProcessor{
 		Config:            cfg,
 		logger:            logger,
 		hostname:          hostname,
 		redisClient:       redisClient,
 		redisStreamClient: redisStreamClient,
-		nbClient:          nbClient,
-		repository:        repository,
+		ops:               ops,
 	}
 
 	return component, nil
@@ -258,7 +258,7 @@ func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChan
 					return
 				}
 
-				id, changeSet, err := GenerateChangeSet(ctx, msg.ingestionLogID, msg.ingestionLog, "", p.nbClient, p.repository, p.logger)
+				id, changeSet, err := p.ops.GenerateChangeSet(ctx, msg.ingestionLogID, msg.ingestionLog, "")
 				if err != nil {
 					p.logger.Error("error generating changeset", "error", err)
 				}
@@ -303,7 +303,7 @@ func (p *IngestionProcessor) ApplyChangeSet(ctx context.Context, applyChan <-cha
 					return
 				}
 
-				if err := ApplyChangeSet(ctx, msg.ingestionLogID, msg.ingestionLog, msg.changeSetID, msg.changeSet, p.nbClient, p.repository, p.logger); err != nil {
+				if err := p.ops.ApplyChangeSet(ctx, msg.ingestionLogID, msg.ingestionLog, msg.changeSetID, msg.changeSet); err != nil {
 					p.logger.Error("error applying changeset", "error", err)
 				}
 			}
@@ -343,7 +343,7 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 			State:              reconcilerpb.State_QUEUED,
 		}
 
-		id, err := p.repository.CreateIngestionLog(ctx, ingestionLog, nil)
+		id, err := p.ops.CreateIngestionLog(ctx, ingestionLog, nil)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("failed to create ingestion log: %v", err))
 			continue

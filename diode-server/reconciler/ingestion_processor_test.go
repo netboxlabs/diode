@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/alicebob/miniredis/v2"
+	"github.com/kelseyhightower/envconfig"
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -15,6 +16,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
+	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
 	"github.com/netboxlabs/diode/diode-server/reconciler"
 	"github.com/netboxlabs/diode/diode-server/reconciler/mocks"
 )
@@ -28,11 +30,15 @@ func TestNewIngestionProcessor(t *testing.T) {
 
 	setupEnv(s.Addr())
 	defer teardownEnv()
+	var cfg reconciler.Config
+	envconfig.MustProcess("", &cfg)
 
 	mockRepository := mocks.NewRepository(t)
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
-	processor, err := reconciler.NewIngestionProcessor(ctx, logger, mockRepository)
+	nbClient, err := netboxdiodeplugin.NewClient(logger, cfg.DiodeToNetBoxAPIKey)
+	require.NoError(t, err)
+	processor, err := reconciler.NewIngestionProcessor(ctx, logger, reconciler.NewOps(mockRepository, nbClient, logger))
 	require.NoError(t, err)
 	require.NotNil(t, processor)
 
@@ -47,13 +53,17 @@ func TestIngestionProcessorStart(t *testing.T) {
 
 	setupEnv(s.Addr())
 	defer teardownEnv()
+	var cfg reconciler.Config
+	envconfig.MustProcess("", &cfg)
 
 	mockRepository := mocks.NewRepository(t)
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	ctx := context.Background()
 
-	processor, err := reconciler.NewIngestionProcessor(ctx, logger, mockRepository)
+	nbClient, err := netboxdiodeplugin.NewClient(logger, cfg.DiodeToNetBoxAPIKey)
+	require.NoError(t, err)
+	processor, err := reconciler.NewIngestionProcessor(ctx, logger, reconciler.NewOps(mockRepository, nbClient, logger))
 	require.NoError(t, err)
 	require.NotNil(t, processor)
 

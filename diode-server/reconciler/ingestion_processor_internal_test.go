@@ -155,7 +155,6 @@ func TestHandleStreamMessage(t *testing.T) {
 			logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
 
 			p := &IngestionProcessor{
-				nbClient:          mockNbClient,
 				redisClient:       mockRedisClient,
 				redisStreamClient: mockRedisStreamClient,
 				logger:            logger,
@@ -164,7 +163,7 @@ func TestHandleStreamMessage(t *testing.T) {
 					ReconcilerRateLimiterRPS:   20,
 					ReconcilerRateLimiterBurst: 1,
 				},
-				repository: mockRepository,
+				ops: NewOps(mockRepository, mockNbClient, logger),
 			}
 
 			request := redis.XMessage{}
@@ -447,14 +446,13 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 
 			p := &IngestionProcessor{
 				redisClient: mockRedisClient,
-				nbClient:    mockNbClient,
 				logger:      logger,
 				Config: Config{
 					AutoApplyChangesets:        tt.autoApplyChangesets,
 					ReconcilerRateLimiterRPS:   20,
 					ReconcilerRateLimiterBurst: 1,
 				},
-				repository: mockRepository,
+				ops: NewOps(mockRepository, mockNbClient, logger),
 			}
 
 			ingestionLogID := int32(1)

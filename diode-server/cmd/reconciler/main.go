@@ -14,6 +14,7 @@ import (
 
 	"github.com/netboxlabs/diode/diode-server/dbstore/postgres"
 	"github.com/netboxlabs/diode/diode-server/migrator"
+	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
 	"github.com/netboxlabs/diode/diode-server/reconciler"
 	"github.com/netboxlabs/diode/diode-server/server"
 )
@@ -45,7 +46,12 @@ func main() {
 
 	repository := postgres.NewRepository(dbPool)
 
-	ingestionProcessor, err := reconciler.NewIngestionProcessor(ctx, s.Logger(), repository)
+	nbClient, err := netboxdiodeplugin.NewClient(s.Logger(), cfg.DiodeToNetBoxAPIKey)
+	if err != nil {
+		s.Logger().Error("failed to create netbox diode plugin client", "error", err)
+	}
+	ops := reconciler.NewOps(repository, nbClient, s.Logger())
+	ingestionProcessor, err := reconciler.NewIngestionProcessor(ctx, s.Logger(), ops)
 	if err != nil {
 		s.Logger().Error("failed to instantiate ingestion processor", "error", err)
 		os.Exit(1)
@@ -87,7 +93,7 @@ func runDBMigrations(ctx context.Context, logger *slog.Logger, dbURL string) err
 		}
 	}()
 
-	m, err := migrator.NewMigrator(logger, "postgres", db, "/etc/diode/migrations")
+	m, err := migrator.NewMigrator(logger, "postgres", db, "/etc/diode/migrations", "")
 	if err != nil {
 		return fmt.Errorf("failed to create migrator: %v", err)
 	}
