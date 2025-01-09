@@ -59,10 +59,7 @@ func NewServer(ctx context.Context, logger *slog.Logger, repository Repository) 
 		return nil, fmt.Errorf("failed to listen on port %d: %v", cfg.GRPCPort, err)
 	}
 
-	apiKeys, err := loadAPIKeys(ctx, cfg, redisClient)
-	if err != nil {
-		return nil, fmt.Errorf("failed to configure data sources: %v", err)
-	}
+	apiKeys := loadAPIKeys(cfg)
 
 	auth := newAuthUnaryInterceptor(logger, apiKeys)
 	grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(auth))
@@ -125,14 +122,19 @@ func (s *Server) RetrieveIngestionLogs(ctx context.Context, in *reconcilerpb.Ret
 	return retrieveIngestionLogs(ctx, s.logger, s.repository, in)
 }
 
-func validateRetrieveIngestionDataSourcesRequest(in *reconcilerpb.RetrieveIngestionDataSourcesRequest) error {
-	if in.GetSdkName() == "" {
-		return fmt.Errorf("sdk name is empty")
+// RetrieveDeviations retrieves deviations
+func (s *Server) RetrieveDeviations(_ context.Context, _ *reconcilerpb.RetrieveDeviationsRequest) (*reconcilerpb.RetrieveDeviationsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "RetrieveDeviations not implemented")
+}
+
+// APIKeys is a map of API keys
+type APIKeys map[string]string
+
+func loadAPIKeys(cfg Config) APIKeys {
+	return map[string]string{
+		"DIODE_TO_NETBOX": cfg.DiodeToNetBoxAPIKey,
+		"NETBOX_TO_DIODE": cfg.NetBoxToDiodeAPIKey,
 	}
-	if in.GetSdkVersion() == "" {
-		return fmt.Errorf("sdk version is empty")
-	}
-	return nil
 }
 
 // isAuthenticated checks if the request is authenticated

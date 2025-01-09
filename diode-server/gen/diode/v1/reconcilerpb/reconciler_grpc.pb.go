@@ -19,18 +19,19 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	ReconcilerService_RetrieveIngestionDataSources_FullMethodName = "/diode.v1.ReconcilerService/RetrieveIngestionDataSources"
-	ReconcilerService_RetrieveIngestionLogs_FullMethodName        = "/diode.v1.ReconcilerService/RetrieveIngestionLogs"
+	ReconcilerService_RetrieveIngestionLogs_FullMethodName = "/diode.v1.ReconcilerService/RetrieveIngestionLogs"
+	ReconcilerService_RetrieveDeviations_FullMethodName    = "/diode.v1.ReconcilerService/RetrieveDeviations"
 )
 
 // ReconcilerServiceClient is the client API for ReconcilerService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ReconcilerServiceClient interface {
-	// Retrieves ingestion data sources
-	RetrieveIngestionDataSources(ctx context.Context, in *RetrieveIngestionDataSourcesRequest, opts ...grpc.CallOption) (*RetrieveIngestionDataSourcesResponse, error)
+	// Deprecated: Do not use.
 	// Retrieves ingestion logs
 	RetrieveIngestionLogs(ctx context.Context, in *RetrieveIngestionLogsRequest, opts ...grpc.CallOption) (*RetrieveIngestionLogsResponse, error)
+	// Retrieve deviations
+	RetrieveDeviations(ctx context.Context, in *RetrieveDeviationsRequest, opts ...grpc.CallOption) (*RetrieveDeviationsResponse, error)
 }
 
 type reconcilerServiceClient struct {
@@ -41,18 +42,19 @@ func NewReconcilerServiceClient(cc grpc.ClientConnInterface) ReconcilerServiceCl
 	return &reconcilerServiceClient{cc}
 }
 
-func (c *reconcilerServiceClient) RetrieveIngestionDataSources(ctx context.Context, in *RetrieveIngestionDataSourcesRequest, opts ...grpc.CallOption) (*RetrieveIngestionDataSourcesResponse, error) {
-	out := new(RetrieveIngestionDataSourcesResponse)
-	err := c.cc.Invoke(ctx, ReconcilerService_RetrieveIngestionDataSources_FullMethodName, in, out, opts...)
+// Deprecated: Do not use.
+func (c *reconcilerServiceClient) RetrieveIngestionLogs(ctx context.Context, in *RetrieveIngestionLogsRequest, opts ...grpc.CallOption) (*RetrieveIngestionLogsResponse, error) {
+	out := new(RetrieveIngestionLogsResponse)
+	err := c.cc.Invoke(ctx, ReconcilerService_RetrieveIngestionLogs_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *reconcilerServiceClient) RetrieveIngestionLogs(ctx context.Context, in *RetrieveIngestionLogsRequest, opts ...grpc.CallOption) (*RetrieveIngestionLogsResponse, error) {
-	out := new(RetrieveIngestionLogsResponse)
-	err := c.cc.Invoke(ctx, ReconcilerService_RetrieveIngestionLogs_FullMethodName, in, out, opts...)
+func (c *reconcilerServiceClient) RetrieveDeviations(ctx context.Context, in *RetrieveDeviationsRequest, opts ...grpc.CallOption) (*RetrieveDeviationsResponse, error) {
+	out := new(RetrieveDeviationsResponse)
+	err := c.cc.Invoke(ctx, ReconcilerService_RetrieveDeviations_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -63,10 +65,11 @@ func (c *reconcilerServiceClient) RetrieveIngestionLogs(ctx context.Context, in 
 // All implementations must embed UnimplementedReconcilerServiceServer
 // for forward compatibility
 type ReconcilerServiceServer interface {
-	// Retrieves ingestion data sources
-	RetrieveIngestionDataSources(context.Context, *RetrieveIngestionDataSourcesRequest) (*RetrieveIngestionDataSourcesResponse, error)
+	// Deprecated: Do not use.
 	// Retrieves ingestion logs
 	RetrieveIngestionLogs(context.Context, *RetrieveIngestionLogsRequest) (*RetrieveIngestionLogsResponse, error)
+	// Retrieve deviations
+	RetrieveDeviations(context.Context, *RetrieveDeviationsRequest) (*RetrieveDeviationsResponse, error)
 	mustEmbedUnimplementedReconcilerServiceServer()
 }
 
@@ -74,11 +77,11 @@ type ReconcilerServiceServer interface {
 type UnimplementedReconcilerServiceServer struct {
 }
 
-func (UnimplementedReconcilerServiceServer) RetrieveIngestionDataSources(context.Context, *RetrieveIngestionDataSourcesRequest) (*RetrieveIngestionDataSourcesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RetrieveIngestionDataSources not implemented")
-}
 func (UnimplementedReconcilerServiceServer) RetrieveIngestionLogs(context.Context, *RetrieveIngestionLogsRequest) (*RetrieveIngestionLogsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RetrieveIngestionLogs not implemented")
+}
+func (UnimplementedReconcilerServiceServer) RetrieveDeviations(context.Context, *RetrieveDeviationsRequest) (*RetrieveDeviationsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RetrieveDeviations not implemented")
 }
 func (UnimplementedReconcilerServiceServer) mustEmbedUnimplementedReconcilerServiceServer() {}
 
@@ -91,24 +94,6 @@ type UnsafeReconcilerServiceServer interface {
 
 func RegisterReconcilerServiceServer(s grpc.ServiceRegistrar, srv ReconcilerServiceServer) {
 	s.RegisterService(&ReconcilerService_ServiceDesc, srv)
-}
-
-func _ReconcilerService_RetrieveIngestionDataSources_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RetrieveIngestionDataSourcesRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ReconcilerServiceServer).RetrieveIngestionDataSources(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ReconcilerService_RetrieveIngestionDataSources_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ReconcilerServiceServer).RetrieveIngestionDataSources(ctx, req.(*RetrieveIngestionDataSourcesRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _ReconcilerService_RetrieveIngestionLogs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -129,6 +114,24 @@ func _ReconcilerService_RetrieveIngestionLogs_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ReconcilerService_RetrieveDeviations_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RetrieveDeviationsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReconcilerServiceServer).RetrieveDeviations(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReconcilerService_RetrieveDeviations_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReconcilerServiceServer).RetrieveDeviations(ctx, req.(*RetrieveDeviationsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ReconcilerService_ServiceDesc is the grpc.ServiceDesc for ReconcilerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -137,12 +140,12 @@ var ReconcilerService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*ReconcilerServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "RetrieveIngestionDataSources",
-			Handler:    _ReconcilerService_RetrieveIngestionDataSources_Handler,
-		},
-		{
 			MethodName: "RetrieveIngestionLogs",
 			Handler:    _ReconcilerService_RetrieveIngestionLogs_Handler,
+		},
+		{
+			MethodName: "RetrieveDeviations",
+			Handler:    _ReconcilerService_RetrieveDeviations_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

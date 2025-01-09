@@ -88,8 +88,62 @@ message RetrieveIngestionLogsResponse {
   string next_page_token = 3; // Token for the next page of results, if any
 }
 
+// The request to retrieve deviations
+message RetrieveDeviationsRequest {
+  optional int32 page_size = 1; // Number of deviations per page, default is 100
+  string page_token = 2; // Token to fetch the next page of results
+  int64 ingestion_ts_start = 3; // Optional start of ingestion timestamp range
+  int64 ingestion_ts_end = 4; // Optional end of ingestion timestamp range
+  repeated State state = 5; // Optional filter by states
+  repeated string object_type = 6; // Optional filter by object types
+  repeated string branch_id = 7; // Optional filter by branch IDs
+  repeated string site = 8; // Optional filter by site
+}
+
+// Deviation error
+message DeviationError {
+  string message = 1;
+  int32 code = 2;
+}
+
+// A change
+message Change {
+  string id = 1;
+  string object_type = 2;
+  string object_name = 3;
+  string change_type = 4;
+  bytes before = 5;
+  bytes after = 6;
+}
+
+// A deviation
+message Deviation {
+  string id = 1;
+  int64 ingestion_ts = 2;
+  int64 last_update_ts = 3;
+  string name = 4;
+  string source = 5;
+  State state = 6;
+  string object_type = 7;
+  optional string branch_id = 8;
+  diode.v1.Entity ingested_entity = 9;
+  DeviationError error = 10;
+  repeated Change changes = 11;
+}
+
+// The response from the retrieve deviations request
+message RetrieveDeviationsResponse {
+  repeated Deviation deviations = 1; // List of deviations
+  string next_page_token = 2; // Token for the next page of results, if any
+}
+
 // Reconciler service API
 service ReconcilerService {
   // Retrieves ingestion logs
-  rpc RetrieveIngestionLogs(RetrieveIngestionLogsRequest) returns (RetrieveIngestionLogsResponse);
+  rpc RetrieveIngestionLogs(RetrieveIngestionLogsRequest) returns (RetrieveIngestionLogsResponse) {
+    option deprecated = true;
+  }
+
+  // Retrieve deviations
+  rpc RetrieveDeviations(RetrieveDeviationsRequest) returns (RetrieveDeviationsResponse) {}
 }
