@@ -120,31 +120,6 @@ func (s *Server) GRPCServer() *grpc.Server {
 	return s.grpcServer
 }
 
-// RetrieveIngestionDataSources retrieves ingestion data sources
-func (s *Server) RetrieveIngestionDataSources(_ context.Context, in *reconcilerpb.RetrieveIngestionDataSourcesRequest) (*reconcilerpb.RetrieveIngestionDataSourcesResponse, error) {
-	if err := validateRetrieveIngestionDataSourcesRequest(in); err != nil {
-		return nil, err
-	}
-
-	dataSources := make([]*reconcilerpb.IngestionDataSource, 0)
-	filterByName := in.Name != ""
-
-	if filterByName {
-		if _, ok := s.apiKeys[in.Name]; !ok || in.Name != "DIODE" {
-			return nil, fmt.Errorf("data source %s not found", in.Name)
-		}
-		dataSources = append(dataSources, &reconcilerpb.IngestionDataSource{Name: in.Name, ApiKey: s.apiKeys[in.Name]})
-		return &reconcilerpb.RetrieveIngestionDataSourcesResponse{IngestionDataSources: dataSources}, nil
-	}
-
-	for name, key := range s.apiKeys {
-		if name == "DIODE" {
-			dataSources = append(dataSources, &reconcilerpb.IngestionDataSource{Name: name, ApiKey: key})
-		}
-	}
-	return &reconcilerpb.RetrieveIngestionDataSourcesResponse{IngestionDataSources: dataSources}, nil
-}
-
 // RetrieveIngestionLogs retrieves logs
 func (s *Server) RetrieveIngestionLogs(ctx context.Context, in *reconcilerpb.RetrieveIngestionLogsRequest) (*reconcilerpb.RetrieveIngestionLogsResponse, error) {
 	return retrieveIngestionLogs(ctx, s.logger, s.repository, in)
@@ -169,20 +144,10 @@ func isAuthenticated(logger *slog.Logger, rpcMethod string, apiKeys APIKeys, aut
 
 	apiKey := strings.TrimSpace(authorization[0])
 
-	switch rpcMethod {
-	case reconcilerpb.ReconcilerService_RetrieveIngestionDataSources_FullMethodName:
-		ingesterToReconcilerAPIKey, ok := apiKeys["INGESTER_TO_RECONCILER"]
-		if !ok {
-			logger.Debug("missing INGESTER_TO_RECONCILER API key")
-			return false
-		}
-		return apiKey == ingesterToReconcilerAPIKey
-	default:
-		netboxToDiode, ok := apiKeys["NETBOX_TO_DIODE"]
-		if !ok {
-			logger.Debug("missing NETBOX_TO_DIODE API key")
-			return false
-		}
-		return apiKey == netboxToDiode
+	netboxToDiode, ok := apiKeys["NETBOX_TO_DIODE"]
+	if !ok {
+		logger.Debug("missing NETBOX_TO_DIODE API key")
+		return false
 	}
+	return apiKey == netboxToDiode
 }

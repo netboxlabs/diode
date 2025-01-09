@@ -25,42 +25,6 @@ func TestIsAuthenticated(t *testing.T) {
 		isAuthenticated bool
 	}{
 		{
-			name:          "missing authorization header",
-			rpcMethod:     reconcilerpb.ReconcilerService_RetrieveIngestionDataSources_FullMethodName,
-			authorization: []string{},
-			apiKeys: map[string]string{
-				"INGESTER_TO_RECONCILER": "test",
-			},
-			isAuthenticated: false,
-		},
-		{
-			name:          "retrieve ingestion data sources with valid authorization",
-			rpcMethod:     reconcilerpb.ReconcilerService_RetrieveIngestionDataSources_FullMethodName,
-			authorization: []string{"test"},
-			apiKeys: map[string]string{
-				"INGESTER_TO_RECONCILER": "test",
-			},
-			isAuthenticated: true,
-		},
-		{
-			name:          "retrieve ingestion data sources with invalid authorization",
-			rpcMethod:     reconcilerpb.ReconcilerService_RetrieveIngestionDataSources_FullMethodName,
-			authorization: []string{"test0"},
-			apiKeys: map[string]string{
-				"INGESTER_TO_RECONCILER": "test",
-			},
-			isAuthenticated: false,
-		},
-		{
-			name:          "retrieve ingestion data sources for server without api key configured",
-			rpcMethod:     reconcilerpb.ReconcilerService_RetrieveIngestionDataSources_FullMethodName,
-			authorization: []string{"test"},
-			apiKeys: map[string]string{
-				"DIODE": "foorbar",
-			},
-			isAuthenticated: false,
-		},
-		{
 			name:          "retrieve ingestion logs with valid authorization",
 			rpcMethod:     reconcilerpb.ReconcilerService_RetrieveIngestionLogs_FullMethodName,
 			authorization: []string{"test"},

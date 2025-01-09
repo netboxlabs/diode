@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net"
 	"os"
+	"slices"
 	"time"
 
 	"github.com/kelseyhightower/envconfig"
@@ -17,8 +18,6 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
-	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
-	"github.com/netboxlabs/diode/diode-server/reconciler"
 	"github.com/netboxlabs/diode/diode-server/sentry"
 )
 
@@ -37,15 +36,13 @@ var (
 type Component struct {
 	diodepb.UnimplementedIngesterServiceServer
 
-	ctx                  context.Context
-	config               Config
-	logger               *slog.Logger
-	hostname             string
-	grpcListener         net.Listener
-	grpcServer           *grpc.Server
-	redisStreamClient    *redis.Client
-	reconcilerClient     reconciler.Client
-	ingestionDataSources []*reconcilerpb.IngestionDataSource
+	ctx               context.Context
+	config            Config
+	logger            *slog.Logger
+	hostname          string
+	grpcListener      net.Listener
+	grpcServer        *grpc.Server
+	redisStreamClient *redis.Client
 }
 
 // New creates a new ingester component
@@ -73,33 +70,18 @@ func New(ctx context.Context, logger *slog.Logger) (*Component, error) {
 		return nil, fmt.Errorf("failed to get hostname: %v", err)
 	}
 
-	reconcilerClient, err := reconciler.NewClient()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create reconciler client: %v", err)
-	}
-
-	dataSources, err := reconcilerClient.RetrieveIngestionDataSources(
-		metadata.NewOutgoingContext(ctx, metadata.Pairs("authorization", cfg.IngesterToReconcilerAPIKey)),
-		&reconcilerpb.RetrieveIngestionDataSourcesRequest{},
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve ingestion data sources: %v", err)
-	}
-
-	ingestionDataSources := dataSources.GetIngestionDataSources()
-	auth := newAuthUnaryInterceptor(ingestionDataSources)
+	apiKeys := loadAPIKeys(cfg)
+	auth := newAuthUnaryInterceptor(apiKeys)
 	grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(auth))
 
 	component := &Component{
-		ctx:                  ctx,
-		config:               cfg,
-		logger:               logger,
-		hostname:             hostname,
-		grpcListener:         grpcListener,
-		grpcServer:           grpcServer,
-		redisStreamClient:    redisStreamClient,
-		reconcilerClient:     reconcilerClient,
-		ingestionDataSources: ingestionDataSources,
+		ctx:               ctx,
+		config:            cfg,
+		logger:            logger,
+		hostname:          hostname,
+		grpcListener:      grpcListener,
+		grpcServer:        grpcServer,
+		redisStreamClient: redisStreamClient,
 	}
 
 	diodepb.RegisterIngesterServiceServer(grpcServer, component)
@@ -108,13 +90,13 @@ func New(ctx context.Context, logger *slog.Logger) (*Component, error) {
 	return component, nil
 }
 
-func newAuthUnaryInterceptor(dataSources []*reconcilerpb.IngestionDataSource) grpc.UnaryServerInterceptor {
+func newAuthUnaryInterceptor(apiKeys []string) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		md, ok := metadata.FromIncomingContext(ctx)
 		if !ok {
 			return nil, errMetadataNotFound
 		}
-		if !authorized(dataSources, md["diode-api-key"]) {
+		if !isAuthenticated(apiKeys, md["diode-api-key"]) {
 			return nil, ErrUnauthorized
 		}
 		return handler(ctx, req)
@@ -216,15 +198,16 @@ func validateRequest(in *diodepb.IngestRequest) error {
 	return nil
 }
 
-func authorized(dataSources []*reconcilerpb.IngestionDataSource, authorization []string) bool {
-	if len(dataSources) < 1 || len(authorization) != 1 {
+func loadAPIKeys(cfg Config) []string {
+	return []string{
+		cfg.DiodeAPIKey,
+	}
+}
+
+func isAuthenticated(apiKeys []string, authorization []string) bool {
+	if len(apiKeys) < 1 || len(authorization) != 1 {
 		return false
 	}
 
-	for _, v := range dataSources {
-		if v.GetApiKey() == authorization[0] {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(apiKeys, authorization[0])
 }
