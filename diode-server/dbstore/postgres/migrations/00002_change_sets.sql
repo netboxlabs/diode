@@ -57,7 +57,7 @@ ORDER BY ingestion_logs.id DESC, change_sets.id DESC;
 
 -- +goose Down
 
--- Drop the v_ingestion_logs_with_change_sets view
+-- Drop the v_ingestion_logs_with_change_set view
 DROP VIEW IF EXISTS v_ingestion_logs_with_change_set;
 
 -- Drop the changes table
