@@ -47,8 +47,8 @@ ALTER TABLE change_sets
 ALTER TABLE changes
     ADD CONSTRAINT fk_changes_change_sets FOREIGN KEY (change_set_id) REFERENCES change_sets (id) ON DELETE CASCADE;
 
--- Create a view to join ingestion_logs with aggregated change_set and changes
-CREATE VIEW v_ingestion_logs_with_change_set AS
+-- Create a view returning deviations
+CREATE VIEW v_deviations AS
 SELECT DISTINCT ON (ingestion_logs.id) ingestion_logs.*,
                                        row_to_json(change_sets.*)              AS change_set,
                                        JSON_AGG(changes.* ORDER BY changes.sequence_number ASC)
@@ -61,8 +61,8 @@ ORDER BY ingestion_logs.id DESC, change_sets.id DESC;
 
 -- +goose Down
 
--- Drop the v_ingestion_logs_with_change_set view
-DROP VIEW IF EXISTS v_ingestion_logs_with_change_set;
+-- Drop the v_deviations view
+DROP VIEW IF EXISTS v_deviations;
 
 -- Drop the changes table
 DROP TABLE changes;
