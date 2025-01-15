@@ -61,7 +61,7 @@ ORDER BY ingestion_logs.id DESC, change_sets.id DESC;
 
 -- +goose Down
 
--- Drop the deviations view
+-- Drop the v_deviations view
 DROP VIEW IF EXISTS v_deviations;
 
 -- Drop the changes table
