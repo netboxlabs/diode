@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS change_sets
 -- Create indices
 CREATE INDEX IF NOT EXISTS idx_change_sets_external_id ON change_sets (external_id);
 CREATE INDEX IF NOT EXISTS idx_change_sets_ingestion_log_id ON change_sets (ingestion_log_id);
+CREATE INDEX IF NOT EXISTS idx_change_sets_branch_id ON change_sets (branch_id);
 
 -- Create the changes table
 CREATE TABLE IF NOT EXISTS changes
