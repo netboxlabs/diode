@@ -1,10 +1,10 @@
 -- name: RetrieveDeviations :many
 SELECT v_deviations.*
 FROM v_deviations
-WHERE (v_deviations.state = ANY (sqlc.narg('state')::text[]) OR sqlc.narg('state') IS NULL)
+WHERE (v_deviations.state = ANY (sqlc.narg('state')::int[]) OR sqlc.narg('state') IS NULL)
   AND (v_deviations.object_type = ANY (sqlc.narg('object_type')::text[]) OR
        sqlc.narg('object_type') IS NULL)
-  AND (v_deviations.branch_id = ANY (sqlc.narg('branch_id')::text[]) OR
+  AND (v_deviations.change_set->>'branch_id' = ANY (sqlc.narg('branch_id')::text[]) OR
        sqlc.narg('branch_id') IS NULL)
   AND (v_deviations.ingestion_ts >= sqlc.narg('ingestion_ts_start') OR
        sqlc.narg('ingestion_ts_start') IS NULL)
