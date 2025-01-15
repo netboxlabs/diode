@@ -271,13 +271,14 @@ func (r *Repository) CreateChangeSet(ctx context.Context, changeSet changeset.Ch
 		}
 
 		changeParams := postgres.CreateChangeParams{
-			ExternalID:     change.ChangeID,
-			ChangeSetID:    cs.ID,
-			ChangeType:     change.ChangeType,
-			ObjectType:     change.ObjectType,
-			Before:         beforeJSON,
-			After:          afterJSON,
-			SequenceNumber: pgtype.Int4{Int32: int32(i), Valid: true},
+			ExternalID:         change.ChangeID,
+			ChangeSetID:        cs.ID,
+			ChangeType:         change.ChangeType,
+			ObjectType:         change.ObjectType,
+			ObjectPrimaryValue: change.ObjectPrimaryValue,
+			Before:             beforeJSON,
+			After:              afterJSON,
+			SequenceNumber:     pgtype.Int4{Int32: int32(i), Valid: true},
 		}
 		if change.ObjectID != nil {
 			changeParams.ObjectID = pgtype.Int4{Int32: int32(*change.ObjectID), Valid: true}
