@@ -77,23 +77,23 @@ func Diff(ctx context.Context, entity IngestEntity, branchID string, netboxAPI n
 	changes := make([]changeset.Change, 0)
 
 	for _, obj := range objectsToReconcile {
-		operation := changeset.ChangeTypeCreate
-		var objectID *int
+		change := changeset.Change{
+			ChangeID:      uuid.NewString(),
+			ChangeType:    changeset.ChangeTypeCreate,
+			ObjectType:    obj.ObjectType(),
+			ObjectID:      nil,
+			ObjectVersion: nil,
+			After:         obj.Data(),
+		}
 
 		id := obj.ID()
 		if id > 0 {
-			objectID = &id
-			operation = changeset.ChangeTypeUpdate
+			change.ObjectID = &id
+			change.ChangeType = changeset.ChangeTypeUpdate
+			change.Before = obj.IntendedData()
 		}
 
-		changes = append(changes, changeset.Change{
-			ChangeID:      uuid.NewString(),
-			ChangeType:    operation,
-			ObjectType:    obj.ObjectType(),
-			ObjectID:      objectID,
-			ObjectVersion: nil,
-			Data:          obj.Data(),
-		})
+		changes = append(changes, change)
 	}
 
 	deviationName := genDeviationName(objectsToReconcile)
@@ -197,7 +197,7 @@ func genDeviationName(objects []netbox.ComparableData) *string {
 	}
 
 	primaryObject := objects[len(objects)-1]
-	deviationName := fmt.Sprintf("%s %s", primaryObject.ObjectTypeName(), primaryObject.PrimaryValue())
+	deviationName := fmt.Sprintf("%s %s", primaryObject.ObjectTypeName(), primaryObject.ObjectPrimaryValue())
 
 	if primaryObject.ID() > 0 {
 		deviationName += " modified"

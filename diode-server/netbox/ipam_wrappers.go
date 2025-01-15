@@ -197,6 +197,8 @@ func (dw *IpamIPAddressDataWrapper) Patch(cmp ComparableData, intendedNestedObje
 	reconciliationRequired := true
 
 	if intended != nil && dw.hash() == intended.hash() {
+		dw.intendedData = intended.Data()
+
 		currentNestedObjectsMap := make(map[string]ComparableData)
 		currentNestedObjects, err := intended.NestedObjects()
 		if err != nil {
@@ -359,8 +361,8 @@ func (dw *IpamIPAddressDataWrapper) SetDefaults() {
 	}
 }
 
-// PrimaryValue returns the primary value of the data
-func (dw *IpamIPAddressDataWrapper) PrimaryValue() string {
+// ObjectPrimaryValue returns the object primary value of the data
+func (dw *IpamIPAddressDataWrapper) ObjectPrimaryValue() string {
 	return dw.IPAddress.Address
 }
 
@@ -497,6 +499,8 @@ func (dw *IpamPrefixDataWrapper) Patch(cmp ComparableData, intendedNestedObjects
 	reconciliationRequired := true
 
 	if intended != nil {
+		dw.intendedData = intended.Data()
+
 		currentNestedObjectsMap := make(map[string]ComparableData)
 		currentNestedObjects, err := intended.NestedObjects()
 		if err != nil {
@@ -630,7 +634,7 @@ func (dw *IpamPrefixDataWrapper) SetDefaults() {
 	}
 }
 
-// PrimaryValue returns the primary value of the data
-func (dw *IpamPrefixDataWrapper) PrimaryValue() string {
+// ObjectPrimaryValue returns the object primary value of the data
+func (dw *IpamPrefixDataWrapper) ObjectPrimaryValue() string {
 	return dw.Prefix.Prefix
 }

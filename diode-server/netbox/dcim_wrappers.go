@@ -190,6 +190,8 @@ func (dw *DcimDeviceDataWrapper) Patch(cmp ComparableData, intendedNestedObjects
 	reconciliationRequired := true
 
 	if intended != nil {
+		dw.intendedData = intended.Data()
+
 		currentNestedObjectsMap := make(map[string]ComparableData)
 		currentNestedObjects, err := intended.NestedObjects()
 		if err != nil {
@@ -506,8 +508,8 @@ func (dw *DcimDeviceDataWrapper) SetDefaults() {
 	}
 }
 
-// PrimaryValue returns the primary value of the data
-func (dw *DcimDeviceDataWrapper) PrimaryValue() string {
+// ObjectPrimaryValue returns the object primary value of the data
+func (dw *DcimDeviceDataWrapper) ObjectPrimaryValue() string {
 	return dw.Device.Name
 }
 
@@ -628,6 +630,8 @@ func (dw *DcimDeviceRoleDataWrapper) Patch(cmp ComparableData, intendedNestedObj
 	reconciliationRequired := true
 
 	if intended != nil {
+		dw.intendedData = intended.Data()
+
 		dw.DeviceRole.ID = intended.DeviceRole.ID
 		dw.DeviceRole.Name = intended.DeviceRole.Name
 		dw.DeviceRole.Slug = intended.DeviceRole.Slug
@@ -688,8 +692,8 @@ func (dw *DcimDeviceRoleDataWrapper) SetDefaults() {
 	}
 }
 
-// PrimaryValue returns the primary value of the data
-func (dw *DcimDeviceRoleDataWrapper) PrimaryValue() string {
+// ObjectPrimaryValue returns the object primary value of the data
+func (dw *DcimDeviceRoleDataWrapper) ObjectPrimaryValue() string {
 	return dw.DeviceRole.Name
 }
 
@@ -833,6 +837,8 @@ func (dw *DcimDeviceTypeDataWrapper) Patch(cmp ComparableData, intendedNestedObj
 	reconciliationRequired := true
 
 	if intended != nil {
+		dw.intendedData = intended.Data()
+
 		currentNestedObjectsMap := make(map[string]ComparableData)
 		currentNestedObjects, err := intended.NestedObjects()
 		if err != nil {
@@ -953,8 +959,8 @@ func (dw *DcimDeviceTypeDataWrapper) Patch(cmp ComparableData, intendedNestedObj
 // SetDefaults sets the default values for the device type
 func (dw *DcimDeviceTypeDataWrapper) SetDefaults() {}
 
-// PrimaryValue returns the primary value of the data
-func (dw *DcimDeviceTypeDataWrapper) PrimaryValue() string {
+// ObjectPrimaryValue returns the object primary value of the data
+func (dw *DcimDeviceTypeDataWrapper) ObjectPrimaryValue() string {
 	return dw.DeviceType.Model
 }
 
@@ -1268,8 +1274,8 @@ func (dw *DcimInterfaceDataWrapper) SetDefaults() {
 	}
 }
 
-// PrimaryValue returns the primary value of the data
-func (dw *DcimInterfaceDataWrapper) PrimaryValue() string {
+// ObjectPrimaryValue returns the object primary value of the data
+func (dw *DcimInterfaceDataWrapper) ObjectPrimaryValue() string {
 	return dw.Interface.Name
 }
 
@@ -1386,6 +1392,8 @@ func (dw *DcimManufacturerDataWrapper) Patch(cmp ComparableData, intendedNestedO
 	reconciliationRequired := true
 
 	if intended != nil {
+		dw.intendedData = intended.Data()
+
 		dw.Manufacturer.ID = intended.Manufacturer.ID
 		dw.Manufacturer.Name = intended.Manufacturer.Name
 		dw.Manufacturer.Slug = intended.Manufacturer.Slug
@@ -1464,8 +1472,8 @@ func mergeTags(actualTags []*Tag, intendedTags []*Tag, intendedNestedObjects map
 // SetDefaults sets the default values for the manufacturer
 func (dw *DcimManufacturerDataWrapper) SetDefaults() {}
 
-// PrimaryValue returns the primary value of the data
-func (dw *DcimManufacturerDataWrapper) PrimaryValue() string {
+// ObjectPrimaryValue returns the object primary value of the data
+func (dw *DcimManufacturerDataWrapper) ObjectPrimaryValue() string {
 	return dw.Manufacturer.Name
 }
 
@@ -1607,6 +1615,8 @@ func (dw *DcimPlatformDataWrapper) Patch(cmp ComparableData, intendedNestedObjec
 	reconciliationRequired := true
 
 	if intended != nil {
+		dw.intendedData = intended.Data()
+
 		currentNestedObjectsMap := make(map[string]ComparableData)
 		currentNestedObjects, err := intended.NestedObjects()
 		if err != nil {
@@ -1734,8 +1744,8 @@ func (dw *DcimPlatformDataWrapper) Patch(cmp ComparableData, intendedNestedObjec
 // SetDefaults sets the default values for the platform
 func (dw *DcimPlatformDataWrapper) SetDefaults() {}
 
-// PrimaryValue returns the primary value of the data
-func (dw *DcimPlatformDataWrapper) PrimaryValue() string {
+// ObjectPrimaryValue returns the object primary value of the data
+func (dw *DcimPlatformDataWrapper) ObjectPrimaryValue() string {
 	return dw.Platform.Name
 }
 
@@ -1856,6 +1866,8 @@ func (dw *DcimSiteDataWrapper) Patch(cmp ComparableData, intendedNestedObjects m
 	reconciliationRequired := true
 
 	if intended != nil {
+		dw.intendedData = intended.Data()
+
 		dw.Site.ID = intended.Site.ID
 		dw.Site.Name = intended.Site.Name
 		dw.Site.Slug = intended.Site.Slug
@@ -1928,7 +1940,7 @@ func (dw *DcimSiteDataWrapper) SetDefaults() {
 	}
 }
 
-// PrimaryValue returns the primary value of the data
-func (dw *DcimSiteDataWrapper) PrimaryValue() string {
+// ObjectPrimaryValue returns the object primary value of the data
+func (dw *DcimSiteDataWrapper) ObjectPrimaryValue() string {
 	return dw.Site.Name
 }

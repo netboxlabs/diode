@@ -13,21 +13,24 @@ import (
 
 const createChange = `-- name: CreateChange :one
 
-INSERT INTO changes (external_id, change_set_id, change_type, object_type, object_id, object_version, data,
+INSERT INTO changes (external_id, change_set_id, change_type, object_type, object_primary_value, object_id,
+                     object_version, before, after,
                      sequence_number)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-RETURNING id, external_id, change_set_id, change_type, object_type, object_id, object_version, data, sequence_number, created_at, updated_at
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+RETURNING id, external_id, change_set_id, change_type, object_type, object_primary_value, object_id, object_version, before, after, sequence_number, created_at, updated_at
 `
 
 type CreateChangeParams struct {
-	ExternalID     string      `json:"external_id"`
-	ChangeSetID    int32       `json:"change_set_id"`
-	ChangeType     string      `json:"change_type"`
-	ObjectType     string      `json:"object_type"`
-	ObjectID       pgtype.Int4 `json:"object_id"`
-	ObjectVersion  pgtype.Int4 `json:"object_version"`
-	Data           any         `json:"data"`
-	SequenceNumber pgtype.Int4 `json:"sequence_number"`
+	ExternalID         string      `json:"external_id"`
+	ChangeSetID        int32       `json:"change_set_id"`
+	ChangeType         string      `json:"change_type"`
+	ObjectType         string      `json:"object_type"`
+	ObjectPrimaryValue string      `json:"object_primary_value"`
+	ObjectID           pgtype.Int4 `json:"object_id"`
+	ObjectVersion      pgtype.Int4 `json:"object_version"`
+	Before             any         `json:"before"`
+	After              any         `json:"after"`
+	SequenceNumber     pgtype.Int4 `json:"sequence_number"`
 }
 
 func (q *Queries) CreateChange(ctx context.Context, arg CreateChangeParams) (Change, error) {
@@ -36,9 +39,11 @@ func (q *Queries) CreateChange(ctx context.Context, arg CreateChangeParams) (Cha
 		arg.ChangeSetID,
 		arg.ChangeType,
 		arg.ObjectType,
+		arg.ObjectPrimaryValue,
 		arg.ObjectID,
 		arg.ObjectVersion,
-		arg.Data,
+		arg.Before,
+		arg.After,
 		arg.SequenceNumber,
 	)
 	var i Change
@@ -48,9 +53,11 @@ func (q *Queries) CreateChange(ctx context.Context, arg CreateChangeParams) (Cha
 		&i.ChangeSetID,
 		&i.ChangeType,
 		&i.ObjectType,
+		&i.ObjectPrimaryValue,
 		&i.ObjectID,
 		&i.ObjectVersion,
-		&i.Data,
+		&i.Before,
+		&i.After,
 		&i.SequenceNumber,
 		&i.CreatedAt,
 		&i.UpdatedAt,

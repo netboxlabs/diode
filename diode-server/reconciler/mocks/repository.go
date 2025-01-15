@@ -203,6 +203,67 @@ func (_c *Repository_CreateIngestionLog_Call) RunAndReturn(run func(context.Cont
 	return _c
 }
 
+// RetrieveDeviations provides a mock function with given fields: ctx, filter, limit, offset
+func (_m *Repository) RetrieveDeviations(ctx context.Context, filter *reconcilerpb.RetrieveDeviationsRequest, limit int32, offset int32) ([]*reconcilerpb.Deviation, error) {
+	ret := _m.Called(ctx, filter, limit, offset)
+
+	if len(ret) == 0 {
+		panic("no return value specified for RetrieveDeviations")
+	}
+
+	var r0 []*reconcilerpb.Deviation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *reconcilerpb.RetrieveDeviationsRequest, int32, int32) ([]*reconcilerpb.Deviation, error)); ok {
+		return rf(ctx, filter, limit, offset)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *reconcilerpb.RetrieveDeviationsRequest, int32, int32) []*reconcilerpb.Deviation); ok {
+		r0 = rf(ctx, filter, limit, offset)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*reconcilerpb.Deviation)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *reconcilerpb.RetrieveDeviationsRequest, int32, int32) error); ok {
+		r1 = rf(ctx, filter, limit, offset)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Repository_RetrieveDeviations_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RetrieveDeviations'
+type Repository_RetrieveDeviations_Call struct {
+	*mock.Call
+}
+
+// RetrieveDeviations is a helper method to define mock.On call
+//   - ctx context.Context
+//   - filter *reconcilerpb.RetrieveDeviationsRequest
+//   - limit int32
+//   - offset int32
+func (_e *Repository_Expecter) RetrieveDeviations(ctx interface{}, filter interface{}, limit interface{}, offset interface{}) *Repository_RetrieveDeviations_Call {
+	return &Repository_RetrieveDeviations_Call{Call: _e.mock.On("RetrieveDeviations", ctx, filter, limit, offset)}
+}
+
+func (_c *Repository_RetrieveDeviations_Call) Run(run func(ctx context.Context, filter *reconcilerpb.RetrieveDeviationsRequest, limit int32, offset int32)) *Repository_RetrieveDeviations_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*reconcilerpb.RetrieveDeviationsRequest), args[2].(int32), args[3].(int32))
+	})
+	return _c
+}
+
+func (_c *Repository_RetrieveDeviations_Call) Return(_a0 []*reconcilerpb.Deviation, _a1 error) *Repository_RetrieveDeviations_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Repository_RetrieveDeviations_Call) RunAndReturn(run func(context.Context, *reconcilerpb.RetrieveDeviationsRequest, int32, int32) ([]*reconcilerpb.Deviation, error)) *Repository_RetrieveDeviations_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // RetrieveIngestionLogByExternalID provides a mock function with given fields: ctx, uuid
 func (_m *Repository) RetrieveIngestionLogByExternalID(ctx context.Context, uuid string) (*int32, *reconcilerpb.IngestionLog, error) {
 	ret := _m.Called(ctx, uuid)

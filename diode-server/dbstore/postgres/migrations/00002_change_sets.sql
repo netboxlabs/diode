@@ -19,17 +19,19 @@ CREATE INDEX IF NOT EXISTS idx_change_sets_ingestion_log_id ON change_sets (inge
 -- Create the changes table
 CREATE TABLE IF NOT EXISTS changes
 (
-    id              INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    external_id     VARCHAR(255) NOT NULL,
-    change_set_id   INTEGER      NOT NULL,
-    change_type     VARCHAR(50)  NOT NULL,
-    object_type     VARCHAR(255) NOT NULL,
-    object_id       INTEGER,
-    object_version  INTEGER,
-    data            JSONB,
-    sequence_number INTEGER,
-    created_at      TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at      TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    id                   INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    external_id          VARCHAR(255) NOT NULL,
+    change_set_id        INTEGER      NOT NULL,
+    change_type          VARCHAR(50)  NOT NULL,
+    object_type          VARCHAR(255) NOT NULL,
+    object_primary_value VARCHAR(255) NOT NULL,
+    object_id            INTEGER,
+    object_version       INTEGER,
+    before               JSONB,
+    after                JSONB,
+    sequence_number      INTEGER,
+    created_at           TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at           TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create indices
@@ -47,8 +49,9 @@ ALTER TABLE changes
 -- Create a view to join ingestion_logs with aggregated change_set and changes
 CREATE VIEW v_ingestion_logs_with_change_set AS
 SELECT DISTINCT ON (ingestion_logs.id) ingestion_logs.*,
-       row_to_json(change_sets.*)                                                                       AS change_set,
-       JSON_AGG(changes.* ORDER BY changes.sequence_number ASC) FILTER ( WHERE changes.id IS NOT NULL ) AS changes
+                                       row_to_json(change_sets.*)              AS change_set,
+                                       JSON_AGG(changes.* ORDER BY changes.sequence_number ASC)
+                                       FILTER ( WHERE changes.id IS NOT NULL ) AS changes
 FROM ingestion_logs
          LEFT JOIN change_sets on ingestion_logs.id = change_sets.ingestion_log_id
          LEFT JOIN changes on change_sets.id = changes.change_set_id

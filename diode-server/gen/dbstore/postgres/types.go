@@ -9,17 +9,19 @@ import (
 )
 
 type Change struct {
-	ID             int32              `json:"id"`
-	ExternalID     string             `json:"external_id"`
-	ChangeSetID    int32              `json:"change_set_id"`
-	ChangeType     string             `json:"change_type"`
-	ObjectType     string             `json:"object_type"`
-	ObjectID       pgtype.Int4        `json:"object_id"`
-	ObjectVersion  pgtype.Int4        `json:"object_version"`
-	Data           any                `json:"data"`
-	SequenceNumber pgtype.Int4        `json:"sequence_number"`
-	CreatedAt      pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
+	ID                 int32              `json:"id"`
+	ExternalID         string             `json:"external_id"`
+	ChangeSetID        int32              `json:"change_set_id"`
+	ChangeType         string             `json:"change_type"`
+	ObjectType         string             `json:"object_type"`
+	ObjectPrimaryValue string             `json:"object_primary_value"`
+	ObjectID           pgtype.Int4        `json:"object_id"`
+	ObjectVersion      pgtype.Int4        `json:"object_version"`
+	Before             any                `json:"before"`
+	After              any                `json:"after"`
+	SequenceNumber     pgtype.Int4        `json:"sequence_number"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
 }
 
 type ChangeSet struct {

@@ -230,7 +230,7 @@ func TestIpamPrepare(t *testing.T) {
 						ObjectType:    "ipam.ipaddress",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.IpamIPAddress{
+						After: &netbox.IpamIPAddress{
 							Address: "192.168.0.1/22",
 							Status:  &netbox.DefaultIPAddressStatus,
 							AssignedObject: &netbox.IPAddressInterface{
@@ -416,7 +416,7 @@ func TestIpamPrepare(t *testing.T) {
 						ObjectType:    "dcim.interface",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimInterface{
+						After: &netbox.DcimInterface{
 							Name: "GigabitEthernet0/0/0",
 							Type: strPtr(netbox.DefaultInterfaceType),
 							Device: &netbox.DcimDevice{
@@ -430,7 +430,7 @@ func TestIpamPrepare(t *testing.T) {
 						ObjectType:    "ipam.ipaddress",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.IpamIPAddress{
+						After: &netbox.IpamIPAddress{
 							Address: "192.168.0.1/22",
 							Status:  &netbox.DefaultIPAddressStatus,
 							AssignedObject: &netbox.IPAddressInterface{
@@ -665,7 +665,7 @@ func TestIpamPrepare(t *testing.T) {
 						ObjectType:    "dcim.interface",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimInterface{
+						After: &netbox.DcimInterface{
 							Name: "GigabitEthernet1/0/1",
 							Type: strPtr(netbox.DefaultInterfaceType),
 							Device: &netbox.DcimDevice{
@@ -679,7 +679,7 @@ func TestIpamPrepare(t *testing.T) {
 						ObjectType:    "ipam.ipaddress",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.IpamIPAddress{
+						After: &netbox.IpamIPAddress{
 							Address: "192.168.0.1/22",
 							Status:  &netbox.DefaultIPAddressStatus,
 							AssignedObject: &netbox.IPAddressInterface{
@@ -955,7 +955,7 @@ func TestIpamPrepare(t *testing.T) {
 						ObjectType:    "ipam.ipaddress",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.IpamIPAddress{
+						After: &netbox.IpamIPAddress{
 							Address: "192.168.0.1/22",
 							Status:  &netbox.DefaultIPAddressStatus,
 							AssignedObject: &netbox.IPAddressInterface{
@@ -1520,7 +1520,7 @@ func TestIpamPrepare(t *testing.T) {
 						ObjectType:    "ipam.ipaddress",
 						ObjectID:      intPtr(1),
 						ObjectVersion: nil,
-						Data: &netbox.IpamIPAddress{
+						After: &netbox.IpamIPAddress{
 							ID:          1,
 							Address:     "192.168.0.1/22",
 							Status:      &netbox.DefaultIPAddressStatus,
@@ -1599,7 +1599,7 @@ func TestIpamPrepare(t *testing.T) {
 						ObjectType:    "dcim.site",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimSite{
+						After: &netbox.DcimSite{
 							Name:   "undefined",
 							Slug:   "undefined",
 							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
@@ -1611,7 +1611,7 @@ func TestIpamPrepare(t *testing.T) {
 						ObjectType:    "ipam.prefix",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.IpamPrefix{
+						After: &netbox.IpamPrefix{
 							Prefix: "192.168.0.0/32",
 							Site: &netbox.DcimSite{
 								Name:   "undefined",
@@ -1808,7 +1808,7 @@ func TestIpamPrepare(t *testing.T) {
 						ObjectType:    "extras.tag",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.Tag{
+						After: &netbox.Tag{
 							Name: "tag 100",
 							Slug: "tag-100",
 						},
@@ -1819,7 +1819,7 @@ func TestIpamPrepare(t *testing.T) {
 						ObjectType:    "ipam.prefix",
 						ObjectID:      intPtr(1),
 						ObjectVersion: nil,
-						Data: &netbox.IpamPrefix{
+						After: &netbox.IpamPrefix{
 							ID:     1,
 							Prefix: "192.168.0.0/32",
 							Site: &netbox.DcimSite{
@@ -1930,7 +1930,7 @@ func TestIpamPrepare(t *testing.T) {
 			for i := range tt.wantChangeSet.ChangeSet {
 				assert.Equal(t, tt.wantChangeSet.ChangeSet[i].ChangeType, cs.ChangeSet[i].ChangeType)
 				assert.Equal(t, tt.wantChangeSet.ChangeSet[i].ObjectType, cs.ChangeSet[i].ObjectType)
-				assert.Equal(t, tt.wantChangeSet.ChangeSet[i].Data, cs.ChangeSet[i].Data)
+				assert.Equal(t, tt.wantChangeSet.ChangeSet[i].After, cs.ChangeSet[i].After)
 			}
 		})
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -169,7 +170,8 @@ func (r *Repository) RetrieveIngestionLogs(ctx context.Context, filter *reconcil
 					ChangeID:   dbChange.ExternalID,
 					ChangeType: dbChange.ChangeType,
 					ObjectType: dbChange.ObjectType,
-					Data:       dbChange.Data,
+					Before:     dbChange.Before,
+					After:      dbChange.After,
 				}
 
 				objID := int(dbChange.ObjectID.Int32)
@@ -256,10 +258,16 @@ func (r *Repository) CreateChangeSet(ctx context.Context, changeSet changeset.Ch
 	}
 
 	for i, change := range changeSet.ChangeSet {
-		dataJSON, err := json.Marshal(change.Data)
+		beforeJSON, err := json.Marshal(change.Before)
 		if err != nil {
 			rollback()
-			return nil, fmt.Errorf("failed to marshal entity: %w", err)
+			return nil, fmt.Errorf("failed to marshal before state: %w", err)
+		}
+
+		afterJSON, err := json.Marshal(change.After)
+		if err != nil {
+			rollback()
+			return nil, fmt.Errorf("failed to marshal after state: %w", err)
 		}
 
 		changeParams := postgres.CreateChangeParams{
@@ -267,7 +275,8 @@ func (r *Repository) CreateChangeSet(ctx context.Context, changeSet changeset.Ch
 			ChangeSetID:    cs.ID,
 			ChangeType:     change.ChangeType,
 			ObjectType:     change.ObjectType,
-			Data:           dataJSON,
+			Before:         beforeJSON,
+			After:          afterJSON,
 			SequenceNumber: pgtype.Int4{Int32: int32(i), Valid: true},
 		}
 		if change.ObjectID != nil {
@@ -288,4 +297,108 @@ func (r *Repository) CreateChangeSet(ctx context.Context, changeSet changeset.Ch
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
 	return &cs.ID, nil
+}
+
+// RetrieveDeviations retrieves deviations.
+func (r *Repository) RetrieveDeviations(ctx context.Context, filter *reconcilerpb.RetrieveDeviationsRequest, limit int32, offset int32) ([]*reconcilerpb.Deviation, error) {
+	params := postgres.RetrieveDeviationsParams{
+		Limit:  limit,
+		Offset: offset,
+	}
+
+	if len(filter.State) > 0 {
+		states := make([]string, 0, len(filter.State))
+		for _, state := range filter.State {
+			states = append(states, state.String())
+		}
+		params.State = states
+	}
+	if len(filter.ObjectType) > 0 {
+		params.ObjectType = filter.ObjectType
+	}
+	if len(filter.BranchId) > 0 {
+		params.BranchID = filter.BranchId
+	}
+
+	// TODO(mfiedorowicz): filtering by site is not implemented yet
+
+	if filter.IngestionTsStart > 0 {
+		params.IngestionTsStart = pgtype.Int8{Int64: filter.IngestionTsStart, Valid: true}
+	}
+	if filter.IngestionTsEnd > 0 {
+		params.IngestionTsEnd = pgtype.Int8{Int64: filter.IngestionTsEnd, Valid: true}
+	}
+
+	rawDeviations, err := r.queries.RetrieveDeviations(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+
+	deviations := make([]*reconcilerpb.Deviation, 0, len(rawDeviations))
+	for _, row := range rawDeviations {
+		entity := &diodepb.Entity{}
+		if err := protojson.Unmarshal(row.Entity, entity); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal entity: %w", err)
+		}
+
+		// split producer app name by forward slash and get first element if it exists
+		source := row.ProducerAppName.String
+		if source != "" {
+			source = strings.Split(source, "/")[0]
+		}
+
+		var branchID *string
+		if row.ChangeSet.BranchID.Valid {
+			branchID = &row.ChangeSet.BranchID.String
+		}
+
+		var deviationErr *reconcilerpb.DeviationError
+		if row.Error != nil {
+			deviationErr = &reconcilerpb.DeviationError{}
+			if err := protojson.Unmarshal(row.Error, deviationErr); err != nil {
+				return nil, fmt.Errorf("failed to unmarshal error: %w", err)
+			}
+		}
+
+		deviation := &reconcilerpb.Deviation{
+			Id:             row.ExternalID,
+			Name:           row.ChangeSet.DeviationName.String,
+			Source:         source,
+			State:          reconcilerpb.State(row.State.Int32),
+			ObjectType:     row.ObjectType.String,
+			BranchId:       branchID,
+			IngestedEntity: entity,
+			Error:          deviationErr,
+		}
+
+		if row.Changes != nil {
+			var dbChanges []postgres.Change
+			if err := json.Unmarshal(row.Changes, &dbChanges); err != nil {
+				return nil, fmt.Errorf("failed to unmarshal changes: %w", err)
+			}
+
+			changes := make([]*reconcilerpb.Change, 0, len(dbChanges))
+			for _, dbChange := range dbChanges {
+				change := &reconcilerpb.Change{
+					Id:                 dbChange.ExternalID,
+					ChangeType:         dbChange.ChangeType,
+					ObjectType:         dbChange.ObjectType,
+					ObjectPrimaryValue: dbChange.ObjectPrimaryValue,
+				}
+				if dbChange.Before != nil {
+					change.Before = dbChange.Before.([]byte)
+				}
+				if dbChange.After != nil {
+					change.After = dbChange.After.([]byte)
+				}
+				changes = append(changes, change)
+			}
+
+			deviation.Changes = changes
+		}
+
+		deviations = append(deviations, deviation)
+	}
+
+	return deviations, nil
 }

@@ -387,14 +387,14 @@ Ingestion API
 
 A change
 
-| Field       | Type              | Label | Description |
-|-------------|-------------------|-------|-------------|
-| id          | [string](#string) |       |             |
-| object_type | [string](#string) |       |             |
-| object_name | [string](#string) |       |             |
-| change_type | [string](#string) |       |             |
-| before      | [bytes](#bytes)   |       |             |
-| after       | [bytes](#bytes)   |       |             |
+| Field                | Type              | Label | Description |
+|----------------------|-------------------|-------|-------------|
+| id                   | [string](#string) |       |             |
+| object_type          | [string](#string) |       |             |
+| object_primary_value | [string](#string) |       |             |
+| change_type          | [string](#string) |       |             |
+| before               | [bytes](#bytes)   |       |             |
+| after                | [bytes](#bytes)   |       |             |
 
 <a name="diode-v1-ChangeSet"></a>
 

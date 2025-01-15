@@ -27,7 +27,7 @@ func TestApplyChangeSet(t *testing.T) {
 				ChangeID:   "00000000-0000-0000-0000-000000000001",
 				ChangeType: "create",
 				ObjectType: "dcim.site",
-				Data: &netbox.DcimSite{
+				After: &netbox.DcimSite{
 					Name:   "Site A",
 					Slug:   "site-a",
 					Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),

@@ -110,7 +110,7 @@ message DeviationError {
 message Change {
   string id = 1;
   string object_type = 2;
-  string object_name = 3;
+  string object_primary_value = 3;
   string change_type = 4;
   bytes before = 5;
   bytes after = 6;
