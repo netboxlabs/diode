@@ -1129,7 +1129,7 @@ func (m *Change) validate(all bool) error {
 
 	// no validation rules for ObjectType
 
-	// no validation rules for ObjectName
+	// no validation rules for ObjectPrimaryValue
 
 	// no validation rules for ChangeType
 
