@@ -319,6 +319,9 @@ func (r *Repository) RetrieveDeviations(ctx context.Context, filter *reconcilerp
 	if len(filter.BranchId) > 0 {
 		params.BranchID = filter.BranchId
 	}
+
+	// TODO(mfiedorowicz): filtering by site is not implemented yet
+
 	if filter.IngestionTsStart > 0 {
 		params.IngestionTsStart = pgtype.Int8{Int64: filter.IngestionTsStart, Valid: true}
 	}
