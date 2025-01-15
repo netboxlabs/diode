@@ -15,8 +15,10 @@ const retrieveDeviations = `-- name: RetrieveDeviations :many
 SELECT v_ingestion_logs_with_change_set.id, v_ingestion_logs_with_change_set.external_id, v_ingestion_logs_with_change_set.object_type, v_ingestion_logs_with_change_set.state, v_ingestion_logs_with_change_set.request_id, v_ingestion_logs_with_change_set.ingestion_ts, v_ingestion_logs_with_change_set.producer_app_name, v_ingestion_logs_with_change_set.producer_app_version, v_ingestion_logs_with_change_set.sdk_name, v_ingestion_logs_with_change_set.sdk_version, v_ingestion_logs_with_change_set.entity, v_ingestion_logs_with_change_set.error, v_ingestion_logs_with_change_set.source_metadata, v_ingestion_logs_with_change_set.created_at, v_ingestion_logs_with_change_set.updated_at, v_ingestion_logs_with_change_set.change_set, v_ingestion_logs_with_change_set.changes
 FROM v_ingestion_logs_with_change_set
 WHERE (v_ingestion_logs_with_change_set.state = ANY ($1::text[]) OR $1 IS NULL)
-  AND (v_ingestion_logs_with_change_set.object_type = ANY ($2::text[]) OR $2 IS NULL)
-  AND (v_ingestion_logs_with_change_set.branch_id = ANY ($3::text[]) OR $3 IS NULL)
+  AND (v_ingestion_logs_with_change_set.object_type = ANY ($2::text[]) OR
+       $2 IS NULL)
+  AND (v_ingestion_logs_with_change_set.branch_id = ANY ($3::text[]) OR
+       $3 IS NULL)
   AND (v_ingestion_logs_with_change_set.ingestion_ts >= $4 OR
        $4 IS NULL)
   AND (v_ingestion_logs_with_change_set.ingestion_ts <= $5 OR
