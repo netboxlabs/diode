@@ -15,6 +15,9 @@ sql:
             go_type:
               type: ChangeSet
               pointer: true
-          - column: changes.data
+          - column: changes.before
+            go_type:
+              type: any
+          - column: changes.after
             go_type:
               type: any

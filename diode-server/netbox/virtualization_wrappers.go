@@ -123,6 +123,8 @@ func (vw *VirtualizationClusterGroupDataWrapper) Patch(cmp ComparableData, inten
 	reconciliationRequired := true
 
 	if intended != nil {
+		vw.intendedData = intended.Data()
+
 		vw.ClusterGroup.ID = intended.ClusterGroup.ID
 		vw.ClusterGroup.Name = intended.ClusterGroup.Name
 		vw.ClusterGroup.Slug = intended.ClusterGroup.Slug
@@ -168,8 +170,8 @@ func (vw *VirtualizationClusterGroupDataWrapper) Patch(cmp ComparableData, inten
 // SetDefaults sets the default values for the device type
 func (vw *VirtualizationClusterGroupDataWrapper) SetDefaults() {}
 
-// PrimaryValue returns the primary value of the data
-func (vw *VirtualizationClusterGroupDataWrapper) PrimaryValue() string {
+// ObjectPrimaryValue returns the object primary value of the data
+func (vw *VirtualizationClusterGroupDataWrapper) ObjectPrimaryValue() string {
 	return vw.ClusterGroup.Name
 }
 
@@ -286,6 +288,8 @@ func (vw *VirtualizationClusterTypeDataWrapper) Patch(cmp ComparableData, intend
 	reconciliationRequired := true
 
 	if intended != nil {
+		vw.intendedData = intended.Data()
+
 		vw.ClusterType.ID = intended.ClusterType.ID
 		vw.ClusterType.Name = intended.ClusterType.Name
 		vw.ClusterType.Slug = intended.ClusterType.Slug
@@ -331,8 +335,8 @@ func (vw *VirtualizationClusterTypeDataWrapper) Patch(cmp ComparableData, intend
 // SetDefaults sets the default values for the device type
 func (vw *VirtualizationClusterTypeDataWrapper) SetDefaults() {}
 
-// PrimaryValue returns the primary value of the data
-func (vw *VirtualizationClusterTypeDataWrapper) PrimaryValue() string {
+// ObjectPrimaryValue returns the object primary value of the data
+func (vw *VirtualizationClusterTypeDataWrapper) ObjectPrimaryValue() string {
 	return vw.ClusterType.Name
 }
 
@@ -495,6 +499,8 @@ func (vw *VirtualizationClusterDataWrapper) Patch(cmp ComparableData, intendedNe
 	reconciliationRequired := true
 
 	if intended != nil {
+		vw.intendedData = intended.Data()
+
 		currentNestedObjectsMap := make(map[string]ComparableData)
 		currentNestedObjects, err := intended.NestedObjects()
 		if err != nil {
@@ -732,8 +738,8 @@ func (vw *VirtualizationClusterDataWrapper) SetDefaults() {
 	}
 }
 
-// PrimaryValue returns the primary value of the data
-func (vw *VirtualizationClusterDataWrapper) PrimaryValue() string {
+// ObjectPrimaryValue returns the object primary value of the data
+func (vw *VirtualizationClusterDataWrapper) ObjectPrimaryValue() string {
 	return vw.Cluster.Name
 }
 
@@ -929,6 +935,8 @@ func (vw *VirtualizationVirtualMachineDataWrapper) Patch(cmp ComparableData, int
 	reconciliationRequired := true
 
 	if intended != nil {
+		vw.intendedData = intended.Data()
+
 		currentNestedObjectsMap := make(map[string]ComparableData)
 		currentNestedObjects, err := intended.NestedObjects()
 		if err != nil {
@@ -1314,8 +1322,8 @@ func (vw *VirtualizationVirtualMachineDataWrapper) SetDefaults() {
 	}
 }
 
-// PrimaryValue returns the primary value of the data
-func (vw *VirtualizationVirtualMachineDataWrapper) PrimaryValue() string {
+// ObjectPrimaryValue returns the object primary value of the data
+func (vw *VirtualizationVirtualMachineDataWrapper) ObjectPrimaryValue() string {
 	return vw.VirtualMachine.Name
 }
 
@@ -1455,6 +1463,8 @@ func (vw *VirtualizationVMInterfaceDataWrapper) Patch(cmp ComparableData, intend
 	reconciliationRequired := true
 
 	if intended != nil {
+		vw.intendedData = intended.Data()
+
 		currentNestedObjectsMap := make(map[string]ComparableData)
 		currentNestedObjects, err := intended.NestedObjects()
 		if err != nil {
@@ -1580,8 +1590,8 @@ func (vw *VirtualizationVMInterfaceDataWrapper) Patch(cmp ComparableData, intend
 // SetDefaults sets the default values for the device type
 func (vw *VirtualizationVMInterfaceDataWrapper) SetDefaults() {}
 
-// PrimaryValue returns the primary value of the data
-func (vw *VirtualizationVMInterfaceDataWrapper) PrimaryValue() string {
+// ObjectPrimaryValue returns the object primary value of the data
+func (vw *VirtualizationVMInterfaceDataWrapper) ObjectPrimaryValue() string {
 	return vw.VMInterface.Name
 }
 
@@ -1721,6 +1731,8 @@ func (vw *VirtualizationVirtualDiskDataWrapper) Patch(cmp ComparableData, intend
 	reconciliationRequired := true
 
 	if intended != nil {
+		vw.intendedData = intended.Data()
+
 		currentNestedObjectsMap := make(map[string]ComparableData)
 		currentNestedObjects, err := intended.NestedObjects()
 		if err != nil {
@@ -1834,7 +1846,7 @@ func (vw *VirtualizationVirtualDiskDataWrapper) Patch(cmp ComparableData, intend
 // SetDefaults sets the default values for the device type
 func (vw *VirtualizationVirtualDiskDataWrapper) SetDefaults() {}
 
-// PrimaryValue returns the primary value of the data
-func (vw *VirtualizationVirtualDiskDataWrapper) PrimaryValue() string {
+// ObjectPrimaryValue returns the object primary value of the data
+func (vw *VirtualizationVirtualDiskDataWrapper) ObjectPrimaryValue() string {
 	return vw.VirtualDisk.Name
 }

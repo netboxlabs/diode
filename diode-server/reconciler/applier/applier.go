@@ -18,7 +18,7 @@ func ApplyChangeSet(ctx context.Context, logger *slog.Logger, cs changeset.Chang
 			ObjectType:    change.ObjectType,
 			ObjectID:      change.ObjectID,
 			ObjectVersion: change.ObjectVersion,
-			Data:          change.Data,
+			Data:          change.After,
 		})
 	}
 

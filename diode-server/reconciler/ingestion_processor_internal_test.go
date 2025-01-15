@@ -305,7 +305,7 @@ func TestCompressChangeSet(t *testing.T) {
 				ObjectType:    "extras.tag",
 				ObjectID:      nil,
 				ObjectVersion: nil,
-				Data: &netbox.Tag{
+				After: &netbox.Tag{
 					Name: "tag 2",
 					Slug: "tag-2",
 				},
@@ -315,7 +315,7 @@ func TestCompressChangeSet(t *testing.T) {
 				ChangeType:    changeset.ChangeTypeUpdate,
 				ObjectType:    "dcim.site",
 				ObjectVersion: nil,
-				Data: &netbox.DcimSite{
+				After: &netbox.DcimSite{
 					ID:     1,
 					Name:   "Site A",
 					Slug:   "site-a",

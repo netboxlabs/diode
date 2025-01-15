@@ -26,12 +26,14 @@ type ChangeSet struct {
 
 // Change represents a change for the change set
 type Change struct {
-	ChangeID      string `json:"change_id"`
-	ChangeType    string `json:"change_type"`
-	ObjectType    string `json:"object_type"`
-	ObjectID      *int   `json:"object_id,omitempty"`
-	ObjectVersion *int   `json:"object_version,omitempty"`
-	Data          any    `json:"data"`
+	ChangeID           string `json:"change_id"`
+	ChangeType         string `json:"change_type"`
+	ObjectType         string `json:"object_type"`
+	ObjectPrimaryValue string `json:"object_primary_value"`
+	ObjectID           *int   `json:"object_id,omitempty"`
+	ObjectVersion      *int   `json:"object_version,omitempty"`
+	Before             any    `json:"before"`
+	After              any    `json:"after"`
 }
 
 // CompressChangeSet compresses a change set

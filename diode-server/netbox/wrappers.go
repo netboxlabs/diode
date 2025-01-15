@@ -28,6 +28,9 @@ type ComparableData interface {
 	// Data returns the data
 	Data() any
 
+	// IntendedData returns the existing object state
+	IntendedData() any
+
 	// IsValid checks if the data is not nil
 	IsValid() bool
 
@@ -42,6 +45,9 @@ type ComparableData interface {
 
 	// ObjectTypeName returns the object type name
 	ObjectTypeName() string
+
+	// ObjectPrimaryValue returns the object primary value of the data
+	ObjectPrimaryValue() string
 
 	// ObjectStateQueryParams returns the query parameters needed to retrieve its object state
 	ObjectStateQueryParams() map[string]string
@@ -60,9 +66,6 @@ type ComparableData interface {
 
 	// HasChanged returns true if the data has changed
 	HasChanged() bool
-
-	// PrimaryValue returns the primary value of the data
-	PrimaryValue() string
 }
 
 // BaseDataWrapper is the base struct for all data wrappers
@@ -70,6 +73,7 @@ type BaseDataWrapper struct {
 	placeholder        bool
 	hasParent          bool
 	intended           bool
+	intendedData       any
 	hasChanged         bool
 	nestedObjects      []ComparableData
 	objectsToReconcile []ComparableData
@@ -83,6 +87,11 @@ func (bw *BaseDataWrapper) IsPlaceholder() bool {
 // HasChanged returns true if the data has changed
 func (bw *BaseDataWrapper) HasChanged() bool {
 	return bw.hasChanged
+}
+
+// IntendedData returns the existing object state
+func (bw *BaseDataWrapper) IntendedData() any {
+	return bw.intendedData
 }
 
 func copyData[T any](srcData *T) (*T, error) {
@@ -118,6 +127,11 @@ func (dw *TagDataWrapper) FromProtoEntity(*diodepb.Entity) error {
 
 // Data returns the Tag
 func (dw *TagDataWrapper) Data() any {
+	return dw.Tag
+}
+
+// IntendedData returns the existing object state
+func (dw *TagDataWrapper) IntendedData() any {
 	return dw.Tag
 }
 
@@ -179,8 +193,8 @@ func (dw *TagDataWrapper) Patch(cmp ComparableData, _ map[string]ComparableData)
 // SetDefaults sets the default values for the platform
 func (dw *TagDataWrapper) SetDefaults() {}
 
-// PrimaryValue returns the primary value of the data
-func (dw *TagDataWrapper) PrimaryValue() string {
+// ObjectPrimaryValue returns the object primary value of the data
+func (dw *TagDataWrapper) ObjectPrimaryValue() string {
 	return dw.Tag.Name
 }
 

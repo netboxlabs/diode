@@ -169,7 +169,8 @@ func (r *Repository) RetrieveIngestionLogs(ctx context.Context, filter *reconcil
 					ChangeID:   dbChange.ExternalID,
 					ChangeType: dbChange.ChangeType,
 					ObjectType: dbChange.ObjectType,
-					Data:       dbChange.Data,
+					Before:     dbChange.Before,
+					After:      dbChange.After,
 				}
 
 				objID := int(dbChange.ObjectID.Int32)
@@ -256,10 +257,16 @@ func (r *Repository) CreateChangeSet(ctx context.Context, changeSet changeset.Ch
 	}
 
 	for i, change := range changeSet.ChangeSet {
-		dataJSON, err := json.Marshal(change.Data)
+		beforeJSON, err := json.Marshal(change.Before)
 		if err != nil {
 			rollback()
-			return nil, fmt.Errorf("failed to marshal entity: %w", err)
+			return nil, fmt.Errorf("failed to marshal before state: %w", err)
+		}
+
+		afterJSON, err := json.Marshal(change.After)
+		if err != nil {
+			rollback()
+			return nil, fmt.Errorf("failed to marshal after state: %w", err)
 		}
 
 		changeParams := postgres.CreateChangeParams{
@@ -267,7 +274,8 @@ func (r *Repository) CreateChangeSet(ctx context.Context, changeSet changeset.Ch
 			ChangeSetID:    cs.ID,
 			ChangeType:     change.ChangeType,
 			ObjectType:     change.ObjectType,
-			Data:           dataJSON,
+			Before:         beforeJSON,
+			After:          afterJSON,
 			SequenceNumber: pgtype.Int4{Int32: int32(i), Valid: true},
 		}
 		if change.ObjectID != nil {

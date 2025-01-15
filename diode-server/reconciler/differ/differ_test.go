@@ -63,7 +63,7 @@ func TestGenDeviationName(t *testing.T) {
 						ObjectType:    "dcim.site",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimSite{
+						After: &netbox.DcimSite{
 							Name:   "Site A",
 							Slug:   "site-a",
 							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
@@ -190,7 +190,7 @@ func TestGenDeviationName(t *testing.T) {
 						ObjectType:    "extras.tag",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.Tag{
+						After: &netbox.Tag{
 							Name: "tag 2",
 							Slug: "tag-2",
 						},
@@ -201,7 +201,7 @@ func TestGenDeviationName(t *testing.T) {
 						ObjectType:    "dcim.site",
 						ObjectID:      intPtr(1),
 						ObjectVersion: nil,
-						Data: &netbox.DcimSite{
+						After: &netbox.DcimSite{
 							ID:     1,
 							Name:   "Site A",
 							Slug:   "site-a",
@@ -278,6 +278,15 @@ func TestGenDeviationName(t *testing.T) {
 
 			require.Equal(t, len(tt.wantChangeSet.ChangeSet), len(cs.ChangeSet))
 			assert.Equal(t, tt.wantChangeSet.DeviationName, cs.DeviationName)
+			for _, change := range cs.ChangeSet {
+				assert.NotNil(t, change.ChangeID)
+				assert.NotNil(t, change.ObjectType)
+				assert.NotNil(t, change.ChangeType)
+				assert.NotNil(t, change.After)
+				if change.ObjectID != nil {
+					assert.NotNil(t, change.Before)
+				}
+			}
 		})
 	}
 }

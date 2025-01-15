@@ -63,7 +63,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.site",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimSite{
+						After: &netbox.DcimSite{
 							Name:   "Site A",
 							Slug:   "site-a",
 							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
@@ -188,7 +188,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "extras.tag",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.Tag{
+						After: &netbox.Tag{
 							Name: "tag 2",
 							Slug: "tag-2",
 						},
@@ -199,7 +199,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.site",
 						ObjectID:      intPtr(1),
 						ObjectVersion: nil,
-						Data: &netbox.DcimSite{
+						After: &netbox.DcimSite{
 							ID:     1,
 							Name:   "Site A",
 							Slug:   "site-a",
@@ -277,7 +277,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.devicerole",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimDeviceRole{
+						After: &netbox.DcimDeviceRole{
 							Name:  "WAN Router",
 							Slug:  "wan-router",
 							Color: strPtr("000000"),
@@ -362,7 +362,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.devicerole",
 						ObjectID:      intPtr(1),
 						ObjectVersion: nil,
-						Data: &netbox.DcimDeviceRole{
+						After: &netbox.DcimDeviceRole{
 							ID:          1,
 							Name:        "WAN Router",
 							Slug:        "wan-router",
@@ -463,7 +463,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.manufacturer",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimManufacturer{
+						After: &netbox.DcimManufacturer{
 							Name: "Cisco",
 							Slug: "cisco",
 						},
@@ -566,7 +566,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.manufacturer",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimManufacturer{
+						After: &netbox.DcimManufacturer{
 							Name: "undefined",
 							Slug: "undefined",
 						},
@@ -577,7 +577,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.devicetype",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimDeviceType{
+						After: &netbox.DcimDeviceType{
 							Model: "ISR4321",
 							Slug:  "isr4321",
 							Manufacturer: &netbox.DcimManufacturer{
@@ -708,7 +708,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.manufacturer",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimManufacturer{
+						After: &netbox.DcimManufacturer{
 							Name: "Cisco",
 							Slug: "cisco",
 						},
@@ -719,7 +719,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.devicetype",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimDeviceType{
+						After: &netbox.DcimDeviceType{
 							Model: "ISR4321",
 							Slug:  "isr4321",
 							Manufacturer: &netbox.DcimManufacturer{
@@ -882,7 +882,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "extras.tag",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.Tag{
+						After: &netbox.Tag{
 							Name: "tag 3",
 							Slug: "tag-3",
 						},
@@ -893,7 +893,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "extras.tag",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.Tag{
+						After: &netbox.Tag{
 							Name: "tag 11",
 							Slug: "tag-11",
 						},
@@ -904,7 +904,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.manufacturer",
 						ObjectID:      intPtr(2),
 						ObjectVersion: nil,
-						Data: &netbox.DcimManufacturer{
+						After: &netbox.DcimManufacturer{
 							ID:   2,
 							Name: "Cisco",
 							Slug: "cisco",
@@ -937,7 +937,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.devicetype",
 						ObjectID:      intPtr(1),
 						ObjectVersion: nil,
-						Data: &netbox.DcimDeviceType{
+						After: &netbox.DcimDeviceType{
 							ID:    1,
 							Model: "ISR4321",
 							Slug:  "isr4321",
@@ -1059,7 +1059,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "extras.tag",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.Tag{
+						After: &netbox.Tag{
 							Name: "tag 3",
 							Slug: "tag-3",
 						},
@@ -1070,7 +1070,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.devicetype",
 						ObjectID:      intPtr(1),
 						ObjectVersion: nil,
-						Data: &netbox.DcimDeviceType{
+						After: &netbox.DcimDeviceType{
 							ID:    1,
 							Model: "ISR4321",
 							Slug:  "isr4321",
@@ -1193,7 +1193,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "extras.tag",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.Tag{
+						After: &netbox.Tag{
 							Name: "tag 3",
 							Slug: "tag-3",
 						},
@@ -1204,7 +1204,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.devicetype",
 						ObjectID:      intPtr(1),
 						ObjectVersion: nil,
-						Data: &netbox.DcimDeviceType{
+						After: &netbox.DcimDeviceType{
 							ID:    1,
 							Model: "ISR4321",
 							Slug:  "isr4321",
@@ -1299,7 +1299,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.site",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimSite{
+						After: &netbox.DcimSite{
 							Name:   "undefined",
 							Slug:   "undefined",
 							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
@@ -1311,7 +1311,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.manufacturer",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimManufacturer{
+						After: &netbox.DcimManufacturer{
 							Name: "undefined",
 							Slug: "undefined",
 						},
@@ -1322,7 +1322,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.devicetype",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimDeviceType{
+						After: &netbox.DcimDeviceType{
 							Model: "undefined",
 							Slug:  "undefined",
 							Manufacturer: &netbox.DcimManufacturer{
@@ -1337,7 +1337,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.devicerole",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimDeviceRole{
+						After: &netbox.DcimDeviceRole{
 							Name:  "undefined",
 							Slug:  "undefined",
 							Color: strPtr("000000"),
@@ -1349,7 +1349,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.device",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimDevice{
+						After: &netbox.DcimDevice{
 							Name: "router01",
 							Site: &netbox.DcimSite{
 								Name:   "undefined",
@@ -1706,7 +1706,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.site",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimSite{
+						After: &netbox.DcimSite{
 							Name:   "Site A",
 							Slug:   "site-a",
 							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
@@ -1718,7 +1718,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.manufacturer",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimManufacturer{
+						After: &netbox.DcimManufacturer{
 							Name: "undefined",
 							Slug: "undefined",
 						},
@@ -1729,7 +1729,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.devicetype",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimDeviceType{
+						After: &netbox.DcimDeviceType{
 							Model: "ISR4321",
 							Slug:  "isr4321",
 							Manufacturer: &netbox.DcimManufacturer{
@@ -1744,7 +1744,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.devicerole",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimDeviceRole{
+						After: &netbox.DcimDeviceRole{
 							Name:  "WAN Router",
 							Slug:  "wan-router",
 							Color: strPtr("000000"),
@@ -1756,7 +1756,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.device",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimDevice{
+						After: &netbox.DcimDevice{
 							Name: "router01",
 							Site: &netbox.DcimSite{
 								Name:   "Site A",
@@ -1894,7 +1894,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.site",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimSite{
+						After: &netbox.DcimSite{
 							Name:   "Site A",
 							Slug:   "site-a",
 							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
@@ -1906,7 +1906,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.manufacturer",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimManufacturer{
+						After: &netbox.DcimManufacturer{
 							Name: "Cisco",
 							Slug: "cisco",
 						},
@@ -1917,7 +1917,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.devicetype",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimDeviceType{
+						After: &netbox.DcimDeviceType{
 							Model: "ISR4321",
 							Slug:  "isr4321",
 							Manufacturer: &netbox.DcimManufacturer{
@@ -1932,7 +1932,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.devicerole",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimDeviceRole{
+						After: &netbox.DcimDeviceRole{
 							Name:  "WAN Router",
 							Slug:  "wan-router",
 							Color: strPtr("000000"),
@@ -1944,7 +1944,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.device",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimDevice{
+						After: &netbox.DcimDevice{
 							Name: "router01",
 							Site: &netbox.DcimSite{
 								Name:   "Site A",
@@ -2139,7 +2139,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.site",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimSite{
+						After: &netbox.DcimSite{
 							Name:   "Site A",
 							Slug:   "site-a",
 							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
@@ -2151,7 +2151,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.devicetype",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimDeviceType{
+						After: &netbox.DcimDeviceType{
 							Model: "ISR4321",
 							Slug:  "isr4321",
 							Manufacturer: &netbox.DcimManufacturer{
@@ -2165,7 +2165,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.devicerole",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimDeviceRole{
+						After: &netbox.DcimDeviceRole{
 							Name:  "WAN Router",
 							Slug:  "wan-router",
 							Color: strPtr("000000"),
@@ -2177,7 +2177,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.device",
 						ObjectID:      intPtr(1),
 						ObjectVersion: nil,
-						Data: &netbox.DcimDevice{
+						After: &netbox.DcimDevice{
 							ID:   1,
 							Name: "router01",
 							Site: &netbox.DcimSite{
@@ -2309,7 +2309,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.site",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimSite{
+						After: &netbox.DcimSite{
 							Name:   "Site A",
 							Slug:   "site-a",
 							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
@@ -2321,7 +2321,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.platform",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimPlatform{
+						After: &netbox.DcimPlatform{
 							Name: "Cisco IOS 15.6",
 							Slug: "cisco-ios-15-6",
 						},
@@ -2332,7 +2332,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.manufacturer",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimManufacturer{
+						After: &netbox.DcimManufacturer{
 							Name: "undefined",
 							Slug: "undefined",
 						},
@@ -2343,7 +2343,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.devicetype",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimDeviceType{
+						After: &netbox.DcimDeviceType{
 							Model: "ISR4321",
 							Slug:  "isr4321",
 							Manufacturer: &netbox.DcimManufacturer{
@@ -2358,7 +2358,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.devicerole",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimDeviceRole{
+						After: &netbox.DcimDeviceRole{
 							Name:  "WAN Router",
 							Slug:  "wan-router",
 							Color: strPtr("000000"),
@@ -2370,7 +2370,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.device",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimDevice{
+						After: &netbox.DcimDevice{
 							Name: "router01",
 							Site: &netbox.DcimSite{
 								Name:   "Site A",
@@ -2535,7 +2535,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.site",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimSite{
+						After: &netbox.DcimSite{
 							Name:   "Site A",
 							Slug:   "site-a",
 							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
@@ -2547,7 +2547,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.devicetype",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimDeviceType{
+						After: &netbox.DcimDeviceType{
 							Model: "ISR4321",
 							Slug:  "isr4321",
 							Manufacturer: &netbox.DcimManufacturer{
@@ -2561,7 +2561,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.devicerole",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimDeviceRole{
+						After: &netbox.DcimDeviceRole{
 							Name:  "WAN Router",
 							Slug:  "wan-router",
 							Color: strPtr("000000"),
@@ -2573,7 +2573,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.device",
 						ObjectID:      intPtr(1),
 						ObjectVersion: nil,
-						Data: &netbox.DcimDevice{
+						After: &netbox.DcimDevice{
 							ID:   1,
 							Name: "router01",
 							Site: &netbox.DcimSite{
@@ -2768,7 +2768,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.device",
 						ObjectID:      intPtr(1),
 						ObjectVersion: nil,
-						Data: &netbox.DcimDevice{
+						After: &netbox.DcimDevice{
 							ID:   1,
 							Name: "router01",
 							Site: &netbox.DcimSite{
@@ -2938,7 +2938,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.devicetype",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimDeviceType{
+						After: &netbox.DcimDeviceType{
 							Model: "ISR4321",
 							Slug:  "isr4321",
 							Manufacturer: &netbox.DcimManufacturer{
@@ -2952,7 +2952,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.devicerole",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimDeviceRole{
+						After: &netbox.DcimDeviceRole{
 							Name:  "WAN Router",
 							Slug:  "wan-router",
 							Color: strPtr("000000"),
@@ -2964,7 +2964,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.device",
 						ObjectID:      intPtr(1),
 						ObjectVersion: nil,
-						Data: &netbox.DcimDevice{
+						After: &netbox.DcimDevice{
 							ID:   1,
 							Name: "router01",
 							Site: &netbox.DcimSite{
@@ -3189,7 +3189,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.site",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimSite{
+						After: &netbox.DcimSite{
 							Name:        "Site A",
 							Slug:        "site-a",
 							Status:      (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
@@ -3241,7 +3241,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.site",
 						ObjectID:      intPtr(1),
 						ObjectVersion: nil,
-						Data: &netbox.DcimSite{
+						After: &netbox.DcimSite{
 							ID:          1,
 							Name:        "Site A",
 							Slug:        "site-a",
@@ -3287,7 +3287,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.manufacturer",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimManufacturer{
+						After: &netbox.DcimManufacturer{
 							Name:        "Cisco",
 							Slug:        "cisco",
 							Description: strPtr("Lorem ipsum dolor sit amet, consectetur adipiscing elit."),
@@ -3336,7 +3336,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.manufacturer",
 						ObjectID:      intPtr(1),
 						ObjectVersion: nil,
-						Data: &netbox.DcimManufacturer{
+						After: &netbox.DcimManufacturer{
 							ID:          1,
 							Name:        "Cisco",
 							Slug:        "cisco",
@@ -3382,7 +3382,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.devicerole",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimDeviceRole{
+						After: &netbox.DcimDeviceRole{
 							Name:        "WAN Router",
 							Slug:        "wan-router",
 							Color:       strPtr("509415"),
@@ -3434,7 +3434,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.devicerole",
 						ObjectID:      intPtr(1),
 						ObjectVersion: nil,
-						Data: &netbox.DcimDeviceRole{
+						After: &netbox.DcimDeviceRole{
 							ID:          1,
 							Name:        "WAN Router",
 							Slug:        "wan-router",
@@ -3583,7 +3583,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.device",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimDevice{
+						After: &netbox.DcimDevice{
 							Name: "undefined",
 							Site: &netbox.DcimSite{
 								ID: 1,
@@ -3606,7 +3606,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.interface",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimInterface{
+						After: &netbox.DcimInterface{
 							Name: "GigabitEthernet0/0/0",
 							Device: &netbox.DcimDevice{
 								Name: "undefined",
@@ -3991,7 +3991,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.interface",
 						ObjectID:      intPtr(1),
 						ObjectVersion: nil,
-						Data: &netbox.DcimInterface{
+						After: &netbox.DcimInterface{
 							ID:   1,
 							Name: "GigabitEthernet0/0/0",
 							Device: &netbox.DcimDevice{
@@ -4315,7 +4315,7 @@ func TestDcimPrepare(t *testing.T) {
 						ObjectType:    "dcim.interface",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimInterface{
+						After: &netbox.DcimInterface{
 							Name: "Ethernet2",
 							Device: &netbox.DcimDevice{
 								ID: 111,
@@ -4361,7 +4361,7 @@ func TestDcimPrepare(t *testing.T) {
 			for i := range tt.wantChangeSet.ChangeSet {
 				assert.Equal(t, tt.wantChangeSet.ChangeSet[i].ChangeType, cs.ChangeSet[i].ChangeType)
 				assert.Equal(t, tt.wantChangeSet.ChangeSet[i].ObjectType, cs.ChangeSet[i].ObjectType)
-				assert.Equal(t, tt.wantChangeSet.ChangeSet[i].Data, cs.ChangeSet[i].Data)
+				assert.Equal(t, tt.wantChangeSet.ChangeSet[i].After, cs.ChangeSet[i].After)
 			}
 		})
 	}

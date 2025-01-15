@@ -63,7 +63,7 @@ func TestVirtualizationPrepare(t *testing.T) {
 						ObjectType:    "virtualization.clustergroup",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.VirtualizationClusterGroup{
+						After: &netbox.VirtualizationClusterGroup{
 							Name: "Test",
 							Slug: "test",
 						},
@@ -157,7 +157,7 @@ func TestVirtualizationPrepare(t *testing.T) {
 						ObjectType:    "virtualization.clustertype",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.VirtualizationClusterType{
+						After: &netbox.VirtualizationClusterType{
 							Name: "Test",
 							Slug: "test",
 						},
@@ -291,7 +291,7 @@ func TestVirtualizationPrepare(t *testing.T) {
 						ObjectType:    "virtualization.cluster",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.VirtualizationCluster{
+						After: &netbox.VirtualizationCluster{
 							Name:   "Test",
 							Status: strPtr(netbox.DefaultVirtualizationStatus),
 							Group: &netbox.VirtualizationClusterGroup{
@@ -535,7 +535,7 @@ func TestVirtualizationPrepare(t *testing.T) {
 						ObjectType:    "virtualization.virtualmachine",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.VirtualizationVirtualMachine{
+						After: &netbox.VirtualizationVirtualMachine{
 							Name:   "Test",
 							Status: strPtr(netbox.DefaultVirtualizationStatus),
 							Role: &netbox.DcimDeviceRole{
@@ -649,7 +649,7 @@ func TestVirtualizationPrepare(t *testing.T) {
 						ObjectType:    "virtualization.cluster",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.VirtualizationCluster{
+						After: &netbox.VirtualizationCluster{
 							Name:   "Cluster-1",
 							Status: strPtr(netbox.DefaultVirtualizationStatus),
 							Group: &netbox.VirtualizationClusterGroup{
@@ -669,7 +669,7 @@ func TestVirtualizationPrepare(t *testing.T) {
 						ObjectType:    "virtualization.virtualmachine",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.VirtualizationVirtualMachine{
+						After: &netbox.VirtualizationVirtualMachine{
 							Name:   "Test",
 							Status: strPtr(netbox.DefaultVirtualizationStatus),
 							Cluster: &netbox.VirtualizationCluster{
@@ -815,7 +815,7 @@ func TestVirtualizationPrepare(t *testing.T) {
 						ObjectType:    "virtualization.virtualmachine",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.VirtualizationVirtualMachine{
+						After: &netbox.VirtualizationVirtualMachine{
 							Name:   "Test",
 							Status: strPtr(netbox.DefaultVirtualizationStatus),
 							Cluster: &netbox.VirtualizationCluster{
@@ -942,7 +942,7 @@ func TestVirtualizationPrepare(t *testing.T) {
 						ObjectType:    "virtualization.cluster",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.VirtualizationCluster{
+						After: &netbox.VirtualizationCluster{
 							Name:   "Cluster-3",
 							Status: strPtr(netbox.DefaultVirtualizationStatus),
 							Group: &netbox.VirtualizationClusterGroup{
@@ -962,7 +962,7 @@ func TestVirtualizationPrepare(t *testing.T) {
 						ObjectType:    "virtualization.virtualmachine",
 						ObjectID:      intPtr(1),
 						ObjectVersion: nil,
-						Data: &netbox.VirtualizationVirtualMachine{
+						After: &netbox.VirtualizationVirtualMachine{
 							ID:   1,
 							Name: "Test",
 							Cluster: &netbox.VirtualizationCluster{
@@ -1226,7 +1226,7 @@ func TestVirtualizationPrepare(t *testing.T) {
 						ObjectType:    "virtualization.virtualmachine",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.VirtualizationVirtualMachine{
+						After: &netbox.VirtualizationVirtualMachine{
 							Name: "undefined",
 							Role: &netbox.DcimDeviceRole{
 								ID: 1,
@@ -1243,7 +1243,7 @@ func TestVirtualizationPrepare(t *testing.T) {
 						ObjectType:    "virtualization.vminterface",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.VirtualizationVMInterface{
+						After: &netbox.VirtualizationVMInterface{
 							Name: "Test",
 							VirtualMachine: &netbox.VirtualizationVirtualMachine{
 								Name: "undefined",
@@ -1441,7 +1441,7 @@ func TestVirtualizationPrepare(t *testing.T) {
 						ObjectType:    "virtualization.virtualmachine",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.VirtualizationVirtualMachine{
+						After: &netbox.VirtualizationVirtualMachine{
 							Name: "undefined",
 							Role: &netbox.DcimDeviceRole{
 								ID: 1,
@@ -1458,7 +1458,7 @@ func TestVirtualizationPrepare(t *testing.T) {
 						ObjectType:    "virtualization.virtualdisk",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.VirtualizationVirtualDisk{
+						After: &netbox.VirtualizationVirtualDisk{
 							Name: "Test",
 							VirtualMachine: &netbox.VirtualizationVirtualMachine{
 								Name: "undefined",
@@ -1541,7 +1541,7 @@ func TestVirtualizationPrepare(t *testing.T) {
 						ObjectType:    "dcim.site",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimSite{
+						After: &netbox.DcimSite{
 							Name:   "undefined",
 							Slug:   "undefined",
 							Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
@@ -1553,7 +1553,7 @@ func TestVirtualizationPrepare(t *testing.T) {
 						ObjectType:    "virtualization.virtualmachine",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.VirtualizationVirtualMachine{
+						After: &netbox.VirtualizationVirtualMachine{
 							Name: "undefined",
 							Role: &netbox.DcimDeviceRole{
 								ID: 1,
@@ -1572,7 +1572,7 @@ func TestVirtualizationPrepare(t *testing.T) {
 						ObjectType:    "virtualization.virtualdisk",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.VirtualizationVirtualDisk{
+						After: &netbox.VirtualizationVirtualDisk{
 							Name: "Test",
 							VirtualMachine: &netbox.VirtualizationVirtualMachine{
 								Name: "undefined",
@@ -1722,7 +1722,7 @@ func TestVirtualizationPrepare(t *testing.T) {
 			for i := range tt.wantChangeSet.ChangeSet {
 				assert.Equal(t, tt.wantChangeSet.ChangeSet[i].ChangeType, cs.ChangeSet[i].ChangeType)
 				assert.Equal(t, tt.wantChangeSet.ChangeSet[i].ObjectType, cs.ChangeSet[i].ObjectType)
-				assert.Equal(t, tt.wantChangeSet.ChangeSet[i].Data, cs.ChangeSet[i].Data)
+				assert.Equal(t, tt.wantChangeSet.ChangeSet[i].After, cs.ChangeSet[i].After)
 			}
 		})
 	}
