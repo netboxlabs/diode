@@ -52,7 +52,7 @@ type IngestionLog struct {
 	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
 }
 
-type VIngestionLogsWithChangeSet struct {
+type VDeviation struct {
 	ID                 int32              `json:"id"`
 	ExternalID         string             `json:"external_id"`
 	ObjectType         pgtype.Text        `json:"object_type"`

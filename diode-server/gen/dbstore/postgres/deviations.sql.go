@@ -12,18 +12,18 @@ import (
 )
 
 const retrieveDeviations = `-- name: RetrieveDeviations :many
-SELECT v_ingestion_logs_with_change_set.id, v_ingestion_logs_with_change_set.external_id, v_ingestion_logs_with_change_set.object_type, v_ingestion_logs_with_change_set.state, v_ingestion_logs_with_change_set.request_id, v_ingestion_logs_with_change_set.ingestion_ts, v_ingestion_logs_with_change_set.producer_app_name, v_ingestion_logs_with_change_set.producer_app_version, v_ingestion_logs_with_change_set.sdk_name, v_ingestion_logs_with_change_set.sdk_version, v_ingestion_logs_with_change_set.entity, v_ingestion_logs_with_change_set.error, v_ingestion_logs_with_change_set.source_metadata, v_ingestion_logs_with_change_set.created_at, v_ingestion_logs_with_change_set.updated_at, v_ingestion_logs_with_change_set.change_set, v_ingestion_logs_with_change_set.changes
-FROM v_ingestion_logs_with_change_set
-WHERE (v_ingestion_logs_with_change_set.state = ANY ($1::text[]) OR $1 IS NULL)
-  AND (v_ingestion_logs_with_change_set.object_type = ANY ($2::text[]) OR
+SELECT v_deviations.id, v_deviations.external_id, v_deviations.object_type, v_deviations.state, v_deviations.request_id, v_deviations.ingestion_ts, v_deviations.producer_app_name, v_deviations.producer_app_version, v_deviations.sdk_name, v_deviations.sdk_version, v_deviations.entity, v_deviations.error, v_deviations.source_metadata, v_deviations.created_at, v_deviations.updated_at, v_deviations.change_set, v_deviations.changes
+FROM v_deviations
+WHERE (v_deviations.state = ANY ($1::text[]) OR $1 IS NULL)
+  AND (v_deviations.object_type = ANY ($2::text[]) OR
        $2 IS NULL)
-  AND (v_ingestion_logs_with_change_set.branch_id = ANY ($3::text[]) OR
+  AND (v_deviations.branch_id = ANY ($3::text[]) OR
        $3 IS NULL)
-  AND (v_ingestion_logs_with_change_set.ingestion_ts >= $4 OR
+  AND (v_deviations.ingestion_ts >= $4 OR
        $4 IS NULL)
-  AND (v_ingestion_logs_with_change_set.ingestion_ts <= $5 OR
+  AND (v_deviations.ingestion_ts <= $5 OR
        $5 IS NULL)
-ORDER BY v_ingestion_logs_with_change_set.id DESC
+ORDER BY v_deviations.id DESC
 LIMIT $7 OFFSET $6
 `
 
@@ -37,7 +37,7 @@ type RetrieveDeviationsParams struct {
 	Limit            int32       `json:"limit"`
 }
 
-func (q *Queries) RetrieveDeviations(ctx context.Context, arg RetrieveDeviationsParams) ([]VIngestionLogsWithChangeSet, error) {
+func (q *Queries) RetrieveDeviations(ctx context.Context, arg RetrieveDeviationsParams) ([]VDeviation, error) {
 	rows, err := q.db.Query(ctx, retrieveDeviations,
 		arg.State,
 		arg.ObjectType,
@@ -51,9 +51,9 @@ func (q *Queries) RetrieveDeviations(ctx context.Context, arg RetrieveDeviations
 		return nil, err
 	}
 	defer rows.Close()
-	var items []VIngestionLogsWithChangeSet
+	var items []VDeviation
 	for rows.Next() {
-		var i VIngestionLogsWithChangeSet
+		var i VDeviation
 		if err := rows.Scan(
 			&i.ID,
 			&i.ExternalID,

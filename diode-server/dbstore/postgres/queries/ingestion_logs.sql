@@ -32,13 +32,13 @@ FROM ingestion_logs
 WHERE external_id = $1;
 
 -- name: RetrieveIngestionLogsWithChangeSets :many
-SELECT v_ingestion_logs_with_change_set.*
-FROM v_ingestion_logs_with_change_set
-WHERE (v_ingestion_logs_with_change_set.state = sqlc.narg('state') OR sqlc.narg('state') IS NULL)
-  AND (v_ingestion_logs_with_change_set.object_type = sqlc.narg('object_type') OR sqlc.narg('object_type') IS NULL)
-  AND (v_ingestion_logs_with_change_set.ingestion_ts >= sqlc.narg('ingestion_ts_start') OR
+SELECT v_deviations.*
+FROM v_deviations
+WHERE (v_deviations.state = sqlc.narg('state') OR sqlc.narg('state') IS NULL)
+  AND (v_deviations.object_type = sqlc.narg('object_type') OR sqlc.narg('object_type') IS NULL)
+  AND (v_deviations.ingestion_ts >= sqlc.narg('ingestion_ts_start') OR
        sqlc.narg('ingestion_ts_start') IS NULL)
-  AND (v_ingestion_logs_with_change_set.ingestion_ts <= sqlc.narg('ingestion_ts_end') OR
+  AND (v_deviations.ingestion_ts <= sqlc.narg('ingestion_ts_end') OR
        sqlc.narg('ingestion_ts_end') IS NULL)
-ORDER BY v_ingestion_logs_with_change_set.id DESC
+ORDER BY v_deviations.id DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');

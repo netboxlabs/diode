@@ -11,7 +11,7 @@ sql:
         output_models_file_name: "types.go"
         emit_json_tags: true
         overrides:
-          - column: v_ingestion_logs_with_change_set.change_set
+          - column: v_deviations.change_set
             go_type:
               type: ChangeSet
               pointer: true
