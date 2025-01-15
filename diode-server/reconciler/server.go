@@ -123,8 +123,8 @@ func (s *Server) RetrieveIngestionLogs(ctx context.Context, in *reconcilerpb.Ret
 }
 
 // RetrieveDeviations retrieves deviations
-func (s *Server) RetrieveDeviations(_ context.Context, _ *reconcilerpb.RetrieveDeviationsRequest) (*reconcilerpb.RetrieveDeviationsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "RetrieveDeviations not implemented")
+func (s *Server) RetrieveDeviations(ctx context.Context, req *reconcilerpb.RetrieveDeviationsRequest) (*reconcilerpb.RetrieveDeviationsResponse, error) {
+	return retrieveDeviations(ctx, s.logger, s.repository, req)
 }
 
 // APIKeys is a map of API keys
