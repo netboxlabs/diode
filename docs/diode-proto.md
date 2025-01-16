@@ -37,6 +37,8 @@
     - [IngestionError.Details.Error](#diode-v1-IngestionError-Details-Error)
     - [IngestionLog](#diode-v1-IngestionLog)
     - [IngestionMetrics](#diode-v1-IngestionMetrics)
+    - [RetrieveDeviationByIDRequest](#diode-v1-RetrieveDeviationByIDRequest)
+    - [RetrieveDeviationByIDResponse](#diode-v1-RetrieveDeviationByIDResponse)
     - [RetrieveDeviationsRequest](#diode-v1-RetrieveDeviationsRequest)
     - [RetrieveDeviationsResponse](#diode-v1-RetrieveDeviationsResponse)
     - [RetrieveIngestionLogsRequest](#diode-v1-RetrieveIngestionLogsRequest)
@@ -507,6 +509,26 @@ Ingestion metrics
 | failed     | [int32](#int32) |       |             |
 | no_changes | [int32](#int32) |       |             |
 
+<a name="diode-v1-RetrieveDeviationByIDRequest"></a>
+
+### RetrieveDeviationByIDRequest
+
+The request to retrieve deviation by ID
+
+| Field | Type              | Label | Description  |
+|-------|-------------------|-------|--------------|
+| id    | [string](#string) |       | Deviation ID |
+
+<a name="diode-v1-RetrieveDeviationByIDResponse"></a>
+
+### RetrieveDeviationByIDResponse
+
+The response from the retrieve deviation by ID request
+
+| Field     | Type                             | Label | Description |
+|-----------|----------------------------------|-------|-------------|
+| deviation | [Deviation](#diode-v1-Deviation) |       | Deviation   |
+
 <a name="diode-v1-RetrieveDeviationsRequest"></a>
 
 ### RetrieveDeviationsRequest
@@ -590,6 +612,7 @@ Reconciler service API
 |-----------------------|------------------------------------------------------------------------|--------------------------------------------------------------------------|--------------------------|
 | RetrieveIngestionLogs | [RetrieveIngestionLogsRequest](#diode-v1-RetrieveIngestionLogsRequest) | [RetrieveIngestionLogsResponse](#diode-v1-RetrieveIngestionLogsResponse) | Retrieves ingestion logs |
 | RetrieveDeviations    | [RetrieveDeviationsRequest](#diode-v1-RetrieveDeviationsRequest)       | [RetrieveDeviationsResponse](#diode-v1-RetrieveDeviationsResponse)       | Retrieve deviations      |
+| RetrieveDeviationByID | [RetrieveDeviationByIDRequest](#diode-v1-RetrieveDeviationByIDRequest) | [RetrieveDeviationByIDResponse](#diode-v1-RetrieveDeviationByIDResponse) | Retrieve deviation by ID |
 
 ## Scalar Value Types
 

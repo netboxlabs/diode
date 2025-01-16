@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion7
 const (
 	ReconcilerService_RetrieveIngestionLogs_FullMethodName = "/diode.v1.ReconcilerService/RetrieveIngestionLogs"
 	ReconcilerService_RetrieveDeviations_FullMethodName    = "/diode.v1.ReconcilerService/RetrieveDeviations"
+	ReconcilerService_RetrieveDeviationByID_FullMethodName = "/diode.v1.ReconcilerService/RetrieveDeviationByID"
 )
 
 // ReconcilerServiceClient is the client API for ReconcilerService service.
@@ -32,6 +33,8 @@ type ReconcilerServiceClient interface {
 	RetrieveIngestionLogs(ctx context.Context, in *RetrieveIngestionLogsRequest, opts ...grpc.CallOption) (*RetrieveIngestionLogsResponse, error)
 	// Retrieve deviations
 	RetrieveDeviations(ctx context.Context, in *RetrieveDeviationsRequest, opts ...grpc.CallOption) (*RetrieveDeviationsResponse, error)
+	// Retrieve deviation by ID
+	RetrieveDeviationByID(ctx context.Context, in *RetrieveDeviationByIDRequest, opts ...grpc.CallOption) (*RetrieveDeviationByIDResponse, error)
 }
 
 type reconcilerServiceClient struct {
@@ -61,6 +64,15 @@ func (c *reconcilerServiceClient) RetrieveDeviations(ctx context.Context, in *Re
 	return out, nil
 }
 
+func (c *reconcilerServiceClient) RetrieveDeviationByID(ctx context.Context, in *RetrieveDeviationByIDRequest, opts ...grpc.CallOption) (*RetrieveDeviationByIDResponse, error) {
+	out := new(RetrieveDeviationByIDResponse)
+	err := c.cc.Invoke(ctx, ReconcilerService_RetrieveDeviationByID_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ReconcilerServiceServer is the server API for ReconcilerService service.
 // All implementations must embed UnimplementedReconcilerServiceServer
 // for forward compatibility
@@ -70,6 +82,8 @@ type ReconcilerServiceServer interface {
 	RetrieveIngestionLogs(context.Context, *RetrieveIngestionLogsRequest) (*RetrieveIngestionLogsResponse, error)
 	// Retrieve deviations
 	RetrieveDeviations(context.Context, *RetrieveDeviationsRequest) (*RetrieveDeviationsResponse, error)
+	// Retrieve deviation by ID
+	RetrieveDeviationByID(context.Context, *RetrieveDeviationByIDRequest) (*RetrieveDeviationByIDResponse, error)
 	mustEmbedUnimplementedReconcilerServiceServer()
 }
 
@@ -82,6 +96,9 @@ func (UnimplementedReconcilerServiceServer) RetrieveIngestionLogs(context.Contex
 }
 func (UnimplementedReconcilerServiceServer) RetrieveDeviations(context.Context, *RetrieveDeviationsRequest) (*RetrieveDeviationsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RetrieveDeviations not implemented")
+}
+func (UnimplementedReconcilerServiceServer) RetrieveDeviationByID(context.Context, *RetrieveDeviationByIDRequest) (*RetrieveDeviationByIDResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RetrieveDeviationByID not implemented")
 }
 func (UnimplementedReconcilerServiceServer) mustEmbedUnimplementedReconcilerServiceServer() {}
 
@@ -132,6 +149,24 @@ func _ReconcilerService_RetrieveDeviations_Handler(srv interface{}, ctx context.
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ReconcilerService_RetrieveDeviationByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RetrieveDeviationByIDRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReconcilerServiceServer).RetrieveDeviationByID(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReconcilerService_RetrieveDeviationByID_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReconcilerServiceServer).RetrieveDeviationByID(ctx, req.(*RetrieveDeviationByIDRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ReconcilerService_ServiceDesc is the grpc.ServiceDesc for ReconcilerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -146,6 +181,10 @@ var ReconcilerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RetrieveDeviations",
 			Handler:    _ReconcilerService_RetrieveDeviations_Handler,
+		},
+		{
+			MethodName: "RetrieveDeviationByID",
+			Handler:    _ReconcilerService_RetrieveDeviationByID_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

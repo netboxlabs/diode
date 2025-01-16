@@ -137,6 +137,16 @@ message RetrieveDeviationsResponse {
   string next_page_token = 2; // Token for the next page of results, if any
 }
 
+// The request to retrieve deviation by ID
+message RetrieveDeviationByIDRequest {
+  string id = 1; // Deviation ID
+}
+
+// The response from the retrieve deviation by ID request
+message RetrieveDeviationByIDResponse {
+  Deviation deviation = 1; // Deviation
+}
+
 // Reconciler service API
 service ReconcilerService {
   // Retrieves ingestion logs
@@ -145,5 +155,8 @@ service ReconcilerService {
   }
 
   // Retrieve deviations
-  rpc RetrieveDeviations(RetrieveDeviationsRequest) returns (RetrieveDeviationsResponse) {}
+  rpc RetrieveDeviations(RetrieveDeviationsRequest) returns (RetrieveDeviationsResponse);
+
+  // Retrieve deviation by ID
+  rpc RetrieveDeviationByID(RetrieveDeviationByIDRequest) returns (RetrieveDeviationByIDResponse);
 }

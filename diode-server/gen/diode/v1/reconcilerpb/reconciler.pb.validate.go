@@ -1561,6 +1561,243 @@ var _ interface {
 	ErrorName() string
 } = RetrieveDeviationsResponseValidationError{}
 
+// Validate checks the field values on RetrieveDeviationByIDRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *RetrieveDeviationByIDRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on RetrieveDeviationByIDRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// RetrieveDeviationByIDRequestMultiError, or nil if none found.
+func (m *RetrieveDeviationByIDRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *RetrieveDeviationByIDRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Id
+
+	if len(errors) > 0 {
+		return RetrieveDeviationByIDRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// RetrieveDeviationByIDRequestMultiError is an error wrapping multiple
+// validation errors returned by RetrieveDeviationByIDRequest.ValidateAll() if
+// the designated constraints aren't met.
+type RetrieveDeviationByIDRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m RetrieveDeviationByIDRequestMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m RetrieveDeviationByIDRequestMultiError) AllErrors() []error { return m }
+
+// RetrieveDeviationByIDRequestValidationError is the validation error returned
+// by RetrieveDeviationByIDRequest.Validate if the designated constraints
+// aren't met.
+type RetrieveDeviationByIDRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e RetrieveDeviationByIDRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e RetrieveDeviationByIDRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e RetrieveDeviationByIDRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e RetrieveDeviationByIDRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e RetrieveDeviationByIDRequestValidationError) ErrorName() string {
+	return "RetrieveDeviationByIDRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e RetrieveDeviationByIDRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sRetrieveDeviationByIDRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = RetrieveDeviationByIDRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = RetrieveDeviationByIDRequestValidationError{}
+
+// Validate checks the field values on RetrieveDeviationByIDResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *RetrieveDeviationByIDResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on RetrieveDeviationByIDResponse with
+// the rules defined in the proto definition for this message. If any rules
+// are violated, the result is a list of violation errors wrapped in
+// RetrieveDeviationByIDResponseMultiError, or nil if none found.
+func (m *RetrieveDeviationByIDResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *RetrieveDeviationByIDResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	if all {
+		switch v := interface{}(m.GetDeviation()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, RetrieveDeviationByIDResponseValidationError{
+					field:  "Deviation",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, RetrieveDeviationByIDResponseValidationError{
+					field:  "Deviation",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetDeviation()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return RetrieveDeviationByIDResponseValidationError{
+				field:  "Deviation",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return RetrieveDeviationByIDResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// RetrieveDeviationByIDResponseMultiError is an error wrapping multiple
+// validation errors returned by RetrieveDeviationByIDResponse.ValidateAll()
+// if the designated constraints aren't met.
+type RetrieveDeviationByIDResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m RetrieveDeviationByIDResponseMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m RetrieveDeviationByIDResponseMultiError) AllErrors() []error { return m }
+
+// RetrieveDeviationByIDResponseValidationError is the validation error
+// returned by RetrieveDeviationByIDResponse.Validate if the designated
+// constraints aren't met.
+type RetrieveDeviationByIDResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e RetrieveDeviationByIDResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e RetrieveDeviationByIDResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e RetrieveDeviationByIDResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e RetrieveDeviationByIDResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e RetrieveDeviationByIDResponseValidationError) ErrorName() string {
+	return "RetrieveDeviationByIDResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e RetrieveDeviationByIDResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sRetrieveDeviationByIDResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = RetrieveDeviationByIDResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = RetrieveDeviationByIDResponseValidationError{}
+
 // Validate checks the field values on IngestionError_Details with the rules
 // defined in the proto definition for this message. If any rules are
 // violated, the first error encountered is returned, or nil if there are no violations.

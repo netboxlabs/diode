@@ -405,3 +405,76 @@ func (r *Repository) RetrieveDeviations(ctx context.Context, filter *reconcilerp
 
 	return deviations, nil
 }
+
+// RetrieveDeviationByID retrieves a deviation by its external identifier.
+func (r *Repository) RetrieveDeviationByID(ctx context.Context, externalID string) (*reconcilerpb.Deviation, error) {
+	rawDeviation, err := r.queries.RetrieveDeviationByID(ctx, externalID)
+	if err != nil {
+		return nil, err
+	}
+
+	entity := &diodepb.Entity{}
+	if err := protojson.Unmarshal(rawDeviation.Entity, entity); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal entity: %w", err)
+	}
+
+	// split producer app name by forward slash and get first element if it exists
+	source := rawDeviation.ProducerAppName.String
+	if source != "" {
+		source = strings.Split(source, "/")[0]
+	}
+
+	var branchID *string
+	if rawDeviation.ChangeSet.BranchID.Valid {
+		branchID = &rawDeviation.ChangeSet.BranchID.String
+	}
+
+	var deviationErr *reconcilerpb.DeviationError
+	if rawDeviation.Error != nil {
+		deviationErr = &reconcilerpb.DeviationError{}
+		if err := protojson.Unmarshal(rawDeviation.Error, deviationErr); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal error: %w", err)
+		}
+	}
+
+	deviation := &reconcilerpb.Deviation{
+		Id:             rawDeviation.ExternalID,
+		Name:           rawDeviation.ChangeSet.DeviationName.String,
+		Source:         source,
+		State:          reconcilerpb.State(rawDeviation.State.Int32),
+		ObjectType:     rawDeviation.ObjectType.String,
+		BranchId:       branchID,
+		IngestedEntity: entity,
+		Error:          deviationErr,
+	}
+
+	if rawDeviation.Changes != nil {
+		var dbChanges []postgres.Change
+		if err := json.Unmarshal(rawDeviation.Changes, &dbChanges); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal changes: %w", err)
+		}
+
+		changes := make([]*reconcilerpb.Change, 0, len(dbChanges))
+		for _, dbChange := range dbChanges {
+			change := &reconcilerpb.Change{
+				Id:                 dbChange.ExternalID,
+				ChangeType:         dbChange.ChangeType,
+				ObjectType:         dbChange.ObjectType,
+				ObjectPrimaryValue: dbChange.ObjectPrimaryValue,
+			}
+			if dbChange.Before != nil {
+				beforeJSON, _ := json.Marshal(dbChange.Before)
+				change.Before = beforeJSON
+			}
+			if dbChange.After != nil {
+				afterJSON, _ := json.Marshal(dbChange.After)
+				change.After = afterJSON
+			}
+			changes = append(changes, change)
+		}
+
+		deviation.Changes = changes
+	}
+
+	return deviation, nil
+}
