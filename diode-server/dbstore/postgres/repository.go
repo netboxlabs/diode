@@ -448,7 +448,7 @@ func (r *Repository) RetrieveDeviationByID(ctx context.Context, externalID strin
 		Error:          deviationErr,
 	}
 
-	if deviation.Changes != nil {
+	if rawDeviation.Changes != nil {
 		var dbChanges []postgres.Change
 		if err := json.Unmarshal(rawDeviation.Changes, &dbChanges); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal changes: %w", err)

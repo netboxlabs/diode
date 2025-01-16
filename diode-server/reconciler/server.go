@@ -127,6 +127,11 @@ func (s *Server) RetrieveDeviations(ctx context.Context, req *reconcilerpb.Retri
 	return retrieveDeviations(ctx, s.logger, s.repository, req)
 }
 
+// RetrieveDeviationByID retrieves a deviation by ID
+func (s *Server) RetrieveDeviationByID(ctx context.Context, req *reconcilerpb.RetrieveDeviationByIDRequest) (*reconcilerpb.RetrieveDeviationByIDResponse, error) {
+	return retrieveDeviationByID(ctx, s.logger, s.repository, req)
+}
+
 // APIKeys is a map of API keys
 type APIKeys map[string]string
 

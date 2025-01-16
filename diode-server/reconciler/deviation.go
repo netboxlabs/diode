@@ -41,6 +41,15 @@ func retrieveDeviations(ctx context.Context, _ *slog.Logger, repository Reposito
 	return &reconcilerpb.RetrieveDeviationsResponse{Deviations: deviations, NextPageToken: nextPageToken}, nil
 }
 
+func retrieveDeviationByID(ctx context.Context, _ *slog.Logger, repository Repository, req *reconcilerpb.RetrieveDeviationByIDRequest) (*reconcilerpb.RetrieveDeviationByIDResponse, error) {
+	deviation, err := repository.RetrieveDeviationByID(ctx, req.GetId())
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve deviation: %w", err)
+	}
+
+	return &reconcilerpb.RetrieveDeviationByIDResponse{Deviation: deviation}, nil
+}
+
 func decodePageToken(encoded string) (int32, error) {
 	// Decode the base64 string back to bytes
 	decoded, err := base64.StdEncoding.DecodeString(encoded)
