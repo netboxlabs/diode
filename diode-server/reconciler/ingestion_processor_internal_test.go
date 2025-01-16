@@ -434,6 +434,41 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 			expectedStatus:      reconcilerpb.State_OPEN,
 			expectedError:       false,
 		},
+		{
+			name: "generate change set without changes",
+			ingestionLog: &reconcilerpb.IngestionLog{
+				Id:                 uuid.NewString(),
+				RequestId:          "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ProducerAppName:    "test-app",
+				ProducerAppVersion: "0.1.0",
+				SdkName:            "diode-sdk-go",
+				SdkVersion:         "0.2.0",
+				ObjectType:         "dcim.site",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Site{
+						Site: &diodepb.Site{
+							Name: "Site A",
+						},
+					},
+				},
+				IngestionTs: time.Now().UnixNano(),
+				State:       reconcilerpb.State_QUEUED,
+			},
+			mockRetrieveObjectStateResponse: &netboxdiodeplugin.ObjectState{
+				ObjectType: "dcim.site",
+				ObjectID:   1,
+				Object: &netbox.DcimSiteDataWrapper{
+					Site: &netbox.DcimSite{
+						ID:   1,
+						Name: "Site A",
+						Slug: "site-a",
+					},
+				},
+			},
+			autoApplyChangesets: false,
+			expectedStatus:      reconcilerpb.State_NO_CHANGES,
+			expectedError:       false,
+		},
 	}
 
 	for _, tt := range tests {
@@ -457,12 +492,12 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 
 			ingestionLogID := int32(1)
 
-			mockRepository.On("UpdateIngestionLogStateWithError", ctx, ingestionLogID, reconcilerpb.State_OPEN, mock.Anything).Return(nil)
 			mockNbClient.On("RetrieveObjectState", ctx, mock.Anything).Return(tt.mockRetrieveObjectStateResponse, nil)
 			if tt.autoApplyChangesets {
-				mockRepository.On("UpdateIngestionLogStateWithError", ctx, ingestionLogID, tt.expectedStatus, mock.Anything).Return(nil)
+				mockRepository.On("UpdateIngestionLogStateWithError", ctx, ingestionLogID, reconcilerpb.State_OPEN, mock.Anything).Return(nil)
 				mockNbClient.On("ApplyChangeSet", ctx, mock.Anything).Return(tt.mockApplyChangeSetResponse, nil)
 			}
+			mockRepository.On("UpdateIngestionLogStateWithError", ctx, ingestionLogID, tt.expectedStatus, mock.Anything).Return(nil)
 			mockRepository.On("CreateChangeSet", ctx, mock.Anything, ingestionLogID).Return(int32Ptr(1), nil)
 
 			bufCapacity := 1

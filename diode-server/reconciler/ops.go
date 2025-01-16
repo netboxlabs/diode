@@ -67,17 +67,14 @@ func (o *Ops) GenerateChangeSet(ctx context.Context, ingestionLogID int32, inges
 		return nil, nil, err
 	}
 
+	state := reconcilerpb.State_OPEN
 	if len(changeSet.ChangeSet) == 0 {
-		ingestionLog.State = reconcilerpb.State_NO_CHANGES
-		if err := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, reconcilerpb.State_NO_CHANGES, nil); err != nil {
-			o.logger.Warn("failed to update ingestion log state (error ignored)", "ingestionLogID", ingestionLogID, "error", err)
-			// TODO(ltucker): This should be in a transaction.  Can leave an inconsistent state marked on the ingestion log.
-			// return nil, err
-		}
+		state = reconcilerpb.State_NO_CHANGES
 	}
 
-	ingestionLog.State = reconcilerpb.State_OPEN
-	if err := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, reconcilerpb.State_OPEN, nil); err != nil {
+	ingestionLog.State = state
+
+	if err := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, state, nil); err != nil {
 		o.logger.Warn("failed to update ingestion log state (error ignored)", "ingestionLogID", ingestionLogID, "error", err)
 		// TODO(ltucker): This should be in a transaction.  Can leave an inconsistent state marked on the ingestion log.
 		// return nil, err
