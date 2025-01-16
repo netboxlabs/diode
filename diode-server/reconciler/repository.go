@@ -16,4 +16,5 @@ type Repository interface {
 	CountIngestionLogsPerState(ctx context.Context) (map[reconcilerpb.State]int32, error)
 	CreateChangeSet(ctx context.Context, changeSet changeset.ChangeSet, ingestionLogID int32) (*int32, error)
 	RetrieveDeviations(ctx context.Context, filter *reconcilerpb.RetrieveDeviationsRequest, limit int32, offset int32) ([]*reconcilerpb.Deviation, error)
+	RetrieveDeviationByID(ctx context.Context, externalID string) (*reconcilerpb.Deviation, error)
 }
