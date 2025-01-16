@@ -14,10 +14,10 @@ import (
 const retrieveDeviations = `-- name: RetrieveDeviations :many
 SELECT v_deviations.id, v_deviations.external_id, v_deviations.object_type, v_deviations.state, v_deviations.request_id, v_deviations.ingestion_ts, v_deviations.producer_app_name, v_deviations.producer_app_version, v_deviations.sdk_name, v_deviations.sdk_version, v_deviations.entity, v_deviations.error, v_deviations.source_metadata, v_deviations.created_at, v_deviations.updated_at, v_deviations.change_set, v_deviations.changes
 FROM v_deviations
-WHERE (v_deviations.state = ANY ($1::text[]) OR $1 IS NULL)
+WHERE (v_deviations.state = ANY ($1::int[]) OR $1 IS NULL)
   AND (v_deviations.object_type = ANY ($2::text[]) OR
        $2 IS NULL)
-  AND (v_deviations.branch_id = ANY ($3::text[]) OR
+  AND (v_deviations.change_set->>'branch_id' = ANY ($3::text[]) OR
        $3 IS NULL)
   AND (v_deviations.ingestion_ts >= $4 OR
        $4 IS NULL)
@@ -28,7 +28,7 @@ LIMIT $7 OFFSET $6
 `
 
 type RetrieveDeviationsParams struct {
-	State            []string    `json:"state"`
+	State            []int32     `json:"state"`
 	ObjectType       []string    `json:"object_type"`
 	BranchID         []string    `json:"branch_id"`
 	IngestionTsStart pgtype.Int8 `json:"ingestion_ts_start"`

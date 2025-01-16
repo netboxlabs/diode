@@ -299,6 +299,7 @@ func TestGenDeviationName(t *testing.T) {
 			for _, change := range cs.ChangeSet {
 				assert.NotNil(t, change.ChangeID)
 				assert.NotNil(t, change.ObjectType)
+				assert.NotEmpty(t, change.ObjectPrimaryValue)
 				assert.NotNil(t, change.ChangeType)
 				assert.NotNil(t, change.After)
 			}

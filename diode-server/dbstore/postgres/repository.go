@@ -271,13 +271,14 @@ func (r *Repository) CreateChangeSet(ctx context.Context, changeSet changeset.Ch
 		}
 
 		changeParams := postgres.CreateChangeParams{
-			ExternalID:     change.ChangeID,
-			ChangeSetID:    cs.ID,
-			ChangeType:     change.ChangeType,
-			ObjectType:     change.ObjectType,
-			Before:         beforeJSON,
-			After:          afterJSON,
-			SequenceNumber: pgtype.Int4{Int32: int32(i), Valid: true},
+			ExternalID:         change.ChangeID,
+			ChangeSetID:        cs.ID,
+			ChangeType:         change.ChangeType,
+			ObjectType:         change.ObjectType,
+			ObjectPrimaryValue: change.ObjectPrimaryValue,
+			Before:             beforeJSON,
+			After:              afterJSON,
+			SequenceNumber:     pgtype.Int4{Int32: int32(i), Valid: true},
 		}
 		if change.ObjectID != nil {
 			changeParams.ObjectID = pgtype.Int4{Int32: int32(*change.ObjectID), Valid: true}
@@ -307,9 +308,9 @@ func (r *Repository) RetrieveDeviations(ctx context.Context, filter *reconcilerp
 	}
 
 	if len(filter.State) > 0 {
-		states := make([]string, 0, len(filter.State))
+		states := make([]int32, 0, len(filter.State))
 		for _, state := range filter.State {
-			states = append(states, state.String())
+			states = append(states, int32(state))
 		}
 		params.State = states
 	}
@@ -386,10 +387,12 @@ func (r *Repository) RetrieveDeviations(ctx context.Context, filter *reconcilerp
 					ObjectPrimaryValue: dbChange.ObjectPrimaryValue,
 				}
 				if dbChange.Before != nil {
-					change.Before = dbChange.Before.([]byte)
+					beforeJSON, _ := json.Marshal(dbChange.Before)
+					change.Before = beforeJSON
 				}
 				if dbChange.After != nil {
-					change.After = dbChange.After.([]byte)
+					afterJSON, _ := json.Marshal(dbChange.After)
+					change.After = afterJSON
 				}
 				changes = append(changes, change)
 			}

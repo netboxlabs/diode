@@ -78,12 +78,13 @@ func Diff(ctx context.Context, entity IngestEntity, branchID string, netboxAPI n
 
 	for _, obj := range objectsToReconcile {
 		change := changeset.Change{
-			ChangeID:      uuid.NewString(),
-			ChangeType:    changeset.ChangeTypeCreate,
-			ObjectType:    obj.ObjectType(),
-			ObjectID:      nil,
-			ObjectVersion: nil,
-			After:         obj.Data(),
+			ChangeID:           uuid.NewString(),
+			ChangeType:         changeset.ChangeTypeCreate,
+			ObjectType:         obj.ObjectType(),
+			ObjectPrimaryValue: obj.ObjectPrimaryValue(),
+			ObjectID:           nil,
+			ObjectVersion:      nil,
+			After:              obj.Data(),
 		}
 
 		id := obj.ID()
