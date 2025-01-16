@@ -370,6 +370,8 @@ func (r *Repository) RetrieveDeviations(ctx context.Context, filter *reconcilerp
 			BranchId:       branchID,
 			IngestedEntity: entity,
 			Error:          deviationErr,
+			IngestionTs:    row.IngestionTs.Int64,
+			LastUpdateTs:   row.UpdatedAt.Time.UnixNano(),
 		}
 
 		if row.Changes != nil {
@@ -446,6 +448,8 @@ func (r *Repository) RetrieveDeviationByID(ctx context.Context, externalID strin
 		BranchId:       branchID,
 		IngestedEntity: entity,
 		Error:          deviationErr,
+		IngestionTs:    rawDeviation.IngestionTs.Int64,
+		LastUpdateTs:   rawDeviation.UpdatedAt.Time.UnixNano(),
 	}
 
 	if rawDeviation.Changes != nil {

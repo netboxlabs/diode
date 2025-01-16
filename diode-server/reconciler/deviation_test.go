@@ -6,7 +6,9 @@ import (
 	"log/slog"
 	"os"
 	"testing"
+	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
@@ -56,6 +58,8 @@ func TestRetrieveDeviations(t *testing.T) {
 								After:              []byte(`{"id": 1, "name": "X", "description": "Example description"}`),
 							},
 						},
+						IngestionTs:  time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
+						LastUpdateTs: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
 					},
 				},
 			},
@@ -86,6 +90,8 @@ func TestRetrieveDeviations(t *testing.T) {
 							After:              []byte(`{"id": 1, "name": "X", "description": "Example description"}`),
 						},
 					},
+					IngestionTs:  time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
+					LastUpdateTs: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
 				},
 			},
 			repoError: nil,
@@ -118,17 +124,21 @@ func TestRetrieveDeviations(t *testing.T) {
 				require.NotNil(t, response)
 
 				for i, deviation := range response.Deviations {
-					require.Equal(t, tt.deviations[i].Id, deviation.Id)
-					require.Equal(t, tt.deviations[i].Name, deviation.Name)
-					require.Equal(t, tt.deviations[i].Source, deviation.Source)
-					require.Equal(t, tt.deviations[i].State, deviation.State)
-					require.Equal(t, tt.deviations[i].ObjectType, deviation.ObjectType)
-					require.Equal(t, tt.deviations[i].BranchId, deviation.BranchId)
-					require.Equal(t, tt.deviations[i].IngestedEntity.String(), deviation.IngestedEntity.String())
-					require.Equal(t, tt.deviations[i].Error, deviation.Error)
-					require.Equal(t, len(tt.deviations[i].Changes), len(deviation.Changes))
-					require.Equal(t, tt.deviations[i].Changes[0].Before, deviation.Changes[0].Before)
-					require.Equal(t, tt.deviations[i].Changes[0].After, deviation.Changes[0].After)
+					assert.Equal(t, tt.deviations[i].Id, deviation.Id)
+					assert.Equal(t, tt.deviations[i].Name, deviation.Name)
+					assert.Equal(t, tt.deviations[i].Source, deviation.Source)
+					assert.Equal(t, tt.deviations[i].State, deviation.State)
+					assert.Equal(t, tt.deviations[i].ObjectType, deviation.ObjectType)
+					assert.Equal(t, tt.deviations[i].BranchId, deviation.BranchId)
+					assert.Equal(t, tt.deviations[i].IngestedEntity.String(), deviation.IngestedEntity.String())
+					assert.Equal(t, tt.deviations[i].Error, deviation.Error)
+					assert.Equal(t, len(tt.deviations[i].Changes), len(deviation.Changes))
+					assert.Equal(t, tt.deviations[i].Changes[0].Before, deviation.Changes[0].Before)
+					assert.Equal(t, tt.deviations[i].Changes[0].After, deviation.Changes[0].After)
+					require.NotZero(t, deviation.IngestionTs)
+					require.NotZero(t, deviation.LastUpdateTs)
+					assert.Equal(t, tt.deviations[i].IngestionTs, deviation.IngestionTs)
+					assert.Equal(t, tt.deviations[i].LastUpdateTs, deviation.LastUpdateTs)
 				}
 			}
 			mockRepository.AssertExpectations(t)
@@ -175,6 +185,8 @@ func TestRetrieveDeviationByID(t *testing.T) {
 							After:              []byte(`{"id": 1, "name": "X", "description": "Example description"}`),
 						},
 					},
+					IngestionTs:  time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
+					LastUpdateTs: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
 				},
 			},
 			deviation: &reconcilerpb.Deviation{
@@ -203,6 +215,8 @@ func TestRetrieveDeviationByID(t *testing.T) {
 						After:              []byte(`{"id": 1, "name": "X", "description": "Example description"}`),
 					},
 				},
+				IngestionTs:  time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
+				LastUpdateTs: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
 			},
 			repoError: nil,
 			wantErr:   nil,
@@ -241,17 +255,21 @@ func TestRetrieveDeviationByID(t *testing.T) {
 				require.NoError(t, err)
 				require.NotNil(t, response)
 
-				require.Equal(t, tt.resp.Deviation.Id, response.Deviation.Id)
-				require.Equal(t, tt.resp.Deviation.Name, response.Deviation.Name)
-				require.Equal(t, tt.resp.Deviation.Source, response.Deviation.Source)
-				require.Equal(t, tt.resp.Deviation.State, response.Deviation.State)
-				require.Equal(t, tt.resp.Deviation.ObjectType, response.Deviation.ObjectType)
-				require.Equal(t, tt.resp.Deviation.BranchId, response.Deviation.BranchId)
-				require.Equal(t, tt.resp.Deviation.IngestedEntity.String(), response.Deviation.IngestedEntity.String())
-				require.Equal(t, tt.resp.Deviation.Error, response.Deviation.Error)
-				require.Equal(t, len(tt.resp.Deviation.Changes), len(response.Deviation.Changes))
-				require.Equal(t, tt.resp.Deviation.Changes[0].Before, response.Deviation.Changes[0].Before)
-				require.Equal(t, tt.resp.Deviation.Changes[0].After, response.Deviation.Changes[0].After)
+				assert.Equal(t, tt.resp.Deviation.Id, response.Deviation.Id)
+				assert.Equal(t, tt.resp.Deviation.Name, response.Deviation.Name)
+				assert.Equal(t, tt.resp.Deviation.Source, response.Deviation.Source)
+				assert.Equal(t, tt.resp.Deviation.State, response.Deviation.State)
+				assert.Equal(t, tt.resp.Deviation.ObjectType, response.Deviation.ObjectType)
+				assert.Equal(t, tt.resp.Deviation.BranchId, response.Deviation.BranchId)
+				assert.Equal(t, tt.resp.Deviation.IngestedEntity.String(), response.Deviation.IngestedEntity.String())
+				assert.Equal(t, tt.resp.Deviation.Error, response.Deviation.Error)
+				assert.Equal(t, len(tt.resp.Deviation.Changes), len(response.Deviation.Changes))
+				assert.Equal(t, tt.resp.Deviation.Changes[0].Before, response.Deviation.Changes[0].Before)
+				assert.Equal(t, tt.resp.Deviation.Changes[0].After, response.Deviation.Changes[0].After)
+				require.NotZero(t, response.Deviation.IngestionTs)
+				require.NotZero(t, response.Deviation.LastUpdateTs)
+				assert.Equal(t, tt.resp.Deviation.IngestionTs, response.Deviation.IngestionTs)
+				assert.Equal(t, tt.resp.Deviation.LastUpdateTs, response.Deviation.LastUpdateTs)
 			}
 			mockRepository.AssertExpectations(t)
 		})
