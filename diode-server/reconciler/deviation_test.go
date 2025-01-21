@@ -20,12 +20,13 @@ import (
 
 func TestRetrieveDeviations(t *testing.T) {
 	tests := []struct {
-		name       string
-		deviations []*reconcilerpb.Deviation
-		req        *reconcilerpb.RetrieveDeviationsRequest
-		resp       *reconcilerpb.RetrieveDeviationsResponse
-		repoError  error
-		wantErr    error
+		name            string
+		deviations      []*reconcilerpb.Deviation
+		req             *reconcilerpb.RetrieveDeviationsRequest
+		resp            *reconcilerpb.RetrieveDeviationsResponse
+		changeAfterJSON []byte
+		repoError       error
+		wantErr         error
 	}{
 		{
 			name: "deviations found",
@@ -94,8 +95,9 @@ func TestRetrieveDeviations(t *testing.T) {
 					LastUpdateTs: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
 				},
 			},
-			repoError: nil,
-			wantErr:   nil,
+			changeAfterJSON: []byte(`{"id": 1, "name": "X", "description": "Example description"}`),
+			repoError:       nil,
+			wantErr:         nil,
 		},
 	}
 	for i := range tests {
@@ -135,6 +137,7 @@ func TestRetrieveDeviations(t *testing.T) {
 					assert.Equal(t, len(tt.deviations[i].Changes), len(deviation.Changes))
 					assert.Equal(t, tt.deviations[i].Changes[0].Before, deviation.Changes[0].Before)
 					assert.Equal(t, tt.deviations[i].Changes[0].After, deviation.Changes[0].After)
+					assert.Equal(t, tt.changeAfterJSON, deviation.Changes[0].After)
 					require.NotZero(t, deviation.IngestionTs)
 					require.NotZero(t, deviation.LastUpdateTs)
 					assert.Equal(t, tt.deviations[i].IngestionTs, deviation.IngestionTs)
@@ -148,12 +151,13 @@ func TestRetrieveDeviations(t *testing.T) {
 
 func TestRetrieveDeviationByID(t *testing.T) {
 	tests := []struct {
-		name      string
-		deviation *reconcilerpb.Deviation
-		req       *reconcilerpb.RetrieveDeviationByIDRequest
-		resp      *reconcilerpb.RetrieveDeviationByIDResponse
-		repoError error
-		wantErr   error
+		name            string
+		deviation       *reconcilerpb.Deviation
+		req             *reconcilerpb.RetrieveDeviationByIDRequest
+		resp            *reconcilerpb.RetrieveDeviationByIDResponse
+		changeAfterJSON []byte
+		repoError       error
+		wantErr         error
 	}{
 		{
 			name: "deviation found",
@@ -218,8 +222,9 @@ func TestRetrieveDeviationByID(t *testing.T) {
 				IngestionTs:  time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
 				LastUpdateTs: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
 			},
-			repoError: nil,
-			wantErr:   nil,
+			changeAfterJSON: []byte(`{"id": 1, "name": "X", "description": "Example description"}`),
+			repoError:       nil,
+			wantErr:         nil,
 		},
 		{
 			name:      "deviation not found",
@@ -266,6 +271,7 @@ func TestRetrieveDeviationByID(t *testing.T) {
 				assert.Equal(t, len(tt.resp.Deviation.Changes), len(response.Deviation.Changes))
 				assert.Equal(t, tt.resp.Deviation.Changes[0].Before, response.Deviation.Changes[0].Before)
 				assert.Equal(t, tt.resp.Deviation.Changes[0].After, response.Deviation.Changes[0].After)
+				assert.Equal(t, tt.changeAfterJSON, response.Deviation.Changes[0].After)
 				require.NotZero(t, response.Deviation.IngestionTs)
 				require.NotZero(t, response.Deviation.LastUpdateTs)
 				assert.Equal(t, tt.resp.Deviation.IngestionTs, response.Deviation.IngestionTs)
