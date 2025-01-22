@@ -13,6 +13,7 @@ import (
 	"github.com/netboxlabs/diode/diode-server/gen/dbstore/postgres"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
+	"github.com/netboxlabs/diode/diode-server/netbox"
 	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
 )
 
@@ -389,11 +390,17 @@ func (r *Repository) RetrieveDeviations(ctx context.Context, filter *reconcilerp
 					ObjectPrimaryValue: dbChange.ObjectPrimaryValue,
 				}
 				if dbChange.Before != nil {
-					beforeJSON, _ := json.Marshal(dbChange.Before)
+					beforeJSON, err := MarshalChangeDataToJSON(dbChange.Before, dbChange.ObjectType)
+					if err != nil {
+						return nil, fmt.Errorf("failed to marshal before state: %w", err)
+					}
 					change.Before = beforeJSON
 				}
 				if dbChange.After != nil {
-					afterJSON, _ := json.Marshal(dbChange.After)
+					afterJSON, err := MarshalChangeDataToJSON(dbChange.After, dbChange.ObjectType)
+					if err != nil {
+						return nil, fmt.Errorf("failed to marshal after state: %w", err)
+					}
 					change.After = afterJSON
 				}
 				changes = append(changes, change)
@@ -467,11 +474,17 @@ func (r *Repository) RetrieveDeviationByID(ctx context.Context, externalID strin
 				ObjectPrimaryValue: dbChange.ObjectPrimaryValue,
 			}
 			if dbChange.Before != nil {
-				beforeJSON, _ := json.Marshal(dbChange.Before)
+				beforeJSON, err := MarshalChangeDataToJSON(dbChange.Before, dbChange.ObjectType)
+				if err != nil {
+					return nil, fmt.Errorf("failed to marshal before state: %w", err)
+				}
 				change.Before = beforeJSON
 			}
 			if dbChange.After != nil {
-				afterJSON, _ := json.Marshal(dbChange.After)
+				afterJSON, err := MarshalChangeDataToJSON(dbChange.After, dbChange.ObjectType)
+				if err != nil {
+					return nil, fmt.Errorf("failed to marshal after state: %w", err)
+				}
 				change.After = afterJSON
 			}
 			changes = append(changes, change)
@@ -481,4 +494,173 @@ func (r *Repository) RetrieveDeviationByID(ctx context.Context, externalID strin
 	}
 
 	return deviation, nil
+}
+
+// MarshalChangeDataToJSON marshals change data to JSON.
+func MarshalChangeDataToJSON(data any, objectType string) ([]byte, error) {
+	dataJSON, _ := json.Marshal(data)
+	switch objectType {
+	case netbox.DcimDeviceObjectType:
+		var o netbox.DcimDevice
+		if err := json.Unmarshal(dataJSON, &o); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal device data: %w", err)
+		}
+		b, err := json.Marshal(o)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal device data: %w", err)
+		}
+		return b, nil
+	case netbox.DcimDeviceRoleObjectType:
+		var o netbox.DcimDeviceRole
+		if err := json.Unmarshal(dataJSON, &o); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal device role data: %w", err)
+		}
+		b, err := json.Marshal(o)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal device role data: %w", err)
+		}
+		return b, nil
+	case netbox.DcimDeviceTypeObjectType:
+		var o netbox.DcimDeviceType
+		if err := json.Unmarshal(dataJSON, &o); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal device type data: %w", err)
+		}
+		b, err := json.Marshal(o)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal device type data: %w", err)
+		}
+		return b, nil
+	case netbox.DcimInterfaceObjectType:
+		var o netbox.DcimInterface
+		if err := json.Unmarshal(dataJSON, &o); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal interface data: %w", err)
+		}
+		b, err := json.Marshal(o)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal interface data: %w", err)
+		}
+		return b, nil
+	case netbox.DcimManufacturerObjectType:
+		var o netbox.DcimManufacturer
+		if err := json.Unmarshal(dataJSON, &o); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal manufacturer data: %w", err)
+		}
+		b, err := json.Marshal(o)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal manufacturer data: %w", err)
+		}
+		return b, nil
+	case netbox.DcimPlatformObjectType:
+		var o netbox.DcimPlatform
+		if err := json.Unmarshal(dataJSON, &o); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal platform data: %w", err)
+		}
+		b, err := json.Marshal(o)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal platform data: %w", err)
+		}
+		return b, nil
+	case netbox.DcimSiteObjectType:
+		var o netbox.DcimSite
+		if err := json.Unmarshal(dataJSON, &o); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal site data: %w", err)
+		}
+		b, err := json.Marshal(o)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal site data: %w", err)
+		}
+		return b, nil
+	case netbox.ExtrasTagObjectType:
+		var o netbox.Tag
+		if err := json.Unmarshal(dataJSON, &o); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal tag data: %w", err)
+		}
+		b, err := json.Marshal(o)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal tag data: %w", err)
+		}
+		return b, nil
+	case netbox.IpamIPAddressObjectType:
+		var o netbox.IpamIPAddress
+		if err := json.Unmarshal(dataJSON, &o); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal ip address data: %w", err)
+		}
+		b, err := json.Marshal(o)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal ip address data: %w", err)
+		}
+		return b, nil
+	case netbox.IpamPrefixObjectType:
+		var o netbox.IpamPrefix
+		if err := json.Unmarshal(dataJSON, &o); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal prefix data: %w", err)
+		}
+		b, err := json.Marshal(o)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal prefix data: %w", err)
+		}
+		return b, nil
+	case netbox.VirtualizationClusterGroupObjectType:
+		var o netbox.VirtualizationClusterGroup
+		if err := json.Unmarshal(dataJSON, &o); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal cluster group data: %w", err)
+		}
+		b, err := json.Marshal(o)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal cluster group data: %w", err)
+		}
+		return b, nil
+	case netbox.VirtualizationClusterTypeObjectType:
+		var o netbox.VirtualizationClusterType
+		if err := json.Unmarshal(dataJSON, &o); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal cluster type data: %w", err)
+		}
+		b, err := json.Marshal(o)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal cluster type data: %w", err)
+		}
+		return b, nil
+	case netbox.VirtualizationClusterObjectType:
+		var o netbox.VirtualizationCluster
+		if err := json.Unmarshal(dataJSON, &o); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal cluster data: %w", err)
+		}
+		b, err := json.Marshal(o)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal cluster data: %w", err)
+		}
+		return b, nil
+	case netbox.VirtualizationVirtualMachineObjectType:
+		var o netbox.VirtualizationVirtualMachine
+		if err := json.Unmarshal(dataJSON, &o); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal virtual machine data: %w", err)
+		}
+		b, err := json.Marshal(o)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal virtual machine data: %w", err)
+		}
+		return b, nil
+	case netbox.VirtualizationVMInterfaceObjectType:
+		var o netbox.VirtualizationVMInterface
+		if err := json.Unmarshal(dataJSON, &o); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal vm interface data: %w", err)
+		}
+		b, err := json.Marshal(o)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal vm interface data: %w", err)
+		}
+		return b, nil
+	case netbox.VirtualizationVirtualDiskObjectType:
+		var o netbox.VirtualizationVirtualDisk
+		if err := json.Unmarshal(dataJSON, &o); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal virtual disk data: %w", err)
+		}
+		b, err := json.Marshal(o)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal virtual disk data: %w", err)
+		}
+		return b, nil
+	default:
+		return nil, fmt.Errorf("unsupported object type: %s", objectType)
+	}
 }
