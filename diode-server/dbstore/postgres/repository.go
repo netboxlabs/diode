@@ -334,79 +334,13 @@ func (r *Repository) RetrieveDeviations(ctx context.Context, filter *reconcilerp
 	}
 
 	deviations := make([]*reconcilerpb.Deviation, 0, len(rawDeviations))
-	for _, row := range rawDeviations {
-		entity := &diodepb.Entity{}
-		if err := protojson.Unmarshal(row.Entity, entity); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal entity: %w", err)
+	for _, rawDeviation := range rawDeviations {
+		deviationPb, err := deviationToProto(rawDeviation)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert deviation to proto: %w", err)
 		}
 
-		// split producer app name by forward slash and get first element if it exists
-		source := row.ProducerAppName.String
-		if source != "" {
-			source = strings.Split(source, "/")[0]
-		}
-
-		var branchID *string
-		if row.ChangeSet.BranchID.Valid {
-			branchID = &row.ChangeSet.BranchID.String
-		}
-
-		var deviationErr *reconcilerpb.DeviationError
-		if row.Error != nil {
-			deviationErr = &reconcilerpb.DeviationError{}
-			if err := protojson.Unmarshal(row.Error, deviationErr); err != nil {
-				return nil, fmt.Errorf("failed to unmarshal error: %w", err)
-			}
-		}
-
-		deviation := &reconcilerpb.Deviation{
-			Id:             row.ExternalID,
-			Name:           row.ChangeSet.DeviationName.String,
-			Source:         source,
-			State:          reconcilerpb.State(row.State.Int32),
-			ObjectType:     row.ObjectType.String,
-			BranchId:       branchID,
-			IngestedEntity: entity,
-			Error:          deviationErr,
-			IngestionTs:    row.IngestionTs.Int64,
-			LastUpdateTs:   row.UpdatedAt.Time.UnixNano(),
-		}
-
-		if row.Changes != nil {
-			var dbChanges []postgres.Change
-			if err := json.Unmarshal(row.Changes, &dbChanges); err != nil {
-				return nil, fmt.Errorf("failed to unmarshal changes: %w", err)
-			}
-
-			changes := make([]*reconcilerpb.Change, 0, len(dbChanges))
-			for _, dbChange := range dbChanges {
-				change := &reconcilerpb.Change{
-					Id:                 dbChange.ExternalID,
-					ChangeType:         dbChange.ChangeType,
-					ObjectType:         dbChange.ObjectType,
-					ObjectPrimaryValue: dbChange.ObjectPrimaryValue,
-				}
-				if dbChange.Before != nil {
-					beforeJSON, err := MarshalChangeDataToJSON(dbChange.Before, dbChange.ObjectType)
-					if err != nil {
-						return nil, fmt.Errorf("failed to marshal before state: %w", err)
-					}
-					change.Before = beforeJSON
-				}
-				if dbChange.After != nil {
-					afterJSON, err := MarshalChangeDataToJSON(dbChange.After, dbChange.ObjectType)
-					if err != nil {
-						return nil, fmt.Errorf("failed to marshal after state: %w", err)
-					}
-					change.After = afterJSON
-				}
-				changes = append(changes, change)
-			}
-
-			deviation.Changes = changes
-		}
-
-		deviations = append(deviations, deviation)
+		deviations = append(deviations, deviationPb)
 	}
 
 	return deviations, nil
@@ -419,78 +353,12 @@ func (r *Repository) RetrieveDeviationByID(ctx context.Context, externalID strin
 		return nil, err
 	}
 
-	entity := &diodepb.Entity{}
-	if err := protojson.Unmarshal(rawDeviation.Entity, entity); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal entity: %w", err)
+	deviationPb, err := deviationToProto(rawDeviation)
+	if err != nil {
+		return nil, fmt.Errorf("failed to convert deviation to proto: %w", err)
 	}
 
-	// split producer app name by forward slash and get first element if it exists
-	source := rawDeviation.ProducerAppName.String
-	if source != "" {
-		source = strings.Split(source, "/")[0]
-	}
-
-	var branchID *string
-	if rawDeviation.ChangeSet.BranchID.Valid {
-		branchID = &rawDeviation.ChangeSet.BranchID.String
-	}
-
-	var deviationErr *reconcilerpb.DeviationError
-	if rawDeviation.Error != nil {
-		deviationErr = &reconcilerpb.DeviationError{}
-		if err := protojson.Unmarshal(rawDeviation.Error, deviationErr); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal error: %w", err)
-		}
-	}
-
-	deviation := &reconcilerpb.Deviation{
-		Id:             rawDeviation.ExternalID,
-		Name:           rawDeviation.ChangeSet.DeviationName.String,
-		Source:         source,
-		State:          reconcilerpb.State(rawDeviation.State.Int32),
-		ObjectType:     rawDeviation.ObjectType.String,
-		BranchId:       branchID,
-		IngestedEntity: entity,
-		Error:          deviationErr,
-		IngestionTs:    rawDeviation.IngestionTs.Int64,
-		LastUpdateTs:   rawDeviation.UpdatedAt.Time.UnixNano(),
-	}
-
-	if rawDeviation.Changes != nil {
-		var dbChanges []postgres.Change
-		if err := json.Unmarshal(rawDeviation.Changes, &dbChanges); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal changes: %w", err)
-		}
-
-		changes := make([]*reconcilerpb.Change, 0, len(dbChanges))
-		for _, dbChange := range dbChanges {
-			change := &reconcilerpb.Change{
-				Id:                 dbChange.ExternalID,
-				ChangeType:         dbChange.ChangeType,
-				ObjectType:         dbChange.ObjectType,
-				ObjectPrimaryValue: dbChange.ObjectPrimaryValue,
-			}
-			if dbChange.Before != nil {
-				beforeJSON, err := MarshalChangeDataToJSON(dbChange.Before, dbChange.ObjectType)
-				if err != nil {
-					return nil, fmt.Errorf("failed to marshal before state: %w", err)
-				}
-				change.Before = beforeJSON
-			}
-			if dbChange.After != nil {
-				afterJSON, err := MarshalChangeDataToJSON(dbChange.After, dbChange.ObjectType)
-				if err != nil {
-					return nil, fmt.Errorf("failed to marshal after state: %w", err)
-				}
-				change.After = afterJSON
-			}
-			changes = append(changes, change)
-		}
-
-		deviation.Changes = changes
-	}
-
-	return deviation, nil
+	return deviationPb, nil
 }
 
 // MarshalChangeDataToJSON marshals change data to JSON.
@@ -660,4 +528,83 @@ func MarshalChangeDataToJSON(data any, objectType string) ([]byte, error) {
 	default:
 		return nil, fmt.Errorf("unsupported object type: %s", objectType)
 	}
+}
+
+func deviationToProto(dbDeviation postgres.VDeviation) (*reconcilerpb.Deviation, error) {
+	entity := &diodepb.Entity{}
+	if err := protojson.Unmarshal(dbDeviation.Entity, entity); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal entity: %w", err)
+	}
+
+	// split producer app name by forward slash and get first element if it exists
+	source := dbDeviation.ProducerAppName.String
+	if source != "" {
+		source = strings.Split(source, "/")[0]
+	}
+
+	var deviationName string
+	var branchID *string
+	if dbDeviation.ChangeSet != nil {
+		deviationName = dbDeviation.ChangeSet.DeviationName.String
+		if dbDeviation.ChangeSet.BranchID.Valid {
+			branchID = &dbDeviation.ChangeSet.BranchID.String
+		}
+	}
+
+	var deviationErr *reconcilerpb.DeviationError
+	if dbDeviation.Error != nil {
+		deviationErr = &reconcilerpb.DeviationError{}
+		if err := protojson.Unmarshal(dbDeviation.Error, deviationErr); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal error: %w", err)
+		}
+	}
+
+	deviation := &reconcilerpb.Deviation{
+		Id:             dbDeviation.ExternalID,
+		Name:           deviationName,
+		Source:         source,
+		State:          reconcilerpb.State(dbDeviation.State.Int32),
+		ObjectType:     dbDeviation.ObjectType.String,
+		BranchId:       branchID,
+		IngestedEntity: entity,
+		Error:          deviationErr,
+		IngestionTs:    dbDeviation.IngestionTs.Int64,
+		LastUpdateTs:   dbDeviation.UpdatedAt.Time.UnixNano(),
+	}
+
+	if dbDeviation.Changes != nil {
+		var dbChanges []postgres.Change
+		if err := json.Unmarshal(dbDeviation.Changes, &dbChanges); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal changes: %w", err)
+		}
+
+		changes := make([]*reconcilerpb.Change, 0, len(dbChanges))
+		for _, dbChange := range dbChanges {
+			change := &reconcilerpb.Change{
+				Id:                 dbChange.ExternalID,
+				ChangeType:         dbChange.ChangeType,
+				ObjectType:         dbChange.ObjectType,
+				ObjectPrimaryValue: dbChange.ObjectPrimaryValue,
+			}
+			if dbChange.Before != nil {
+				beforeJSON, err := MarshalChangeDataToJSON(dbChange.Before, dbChange.ObjectType)
+				if err != nil {
+					return nil, fmt.Errorf("failed to marshal before state: %w", err)
+				}
+				change.Before = beforeJSON
+			}
+			if dbChange.After != nil {
+				afterJSON, err := MarshalChangeDataToJSON(dbChange.After, dbChange.ObjectType)
+				if err != nil {
+					return nil, fmt.Errorf("failed to marshal after state: %w", err)
+				}
+				change.After = afterJSON
+			}
+			changes = append(changes, change)
+		}
+
+		deviation.Changes = changes
+	}
+
+	return deviation, nil
 }
