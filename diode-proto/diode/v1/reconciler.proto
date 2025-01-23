@@ -97,7 +97,6 @@ message RetrieveDeviationsRequest {
   repeated State state = 5; // Optional filter by states
   repeated string object_type = 6; // Optional filter by object types
   repeated string branch_id = 7; // Optional filter by branch IDs
-  repeated string site = 8; // Optional filter by site
 }
 
 // Deviation error

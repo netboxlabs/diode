@@ -544,7 +544,6 @@ The request to retrieve deviations
 | state              | [State](#diode-v1-State) | repeated | Optional filter by states                     |
 | object_type        | [string](#string)        | repeated | Optional filter by object types               |
 | branch_id          | [string](#string)        | repeated | Optional filter by branch IDs                 |
-| site               | [string](#string)        | repeated | Optional filter by site                       |
 
 <a name="diode-v1-RetrieveDeviationsResponse"></a>
 
