@@ -59,7 +59,15 @@ func (o *Ops) GenerateChangeSet(ctx context.Context, ingestionLogID int32, inges
 		if err2 := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, reconcilerpb.State_FAILED, ingestionErr); err2 != nil {
 			err = errors.Join(err, err2)
 		}
-		return nil, nil, err
+
+		cs := differ.FailedDiffChangeSet(ingestEntity, branchID)
+		id, err1 := o.repository.CreateChangeSet(ctx, *cs, ingestionLogID)
+		if err1 != nil {
+			o.logger.Error("error generating diff failure placeholder change set")
+			return nil, nil, errors.Join(err, err1)
+		}
+
+		return id, cs, err
 	}
 
 	changeSetID, err := o.repository.CreateChangeSet(ctx, *changeSet, ingestionLogID)

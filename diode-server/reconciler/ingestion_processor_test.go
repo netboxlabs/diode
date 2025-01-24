@@ -235,7 +235,7 @@ func TestIngestionProcessorStart(t *testing.T) {
 
 	mockRepository.On("CreateIngestionLog", ctx, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
 	mockRepository.On("UpdateIngestionLogStateWithError", ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
+	mockRepository.On("CreateChangeSet", ctx, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
 	redisClient := redis.NewClient(&redis.Options{
 		Addr: s.Addr(),
 		DB:   1,
