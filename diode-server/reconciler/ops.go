@@ -61,13 +61,13 @@ func (o *Ops) GenerateChangeSet(ctx context.Context, ingestionLogID int32, inges
 		}
 
 		cs := differ.FailedDiffChangeSet(ingestEntity, branchID)
-		_, err1 := o.repository.CreateChangeSet(ctx, *cs, ingestionLogID)
+		id, err1 := o.repository.CreateChangeSet(ctx, *cs, ingestionLogID)
 		if err1 != nil {
 			o.logger.Error("error generating diff failure placeholder change set")
 			return nil, nil, errors.Join(err, err1)
 		}
 
-		return nil, nil, err
+		return id, cs, err
 	}
 
 	changeSetID, err := o.repository.CreateChangeSet(ctx, *changeSet, ingestionLogID)

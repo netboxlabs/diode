@@ -190,8 +190,6 @@ func TestProOpsGenerateChangeSet(t *testing.T) {
 			csid, cs, err := ops.GenerateChangeSet(ctx, tt.logDBID, tt.log, tt.branchID)
 			if tt.hasError {
 				require.Error(t, err)
-				require.Nil(t, csid)
-				require.Nil(t, cs)
 				require.Contains(t, err.Error(), tt.errorMessage)
 			} else {
 				require.NoError(t, err)
