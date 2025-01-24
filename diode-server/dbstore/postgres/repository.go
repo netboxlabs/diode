@@ -43,6 +43,7 @@ func (r *Repository) CreateIngestionLog(ctx context.Context, ingestionLog *recon
 		State:              pgtype.Int4{Int32: int32(ingestionLog.State), Valid: true},
 		RequestID:          pgtype.Text{String: ingestionLog.RequestId, Valid: true},
 		IngestionTs:        pgtype.Int8{Int64: ingestionLog.IngestionTs, Valid: true},
+		SourceTs:           pgtype.Int8{Int64: ingestionLog.SourceTs, Valid: true},
 		ProducerAppName:    pgtype.Text{String: ingestionLog.ProducerAppName, Valid: true},
 		ProducerAppVersion: pgtype.Text{String: ingestionLog.ProducerAppVersion, Valid: true},
 		SdkName:            pgtype.Text{String: ingestionLog.SdkName, Valid: true},
@@ -151,6 +152,7 @@ func (r *Repository) RetrieveIngestionLogs(ctx context.Context, filter *reconcil
 			State:              reconcilerpb.State(ingestionLog.State.Int32),
 			RequestId:          ingestionLog.RequestID.String,
 			IngestionTs:        ingestionLog.IngestionTs.Int64,
+			SourceTs:           ingestionLog.SourceTs.Int64,
 			ProducerAppName:    ingestionLog.ProducerAppName.String,
 			ProducerAppVersion: ingestionLog.ProducerAppVersion.String,
 			SdkName:            ingestionLog.SdkName.String,
@@ -570,6 +572,7 @@ func deviationToProto(dbDeviation postgres.VDeviation) (*reconcilerpb.Deviation,
 		Error:          deviationErr,
 		IngestionTs:    dbDeviation.IngestionTs.Int64,
 		LastUpdateTs:   dbDeviation.UpdatedAt.Time.UnixNano(),
+		SourceTs:       dbDeviation.SourceTs.Int64,
 	}
 
 	if dbDeviation.Changes != nil {

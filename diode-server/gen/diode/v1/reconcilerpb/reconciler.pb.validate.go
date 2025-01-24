@@ -518,6 +518,8 @@ func (m *IngestionLog) validate(all bool) error {
 
 	// no validation rules for ObjectType
 
+	// no validation rules for SourceTs
+
 	if len(errors) > 0 {
 		return IngestionLogMultiError(errors)
 	}
@@ -1341,6 +1343,8 @@ func (m *Deviation) validate(all bool) error {
 		}
 
 	}
+
+	// no validation rules for SourceTs
 
 	if m.BranchId != nil {
 		// no validation rules for BranchId

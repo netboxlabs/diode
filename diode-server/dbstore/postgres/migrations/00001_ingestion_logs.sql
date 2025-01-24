@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS ingestion_logs
     state                INTEGER,
     request_id           VARCHAR(255),
     ingestion_ts         BIGINT,
+    source_ts            BIGINT,
     producer_app_name    VARCHAR(255),
     producer_app_version VARCHAR(255),
     sdk_name             VARCHAR(255),

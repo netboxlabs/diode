@@ -43,10 +43,10 @@ func (q *Queries) CountIngestionLogsPerState(ctx context.Context) ([]CountIngest
 }
 
 const createIngestionLog = `-- name: CreateIngestionLog :one
-INSERT INTO ingestion_logs (external_id, object_type, state, request_id, ingestion_ts, producer_app_name,
+INSERT INTO ingestion_logs (external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name,
                             producer_app_version, sdk_name, sdk_version, entity, source_metadata)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-RETURNING id, external_id, object_type, state, request_id, ingestion_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+RETURNING id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at
 `
 
 type CreateIngestionLogParams struct {
@@ -55,6 +55,7 @@ type CreateIngestionLogParams struct {
 	State              pgtype.Int4 `json:"state"`
 	RequestID          pgtype.Text `json:"request_id"`
 	IngestionTs        pgtype.Int8 `json:"ingestion_ts"`
+	SourceTs           pgtype.Int8 `json:"source_ts"`
 	ProducerAppName    pgtype.Text `json:"producer_app_name"`
 	ProducerAppVersion pgtype.Text `json:"producer_app_version"`
 	SdkName            pgtype.Text `json:"sdk_name"`
@@ -70,6 +71,7 @@ func (q *Queries) CreateIngestionLog(ctx context.Context, arg CreateIngestionLog
 		arg.State,
 		arg.RequestID,
 		arg.IngestionTs,
+		arg.SourceTs,
 		arg.ProducerAppName,
 		arg.ProducerAppVersion,
 		arg.SdkName,
@@ -85,6 +87,7 @@ func (q *Queries) CreateIngestionLog(ctx context.Context, arg CreateIngestionLog
 		&i.State,
 		&i.RequestID,
 		&i.IngestionTs,
+		&i.SourceTs,
 		&i.ProducerAppName,
 		&i.ProducerAppVersion,
 		&i.SdkName,
@@ -99,7 +102,7 @@ func (q *Queries) CreateIngestionLog(ctx context.Context, arg CreateIngestionLog
 }
 
 const retrieveIngestionLogByExternalID = `-- name: RetrieveIngestionLogByExternalID :one
-SELECT id, external_id, object_type, state, request_id, ingestion_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at
+SELECT id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at
 FROM ingestion_logs
 WHERE external_id = $1
 `
@@ -114,6 +117,7 @@ func (q *Queries) RetrieveIngestionLogByExternalID(ctx context.Context, external
 		&i.State,
 		&i.RequestID,
 		&i.IngestionTs,
+		&i.SourceTs,
 		&i.ProducerAppName,
 		&i.ProducerAppVersion,
 		&i.SdkName,
@@ -128,7 +132,7 @@ func (q *Queries) RetrieveIngestionLogByExternalID(ctx context.Context, external
 }
 
 const retrieveIngestionLogs = `-- name: RetrieveIngestionLogs :many
-SELECT id, external_id, object_type, state, request_id, ingestion_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at
+SELECT id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at
 FROM ingestion_logs
 WHERE (state = $1 OR $1 IS NULL)
   AND (object_type = $2 OR $2 IS NULL)
@@ -170,6 +174,7 @@ func (q *Queries) RetrieveIngestionLogs(ctx context.Context, arg RetrieveIngesti
 			&i.State,
 			&i.RequestID,
 			&i.IngestionTs,
+			&i.SourceTs,
 			&i.ProducerAppName,
 			&i.ProducerAppVersion,
 			&i.SdkName,
@@ -191,7 +196,7 @@ func (q *Queries) RetrieveIngestionLogs(ctx context.Context, arg RetrieveIngesti
 }
 
 const retrieveIngestionLogsWithChangeSets = `-- name: RetrieveIngestionLogsWithChangeSets :many
-SELECT v_deviations.id, v_deviations.external_id, v_deviations.object_type, v_deviations.state, v_deviations.request_id, v_deviations.ingestion_ts, v_deviations.producer_app_name, v_deviations.producer_app_version, v_deviations.sdk_name, v_deviations.sdk_version, v_deviations.entity, v_deviations.error, v_deviations.source_metadata, v_deviations.created_at, v_deviations.updated_at, v_deviations.change_set, v_deviations.changes
+SELECT v_deviations.id, v_deviations.external_id, v_deviations.object_type, v_deviations.state, v_deviations.request_id, v_deviations.ingestion_ts, v_deviations.source_ts, v_deviations.producer_app_name, v_deviations.producer_app_version, v_deviations.sdk_name, v_deviations.sdk_version, v_deviations.entity, v_deviations.error, v_deviations.source_metadata, v_deviations.created_at, v_deviations.updated_at, v_deviations.change_set, v_deviations.changes
 FROM v_deviations
 WHERE (v_deviations.state = $1 OR $1 IS NULL)
   AND (v_deviations.object_type = $2 OR $2 IS NULL)
@@ -235,6 +240,7 @@ func (q *Queries) RetrieveIngestionLogsWithChangeSets(ctx context.Context, arg R
 			&i.State,
 			&i.RequestID,
 			&i.IngestionTs,
+			&i.SourceTs,
 			&i.ProducerAppName,
 			&i.ProducerAppVersion,
 			&i.SdkName,
@@ -262,7 +268,7 @@ UPDATE ingestion_logs
 SET state = $2,
     error = $3
 WHERE id = $1
-RETURNING id, external_id, object_type, state, request_id, ingestion_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at
+RETURNING id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at
 `
 
 type UpdateIngestionLogStateWithErrorParams struct {

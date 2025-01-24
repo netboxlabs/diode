@@ -341,6 +341,7 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 			Entity:             v,
 			IngestionTs:        int64(ingestionTs),
 			State:              reconcilerpb.State_QUEUED,
+			SourceTs:           v.GetTimestamp().AsTime().UnixNano(),
 		}
 
 		id, err := p.ops.CreateIngestionLog(ctx, ingestionLog, nil)

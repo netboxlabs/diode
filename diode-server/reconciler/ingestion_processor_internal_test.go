@@ -386,6 +386,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 					},
 				},
 				IngestionTs: time.Now().UnixNano(),
+				SourceTs:    time.Now().UnixNano(),
 				State:       reconcilerpb.State_QUEUED,
 			},
 			mockRetrieveObjectStateResponse: &netboxdiodeplugin.ObjectState{
@@ -421,6 +422,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 					},
 				},
 				IngestionTs: time.Now().UnixNano(),
+				SourceTs:    time.Now().UnixNano(),
 				State:       reconcilerpb.State_OPEN,
 			},
 			mockRetrieveObjectStateResponse: &netboxdiodeplugin.ObjectState{
@@ -452,6 +454,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 					},
 				},
 				IngestionTs: time.Now().UnixNano(),
+				SourceTs:    time.Now().UnixNano(),
 				State:       reconcilerpb.State_QUEUED,
 			},
 			mockRetrieveObjectStateResponse: &netboxdiodeplugin.ObjectState{

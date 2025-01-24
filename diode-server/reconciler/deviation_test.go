@@ -61,6 +61,7 @@ func TestRetrieveDeviations(t *testing.T) {
 						},
 						IngestionTs:  time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
 						LastUpdateTs: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
+						SourceTs:     time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
 					},
 				},
 			},
@@ -93,6 +94,7 @@ func TestRetrieveDeviations(t *testing.T) {
 					},
 					IngestionTs:  time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
 					LastUpdateTs: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
+					SourceTs:     time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC).Unix(),
 				},
 			},
 			changeAfterJSON: []byte(`{"id": 1, "name": "X", "description": "Example description"}`),
@@ -140,8 +142,10 @@ func TestRetrieveDeviations(t *testing.T) {
 					assert.Equal(t, tt.changeAfterJSON, deviation.Changes[0].After)
 					require.NotZero(t, deviation.IngestionTs)
 					require.NotZero(t, deviation.LastUpdateTs)
+					require.NotZero(t, deviation.SourceTs)
 					assert.Equal(t, tt.deviations[i].IngestionTs, deviation.IngestionTs)
 					assert.Equal(t, tt.deviations[i].LastUpdateTs, deviation.LastUpdateTs)
+					assert.Equal(t, tt.resp.Deviations[i].SourceTs, deviation.SourceTs)
 				}
 			}
 			mockRepository.AssertExpectations(t)
