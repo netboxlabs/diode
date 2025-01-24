@@ -208,3 +208,25 @@ func genDeviationName(objects []netbox.ComparableData) *string {
 
 	return &deviationName
 }
+
+func deviationNameForDiffFailure(entity IngestEntity) string {
+	e, err := extractIngestEntityData(entity)
+	if err != nil {
+		return fmt.Sprintf("Unknown %s discovered", entity.ObjectType)
+	}
+
+	return fmt.Sprintf("%s %s discovered", e.ObjectTypeName(), e.ObjectPrimaryValue())
+}
+
+// FailedDiffChangeSet generates a placeholder change set for a failed diff
+func FailedDiffChangeSet(entity IngestEntity, branchID string) *changeset.ChangeSet {
+	deviationName := deviationNameForDiffFailure(entity)
+	cs := &changeset.ChangeSet{
+		ChangeSetID:   uuid.NewString(),
+		DeviationName: &deviationName,
+	}
+	if branchID != "" {
+		cs.BranchID = &branchID
+	}
+	return cs
+}
