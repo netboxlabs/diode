@@ -3,13 +3,12 @@ package reconciler
 import (
 	"context"
 	"errors"
-	"log/slog"
-	"os"
-	"testing"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"log/slog"
+	"os"
+	"testing"
 
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
@@ -92,6 +91,7 @@ func TestRetrieveLogs(t *testing.T) {
 					State:              reconcilerpb.State_APPLIED,
 					RequestId:          "req-id",
 					IngestionTs:        1725552914392208722,
+					SourceTs:           1725545454541975975,
 					ProducerAppName:    "diode-agent",
 					ProducerAppVersion: "0.0.1",
 					SdkName:            "diode-sdk-go",
@@ -114,6 +114,7 @@ func TestRetrieveLogs(t *testing.T) {
 					State:              reconcilerpb.State_APPLIED,
 					RequestId:          "bc1052e3-656a-42f0-b364-27b385e02a0c",
 					IngestionTs:        1725552654541975975,
+					SourceTs:           1725545454541975975,
 					ProducerAppName:    "diode-agent",
 					ProducerAppVersion: "0.0.1",
 					SdkName:            "diode-sdk-python",
@@ -143,6 +144,7 @@ func TestRetrieveLogs(t *testing.T) {
 						State:              reconcilerpb.State_APPLIED,
 						RequestId:          "req-id",
 						IngestionTs:        1725552914392208722,
+						SourceTs:           1725545454541975975,
 						ProducerAppName:    "diode-agent",
 						ProducerAppVersion: "0.0.1",
 						SdkName:            "diode-sdk-go",
@@ -164,6 +166,7 @@ func TestRetrieveLogs(t *testing.T) {
 						State:              reconcilerpb.State_APPLIED,
 						RequestId:          "bc1052e3-656a-42f0-b364-27b385e02a0c",
 						IngestionTs:        1725552654541975975,
+						SourceTs:           1725545454541975975,
 						ProducerAppName:    "diode-agent",
 						ProducerAppVersion: "0.0.1",
 						SdkName:            "diode-sdk-python",
@@ -207,6 +210,7 @@ func TestRetrieveLogs(t *testing.T) {
 					State:              reconcilerpb.State_FAILED,
 					RequestId:          "e03c4892-5b7e-4c39-b5e6-0225a264ab8b",
 					IngestionTs:        1725046967777525928,
+					SourceTs:           1725545454541975975,
 					ProducerAppName:    "example-app",
 					ProducerAppVersion: "0.1.0",
 					SdkName:            "diode-sdk-go",
@@ -242,6 +246,7 @@ func TestRetrieveLogs(t *testing.T) {
 						State:              reconcilerpb.State_FAILED,
 						RequestId:          "e03c4892-5b7e-4c39-b5e6-0225a264ab8b",
 						IngestionTs:        1725046967777525928,
+						SourceTs:           1725545454541975975,
 						ProducerAppName:    "example-app",
 						ProducerAppVersion: "0.1.0",
 						SdkName:            "diode-sdk-go",
@@ -290,6 +295,7 @@ func TestRetrieveLogs(t *testing.T) {
 					State:              reconcilerpb.State_QUEUED,
 					RequestId:          "req-id",
 					IngestionTs:        1725552914392208722,
+					SourceTs:           1725545454541975975,
 					ProducerAppName:    "diode-agent",
 					ProducerAppVersion: "0.0.1",
 					SdkName:            "diode-sdk-go",
@@ -314,6 +320,7 @@ func TestRetrieveLogs(t *testing.T) {
 						State:              reconcilerpb.State_QUEUED,
 						RequestId:          "req-id",
 						IngestionTs:        1725552914392208722,
+						SourceTs:           1725545454541975975,
 						ProducerAppName:    "diode-agent",
 						ProducerAppVersion: "0.0.1",
 						SdkName:            "diode-sdk-go",
@@ -352,6 +359,7 @@ func TestRetrieveLogs(t *testing.T) {
 					State:              reconcilerpb.State_APPLIED,
 					RequestId:          "req-id",
 					IngestionTs:        1725552914392208722,
+					SourceTs:           1725545454541975975,
 					ProducerAppName:    "diode-agent",
 					ProducerAppVersion: "0.0.1",
 					SdkName:            "diode-sdk-go",
@@ -377,6 +385,7 @@ func TestRetrieveLogs(t *testing.T) {
 						State:              reconcilerpb.State_APPLIED,
 						RequestId:          "req-id",
 						IngestionTs:        1725552914392208722,
+						SourceTs:           1725545454541975975,
 						ProducerAppName:    "diode-agent",
 						ProducerAppVersion: "0.0.1",
 						SdkName:            "diode-sdk-go",
@@ -415,6 +424,7 @@ func TestRetrieveLogs(t *testing.T) {
 					State:              reconcilerpb.State_FAILED,
 					RequestId:          "req-id",
 					IngestionTs:        1725552914392208722,
+					SourceTs:           1725545454541975975,
 					ProducerAppName:    "diode-agent",
 					ProducerAppVersion: "0.0.1",
 					SdkName:            "diode-sdk-go",
@@ -440,6 +450,7 @@ func TestRetrieveLogs(t *testing.T) {
 						State:              reconcilerpb.State_FAILED,
 						RequestId:          "req-id",
 						IngestionTs:        1725552914392208722,
+						SourceTs:           1725545454541975975,
 						ProducerAppName:    "diode-agent",
 						ProducerAppVersion: "0.0.1",
 						SdkName:            "diode-sdk-go",
@@ -478,6 +489,7 @@ func TestRetrieveLogs(t *testing.T) {
 					State:              reconcilerpb.State_NO_CHANGES,
 					RequestId:          "req-id",
 					IngestionTs:        1725552914392208722,
+					SourceTs:           1725545454541975975,
 					ProducerAppName:    "diode-agent",
 					ProducerAppVersion: "0.0.1",
 					SdkName:            "diode-sdk-go",
@@ -503,6 +515,7 @@ func TestRetrieveLogs(t *testing.T) {
 						State:              reconcilerpb.State_NO_CHANGES,
 						RequestId:          "req-id",
 						IngestionTs:        1725552914392208722,
+						SourceTs:           1725545454541975975,
 						ProducerAppName:    "diode-agent",
 						ProducerAppVersion: "0.0.1",
 						SdkName:            "diode-sdk-go",
@@ -541,6 +554,7 @@ func TestRetrieveLogs(t *testing.T) {
 					State:              reconcilerpb.State_APPLIED,
 					RequestId:          "req-id",
 					IngestionTs:        1725552914392208722,
+					SourceTs:           1725545454541975975,
 					ProducerAppName:    "diode-agent",
 					ProducerAppVersion: "0.0.1",
 					SdkName:            "diode-sdk-go",
@@ -566,6 +580,7 @@ func TestRetrieveLogs(t *testing.T) {
 						State:              reconcilerpb.State_APPLIED,
 						RequestId:          "req-id",
 						IngestionTs:        1725552914392208722,
+						SourceTs:           1725545454541975975,
 						ProducerAppName:    "diode-agent",
 						ProducerAppVersion: "0.0.1",
 						SdkName:            "diode-sdk-go",
@@ -604,6 +619,7 @@ func TestRetrieveLogs(t *testing.T) {
 					State:              reconcilerpb.State_APPLIED,
 					RequestId:          "req-id",
 					IngestionTs:        1725552914392208722,
+					SourceTs:           1725545454541975975,
 					ProducerAppName:    "diode-agent",
 					ProducerAppVersion: "0.0.1",
 					SdkName:            "diode-sdk-go",
@@ -629,6 +645,7 @@ func TestRetrieveLogs(t *testing.T) {
 						State:              reconcilerpb.State_APPLIED,
 						RequestId:          "req-id",
 						IngestionTs:        1725552914392208722,
+						SourceTs:           1725545454541975975,
 						ProducerAppName:    "diode-agent",
 						ProducerAppVersion: "0.0.1",
 						SdkName:            "diode-sdk-go",
@@ -667,6 +684,7 @@ func TestRetrieveLogs(t *testing.T) {
 					State:              reconcilerpb.State_APPLIED,
 					RequestId:          "req-id",
 					IngestionTs:        1725552914392208722,
+					SourceTs:           1725545454541975975,
 					ProducerAppName:    "diode-agent",
 					ProducerAppVersion: "0.0.1",
 					SdkName:            "diode-sdk-go",
@@ -692,6 +710,7 @@ func TestRetrieveLogs(t *testing.T) {
 						State:              reconcilerpb.State_APPLIED,
 						RequestId:          "req-id",
 						IngestionTs:        1725552914392208722,
+						SourceTs:           1725545454541975975,
 						ProducerAppName:    "diode-agent",
 						ProducerAppVersion: "0.0.1",
 						SdkName:            "diode-sdk-go",
@@ -759,6 +778,7 @@ func TestRetrieveLogs(t *testing.T) {
 					assert.Equal(t, tt.response.Logs[i].State, response.Logs[i].State)
 					assert.Equal(t, tt.response.Logs[i].RequestId, response.Logs[i].RequestId)
 					assert.Equal(t, tt.response.Logs[i].IngestionTs, response.Logs[i].IngestionTs)
+					assert.Equal(t, tt.response.Logs[i].SourceTs, response.Logs[i].SourceTs)
 					assert.Equal(t, tt.response.Logs[i].ProducerAppName, response.Logs[i].ProducerAppName)
 					assert.Equal(t, tt.response.Logs[i].ProducerAppVersion, response.Logs[i].ProducerAppVersion)
 					assert.Equal(t, tt.response.Logs[i].SdkName, response.Logs[i].SdkName)

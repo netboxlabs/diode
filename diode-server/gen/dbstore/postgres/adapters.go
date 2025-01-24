@@ -29,6 +29,7 @@ func (log IngestionLog) ToProto() (*reconcilerpb.IngestionLog, error) {
 		State:              reconcilerpb.State(log.State.Int32),
 		RequestId:          log.RequestID.String,
 		IngestionTs:        log.IngestionTs.Int64,
+		SourceTs:           log.SourceTs.Int64,
 		ProducerAppName:    log.ProducerAppName.String,
 		ProducerAppVersion: log.ProducerAppVersion.String,
 		SdkName:            log.SdkName.String,

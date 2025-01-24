@@ -41,6 +41,7 @@ type IngestionLog struct {
 	State              pgtype.Int4        `json:"state"`
 	RequestID          pgtype.Text        `json:"request_id"`
 	IngestionTs        pgtype.Int8        `json:"ingestion_ts"`
+	SourceTs           pgtype.Int8        `json:"source_ts"`
 	ProducerAppName    pgtype.Text        `json:"producer_app_name"`
 	ProducerAppVersion pgtype.Text        `json:"producer_app_version"`
 	SdkName            pgtype.Text        `json:"sdk_name"`
@@ -59,6 +60,7 @@ type VDeviation struct {
 	State              pgtype.Int4        `json:"state"`
 	RequestID          pgtype.Text        `json:"request_id"`
 	IngestionTs        pgtype.Int8        `json:"ingestion_ts"`
+	SourceTs           pgtype.Int8        `json:"source_ts"`
 	ProducerAppName    pgtype.Text        `json:"producer_app_name"`
 	ProducerAppVersion pgtype.Text        `json:"producer_app_version"`
 	SdkName            pgtype.Text        `json:"sdk_name"`
