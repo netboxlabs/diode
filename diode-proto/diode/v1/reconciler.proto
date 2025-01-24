@@ -66,6 +66,7 @@ message IngestionLog {
   IngestionError error = 11;
   ChangeSet change_set = 12;
   string object_type = 13;
+  int64 source_ts = 14;
 }
 
 // The request to retrieve ingestion logs
@@ -128,6 +129,7 @@ message Deviation {
   diode.v1.Entity ingested_entity = 9;
   DeviationError error = 10;
   repeated Change changes = 11;
+  int64 source_ts = 12;
 }
 
 // The response from the retrieve deviations request

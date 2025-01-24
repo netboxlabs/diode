@@ -430,6 +430,7 @@ A deviation
 | ingested_entity | [Entity](#diode-v1-Entity)                 |          |             |
 | error           | [DeviationError](#diode-v1-DeviationError) |          |             |
 | changes         | [Change](#diode-v1-Change)                 | repeated |             |
+| source_ts       | [int64](#int64)                            |          |             |
 
 <a name="diode-v1-DeviationError"></a>
 
@@ -494,6 +495,7 @@ An ingestion log
 | error                | [IngestionError](#diode-v1-IngestionError) |       |                 |
 | change_set           | [ChangeSet](#diode-v1-ChangeSet)           |       |                 |
 | object_type          | [string](#string)                          |       |                 |
+| source_ts            | [int64](#int64)                            |       |                 |
 
 <a name="diode-v1-IngestionMetrics"></a>
 
