@@ -1,9 +1,10 @@
-package netbox
+package netbox_test
 
 import (
 	"encoding/json"
 	"testing"
 
+	"github.com/netboxlabs/diode/diode-server/netbox"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -11,7 +12,7 @@ func TestIpamIPAddress_UnmarshalJSON(t *testing.T) {
 	tests := []struct {
 		name    string
 		json    string
-		want    *IpamIPAddress
+		want    *netbox.IpamIPAddress
 		wantErr bool
 	}{
 		{
@@ -28,11 +29,11 @@ func TestIpamIPAddress_UnmarshalJSON(t *testing.T) {
 				"status": "active",
 				"dns_name": "test.example.com"
 			}`,
-			want: &IpamIPAddress{
+			want: &netbox.IpamIPAddress{
 				ID:      1,
 				Address: "192.168.1.1",
-				AssignedObject: &IPAddressInterface{
-					Interface: &DcimInterface{
+				AssignedObject: &netbox.IPAddressInterface{
+					Interface: &netbox.DcimInterface{
 						ID:   123,
 						Name: "eth0",
 					},
@@ -49,7 +50,7 @@ func TestIpamIPAddress_UnmarshalJSON(t *testing.T) {
 				"address": "192.168.1.2",
 				"status": "active"
 			}`,
-			want: &IpamIPAddress{
+			want: &netbox.IpamIPAddress{
 				ID:      2,
 				Address: "192.168.1.2",
 				Status:  stringPtr("active"),
@@ -66,7 +67,7 @@ func TestIpamIPAddress_UnmarshalJSON(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var got IpamIPAddress
+			var got netbox.IpamIPAddress
 			err := json.Unmarshal([]byte(tt.json), &got)
 
 			if tt.wantErr {
