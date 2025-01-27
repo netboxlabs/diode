@@ -1,6 +1,7 @@
 package netbox
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -262,4 +263,33 @@ func FromProtoPrefix(prefixPb *diodepb.Prefix) *IpamPrefix {
 		Comments:     prefixPb.Comments,
 		Tags:         FromProtoTags(prefixPb.Tags),
 	}
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface
+func (ip *IpamIPAddress) UnmarshalJSON(data []byte) error {
+	type Alias IpamIPAddress // Create alias to avoid recursive UnmarshalJSON calls
+
+	aux := struct {
+		*Alias
+		AssignedObject map[string]interface{} `json:"assigned_object"`
+	}{
+		Alias: (*Alias)(ip),
+	}
+
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+
+	// Handle AssignedObject based on the map contents
+	if aux.AssignedObject != nil {
+		if _, hasInterface := aux.AssignedObject["interface"]; hasInterface {
+			var ipInterface IPAddressInterface
+			if err := mapstructure.Decode(aux.AssignedObject, &ipInterface); err != nil {
+				return fmt.Errorf("failed to decode assigned object: %w", err)
+			}
+			ip.AssignedObject = &ipInterface
+		}
+	}
+
+	return nil
 }
