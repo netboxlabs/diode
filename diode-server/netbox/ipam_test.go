@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/netboxlabs/diode/diode-server/netbox"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/netboxlabs/diode/diode-server/netbox"
 )
 
 func TestIpamIPAddress_UnmarshalJSON(t *testing.T) {
