@@ -17,16 +17,34 @@ import (
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
 	"github.com/netboxlabs/diode/diode-server/reconciler"
 	"github.com/netboxlabs/diode/diode-server/server"
+	"github.com/netboxlabs/diode/diode-server/telemetry"
+)
+
+const (
+	applicationName = "diode-reconciler"
 )
 
 func main() {
 	ctx := context.Background()
-	s := server.New(ctx, "diode-reconciler")
+	s := server.New(ctx, applicationName)
 
 	defer s.Recover(sentry.CurrentHub())
 
 	var cfg reconciler.Config
 	envconfig.MustProcess("", &cfg)
+
+	// Set default telemetry configuration if not provided
+	if cfg.Telemetry.ServiceName == "" {
+		cfg.Telemetry.ServiceName = applicationName
+	}
+
+	// Initialize telemetry
+	shutdown, err := telemetry.Setup(ctx, cfg.Telemetry)
+	if err != nil {
+		s.Logger().Error("failed to initialize telemetry", "error", err)
+		os.Exit(1)
+	}
+	defer shutdown(ctx)
 
 	dbURL := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", cfg.PostgresHost, cfg.PostgresPort, cfg.PostgresUser, cfg.PostgresPassword, cfg.PostgresDBName)
 

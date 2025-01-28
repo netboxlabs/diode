@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/alicebob/miniredis/v2"
+	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -94,8 +95,12 @@ func startTestComponent(ctx context.Context, t *testing.T) (*ingester.Component,
 	listener := bufconn.Listen(bufSize)
 	s := grpc.NewServer()
 
+	var cfg ingester.Config
+	err := envconfig.Process("", &cfg)
+	require.NoError(t, err)
+
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
-	component, err := ingester.New(ctx, logger)
+	component, err := ingester.New(ctx, logger, cfg)
 	require.NoError(t, err)
 
 	pb.RegisterIngesterServiceServer(s, component)
@@ -134,7 +139,11 @@ func TestNewComponent(t *testing.T) {
 	_ = os.Setenv("GRPC_PORT", grpcPort)
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
 
-	component, err := ingester.New(ctx, logger)
+	var cfg ingester.Config
+	err := envconfig.Process("", &cfg)
+	require.NoError(t, err)
+
+	component, err := ingester.New(ctx, logger, cfg)
 
 	require.NoError(t, err)
 	require.NotNil(t, component)

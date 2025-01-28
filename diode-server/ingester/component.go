@@ -10,7 +10,6 @@ import (
 	"slices"
 	"time"
 
-	"github.com/kelseyhightower/envconfig"
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -46,10 +45,7 @@ type Component struct {
 }
 
 // New creates a new ingester component
-func New(ctx context.Context, logger *slog.Logger) (*Component, error) {
-	var cfg Config
-	envconfig.MustProcess("", &cfg)
-
+func New(ctx context.Context, logger *slog.Logger, cfg Config) (*Component, error) {
 	grpcListener, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.GRPCPort))
 	if err != nil {
 		return nil, fmt.Errorf("failed to listen on port %d: %v", cfg.GRPCPort, err)
