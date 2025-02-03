@@ -6,6 +6,8 @@ import (
 
 	"github.com/getsentry/sentry-go"
 	"github.com/kelseyhightower/envconfig"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/metric"
 
 	"github.com/netboxlabs/diode/diode-server/ingester"
 	"github.com/netboxlabs/diode/diode-server/server"
@@ -13,7 +15,8 @@ import (
 )
 
 const (
-	applicationName = "diode-ingester"
+	applicationName = "com.netboxlabs.diode.ingester"
+	metricStartup   = "startup_count"
 )
 
 func main() {
@@ -31,15 +34,27 @@ func main() {
 		cfg.Telemetry.ServiceName = applicationName
 	}
 
-	// Initialize telemetry
 	shutdown, err := telemetry.Setup(ctx, cfg.Telemetry)
 	if err != nil {
 		s.Logger().Error("failed to initialize telemetry", "error", err)
 		os.Exit(1)
 	}
-	defer shutdown(ctx)
+	defer func() {
+		if err := shutdown(ctx); err != nil {
+			s.Logger().Error("failed to shutdown telemetry", "error", err)
+		}
+	}()
 
-	ingesterComponent, err := ingester.New(ctx, s.Logger(), cfg)
+	meter := otel.GetMeterProvider().Meter(applicationName)
+	startupCounter, err := meter.Int64Counter(metricStartup,
+		metric.WithDescription("Number of times the ingester service has started"))
+	if err != nil {
+		s.Logger().Error("failed to create startup metric", "error", err)
+		os.Exit(1)
+	}
+	startupCounter.Add(ctx, 1)
+
+	ingesterComponent, err := ingester.New(ctx, s.Logger(), cfg, meter)
 	if err != nil {
 		s.Logger().Error("failed to instantiate ingester component", "error", err)
 		os.Exit(1)

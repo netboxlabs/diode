@@ -12,6 +12,7 @@ import (
 	"github.com/alicebob/miniredis/v2"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
@@ -100,7 +101,9 @@ func startTestComponent(ctx context.Context, t *testing.T) (*ingester.Component,
 	require.NoError(t, err)
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
-	component, err := ingester.New(ctx, logger, cfg)
+
+	meter := otel.GetMeterProvider().Meter("test.ingester")
+	component, err := ingester.New(ctx, logger, cfg, meter)
 	require.NoError(t, err)
 
 	pb.RegisterIngesterServiceServer(s, component)
@@ -143,7 +146,8 @@ func TestNewComponent(t *testing.T) {
 	err := envconfig.Process("", &cfg)
 	require.NoError(t, err)
 
-	component, err := ingester.New(ctx, logger, cfg)
+	meter := otel.GetMeterProvider().Meter("test.ingester")
+	component, err := ingester.New(ctx, logger, cfg, meter)
 
 	require.NoError(t, err)
 	require.NotNil(t, component)

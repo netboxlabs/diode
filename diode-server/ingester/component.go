@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
@@ -18,18 +20,15 @@ import (
 
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/sentry"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/metric"
 )
 
 const (
 	streamID = "diode.v1.ingest-stream"
 
 	// Metric names
-	metricIngestTotal   = "diode.ingester.ingest.total"
-	metricIngestSuccess = "diode.ingester.ingest.success"
-	metricIngestFailure = "diode.ingester.ingest.failure"
+	metricIngestTotal   = "ingest.total"
+	metricIngestSuccess = "ingest.success"
+	metricIngestFailure = "ingest.failure"
 )
 
 var (
@@ -58,7 +57,7 @@ type Component struct {
 }
 
 // New creates a new ingester component
-func New(ctx context.Context, logger *slog.Logger, cfg Config) (*Component, error) {
+func New(ctx context.Context, logger *slog.Logger, cfg Config, meter metric.Meter) (*Component, error) {
 	grpcListener, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.GRPCPort))
 	if err != nil {
 		return nil, fmt.Errorf("failed to listen on port %d: %v", cfg.GRPCPort, err)
@@ -83,8 +82,6 @@ func New(ctx context.Context, logger *slog.Logger, cfg Config) (*Component, erro
 	auth := newAuthUnaryInterceptor(apiKeys)
 	grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(auth))
 
-	meter := otel.GetMeterProvider().Meter("diode/ingester")
-
 	ingestTotal, err := meter.Int64Counter(metricIngestTotal,
 		metric.WithDescription("Total number of ingest requests received"))
 	if err != nil {
@@ -92,7 +89,7 @@ func New(ctx context.Context, logger *slog.Logger, cfg Config) (*Component, erro
 	}
 
 	ingestSuccess, err := meter.Int64Counter(metricIngestSuccess,
-		metric.WithDescription("Number of successful ingest requests"))
+		metric.WithDescription("Number of successfully processed ingest requests"))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create success counter: %v", err)
 	}

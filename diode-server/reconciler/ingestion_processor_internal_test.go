@@ -16,6 +16,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
@@ -29,6 +30,17 @@ import (
 
 func int32Ptr(i int32) *int32 { return &i }
 func strPtr(s string) *string { return &s }
+
+func addMeters(t *testing.T, p *IngestionProcessor) {
+	var err error
+	meter := otel.GetMeterProvider().Meter("test.ingestion-processor")
+	p.handleMessageTotalCounter, err = meter.Int64Counter("handle_message.total")
+	require.NoError(t, err)
+	p.handleMessageSuccessCounter, err = meter.Int64Counter("handle_message.success")
+	require.NoError(t, err)
+	p.handleMessageFailureCounter, err = meter.Int64Counter("handle_message.failure")
+	require.NoError(t, err)
+}
 
 func TestHandleStreamMessage(t *testing.T) {
 	tests := []struct {
@@ -165,6 +177,7 @@ func TestHandleStreamMessage(t *testing.T) {
 				},
 				ops: NewOps(mockRepository, mockNbClient, logger),
 			}
+			addMeters(t, p)
 
 			request := redis.XMessage{}
 			if tt.validMsg {
@@ -281,6 +294,7 @@ func TestConsumeIngestionStream(t *testing.T) {
 					ReconcilerRateLimiterBurst: 1,
 				},
 			}
+			addMeters(t, p)
 
 			err := p.consumeIngestionStream(ctx, "test-stream", "test-group", "test-consumer")
 
@@ -492,6 +506,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 				},
 				ops: NewOps(mockRepository, mockNbClient, logger),
 			}
+			addMeters(t, p)
 
 			ingestionLogID := int32(1)
 
