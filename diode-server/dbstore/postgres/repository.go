@@ -556,7 +556,11 @@ func deviationToProto(dbDeviation postgres.VDeviation) (*reconcilerpb.Deviation,
 	var deviationErr *reconcilerpb.DeviationError
 	if dbDeviation.Error != nil {
 		deviationErr = &reconcilerpb.DeviationError{}
-		if err := protojson.Unmarshal(dbDeviation.Error, deviationErr); err != nil {
+		// these are input as a larger error type that is not fully unmarshaled in the response
+		err := protojson.UnmarshalOptions{
+			DiscardUnknown: true,
+		}.Unmarshal(dbDeviation.Error, deviationErr)
+		if err != nil {
 			return nil, fmt.Errorf("failed to unmarshal error: %w", err)
 		}
 	}
