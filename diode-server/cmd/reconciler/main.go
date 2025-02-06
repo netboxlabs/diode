@@ -25,7 +25,7 @@ import (
 const (
 	applicationName             = "com.netboxlabs.diode.reconciler"
 	ingestionProcessorMeterName = "com.netboxlabs.diode.reconciler.ingestion-processor"
-	metricStartup               = "startup_count"
+	metricStartup               = "diode.reconciler.startup_count"
 )
 
 func main() {
@@ -110,7 +110,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	// TODO: instantiate prometheus server
+	telemetry.ServePrometheusMetricsIfNecessary(cfg.Telemetry, s.Logger())
 
 	if err := s.Run(); err != nil {
 		s.Logger().Error("server failure", "serverName", s.Name(), "error", err)

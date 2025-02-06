@@ -31,15 +31,12 @@ import (
 func int32Ptr(i int32) *int32 { return &i }
 func strPtr(s string) *string { return &s }
 
-func addMeters(t *testing.T, p *IngestionProcessor) {
+func addMetrics(t *testing.T, p *IngestionProcessor) {
 	var err error
 	meter := otel.GetMeterProvider().Meter("test.ingestion-processor")
-	p.handleMessageTotalCounter, err = meter.Int64Counter("handle_message.total")
+	metrics, err := NewIngestionProcessorMetrics(meter)
 	require.NoError(t, err)
-	p.handleMessageSuccessCounter, err = meter.Int64Counter("handle_message.success")
-	require.NoError(t, err)
-	p.handleMessageFailureCounter, err = meter.Int64Counter("handle_message.failure")
-	require.NoError(t, err)
+	p.metrics = metrics
 }
 
 func TestHandleStreamMessage(t *testing.T) {
@@ -177,7 +174,7 @@ func TestHandleStreamMessage(t *testing.T) {
 				},
 				ops: NewOps(mockRepository, mockNbClient, logger),
 			}
-			addMeters(t, p)
+			addMetrics(t, p)
 
 			request := redis.XMessage{}
 			if tt.validMsg {
@@ -204,9 +201,9 @@ func TestHandleStreamMessage(t *testing.T) {
 				}
 			}
 			if tt.reconcilerError {
-				mockNbClient.On("RetrieveObjectState", ctx, mock.Anything).Return(&netboxdiodeplugin.ObjectState{}, errors.New("prepare error"))
+				mockNbClient.On("RetrieveObjectState", mock.Anything, mock.Anything).Return(&netboxdiodeplugin.ObjectState{}, errors.New("prepare error"))
 			} else {
-				mockNbClient.On("RetrieveObjectState", ctx, mock.Anything).Return(&netboxdiodeplugin.ObjectState{
+				mockNbClient.On("RetrieveObjectState", mock.Anything, mock.Anything).Return(&netboxdiodeplugin.ObjectState{
 					ObjectType:     "dcim.site",
 					ObjectID:       0,
 					ObjectChangeID: 0,
@@ -215,12 +212,12 @@ func TestHandleStreamMessage(t *testing.T) {
 					},
 				}, nil)
 			}
-			mockNbClient.On("ApplyChangeSet", ctx, mock.Anything).Return(tt.changeSetResponse, tt.changeSetError)
+			mockNbClient.On("ApplyChangeSet", mock.Anything, mock.Anything).Return(tt.changeSetResponse, tt.changeSetError)
 			if tt.entities[0].Entity != nil {
-				mockRepository.On("CreateIngestionLog", ctx, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
+				mockRepository.On("CreateIngestionLog", mock.Anything, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
 			}
-			mockRedisStreamClient.On("XAck", ctx, mock.Anything, mock.Anything, mock.Anything).Return(redis.NewIntCmd(ctx))
-			mockRedisStreamClient.On("XDel", ctx, mock.Anything, mock.Anything).Return(redis.NewIntCmd(ctx))
+			mockRedisStreamClient.On("XAck", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(redis.NewIntCmd(ctx))
+			mockRedisStreamClient.On("XDel", mock.Anything, mock.Anything, mock.Anything).Return(redis.NewIntCmd(ctx))
 
 			err := p.handleStreamMessage(ctx, request)
 			if tt.expectedError {
@@ -294,7 +291,7 @@ func TestConsumeIngestionStream(t *testing.T) {
 					ReconcilerRateLimiterBurst: 1,
 				},
 			}
-			addMeters(t, p)
+			addMetrics(t, p)
 
 			err := p.consumeIngestionStream(ctx, "test-stream", "test-group", "test-consumer")
 
@@ -506,7 +503,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 				},
 				ops: NewOps(mockRepository, mockNbClient, logger),
 			}
-			addMeters(t, p)
+			addMetrics(t, p)
 
 			ingestionLogID := int32(1)
 

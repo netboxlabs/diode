@@ -13,6 +13,9 @@ type Config struct {
 	// MetricsExporter represents the type of exporter to use. oltp,console and none are supported
 	MetricsExporter string `envconfig:"METRICS_EXPORTER" default:"none"`
 
+	// MetricsPort is the port to serve the metrics on if MetricsExporter is prometheus
+	MetricsPort int `envconfig:"METRICS_PORT" default:"9090"`
+
 	// TracesExporter represents the type of exporter to use. oltp,console and none are supported
 	TracesExporter string `envconfig:"TRACES_EXPORTER" default:"none"`
 

@@ -20,15 +20,11 @@ import (
 
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/sentry"
+	"github.com/netboxlabs/diode/diode-server/telemetry"
 )
 
 const (
 	streamID = "diode.v1.ingest-stream"
-
-	// Metric names
-	metricIngestTotal   = "ingest.total"
-	metricIngestSuccess = "ingest.success"
-	metricIngestFailure = "ingest.failure"
 )
 
 var (
@@ -49,11 +45,7 @@ type Component struct {
 	grpcListener      net.Listener
 	grpcServer        *grpc.Server
 	redisStreamClient *redis.Client
-
-	// Metrics
-	ingestTotalCounter   metric.Int64Counter
-	ingestSuccessCounter metric.Int64Counter
-	ingestFailureCounter metric.Int64Counter
+	metrics           *Metrics
 }
 
 // New creates a new ingester component
@@ -82,35 +74,20 @@ func New(ctx context.Context, logger *slog.Logger, cfg Config, meter metric.Mete
 	auth := newAuthUnaryInterceptor(apiKeys)
 	grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(auth))
 
-	ingestTotal, err := meter.Int64Counter(metricIngestTotal,
-		metric.WithDescription("Total number of ingest requests received"))
+	metrics, err := NewMetrics(meter)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create total counter: %v", err)
-	}
-
-	ingestSuccess, err := meter.Int64Counter(metricIngestSuccess,
-		metric.WithDescription("Number of successfully processed ingest requests"))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create success counter: %v", err)
-	}
-
-	ingestFailure, err := meter.Int64Counter(metricIngestFailure,
-		metric.WithDescription("Number of failed ingest requests"))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create failure counter: %v", err)
+		return nil, fmt.Errorf("failed to create ingester metrics: %v", err)
 	}
 
 	component := &Component{
-		ctx:                  ctx,
-		config:               cfg,
-		logger:               logger,
-		hostname:             hostname,
-		grpcListener:         grpcListener,
-		grpcServer:           grpcServer,
-		redisStreamClient:    redisStreamClient,
-		ingestTotalCounter:   ingestTotal,
-		ingestSuccessCounter: ingestSuccess,
-		ingestFailureCounter: ingestFailure,
+		ctx:               ctx,
+		config:            cfg,
+		logger:            logger,
+		hostname:          hostname,
+		grpcListener:      grpcListener,
+		grpcServer:        grpcServer,
+		redisStreamClient: redisStreamClient,
+		metrics:           metrics,
 	}
 
 	diodepb.RegisterIngesterServiceServer(grpcServer, component)
@@ -154,20 +131,17 @@ func (c *Component) Stop() error {
 func (c *Component) Ingest(ctx context.Context, in *diodepb.IngestRequest) (*diodepb.IngestResponse, error) {
 	// Create attributes for metrics
 	attrs := []attribute.KeyValue{
-		attribute.String("sdk_name", in.SdkName),
-		attribute.String("sdk_version", in.SdkVersion),
-		attribute.String("hostname", c.hostname),
-		attribute.String("producer_app_name", in.ProducerAppName),
-		attribute.String("producer_app_version", in.ProducerAppVersion),
-		attribute.String("stream", in.Stream),
+		attribute.String(telemetry.AttributeSDKName, in.SdkName),
+		attribute.String(telemetry.AttributeSDKVersion, in.SdkVersion),
+		attribute.String(telemetry.AttributeHostname, c.hostname),
+		attribute.String(telemetry.AttributeProducerAppName, in.ProducerAppName),
+		attribute.String(telemetry.AttributeProducerAppVersion, in.ProducerAppVersion),
+		attribute.String(telemetry.AttributeStream, in.Stream),
 	}
-
-	// Record total ingest attempt
-	c.ingestTotalCounter.Add(ctx, 1, metric.WithAttributes(attrs...))
+	ctx = telemetry.ContextWithMetricAttributes(ctx, attrs...)
 
 	if err := validateRequest(in); err != nil {
-		// Record failure
-		c.ingestFailureCounter.Add(ctx, 1, metric.WithAttributes(attrs...))
+		c.metrics.RecordIngestRequest(ctx, false)
 
 		tags := map[string]string{
 			"hostname":    c.hostname,
@@ -190,6 +164,7 @@ func (c *Component) Ingest(ctx context.Context, in *diodepb.IngestRequest) (*dio
 
 	encodedRequest, err := proto.Marshal(in)
 	if err != nil {
+		c.metrics.RecordIngestRequest(ctx, false)
 		c.logger.Error("failed to marshal request", "error", err, "request", in)
 	}
 
@@ -209,10 +184,11 @@ func (c *Component) Ingest(ctx context.Context, in *diodepb.IngestRequest) (*dio
 		Stream: streamID,
 		Values: msg,
 	}).Err(); err != nil {
-		c.ingestFailureCounter.Add(ctx, 1, metric.WithAttributes(attrs...))
+		c.metrics.RecordIngestRequest(ctx, false)
 		c.logger.Error("failed to add element to the stream", "error", err, "streamID", streamID, "value", msg)
 	} else {
-		c.ingestSuccessCounter.Add(ctx, 1, metric.WithAttributes(attrs...))
+		c.metrics.RecordIngestRequest(ctx, true)
+		c.metrics.RecordIngestEntities(ctx, int64(len(in.GetEntities())))
 	}
 
 	return &diodepb.IngestResponse{Errors: errs}, nil

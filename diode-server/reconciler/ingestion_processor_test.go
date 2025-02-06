@@ -236,9 +236,9 @@ func TestIngestionProcessorStart(t *testing.T) {
 	// Wait server
 	time.Sleep(50 * time.Millisecond)
 
-	mockRepository.On("CreateIngestionLog", ctx, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
-	mockRepository.On("UpdateIngestionLogStateWithError", ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mockRepository.On("CreateChangeSet", ctx, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
+	mockRepository.On("CreateIngestionLog", mock.Anything, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
+	mockRepository.On("UpdateIngestionLogStateWithError", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mockRepository.On("CreateChangeSet", mock.Anything, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
 	redisClient := redis.NewClient(&redis.Options{
 		Addr: s.Addr(),
 		DB:   1,

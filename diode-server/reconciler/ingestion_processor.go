@@ -22,6 +22,7 @@ import (
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
 	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
 	"github.com/netboxlabs/diode/diode-server/sentry"
+	"github.com/netboxlabs/diode/diode-server/telemetry"
 )
 
 const (
@@ -34,11 +35,6 @@ const (
 
 	// RedisConsumerGroupExistsErrMsg is the error message returned by the redis client when the consumer group already exists
 	RedisConsumerGroupExistsErrMsg = "BUSYGROUP Consumer Group name already exists"
-
-	// Metric names
-	metricHandleMessageTotal   = "handle_message.total"
-	metricHandleMessageSuccess = "handle_message.success"
-	metricHandleMessageFailure = "handle_message.failure"
 )
 
 // RedisClient is an interface that represents the methods used from redis.Client
@@ -63,11 +59,7 @@ type IngestionProcessor struct {
 	redisClient       RedisClient
 	redisStreamClient RedisClient
 	ops               IngestionProcessorOps
-
-	// Metrics
-	handleMessageTotalCounter   metric.Int64Counter
-	handleMessageSuccessCounter metric.Int64Counter
-	handleMessageFailureCounter metric.Int64Counter
+	metrics           *IngestionProcessorMetrics
 }
 
 // IngestionLogToProcess represents an ingestion log to process
@@ -89,21 +81,6 @@ type IngestionProcessorOps interface {
 func NewIngestionProcessor(ctx context.Context, logger *slog.Logger, ops IngestionProcessorOps, meter metric.Meter) (*IngestionProcessor, error) {
 	var cfg Config
 	envconfig.MustProcess("", &cfg)
-
-	handleMessageTotalCounter, err := meter.Int64Counter(metricHandleMessageTotal)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create handle message total counter: %v", err)
-	}
-
-	handleMessageSuccessCounter, err := meter.Int64Counter(metricHandleMessageSuccess)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create handle message success counter: %v", err)
-	}
-
-	handleMessageFailureCounter, err := meter.Int64Counter(metricHandleMessageFailure)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create handle message failure counter: %v", err)
-	}
 
 	redisClient := redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%s:%s", cfg.RedisHost, cfg.RedisPort),
@@ -130,16 +107,19 @@ func NewIngestionProcessor(ctx context.Context, logger *slog.Logger, ops Ingesti
 		return nil, fmt.Errorf("failed to get hostname: %v", err)
 	}
 
+	metrics, err := NewIngestionProcessorMetrics(meter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create ingestion processor metrics: %v", err)
+	}
+
 	component := &IngestionProcessor{
-		Config:                      cfg,
-		logger:                      logger,
-		hostname:                    hostname,
-		redisClient:                 redisClient,
-		redisStreamClient:           redisStreamClient,
-		ops:                         ops,
-		handleMessageTotalCounter:   handleMessageTotalCounter,
-		handleMessageSuccessCounter: handleMessageSuccessCounter,
-		handleMessageFailureCounter: handleMessageFailureCounter,
+		Config:            cfg,
+		logger:            logger,
+		hostname:          hostname,
+		redisClient:       redisClient,
+		redisStreamClient: redisStreamClient,
+		ops:               ops,
+		metrics:           metrics,
 	}
 
 	return component, nil
@@ -201,25 +181,24 @@ func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, stream,
 func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.XMessage) error {
 	// Create attributes for metrics
 	attrs := []attribute.KeyValue{
-		attribute.String("hostname", p.hostname),
+		attribute.String(telemetry.AttributeHostname, p.hostname),
 	}
-
-	// Record total process attempt
-	p.handleMessageTotalCounter.Add(ctx, 1, metric.WithAttributes(attrs...))
+	ctx = telemetry.ContextWithMetricAttributes(ctx, attrs...)
 
 	ingestReq := &diodepb.IngestRequest{}
 	if err := proto.Unmarshal([]byte(msg.Values["request"].(string)), ingestReq); err != nil {
-		p.handleMessageFailureCounter.Add(ctx, 1, metric.WithAttributes(attrs...))
+		p.metrics.RecordHandleMessage(ctx, false)
 		return err
 	}
 
 	// Add request-specific attributes
 	attrs = append(attrs,
-		attribute.String("sdk_name", ingestReq.SdkName),
-		attribute.String("sdk_version", ingestReq.SdkVersion),
-		attribute.String("producer_app_name", ingestReq.ProducerAppName),
-		attribute.String("producer_app_version", ingestReq.ProducerAppVersion),
+		attribute.String(telemetry.AttributeSDKName, ingestReq.SdkName),
+		attribute.String(telemetry.AttributeSDKVersion, ingestReq.SdkVersion),
+		attribute.String(telemetry.AttributeProducerAppName, ingestReq.ProducerAppName),
+		attribute.String(telemetry.AttributeProducerAppVersion, ingestReq.ProducerAppVersion),
 	)
+	ctx = telemetry.ContextWithMetricAttributes(ctx, attrs...)
 
 	errs := make([]error, 0)
 
@@ -255,8 +234,8 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 
 	p.redisStreamClient.XAck(ctx, redisStreamID, redisConsumerGroup, msg.ID)
 
+	// TODO(ltucker): we do not gather errors from all stages, so the metrics do not reflect all errors
 	if len(errs) > 0 {
-		p.handleMessageFailureCounter.Add(ctx, 1, metric.WithAttributes(attrs...))
 		errsStr := make([]string, 0)
 		for _, err := range errs {
 			errsStr = append(errsStr, err.Error())
@@ -270,7 +249,6 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 		}
 		sentry.CaptureError(fmt.Errorf("failed to handle ingest request: %v", errs), nil, "Ingestion request", contextMap)
 	} else {
-		p.handleMessageSuccessCounter.Add(ctx, 1, metric.WithAttributes(attrs...))
 		p.redisStreamClient.XDel(ctx, redisStreamID, msg.ID)
 	}
 
@@ -308,6 +286,9 @@ func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChan
 				id, changeSet, err := p.ops.GenerateChangeSet(ctx, msg.ingestionLogID, msg.ingestionLog, "")
 				if err != nil {
 					p.logger.Error("error generating changeset", "error", err)
+					p.metrics.RecordChangeSetCreate(ctx, false, 0)
+				} else {
+					p.metrics.RecordChangeSetCreate(ctx, true, int64(len(changeSet.ChangeSet)))
 				}
 
 				if changeSet != nil && len(changeSet.ChangeSet) > 0 {
@@ -352,6 +333,9 @@ func (p *IngestionProcessor) ApplyChangeSet(ctx context.Context, applyChan <-cha
 
 				if err := p.ops.ApplyChangeSet(ctx, msg.ingestionLogID, msg.ingestionLog, msg.changeSetID, msg.changeSet); err != nil {
 					p.logger.Error("error applying changeset", "error", err)
+					p.metrics.RecordChangeSetApply(ctx, false, 0)
+				} else {
+					p.metrics.RecordChangeSetApply(ctx, true, int64(len(msg.changeSet.ChangeSet)))
 				}
 			}
 		}
@@ -394,8 +378,11 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 		id, err := p.ops.CreateIngestionLog(ctx, ingestionLog, nil)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("failed to create ingestion log: %v", err))
+			p.metrics.RecordIngestionLogCreate(ctx, false)
 			continue
 		}
+
+		p.metrics.RecordIngestionLogCreate(ctx, true)
 		p.logger.Debug("created ingestion log", "id", id, "externalID", ingestionLog.GetId())
 
 		generateIngestionLogChan <- IngestionLogToProcess{
