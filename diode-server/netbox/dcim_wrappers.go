@@ -1126,6 +1126,8 @@ func (dw *DcimInterfaceDataWrapper) Patch(cmp ComparableData, intendedNestedObje
 			currentNestedObjectsMap[fmt.Sprintf("%p", obj.Data())] = obj
 		}
 
+		dw.intendedData = intended.Data()
+
 		dw.Interface.ID = intended.Interface.ID
 		dw.Interface.Name = intended.Interface.Name
 
