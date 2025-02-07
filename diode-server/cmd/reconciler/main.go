@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	applicationName             = "com.netboxlabs.diode.reconciler"
+	applicationName             = "diode-reconciler"
 	ingestionProcessorMeterName = "com.netboxlabs.diode.reconciler.ingestion-processor"
 	metricStartup               = "diode.reconciler.startup_count"
 )

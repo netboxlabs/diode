@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	applicationName = "com.netboxlabs.diode.ingester"
+	applicationName = "diode-ingester"
 	metricStartup   = "diode.ingester.startup_count"
 )
 
