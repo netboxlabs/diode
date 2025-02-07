@@ -12,7 +12,6 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/redis/go-redis/v9"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/metric"
 	"golang.org/x/time/rate"
 	"google.golang.org/protobuf/proto"
 
@@ -59,7 +58,7 @@ type IngestionProcessor struct {
 	redisClient       RedisClient
 	redisStreamClient RedisClient
 	ops               IngestionProcessorOps
-	metrics           *IngestionProcessorMetrics
+	metrics           IngestionProcessorMetrics
 }
 
 // IngestionLogToProcess represents an ingestion log to process
@@ -77,8 +76,16 @@ type IngestionProcessorOps interface {
 	ApplyChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, changeSetID int32, changeSet *changeset.ChangeSet) error
 }
 
+// IngestionProcessorMetrics represents the metrics collecteingestion processor
+type IngestionProcessorMetrics interface {
+	RecordHandleMessage(ctx context.Context, success bool)
+	RecordIngestionLogCreate(ctx context.Context, success bool)
+	RecordChangeSetCreate(ctx context.Context, success bool, changes int64)
+	RecordChangeSetApply(ctx context.Context, success bool, changes int64)
+}
+
 // NewIngestionProcessor creates a new ingestion processor
-func NewIngestionProcessor(ctx context.Context, logger *slog.Logger, ops IngestionProcessorOps, meter metric.Meter) (*IngestionProcessor, error) {
+func NewIngestionProcessor(ctx context.Context, logger *slog.Logger, ops IngestionProcessorOps, metrics IngestionProcessorMetrics) (*IngestionProcessor, error) {
 	var cfg Config
 	envconfig.MustProcess("", &cfg)
 
@@ -105,11 +112,6 @@ func NewIngestionProcessor(ctx context.Context, logger *slog.Logger, ops Ingesti
 	hostname, err := os.Hostname()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get hostname: %v", err)
-	}
-
-	metrics, err := NewIngestionProcessorMetrics(meter)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create ingestion processor metrics: %v", err)
 	}
 
 	component := &IngestionProcessor{
@@ -234,7 +236,6 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 
 	p.redisStreamClient.XAck(ctx, redisStreamID, redisConsumerGroup, msg.ID)
 
-	// TODO(ltucker): we do not gather errors from all stages, so the metrics do not reflect all errors
 	if len(errs) > 0 {
 		errsStr := make([]string, 0)
 		for _, err := range errs {
@@ -248,8 +249,10 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 			"hostname":            p.hostname,
 		}
 		sentry.CaptureError(fmt.Errorf("failed to handle ingest request: %v", errs), nil, "Ingestion request", contextMap)
+		p.metrics.RecordHandleMessage(ctx, false)
 	} else {
 		p.redisStreamClient.XDel(ctx, redisStreamID, msg.ID)
+		p.metrics.RecordHandleMessage(ctx, true)
 	}
 
 	return nil

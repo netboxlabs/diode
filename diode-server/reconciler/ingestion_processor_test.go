@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"go.opentelemetry.io/otel"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
@@ -39,8 +38,8 @@ func TestNewIngestionProcessor(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
 	nbClient, err := netboxdiodeplugin.NewClient(logger, cfg.DiodeToNetBoxAPIKey)
 	require.NoError(t, err)
-	meter := otel.GetMeterProvider().Meter("test.ingestion-processor")
-	processor, err := reconciler.NewIngestionProcessor(ctx, logger, reconciler.NewOps(mockRepository, nbClient, logger), meter)
+	metrics := mocks.NewIngestionProcessorMetrics(t)
+	processor, err := reconciler.NewIngestionProcessor(ctx, logger, reconciler.NewOps(mockRepository, nbClient, logger), metrics)
 	require.NoError(t, err)
 	require.NotNil(t, processor)
 
@@ -65,8 +64,13 @@ func TestIngestionProcessorStart(t *testing.T) {
 
 	nbClient, err := netboxdiodeplugin.NewClient(logger, cfg.DiodeToNetBoxAPIKey)
 	require.NoError(t, err)
-	meter := otel.GetMeterProvider().Meter("test.ingestion-processor")
-	processor, err := reconciler.NewIngestionProcessor(ctx, logger, reconciler.NewOps(mockRepository, nbClient, logger), meter)
+	mockMetrics := new(mocks.IngestionProcessorMetrics)
+	mockMetrics.On("RecordHandleMessage", mock.Anything, mock.Anything).Return()
+	mockMetrics.On("RecordIngestionLogCreate", mock.Anything, mock.Anything).Return()
+	mockMetrics.On("RecordChangeSetCreate", mock.Anything, mock.Anything, mock.Anything).Return()
+	mockMetrics.On("RecordChangeSetApply", mock.Anything, mock.Anything, mock.Anything).Return()
+
+	processor, err := reconciler.NewIngestionProcessor(ctx, logger, reconciler.NewOps(mockRepository, nbClient, logger), mockMetrics)
 	require.NoError(t, err)
 	require.NotNil(t, processor)
 

@@ -24,8 +24,8 @@ import (
 
 const (
 	applicationName             = "diode-reconciler"
-	ingestionProcessorMeterName = "com.netboxlabs.diode.reconciler.ingestion-processor"
-	metricStartup               = "diode.reconciler.startup_count"
+	ingestionProcessorMeterName = "diode-reconciler.ingestion-processor"
+	metricStartup               = "diode-reconciler.startup_count"
 )
 
 func main() {
@@ -88,7 +88,12 @@ func main() {
 
 	ops := reconciler.NewOps(repository, nbClient, s.Logger())
 	ingestionMeter := otel.GetMeterProvider().Meter(ingestionProcessorMeterName)
-	ingestionProcessor, err := reconciler.NewIngestionProcessor(ctx, s.Logger(), ops, ingestionMeter)
+	ingestionMetrics, err := reconciler.NewOtelIngestionProcessorMetrics(ingestionMeter, applicationName)
+	if err != nil {
+		s.Logger().Error("failed to create ingestion processor metrics", "error", err)
+		os.Exit(1)
+	}
+	ingestionProcessor, err := reconciler.NewIngestionProcessor(ctx, s.Logger(), ops, ingestionMetrics)
 	if err != nil {
 		s.Logger().Error("failed to instantiate ingestion processor", "error", err)
 		os.Exit(1)

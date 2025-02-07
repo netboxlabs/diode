@@ -16,7 +16,7 @@ import (
 
 const (
 	applicationName = "diode-ingester"
-	metricStartup   = "diode.ingester.startup_count"
+	metricStartup   = "diode-ingester.startup_count"
 )
 
 func main() {

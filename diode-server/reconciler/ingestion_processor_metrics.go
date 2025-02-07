@@ -12,16 +12,16 @@ import (
 
 const (
 	// Metric names
-	metricHandleMessage      = "diode.reconciler.ingestion_processor.handle_message"
-	metricIngestionLogCreate = "diode.reconciler.ingestion_processor.ingestion_log_create"
-	metricChangeSetCreate    = "diode.reconciler.ingestion_processor.change_set_create"
-	metricChangeSetApply     = "diode.reconciler.ingestion_processor.change_set_apply"
-	metricChangeCreate       = "diode.reconciler.ingestion_processor.change_create"
-	metricChangeApply        = "diode.reconciler.ingestion_processor.change_apply"
+	metricHandleMessage      = "ingestion_processor.handle_message"
+	metricIngestionLogCreate = "ingestion_processor.ingestion_log_create"
+	metricChangeSetCreate    = "ingestion_processor.change_set_create"
+	metricChangeSetApply     = "ingestion_processor.change_set_apply"
+	metricChangeCreate       = "ingestion_processor.change_create"
+	metricChangeApply        = "ingestion_processor.change_apply"
 )
 
-// IngestionProcessorMetrics is a struct that contains the metrics for the ingestion processor.
-type IngestionProcessorMetrics struct {
+// OtelIngestionProcessorMetrics is a struct that contains the metrics for the ingestion processor.
+type OtelIngestionProcessorMetrics struct {
 	// Metrics
 	handleMessage      metric.Int64Counter
 	ingestionLogCreate metric.Int64Counter
@@ -31,39 +31,44 @@ type IngestionProcessorMetrics struct {
 	changeApply        metric.Int64Counter
 }
 
-// NewIngestionProcessorMetrics creates a new IngestionProcessorMetrics instance.
-func NewIngestionProcessorMetrics(meter metric.Meter) (*IngestionProcessorMetrics, error) {
-	handleMessage, err := meter.Int64Counter(metricHandleMessage, metric.WithDescription("Number of messages handled"))
+// NewOtelIngestionProcessorMetrics creates a new OtelIngestionProcessorMetrics instance.
+// If a prefix is provided, it will be prepended to the metric names, separated by a dot.
+func NewOtelIngestionProcessorMetrics(meter metric.Meter, prefix string) (*OtelIngestionProcessorMetrics, error) {
+	if prefix != "" {
+		prefix += "."
+	}
+
+	handleMessage, err := meter.Int64Counter(prefix+metricHandleMessage, metric.WithDescription("Number of messages handled"))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create handle message counter: %v", err)
 	}
 
-	ingestionLogCreate, err := meter.Int64Counter(metricIngestionLogCreate, metric.WithDescription("Number of ingestion logs created"))
+	ingestionLogCreate, err := meter.Int64Counter(prefix+metricIngestionLogCreate, metric.WithDescription("Number of ingestion logs created"))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create ingestion log create counter: %v", err)
 	}
 
-	changeSetCreate, err := meter.Int64Counter(metricChangeSetCreate, metric.WithDescription("Number of change sets created"))
+	changeSetCreate, err := meter.Int64Counter(prefix+metricChangeSetCreate, metric.WithDescription("Number of change sets created"))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create change set create counter: %v", err)
 	}
 
-	changeSetApply, err := meter.Int64Counter(metricChangeSetApply, metric.WithDescription("Number of change sets applied"))
+	changeSetApply, err := meter.Int64Counter(prefix+metricChangeSetApply, metric.WithDescription("Number of change sets applied"))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create change set apply counter: %v", err)
 	}
 
-	changeCreate, err := meter.Int64Counter(metricChangeCreate, metric.WithDescription("Number of changes created"))
+	changeCreate, err := meter.Int64Counter(prefix+metricChangeCreate, metric.WithDescription("Number of changes created"))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create change create counter: %v", err)
 	}
 
-	changeApply, err := meter.Int64Counter(metricChangeApply, metric.WithDescription("Number of changes applied"))
+	changeApply, err := meter.Int64Counter(prefix+metricChangeApply, metric.WithDescription("Number of changes applied"))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create change apply counter: %v", err)
 	}
 
-	return &IngestionProcessorMetrics{
+	return &OtelIngestionProcessorMetrics{
 		handleMessage:      handleMessage,
 		ingestionLogCreate: ingestionLogCreate,
 		changeSetCreate:    changeSetCreate,
@@ -74,7 +79,7 @@ func NewIngestionProcessorMetrics(meter metric.Meter) (*IngestionProcessorMetric
 }
 
 // RecordHandleMessage records a message being handled.
-func (m *IngestionProcessorMetrics) RecordHandleMessage(ctx context.Context, success bool) {
+func (m *OtelIngestionProcessorMetrics) RecordHandleMessage(ctx context.Context, success bool) {
 	attrs := []attribute.KeyValue{
 		attribute.Bool(telemetry.AttributeSuccess, success),
 	}
@@ -82,7 +87,7 @@ func (m *IngestionProcessorMetrics) RecordHandleMessage(ctx context.Context, suc
 }
 
 // RecordIngestionLogCreate records an ingestion log being created.
-func (m *IngestionProcessorMetrics) RecordIngestionLogCreate(ctx context.Context, success bool) {
+func (m *OtelIngestionProcessorMetrics) RecordIngestionLogCreate(ctx context.Context, success bool) {
 	attrs := []attribute.KeyValue{
 		attribute.Bool(telemetry.AttributeSuccess, success),
 	}
@@ -90,7 +95,7 @@ func (m *IngestionProcessorMetrics) RecordIngestionLogCreate(ctx context.Context
 }
 
 // RecordChangeSetCreate records a change set being created.
-func (m *IngestionProcessorMetrics) RecordChangeSetCreate(ctx context.Context, success bool, changes int64) {
+func (m *OtelIngestionProcessorMetrics) RecordChangeSetCreate(ctx context.Context, success bool, changes int64) {
 	attrs := []attribute.KeyValue{
 		attribute.Bool(telemetry.AttributeSuccess, success),
 	}
@@ -102,7 +107,7 @@ func (m *IngestionProcessorMetrics) RecordChangeSetCreate(ctx context.Context, s
 }
 
 // RecordChangeSetApply records a change set being applied.
-func (m *IngestionProcessorMetrics) RecordChangeSetApply(ctx context.Context, success bool, changes int64) {
+func (m *OtelIngestionProcessorMetrics) RecordChangeSetApply(ctx context.Context, success bool, changes int64) {
 	attrs := []attribute.KeyValue{
 		attribute.Bool(telemetry.AttributeSuccess, success),
 	}
