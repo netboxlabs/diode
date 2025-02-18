@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -538,11 +537,7 @@ func deviationToProto(dbDeviation postgres.VDeviation) (*reconcilerpb.Deviation,
 		return nil, fmt.Errorf("failed to unmarshal entity: %w", err)
 	}
 
-	// split producer app name by forward slash and get first element if it exists
 	source := dbDeviation.ProducerAppName.String
-	if source != "" {
-		source = strings.Split(source, "/")[0]
-	}
 
 	var deviationName string
 	var branchID *string
