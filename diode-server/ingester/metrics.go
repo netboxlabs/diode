@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	metricIngestRequest = "diode.ingester.ingest_request"
-	metricIngestEntity  = "diode.ingester.ingest_entity"
+	metricIngestRequest = "netboxlabs.com/diode/ingester/ingest_request_count"
+	metricIngestEntity  = "netboxlabs.com/diode/ingester/ingest_entity_count"
 )
 
 // Metrics is a struct that contains the metrics for the ingester.

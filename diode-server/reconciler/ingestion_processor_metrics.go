@@ -12,12 +12,12 @@ import (
 
 const (
 	// Metric names
-	metricHandleMessage      = "ingestion_processor.handle_message"
-	metricIngestionLogCreate = "ingestion_processor.ingestion_log_create"
-	metricChangeSetCreate    = "ingestion_processor.change_set_create"
-	metricChangeSetApply     = "ingestion_processor.change_set_apply"
-	metricChangeCreate       = "ingestion_processor.change_create"
-	metricChangeApply        = "ingestion_processor.change_apply"
+	metricHandleMessage      = "handle_message_count"
+	metricIngestionLogCreate = "ingestion_log_create_count"
+	metricChangeSetCreate    = "change_set_create_count"
+	metricChangeSetApply     = "change_set_apply_count"
+	metricChangeCreate       = "change_create_count"
+	metricChangeApply        = "change_apply_count"
 )
 
 // OtelIngestionProcessorMetrics is a struct that contains the metrics for the ingestion processor.
@@ -32,10 +32,10 @@ type OtelIngestionProcessorMetrics struct {
 }
 
 // NewOtelIngestionProcessorMetrics creates a new OtelIngestionProcessorMetrics instance.
-// If a prefix is provided, it will be prepended to the metric names, separated by a dot.
+// If a prefix is provided, it will be prepended to the metric names, separated by a /.
 func NewOtelIngestionProcessorMetrics(meter metric.Meter, prefix string) (*OtelIngestionProcessorMetrics, error) {
 	if prefix != "" {
-		prefix += "."
+		prefix += "/"
 	}
 
 	handleMessage, err := meter.Int64Counter(prefix+metricHandleMessage, metric.WithDescription("Number of messages handled"))

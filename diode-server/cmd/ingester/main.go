@@ -15,8 +15,11 @@ import (
 )
 
 const (
-	applicationName = "diode-ingester"
-	metricStartup   = "diode-ingester.startup_count"
+	applicationName = "diode-ingester" // used by sentry
+
+	// used by open telemetry metrics
+	telemetryServiceName = "netboxlabs.com/diode/ingester"
+	metricStartup        = "netboxlabs.com/diode/ingester/startup_count"
 )
 
 func main() {
@@ -31,7 +34,7 @@ func main() {
 
 	// Set default telemetry configuration if not provided
 	if cfg.Telemetry.ServiceName == "" {
-		cfg.Telemetry.ServiceName = applicationName
+		cfg.Telemetry.ServiceName = telemetryServiceName
 	}
 
 	shutdown, err := telemetry.Setup(ctx, cfg.Telemetry)
@@ -45,7 +48,7 @@ func main() {
 		}
 	}()
 
-	meter := otel.GetMeterProvider().Meter(applicationName)
+	meter := otel.GetMeterProvider().Meter(telemetryServiceName)
 	startupCounter, err := meter.Int64Counter(metricStartup,
 		metric.WithDescription("Number of times the ingester service has started"))
 	if err != nil {

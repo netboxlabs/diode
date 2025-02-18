@@ -23,9 +23,12 @@ import (
 )
 
 const (
-	applicationName             = "diode-reconciler"
-	ingestionProcessorMeterName = "diode-reconciler.ingestion-processor"
-	metricStartup               = "diode-reconciler.startup_count"
+	applicationName = "diode-reconciler" // used by sentry
+
+	// used by open telemetry metrics
+	telemetryServiceName   = "netboxlabs.com/diode/reconciler"
+	ingestionProcessorName = "netboxlabs.com/diode/reconciler/ingestion_processor"
+	metricStartup          = "netboxlabs.com/diode/reconciler/startup_count"
 )
 
 func main() {
@@ -39,7 +42,7 @@ func main() {
 
 	// Set default telemetry configuration if not provided
 	if cfg.Telemetry.ServiceName == "" {
-		cfg.Telemetry.ServiceName = applicationName
+		cfg.Telemetry.ServiceName = telemetryServiceName
 	}
 
 	// Initialize telemetry
@@ -54,7 +57,7 @@ func main() {
 		}
 	}()
 
-	appMeter := otel.GetMeterProvider().Meter(applicationName)
+	appMeter := otel.GetMeterProvider().Meter(telemetryServiceName)
 	startupCounter, err := appMeter.Int64Counter(metricStartup,
 		metric.WithDescription("Number of times the reconciler service has started"))
 	if err != nil {
@@ -87,8 +90,8 @@ func main() {
 	}
 
 	ops := reconciler.NewOps(repository, nbClient, s.Logger())
-	ingestionMeter := otel.GetMeterProvider().Meter(ingestionProcessorMeterName)
-	ingestionMetrics, err := reconciler.NewOtelIngestionProcessorMetrics(ingestionMeter, applicationName)
+	ingestionMeter := otel.GetMeterProvider().Meter(ingestionProcessorName)
+	ingestionMetrics, err := reconciler.NewOtelIngestionProcessorMetrics(ingestionMeter, ingestionProcessorName)
 	if err != nil {
 		s.Logger().Error("failed to create ingestion processor metrics", "error", err)
 		os.Exit(1)
