@@ -26,9 +26,9 @@ const (
 	applicationName = "diode-reconciler" // used by sentry
 
 	// used by open telemetry metrics
-	telemetryServiceName   = "netboxlabs.com/diode/reconciler"
-	ingestionProcessorName = "netboxlabs.com/diode/reconciler/ingestion_processor"
-	metricStartup          = "netboxlabs.com/diode/reconciler/startup_count"
+	telemetryServiceName   = "netboxlabs/diode/reconciler"
+	ingestionProcessorName = "netboxlabs/diode/reconciler/ingestion_processor"
+	metricStartup          = "netboxlabs/diode/reconciler/startup_count"
 )
 
 func main() {

@@ -18,8 +18,8 @@ const (
 	applicationName = "diode-ingester" // used by sentry
 
 	// used by open telemetry metrics
-	telemetryServiceName = "netboxlabs.com/diode/ingester"
-	metricStartup        = "netboxlabs.com/diode/ingester/startup_count"
+	telemetryServiceName = "netboxlabs/diode/ingester"
+	metricStartup        = "netboxlabs/diode/ingester/startup_count"
 )
 
 func main() {
