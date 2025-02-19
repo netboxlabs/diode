@@ -1,5 +1,7 @@
 package reconciler
 
+import "github.com/netboxlabs/diode/diode-server/telemetry"
+
 // Config is the configuration for the reconciler service
 type Config struct {
 	GRPCPort                   int    `envconfig:"GRPC_PORT" default:"8081"`
@@ -21,4 +23,6 @@ type Config struct {
 	// API keys
 	DiodeToNetBoxAPIKey string `envconfig:"DIODE_TO_NETBOX_API_KEY" required:"true"`
 	NetBoxToDiodeAPIKey string `envconfig:"NETBOX_TO_DIODE_API_KEY" required:"true"`
+
+	Telemetry telemetry.Config `envconfig:"TELEMETRY"`
 }

@@ -1,5 +1,7 @@
 package ingester
 
+import "github.com/netboxlabs/diode/diode-server/telemetry"
+
 // Config is the configuration for the ingester service
 type Config struct {
 	GRPCPort      int    `envconfig:"GRPC_PORT" default:"8081"`
@@ -8,4 +10,6 @@ type Config struct {
 	RedisPassword string `envconfig:"REDIS_PASSWORD" required:"true"`
 	RedisStreamDB int    `envconfig:"REDIS_STREAM_DB" default:"1"`
 	DiodeAPIKey   string `envconfig:"DIODE_API_KEY" required:"true"`
+
+	Telemetry telemetry.Config `envconfig:"TELEMETRY"`
 }

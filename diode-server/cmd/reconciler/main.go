@@ -11,22 +11,60 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib" // pgx to database/sql compatibility
 	"github.com/kelseyhightower/envconfig"
 	"github.com/pressly/goose/v3"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/metric"
 
 	"github.com/netboxlabs/diode/diode-server/dbstore/postgres"
 	"github.com/netboxlabs/diode/diode-server/migrator"
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
 	"github.com/netboxlabs/diode/diode-server/reconciler"
 	"github.com/netboxlabs/diode/diode-server/server"
+	"github.com/netboxlabs/diode/diode-server/telemetry"
+)
+
+const (
+	applicationName = "diode-reconciler" // used by sentry
+
+	// used by open telemetry metrics
+	telemetryServiceName   = "netboxlabs/diode/reconciler"
+	ingestionProcessorName = "netboxlabs/diode/reconciler/ingestion_processor"
+	metricStartup          = "netboxlabs/diode/reconciler/startup_count"
 )
 
 func main() {
 	ctx := context.Background()
-	s := server.New(ctx, "diode-reconciler")
+	s := server.New(ctx, applicationName)
 
 	defer s.Recover(sentry.CurrentHub())
 
 	var cfg reconciler.Config
 	envconfig.MustProcess("", &cfg)
+
+	// Set default telemetry configuration if not provided
+	if cfg.Telemetry.ServiceName == "" {
+		cfg.Telemetry.ServiceName = telemetryServiceName
+	}
+
+	// Initialize telemetry
+	shutdown, err := telemetry.Setup(ctx, cfg.Telemetry)
+	if err != nil {
+		s.Logger().Error("failed to initialize telemetry", "error", err)
+		os.Exit(1)
+	}
+	defer func() {
+		if err := shutdown(ctx); err != nil {
+			s.Logger().Error("failed to shutdown telemetry", "error", err)
+		}
+	}()
+
+	appMeter := otel.GetMeterProvider().Meter(telemetryServiceName)
+	startupCounter, err := appMeter.Int64Counter(metricStartup,
+		metric.WithDescription("Number of times the reconciler service has started"))
+	if err != nil {
+		s.Logger().Error("failed to create startup metric", "error", err)
+		os.Exit(1)
+	}
+	startupCounter.Add(ctx, 1)
 
 	dbURL := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", cfg.PostgresHost, cfg.PostgresPort, cfg.PostgresUser, cfg.PostgresPassword, cfg.PostgresDBName)
 
@@ -50,8 +88,15 @@ func main() {
 	if err != nil {
 		s.Logger().Error("failed to create netbox diode plugin client", "error", err)
 	}
+
 	ops := reconciler.NewOps(repository, nbClient, s.Logger())
-	ingestionProcessor, err := reconciler.NewIngestionProcessor(ctx, s.Logger(), ops)
+	ingestionMeter := otel.GetMeterProvider().Meter(ingestionProcessorName)
+	ingestionMetrics, err := reconciler.NewOtelIngestionProcessorMetrics(ingestionMeter, ingestionProcessorName)
+	if err != nil {
+		s.Logger().Error("failed to create ingestion processor metrics", "error", err)
+		os.Exit(1)
+	}
+	ingestionProcessor, err := reconciler.NewIngestionProcessor(ctx, s.Logger(), ops, ingestionMetrics)
 	if err != nil {
 		s.Logger().Error("failed to instantiate ingestion processor", "error", err)
 		os.Exit(1)
@@ -73,7 +118,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	// TODO: instantiate prometheus server
+	telemetry.ServePrometheusMetricsIfNecessary(cfg.Telemetry, s.Logger())
 
 	if err := s.Run(); err != nil {
 		s.Logger().Error("server failure", "serverName", s.Name(), "error", err)

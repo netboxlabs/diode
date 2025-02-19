@@ -9,6 +9,7 @@ import (
 
 	"github.com/kelseyhightower/envconfig"
 	"github.com/redis/go-redis/v9"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -62,7 +63,10 @@ func NewServer(ctx context.Context, logger *slog.Logger, repository Repository) 
 	apiKeys := loadAPIKeys(cfg)
 
 	auth := newAuthUnaryInterceptor(logger, apiKeys)
-	grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(auth))
+	grpcServer := grpc.NewServer(
+		grpc.ChainUnaryInterceptor(auth),
+		grpc.StatsHandler(otelgrpc.NewServerHandler()),
+	)
 
 	component := &Server{
 		config:       cfg,

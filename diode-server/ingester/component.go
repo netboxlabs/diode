@@ -10,8 +10,9 @@ import (
 	"slices"
 	"time"
 
-	"github.com/kelseyhightower/envconfig"
 	"github.com/redis/go-redis/v9"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
@@ -19,6 +20,7 @@ import (
 
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/sentry"
+	"github.com/netboxlabs/diode/diode-server/telemetry"
 )
 
 const (
@@ -43,13 +45,11 @@ type Component struct {
 	grpcListener      net.Listener
 	grpcServer        *grpc.Server
 	redisStreamClient *redis.Client
+	metrics           *Metrics
 }
 
 // New creates a new ingester component
-func New(ctx context.Context, logger *slog.Logger) (*Component, error) {
-	var cfg Config
-	envconfig.MustProcess("", &cfg)
-
+func New(ctx context.Context, logger *slog.Logger, cfg Config, meter metric.Meter) (*Component, error) {
 	grpcListener, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.GRPCPort))
 	if err != nil {
 		return nil, fmt.Errorf("failed to listen on port %d: %v", cfg.GRPCPort, err)
@@ -74,6 +74,11 @@ func New(ctx context.Context, logger *slog.Logger) (*Component, error) {
 	auth := newAuthUnaryInterceptor(apiKeys)
 	grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(auth))
 
+	metrics, err := NewMetrics(meter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create ingester metrics: %v", err)
+	}
+
 	component := &Component{
 		ctx:               ctx,
 		config:            cfg,
@@ -82,6 +87,7 @@ func New(ctx context.Context, logger *slog.Logger) (*Component, error) {
 		grpcListener:      grpcListener,
 		grpcServer:        grpcServer,
 		redisStreamClient: redisStreamClient,
+		metrics:           metrics,
 	}
 
 	diodepb.RegisterIngesterServiceServer(grpcServer, component)
@@ -123,7 +129,20 @@ func (c *Component) Stop() error {
 
 // Ingest handles the ingest request
 func (c *Component) Ingest(ctx context.Context, in *diodepb.IngestRequest) (*diodepb.IngestResponse, error) {
+	// Create attributes for metrics
+	attrs := []attribute.KeyValue{
+		attribute.String(telemetry.AttributeSDKName, in.SdkName),
+		attribute.String(telemetry.AttributeSDKVersion, in.SdkVersion),
+		attribute.String(telemetry.AttributeHostname, c.hostname),
+		attribute.String(telemetry.AttributeProducerAppName, in.ProducerAppName),
+		attribute.String(telemetry.AttributeProducerAppVersion, in.ProducerAppVersion),
+		attribute.String(telemetry.AttributeStream, in.Stream),
+	}
+	ctx = telemetry.ContextWithMetricAttributes(ctx, attrs...)
+
 	if err := validateRequest(in); err != nil {
+		c.metrics.RecordIngestRequest(ctx, false)
+
 		tags := map[string]string{
 			"hostname":    c.hostname,
 			"sdk_name":    in.SdkName,
@@ -145,6 +164,7 @@ func (c *Component) Ingest(ctx context.Context, in *diodepb.IngestRequest) (*dio
 
 	encodedRequest, err := proto.Marshal(in)
 	if err != nil {
+		c.metrics.RecordIngestRequest(ctx, false)
 		c.logger.Error("failed to marshal request", "error", err, "request", in)
 	}
 
@@ -164,7 +184,11 @@ func (c *Component) Ingest(ctx context.Context, in *diodepb.IngestRequest) (*dio
 		Stream: streamID,
 		Values: msg,
 	}).Err(); err != nil {
+		c.metrics.RecordIngestRequest(ctx, false)
 		c.logger.Error("failed to add element to the stream", "error", err, "streamID", streamID, "value", msg)
+	} else {
+		c.metrics.RecordIngestRequest(ctx, true)
+		c.metrics.RecordIngestEntities(ctx, int64(len(in.GetEntities())))
 	}
 
 	return &diodepb.IngestResponse{Errors: errs}, nil

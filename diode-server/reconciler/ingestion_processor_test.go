@@ -38,7 +38,8 @@ func TestNewIngestionProcessor(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
 	nbClient, err := netboxdiodeplugin.NewClient(logger, cfg.DiodeToNetBoxAPIKey)
 	require.NoError(t, err)
-	processor, err := reconciler.NewIngestionProcessor(ctx, logger, reconciler.NewOps(mockRepository, nbClient, logger))
+	metrics := mocks.NewIngestionProcessorMetrics(t)
+	processor, err := reconciler.NewIngestionProcessor(ctx, logger, reconciler.NewOps(mockRepository, nbClient, logger), metrics)
 	require.NoError(t, err)
 	require.NotNil(t, processor)
 
@@ -63,7 +64,13 @@ func TestIngestionProcessorStart(t *testing.T) {
 
 	nbClient, err := netboxdiodeplugin.NewClient(logger, cfg.DiodeToNetBoxAPIKey)
 	require.NoError(t, err)
-	processor, err := reconciler.NewIngestionProcessor(ctx, logger, reconciler.NewOps(mockRepository, nbClient, logger))
+	mockMetrics := new(mocks.IngestionProcessorMetrics)
+	mockMetrics.On("RecordHandleMessage", mock.Anything, mock.Anything).Return()
+	mockMetrics.On("RecordIngestionLogCreate", mock.Anything, mock.Anything).Return()
+	mockMetrics.On("RecordChangeSetCreate", mock.Anything, mock.Anything, mock.Anything).Return()
+	mockMetrics.On("RecordChangeSetApply", mock.Anything, mock.Anything, mock.Anything).Return()
+
+	processor, err := reconciler.NewIngestionProcessor(ctx, logger, reconciler.NewOps(mockRepository, nbClient, logger), mockMetrics)
 	require.NoError(t, err)
 	require.NotNil(t, processor)
 
@@ -233,9 +240,9 @@ func TestIngestionProcessorStart(t *testing.T) {
 	// Wait server
 	time.Sleep(50 * time.Millisecond)
 
-	mockRepository.On("CreateIngestionLog", ctx, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
-	mockRepository.On("UpdateIngestionLogStateWithError", ctx, mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mockRepository.On("CreateChangeSet", ctx, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
+	mockRepository.On("CreateIngestionLog", mock.Anything, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
+	mockRepository.On("UpdateIngestionLogStateWithError", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mockRepository.On("CreateChangeSet", mock.Anything, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
 	redisClient := redis.NewClient(&redis.Options{
 		Addr: s.Addr(),
 		DB:   1,
