@@ -28,19 +28,22 @@ CREATE INDEX IF NOT EXISTS idx_ingestion_logs_state ON ingestion_logs (state);
 CREATE INDEX IF NOT EXISTS idx_ingestion_logs_request_id ON ingestion_logs (request_id);
 
 -- Create trigger function
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
+-- +goose StatementBegin
+CREATE OR REPLACE FUNCTION update_updated_at_column() RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = CURRENT_TIMESTAMP;
     RETURN NEW;
 END;
-$$ language 'plpgsql';
+$$ LANGUAGE plpgsql;
+-- +goose StatementEnd
 
 -- Create trigger
+-- +goose StatementBegin
 CREATE TRIGGER update_ingestion_logs_updated_at
     BEFORE UPDATE ON ingestion_logs
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
+-- +goose StatementEnd
 
 -- +goose Down
 
