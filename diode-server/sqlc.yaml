@@ -17,7 +17,7 @@ sql:
               pointer: true
           - column: changes.before
             go_type:
-              type: any
+              type: json.RawMessage
           - column: changes.after
             go_type:
-              type: any
+              type: json.RawMessage

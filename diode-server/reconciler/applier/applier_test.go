@@ -2,13 +2,13 @@ package applier_test
 
 import (
 	"context"
+	"encoding/json"
 	"log/slog"
 	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/netboxlabs/diode/diode-server/netbox"
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
 	nbClientMock "github.com/netboxlabs/diode/diode-server/netboxdiodeplugin/mocks"
 	"github.com/netboxlabs/diode/diode-server/reconciler/applier"
@@ -27,16 +27,12 @@ func TestApplyChangeSet(t *testing.T) {
 				ChangeID:   "00000000-0000-0000-0000-000000000001",
 				ChangeType: "create",
 				ObjectType: "dcim.site",
-				After: &netbox.DcimSite{
-					Name:   "Site A",
-					Slug:   "site-a",
-					Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-				},
+				After:      json.RawMessage(`{"name": "Site A", "slug": "site-a", "status": "active"}`),
 			},
 		},
 	}
 
-	req := netboxdiodeplugin.ChangeSetRequest{
+	req := netboxdiodeplugin.ApplyChangeSetRequest{
 		ChangeSetID: "00000000-0000-0000-0000-000000000000",
 		ChangeSet: []netboxdiodeplugin.Change{
 			{
@@ -45,16 +41,12 @@ func TestApplyChangeSet(t *testing.T) {
 				ObjectType:    "dcim.site",
 				ObjectID:      nil,
 				ObjectVersion: nil,
-				Data: &netbox.DcimSite{
-					Name:   "Site A",
-					Slug:   "site-a",
-					Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-				},
+				Data:          json.RawMessage(`{"name": "Site A", "slug": "site-a", "status": "active"}`),
 			},
 		},
 	}
 
-	resp := &netboxdiodeplugin.ChangeSetResponse{
+	resp := &netboxdiodeplugin.ApplyChangeSetResponse{
 		ChangeSetID: "00000000-0000-0000-0000-000000000000",
 		Result:      "success",
 	}
@@ -65,5 +57,3 @@ func TestApplyChangeSet(t *testing.T) {
 	assert.NoError(t, err)
 	mockNetBoxAPI.AssertExpectations(t)
 }
-
-func strPtr(s string) *string { return &s }
