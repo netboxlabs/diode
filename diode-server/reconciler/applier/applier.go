@@ -22,7 +22,7 @@ func ApplyChangeSet(ctx context.Context, logger *slog.Logger, cs changeset.Chang
 		})
 	}
 
-	req := netboxdiodeplugin.ChangeSetRequest{
+	req := netboxdiodeplugin.ApplyChangeSetRequest{
 		ChangeSetID: cs.ChangeSetID,
 		ChangeSet:   changes,
 	}

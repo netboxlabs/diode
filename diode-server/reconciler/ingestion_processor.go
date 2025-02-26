@@ -164,7 +164,8 @@ func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, stream,
 			continue
 		}
 		for _, msg := range streams[0].Messages {
-			if err := p.handleStreamMessage(ctx, msg); err != nil {
+			_, err := p.handleStreamMessage(ctx, msg)
+			if err != nil {
 				p.logger.Error("failed to handle stream message", "error", err, "message", msg)
 
 				contextMap := map[string]any{
@@ -180,7 +181,10 @@ func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, stream,
 	}
 }
 
-func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.XMessage) error {
+func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.XMessage) (chan struct{}, error) {
+	doneChan := make(chan struct{})
+	defer close(doneChan)
+
 	// Create attributes for metrics
 	attrs := []attribute.KeyValue{
 		attribute.String(telemetry.AttributeHostname, p.hostname),
@@ -190,7 +194,7 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 	ingestReq := &diodepb.IngestRequest{}
 	if err := proto.Unmarshal([]byte(msg.Values["request"].(string)), ingestReq); err != nil {
 		p.metrics.RecordHandleMessage(ctx, false)
-		return err
+		return doneChan, err
 	}
 
 	// Add request-specific attributes
@@ -227,7 +231,17 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 
 	if p.Config.AutoApplyChangesets {
 		p.ApplyChangeSet(ctx, applyChangeSetChan, applyChangeSetDoneChan)
+	} else {
+		close(applyChangeSetDoneChan)
 	}
+
+	allDone := make(chan struct{})
+	go func() {
+		<-doneChan
+		<-generateIngestionLogDoneChan
+		<-applyChangeSetDoneChan
+		close(allDone)
+	}()
 
 	createIngestionLogsErrs := p.CreateIngestionLogs(ctx, ingestReq, ingestionTs, generateIngestionLogChan)
 	if len(createIngestionLogsErrs) > 0 {
@@ -255,7 +269,7 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 		p.metrics.RecordHandleMessage(ctx, true)
 	}
 
-	return nil
+	return allDone, nil
 }
 
 // GenerateChangeSet generates a change set for an ingestion log
@@ -357,7 +371,7 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 			continue
 		}
 
-		objectType, err := extractObjectType(v)
+		objectType, err := netbox.GetObjectType(v)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("failed to extract object type for index %d: %v", i, err))
 			continue
@@ -412,41 +426,4 @@ func extractIngestionError(err error) *reconcilerpb.IngestionError {
 	}
 
 	return ingestionErr
-}
-
-func extractObjectType(in *diodepb.Entity) (string, error) {
-	switch in.GetEntity().(type) {
-	case *diodepb.Entity_Device:
-		return netbox.DcimDeviceObjectType, nil
-	case *diodepb.Entity_DeviceRole:
-		return netbox.DcimDeviceRoleObjectType, nil
-	case *diodepb.Entity_DeviceType:
-		return netbox.DcimDeviceTypeObjectType, nil
-	case *diodepb.Entity_Interface:
-		return netbox.DcimInterfaceObjectType, nil
-	case *diodepb.Entity_Manufacturer:
-		return netbox.DcimManufacturerObjectType, nil
-	case *diodepb.Entity_Platform:
-		return netbox.DcimPlatformObjectType, nil
-	case *diodepb.Entity_Site:
-		return netbox.DcimSiteObjectType, nil
-	case *diodepb.Entity_IpAddress:
-		return netbox.IpamIPAddressObjectType, nil
-	case *diodepb.Entity_Prefix:
-		return netbox.IpamPrefixObjectType, nil
-	case *diodepb.Entity_ClusterGroup:
-		return netbox.VirtualizationClusterGroupObjectType, nil
-	case *diodepb.Entity_ClusterType:
-		return netbox.VirtualizationClusterTypeObjectType, nil
-	case *diodepb.Entity_Cluster:
-		return netbox.VirtualizationClusterObjectType, nil
-	case *diodepb.Entity_VirtualMachine:
-		return netbox.VirtualizationVirtualMachineObjectType, nil
-	case *diodepb.Entity_Vminterface:
-		return netbox.VirtualizationVMInterfaceObjectType, nil
-	case *diodepb.Entity_VirtualDisk:
-		return netbox.VirtualizationVirtualDiskObjectType, nil
-	default:
-		return "", fmt.Errorf("unknown object type")
-	}
 }

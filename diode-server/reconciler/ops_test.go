@@ -21,14 +21,10 @@ import (
 )
 
 func TestProOpsGenerateChangeSet(t *testing.T) {
-	type mockRetrieveObjectState struct {
-		objectType     string
-		objectID       int
-		branchID       string
-		queryParams    map[string]string
-		objectChangeID int
-		object         netbox.ComparableData
-		err            error
+	type mockGenerateDiff struct {
+		changeSet []netboxdiodeplugin.Change
+		branchID  string
+		err       error
 	}
 
 	type mockCreateChangeSet struct {
@@ -50,7 +46,7 @@ func TestProOpsGenerateChangeSet(t *testing.T) {
 		log      *pb.IngestionLog
 		branchID string
 
-		retrieveObjectStates              []mockRetrieveObjectState
+		generateDiff                      []mockGenerateDiff
 		createChangeSets                  []mockCreateChangeSet
 		updateIngestionLogStateWithErrors []mockUpdateIngestionLogStateWithError
 
@@ -73,12 +69,9 @@ func TestProOpsGenerateChangeSet(t *testing.T) {
 					},
 				},
 			},
-			retrieveObjectStates: []mockRetrieveObjectState{
+			generateDiff: []mockGenerateDiff{
 				{
-					objectType:  "dcim.site",
-					objectID:    0,
-					queryParams: map[string]string{"q": "test-site-1"},
-					err:         fmt.Errorf("Client.Timeout exceeded while awaiting headers"),
+					err: fmt.Errorf("Client.Timeout exceeded while awaiting headers"),
 				},
 			},
 			updateIngestionLogStateWithErrors: []mockUpdateIngestionLogStateWithError{
@@ -114,13 +107,9 @@ func TestProOpsGenerateChangeSet(t *testing.T) {
 					},
 				},
 			},
-			retrieveObjectStates: []mockRetrieveObjectState{
+			generateDiff: []mockGenerateDiff{
 				{
-					objectType:  "dcim.site",
-					objectID:    0,
-					branchID:    "branch-1",
-					queryParams: map[string]string{"q": "test-site-1"},
-					err:         fmt.Errorf("Client.Timeout exceeded while awaiting headers"),
+					err: fmt.Errorf("Client.Timeout exceeded while awaiting headers"),
 				},
 			},
 			updateIngestionLogStateWithErrors: []mockUpdateIngestionLogStateWithError{
@@ -150,26 +139,14 @@ func TestProOpsGenerateChangeSet(t *testing.T) {
 			mockNetBoxClient := pluginmocks.NewNetBoxAPI(t)
 			ops := reconciler.NewOps(mockRepository, mockNetBoxClient, logger)
 
-			for _, m := range tt.retrieveObjectStates {
+			for _, m := range tt.generateDiff {
 				if m.err == nil {
-					mockNetBoxClient.EXPECT().RetrieveObjectState(ctx, netboxdiodeplugin.RetrieveObjectStateQueryParams{
-						ObjectType: m.objectType,
-						ObjectID:   m.objectID,
-						BranchID:   m.branchID,
-						Params:     m.queryParams,
-					}).Return(&netboxdiodeplugin.ObjectState{
-						ObjectID:       m.objectID,
-						ObjectType:     m.objectType,
-						ObjectChangeID: m.objectChangeID,
-						Object:         m.object,
+					mockNetBoxClient.EXPECT().GenerateDiff(ctx, mock.Anything).Return(&netboxdiodeplugin.GenerateDiffResponse{
+						ChangeSet: m.changeSet,
+						BranchID:  m.branchID,
 					}, nil)
 				} else {
-					mockNetBoxClient.EXPECT().RetrieveObjectState(ctx, netboxdiodeplugin.RetrieveObjectStateQueryParams{
-						ObjectType: m.objectType,
-						ObjectID:   m.objectID,
-						BranchID:   m.branchID,
-						Params:     m.queryParams,
-					}).Return(nil, m.err)
+					mockNetBoxClient.EXPECT().GenerateDiff(ctx, mock.Anything).Return(nil, m.err)
 				}
 			}
 			for _, m := range tt.createChangeSets {
