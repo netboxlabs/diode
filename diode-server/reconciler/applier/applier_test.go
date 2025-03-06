@@ -30,6 +30,7 @@ func TestApplyChangeSet(t *testing.T) {
 				After:      json.RawMessage(`{"name": "Site A", "slug": "site-a", "status": "active"}`),
 			},
 		},
+		BranchID: func() *string { s := "branch_name (123)"; return &s }(),
 	}
 
 	req := netboxdiodeplugin.ApplyChangeSetRequest{
@@ -44,6 +45,7 @@ func TestApplyChangeSet(t *testing.T) {
 				Data:          json.RawMessage(`{"name": "Site A", "slug": "site-a", "status": "active"}`),
 			},
 		},
+		BranchID: "123",
 	}
 
 	resp := &netboxdiodeplugin.ApplyChangeSetResponse{
