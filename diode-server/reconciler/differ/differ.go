@@ -49,9 +49,10 @@ func Diff(ctx context.Context, entity IngestEntity, branchID string, netboxAPI n
 	}
 
 	deviationName := genDeviationName(changes)
-	cs := &changeset.ChangeSet{ChangeSetID: uuid.NewString(), ChangeSet: changes, DeviationName: deviationName}
-	if res.BranchID != "" {
-		cs.BranchID = &res.BranchID
+	cs := &changeset.ChangeSet{ChangeSetID: res.ID, ChangeSet: changes, DeviationName: deviationName}
+	if res.Branch != nil {
+		branchID := fmt.Sprintf("%s (%s)", res.Branch.Name, res.Branch.ID)
+		cs.BranchID = &branchID
 	}
 	return cs, nil
 }
