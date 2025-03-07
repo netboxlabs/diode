@@ -232,7 +232,10 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 	if p.Config.AutoApplyChangesets {
 		p.ApplyChangeSet(ctx, applyChangeSetChan, applyChangeSetDoneChan)
 	} else {
-		close(applyChangeSetDoneChan)
+		// Only close the channel if it's not nil to avoid panic
+		if applyChangeSetDoneChan != nil {
+			close(applyChangeSetDoneChan)
+		}
 	}
 
 	allDone := make(chan struct{})
