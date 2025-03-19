@@ -4,6 +4,10 @@
 // - protoc             (unknown)
 // source: diode/v1/ingester.proto
 
+// Generated Code. DO NOT EDIT.
+// Source: NetBox Community v4.2.3
+// Timestamp: 2025-03-19 19:24:08Z
+
 package diodepb
 
 import (
