@@ -143,7 +143,9 @@ func TestProOpsGenerateChangeSet(t *testing.T) {
 				if m.err == nil {
 					mockNetBoxClient.EXPECT().GenerateDiff(ctx, mock.Anything).Return(&netboxdiodeplugin.GenerateDiffResponse{
 						ChangeSet: m.changeSet,
-						BranchID:  m.branchID,
+						Branch: &netboxdiodeplugin.Branch{
+							ID: m.branchID,
+						},
 					}, nil)
 				} else {
 					mockNetBoxClient.EXPECT().GenerateDiff(ctx, mock.Anything).Return(nil, m.err)

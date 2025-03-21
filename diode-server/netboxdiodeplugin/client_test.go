@@ -175,7 +175,7 @@ func TestGenerateDiff(t *testing.T) {
 				Entity: &diodepb.Entity{
 					Entity: &diodepb.Entity_Device{
 						Device: &diodepb.Device{
-							Name: "test",
+							Name: strPtr("test"),
 							Site: &diodepb.Site{
 								Name: "test-site",
 							},
@@ -425,4 +425,8 @@ func cleanUpEnvVars() {
 
 func ptrInt(i int) *int {
 	return &i
+}
+
+func strPtr(s string) *string {
+	return &s
 }

@@ -110,7 +110,7 @@ func TestIngestionProcessorStart(t *testing.T) {
 			},
 			{
 				Entity: &diodepb.Entity_DeviceRole{
-					DeviceRole: &diodepb.Role{
+					DeviceRole: &diodepb.DeviceRole{
 						Name: "test-device-role",
 					},
 				},
@@ -125,7 +125,7 @@ func TestIngestionProcessorStart(t *testing.T) {
 			{
 				Entity: &diodepb.Entity_Device{
 					Device: &diodepb.Device{
-						Name: "test-device-name",
+						Name: strPtr("test-device-name"),
 						Site: &diodepb.Site{
 							Name: "test-site-name",
 						},
@@ -149,7 +149,7 @@ func TestIngestionProcessorStart(t *testing.T) {
 					Interface: &diodepb.Interface{
 						Name: "test-interface",
 						Device: &diodepb.Device{
-							Name: "test-device-name",
+							Name: strPtr("test-device-name"),
 							Site: &diodepb.Site{
 								Name: "test-site-name",
 							},
@@ -161,11 +161,11 @@ func TestIngestionProcessorStart(t *testing.T) {
 				Entity: &diodepb.Entity_IpAddress{
 					IpAddress: &diodepb.IPAddress{
 						Address: "192.168.0.1/32",
-						AssignedObject: &diodepb.IPAddress_Interface{
-							Interface: &diodepb.Interface{
+						AssignedObject: &diodepb.IPAddress_AssignedObjectInterface{
+							AssignedObjectInterface: &diodepb.Interface{
 								Name: "test-interface",
 								Device: &diodepb.Device{
-									Name: "test-device-name",
+									Name: strPtr("test-device-name"),
 									Site: &diodepb.Site{
 										Name: "test-site-name",
 									},
@@ -179,8 +179,10 @@ func TestIngestionProcessorStart(t *testing.T) {
 				Entity: &diodepb.Entity_Prefix{
 					Prefix: &diodepb.Prefix{
 						Prefix: "192.168.0.0/32",
-						Site: &diodepb.Site{
-							Name: "test-site-name",
+						Scope: &diodepb.Prefix_ScopeSite{
+							ScopeSite: &diodepb.Site{
+								Name: "test-site-name",
+							},
 						},
 					},
 				},
@@ -214,8 +216,8 @@ func TestIngestionProcessorStart(t *testing.T) {
 				},
 			},
 			{
-				Entity: &diodepb.Entity_Vminterface{
-					Vminterface: &diodepb.VMInterface{
+				Entity: &diodepb.Entity_VmInterface{
+					VmInterface: &diodepb.VMInterface{
 						Name: "test-vm-interface",
 					},
 				},
