@@ -36,7 +36,7 @@ func GetObjectType(entity *diodepb.Entity) (string, error) {
 		return VirtualizationClusterObjectType, nil
 	case *diodepb.Entity_VirtualMachine:
 		return VirtualizationVirtualMachineObjectType, nil
-	case *diodepb.Entity_Vminterface:
+	case *diodepb.Entity_VmInterface:
 		return VirtualizationVMInterfaceObjectType, nil
 	case *diodepb.Entity_VirtualDisk:
 		return VirtualizationVirtualDiskObjectType, nil
@@ -85,7 +85,10 @@ func GetObjectTypeName(objectType string) (string, error) {
 func GetPrimaryValue(entity *diodepb.Entity) (string, error) {
 	switch e := entity.GetEntity().(type) {
 	case *diodepb.Entity_Device:
-		return e.Device.Name, nil
+		if e.Device.Name != nil {
+			return *e.Device.Name, nil
+		}
+		return "Unnamed Device", nil
 	case *diodepb.Entity_DeviceRole:
 		return e.DeviceRole.Name, nil
 	case *diodepb.Entity_DeviceType:
@@ -110,8 +113,8 @@ func GetPrimaryValue(entity *diodepb.Entity) (string, error) {
 		return e.Cluster.Name, nil
 	case *diodepb.Entity_VirtualMachine:
 		return e.VirtualMachine.Name, nil
-	case *diodepb.Entity_Vminterface:
-		return e.Vminterface.Name, nil
+	case *diodepb.Entity_VmInterface:
+		return e.VmInterface.Name, nil
 	case *diodepb.Entity_VirtualDisk:
 		return e.VirtualDisk.Name, nil
 	default:
