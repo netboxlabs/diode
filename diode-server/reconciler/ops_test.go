@@ -12,7 +12,7 @@ import (
 
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	pb "github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
-	"github.com/netboxlabs/diode/diode-server/netbox"
+	"github.com/netboxlabs/diode/diode-server/gen/netbox"
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
 	pluginmocks "github.com/netboxlabs/diode/diode-server/netboxdiodeplugin/mocks"
 	"github.com/netboxlabs/diode/diode-server/reconciler"
@@ -58,7 +58,7 @@ func TestProOpsGenerateChangeSet(t *testing.T) {
 			logDBID: 1234,
 			log: &pb.IngestionLog{
 				Id:         "8a8ae517-85b9-466e-890c-aadb0771cc9e",
-				ObjectType: netbox.DcimSiteObjectType,
+				ObjectType: netbox.SiteObjectType,
 				State:      pb.State_QUEUED,
 				RequestId:  "1abf059c-496f-4037-83c2-0e9b1d021e85",
 				Entity: &diodepb.Entity{
@@ -96,7 +96,7 @@ func TestProOpsGenerateChangeSet(t *testing.T) {
 			logDBID:  1234,
 			log: &pb.IngestionLog{
 				Id:         "8a8ae517-85b9-466e-890c-aadb0771cc9e",
-				ObjectType: netbox.DcimSiteObjectType,
+				ObjectType: netbox.SiteObjectType,
 				State:      pb.State_QUEUED,
 				RequestId:  "1abf059c-496f-4037-83c2-0e9b1d021e85",
 				Entity: &diodepb.Entity{
