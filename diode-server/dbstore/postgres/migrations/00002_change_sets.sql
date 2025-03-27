@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS changes
     object_version       INTEGER,
     before               JSONB,
     after                JSONB,
-    refs                 TEXT[],
+    new_refs             TEXT[],
     sequence_number      INTEGER,
     created_at           TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at           TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP

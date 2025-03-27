@@ -15,10 +15,10 @@ import (
 const createChange = `-- name: CreateChange :one
 
 INSERT INTO changes (external_id, change_set_id, change_type, object_type, object_primary_value, object_id,
-                     ref_id, object_version, before, after, refs,
+                     ref_id, object_version, before, after, new_refs,
                      sequence_number)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-RETURNING id, external_id, change_set_id, change_type, object_type, object_primary_value, object_id, ref_id, object_version, before, after, refs, sequence_number, created_at, updated_at
+RETURNING id, external_id, change_set_id, change_type, object_type, object_primary_value, object_id, ref_id, object_version, before, after, new_refs, sequence_number, created_at, updated_at
 `
 
 type CreateChangeParams struct {
@@ -32,7 +32,7 @@ type CreateChangeParams struct {
 	ObjectVersion      pgtype.Int4     `json:"object_version"`
 	Before             json.RawMessage `json:"before"`
 	After              json.RawMessage `json:"after"`
-	Refs               []string        `json:"refs"`
+	NewRefs            []string        `json:"new_refs"`
 	SequenceNumber     pgtype.Int4     `json:"sequence_number"`
 }
 
@@ -48,7 +48,7 @@ func (q *Queries) CreateChange(ctx context.Context, arg CreateChangeParams) (Cha
 		arg.ObjectVersion,
 		arg.Before,
 		arg.After,
-		arg.Refs,
+		arg.NewRefs,
 		arg.SequenceNumber,
 	)
 	var i Change
@@ -64,7 +64,7 @@ func (q *Queries) CreateChange(ctx context.Context, arg CreateChangeParams) (Cha
 		&i.ObjectVersion,
 		&i.Before,
 		&i.After,
-		&i.Refs,
+		&i.NewRefs,
 		&i.SequenceNumber,
 		&i.CreatedAt,
 		&i.UpdatedAt,

@@ -42,9 +42,11 @@ func Diff(ctx context.Context, entity IngestEntity, branchID string, netboxAPI n
 			ObjectType:         change.ObjectType,
 			ObjectID:           change.ObjectID,
 			ObjectVersion:      change.ObjectVersion,
+			RefID:              change.RefID,
 			ObjectPrimaryValue: change.ObjectPrimaryValue,
 			After:              change.Data,
 			Before:             change.Before,
+			NewRefs:            change.NewRefs,
 		})
 	}
 

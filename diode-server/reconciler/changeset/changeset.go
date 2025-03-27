@@ -38,7 +38,7 @@ type Change struct {
 	ObjectVersion      *int            `json:"object_version,omitempty"`
 	Before             json.RawMessage `json:"before"`
 	After              json.RawMessage `json:"after"`
-	Refs               []string        `json:"refs,omitempty"`
+	NewRefs            []string        `json:"new_refs,omitempty"`
 }
 
 // CompressChangeSet compresses a change set
