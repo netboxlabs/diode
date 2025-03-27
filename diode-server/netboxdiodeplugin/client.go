@@ -326,8 +326,6 @@ func (c *Client) GenerateDiff(ctx context.Context, payload GenerateDiffRequest) 
 		return nil, fmt.Errorf("failed to read response body %w", err)
 	}
 
-	c.logger.Debug("generate diff", "response", string(respBytes))
-
 	var generateDiffResponse GenerateDiffResponse
 	if err = json.Unmarshal(respBytes, &generateDiffResponse); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal response body %w", err)
@@ -350,7 +348,7 @@ type Change struct {
 	ChangeType         string          `json:"change_type"`
 	ObjectType         string          `json:"object_type"`
 	ObjectID           *int            `json:"object_id,omitempty"`
-	RefID              *int            `json:"ref_id,omitempty"`
+	RefID              *string         `json:"ref_id,omitempty"`
 	ObjectVersion      *int            `json:"object_version,omitempty"`
 	Data               json.RawMessage `json:"data"`
 	Before             json.RawMessage `json:"before,omitempty"`
