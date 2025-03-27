@@ -173,7 +173,7 @@ func (r *Repository) RetrieveIngestionLogs(ctx context.Context, filter *reconcil
 					ObjectType: dbChange.ObjectType,
 					Before:     dbChange.Before,
 					After:      dbChange.After,
-					Refs:       dbChange.Refs,
+					NewRefs:    dbChange.NewRefs,
 				}
 
 				objID := int(dbChange.ObjectID.Int32)
@@ -283,7 +283,7 @@ func (r *Repository) CreateChangeSet(ctx context.Context, changeSet changeset.Ch
 			ObjectPrimaryValue: change.ObjectPrimaryValue,
 			Before:             beforeJSON,
 			After:              afterJSON,
-			Refs:               change.Refs,
+			NewRefs:            change.NewRefs,
 			SequenceNumber:     pgtype.Int4{Int32: int32(i), Valid: true},
 		}
 		if change.ObjectID != nil {

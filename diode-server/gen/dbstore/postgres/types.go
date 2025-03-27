@@ -22,7 +22,7 @@ type Change struct {
 	ObjectVersion      pgtype.Int4        `json:"object_version"`
 	Before             json.RawMessage    `json:"before"`
 	After              json.RawMessage    `json:"after"`
-	Refs               []string           `json:"refs"`
+	NewRefs            []string           `json:"new_refs"`
 	SequenceNumber     pgtype.Int4        `json:"sequence_number"`
 	CreatedAt          pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
