@@ -16,9 +16,9 @@ var branchIDRegex = regexp.MustCompile(`^.*\((.*)\)$`)
 // ApplyChangeSet applies a change set to NetBox
 func ApplyChangeSet(ctx context.Context, logger *slog.Logger, cs changeset.ChangeSet, nbClient netboxdiodeplugin.NetBoxAPI) error {
 	changes := make([]netboxdiodeplugin.Change, 0)
-	for _, change := range cs.ChangeSet {
+	for _, change := range cs.Changes {
 		changes = append(changes, netboxdiodeplugin.Change{
-			ChangeID:      change.ChangeID,
+			ID:            change.ID,
 			ChangeType:    change.ChangeType,
 			ObjectType:    change.ObjectType,
 			ObjectID:      change.ObjectID,
@@ -28,8 +28,8 @@ func ApplyChangeSet(ctx context.Context, logger *slog.Logger, cs changeset.Chang
 	}
 
 	req := netboxdiodeplugin.ApplyChangeSetRequest{
-		ChangeSetID: cs.ChangeSetID,
-		ChangeSet:   changes,
+		ID:      cs.ID,
+		Changes: changes,
 	}
 	if cs.BranchID != nil {
 		branchIDStr := *cs.BranchID

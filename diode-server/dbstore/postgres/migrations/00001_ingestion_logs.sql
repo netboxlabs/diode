@@ -50,4 +50,3 @@ CREATE TRIGGER update_ingestion_logs_updated_at
 -- Drop the ingestion_logs table
 DROP TABLE ingestion_logs;
 DROP FUNCTION IF EXISTS update_updated_at_column();
-

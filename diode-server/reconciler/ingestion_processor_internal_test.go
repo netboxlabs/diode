@@ -108,12 +108,12 @@ func TestHandleStreamMessage(t *testing.T) {
 				},
 			},
 			mockChangeSet: &changeset.ChangeSet{
-				ChangeSetID: "cs123",
-				ChangeSet:   []changeset.Change{},
+				ID:      "cs123",
+				Changes: []changeset.Change{},
 			},
 			changeSetResponse: &netboxdiodeplugin.ApplyChangeSetResponse{
-				ChangeSetID: "cs123",
-				Result:      "changed",
+				ID:     "cs123",
+				Result: "changed",
 			},
 			reconcilerError: false,
 			expectedError:   false,
@@ -131,12 +131,12 @@ func TestHandleStreamMessage(t *testing.T) {
 				},
 			},
 			mockChangeSet: &changeset.ChangeSet{
-				ChangeSetID: "cs123",
-				ChangeSet:   []changeset.Change{},
+				ID:      "cs123",
+				Changes: []changeset.Change{},
 			},
 			changeSetResponse: &netboxdiodeplugin.ApplyChangeSetResponse{
-				ChangeSetID: "cs123",
-				Result:      "changed",
+				ID:     "cs123",
+				Result: "changed",
 			},
 			changeSetError:  errors.New("apply error"),
 			reconcilerError: false,
@@ -195,9 +195,9 @@ func TestHandleStreamMessage(t *testing.T) {
 				mockNbClient.On("GenerateDiff", mock.Anything, mock.Anything).Return(nil, errors.New("prepare error"))
 			} else {
 				mockNbClient.On("GenerateDiff", mock.Anything, mock.Anything).Return(&netboxdiodeplugin.GenerateDiffResponse{
-					ChangeSet: []netboxdiodeplugin.Change{
+					Changes: []netboxdiodeplugin.Change{
 						{
-							ChangeID:   "00000000-0000-0000-0000-000000000000",
+							ID:         "00000000-0000-0000-0000-000000000000",
 							ChangeType: "create",
 							ObjectType: "dcim.site",
 							Data:       json.RawMessage(`{"name": "Site A"}`),
@@ -317,10 +317,10 @@ func TestConsumeIngestionStream(t *testing.T) {
 
 func TestCompressChangeSet(t *testing.T) {
 	cs := changeset.ChangeSet{
-		ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
-		ChangeSet: []changeset.Change{
+		ID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+		Changes: []changeset.Change{
 			{
-				ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b6",
+				ID:            "5663a77e-9bad-4981-afe9-77d8a9f2b8b6",
 				ChangeType:    changeset.ChangeTypeCreate,
 				ObjectType:    "extras.tag",
 				ObjectID:      nil,
@@ -328,7 +328,7 @@ func TestCompressChangeSet(t *testing.T) {
 				After:         json.RawMessage(`{"name": "tag 2", "slug": "tag-2"}`),
 			},
 			{
-				ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ID:            "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
 				ChangeType:    changeset.ChangeTypeUpdate,
 				ObjectType:    "dcim.site",
 				ObjectVersion: nil,
@@ -386,9 +386,9 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 				State:       reconcilerpb.State_QUEUED,
 			},
 			mockGenerateDiffResponse: &netboxdiodeplugin.GenerateDiffResponse{
-				ChangeSet: []netboxdiodeplugin.Change{
+				Changes: []netboxdiodeplugin.Change{
 					{
-						ChangeID:   "00000000-0000-0000-0000-000000000000",
+						ID:         "00000000-0000-0000-0000-000000000000",
 						ChangeType: "create",
 						ObjectType: "dcim.site",
 						Data:       json.RawMessage(`{"name": "Site A"}`),
@@ -396,8 +396,8 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 				},
 			},
 			mockApplyChangeSetResponse: &netboxdiodeplugin.ApplyChangeSetResponse{
-				ChangeSetID: "00000000-0000-0000-0000-000000000000",
-				Result:      "success",
+				ID:     "00000000-0000-0000-0000-000000000000",
+				Result: "success",
 			},
 			autoApplyChangesets: true,
 			expectedStatus:      reconcilerpb.State_APPLIED,
@@ -425,9 +425,9 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 				State:       reconcilerpb.State_OPEN,
 			},
 			mockGenerateDiffResponse: &netboxdiodeplugin.GenerateDiffResponse{
-				ChangeSet: []netboxdiodeplugin.Change{
+				Changes: []netboxdiodeplugin.Change{
 					{
-						ChangeID:   "00000000-0000-0000-0000-000000000000",
+						ID:         "00000000-0000-0000-0000-000000000000",
 						ChangeType: "create",
 						ObjectType: "dcim.site",
 						Data:       json.RawMessage(`{"name": "Site A"}`),
@@ -460,7 +460,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 				State:       reconcilerpb.State_QUEUED,
 			},
 			mockGenerateDiffResponse: &netboxdiodeplugin.GenerateDiffResponse{
-				ChangeSet: []netboxdiodeplugin.Change{},
+				Changes: []netboxdiodeplugin.Change{},
 			},
 			autoApplyChangesets: false,
 			expectedStatus:      reconcilerpb.State_NO_CHANGES,

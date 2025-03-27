@@ -18,9 +18,11 @@ type Change struct {
 	ObjectType         string             `json:"object_type"`
 	ObjectPrimaryValue string             `json:"object_primary_value"`
 	ObjectID           pgtype.Int4        `json:"object_id"`
+	RefID              pgtype.Text        `json:"ref_id"`
 	ObjectVersion      pgtype.Int4        `json:"object_version"`
 	Before             json.RawMessage    `json:"before"`
 	After              json.RawMessage    `json:"after"`
+	Refs               []string           `json:"refs"`
 	SequenceNumber     pgtype.Int4        `json:"sequence_number"`
 	CreatedAt          pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`

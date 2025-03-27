@@ -21,10 +21,10 @@ func TestApplyChangeSet(t *testing.T) {
 
 	mockNetBoxAPI := new(nbClientMock.NetBoxAPI)
 	cs := changeset.ChangeSet{
-		ChangeSetID: "00000000-0000-0000-0000-000000000000",
-		ChangeSet: []changeset.Change{
+		ID: "00000000-0000-0000-0000-000000000000",
+		Changes: []changeset.Change{
 			{
-				ChangeID:   "00000000-0000-0000-0000-000000000001",
+				ID:         "00000000-0000-0000-0000-000000000001",
 				ChangeType: "create",
 				ObjectType: "dcim.site",
 				After:      json.RawMessage(`{"name": "Site A", "slug": "site-a", "status": "active"}`),
@@ -34,10 +34,10 @@ func TestApplyChangeSet(t *testing.T) {
 	}
 
 	req := netboxdiodeplugin.ApplyChangeSetRequest{
-		ChangeSetID: "00000000-0000-0000-0000-000000000000",
-		ChangeSet: []netboxdiodeplugin.Change{
+		ID: "00000000-0000-0000-0000-000000000000",
+		Changes: []netboxdiodeplugin.Change{
 			{
-				ChangeID:      "00000000-0000-0000-0000-000000000001",
+				ID:            "00000000-0000-0000-0000-000000000001",
 				ChangeType:    "create",
 				ObjectType:    "dcim.site",
 				ObjectID:      nil,
@@ -49,8 +49,8 @@ func TestApplyChangeSet(t *testing.T) {
 	}
 
 	resp := &netboxdiodeplugin.ApplyChangeSetResponse{
-		ChangeSetID: "00000000-0000-0000-0000-000000000000",
-		Result:      "success",
+		ID:     "00000000-0000-0000-0000-000000000000",
+		Result: "success",
 	}
 
 	mockNetBoxAPI.On("ApplyChangeSet", ctx, req).Return(resp, nil)

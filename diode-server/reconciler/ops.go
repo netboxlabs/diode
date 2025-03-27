@@ -76,7 +76,7 @@ func (o *Ops) GenerateChangeSet(ctx context.Context, ingestionLogID int32, inges
 	}
 
 	state := reconcilerpb.State_OPEN
-	if len(changeSet.ChangeSet) == 0 {
+	if len(changeSet.Changes) == 0 {
 		state = reconcilerpb.State_NO_CHANGES
 	}
 
@@ -88,14 +88,14 @@ func (o *Ops) GenerateChangeSet(ctx context.Context, ingestionLogID int32, inges
 		// return nil, err
 	}
 
-	o.logger.Debug("change set generated", "id", changeSetID, "externalID", changeSet.ChangeSetID, "ingestionLogID", ingestionLogID)
+	o.logger.Debug("change set generated", "id", changeSetID, "externalID", changeSet.ID, "ingestionLogID", ingestionLogID)
 	return changeSetID, changeSet, nil
 }
 
 // ApplyChangeSet applies change set to NetBox and updates related states
 func (o *Ops) ApplyChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, changeSetID int32, changeSet *changeset.ChangeSet) error {
 	if err := applier.ApplyChangeSet(ctx, o.logger, *changeSet, o.nbClient); err != nil {
-		o.logger.Debug("failed to apply change set", "id", changeSetID, "externalID", changeSet.ChangeSetID, "ingestionLogID", ingestionLogID, "error", err)
+		o.logger.Debug("failed to apply change set", "id", changeSetID, "externalID", changeSet.ID, "ingestionLogID", ingestionLogID, "error", err)
 		ingestionErr := extractIngestionError(err)
 
 		if err2 := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, reconcilerpb.State_FAILED, ingestionErr); err2 != nil {
@@ -111,6 +111,6 @@ func (o *Ops) ApplyChangeSet(ctx context.Context, ingestionLogID int32, ingestio
 		// return nil, err
 	}
 
-	o.logger.Debug("change set applied", "id", changeSetID, "externalID", changeSet.ChangeSetID, "ingestionLogID", ingestionLogID)
+	o.logger.Debug("change set applied", "id", changeSetID, "externalID", changeSet.ID, "ingestionLogID", ingestionLogID)
 	return nil
 }
