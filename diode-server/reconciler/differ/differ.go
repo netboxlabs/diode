@@ -35,10 +35,10 @@ func Diff(ctx context.Context, entity IngestEntity, branchID string, netboxAPI n
 	}
 
 	changes := make([]changeset.Change, 0)
-	for _, change := range res.ChangeSet {
+	for _, change := range res.Changes {
 		changes = append(changes, changeset.Change{
+			ID:                 change.ID,
 			ChangeType:         change.ChangeType,
-			ChangeID:           change.ChangeID,
 			ObjectType:         change.ObjectType,
 			ObjectID:           change.ObjectID,
 			ObjectVersion:      change.ObjectVersion,
@@ -49,7 +49,7 @@ func Diff(ctx context.Context, entity IngestEntity, branchID string, netboxAPI n
 	}
 
 	deviationName := genDeviationName(changes)
-	cs := &changeset.ChangeSet{ChangeSetID: res.ID, ChangeSet: changes, DeviationName: deviationName}
+	cs := &changeset.ChangeSet{ID: res.ID, Changes: changes, DeviationName: deviationName}
 	if res.Branch != nil {
 		branchID := fmt.Sprintf("%s (%s)", res.Branch.Name, res.Branch.ID)
 		cs.BranchID = &branchID
@@ -103,7 +103,7 @@ func deviationNameForDiffFailure(entity IngestEntity) string {
 func FailedDiffChangeSet(entity IngestEntity, branchID string) *changeset.ChangeSet {
 	deviationName := deviationNameForDiffFailure(entity)
 	cs := &changeset.ChangeSet{
-		ChangeSetID:   uuid.NewString(),
+		ID:            uuid.NewString(),
 		DeviationName: &deviationName,
 	}
 	if branchID != "" {

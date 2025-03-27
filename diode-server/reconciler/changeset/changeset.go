@@ -14,26 +14,31 @@ const (
 
 	// ChangeTypeUpdate is the change type for an update
 	ChangeTypeUpdate = "update"
+
+	// ChangeTypeNoop is the change type for a no-op
+	ChangeTypeNoop = "noop"
 )
 
 // ChangeSet represents a change set
 type ChangeSet struct {
-	ChangeSetID   string   `json:"change_set_id"`
-	ChangeSet     []Change `json:"change_set"`
+	ID            string   `json:"id"`
+	Changes       []Change `json:"changes"`
 	BranchID      *string  `json:"branch_id,omitempty"`
 	DeviationName *string  `json:"deviation_name,omitempty"`
 }
 
 // Change represents a change for the change set
 type Change struct {
-	ChangeID           string          `json:"change_id"`
+	ID                 string          `json:"id"`
 	ChangeType         string          `json:"change_type"`
 	ObjectType         string          `json:"object_type"`
 	ObjectPrimaryValue string          `json:"object_primary_value"`
 	ObjectID           *int            `json:"object_id,omitempty"`
+	RefID              *string         `json:"ref_id,omitempty"`
 	ObjectVersion      *int            `json:"object_version,omitempty"`
 	Before             json.RawMessage `json:"before"`
 	After              json.RawMessage `json:"after"`
+	Refs               []string        `json:"refs,omitempty"`
 }
 
 // CompressChangeSet compresses a change set

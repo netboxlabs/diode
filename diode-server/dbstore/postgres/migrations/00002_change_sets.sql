@@ -27,9 +27,11 @@ CREATE TABLE IF NOT EXISTS changes
     object_type          VARCHAR(255) NOT NULL,
     object_primary_value VARCHAR(255) NOT NULL,
     object_id            INTEGER,
+    ref_id               VARCHAR(255),
     object_version       INTEGER,
     before               JSONB,
     after                JSONB,
+    refs                 TEXT[],
     sequence_number      INTEGER,
     created_at           TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at           TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP

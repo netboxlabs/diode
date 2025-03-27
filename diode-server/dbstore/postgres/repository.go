@@ -168,11 +168,12 @@ func (r *Repository) RetrieveIngestionLogs(ctx context.Context, filter *reconcil
 			changes := make([]changeset.Change, 0, len(dbChanges))
 			for _, dbChange := range dbChanges {
 				change := changeset.Change{
-					ChangeID:   dbChange.ExternalID,
+					ID:         dbChange.ExternalID,
 					ChangeType: dbChange.ChangeType,
 					ObjectType: dbChange.ObjectType,
 					Before:     dbChange.Before,
 					After:      dbChange.After,
+					Refs:       dbChange.Refs,
 				}
 
 				objID := int(dbChange.ObjectID.Int32)
@@ -182,6 +183,9 @@ func (r *Repository) RetrieveIngestionLogs(ctx context.Context, filter *reconcil
 				objVersion := int(dbChange.ObjectVersion.Int32)
 				if dbChange.ObjectVersion.Valid {
 					change.ObjectVersion = &objVersion
+				}
+				if dbChange.RefID.Valid {
+					change.RefID = &dbChange.RefID.String
 				}
 
 				changes = append(changes, change)
@@ -198,8 +202,8 @@ func (r *Repository) RetrieveIngestionLogs(ctx context.Context, filter *reconcil
 			}
 
 			changeSet := &changeset.ChangeSet{
-				ChangeSetID:   row.ChangeSet.ExternalID,
-				ChangeSet:     changes,
+				ID:            row.ChangeSet.ExternalID,
+				Changes:       changes,
 				BranchID:      branchID,
 				DeviationName: deviationName,
 			}
@@ -242,7 +246,7 @@ func (r *Repository) CreateChangeSet(ctx context.Context, changeSet changeset.Ch
 
 	qtx := r.queries.WithTx(tx)
 	params := postgres.CreateChangeSetParams{
-		ExternalID:     changeSet.ChangeSetID,
+		ExternalID:     changeSet.ID,
 		IngestionLogID: ingestionLogID,
 	}
 	if changeSet.BranchID != nil {
@@ -258,7 +262,7 @@ func (r *Repository) CreateChangeSet(ctx context.Context, changeSet changeset.Ch
 		return nil, fmt.Errorf("failed to create change set: %w", err)
 	}
 
-	for i, change := range changeSet.ChangeSet {
+	for i, change := range changeSet.Changes {
 		beforeJSON, err := json.Marshal(change.Before)
 		if err != nil {
 			rollback()
@@ -272,13 +276,14 @@ func (r *Repository) CreateChangeSet(ctx context.Context, changeSet changeset.Ch
 		}
 
 		changeParams := postgres.CreateChangeParams{
-			ExternalID:         change.ChangeID,
+			ExternalID:         change.ID,
 			ChangeSetID:        cs.ID,
 			ChangeType:         change.ChangeType,
 			ObjectType:         change.ObjectType,
 			ObjectPrimaryValue: change.ObjectPrimaryValue,
 			Before:             beforeJSON,
 			After:              afterJSON,
+			Refs:               change.Refs,
 			SequenceNumber:     pgtype.Int4{Int32: int32(i), Valid: true},
 		}
 		if change.ObjectID != nil {
@@ -286,6 +291,9 @@ func (r *Repository) CreateChangeSet(ctx context.Context, changeSet changeset.Ch
 		}
 		if change.ObjectVersion != nil {
 			changeParams.ObjectVersion = pgtype.Int4{Int32: int32(*change.ObjectVersion), Valid: true}
+		}
+		if change.RefID != nil {
+			changeParams.RefID = pgtype.Text{String: *change.RefID, Valid: true}
 		}
 
 		if _, err = qtx.CreateChange(ctx, changeParams); err != nil {

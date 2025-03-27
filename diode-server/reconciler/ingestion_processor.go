@@ -308,10 +308,10 @@ func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChan
 					p.logger.Error("error generating changeset", "error", err)
 					p.metrics.RecordChangeSetCreate(ctx, false, 0)
 				} else {
-					p.metrics.RecordChangeSetCreate(ctx, true, int64(len(changeSet.ChangeSet)))
+					p.metrics.RecordChangeSetCreate(ctx, true, int64(len(changeSet.Changes)))
 				}
 
-				if changeSet != nil && len(changeSet.ChangeSet) > 0 {
+				if changeSet != nil && len(changeSet.Changes) > 0 {
 					if applyChangeSetChan != nil {
 						applyChangeSetChan <- IngestionLogToProcess{
 							ingestionLogID: msg.ingestionLogID,
@@ -355,7 +355,7 @@ func (p *IngestionProcessor) ApplyChangeSet(ctx context.Context, applyChan <-cha
 					p.logger.Error("error applying changeset", "error", err)
 					p.metrics.RecordChangeSetApply(ctx, false, 0)
 				} else {
-					p.metrics.RecordChangeSetApply(ctx, true, int64(len(msg.changeSet.ChangeSet)))
+					p.metrics.RecordChangeSetApply(ctx, true, int64(len(msg.changeSet.Changes)))
 				}
 			}
 		}

@@ -185,11 +185,11 @@ func TestGenerateDiff(t *testing.T) {
 			},
 			mockStatusCode:     http.StatusOK,
 			expectedBody:       `{"object_type":"dcim.device","entity":{"device":{"name":"test","site":{"name":"test-site"}}}}`,
-			mockServerResponse: `{"change_set": [{"change_id": "00000000-0000-0000-0000-000000000001", "change_type": "create", "object_type": "dcim.device", "data": {"name": "test"}}]}`,
+			mockServerResponse: `{"changes": [{"id": "00000000-0000-0000-0000-000000000001", "change_type": "create", "object_type": "dcim.device", "data": {"name": "test"}}]}`,
 			response: &netboxdiodeplugin.GenerateDiffResponse{
-				ChangeSet: []netboxdiodeplugin.Change{
+				Changes: []netboxdiodeplugin.Change{
 					{
-						ChangeID:   "00000000-0000-0000-0000-000000000001",
+						ID:         "00000000-0000-0000-0000-000000000001",
 						ChangeType: "create",
 						ObjectType: "dcim.device",
 						Data:       json.RawMessage(`{"name": "test"}`),
@@ -259,10 +259,10 @@ func TestApplyChangeSet(t *testing.T) {
 			name:   "valid apply change set response",
 			apiKey: "foobar",
 			changeSetRequest: netboxdiodeplugin.ApplyChangeSetRequest{
-				ChangeSetID: "00000000-0000-0000-0000-000000000000",
-				ChangeSet: []netboxdiodeplugin.Change{
+				ID: "00000000-0000-0000-0000-000000000000",
+				Changes: []netboxdiodeplugin.Change{
 					{
-						ChangeID:      "00000000-0000-0000-0000-000000000001",
+						ID:            "00000000-0000-0000-0000-000000000001",
 						ChangeType:    "create",
 						ObjectType:    "dcim.device",
 						ObjectID:      nil,
@@ -270,7 +270,7 @@ func TestApplyChangeSet(t *testing.T) {
 						Data:          json.RawMessage(`{"name": "test"}`),
 					},
 					{
-						ChangeID:      "00000000-0000-0000-0000-000000000002",
+						ID:            "00000000-0000-0000-0000-000000000002",
 						ChangeType:    "update",
 						ObjectType:    "dcim.device",
 						ObjectID:      ptrInt(1),
@@ -279,11 +279,11 @@ func TestApplyChangeSet(t *testing.T) {
 					},
 				},
 			},
-			mockServerResponse: `{"change_set_id":"00000000-0000-0000-0000-000000000000","result":"success"}`,
+			mockServerResponse: `{"id":"00000000-0000-0000-0000-000000000000","result":"success"}`,
 			mockStatusCode:     http.StatusOK,
 			response: &netboxdiodeplugin.ApplyChangeSetResponse{
-				ChangeSetID: "00000000-0000-0000-0000-000000000000",
-				Result:      "success",
+				ID:     "00000000-0000-0000-0000-000000000000",
+				Result: "success",
 			},
 			shouldError: false,
 		},
@@ -291,11 +291,11 @@ func TestApplyChangeSet(t *testing.T) {
 			name:   "valid apply change set response with branch",
 			apiKey: "foobar",
 			changeSetRequest: netboxdiodeplugin.ApplyChangeSetRequest{
-				ChangeSetID: "00000000-0000-0000-0000-000000000000",
-				BranchID:    "test-branch",
-				ChangeSet: []netboxdiodeplugin.Change{
+				ID:       "00000000-0000-0000-0000-000000000000",
+				BranchID: "test-branch",
+				Changes: []netboxdiodeplugin.Change{
 					{
-						ChangeID:      "00000000-0000-0000-0000-000000000001",
+						ID:            "00000000-0000-0000-0000-000000000001",
 						ChangeType:    "create",
 						ObjectType:    "dcim.device",
 						ObjectID:      nil,
@@ -304,11 +304,11 @@ func TestApplyChangeSet(t *testing.T) {
 					},
 				},
 			},
-			mockServerResponse: `{"change_set_id":"00000000-0000-0000-0000-000000000000","result":"success"}`,
+			mockServerResponse: `{"id":"00000000-0000-0000-0000-000000000000","result":"success"}`,
 			mockStatusCode:     http.StatusOK,
 			response: &netboxdiodeplugin.ApplyChangeSetResponse{
-				ChangeSetID: "00000000-0000-0000-0000-000000000000",
-				Result:      "success",
+				ID:     "00000000-0000-0000-0000-000000000000",
+				Result: "success",
 			},
 			shouldError: false,
 		},
@@ -316,10 +316,10 @@ func TestApplyChangeSet(t *testing.T) {
 			name:   "invalid request",
 			apiKey: "foobar",
 			changeSetRequest: netboxdiodeplugin.ApplyChangeSetRequest{
-				ChangeSetID: "00000000-0000-0000-0000-000000000000",
-				ChangeSet: []netboxdiodeplugin.Change{
+				ID: "00000000-0000-0000-0000-000000000000",
+				Changes: []netboxdiodeplugin.Change{
 					{
-						ChangeID:      "00000000-0000-0000-0000-000000000001",
+						ID:            "00000000-0000-0000-0000-000000000001",
 						ChangeType:    "create",
 						ObjectType:    "",
 						ObjectID:      nil,
@@ -335,10 +335,10 @@ func TestApplyChangeSet(t *testing.T) {
 			name:   "invalid post message",
 			apiKey: "foobar",
 			changeSetRequest: netboxdiodeplugin.ApplyChangeSetRequest{
-				ChangeSetID: "00000000-0000-0000-0000-000000000000",
-				ChangeSet: []netboxdiodeplugin.Change{
+				ID: "00000000-0000-0000-0000-000000000000",
+				Changes: []netboxdiodeplugin.Change{
 					{
-						ChangeID:      "00000000-0000-0000-0000-000000000001",
+						ID:            "00000000-0000-0000-0000-000000000001",
 						ChangeType:    "create",
 						ObjectType:    "dcim.device",
 						ObjectID:      nil,
@@ -347,7 +347,7 @@ func TestApplyChangeSet(t *testing.T) {
 					},
 				},
 			},
-			mockServerResponse: `{"change_set_id":"00000000-0000-0000-0000-000000000000","result":"error"}`,
+			mockServerResponse: `{"id":"00000000-0000-0000-0000-000000000000","result":"error"}`,
 			mockStatusCode:     http.StatusBadRequest,
 			response:           nil,
 			shouldError:        true,
@@ -356,10 +356,10 @@ func TestApplyChangeSet(t *testing.T) {
 			name:   "unmarshal error",
 			apiKey: "foobar",
 			changeSetRequest: netboxdiodeplugin.ApplyChangeSetRequest{
-				ChangeSetID: "00000000-0000-0000-0000-000000000000",
-				ChangeSet: []netboxdiodeplugin.Change{
+				ID: "00000000-0000-0000-0000-000000000000",
+				Changes: []netboxdiodeplugin.Change{
 					{
-						ChangeID:      "00000000-0000-0000-0000-000000000001",
+						ID:            "00000000-0000-0000-0000-000000000001",
 						ChangeType:    "create",
 						ObjectType:    "dcim.device",
 						ObjectID:      nil,
@@ -368,7 +368,7 @@ func TestApplyChangeSet(t *testing.T) {
 					},
 				},
 			},
-			mockServerResponse: `{"change_set_id"  - "00000000-0000-0000\-0000-000000000000","result":"error"}`,
+			mockServerResponse: `{"id"  - "00000000-0000-0000\-0000-000000000000","result":"error"}`,
 			mockStatusCode:     http.StatusBadRequest,
 			response:           nil,
 			shouldError:        true,
