@@ -18,12 +18,15 @@ func ApplyChangeSet(ctx context.Context, logger *slog.Logger, cs changeset.Chang
 	changes := make([]netboxdiodeplugin.Change, 0)
 	for _, change := range cs.Changes {
 		changes = append(changes, netboxdiodeplugin.Change{
-			ID:            change.ID,
-			ChangeType:    change.ChangeType,
-			ObjectType:    change.ObjectType,
-			ObjectID:      change.ObjectID,
-			ObjectVersion: change.ObjectVersion,
-			Data:          change.After,
+			ID:                 change.ID,
+			ChangeType:         change.ChangeType,
+			ObjectType:         change.ObjectType,
+			ObjectID:           change.ObjectID,
+			ObjectVersion:      change.ObjectVersion,
+			ObjectPrimaryValue: change.ObjectPrimaryValue,
+			RefID:              change.RefID,
+			Data:               change.After,
+			NewRefs:            change.NewRefs,
 		})
 	}
 
