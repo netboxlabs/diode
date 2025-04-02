@@ -17,6 +17,7 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/time/rate"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 
@@ -160,6 +161,7 @@ type Client struct {
 	logger     *slog.Logger
 	httpClient *http.Client
 	baseURL    *url.URL
+	limiter    *rate.Limiter
 }
 
 // NewHTTPTransport creates a http Transport Layer
@@ -182,7 +184,7 @@ func NewHTTPTransport() *http.Transport {
 }
 
 // NewClient creates a new NetBox Diode plugin client
-func NewClient(logger *slog.Logger, apiKey string) (*Client, error) {
+func NewClient(logger *slog.Logger, apiKey string, rateLimitRps, rateLimitBurstRps int) (*Client, error) {
 	transport := NewHTTPTransport()
 
 	rt, err := newAPIRoundTripper(apiKey, transport)
@@ -209,6 +211,7 @@ func NewClient(logger *slog.Logger, apiKey string) (*Client, error) {
 		logger:     logger,
 		httpClient: httpClient,
 		baseURL:    u,
+		limiter:    rate.NewLimiter(rate.Limit(rateLimitRps), rateLimitBurstRps),
 	}
 
 	return client, nil
@@ -300,6 +303,10 @@ func (c *Client) GenerateDiff(ctx context.Context, payload GenerateDiffRequest) 
 		return nil, err
 	}
 
+	if err := c.limiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpointURL.String(), bytes.NewBuffer(reqBody))
 	if err != nil {
 		return nil, err
@@ -372,6 +379,10 @@ func (c *Client) ApplyChangeSet(ctx context.Context, payload ApplyChangeSetReque
 
 	reqBody, err := json.Marshal(payload)
 	if err != nil {
+		return nil, err
+	}
+
+	if err := c.limiter.Wait(ctx); err != nil {
 		return nil, err
 	}
 

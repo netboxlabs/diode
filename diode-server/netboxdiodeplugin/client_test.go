@@ -144,7 +144,7 @@ func TestNewClient(t *testing.T) {
 				_ = os.Setenv(netboxdiodeplugin.TLSSkipVerifyEnvVarName, "true")
 			}
 
-			client, err := netboxdiodeplugin.NewClient(logger, tt.apiKey)
+			client, err := netboxdiodeplugin.NewClient(logger, tt.apiKey, 1, 1)
 			if tt.shouldError {
 				require.Error(t, err)
 				return
@@ -164,6 +164,8 @@ func TestGenerateDiff(t *testing.T) {
 		mockStatusCode      int
 		expectedBody        string
 		mockServerResponse  string
+		rateLimiterRPS      int
+		rateLimiterBurst    int
 		response            *netboxdiodeplugin.GenerateDiffResponse
 		shouldError         bool
 	}{
@@ -186,6 +188,8 @@ func TestGenerateDiff(t *testing.T) {
 			mockStatusCode:     http.StatusOK,
 			expectedBody:       `{"object_type":"dcim.device","entity":{"device":{"name":"test","site":{"name":"test-site"}}}}`,
 			mockServerResponse: `{"changes": [{"id": "00000000-0000-0000-0000-000000000001", "change_type": "create", "object_type": "dcim.device", "data": {"name": "test"}}]}`,
+			rateLimiterRPS:     1,
+			rateLimiterBurst:   1,
 			response: &netboxdiodeplugin.GenerateDiffResponse{
 				Changes: []netboxdiodeplugin.Change{
 					{
@@ -196,6 +200,31 @@ func TestGenerateDiff(t *testing.T) {
 					},
 				},
 			},
+			shouldError: false,
+		},
+		{
+			name:   "valid generate diff response",
+			apiKey: "foobar",
+			generateDiffRequest: netboxdiodeplugin.GenerateDiffRequest{
+				ObjectType: "dcim.device",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Device{
+						Device: &diodepb.Device{
+							Name: strPtr("test"),
+							Site: &diodepb.Site{
+								Name: "test-site",
+							},
+						},
+					},
+				},
+			},
+			mockStatusCode:     http.StatusOK,
+			expectedBody:       `{"object_type":"dcim.device","entity":{"device":{"name":"test","site":{"name":"test-site"}}}}`,
+			mockServerResponse: `{"changes": [{"id": "00000000-0000-0000-0000-000000000001", "change_type": "create", "object_type": "dcim.device", "data": {"name": "test"}}]}`,
+			rateLimiterRPS:     0, // Any calls made to netbox will be rate limited
+			rateLimiterBurst:   0,
+			response:           nil,
+			shouldError:        true,
 		},
 	}
 
@@ -230,7 +259,7 @@ func TestGenerateDiff(t *testing.T) {
 
 			_ = os.Setenv(netboxdiodeplugin.BaseURLEnvVarName, fmt.Sprintf("%s/api/diode", ts.URL))
 
-			client, err := netboxdiodeplugin.NewClient(logger, tt.apiKey)
+			client, err := netboxdiodeplugin.NewClient(logger, tt.apiKey, tt.rateLimiterRPS, tt.rateLimiterBurst)
 			require.NoError(t, err)
 			resp, err := client.GenerateDiff(context.Background(), tt.generateDiffRequest)
 			if tt.shouldError {
@@ -252,6 +281,8 @@ func TestApplyChangeSet(t *testing.T) {
 		changeSetRequest   netboxdiodeplugin.ApplyChangeSetRequest
 		mockServerResponse string
 		mockStatusCode     int
+		rateLimiterRPS     int
+		rateLimiterBurst   int
 		response           *netboxdiodeplugin.ApplyChangeSetResponse
 		shouldError        bool
 	}{
@@ -281,6 +312,8 @@ func TestApplyChangeSet(t *testing.T) {
 			},
 			mockServerResponse: `{"id":"00000000-0000-0000-0000-000000000000","result":"success"}`,
 			mockStatusCode:     http.StatusOK,
+			rateLimiterRPS:     1,
+			rateLimiterBurst:   1,
 			response: &netboxdiodeplugin.ApplyChangeSetResponse{
 				ID:     "00000000-0000-0000-0000-000000000000",
 				Result: "success",
@@ -306,11 +339,37 @@ func TestApplyChangeSet(t *testing.T) {
 			},
 			mockServerResponse: `{"id":"00000000-0000-0000-0000-000000000000","result":"success"}`,
 			mockStatusCode:     http.StatusOK,
+			rateLimiterRPS:     1,
+			rateLimiterBurst:   1,
 			response: &netboxdiodeplugin.ApplyChangeSetResponse{
 				ID:     "00000000-0000-0000-0000-000000000000",
 				Result: "success",
 			},
 			shouldError: false,
+		},
+		{
+			name:   "rate limit error",
+			apiKey: "foobar",
+			changeSetRequest: netboxdiodeplugin.ApplyChangeSetRequest{
+				ID:       "00000000-0000-0000-0000-000000000000",
+				BranchID: "test-branch",
+				Changes: []netboxdiodeplugin.Change{
+					{
+						ID:            "00000000-0000-0000-0000-000000000001",
+						ChangeType:    "create",
+						ObjectType:    "dcim.device",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data:          json.RawMessage(`{"name": "test"}`),
+					},
+				},
+			},
+			mockServerResponse: `{"id":"00000000-0000-0000-0000-000000000000","result":"success"}`,
+			mockStatusCode:     http.StatusOK,
+			rateLimiterRPS:     0, // Any calls made to netbox will be rate limited
+			rateLimiterBurst:   0,
+			response:           nil,
+			shouldError:        true,
 		},
 		{
 			name:   "invalid request",
@@ -328,8 +387,10 @@ func TestApplyChangeSet(t *testing.T) {
 					},
 				},
 			},
-			response:    nil,
-			shouldError: true,
+			rateLimiterRPS:   1,
+			rateLimiterBurst: 1,
+			response:         nil,
+			shouldError:      true,
 		},
 		{
 			name:   "invalid post message",
@@ -349,6 +410,8 @@ func TestApplyChangeSet(t *testing.T) {
 			},
 			mockServerResponse: `{"id":"00000000-0000-0000-0000-000000000000","result":"error"}`,
 			mockStatusCode:     http.StatusBadRequest,
+			rateLimiterRPS:     1,
+			rateLimiterBurst:   1,
 			response:           nil,
 			shouldError:        true,
 		},
@@ -370,6 +433,8 @@ func TestApplyChangeSet(t *testing.T) {
 			},
 			mockServerResponse: `{"id"  - "00000000-0000-0000\-0000-000000000000","result":"error"}`,
 			mockStatusCode:     http.StatusBadRequest,
+			rateLimiterRPS:     1,
+			rateLimiterBurst:   1,
 			response:           nil,
 			shouldError:        true,
 		},
@@ -402,7 +467,7 @@ func TestApplyChangeSet(t *testing.T) {
 
 			_ = os.Setenv(netboxdiodeplugin.BaseURLEnvVarName, fmt.Sprintf("%s/api/diode", ts.URL))
 
-			client, err := netboxdiodeplugin.NewClient(logger, tt.apiKey)
+			client, err := netboxdiodeplugin.NewClient(logger, tt.apiKey, tt.rateLimiterRPS, tt.rateLimiterBurst)
 			require.NoError(t, err)
 			resp, err := client.ApplyChangeSet(context.Background(), tt.changeSetRequest)
 			if tt.shouldError {

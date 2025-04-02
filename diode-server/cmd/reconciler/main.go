@@ -84,7 +84,7 @@ func main() {
 
 	repository := postgres.NewRepository(dbPool)
 
-	nbClient, err := netboxdiodeplugin.NewClient(s.Logger(), cfg.DiodeToNetBoxAPIKey)
+	nbClient, err := netboxdiodeplugin.NewClient(s.Logger(), cfg.DiodeToNetBoxAPIKey, cfg.DiodeToNetboxRateLimiterRPS, cfg.DiodeToNetboxRateLimiterBurst)
 	if err != nil {
 		s.Logger().Error("failed to create netbox diode plugin client", "error", err)
 	}
