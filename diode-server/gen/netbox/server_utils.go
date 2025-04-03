@@ -1,5 +1,5 @@
 // Generated code. DO NOT EDIT.
-// Timestamp: 2025-03-22 01:51:43Z
+// Timestamp: 2025-04-01 21:05:15Z
 package netbox
 
 import (
@@ -554,46 +554,42 @@ func GetObjectTypeName(objectType string) (string, error) {
 
 func GetPrimaryValue(entity *pb.Entity) (string, error) {
     switch e := entity.GetEntity().(type) {
-    case *pb.Entity_AsnRange:
-        return fmt.Sprintf("%v", e.AsnRange.Name), nil
     case *pb.Entity_Asn:
         return fmt.Sprintf("%v", e.Asn.Asn), nil
-    case *pb.Entity_CircuitGroup:
-        return fmt.Sprintf("%v", e.CircuitGroup.Name), nil
+    case *pb.Entity_AsnRange:
+        return fmt.Sprintf("%v", e.AsnRange.Name), nil
     case *pb.Entity_Circuit:
         return fmt.Sprintf("%v", e.Circuit.Cid), nil
+    case *pb.Entity_CircuitGroup:
+        return fmt.Sprintf("%v", e.CircuitGroup.Name), nil
     case *pb.Entity_CircuitType:
         return fmt.Sprintf("%v", e.CircuitType.Name), nil
-    case *pb.Entity_ClusterGroup:
-        return fmt.Sprintf("%v", e.ClusterGroup.Name), nil
     case *pb.Entity_Cluster:
         return fmt.Sprintf("%v", e.Cluster.Name), nil
+    case *pb.Entity_ClusterGroup:
+        return fmt.Sprintf("%v", e.ClusterGroup.Name), nil
     case *pb.Entity_ClusterType:
         return fmt.Sprintf("%v", e.ClusterType.Name), nil
     case *pb.Entity_ConsolePort:
         return fmt.Sprintf("%v", e.ConsolePort.Name), nil
     case *pb.Entity_ConsoleServerPort:
         return fmt.Sprintf("%v", e.ConsoleServerPort.Name), nil
+    case *pb.Entity_Contact:
+        return fmt.Sprintf("%v", e.Contact.Name), nil
     case *pb.Entity_ContactGroup:
         return fmt.Sprintf("%v", e.ContactGroup.Name), nil
     case *pb.Entity_ContactRole:
         return fmt.Sprintf("%v", e.ContactRole.Name), nil
-    case *pb.Entity_Contact:
-        return fmt.Sprintf("%v", e.Contact.Name), nil
-    case *pb.Entity_Vlan:
-        return fmt.Sprintf("%v", e.Vlan.Name), nil
+    case *pb.Entity_Device:
+        return fmt.Sprintf("%v", e.Device.Name), nil
     case *pb.Entity_DeviceBay:
         return fmt.Sprintf("%v", e.DeviceBay.Name), nil
     case *pb.Entity_DeviceRole:
         return fmt.Sprintf("%v", e.DeviceRole.Name), nil
-    case *pb.Entity_Device:
-        return fmt.Sprintf("%v", e.Device.Name), nil
     case *pb.Entity_DeviceType:
         return fmt.Sprintf("%v", e.DeviceType.Model), nil
     case *pb.Entity_FhrpGroup:
         return fmt.Sprintf("%v", e.FhrpGroup.Name), nil
-    case *pb.Entity_RearPort:
-        return fmt.Sprintf("%v", e.RearPort.Name), nil
     case *pb.Entity_FrontPort:
         return fmt.Sprintf("%v", e.FrontPort.Name), nil
     case *pb.Entity_IkePolicy:
@@ -610,10 +606,10 @@ func GetPrimaryValue(entity *pb.Entity) (string, error) {
         return fmt.Sprintf("%v", e.IpSecProposal.Name), nil
     case *pb.Entity_Interface:
         return fmt.Sprintf("%v", e.Interface.Name), nil
-    case *pb.Entity_InventoryItemRole:
-        return fmt.Sprintf("%v", e.InventoryItemRole.Name), nil
     case *pb.Entity_InventoryItem:
         return fmt.Sprintf("%v", e.InventoryItem.Name), nil
+    case *pb.Entity_InventoryItemRole:
+        return fmt.Sprintf("%v", e.InventoryItemRole.Name), nil
     case *pb.Entity_L2Vpn:
         return fmt.Sprintf("%v", e.L2Vpn.Name), nil
     case *pb.Entity_Location:
@@ -626,20 +622,6 @@ func GetPrimaryValue(entity *pb.Entity) (string, error) {
         return fmt.Sprintf("%v", e.ModuleBay.Name), nil
     case *pb.Entity_ModuleType:
         return fmt.Sprintf("%v", e.ModuleType.Model), nil
-    case *pb.Entity_Region:
-        return fmt.Sprintf("%v", e.Region.Name), nil
-    case *pb.Entity_SiteGroup:
-        return fmt.Sprintf("%v", e.SiteGroup.Name), nil
-    case *pb.Entity_Tag:
-        return fmt.Sprintf("%v", e.Tag.Name), nil
-    case *pb.Entity_TenantGroup:
-        return fmt.Sprintf("%v", e.TenantGroup.Name), nil
-    case *pb.Entity_VmInterface:
-        return fmt.Sprintf("%v", e.VmInterface.Name), nil
-    case *pb.Entity_VirtualMachine:
-        return fmt.Sprintf("%v", e.VirtualMachine.Name), nil
-    case *pb.Entity_WirelessLanGroup:
-        return fmt.Sprintf("%v", e.WirelessLanGroup.Name), nil
     case *pb.Entity_Platform:
         return fmt.Sprintf("%v", e.Platform.Name), nil
     case *pb.Entity_PowerFeed:
@@ -652,20 +634,24 @@ func GetPrimaryValue(entity *pb.Entity) (string, error) {
         return fmt.Sprintf("%v", e.PowerPort.Name), nil
     case *pb.Entity_Prefix:
         return fmt.Sprintf("%v", e.Prefix.Prefix), nil
+    case *pb.Entity_Provider:
+        return fmt.Sprintf("%v", e.Provider.Name), nil
     case *pb.Entity_ProviderAccount:
         return fmt.Sprintf("%v", e.ProviderAccount.Name), nil
     case *pb.Entity_ProviderNetwork:
         return fmt.Sprintf("%v", e.ProviderNetwork.Name), nil
-    case *pb.Entity_Provider:
-        return fmt.Sprintf("%v", e.Provider.Name), nil
     case *pb.Entity_Rir:
         return fmt.Sprintf("%v", e.Rir.Name), nil
-    case *pb.Entity_RackRole:
-        return fmt.Sprintf("%v", e.RackRole.Name), nil
     case *pb.Entity_Rack:
         return fmt.Sprintf("%v", e.Rack.Name), nil
+    case *pb.Entity_RackRole:
+        return fmt.Sprintf("%v", e.RackRole.Name), nil
     case *pb.Entity_RackType:
         return fmt.Sprintf("%v", e.RackType.Model), nil
+    case *pb.Entity_RearPort:
+        return fmt.Sprintf("%v", e.RearPort.Name), nil
+    case *pb.Entity_Region:
+        return fmt.Sprintf("%v", e.Region.Name), nil
     case *pb.Entity_Role:
         return fmt.Sprintf("%v", e.Role.Name), nil
     case *pb.Entity_RouteTarget:
@@ -674,16 +660,26 @@ func GetPrimaryValue(entity *pb.Entity) (string, error) {
         return fmt.Sprintf("%v", e.Service.Name), nil
     case *pb.Entity_Site:
         return fmt.Sprintf("%v", e.Site.Name), nil
+    case *pb.Entity_SiteGroup:
+        return fmt.Sprintf("%v", e.SiteGroup.Name), nil
+    case *pb.Entity_Tag:
+        return fmt.Sprintf("%v", e.Tag.Name), nil
     case *pb.Entity_Tenant:
         return fmt.Sprintf("%v", e.Tenant.Name), nil
-    case *pb.Entity_TunnelGroup:
-        return fmt.Sprintf("%v", e.TunnelGroup.Name), nil
+    case *pb.Entity_TenantGroup:
+        return fmt.Sprintf("%v", e.TenantGroup.Name), nil
     case *pb.Entity_Tunnel:
         return fmt.Sprintf("%v", e.Tunnel.Name), nil
+    case *pb.Entity_TunnelGroup:
+        return fmt.Sprintf("%v", e.TunnelGroup.Name), nil
+    case *pb.Entity_Vlan:
+        return fmt.Sprintf("%v", e.Vlan.Name), nil
     case *pb.Entity_VlanGroup:
         return fmt.Sprintf("%v", e.VlanGroup.Name), nil
     case *pb.Entity_VlanTranslationPolicy:
         return fmt.Sprintf("%v", e.VlanTranslationPolicy.Name), nil
+    case *pb.Entity_VmInterface:
+        return fmt.Sprintf("%v", e.VmInterface.Name), nil
     case *pb.Entity_Vrf:
         return fmt.Sprintf("%v", e.Vrf.Name), nil
     case *pb.Entity_VirtualChassis:
@@ -696,8 +692,12 @@ func GetPrimaryValue(entity *pb.Entity) (string, error) {
         return fmt.Sprintf("%v", e.VirtualDeviceContext.Name), nil
     case *pb.Entity_VirtualDisk:
         return fmt.Sprintf("%v", e.VirtualDisk.Name), nil
+    case *pb.Entity_VirtualMachine:
+        return fmt.Sprintf("%v", e.VirtualMachine.Name), nil
     case *pb.Entity_WirelessLan:
         return fmt.Sprintf("%v", e.WirelessLan.Ssid), nil
+    case *pb.Entity_WirelessLanGroup:
+        return fmt.Sprintf("%v", e.WirelessLanGroup.Name), nil
     default:
         return "", fmt.Errorf("unknown entity type: %v", entity.GetEntity())
     }
