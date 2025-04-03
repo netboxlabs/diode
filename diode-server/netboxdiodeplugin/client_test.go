@@ -51,6 +51,8 @@ func TestNewClient(t *testing.T) {
 		name             string
 		apiKey           string
 		baseURL          string
+		rateLimiterRPS   int
+		rateLimiterBurst int
 		timeout          string
 		setBaseURLEnvVar bool
 		setTimeoutEnvVar bool
@@ -61,6 +63,8 @@ func TestNewClient(t *testing.T) {
 			name:             "valid client",
 			apiKey:           "test",
 			baseURL:          "http://",
+			rateLimiterRPS:   1,
+			rateLimiterBurst: 1,
 			timeout:          "5",
 			setBaseURLEnvVar: true,
 			setTimeoutEnvVar: true,
@@ -71,6 +75,8 @@ func TestNewClient(t *testing.T) {
 			name:             "default base URL",
 			apiKey:           "test",
 			baseURL:          "",
+			rateLimiterRPS:   1,
+			rateLimiterBurst: 1,
 			timeout:          "5",
 			setBaseURLEnvVar: false,
 			setTimeoutEnvVar: true,
@@ -80,6 +86,8 @@ func TestNewClient(t *testing.T) {
 			name:             "invalid base URL",
 			apiKey:           "test",
 			baseURL:          "http://local\nhost",
+			rateLimiterRPS:   1,
+			rateLimiterBurst: 1,
 			timeout:          "5",
 			setBaseURLEnvVar: true,
 			setTimeoutEnvVar: true,
@@ -90,6 +98,8 @@ func TestNewClient(t *testing.T) {
 			name:             "default timeout",
 			apiKey:           "test",
 			baseURL:          "http://",
+			rateLimiterRPS:   1,
+			rateLimiterBurst: 1,
 			timeout:          "",
 			setBaseURLEnvVar: true,
 			setTimeoutEnvVar: false,
@@ -100,6 +110,8 @@ func TestNewClient(t *testing.T) {
 			name:             "invalid timeout",
 			apiKey:           "test",
 			baseURL:          "http://",
+			rateLimiterRPS:   1,
+			rateLimiterBurst: 1,
 			timeout:          "-1",
 			setBaseURLEnvVar: true,
 			setTimeoutEnvVar: true,
@@ -110,6 +122,8 @@ func TestNewClient(t *testing.T) {
 			name:             "API key not provided",
 			apiKey:           "",
 			baseURL:          "http://",
+			rateLimiterRPS:   1,
+			rateLimiterBurst: 1,
 			timeout:          "5",
 			setBaseURLEnvVar: true,
 			setTimeoutEnvVar: true,
@@ -120,11 +134,37 @@ func TestNewClient(t *testing.T) {
 			name:             "set TLS skip verify",
 			apiKey:           "test",
 			baseURL:          "",
+			rateLimiterRPS:   1,
+			rateLimiterBurst: 1,
 			timeout:          "5",
 			setBaseURLEnvVar: false,
 			setTimeoutEnvVar: true,
 			setTLSSkipEnvVar: true,
 			shouldError:      false,
+		},
+		{
+			name:             "invalid rate limiter rps parameter",
+			apiKey:           "test",
+			baseURL:          "http://",
+			rateLimiterRPS:   0,
+			rateLimiterBurst: 1,
+			timeout:          "5",
+			setBaseURLEnvVar: true,
+			setTimeoutEnvVar: true,
+			setTLSSkipEnvVar: false,
+			shouldError:      true,
+		},
+		{
+			name:             "invalid rate limiter burst parameter",
+			apiKey:           "test",
+			baseURL:          "http://",
+			rateLimiterRPS:   1,
+			rateLimiterBurst: 0,
+			timeout:          "5",
+			setBaseURLEnvVar: true,
+			setTimeoutEnvVar: true,
+			setTLSSkipEnvVar: false,
+			shouldError:      true,
 		},
 	}
 
@@ -144,7 +184,7 @@ func TestNewClient(t *testing.T) {
 				_ = os.Setenv(netboxdiodeplugin.TLSSkipVerifyEnvVarName, "true")
 			}
 
-			client, err := netboxdiodeplugin.NewClient(logger, tt.apiKey, 1, 1)
+			client, err := netboxdiodeplugin.NewClient(logger, tt.apiKey, tt.rateLimiterRPS, tt.rateLimiterBurst)
 			if tt.shouldError {
 				require.Error(t, err)
 				return
@@ -202,30 +242,6 @@ func TestGenerateDiff(t *testing.T) {
 			},
 			shouldError: false,
 		},
-		{
-			name:   "valid generate diff response",
-			apiKey: "foobar",
-			generateDiffRequest: netboxdiodeplugin.GenerateDiffRequest{
-				ObjectType: "dcim.device",
-				Entity: &diodepb.Entity{
-					Entity: &diodepb.Entity_Device{
-						Device: &diodepb.Device{
-							Name: strPtr("test"),
-							Site: &diodepb.Site{
-								Name: "test-site",
-							},
-						},
-					},
-				},
-			},
-			mockStatusCode:     http.StatusOK,
-			expectedBody:       `{"object_type":"dcim.device","entity":{"device":{"name":"test","site":{"name":"test-site"}}}}`,
-			mockServerResponse: `{"changes": [{"id": "00000000-0000-0000-0000-000000000001", "change_type": "create", "object_type": "dcim.device", "data": {"name": "test"}}]}`,
-			rateLimiterRPS:     0, // Any calls made to netbox will be rate limited
-			rateLimiterBurst:   0,
-			response:           nil,
-			shouldError:        true,
-		},
 	}
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
@@ -270,6 +286,105 @@ func TestGenerateDiff(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, tt.response, resp)
 			assert.Equal(t, tt.mockStatusCode, http.StatusOK)
+		})
+	}
+}
+
+func TestGenerateDiffRateLimiting(t *testing.T) {
+	tests := []struct {
+		name                string
+		apiKey              string
+		expectedCalls       int
+		generateDiffRequest netboxdiodeplugin.GenerateDiffRequest
+		mockStatusCode      int
+		expectedBody        string
+		mockServerResponse  string
+		rateLimiterRPS      int
+		rateLimiterBurst    int
+		response            *netboxdiodeplugin.GenerateDiffResponse
+		shouldError         bool
+	}{
+		{
+			name:          "rate limited requests",
+			apiKey:        "foobar",
+			expectedCalls: 2,
+			generateDiffRequest: netboxdiodeplugin.GenerateDiffRequest{
+				ObjectType: "dcim.device",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Device{
+						Device: &diodepb.Device{
+							Name: strPtr("test"),
+							Site: &diodepb.Site{
+								Name: "test-site",
+							},
+						},
+					},
+				},
+			},
+			mockStatusCode:     http.StatusOK,
+			expectedBody:       `{"object_type":"dcim.device","entity":{"device":{"name":"test","site":{"name":"test-site"}}}}`,
+			mockServerResponse: `{"changes": [{"id": "00000000-0000-0000-0000-000000000001", "change_type": "create", "object_type": "dcim.device", "data": {"name": "test"}}]}`,
+			rateLimiterRPS:     1,
+			rateLimiterBurst:   1,
+			response: &netboxdiodeplugin.GenerateDiffResponse{
+				Changes: []netboxdiodeplugin.Change{
+					{
+						ID:         "00000000-0000-0000-0000-000000000001",
+						ChangeType: "create",
+						ObjectType: "dcim.device",
+						Data:       json.RawMessage(`{"name": "test"}`),
+					},
+				},
+			},
+			shouldError: false,
+		},
+	}
+
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cleanUpEnvVars()
+			actualCalls := 0
+			handler := func(w http.ResponseWriter, r *http.Request) {
+				actualCalls++
+				assert.Equal(t, r.Method, http.MethodPost)
+				assert.Equal(t, r.URL.Path, "/api/diode/generate-diff/")
+				assert.Equal(t, r.Header.Get("Authorization"), fmt.Sprintf("Token %s", tt.apiKey))
+				assert.Equal(t, r.Header.Get("User-Agent"), fmt.Sprintf("%s/%s", netboxdiodeplugin.SDKName, netboxdiodeplugin.SDKVersion))
+				assert.Equal(t, r.Header.Get("Content-Type"), "application/json")
+
+				if tt.generateDiffRequest.BranchID != "" {
+					assert.Equal(t, r.Header.Get(netboxdiodeplugin.NetBoxBranchHeader), tt.generateDiffRequest.BranchID)
+				} else {
+					assert.Len(t, r.Header.Values(netboxdiodeplugin.NetBoxBranchHeader), 0)
+				}
+				body, err := io.ReadAll(r.Body)
+				require.NoError(t, err)
+				assert.Equal(t, tt.expectedBody, string(body))
+				w.WriteHeader(tt.mockStatusCode)
+				_, _ = w.Write([]byte(tt.mockServerResponse))
+			}
+			mux := http.NewServeMux()
+			mux.HandleFunc("/api/diode/generate-diff/", handler)
+			ts := httptest.NewServer(mux)
+			defer ts.Close()
+
+			_ = os.Setenv(netboxdiodeplugin.BaseURLEnvVarName, fmt.Sprintf("%s/api/diode", ts.URL))
+
+			client, err := netboxdiodeplugin.NewClient(logger, tt.apiKey, tt.rateLimiterRPS, tt.rateLimiterBurst)
+			require.NoError(t, err)
+			resp, err := client.GenerateDiff(context.Background(), tt.generateDiffRequest)
+			_, _ = client.GenerateDiff(context.Background(), tt.generateDiffRequest)
+			if tt.shouldError {
+				require.Error(t, err)
+				assert.Equal(t, tt.response, resp)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tt.response, resp)
+			assert.Equal(t, tt.mockStatusCode, http.StatusOK)
+			assert.Equal(t, tt.expectedCalls, actualCalls)
 		})
 	}
 }
@@ -346,30 +461,6 @@ func TestApplyChangeSet(t *testing.T) {
 				Result: "success",
 			},
 			shouldError: false,
-		},
-		{
-			name:   "rate limit error",
-			apiKey: "foobar",
-			changeSetRequest: netboxdiodeplugin.ApplyChangeSetRequest{
-				ID:       "00000000-0000-0000-0000-000000000000",
-				BranchID: "test-branch",
-				Changes: []netboxdiodeplugin.Change{
-					{
-						ID:            "00000000-0000-0000-0000-000000000001",
-						ChangeType:    "create",
-						ObjectType:    "dcim.device",
-						ObjectID:      nil,
-						ObjectVersion: nil,
-						Data:          json.RawMessage(`{"name": "test"}`),
-					},
-				},
-			},
-			mockServerResponse: `{"id":"00000000-0000-0000-0000-000000000000","result":"success"}`,
-			mockStatusCode:     http.StatusOK,
-			rateLimiterRPS:     0, // Any calls made to netbox will be rate limited
-			rateLimiterBurst:   0,
-			response:           nil,
-			shouldError:        true,
 		},
 		{
 			name:   "invalid request",
@@ -478,6 +569,95 @@ func TestApplyChangeSet(t *testing.T) {
 			require.NoError(t, err)
 			assert.Equal(t, tt.response, resp)
 			assert.Equal(t, tt.mockStatusCode, http.StatusOK)
+		})
+	}
+}
+
+func TestApplyChangeSetRateLimiting(t *testing.T) {
+	tests := []struct {
+		name               string
+		apiKey             string
+		changeSetRequest   netboxdiodeplugin.ApplyChangeSetRequest
+		expectedCalls      int
+		mockServerResponse string
+		mockStatusCode     int
+		rateLimiterRPS     int
+		rateLimiterBurst   int
+		response           *netboxdiodeplugin.ApplyChangeSetResponse
+		shouldError        bool
+	}{
+		{
+			name:   "rate limit error",
+			apiKey: "foobar",
+			changeSetRequest: netboxdiodeplugin.ApplyChangeSetRequest{
+				ID:       "00000000-0000-0000-0000-000000000000",
+				BranchID: "test-branch",
+				Changes: []netboxdiodeplugin.Change{
+					{
+						ID:            "00000000-0000-0000-0000-000000000001",
+						ChangeType:    "create",
+						ObjectType:    "dcim.device",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data:          json.RawMessage(`{"name": "test"}`),
+					},
+				},
+			},
+			expectedCalls:      2,
+			mockServerResponse: `{"id":"00000000-0000-0000-0000-000000000000","result":"success"}`,
+			mockStatusCode:     http.StatusOK,
+			rateLimiterRPS:     1,
+			rateLimiterBurst:   1,
+			response: &netboxdiodeplugin.ApplyChangeSetResponse{
+				ID:     "00000000-0000-0000-0000-000000000000",
+				Result: "success",
+			},
+			shouldError: false,
+		},
+	}
+
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cleanUpEnvVars()
+			actualCalls := 0
+
+			handler := func(w http.ResponseWriter, r *http.Request) {
+				actualCalls++
+				assert.Equal(t, r.Method, http.MethodPost)
+				assert.Equal(t, r.URL.Path, "/api/diode/apply-change-set/")
+				assert.Equal(t, r.Header.Get("Authorization"), fmt.Sprintf("Token %s", tt.apiKey))
+				assert.Equal(t, r.Header.Get("User-Agent"), fmt.Sprintf("%s/%s", netboxdiodeplugin.SDKName, netboxdiodeplugin.SDKVersion))
+				assert.Equal(t, r.Header.Get("Content-Type"), "application/json")
+				if tt.changeSetRequest.BranchID != "" {
+					assert.Equal(t, r.Header.Get(netboxdiodeplugin.NetBoxBranchHeader), tt.changeSetRequest.BranchID)
+				} else {
+					assert.Len(t, r.Header.Values(netboxdiodeplugin.NetBoxBranchHeader), 0)
+				}
+				w.WriteHeader(tt.mockStatusCode)
+				_, _ = w.Write([]byte(tt.mockServerResponse))
+			}
+			mux := http.NewServeMux()
+			mux.HandleFunc("/api/diode/apply-change-set/", handler)
+			ts := httptest.NewServer(mux)
+			defer ts.Close()
+
+			_ = os.Setenv(netboxdiodeplugin.BaseURLEnvVarName, fmt.Sprintf("%s/api/diode", ts.URL))
+
+			client, err := netboxdiodeplugin.NewClient(logger, tt.apiKey, tt.rateLimiterRPS, tt.rateLimiterBurst)
+			require.NoError(t, err)
+			resp, err := client.ApplyChangeSet(context.Background(), tt.changeSetRequest)
+			_, _ = client.ApplyChangeSet(context.Background(), tt.changeSetRequest)
+			if tt.shouldError {
+				require.Error(t, err)
+				assert.Equal(t, tt.response, resp)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tt.response, resp)
+			assert.Equal(t, tt.mockStatusCode, http.StatusOK)
+			assert.Equal(t, tt.expectedCalls, actualCalls)
 		})
 	}
 }
