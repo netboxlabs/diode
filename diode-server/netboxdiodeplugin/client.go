@@ -207,6 +207,10 @@ func NewClient(logger *slog.Logger, apiKey string, rateLimitRps, rateLimitBurstR
 		return nil, err
 	}
 
+	if rateLimitRps <= 0 || rateLimitBurstRps <= 0 {
+		return nil, fmt.Errorf("invalid rate limit values: %d %d", rateLimitRps, rateLimitBurstRps)
+	}
+
 	client := &Client{
 		logger:     logger,
 		httpClient: httpClient,
