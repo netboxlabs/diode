@@ -1732,6 +1732,7 @@
 | comments | [string](#string) | optional |  |
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [IKEPolicy.CustomFieldsEntry](#diode-v1-IKEPolicy-CustomFieldsEntry) | repeated |  |
+| proposals | [IKEProposal](#diode-v1-IKEProposal) | repeated |  |
 
 
 
@@ -1893,6 +1894,7 @@
 | comments | [string](#string) | optional |  |
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [IPSecPolicy.CustomFieldsEntry](#diode-v1-IPSecPolicy-CustomFieldsEntry) | repeated |  |
+| proposals | [IPSecProposal](#diode-v1-IPSecProposal) | repeated |  |
 
 
 
@@ -2067,6 +2069,9 @@
 | vrf | [VRF](#diode-v1-VRF) | optional |  |
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [Interface.CustomFieldsEntry](#diode-v1-Interface-CustomFieldsEntry) | repeated |  |
+| vdcs | [VirtualDeviceContext](#diode-v1-VirtualDeviceContext) | repeated |  |
+| tagged_vlans | [VLAN](#diode-v1-VLAN) | repeated |  |
+| wireless_lans | [WirelessLAN](#diode-v1-WirelessLAN) | repeated |  |
 
 
 
@@ -2193,6 +2198,8 @@
 | tenant | [Tenant](#diode-v1-Tenant) | optional |  |
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [L2VPN.CustomFieldsEntry](#diode-v1-L2VPN-CustomFieldsEntry) | repeated |  |
+| import_targets | [RouteTarget](#diode-v1-RouteTarget) | repeated |  |
+| export_targets | [RouteTarget](#diode-v1-RouteTarget) | repeated |  |
 
 
 
@@ -2744,6 +2751,8 @@
 | comments | [string](#string) | optional |  |
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [Provider.CustomFieldsEntry](#diode-v1-Provider-CustomFieldsEntry) | repeated |  |
+| accounts | [ProviderAccount](#diode-v1-ProviderAccount) | repeated |  |
+| asns | [ASN](#diode-v1-ASN) | repeated |  |
 
 
 
@@ -3221,6 +3230,7 @@
 | comments | [string](#string) | optional |  |
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [Service.CustomFieldsEntry](#diode-v1-Service-CustomFieldsEntry) | repeated |  |
+| ipaddresses | [IPAddress](#diode-v1-IPAddress) | repeated |  |
 
 
 
@@ -3267,6 +3277,7 @@
 | comments | [string](#string) | optional |  |
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [Site.CustomFieldsEntry](#diode-v1-Site-CustomFieldsEntry) | repeated |  |
+| asns | [ASN](#diode-v1-ASN) | repeated |  |
 
 
 
@@ -3757,6 +3768,7 @@
 | vrf | [VRF](#diode-v1-VRF) | optional |  |
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [VMInterface.CustomFieldsEntry](#diode-v1-VMInterface-CustomFieldsEntry) | repeated |  |
+| tagged_vlans | [VLAN](#diode-v1-VLAN) | repeated |  |
 
 
 
@@ -3795,6 +3807,8 @@
 | comments | [string](#string) | optional |  |
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [VRF.CustomFieldsEntry](#diode-v1-VRF-CustomFieldsEntry) | repeated |  |
+| import_targets | [RouteTarget](#diode-v1-RouteTarget) | repeated |  |
+| export_targets | [RouteTarget](#diode-v1-RouteTarget) | repeated |  |
 
 
 
