@@ -36,7 +36,7 @@ func TestNewIngestionProcessor(t *testing.T) {
 	mockRepository := mocks.NewRepository(t)
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
-	nbClient, err := netboxdiodeplugin.NewClient(logger, cfg.DiodeToNetBoxAPIKey, cfg.DiodeToNetboxRateLimiterRPS, cfg.DiodeToNetboxRateLimiterBurst)
+	nbClient, err := netboxdiodeplugin.NewClient(logger, cfg.DiodeToNetBoxAPIKey, cfg.DiodeToNetBoxRateLimiterRPS, cfg.DiodeToNetBoxRateLimiterBurst)
 	require.NoError(t, err)
 	metrics := mocks.NewIngestionProcessorMetrics(t)
 	processor, err := reconciler.NewIngestionProcessor(ctx, logger, reconciler.NewOps(mockRepository, nbClient, logger), metrics)
@@ -62,7 +62,7 @@ func TestIngestionProcessorStart(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	ctx := context.Background()
 
-	nbClient, err := netboxdiodeplugin.NewClient(logger, cfg.DiodeToNetBoxAPIKey, cfg.DiodeToNetboxRateLimiterRPS, cfg.DiodeToNetboxRateLimiterBurst)
+	nbClient, err := netboxdiodeplugin.NewClient(logger, cfg.DiodeToNetBoxAPIKey, cfg.DiodeToNetBoxRateLimiterRPS, cfg.DiodeToNetBoxRateLimiterBurst)
 	require.NoError(t, err)
 	mockMetrics := new(mocks.IngestionProcessorMetrics)
 	mockMetrics.On("RecordHandleMessage", mock.Anything, mock.Anything).Return()
