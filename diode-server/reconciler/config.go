@@ -14,8 +14,8 @@ type Config struct {
 	AutoApplyChangesets           bool   `envconfig:"AUTO_APPLY_CHANGESETS" default:"true"`
 	ReconcilerRateLimiterRPS      int    `envconfig:"RECONCILER_RATE_LIMITER_RPS" default:"20"`
 	ReconcilerRateLimiterBurst    int    `envconfig:"RECONCILER_RATE_LIMITER_BURST" default:"1"`
-	DiodeToNetboxRateLimiterRPS   int    `envconfig:"DIODE_TO_NETBOX_RATE_LIMITER_RPS" default:"20"`
-	DiodeToNetboxRateLimiterBurst int    `envconfig:"DIODE_TO_NETBOX_RATE_LIMITER_BURST" default:"1"`
+	DiodeToNetBoxRateLimiterRPS   int    `envconfig:"DIODE_TO_NETBOX_RATE_LIMITER_RPS" default:"20"`
+	DiodeToNetBoxRateLimiterBurst int    `envconfig:"DIODE_TO_NETBOX_RATE_LIMITER_BURST" default:"1"`
 	PostgresHost                  string `envconfig:"POSTGRES_HOST"`
 	PostgresPort                  int    `envconfig:"POSTGRES_PORT"`
 	PostgresDBName                string `envconfig:"POSTGRES_DB_NAME"`

@@ -34,7 +34,7 @@ const (
 	// BaseURLEnvVarName is the environment variable name for the NetBox Diode plugin HTTP base URL
 	BaseURLEnvVarName = "NETBOX_DIODE_PLUGIN_API_BASE_URL"
 
-	// TLSSkipVerifyEnvVarName is the environment variable name for Netbox Diode plugin TLS verification
+	// TLSSkipVerifyEnvVarName is the environment variable name for NetBox Diode plugin TLS verification
 	TLSSkipVerifyEnvVarName = "NETBOX_DIODE_PLUGIN_SKIP_TLS_VERIFY"
 
 	// TimeoutSecondsEnvVarName is the environment variable name for the NetBox Diode plugin HTTP timeout
