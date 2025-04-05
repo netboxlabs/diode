@@ -7,6 +7,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -272,9 +273,9 @@ RETURNING id, external_id, object_type, state, request_id, ingestion_ts, source_
 `
 
 type UpdateIngestionLogStateWithErrorParams struct {
-	ID    int32       `json:"id"`
-	State pgtype.Int4 `json:"state"`
-	Error []byte      `json:"error"`
+	ID    int32           `json:"id"`
+	State pgtype.Int4     `json:"state"`
+	Error json.RawMessage `json:"error"`
 }
 
 func (q *Queries) UpdateIngestionLogStateWithError(ctx context.Context, arg UpdateIngestionLogStateWithErrorParams) error {
