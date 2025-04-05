@@ -4330,7 +4330,8 @@ Deviation error
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | message | [string](#string) |  |  |
-| code | [int32](#int32) |  |  |
+| code | [string](#string) |  |  |
+| details | [bytes](#bytes) |  |  |
 
 
 
