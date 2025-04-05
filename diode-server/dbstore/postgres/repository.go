@@ -71,18 +71,19 @@ func (r *Repository) RetrieveIngestionLogByExternalID(ctx context.Context, uuid 
 }
 
 // UpdateIngestionLogStateWithError updates an ingestion log with a new state and error.
-func (r *Repository) UpdateIngestionLogStateWithError(ctx context.Context, id int32, state reconcilerpb.State, ingestionError *reconcilerpb.IngestionError) error {
+func (r *Repository) UpdateIngestionLogStateWithError(ctx context.Context, id int32, state reconcilerpb.State, err error) error {
 	params := postgres.UpdateIngestionLogStateWithErrorParams{
 		ID:    id,
 		State: pgtype.Int4{Int32: int32(state), Valid: true},
 	}
 
-	if ingestionError != nil {
-		ingestionErrJSON, err := json.Marshal(ingestionError)
+	if err != nil {
+		errJSON, err := json.Marshal(err)
 		if err != nil {
 			return fmt.Errorf("failed to marshal error: %w", err)
 		}
-		params.Error = ingestionErrJSON
+		params.Error = errJSON
+		fmt.Printf("UpdateIngestionLogStateWithError error: %s\n, err: %s\n", string(errJSON), err)
 	}
 	return r.queries.UpdateIngestionLogStateWithError(ctx, params)
 }
@@ -388,13 +389,15 @@ func deviationToProto(dbDeviation postgres.VDeviation) (*reconcilerpb.Deviation,
 
 	var deviationErr *reconcilerpb.DeviationError
 	if dbDeviation.Error != nil {
-		deviationErr = &reconcilerpb.DeviationError{}
-		// these are input as a larger error type that is not fully unmarshaled in the response
-		err := protojson.UnmarshalOptions{
-			DiscardUnknown: true,
-		}.Unmarshal(dbDeviation.Error, deviationErr)
-		if err != nil {
+		var changeSetErr changeset.Error
+		if err := json.Unmarshal(dbDeviation.Error, &changeSetErr); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal error: %w", err)
+		}
+
+		deviationErr = &reconcilerpb.DeviationError{
+			Message: changeSetErr.Message,
+			Code:    string(changeSetErr.Code),
+			Details: changeSetErr.Details,
 		}
 	}
 

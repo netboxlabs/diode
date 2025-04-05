@@ -206,7 +206,7 @@ func TestGenerateDiff(t *testing.T) {
 		mockServerResponse  string
 		rateLimiterRPS      int
 		rateLimiterBurst    int
-		response            *netboxdiodeplugin.GenerateDiffResponse
+		response            *netboxdiodeplugin.ChangeSetResult
 		shouldError         bool
 	}{
 		{
@@ -227,16 +227,20 @@ func TestGenerateDiff(t *testing.T) {
 			},
 			mockStatusCode:     http.StatusOK,
 			expectedBody:       `{"object_type":"dcim.device","entity":{"device":{"name":"test","site":{"name":"test-site"}}}}`,
-			mockServerResponse: `{"changes": [{"id": "00000000-0000-0000-0000-000000000001", "change_type": "create", "object_type": "dcim.device", "data": {"name": "test"}}]}`,
+			mockServerResponse: `{"id": "00000000-0000-0000-0000-000000000001", "change_set": {"id": "00000000-0000-0000-0000-000000000001", "changes": [{"id": "00000000-0000-0000-0000-000000000002", "change_type": "create", "object_type": "dcim.device", "data": {"name": "test"}}]}}`,
 			rateLimiterRPS:     1,
 			rateLimiterBurst:   1,
-			response: &netboxdiodeplugin.GenerateDiffResponse{
-				Changes: []netboxdiodeplugin.Change{
-					{
-						ID:         "00000000-0000-0000-0000-000000000001",
-						ChangeType: "create",
-						ObjectType: "dcim.device",
-						Data:       json.RawMessage(`{"name": "test"}`),
+			response: &netboxdiodeplugin.ChangeSetResult{
+				ID: "00000000-0000-0000-0000-000000000001",
+				ChangeSet: &netboxdiodeplugin.ChangeSet{
+					ID: "00000000-0000-0000-0000-000000000001",
+					Changes: []netboxdiodeplugin.Change{
+						{
+							ID:         "00000000-0000-0000-0000-000000000002",
+							ChangeType: "create",
+							ObjectType: "dcim.device",
+							Data:       json.RawMessage(`{"name": "test"}`),
+						},
 					},
 				},
 			},
@@ -301,7 +305,7 @@ func TestGenerateDiffRateLimiting(t *testing.T) {
 		mockServerResponse  string
 		rateLimiterRPS      int
 		rateLimiterBurst    int
-		response            *netboxdiodeplugin.GenerateDiffResponse
+		response            *netboxdiodeplugin.ChangeSetResult
 		shouldError         bool
 	}{
 		{
@@ -323,16 +327,20 @@ func TestGenerateDiffRateLimiting(t *testing.T) {
 			},
 			mockStatusCode:     http.StatusOK,
 			expectedBody:       `{"object_type":"dcim.device","entity":{"device":{"name":"test","site":{"name":"test-site"}}}}`,
-			mockServerResponse: `{"changes": [{"id": "00000000-0000-0000-0000-000000000001", "change_type": "create", "object_type": "dcim.device", "data": {"name": "test"}}]}`,
+			mockServerResponse: `{"id": "00000000-0000-0000-0000-000000000001", "change_set": {"id": "00000000-0000-0000-0000-000000000001", "changes": [{"id": "00000000-0000-0000-0000-000000000002", "change_type": "create", "object_type": "dcim.device", "data": {"name": "test"}}]}}`,
 			rateLimiterRPS:     1,
 			rateLimiterBurst:   1,
-			response: &netboxdiodeplugin.GenerateDiffResponse{
-				Changes: []netboxdiodeplugin.Change{
-					{
-						ID:         "00000000-0000-0000-0000-000000000001",
-						ChangeType: "create",
-						ObjectType: "dcim.device",
-						Data:       json.RawMessage(`{"name": "test"}`),
+			response: &netboxdiodeplugin.ChangeSetResult{
+				ID: "00000000-0000-0000-0000-000000000001",
+				ChangeSet: &netboxdiodeplugin.ChangeSet{
+					ID: "00000000-0000-0000-0000-000000000001",
+					Changes: []netboxdiodeplugin.Change{
+						{
+							ID:         "00000000-0000-0000-0000-000000000002",
+							ChangeType: "create",
+							ObjectType: "dcim.device",
+							Data:       json.RawMessage(`{"name": "test"}`),
+						},
 					},
 				},
 			},
@@ -398,7 +406,7 @@ func TestApplyChangeSet(t *testing.T) {
 		mockStatusCode     int
 		rateLimiterRPS     int
 		rateLimiterBurst   int
-		response           *netboxdiodeplugin.ApplyChangeSetResponse
+		response           *netboxdiodeplugin.ChangeSetResult
 		shouldError        bool
 	}{
 		{
@@ -425,13 +433,12 @@ func TestApplyChangeSet(t *testing.T) {
 					},
 				},
 			},
-			mockServerResponse: `{"id":"00000000-0000-0000-0000-000000000000","result":"success"}`,
+			mockServerResponse: `{"id":"00000000-0000-0000-0000-000000000000"}`,
 			mockStatusCode:     http.StatusOK,
 			rateLimiterRPS:     1,
 			rateLimiterBurst:   1,
-			response: &netboxdiodeplugin.ApplyChangeSetResponse{
-				ID:     "00000000-0000-0000-0000-000000000000",
-				Result: "success",
+			response: &netboxdiodeplugin.ChangeSetResult{
+				ID: "00000000-0000-0000-0000-000000000000",
 			},
 			shouldError: false,
 		},
@@ -452,13 +459,12 @@ func TestApplyChangeSet(t *testing.T) {
 					},
 				},
 			},
-			mockServerResponse: `{"id":"00000000-0000-0000-0000-000000000000","result":"success"}`,
+			mockServerResponse: `{"id":"00000000-0000-0000-0000-000000000000"}`,
 			mockStatusCode:     http.StatusOK,
 			rateLimiterRPS:     1,
 			rateLimiterBurst:   1,
-			response: &netboxdiodeplugin.ApplyChangeSetResponse{
-				ID:     "00000000-0000-0000-0000-000000000000",
-				Result: "success",
+			response: &netboxdiodeplugin.ChangeSetResult{
+				ID: "00000000-0000-0000-0000-000000000000",
 			},
 			shouldError: false,
 		},
@@ -583,7 +589,7 @@ func TestApplyChangeSetRateLimiting(t *testing.T) {
 		mockStatusCode     int
 		rateLimiterRPS     int
 		rateLimiterBurst   int
-		response           *netboxdiodeplugin.ApplyChangeSetResponse
+		response           *netboxdiodeplugin.ChangeSetResult
 		shouldError        bool
 	}{
 		{
@@ -604,13 +610,12 @@ func TestApplyChangeSetRateLimiting(t *testing.T) {
 				},
 			},
 			expectedCalls:      2,
-			mockServerResponse: `{"id":"00000000-0000-0000-0000-000000000000","result":"success"}`,
+			mockServerResponse: `{"id":"00000000-0000-0000-0000-000000000000"}`,
 			mockStatusCode:     http.StatusOK,
 			rateLimiterRPS:     1,
 			rateLimiterBurst:   1,
-			response: &netboxdiodeplugin.ApplyChangeSetResponse{
-				ID:     "00000000-0000-0000-0000-000000000000",
-				Result: "success",
+			response: &netboxdiodeplugin.ChangeSetResult{
+				ID: "00000000-0000-0000-0000-000000000000",
 			},
 			shouldError: false,
 		},

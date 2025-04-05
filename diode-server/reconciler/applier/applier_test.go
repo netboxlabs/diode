@@ -48,9 +48,10 @@ func TestApplyChangeSet(t *testing.T) {
 		BranchID: "123",
 	}
 
-	resp := &netboxdiodeplugin.ApplyChangeSetResponse{
-		ID:     "00000000-0000-0000-0000-000000000000",
-		Result: "success",
+	resp := &netboxdiodeplugin.ChangeSetResult{
+		ChangeSet: &netboxdiodeplugin.ChangeSet{
+			ID: "00000000-0000-0000-0000-000000000000",
+		},
 	}
 
 	mockNetBoxAPI.On("ApplyChangeSet", ctx, req).Return(resp, nil)

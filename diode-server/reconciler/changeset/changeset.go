@@ -6,6 +6,8 @@ import (
 	"fmt"
 
 	"github.com/andybalholm/brotli"
+
+	"github.com/netboxlabs/diode/diode-server/errors"
 )
 
 const (
@@ -58,4 +60,25 @@ func CompressChangeSet(cs *ChangeSet) ([]byte, error) {
 	}
 
 	return brotliBuf.Bytes(), nil
+}
+
+// Error represents an error when diffing or applying change set
+type Error struct {
+	Message string           `json:"message"`
+	Code    errors.ErrorCode `json:"code"`
+	Details json.RawMessage  `json:"details"`
+}
+
+// Error returns the ChangeSetError message
+func (e *Error) Error() string {
+	return fmt.Sprintf("%s - %s - %s", e.Message, e.Code, string(e.Details))
+}
+
+// NewError creates a new Error
+func NewError(message string, code errors.ErrorCode, details []byte) error {
+	return &Error{
+		Message: message,
+		Code:    code,
+		Details: details,
+	}
 }

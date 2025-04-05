@@ -35,7 +35,7 @@ func TestHandleStreamMessage(t *testing.T) {
 		validMsg          bool
 		entities          []*diodepb.Entity
 		mockChangeSet     *changeset.ChangeSet
-		changeSetResponse *netboxdiodeplugin.ApplyChangeSetResponse
+		changeSetResponse *netboxdiodeplugin.ChangeSetResult
 		changeSetError    error
 		reconcilerError   bool
 		expectedError     bool
@@ -52,7 +52,7 @@ func TestHandleStreamMessage(t *testing.T) {
 					},
 				},
 			},
-			changeSetResponse: &netboxdiodeplugin.ApplyChangeSetResponse{},
+			changeSetResponse: &netboxdiodeplugin.ChangeSetResult{},
 			reconcilerError:   false,
 			expectedError:     false,
 		},
@@ -79,7 +79,7 @@ func TestHandleStreamMessage(t *testing.T) {
 					},
 				},
 			},
-			changeSetResponse: &netboxdiodeplugin.ApplyChangeSetResponse{},
+			changeSetResponse: &netboxdiodeplugin.ChangeSetResult{},
 			reconcilerError:   true,
 			expectedError:     false,
 		},
@@ -91,7 +91,7 @@ func TestHandleStreamMessage(t *testing.T) {
 					Entity: nil,
 				},
 			},
-			changeSetResponse: &netboxdiodeplugin.ApplyChangeSetResponse{},
+			changeSetResponse: &netboxdiodeplugin.ChangeSetResult{},
 			reconcilerError:   false,
 			expectedError:     false,
 		},
@@ -111,9 +111,8 @@ func TestHandleStreamMessage(t *testing.T) {
 				ID:      "cs123",
 				Changes: []changeset.Change{},
 			},
-			changeSetResponse: &netboxdiodeplugin.ApplyChangeSetResponse{
-				ID:     "cs123",
-				Result: "changed",
+			changeSetResponse: &netboxdiodeplugin.ChangeSetResult{
+				ID: "cs123",
 			},
 			reconcilerError: false,
 			expectedError:   false,
@@ -134,9 +133,8 @@ func TestHandleStreamMessage(t *testing.T) {
 				ID:      "cs123",
 				Changes: []changeset.Change{},
 			},
-			changeSetResponse: &netboxdiodeplugin.ApplyChangeSetResponse{
-				ID:     "cs123",
-				Result: "changed",
+			changeSetResponse: &netboxdiodeplugin.ChangeSetResult{
+				ID: "cs123",
 			},
 			changeSetError:  errors.New("apply error"),
 			reconcilerError: false,
@@ -194,13 +192,15 @@ func TestHandleStreamMessage(t *testing.T) {
 			if tt.reconcilerError {
 				mockNbClient.On("GenerateDiff", mock.Anything, mock.Anything).Return(nil, errors.New("prepare error"))
 			} else {
-				mockNbClient.On("GenerateDiff", mock.Anything, mock.Anything).Return(&netboxdiodeplugin.GenerateDiffResponse{
-					Changes: []netboxdiodeplugin.Change{
-						{
-							ID:         "00000000-0000-0000-0000-000000000000",
-							ChangeType: "create",
-							ObjectType: "dcim.site",
-							Data:       json.RawMessage(`{"name": "Site A"}`),
+				mockNbClient.On("GenerateDiff", mock.Anything, mock.Anything).Return(&netboxdiodeplugin.ChangeSetResult{
+					ChangeSet: &netboxdiodeplugin.ChangeSet{
+						Changes: []netboxdiodeplugin.Change{
+							{
+								ID:         "00000000-0000-0000-0000-000000000000",
+								ChangeType: "create",
+								ObjectType: "dcim.site",
+								Data:       json.RawMessage(`{"name": "Site A"}`),
+							},
 						},
 					},
 				}, nil)
@@ -358,8 +358,8 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 	tests := []struct {
 		name                       string
 		ingestionLog               *reconcilerpb.IngestionLog
-		mockGenerateDiffResponse   *netboxdiodeplugin.GenerateDiffResponse
-		mockApplyChangeSetResponse *netboxdiodeplugin.ApplyChangeSetResponse
+		mockGenerateDiffResponse   *netboxdiodeplugin.ChangeSetResult
+		mockApplyChangeSetResponse *netboxdiodeplugin.ChangeSetResult
 		autoApplyChangesets        bool
 		expectedStatus             reconcilerpb.State
 		expectedError              bool
@@ -385,19 +385,20 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 				SourceTs:    time.Now().UnixNano(),
 				State:       reconcilerpb.State_QUEUED,
 			},
-			mockGenerateDiffResponse: &netboxdiodeplugin.GenerateDiffResponse{
-				Changes: []netboxdiodeplugin.Change{
-					{
-						ID:         "00000000-0000-0000-0000-000000000000",
-						ChangeType: "create",
-						ObjectType: "dcim.site",
-						Data:       json.RawMessage(`{"name": "Site A"}`),
+			mockGenerateDiffResponse: &netboxdiodeplugin.ChangeSetResult{
+				ChangeSet: &netboxdiodeplugin.ChangeSet{
+					Changes: []netboxdiodeplugin.Change{
+						{
+							ID:         "00000000-0000-0000-0000-000000000000",
+							ChangeType: "create",
+							ObjectType: "dcim.site",
+							Data:       json.RawMessage(`{"name": "Site A"}`),
+						},
 					},
 				},
 			},
-			mockApplyChangeSetResponse: &netboxdiodeplugin.ApplyChangeSetResponse{
-				ID:     "00000000-0000-0000-0000-000000000000",
-				Result: "success",
+			mockApplyChangeSetResponse: &netboxdiodeplugin.ChangeSetResult{
+				ID: "00000000-0000-0000-0000-000000000000",
 			},
 			autoApplyChangesets: true,
 			expectedStatus:      reconcilerpb.State_APPLIED,
@@ -424,13 +425,15 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 				SourceTs:    time.Now().UnixNano(),
 				State:       reconcilerpb.State_OPEN,
 			},
-			mockGenerateDiffResponse: &netboxdiodeplugin.GenerateDiffResponse{
-				Changes: []netboxdiodeplugin.Change{
-					{
-						ID:         "00000000-0000-0000-0000-000000000000",
-						ChangeType: "create",
-						ObjectType: "dcim.site",
-						Data:       json.RawMessage(`{"name": "Site A"}`),
+			mockGenerateDiffResponse: &netboxdiodeplugin.ChangeSetResult{
+				ChangeSet: &netboxdiodeplugin.ChangeSet{
+					Changes: []netboxdiodeplugin.Change{
+						{
+							ID:         "00000000-0000-0000-0000-000000000000",
+							ChangeType: "create",
+							ObjectType: "dcim.site",
+							Data:       json.RawMessage(`{"name": "Site A"}`),
+						},
 					},
 				},
 			},
@@ -459,8 +462,10 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 				SourceTs:    time.Now().UnixNano(),
 				State:       reconcilerpb.State_QUEUED,
 			},
-			mockGenerateDiffResponse: &netboxdiodeplugin.GenerateDiffResponse{
-				Changes: []netboxdiodeplugin.Change{},
+			mockGenerateDiffResponse: &netboxdiodeplugin.ChangeSetResult{
+				ChangeSet: &netboxdiodeplugin.ChangeSet{
+					Changes: []netboxdiodeplugin.Change{},
+				},
 			},
 			autoApplyChangesets: false,
 			expectedStatus:      reconcilerpb.State_NO_CHANGES,

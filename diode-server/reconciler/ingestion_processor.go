@@ -18,7 +18,6 @@ import (
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 	"github.com/netboxlabs/diode/diode-server/gen/netbox"
-	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
 	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
 	"github.com/netboxlabs/diode/diode-server/sentry"
 	"github.com/netboxlabs/diode/diode-server/telemetry"
@@ -412,21 +411,4 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 	}
 
 	return errs
-}
-
-func extractIngestionError(err error) *reconcilerpb.IngestionError {
-	var ingestionErr *reconcilerpb.IngestionError
-	var applyChangeSetErr *netboxdiodeplugin.ApplyChangeSetError
-
-	switch {
-	case errors.As(err, &applyChangeSetErr):
-		ingestionErr = applyChangeSetErr.ToIngestionError()
-	default:
-		ingestionErr = &reconcilerpb.IngestionError{
-			Message: err.Error(),
-			Code:    0,
-		}
-	}
-
-	return ingestionErr
 }
