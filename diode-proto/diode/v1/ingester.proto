@@ -2,7 +2,7 @@ syntax = "proto3";
 
 // Generated Code. DO NOT EDIT.
 // Source: NetBox Community v4.2.3
-// Timestamp: 2025-04-01 21:05:14Z
+// Timestamp: 2025-04-07 14:51:54Z
 
 package diode.v1;
 
@@ -728,6 +728,7 @@ message CustomFieldValue {
     bool boolean = 4;
     google.protobuf.Timestamp timestamp = 5;
     CustomFieldObjectReference object = 6;
+    string json = 9;
   }
   repeated string string_array = 7;
   repeated CustomFieldObjectReference object_array = 8;

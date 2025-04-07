@@ -17522,6 +17522,18 @@ func (m *CustomFieldValue) validate(all bool) error {
 			}
 		}
 
+	case *CustomFieldValue_Json:
+		if v == nil {
+			err := CustomFieldValueValidationError{
+				field:  "Value",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+		// no validation rules for Json
 	default:
 		_ = v // ensures v is used
 	}

@@ -1137,6 +1137,7 @@
 | boolean | [bool](#bool) |  |  |
 | timestamp | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  |  |
 | object | [CustomFieldObjectReference](#diode-v1-CustomFieldObjectReference) |  |  |
+| json | [string](#string) |  |  |
 | string_array | [string](#string) | repeated |  |
 | object_array | [CustomFieldObjectReference](#diode-v1-CustomFieldObjectReference) | repeated |  |
 
