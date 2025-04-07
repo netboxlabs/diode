@@ -50,7 +50,7 @@ func Diff(ctx context.Context, entity IngestEntity, branchID string, netboxAPI n
 		})
 	}
 
-	deviationName := genDeviationName(changes)
+	deviationName := genDeviationName(changes, entity.ObjectType)
 	cs := &changeset.ChangeSet{ID: res.ID, Changes: changes, DeviationName: deviationName}
 	if res.ChangeSet.Branch != nil {
 		branchID := fmt.Sprintf("%s (%s)", res.ChangeSet.Branch.Name, res.ChangeSet.Branch.ID)
@@ -59,8 +59,13 @@ func Diff(ctx context.Context, entity IngestEntity, branchID string, netboxAPI n
 	return cs, nil
 }
 
-func genDeviationName(objects []changeset.Change) *string {
+func genDeviationName(objects []changeset.Change, objectType string) *string {
 	if len(objects) == 0 {
+		typeName, err := netbox.GetObjectTypeName(objectType)
+		if err != nil {
+			deviationName := fmt.Sprintf("Unknown %s discovered", objectType)
+			return &deviationName
+		}
 		deviationName := fmt.Sprintf("%s unchanged", typeName)
 		return &deviationName
 	}
@@ -77,8 +82,10 @@ func genDeviationName(objects []changeset.Change) *string {
 		deviationName += " modified"
 	} else if primaryObject.ChangeType == changeset.ChangeTypeCreate {
 		deviationName += " created"
+	} else if primaryObject.ChangeType == changeset.ChangeTypeNoop {
+		deviationName += " unchanged"
 	} else {
-		deviationName += " (unrecognized change type " + primaryObject.ChangeType + ""
+		deviationName += " (unrecognized change type " + primaryObject.ChangeType + ")"
 	}
 
 	return &deviationName
