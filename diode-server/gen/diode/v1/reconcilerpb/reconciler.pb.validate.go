@@ -1028,6 +1028,8 @@ func (m *DeviationError) validate(all bool) error {
 
 	// no validation rules for Code
 
+	// no validation rules for Details
+
 	if len(errors) > 0 {
 		return DeviationErrorMultiError(errors)
 	}

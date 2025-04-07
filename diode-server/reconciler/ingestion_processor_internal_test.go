@@ -20,7 +20,6 @@ import (
 
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
-	"github.com/netboxlabs/diode/diode-server/netbox"
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
 	mnp "github.com/netboxlabs/diode/diode-server/netboxdiodeplugin/mocks"
 	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
@@ -36,7 +35,7 @@ func TestHandleStreamMessage(t *testing.T) {
 		validMsg          bool
 		entities          []*diodepb.Entity
 		mockChangeSet     *changeset.ChangeSet
-		changeSetResponse *netboxdiodeplugin.ChangeSetResponse
+		changeSetResponse *netboxdiodeplugin.ChangeSetResult
 		changeSetError    error
 		reconcilerError   bool
 		expectedError     bool
@@ -53,7 +52,7 @@ func TestHandleStreamMessage(t *testing.T) {
 					},
 				},
 			},
-			changeSetResponse: &netboxdiodeplugin.ChangeSetResponse{},
+			changeSetResponse: &netboxdiodeplugin.ChangeSetResult{},
 			reconcilerError:   false,
 			expectedError:     false,
 		},
@@ -80,7 +79,7 @@ func TestHandleStreamMessage(t *testing.T) {
 					},
 				},
 			},
-			changeSetResponse: &netboxdiodeplugin.ChangeSetResponse{},
+			changeSetResponse: &netboxdiodeplugin.ChangeSetResult{},
 			reconcilerError:   true,
 			expectedError:     false,
 		},
@@ -92,7 +91,7 @@ func TestHandleStreamMessage(t *testing.T) {
 					Entity: nil,
 				},
 			},
-			changeSetResponse: &netboxdiodeplugin.ChangeSetResponse{},
+			changeSetResponse: &netboxdiodeplugin.ChangeSetResult{},
 			reconcilerError:   false,
 			expectedError:     false,
 		},
@@ -109,12 +108,11 @@ func TestHandleStreamMessage(t *testing.T) {
 				},
 			},
 			mockChangeSet: &changeset.ChangeSet{
-				ChangeSetID: "cs123",
-				ChangeSet:   []changeset.Change{},
+				ID:      "cs123",
+				Changes: []changeset.Change{},
 			},
-			changeSetResponse: &netboxdiodeplugin.ChangeSetResponse{
-				ChangeSetID: "cs123",
-				Result:      "changed",
+			changeSetResponse: &netboxdiodeplugin.ChangeSetResult{
+				ID: "cs123",
 			},
 			reconcilerError: false,
 			expectedError:   false,
@@ -132,12 +130,11 @@ func TestHandleStreamMessage(t *testing.T) {
 				},
 			},
 			mockChangeSet: &changeset.ChangeSet{
-				ChangeSetID: "cs123",
-				ChangeSet:   []changeset.Change{},
+				ID:      "cs123",
+				Changes: []changeset.Change{},
 			},
-			changeSetResponse: &netboxdiodeplugin.ChangeSetResponse{
-				ChangeSetID: "cs123",
-				Result:      "changed",
+			changeSetResponse: &netboxdiodeplugin.ChangeSetResult{
+				ID: "cs123",
 			},
 			changeSetError:  errors.New("apply error"),
 			reconcilerError: false,
@@ -193,20 +190,26 @@ func TestHandleStreamMessage(t *testing.T) {
 				}
 			}
 			if tt.reconcilerError {
-				mockNbClient.On("RetrieveObjectState", mock.Anything, mock.Anything).Return(&netboxdiodeplugin.ObjectState{}, errors.New("prepare error"))
+				mockNbClient.On("GenerateDiff", mock.Anything, mock.Anything).Return(nil, errors.New("prepare error"))
 			} else {
-				mockNbClient.On("RetrieveObjectState", mock.Anything, mock.Anything).Return(&netboxdiodeplugin.ObjectState{
-					ObjectType:     "dcim.site",
-					ObjectID:       0,
-					ObjectChangeID: 0,
-					Object: &netbox.DcimSiteDataWrapper{
-						Site: nil,
+				mockNbClient.On("GenerateDiff", mock.Anything, mock.Anything).Return(&netboxdiodeplugin.ChangeSetResult{
+					ChangeSet: &netboxdiodeplugin.ChangeSet{
+						Changes: []netboxdiodeplugin.Change{
+							{
+								ID:         "00000000-0000-0000-0000-000000000000",
+								ChangeType: "create",
+								ObjectType: "dcim.site",
+								Data:       json.RawMessage(`{"name": "Site A"}`),
+							},
+						},
 					},
 				}, nil)
 			}
 			mockNbClient.On("ApplyChangeSet", mock.Anything, mock.Anything).Return(tt.changeSetResponse, tt.changeSetError)
 			if tt.entities[0].Entity != nil {
 				mockRepository.On("CreateIngestionLog", mock.Anything, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
+				mockRepository.On("CreateChangeSet", mock.Anything, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
+				mockRepository.On("UpdateIngestionLogStateWithError", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 			}
 			mockRedisStreamClient.On("XAck", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(redis.NewIntCmd(ctx))
 			mockRedisStreamClient.On("XDel", mock.Anything, mock.Anything, mock.Anything).Return(redis.NewIntCmd(ctx))
@@ -215,11 +218,16 @@ func TestHandleStreamMessage(t *testing.T) {
 			mockMetrics.On("RecordChangeSetCreate", mock.Anything, mock.Anything, mock.Anything).Return()
 			mockMetrics.On("RecordChangeSetApply", mock.Anything, mock.Anything, mock.Anything).Return()
 
-			err := p.handleStreamMessage(ctx, request)
+			allDone, err := p.handleStreamMessage(ctx, request)
 			if tt.expectedError {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
+			}
+			select {
+			case <-allDone:
+			case <-time.After(1 * time.Second):
+				require.Fail(t, "allDone channel did not close")
 			}
 
 			if tt.validMsg {
@@ -309,46 +317,22 @@ func TestConsumeIngestionStream(t *testing.T) {
 
 func TestCompressChangeSet(t *testing.T) {
 	cs := changeset.ChangeSet{
-		ChangeSetID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
-		ChangeSet: []changeset.Change{
+		ID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+		Changes: []changeset.Change{
 			{
-				ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b6",
+				ID:            "5663a77e-9bad-4981-afe9-77d8a9f2b8b6",
 				ChangeType:    changeset.ChangeTypeCreate,
 				ObjectType:    "extras.tag",
 				ObjectID:      nil,
 				ObjectVersion: nil,
-				After: &netbox.Tag{
-					Name: "tag 2",
-					Slug: "tag-2",
-				},
+				After:         json.RawMessage(`{"name": "tag 2", "slug": "tag-2"}`),
 			},
 			{
-				ChangeID:      "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				ID:            "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
 				ChangeType:    changeset.ChangeTypeUpdate,
 				ObjectType:    "dcim.site",
 				ObjectVersion: nil,
-				After: &netbox.DcimSite{
-					ID:     1,
-					Name:   "Site A",
-					Slug:   "site-a",
-					Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-					Tags: []*netbox.Tag{
-						{
-							ID:   1,
-							Name: "tag 1",
-							Slug: "tag-1",
-						},
-						{
-							ID:   3,
-							Name: "tag 3",
-							Slug: "tag-3",
-						},
-						{
-							Name: "tag 2",
-							Slug: "tag-2",
-						},
-					},
-				},
+				After:         json.RawMessage(`{"name": "Site A", "slug": "site-a", "status": "active", "tags": [{"id": 1, "name": "tag 1", "slug": "tag-1"}, {"id": 3, "name": "tag 3", "slug": "tag-3"}, {"id": 2, "name": "tag 2", "slug": "tag-2"}]}`),
 			},
 		},
 	}
@@ -372,13 +356,13 @@ func TestCompressChangeSet(t *testing.T) {
 
 func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 	tests := []struct {
-		name                            string
-		ingestionLog                    *reconcilerpb.IngestionLog
-		mockRetrieveObjectStateResponse *netboxdiodeplugin.ObjectState
-		mockApplyChangeSetResponse      *netboxdiodeplugin.ChangeSetResponse
-		autoApplyChangesets             bool
-		expectedStatus                  reconcilerpb.State
-		expectedError                   bool
+		name                       string
+		ingestionLog               *reconcilerpb.IngestionLog
+		mockGenerateDiffResponse   *netboxdiodeplugin.ChangeSetResult
+		mockApplyChangeSetResponse *netboxdiodeplugin.ChangeSetResult
+		autoApplyChangesets        bool
+		expectedStatus             reconcilerpb.State
+		expectedError              bool
 	}{
 		{
 			name: "generate and apply change set",
@@ -401,16 +385,20 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 				SourceTs:    time.Now().UnixNano(),
 				State:       reconcilerpb.State_QUEUED,
 			},
-			mockRetrieveObjectStateResponse: &netboxdiodeplugin.ObjectState{
-				ObjectType: "dcim.site",
-				ObjectID:   0,
-				Object: &netbox.DcimSiteDataWrapper{
-					Site: nil,
+			mockGenerateDiffResponse: &netboxdiodeplugin.ChangeSetResult{
+				ChangeSet: &netboxdiodeplugin.ChangeSet{
+					Changes: []netboxdiodeplugin.Change{
+						{
+							ID:         "00000000-0000-0000-0000-000000000000",
+							ChangeType: "create",
+							ObjectType: "dcim.site",
+							Data:       json.RawMessage(`{"name": "Site A"}`),
+						},
+					},
 				},
 			},
-			mockApplyChangeSetResponse: &netboxdiodeplugin.ChangeSetResponse{
-				ChangeSetID: "00000000-0000-0000-0000-000000000000",
-				Result:      "success",
+			mockApplyChangeSetResponse: &netboxdiodeplugin.ChangeSetResult{
+				ID: "00000000-0000-0000-0000-000000000000",
 			},
 			autoApplyChangesets: true,
 			expectedStatus:      reconcilerpb.State_APPLIED,
@@ -437,11 +425,16 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 				SourceTs:    time.Now().UnixNano(),
 				State:       reconcilerpb.State_OPEN,
 			},
-			mockRetrieveObjectStateResponse: &netboxdiodeplugin.ObjectState{
-				ObjectType: "dcim.site",
-				ObjectID:   0,
-				Object: &netbox.DcimSiteDataWrapper{
-					Site: nil,
+			mockGenerateDiffResponse: &netboxdiodeplugin.ChangeSetResult{
+				ChangeSet: &netboxdiodeplugin.ChangeSet{
+					Changes: []netboxdiodeplugin.Change{
+						{
+							ID:         "00000000-0000-0000-0000-000000000000",
+							ChangeType: "create",
+							ObjectType: "dcim.site",
+							Data:       json.RawMessage(`{"name": "Site A"}`),
+						},
+					},
 				},
 			},
 			autoApplyChangesets: false,
@@ -469,15 +462,9 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 				SourceTs:    time.Now().UnixNano(),
 				State:       reconcilerpb.State_QUEUED,
 			},
-			mockRetrieveObjectStateResponse: &netboxdiodeplugin.ObjectState{
-				ObjectType: "dcim.site",
-				ObjectID:   1,
-				Object: &netbox.DcimSiteDataWrapper{
-					Site: &netbox.DcimSite{
-						ID:   1,
-						Name: "Site A",
-						Slug: "site-a",
-					},
+			mockGenerateDiffResponse: &netboxdiodeplugin.ChangeSetResult{
+				ChangeSet: &netboxdiodeplugin.ChangeSet{
+					Changes: []netboxdiodeplugin.Change{},
 				},
 			},
 			autoApplyChangesets: false,
@@ -509,7 +496,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 
 			ingestionLogID := int32(1)
 
-			mockNbClient.On("RetrieveObjectState", ctx, mock.Anything).Return(tt.mockRetrieveObjectStateResponse, nil)
+			mockNbClient.On("GenerateDiff", ctx, mock.Anything).Return(tt.mockGenerateDiffResponse, nil)
 			if tt.autoApplyChangesets {
 				mockRepository.On("UpdateIngestionLogStateWithError", ctx, ingestionLogID, reconcilerpb.State_OPEN, mock.Anything).Return(nil)
 				mockNbClient.On("ApplyChangeSet", ctx, mock.Anything).Return(tt.mockApplyChangeSetResponse, nil)

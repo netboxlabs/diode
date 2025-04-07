@@ -12,7 +12,6 @@ import (
 	"github.com/netboxlabs/diode/diode-server/gen/dbstore/postgres"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
-	"github.com/netboxlabs/diode/diode-server/netbox"
 	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
 )
 
@@ -72,18 +71,19 @@ func (r *Repository) RetrieveIngestionLogByExternalID(ctx context.Context, uuid 
 }
 
 // UpdateIngestionLogStateWithError updates an ingestion log with a new state and error.
-func (r *Repository) UpdateIngestionLogStateWithError(ctx context.Context, id int32, state reconcilerpb.State, ingestionError *reconcilerpb.IngestionError) error {
+func (r *Repository) UpdateIngestionLogStateWithError(ctx context.Context, id int32, state reconcilerpb.State, err error) error {
 	params := postgres.UpdateIngestionLogStateWithErrorParams{
 		ID:    id,
 		State: pgtype.Int4{Int32: int32(state), Valid: true},
 	}
 
-	if ingestionError != nil {
-		ingestionErrJSON, err := json.Marshal(ingestionError)
+	if err != nil {
+		errJSON, err := json.Marshal(err)
 		if err != nil {
 			return fmt.Errorf("failed to marshal error: %w", err)
 		}
-		params.Error = ingestionErrJSON
+		params.Error = errJSON
+		fmt.Printf("UpdateIngestionLogStateWithError error: %s\n, err: %s\n", string(errJSON), err)
 	}
 	return r.queries.UpdateIngestionLogStateWithError(ctx, params)
 }
@@ -169,11 +169,12 @@ func (r *Repository) RetrieveIngestionLogs(ctx context.Context, filter *reconcil
 			changes := make([]changeset.Change, 0, len(dbChanges))
 			for _, dbChange := range dbChanges {
 				change := changeset.Change{
-					ChangeID:   dbChange.ExternalID,
+					ID:         dbChange.ExternalID,
 					ChangeType: dbChange.ChangeType,
 					ObjectType: dbChange.ObjectType,
 					Before:     dbChange.Before,
 					After:      dbChange.After,
+					NewRefs:    dbChange.NewRefs,
 				}
 
 				objID := int(dbChange.ObjectID.Int32)
@@ -183,6 +184,9 @@ func (r *Repository) RetrieveIngestionLogs(ctx context.Context, filter *reconcil
 				objVersion := int(dbChange.ObjectVersion.Int32)
 				if dbChange.ObjectVersion.Valid {
 					change.ObjectVersion = &objVersion
+				}
+				if dbChange.RefID.Valid {
+					change.RefID = &dbChange.RefID.String
 				}
 
 				changes = append(changes, change)
@@ -199,8 +203,8 @@ func (r *Repository) RetrieveIngestionLogs(ctx context.Context, filter *reconcil
 			}
 
 			changeSet := &changeset.ChangeSet{
-				ChangeSetID:   row.ChangeSet.ExternalID,
-				ChangeSet:     changes,
+				ID:            row.ChangeSet.ExternalID,
+				Changes:       changes,
 				BranchID:      branchID,
 				DeviationName: deviationName,
 			}
@@ -243,7 +247,7 @@ func (r *Repository) CreateChangeSet(ctx context.Context, changeSet changeset.Ch
 
 	qtx := r.queries.WithTx(tx)
 	params := postgres.CreateChangeSetParams{
-		ExternalID:     changeSet.ChangeSetID,
+		ExternalID:     changeSet.ID,
 		IngestionLogID: ingestionLogID,
 	}
 	if changeSet.BranchID != nil {
@@ -259,7 +263,7 @@ func (r *Repository) CreateChangeSet(ctx context.Context, changeSet changeset.Ch
 		return nil, fmt.Errorf("failed to create change set: %w", err)
 	}
 
-	for i, change := range changeSet.ChangeSet {
+	for i, change := range changeSet.Changes {
 		beforeJSON, err := json.Marshal(change.Before)
 		if err != nil {
 			rollback()
@@ -273,13 +277,14 @@ func (r *Repository) CreateChangeSet(ctx context.Context, changeSet changeset.Ch
 		}
 
 		changeParams := postgres.CreateChangeParams{
-			ExternalID:         change.ChangeID,
+			ExternalID:         change.ID,
 			ChangeSetID:        cs.ID,
 			ChangeType:         change.ChangeType,
 			ObjectType:         change.ObjectType,
 			ObjectPrimaryValue: change.ObjectPrimaryValue,
 			Before:             beforeJSON,
 			After:              afterJSON,
+			NewRefs:            change.NewRefs,
 			SequenceNumber:     pgtype.Int4{Int32: int32(i), Valid: true},
 		}
 		if change.ObjectID != nil {
@@ -287,6 +292,9 @@ func (r *Repository) CreateChangeSet(ctx context.Context, changeSet changeset.Ch
 		}
 		if change.ObjectVersion != nil {
 			changeParams.ObjectVersion = pgtype.Int4{Int32: int32(*change.ObjectVersion), Valid: true}
+		}
+		if change.RefID != nil {
+			changeParams.RefID = pgtype.Text{String: *change.RefID, Valid: true}
 		}
 
 		if _, err = qtx.CreateChange(ctx, changeParams); err != nil {
@@ -362,175 +370,6 @@ func (r *Repository) RetrieveDeviationByID(ctx context.Context, externalID strin
 	return deviationPb, nil
 }
 
-// MarshalChangeDataToJSON marshals change data to JSON.
-func MarshalChangeDataToJSON(data any, objectType string) ([]byte, error) {
-	dataJSON, _ := json.Marshal(data)
-	switch objectType {
-	case netbox.DcimDeviceObjectType:
-		var o netbox.DcimDevice
-		if err := json.Unmarshal(dataJSON, &o); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal device data: %w", err)
-		}
-		b, err := json.Marshal(o)
-		if err != nil {
-			return nil, fmt.Errorf("failed to marshal device data: %w", err)
-		}
-		return b, nil
-	case netbox.DcimDeviceRoleObjectType:
-		var o netbox.DcimDeviceRole
-		if err := json.Unmarshal(dataJSON, &o); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal device role data: %w", err)
-		}
-		b, err := json.Marshal(o)
-		if err != nil {
-			return nil, fmt.Errorf("failed to marshal device role data: %w", err)
-		}
-		return b, nil
-	case netbox.DcimDeviceTypeObjectType:
-		var o netbox.DcimDeviceType
-		if err := json.Unmarshal(dataJSON, &o); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal device type data: %w", err)
-		}
-		b, err := json.Marshal(o)
-		if err != nil {
-			return nil, fmt.Errorf("failed to marshal device type data: %w", err)
-		}
-		return b, nil
-	case netbox.DcimInterfaceObjectType:
-		var o netbox.DcimInterface
-		if err := json.Unmarshal(dataJSON, &o); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal interface data: %w", err)
-		}
-		b, err := json.Marshal(o)
-		if err != nil {
-			return nil, fmt.Errorf("failed to marshal interface data: %w", err)
-		}
-		return b, nil
-	case netbox.DcimManufacturerObjectType:
-		var o netbox.DcimManufacturer
-		if err := json.Unmarshal(dataJSON, &o); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal manufacturer data: %w", err)
-		}
-		b, err := json.Marshal(o)
-		if err != nil {
-			return nil, fmt.Errorf("failed to marshal manufacturer data: %w", err)
-		}
-		return b, nil
-	case netbox.DcimPlatformObjectType:
-		var o netbox.DcimPlatform
-		if err := json.Unmarshal(dataJSON, &o); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal platform data: %w", err)
-		}
-		b, err := json.Marshal(o)
-		if err != nil {
-			return nil, fmt.Errorf("failed to marshal platform data: %w", err)
-		}
-		return b, nil
-	case netbox.DcimSiteObjectType:
-		var o netbox.DcimSite
-		if err := json.Unmarshal(dataJSON, &o); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal site data: %w", err)
-		}
-		b, err := json.Marshal(o)
-		if err != nil {
-			return nil, fmt.Errorf("failed to marshal site data: %w", err)
-		}
-		return b, nil
-	case netbox.ExtrasTagObjectType:
-		var o netbox.Tag
-		if err := json.Unmarshal(dataJSON, &o); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal tag data: %w", err)
-		}
-		b, err := json.Marshal(o)
-		if err != nil {
-			return nil, fmt.Errorf("failed to marshal tag data: %w", err)
-		}
-		return b, nil
-	case netbox.IpamIPAddressObjectType:
-		var o netbox.IpamIPAddress
-		if err := json.Unmarshal(dataJSON, &o); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal ip address data: %w", err)
-		}
-		b, err := json.Marshal(o)
-		if err != nil {
-			return nil, fmt.Errorf("failed to marshal ip address data: %w", err)
-		}
-		return b, nil
-	case netbox.IpamPrefixObjectType:
-		var o netbox.IpamPrefix
-		if err := json.Unmarshal(dataJSON, &o); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal prefix data: %w", err)
-		}
-		b, err := json.Marshal(o)
-		if err != nil {
-			return nil, fmt.Errorf("failed to marshal prefix data: %w", err)
-		}
-		return b, nil
-	case netbox.VirtualizationClusterGroupObjectType:
-		var o netbox.VirtualizationClusterGroup
-		if err := json.Unmarshal(dataJSON, &o); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal cluster group data: %w", err)
-		}
-		b, err := json.Marshal(o)
-		if err != nil {
-			return nil, fmt.Errorf("failed to marshal cluster group data: %w", err)
-		}
-		return b, nil
-	case netbox.VirtualizationClusterTypeObjectType:
-		var o netbox.VirtualizationClusterType
-		if err := json.Unmarshal(dataJSON, &o); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal cluster type data: %w", err)
-		}
-		b, err := json.Marshal(o)
-		if err != nil {
-			return nil, fmt.Errorf("failed to marshal cluster type data: %w", err)
-		}
-		return b, nil
-	case netbox.VirtualizationClusterObjectType:
-		var o netbox.VirtualizationCluster
-		if err := json.Unmarshal(dataJSON, &o); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal cluster data: %w", err)
-		}
-		b, err := json.Marshal(o)
-		if err != nil {
-			return nil, fmt.Errorf("failed to marshal cluster data: %w", err)
-		}
-		return b, nil
-	case netbox.VirtualizationVirtualMachineObjectType:
-		var o netbox.VirtualizationVirtualMachine
-		if err := json.Unmarshal(dataJSON, &o); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal virtual machine data: %w", err)
-		}
-		b, err := json.Marshal(o)
-		if err != nil {
-			return nil, fmt.Errorf("failed to marshal virtual machine data: %w", err)
-		}
-		return b, nil
-	case netbox.VirtualizationVMInterfaceObjectType:
-		var o netbox.VirtualizationVMInterface
-		if err := json.Unmarshal(dataJSON, &o); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal vm interface data: %w", err)
-		}
-		b, err := json.Marshal(o)
-		if err != nil {
-			return nil, fmt.Errorf("failed to marshal vm interface data: %w", err)
-		}
-		return b, nil
-	case netbox.VirtualizationVirtualDiskObjectType:
-		var o netbox.VirtualizationVirtualDisk
-		if err := json.Unmarshal(dataJSON, &o); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal virtual disk data: %w", err)
-		}
-		b, err := json.Marshal(o)
-		if err != nil {
-			return nil, fmt.Errorf("failed to marshal virtual disk data: %w", err)
-		}
-		return b, nil
-	default:
-		return nil, fmt.Errorf("unsupported object type: %s", objectType)
-	}
-}
-
 func deviationToProto(dbDeviation postgres.VDeviation) (*reconcilerpb.Deviation, error) {
 	entity := &diodepb.Entity{}
 	if err := protojson.Unmarshal(dbDeviation.Entity, entity); err != nil {
@@ -550,13 +389,15 @@ func deviationToProto(dbDeviation postgres.VDeviation) (*reconcilerpb.Deviation,
 
 	var deviationErr *reconcilerpb.DeviationError
 	if dbDeviation.Error != nil {
-		deviationErr = &reconcilerpb.DeviationError{}
-		// these are input as a larger error type that is not fully unmarshaled in the response
-		err := protojson.UnmarshalOptions{
-			DiscardUnknown: true,
-		}.Unmarshal(dbDeviation.Error, deviationErr)
-		if err != nil {
+		var changeSetErr changeset.Error
+		if err := json.Unmarshal(dbDeviation.Error, &changeSetErr); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal error: %w", err)
+		}
+
+		deviationErr = &reconcilerpb.DeviationError{
+			Message: changeSetErr.Message,
+			Code:    string(changeSetErr.Code),
+			Details: changeSetErr.Details,
 		}
 	}
 
@@ -587,20 +428,8 @@ func deviationToProto(dbDeviation postgres.VDeviation) (*reconcilerpb.Deviation,
 				ChangeType:         dbChange.ChangeType,
 				ObjectType:         dbChange.ObjectType,
 				ObjectPrimaryValue: dbChange.ObjectPrimaryValue,
-			}
-			if dbChange.Before != nil {
-				beforeJSON, err := MarshalChangeDataToJSON(dbChange.Before, dbChange.ObjectType)
-				if err != nil {
-					return nil, fmt.Errorf("failed to marshal before state: %w", err)
-				}
-				change.Before = beforeJSON
-			}
-			if dbChange.After != nil {
-				afterJSON, err := MarshalChangeDataToJSON(dbChange.After, dbChange.ObjectType)
-				if err != nil {
-					return nil, fmt.Errorf("failed to marshal after state: %w", err)
-				}
-				change.After = afterJSON
+				Before:             dbChange.Before,
+				After:              dbChange.After,
 			}
 			changes = append(changes, change)
 		}

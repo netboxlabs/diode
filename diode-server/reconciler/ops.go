@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log/slog"
 
+	diodeErrors "github.com/netboxlabs/diode/diode-server/errors"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
 	"github.com/netboxlabs/diode/diode-server/reconciler/applier"
@@ -53,10 +54,11 @@ func (o *Ops) GenerateChangeSet(ctx context.Context, ingestionLogID int32, inges
 			"object_type": ingestEntity.ObjectType,
 		}
 		sentry.CaptureError(err, tags, "Ingest Entity", contextMap)
-		ingestionErr := extractIngestionError(err)
 
 		ingestionLog.State = reconcilerpb.State_FAILED
-		if err2 := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, reconcilerpb.State_FAILED, ingestionErr); err2 != nil {
+
+		changeSetErr := handleChangeSetError(err)
+		if err2 := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, reconcilerpb.State_FAILED, changeSetErr); err2 != nil {
 			err = errors.Join(err, err2)
 		}
 
@@ -76,7 +78,7 @@ func (o *Ops) GenerateChangeSet(ctx context.Context, ingestionLogID int32, inges
 	}
 
 	state := reconcilerpb.State_OPEN
-	if len(changeSet.ChangeSet) == 0 {
+	if len(changeSet.Changes) == 0 {
 		state = reconcilerpb.State_NO_CHANGES
 	}
 
@@ -88,17 +90,18 @@ func (o *Ops) GenerateChangeSet(ctx context.Context, ingestionLogID int32, inges
 		// return nil, err
 	}
 
-	o.logger.Debug("change set generated", "id", changeSetID, "externalID", changeSet.ChangeSetID, "ingestionLogID", ingestionLogID)
+	o.logger.Debug("change set generated", "id", changeSetID, "externalID", changeSet.ID, "ingestionLogID", ingestionLogID)
 	return changeSetID, changeSet, nil
 }
 
 // ApplyChangeSet applies change set to NetBox and updates related states
 func (o *Ops) ApplyChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, changeSetID int32, changeSet *changeset.ChangeSet) error {
 	if err := applier.ApplyChangeSet(ctx, o.logger, *changeSet, o.nbClient); err != nil {
-		o.logger.Debug("failed to apply change set", "id", changeSetID, "externalID", changeSet.ChangeSetID, "ingestionLogID", ingestionLogID, "error", err)
-		ingestionErr := extractIngestionError(err)
+		o.logger.Debug("failed to apply change set", "id", changeSetID, "externalID", changeSet.ID, "ingestionLogID", ingestionLogID, "error", err)
 
-		if err2 := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, reconcilerpb.State_FAILED, ingestionErr); err2 != nil {
+		changeSetErr := handleChangeSetError(err)
+
+		if err2 := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, reconcilerpb.State_FAILED, changeSetErr); err2 != nil {
 			err = errors.Join(err, err2)
 		}
 		return err
@@ -111,6 +114,19 @@ func (o *Ops) ApplyChangeSet(ctx context.Context, ingestionLogID int32, ingestio
 		// return nil, err
 	}
 
-	o.logger.Debug("change set applied", "id", changeSetID, "externalID", changeSet.ChangeSetID, "ingestionLogID", ingestionLogID)
+	o.logger.Debug("change set applied", "id", changeSetID, "externalID", changeSet.ID, "ingestionLogID", ingestionLogID)
 	return nil
+}
+
+func handleChangeSetError(err error) error {
+	var changeSetErr *changeset.Error
+	if errors.As(err, &changeSetErr) {
+		return err
+	}
+
+	return &changeset.Error{
+		Message: err.Error(),
+		Code:    diodeErrors.ErrCodeInternal,
+		Details: []byte{},
+	}
 }

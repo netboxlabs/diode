@@ -17,7 +17,13 @@ sql:
               pointer: true
           - column: changes.before
             go_type:
-              type: any
+              type: json.RawMessage
           - column: changes.after
             go_type:
-              type: any
+              type: json.RawMessage
+          - column: ingestion_logs.error
+            go_type:
+              type: json.RawMessage
+          - column: v_deviations.error
+            go_type:
+              type: json.RawMessage

@@ -17,8 +17,7 @@ import (
 
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
-	"github.com/netboxlabs/diode/diode-server/netbox"
-	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
+	"github.com/netboxlabs/diode/diode-server/gen/netbox"
 	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
 	"github.com/netboxlabs/diode/diode-server/sentry"
 	"github.com/netboxlabs/diode/diode-server/telemetry"
@@ -164,7 +163,8 @@ func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, stream,
 			continue
 		}
 		for _, msg := range streams[0].Messages {
-			if err := p.handleStreamMessage(ctx, msg); err != nil {
+			_, err := p.handleStreamMessage(ctx, msg)
+			if err != nil {
 				p.logger.Error("failed to handle stream message", "error", err, "message", msg)
 
 				contextMap := map[string]any{
@@ -180,7 +180,10 @@ func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, stream,
 	}
 }
 
-func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.XMessage) error {
+func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.XMessage) (chan struct{}, error) {
+	doneChan := make(chan struct{})
+	defer close(doneChan)
+
 	// Create attributes for metrics
 	attrs := []attribute.KeyValue{
 		attribute.String(telemetry.AttributeHostname, p.hostname),
@@ -190,7 +193,7 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 	ingestReq := &diodepb.IngestRequest{}
 	if err := proto.Unmarshal([]byte(msg.Values["request"].(string)), ingestReq); err != nil {
 		p.metrics.RecordHandleMessage(ctx, false)
-		return err
+		return doneChan, err
 	}
 
 	// Add request-specific attributes
@@ -227,7 +230,20 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 
 	if p.Config.AutoApplyChangesets {
 		p.ApplyChangeSet(ctx, applyChangeSetChan, applyChangeSetDoneChan)
+	} else {
+		// Only close the channel if it's not nil to avoid panic
+		if applyChangeSetDoneChan != nil {
+			close(applyChangeSetDoneChan)
+		}
 	}
+
+	allDone := make(chan struct{})
+	go func() {
+		<-doneChan
+		<-generateIngestionLogDoneChan
+		<-applyChangeSetDoneChan
+		close(allDone)
+	}()
 
 	createIngestionLogsErrs := p.CreateIngestionLogs(ctx, ingestReq, ingestionTs, generateIngestionLogChan)
 	if len(createIngestionLogsErrs) > 0 {
@@ -255,7 +271,7 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 		p.metrics.RecordHandleMessage(ctx, true)
 	}
 
-	return nil
+	return allDone, nil
 }
 
 // GenerateChangeSet generates a change set for an ingestion log
@@ -291,10 +307,10 @@ func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChan
 					p.logger.Error("error generating changeset", "error", err)
 					p.metrics.RecordChangeSetCreate(ctx, false, 0)
 				} else {
-					p.metrics.RecordChangeSetCreate(ctx, true, int64(len(changeSet.ChangeSet)))
+					p.metrics.RecordChangeSetCreate(ctx, true, int64(len(changeSet.Changes)))
 				}
 
-				if changeSet != nil && len(changeSet.ChangeSet) > 0 {
+				if changeSet != nil && len(changeSet.Changes) > 0 {
 					if applyChangeSetChan != nil {
 						applyChangeSetChan <- IngestionLogToProcess{
 							ingestionLogID: msg.ingestionLogID,
@@ -338,7 +354,7 @@ func (p *IngestionProcessor) ApplyChangeSet(ctx context.Context, applyChan <-cha
 					p.logger.Error("error applying changeset", "error", err)
 					p.metrics.RecordChangeSetApply(ctx, false, 0)
 				} else {
-					p.metrics.RecordChangeSetApply(ctx, true, int64(len(msg.changeSet.ChangeSet)))
+					p.metrics.RecordChangeSetApply(ctx, true, int64(len(msg.changeSet.Changes)))
 				}
 			}
 		}
@@ -357,7 +373,7 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 			continue
 		}
 
-		objectType, err := extractObjectType(v)
+		objectType, err := netbox.GetObjectType(v)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("failed to extract object type for index %d: %v", i, err))
 			continue
@@ -395,58 +411,4 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 	}
 
 	return errs
-}
-
-func extractIngestionError(err error) *reconcilerpb.IngestionError {
-	var ingestionErr *reconcilerpb.IngestionError
-	var applyChangeSetErr *netboxdiodeplugin.ApplyChangeSetError
-
-	switch {
-	case errors.As(err, &applyChangeSetErr):
-		ingestionErr = applyChangeSetErr.ToIngestionError()
-	default:
-		ingestionErr = &reconcilerpb.IngestionError{
-			Message: err.Error(),
-			Code:    0,
-		}
-	}
-
-	return ingestionErr
-}
-
-func extractObjectType(in *diodepb.Entity) (string, error) {
-	switch in.GetEntity().(type) {
-	case *diodepb.Entity_Device:
-		return netbox.DcimDeviceObjectType, nil
-	case *diodepb.Entity_DeviceRole:
-		return netbox.DcimDeviceRoleObjectType, nil
-	case *diodepb.Entity_DeviceType:
-		return netbox.DcimDeviceTypeObjectType, nil
-	case *diodepb.Entity_Interface:
-		return netbox.DcimInterfaceObjectType, nil
-	case *diodepb.Entity_Manufacturer:
-		return netbox.DcimManufacturerObjectType, nil
-	case *diodepb.Entity_Platform:
-		return netbox.DcimPlatformObjectType, nil
-	case *diodepb.Entity_Site:
-		return netbox.DcimSiteObjectType, nil
-	case *diodepb.Entity_IpAddress:
-		return netbox.IpamIPAddressObjectType, nil
-	case *diodepb.Entity_Prefix:
-		return netbox.IpamPrefixObjectType, nil
-	case *diodepb.Entity_ClusterGroup:
-		return netbox.VirtualizationClusterGroupObjectType, nil
-	case *diodepb.Entity_ClusterType:
-		return netbox.VirtualizationClusterTypeObjectType, nil
-	case *diodepb.Entity_Cluster:
-		return netbox.VirtualizationClusterObjectType, nil
-	case *diodepb.Entity_VirtualMachine:
-		return netbox.VirtualizationVirtualMachineObjectType, nil
-	case *diodepb.Entity_Vminterface:
-		return netbox.VirtualizationVMInterfaceObjectType, nil
-	case *diodepb.Entity_VirtualDisk:
-		return netbox.VirtualizationVirtualDiskObjectType, nil
-	default:
-		return "", fmt.Errorf("unknown object type")
-	}
 }

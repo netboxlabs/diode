@@ -101,7 +101,7 @@ func TestRetrieveLogs(t *testing.T) {
 						Entity: &diodepb.Entity_Interface{
 							Interface: &diodepb.Interface{
 								Device: &diodepb.Device{
-									Name: "my_dev",
+									Name: strPtr("my_dev"),
 								},
 								Name: "Gig 2",
 							},
@@ -123,14 +123,14 @@ func TestRetrieveLogs(t *testing.T) {
 					Entity: &diodepb.Entity{
 						Entity: &diodepb.Entity_Device{
 							Device: &diodepb.Device{
-								Name: "Conference_Room_AP_02",
+								Name: strPtr("Conference_Room_AP_02"),
 								DeviceType: &diodepb.DeviceType{
 									Model: "Cisco Aironet 3802",
 									Manufacturer: &diodepb.Manufacturer{
 										Name: "Cisco",
 									},
 								},
-								Role:   &diodepb.Role{Name: "Wireless_AP"},
+								Role:   &diodepb.DeviceRole{Name: "Wireless_AP"},
 								Serial: strPtr("PQR456789012"),
 								Site:   &diodepb.Site{Name: "HQ"},
 							},
@@ -154,7 +154,7 @@ func TestRetrieveLogs(t *testing.T) {
 							Entity: &diodepb.Entity_Interface{
 								Interface: &diodepb.Interface{
 									Device: &diodepb.Device{
-										Name: "my_dev",
+										Name: strPtr("my_dev"),
 									},
 									Name: "Gig 2",
 								},
@@ -175,14 +175,14 @@ func TestRetrieveLogs(t *testing.T) {
 						Entity: &diodepb.Entity{
 							Entity: &diodepb.Entity_Device{
 								Device: &diodepb.Device{
-									Name: "Conference_Room_AP_02",
+									Name: strPtr("Conference_Room_AP_02"),
 									DeviceType: &diodepb.DeviceType{
 										Model: "Cisco Aironet 3802",
 										Manufacturer: &diodepb.Manufacturer{
 											Name: "Cisco",
 										},
 									},
-									Role:   &diodepb.Role{Name: "Wireless_AP"},
+									Role:   &diodepb.DeviceRole{Name: "Wireless_AP"},
 									Serial: strPtr("PQR456789012"),
 									Site:   &diodepb.Site{Name: "HQ"},
 								},
@@ -305,7 +305,7 @@ func TestRetrieveLogs(t *testing.T) {
 						Entity: &diodepb.Entity_Interface{
 							Interface: &diodepb.Interface{
 								Device: &diodepb.Device{
-									Name: "my_dev",
+									Name: strPtr("my_dev"),
 								},
 								Name: "Gig 2",
 							},
@@ -330,7 +330,7 @@ func TestRetrieveLogs(t *testing.T) {
 							Entity: &diodepb.Entity_Interface{
 								Interface: &diodepb.Interface{
 									Device: &diodepb.Device{
-										Name: "my_dev",
+										Name: strPtr("my_dev"),
 									},
 									Name: "Gig 2",
 								},
@@ -369,7 +369,7 @@ func TestRetrieveLogs(t *testing.T) {
 						Entity: &diodepb.Entity_Interface{
 							Interface: &diodepb.Interface{
 								Device: &diodepb.Device{
-									Name: "my_dev",
+									Name: strPtr("my_dev"),
 								},
 								Name: "Gig 2",
 							},
@@ -395,7 +395,7 @@ func TestRetrieveLogs(t *testing.T) {
 							Entity: &diodepb.Entity_Interface{
 								Interface: &diodepb.Interface{
 									Device: &diodepb.Device{
-										Name: "my_dev",
+										Name: strPtr("my_dev"),
 									},
 									Name: "Gig 2",
 								},
@@ -434,7 +434,7 @@ func TestRetrieveLogs(t *testing.T) {
 						Entity: &diodepb.Entity_Interface{
 							Interface: &diodepb.Interface{
 								Device: &diodepb.Device{
-									Name: "my_dev",
+									Name: strPtr("my_dev"),
 								},
 								Name: "Gig 2",
 							},
@@ -460,7 +460,7 @@ func TestRetrieveLogs(t *testing.T) {
 							Entity: &diodepb.Entity_Interface{
 								Interface: &diodepb.Interface{
 									Device: &diodepb.Device{
-										Name: "my_dev",
+										Name: strPtr("my_dev"),
 									},
 									Name: "Gig 2",
 								},
@@ -499,7 +499,7 @@ func TestRetrieveLogs(t *testing.T) {
 						Entity: &diodepb.Entity_Interface{
 							Interface: &diodepb.Interface{
 								Device: &diodepb.Device{
-									Name: "my_dev",
+									Name: strPtr("my_dev"),
 								},
 								Name: "Gig 2",
 							},
@@ -525,7 +525,7 @@ func TestRetrieveLogs(t *testing.T) {
 							Entity: &diodepb.Entity_Interface{
 								Interface: &diodepb.Interface{
 									Device: &diodepb.Device{
-										Name: "my_dev",
+										Name: strPtr("my_dev"),
 									},
 									Name: "Gig 2",
 								},
@@ -564,7 +564,7 @@ func TestRetrieveLogs(t *testing.T) {
 						Entity: &diodepb.Entity_Interface{
 							Interface: &diodepb.Interface{
 								Device: &diodepb.Device{
-									Name: "my_dev",
+									Name: strPtr("my_dev"),
 								},
 								Name: "Gig 2",
 							},
@@ -590,7 +590,7 @@ func TestRetrieveLogs(t *testing.T) {
 							Entity: &diodepb.Entity_Interface{
 								Interface: &diodepb.Interface{
 									Device: &diodepb.Device{
-										Name: "my_dev",
+										Name: strPtr("my_dev"),
 									},
 									Name: "Gig 2",
 								},
@@ -629,7 +629,7 @@ func TestRetrieveLogs(t *testing.T) {
 						Entity: &diodepb.Entity_Interface{
 							Interface: &diodepb.Interface{
 								Device: &diodepb.Device{
-									Name: "my_dev",
+									Name: strPtr("my_dev"),
 								},
 								Name: "Gig 2",
 							},
@@ -655,7 +655,7 @@ func TestRetrieveLogs(t *testing.T) {
 							Entity: &diodepb.Entity_Interface{
 								Interface: &diodepb.Interface{
 									Device: &diodepb.Device{
-										Name: "my_dev",
+										Name: strPtr("my_dev"),
 									},
 									Name: "Gig 2",
 								},
@@ -694,7 +694,7 @@ func TestRetrieveLogs(t *testing.T) {
 						Entity: &diodepb.Entity_Interface{
 							Interface: &diodepb.Interface{
 								Device: &diodepb.Device{
-									Name: "my_dev",
+									Name: strPtr("my_dev"),
 								},
 								Name: "Gig 2",
 							},
@@ -720,7 +720,7 @@ func TestRetrieveLogs(t *testing.T) {
 							Entity: &diodepb.Entity_Interface{
 								Interface: &diodepb.Interface{
 									Device: &diodepb.Device{
-										Name: "my_dev",
+										Name: strPtr("my_dev"),
 									},
 									Name: "Gig 2",
 								},
