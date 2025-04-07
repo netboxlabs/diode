@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log/slog"
 
+	diodeErrors "github.com/netboxlabs/diode/diode-server/errors"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
 	"github.com/netboxlabs/diode/diode-server/reconciler/applier"
@@ -53,10 +54,11 @@ func (o *Ops) GenerateChangeSet(ctx context.Context, ingestionLogID int32, inges
 			"object_type": ingestEntity.ObjectType,
 		}
 		sentry.CaptureError(err, tags, "Ingest Entity", contextMap)
-		ingestionErr := extractIngestionError(err)
 
 		ingestionLog.State = reconcilerpb.State_FAILED
-		if err2 := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, reconcilerpb.State_FAILED, ingestionErr); err2 != nil {
+
+		changeSetErr := handleChangeSetError(err)
+		if err2 := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, reconcilerpb.State_FAILED, changeSetErr); err2 != nil {
 			err = errors.Join(err, err2)
 		}
 
@@ -96,9 +98,10 @@ func (o *Ops) GenerateChangeSet(ctx context.Context, ingestionLogID int32, inges
 func (o *Ops) ApplyChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, changeSetID int32, changeSet *changeset.ChangeSet) error {
 	if err := applier.ApplyChangeSet(ctx, o.logger, *changeSet, o.nbClient); err != nil {
 		o.logger.Debug("failed to apply change set", "id", changeSetID, "externalID", changeSet.ID, "ingestionLogID", ingestionLogID, "error", err)
-		ingestionErr := extractIngestionError(err)
 
-		if err2 := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, reconcilerpb.State_FAILED, ingestionErr); err2 != nil {
+		changeSetErr := handleChangeSetError(err)
+
+		if err2 := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, reconcilerpb.State_FAILED, changeSetErr); err2 != nil {
 			err = errors.Join(err, err2)
 		}
 		return err
@@ -113,4 +116,17 @@ func (o *Ops) ApplyChangeSet(ctx context.Context, ingestionLogID int32, ingestio
 
 	o.logger.Debug("change set applied", "id", changeSetID, "externalID", changeSet.ID, "ingestionLogID", ingestionLogID)
 	return nil
+}
+
+func handleChangeSetError(err error) error {
+	var changeSetErr *changeset.Error
+	if errors.As(err, &changeSetErr) {
+		return err
+	}
+
+	return &changeset.Error{
+		Message: err.Error(),
+		Code:    diodeErrors.ErrCodeInternal,
+		Details: []byte{},
+	}
 }

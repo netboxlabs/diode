@@ -141,10 +141,12 @@ func TestProOpsGenerateChangeSet(t *testing.T) {
 
 			for _, m := range tt.generateDiff {
 				if m.err == nil {
-					mockNetBoxClient.EXPECT().GenerateDiff(ctx, mock.Anything).Return(&netboxdiodeplugin.GenerateDiffResponse{
-						Changes: m.changeSet,
-						Branch: &netboxdiodeplugin.Branch{
-							ID: m.branchID,
+					mockNetBoxClient.EXPECT().GenerateDiff(ctx, mock.Anything).Return(&netboxdiodeplugin.ChangeSetResult{
+						ChangeSet: &netboxdiodeplugin.ChangeSet{
+							Changes: m.changeSet,
+							Branch: &netboxdiodeplugin.Branch{
+								ID: m.branchID,
+							},
 						},
 					}, nil)
 				} else {

@@ -51,7 +51,7 @@ type IngestionLog struct {
 	SdkName            pgtype.Text        `json:"sdk_name"`
 	SdkVersion         pgtype.Text        `json:"sdk_version"`
 	Entity             []byte             `json:"entity"`
-	Error              []byte             `json:"error"`
+	Error              json.RawMessage    `json:"error"`
 	SourceMetadata     []byte             `json:"source_metadata"`
 	CreatedAt          pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
@@ -70,7 +70,7 @@ type VDeviation struct {
 	SdkName            pgtype.Text        `json:"sdk_name"`
 	SdkVersion         pgtype.Text        `json:"sdk_version"`
 	Entity             []byte             `json:"entity"`
-	Error              []byte             `json:"error"`
+	Error              json.RawMessage    `json:"error"`
 	SourceMetadata     []byte             `json:"source_metadata"`
 	CreatedAt          pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`

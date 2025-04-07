@@ -21,7 +21,8 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
+	diodeErrors "github.com/netboxlabs/diode/diode-server/errors"
+	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
 )
 
 const (
@@ -29,12 +30,12 @@ const (
 	SDKName = "netbox-diode-plugin-sdk-go"
 
 	// SDKVersion is the version of the SDK
-	SDKVersion = "0.1.0"
+	SDKVersion = "0.1.0" // TODO: consider making this same as diode-reconciler version
 
 	// BaseURLEnvVarName is the environment variable name for the NetBox Diode plugin HTTP base URL
 	BaseURLEnvVarName = "NETBOX_DIODE_PLUGIN_API_BASE_URL"
 
-	// TLSSkipVerifyEnvVarName is the environment variable name for Netbox Diode plugin TLS verification
+	// TLSSkipVerifyEnvVarName is the environment variable name for NetBox Diode plugin TLS verification
 	TLSSkipVerifyEnvVarName = "NETBOX_DIODE_PLUGIN_SKIP_TLS_VERIFY"
 
 	// TimeoutSecondsEnvVarName is the environment variable name for the NetBox Diode plugin HTTP timeout
@@ -46,17 +47,13 @@ const (
 
 	// NetBoxBranchHeader is an HTTP header that indicates the NetBox branch to target
 	NetBoxBranchHeader = "X-NetBox-Branch"
+
 	// NetBoxBranchParam is a query parameter that indicates the NetBox branch to target
 	NetBoxBranchParam = "_branch"
 )
 
-var (
-	// ErrInvalidTimeout is an error for invalid timeout value
-	ErrInvalidTimeout = errors.New("invalid timeout value")
-
-	// ErrApplyChangeSetFailed is an error for failed to apply change set
-	ErrApplyChangeSetFailed = errors.New("failed to apply change set")
-)
+// ErrInvalidTimeout is an error for invalid timeout value
+var ErrInvalidTimeout = errors.New("invalid timeout value")
 
 type apiRoundTripper struct {
 	transport http.RoundTripper
@@ -93,67 +90,47 @@ func (rt *apiRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) 
 	return rt.transport.RoundTrip(req2)
 }
 
-// ApplyChangeSetError represents an error when applying a change set
-type ApplyChangeSetError struct {
-	Message string
-	Code    int
-	Details ApplyChangeSetResponse
+// ChangeSetResult represents a change set result
+type ChangeSetResult struct {
+	ID        string          `json:"id"`
+	ChangeSet *ChangeSet      `json:"change_set"`
+	Errors    json.RawMessage `json:"errors"`
 }
 
-// Error returns the NetBoxDiodePluginError message
-func (e *ApplyChangeSetError) Error() string {
-	detailsErrorsJSON, _ := json.Marshal(e.Details.Errors)
-	return fmt.Sprintf("msg: %s, code: %d, change set id: %s, result: %s, errors: %s", e.Message, e.Code, e.Details.ID, e.Details.Result, detailsErrorsJSON)
+// ChangeSet represents a change set
+type ChangeSet struct {
+	ID      string   `json:"id"`
+	Changes []Change `json:"changes"`
+	Branch  *Branch  `json:"branch"`
 }
 
-// NewApplyChangeSetError creates a new ApplyChangeSetError
-func NewApplyChangeSetError(msg string, code int, response ApplyChangeSetResponse) error {
-	return &ApplyChangeSetError{
-		Message: msg,
-		Code:    code,
-		Details: response,
-	}
+// Change represents a change
+type Change struct {
+	ID                 string          `json:"id"`
+	ChangeType         string          `json:"change_type"`
+	ObjectType         string          `json:"object_type"`
+	ObjectID           *int            `json:"object_id,omitempty"`
+	RefID              *string         `json:"ref_id,omitempty"`
+	ObjectVersion      *int            `json:"object_version,omitempty"`
+	Data               json.RawMessage `json:"data"`
+	Before             json.RawMessage `json:"before,omitempty"`
+	ObjectPrimaryValue string          `json:"object_primary_value,omitempty"`
+	NewRefs            []string        `json:"new_refs,omitempty"`
 }
 
-// ToIngestionError converts ApplyChangeSetError to *reconcilerpb.IngestionError
-func (e *ApplyChangeSetError) ToIngestionError() *reconcilerpb.IngestionError {
-	changeSetErrors := make([]*reconcilerpb.IngestionError_Details_Error, 0)
-
-	ingestionErr := &reconcilerpb.IngestionError{
-		Message: e.Message,
-		Code:    int32(e.Code),
-		Details: &reconcilerpb.IngestionError_Details{
-			ChangeSetId: e.Details.ID,
-			Result:      e.Details.Result,
-		},
-	}
-
-	if len(e.Details.Errors) > 0 {
-		for _, detailsErr := range e.Details.Errors {
-			changeID := detailsErr["change_id"]
-			for errKey, errValue := range detailsErr {
-				if errKey == "change_id" {
-					continue
-				}
-				changeSetErrors = append(changeSetErrors, &reconcilerpb.IngestionError_Details_Error{
-					ChangeId: changeID,
-					Error:    errValue,
-				})
-			}
-		}
-		ingestionErr.Details.Errors = changeSetErrors
-	}
-
-	return ingestionErr
+// Branch represents a NetBox branch details
+type Branch struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }
 
 // NetBoxAPI is the interface for the NetBox Diode plugin API
 type NetBoxAPI interface {
 	// GenerateDiff generates diff between ingested entity and NetBox object state
-	GenerateDiff(context.Context, GenerateDiffRequest) (*GenerateDiffResponse, error)
+	GenerateDiff(context.Context, GenerateDiffRequest) (*ChangeSetResult, error)
 
 	// ApplyChangeSet applies a change set
-	ApplyChangeSet(context.Context, ApplyChangeSetRequest) (*ApplyChangeSetResponse, error)
+	ApplyChangeSet(context.Context, ApplyChangeSetRequest) (*ChangeSetResult, error)
 }
 
 // Client is a NetBox Diode plugin client
@@ -266,20 +243,6 @@ type GenerateDiffRequest struct {
 	EntityJSON json.RawMessage `json:"entity"` // Variable structure based on object type
 }
 
-// GenerateDiffResponse represents a diff generated by
-// NetBox against an ingested entity
-type GenerateDiffResponse struct {
-	ID      string   `json:"id"`
-	Changes []Change `json:"changes"`
-	Branch  *Branch  `json:"branch"`
-}
-
-// Branch represents a NetBox branch details
-type Branch struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-}
-
 func protoToJSON(proto proto.Message) (json.RawMessage, error) {
 	jsonBytes, err := protojson.Marshal(proto)
 	if err != nil {
@@ -289,7 +252,7 @@ func protoToJSON(proto proto.Message) (json.RawMessage, error) {
 }
 
 // GenerateDiff generates a diff between an ingested entity and NetBox object state
-func (c *Client) GenerateDiff(ctx context.Context, payload GenerateDiffRequest) (*GenerateDiffResponse, error) {
+func (c *Client) GenerateDiff(ctx context.Context, payload GenerateDiffRequest) (*ChangeSetResult, error) {
 	endpointURL, err := url.Parse(fmt.Sprintf("%s/generate-diff/", c.baseURL.String()))
 	if err != nil {
 		return nil, err
@@ -337,12 +300,19 @@ func (c *Client) GenerateDiff(ctx context.Context, payload GenerateDiffRequest) 
 		return nil, fmt.Errorf("failed to read response body %w", err)
 	}
 
-	var generateDiffResponse GenerateDiffResponse
-	if err = json.Unmarshal(respBytes, &generateDiffResponse); err != nil {
+	c.logger.Debug("generate diff", "statusCode", resp.StatusCode, "response", string(respBytes))
+
+	// return errors with 4xx status code
+	if resp.StatusCode >= http.StatusBadRequest {
+		return nil, changeset.NewError("generate diff failed", diodeErrors.ErrCodeOpsGenerateDiff, respBytes)
+	}
+
+	var changeSetResult ChangeSetResult
+	if err = json.Unmarshal(respBytes, &changeSetResult); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal response body %w", err)
 	}
 
-	return &generateDiffResponse, nil
+	return &changeSetResult, nil
 }
 
 // ApplyChangeSetRequest represents a apply change set request
@@ -353,29 +323,8 @@ type ApplyChangeSetRequest struct {
 	BranchID string   `json:"-"` // Supplied as header
 }
 
-// Change represents a change
-type Change struct {
-	ID                 string          `json:"id"`
-	ChangeType         string          `json:"change_type"`
-	ObjectType         string          `json:"object_type"`
-	ObjectID           *int            `json:"object_id,omitempty"`
-	RefID              *string         `json:"ref_id,omitempty"`
-	ObjectVersion      *int            `json:"object_version,omitempty"`
-	Data               json.RawMessage `json:"data"`
-	Before             json.RawMessage `json:"before,omitempty"`
-	ObjectPrimaryValue string          `json:"object_primary_value,omitempty"`
-	NewRefs            []string        `json:"new_refs,omitempty"`
-}
-
-// ApplyChangeSetResponse represents an apply change set response
-type ApplyChangeSetResponse struct {
-	ID     string              `json:"id"`
-	Result string              `json:"result"`
-	Errors []map[string]string `json:"errors"`
-}
-
 // ApplyChangeSet applies a change set
-func (c *Client) ApplyChangeSet(ctx context.Context, payload ApplyChangeSetRequest) (*ApplyChangeSetResponse, error) {
+func (c *Client) ApplyChangeSet(ctx context.Context, payload ApplyChangeSetRequest) (*ChangeSetResult, error) {
 	endpointURL, err := url.Parse(fmt.Sprintf("%s/apply-change-set/", c.baseURL.String()))
 	if err != nil {
 		return nil, err
@@ -420,15 +369,15 @@ func (c *Client) ApplyChangeSet(ctx context.Context, payload ApplyChangeSetReque
 
 	c.logger.Debug("apply change set", "response", string(respBytes))
 
-	var changeSetResponse ApplyChangeSetResponse
-	if err = json.Unmarshal(respBytes, &changeSetResponse); err != nil {
+	var changeSetResult ChangeSetResult
+	if err = json.Unmarshal(respBytes, &changeSetResult); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal response body %w", err)
 	}
 
 	// return errors with 4xx status code
 	if resp.StatusCode >= http.StatusBadRequest {
-		return nil, NewApplyChangeSetError(ErrApplyChangeSetFailed.Error(), resp.StatusCode, changeSetResponse)
+		return nil, changeset.NewError("apply change set failed", diodeErrors.ErrCodeOpsApplyChangeSet, respBytes)
 	}
 
-	return &changeSetResponse, nil
+	return &changeSetResult, nil
 }

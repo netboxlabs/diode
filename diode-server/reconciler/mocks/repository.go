@@ -452,17 +452,17 @@ func (_c *Repository_RetrieveIngestionLogs_Call) RunAndReturn(run func(context.C
 	return _c
 }
 
-// UpdateIngestionLogStateWithError provides a mock function with given fields: ctx, id, state, ingestionError
-func (_m *Repository) UpdateIngestionLogStateWithError(ctx context.Context, id int32, state reconcilerpb.State, ingestionError *reconcilerpb.IngestionError) error {
-	ret := _m.Called(ctx, id, state, ingestionError)
+// UpdateIngestionLogStateWithError provides a mock function with given fields: ctx, id, state, err
+func (_m *Repository) UpdateIngestionLogStateWithError(ctx context.Context, id int32, state reconcilerpb.State, err error) error {
+	ret := _m.Called(ctx, id, state, err)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdateIngestionLogStateWithError")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, int32, reconcilerpb.State, *reconcilerpb.IngestionError) error); ok {
-		r0 = rf(ctx, id, state, ingestionError)
+	if rf, ok := ret.Get(0).(func(context.Context, int32, reconcilerpb.State, error) error); ok {
+		r0 = rf(ctx, id, state, err)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -479,14 +479,14 @@ type Repository_UpdateIngestionLogStateWithError_Call struct {
 //   - ctx context.Context
 //   - id int32
 //   - state reconcilerpb.State
-//   - ingestionError *reconcilerpb.IngestionError
-func (_e *Repository_Expecter) UpdateIngestionLogStateWithError(ctx interface{}, id interface{}, state interface{}, ingestionError interface{}) *Repository_UpdateIngestionLogStateWithError_Call {
-	return &Repository_UpdateIngestionLogStateWithError_Call{Call: _e.mock.On("UpdateIngestionLogStateWithError", ctx, id, state, ingestionError)}
+//   - err error
+func (_e *Repository_Expecter) UpdateIngestionLogStateWithError(ctx interface{}, id interface{}, state interface{}, err interface{}) *Repository_UpdateIngestionLogStateWithError_Call {
+	return &Repository_UpdateIngestionLogStateWithError_Call{Call: _e.mock.On("UpdateIngestionLogStateWithError", ctx, id, state, err)}
 }
 
-func (_c *Repository_UpdateIngestionLogStateWithError_Call) Run(run func(ctx context.Context, id int32, state reconcilerpb.State, ingestionError *reconcilerpb.IngestionError)) *Repository_UpdateIngestionLogStateWithError_Call {
+func (_c *Repository_UpdateIngestionLogStateWithError_Call) Run(run func(ctx context.Context, id int32, state reconcilerpb.State, err error)) *Repository_UpdateIngestionLogStateWithError_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(int32), args[2].(reconcilerpb.State), args[3].(*reconcilerpb.IngestionError))
+		run(args[0].(context.Context), args[1].(int32), args[2].(reconcilerpb.State), args[3].(error))
 	})
 	return _c
 }
@@ -496,7 +496,7 @@ func (_c *Repository_UpdateIngestionLogStateWithError_Call) Return(_a0 error) *R
 	return _c
 }
 
-func (_c *Repository_UpdateIngestionLogStateWithError_Call) RunAndReturn(run func(context.Context, int32, reconcilerpb.State, *reconcilerpb.IngestionError) error) *Repository_UpdateIngestionLogStateWithError_Call {
+func (_c *Repository_UpdateIngestionLogStateWithError_Call) RunAndReturn(run func(context.Context, int32, reconcilerpb.State, error) error) *Repository_UpdateIngestionLogStateWithError_Call {
 	_c.Call.Return(run)
 	return _c
 }

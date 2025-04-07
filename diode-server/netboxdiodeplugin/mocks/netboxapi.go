@@ -23,23 +23,23 @@ func (_m *NetBoxAPI) EXPECT() *NetBoxAPI_Expecter {
 }
 
 // ApplyChangeSet provides a mock function with given fields: _a0, _a1
-func (_m *NetBoxAPI) ApplyChangeSet(_a0 context.Context, _a1 netboxdiodeplugin.ApplyChangeSetRequest) (*netboxdiodeplugin.ApplyChangeSetResponse, error) {
+func (_m *NetBoxAPI) ApplyChangeSet(_a0 context.Context, _a1 netboxdiodeplugin.ApplyChangeSetRequest) (*netboxdiodeplugin.ChangeSetResult, error) {
 	ret := _m.Called(_a0, _a1)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ApplyChangeSet")
 	}
 
-	var r0 *netboxdiodeplugin.ApplyChangeSetResponse
+	var r0 *netboxdiodeplugin.ChangeSetResult
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, netboxdiodeplugin.ApplyChangeSetRequest) (*netboxdiodeplugin.ApplyChangeSetResponse, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, netboxdiodeplugin.ApplyChangeSetRequest) (*netboxdiodeplugin.ChangeSetResult, error)); ok {
 		return rf(_a0, _a1)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, netboxdiodeplugin.ApplyChangeSetRequest) *netboxdiodeplugin.ApplyChangeSetResponse); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, netboxdiodeplugin.ApplyChangeSetRequest) *netboxdiodeplugin.ChangeSetResult); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*netboxdiodeplugin.ApplyChangeSetResponse)
+			r0 = ret.Get(0).(*netboxdiodeplugin.ChangeSetResult)
 		}
 	}
 
@@ -71,34 +71,34 @@ func (_c *NetBoxAPI_ApplyChangeSet_Call) Run(run func(_a0 context.Context, _a1 n
 	return _c
 }
 
-func (_c *NetBoxAPI_ApplyChangeSet_Call) Return(_a0 *netboxdiodeplugin.ApplyChangeSetResponse, _a1 error) *NetBoxAPI_ApplyChangeSet_Call {
+func (_c *NetBoxAPI_ApplyChangeSet_Call) Return(_a0 *netboxdiodeplugin.ChangeSetResult, _a1 error) *NetBoxAPI_ApplyChangeSet_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *NetBoxAPI_ApplyChangeSet_Call) RunAndReturn(run func(context.Context, netboxdiodeplugin.ApplyChangeSetRequest) (*netboxdiodeplugin.ApplyChangeSetResponse, error)) *NetBoxAPI_ApplyChangeSet_Call {
+func (_c *NetBoxAPI_ApplyChangeSet_Call) RunAndReturn(run func(context.Context, netboxdiodeplugin.ApplyChangeSetRequest) (*netboxdiodeplugin.ChangeSetResult, error)) *NetBoxAPI_ApplyChangeSet_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // GenerateDiff provides a mock function with given fields: _a0, _a1
-func (_m *NetBoxAPI) GenerateDiff(_a0 context.Context, _a1 netboxdiodeplugin.GenerateDiffRequest) (*netboxdiodeplugin.GenerateDiffResponse, error) {
+func (_m *NetBoxAPI) GenerateDiff(_a0 context.Context, _a1 netboxdiodeplugin.GenerateDiffRequest) (*netboxdiodeplugin.ChangeSetResult, error) {
 	ret := _m.Called(_a0, _a1)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GenerateDiff")
 	}
 
-	var r0 *netboxdiodeplugin.GenerateDiffResponse
+	var r0 *netboxdiodeplugin.ChangeSetResult
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, netboxdiodeplugin.GenerateDiffRequest) (*netboxdiodeplugin.GenerateDiffResponse, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, netboxdiodeplugin.GenerateDiffRequest) (*netboxdiodeplugin.ChangeSetResult, error)); ok {
 		return rf(_a0, _a1)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, netboxdiodeplugin.GenerateDiffRequest) *netboxdiodeplugin.GenerateDiffResponse); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, netboxdiodeplugin.GenerateDiffRequest) *netboxdiodeplugin.ChangeSetResult); ok {
 		r0 = rf(_a0, _a1)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*netboxdiodeplugin.GenerateDiffResponse)
+			r0 = ret.Get(0).(*netboxdiodeplugin.ChangeSetResult)
 		}
 	}
 
@@ -130,12 +130,12 @@ func (_c *NetBoxAPI_GenerateDiff_Call) Run(run func(_a0 context.Context, _a1 net
 	return _c
 }
 
-func (_c *NetBoxAPI_GenerateDiff_Call) Return(_a0 *netboxdiodeplugin.GenerateDiffResponse, _a1 error) *NetBoxAPI_GenerateDiff_Call {
+func (_c *NetBoxAPI_GenerateDiff_Call) Return(_a0 *netboxdiodeplugin.ChangeSetResult, _a1 error) *NetBoxAPI_GenerateDiff_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *NetBoxAPI_GenerateDiff_Call) RunAndReturn(run func(context.Context, netboxdiodeplugin.GenerateDiffRequest) (*netboxdiodeplugin.GenerateDiffResponse, error)) *NetBoxAPI_GenerateDiff_Call {
+func (_c *NetBoxAPI_GenerateDiff_Call) RunAndReturn(run func(context.Context, netboxdiodeplugin.GenerateDiffRequest) (*netboxdiodeplugin.ChangeSetResult, error)) *NetBoxAPI_GenerateDiff_Call {
 	_c.Call.Return(run)
 	return _c
 }
