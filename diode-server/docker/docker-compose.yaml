@@ -83,9 +83,9 @@ services:
       - RECONCILER_RATE_LIMITER_BURST=${RECONCILER_RATE_LIMITER_BURST}
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
-      - POSTGRES_DB_NAME=${POSTGRES_DB_NAME}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB_NAME=${DIODE_POSTGRES_DB_NAME}
+      - POSTGRES_USER=${DIODE_POSTGRES_USER}
+      - POSTGRES_PASSWORD=${DIODE_POSTGRES_PASSWORD}
       - TELEMETRY_METRICS_EXPORTER=${TELEMETRY_METRICS_EXPORTER}
       - TELEMETRY_TRACES_EXPORTER=${TELEMETRY_TRACES_EXPORTER}
       - TELEMETRY_ENVIRONMENT=${TELEMETRY_ENVIRONMENT}
@@ -96,7 +96,7 @@ services:
     depends_on:
       diode-redis:
         condition: service_started
-      postgres:
+      diode-postgres:
         condition: service_healthy
 
   diode-redis:
@@ -104,7 +104,7 @@ services:
     command:
       - sh
       - -c
-      - redis-server --appendonly yes --dir /data --save 60 1 --requirepass $$REDIS_PASSWORD --loadmodule /opt/redis-stack/lib/rejson.so --loadmodule /opt/redis-stack/lib/redisearch.so --port $$REDIS_PORT
+      - redis-server --appendonly yes --dir /data --save 60 1 --requirepass $$REDIS_PASSWORD --port $$REDIS_PORT
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - REDIS_PORT=${REDIS_PORT}
@@ -112,22 +112,57 @@ services:
     volumes:
       - diode-redis-data:/data
 
-  postgres:
+  diode-postgres:
     image: docker.io/postgres:16-alpine
     environment:
-      - POSTGRES_DB=${POSTGRES_DB_NAME}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - DIODE_POSTGRES_DB_NAME=${DIODE_POSTGRES_DB_NAME}
+      - DIODE_POSTGRES_USER=${DIODE_POSTGRES_USER}
+      - DIODE_POSTGRES_PASSWORD=${DIODE_POSTGRES_PASSWORD}
+      - HYDRA_POSTGRES_DB_NAME=${HYDRA_POSTGRES_DB_NAME}
+      - HYDRA_POSTGRES_USER=${HYDRA_POSTGRES_USER}
+      - HYDRA_POSTGRES_PASSWORD=${HYDRA_POSTGRES_PASSWORD}
     ports:
       - ${POSTGRES_PORT:-5432}:5432
     healthcheck:
-      test: pg_isready -q -t 2 -d $$POSTGRES_DB -U $$POSTGRES_USER
+      test: pg_isready -q -t 2 -d $$DIODE_POSTGRES_DB_NAME -U $$DIODE_POSTGRES_USER
       start_period: 20s
       interval: 1s
       timeout: 5s
       retries: 5
     volumes:
       - diode-postgres-data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:z,ro
+  
+  diode-hydra:
+    image: oryd/hydra:v2.3.0
+    expose:
+      - "4444" # Public port
+      - "4445" # Admin port
+    command: serve all --dev
+    environment:
+      - DSN=postgres://${HYDRA_POSTGRES_USER}:${HYDRA_POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT:-5432}/${HYDRA_POSTGRES_DB_NAME}?sslmode=disable&max_conns=20&max_idle_conns=4
+      - STRATEGIES_ACCESS_TOKEN=${HYDRA_STRATEGIES_ACCESS_TOKEN}
+      - STRATEGIES_REFRESH_TOKEN=${HYDRA_STRATEGIES_REFRESH_TOKEN}
+      - TTL_ACCESS_TOKEN=${HYDRA_TTL_ACCESS_TOKEN}
+      - OIDC_SUBJECT_IDENTIFIERS_SUPPORTED_TYPES=${HYDRA_OIDC_SUBJECT_IDENTIFIERS_SUPPORTED_TYPES}
+      - URLS_SELF_ISSUER=${HYDRA_URLS_SELF_ISSUER}
+      - SECRETS_SYSTEM=${HYDRA_SECRETS_SYSTEM_0}
+    restart: unless-stopped
+    depends_on:
+      - diode-hydra-migrate
+      - diode-postgres
+  diode-hydra-migrate:
+    image: oryd/hydra:v2.3.0
+    command: migrate sql up -e --yes
+    environment:
+      - DSN=postgres://${HYDRA_POSTGRES_USER}:${HYDRA_POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT:-5432}/${HYDRA_POSTGRES_DB_NAME}?sslmode=disable&max_conns=20&max_idle_conns=4
+      - URLS_SELF_ISSUER=${HYDRA_URLS_SELF_ISSUER}
+      - SECRETS_SYSTEM=${HYDRA_SECRETS_SYSTEM_0}
+    restart: on-failure
+    depends_on:
+      - diode-postgres
 
 volumes:
   diode-redis-data:
