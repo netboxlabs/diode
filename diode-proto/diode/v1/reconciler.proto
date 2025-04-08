@@ -7,22 +7,6 @@ import "validate/validate.proto";
 
 option go_package = "github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb";
 
-// IngestionError represents an error occurring while processing an ingestion entity
-message IngestionError {
-  message Details {
-    message Error {
-      string error = 1; //key value pair of the error
-      string change_id = 2;
-    }
-    string change_set_id = 1;
-    string result = 2;
-    repeated Error errors = 3;
-  }
-  string message = 1;
-  int32 code = 2;
-  Details details = 3;
-}
-
 enum State {
   STATE_UNSPECIFIED = 0;
   QUEUED = 1;
@@ -63,7 +47,7 @@ message IngestionLog {
   string sdk_name = 8;
   string sdk_version = 9;
   diode.v1.Entity entity = 10;
-  IngestionError error = 11;
+  DeviationError error = 11;
   ChangeSet change_set = 12;
   string object_type = 13;
   int64 source_ts = 14;

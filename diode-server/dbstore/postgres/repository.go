@@ -138,9 +138,9 @@ func (r *Repository) RetrieveIngestionLogs(ctx context.Context, filter *reconcil
 		if err := protojson.Unmarshal(ingestionLog.Entity, entity); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal entity: %w", err)
 		}
-		var ingestionErr reconcilerpb.IngestionError
+		var ingestionErr reconcilerpb.DeviationError
 		if ingestionLog.Error != nil {
-			if err := protojson.Unmarshal(ingestionLog.Error, &ingestionErr); err != nil {
+			if err := postgres.LoadDeviationError(ingestionLog.Error, &ingestionErr); err != nil {
 				return nil, fmt.Errorf("failed to unmarshal error: %w", err)
 			}
 		}
@@ -389,15 +389,8 @@ func deviationToProto(dbDeviation postgres.VDeviation) (*reconcilerpb.Deviation,
 
 	var deviationErr *reconcilerpb.DeviationError
 	if dbDeviation.Error != nil {
-		var changeSetErr changeset.Error
-		if err := json.Unmarshal(dbDeviation.Error, &changeSetErr); err != nil {
-			return nil, fmt.Errorf("failed to unmarshal error: %w", err)
-		}
-
-		deviationErr = &reconcilerpb.DeviationError{
-			Message: changeSetErr.Message,
-			Code:    string(changeSetErr.Code),
-			Details: changeSetErr.Details,
+		if err := postgres.LoadDeviationError(dbDeviation.Error, deviationErr); err != nil {
+			return nil, fmt.Errorf("failed to load deviation error: %w", err)
 		}
 	}
 
