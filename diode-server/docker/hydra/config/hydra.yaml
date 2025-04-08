@@ -1,6 +1,0 @@
-urls:
-  self:
-    issuer: http://127.0.0.1:4444
-secrets:
-  system:
-    - hydrasystemsecret
