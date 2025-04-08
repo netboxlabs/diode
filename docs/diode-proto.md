@@ -187,9 +187,6 @@
     - [ChangeSet](#diode-v1-ChangeSet)
     - [Deviation](#diode-v1-Deviation)
     - [DeviationError](#diode-v1-DeviationError)
-    - [IngestionError](#diode-v1-IngestionError)
-    - [IngestionError.Details](#diode-v1-IngestionError-Details)
-    - [IngestionError.Details.Error](#diode-v1-IngestionError-Details-Error)
     - [IngestionLog](#diode-v1-IngestionLog)
     - [IngestionMetrics](#diode-v1-IngestionMetrics)
     - [RetrieveDeviationByIDRequest](#diode-v1-RetrieveDeviationByIDRequest)
@@ -4338,56 +4335,6 @@ Deviation error
 
 
 
-<a name="diode-v1-IngestionError"></a>
-
-### IngestionError
-IngestionError represents an error occurring while processing an ingestion entity
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| message | [string](#string) |  |  |
-| code | [int32](#int32) |  |  |
-| details | [IngestionError.Details](#diode-v1-IngestionError-Details) |  |  |
-
-
-
-
-
-
-<a name="diode-v1-IngestionError-Details"></a>
-
-### IngestionError.Details
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| change_set_id | [string](#string) |  |  |
-| result | [string](#string) |  |  |
-| errors | [IngestionError.Details.Error](#diode-v1-IngestionError-Details-Error) | repeated |  |
-
-
-
-
-
-
-<a name="diode-v1-IngestionError-Details-Error"></a>
-
-### IngestionError.Details.Error
-
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| error | [string](#string) |  | key value pair of the error |
-| change_id | [string](#string) |  |  |
-
-
-
-
-
-
 <a name="diode-v1-IngestionLog"></a>
 
 ### IngestionLog
@@ -4406,7 +4353,7 @@ An ingestion log
 | sdk_name | [string](#string) |  |  |
 | sdk_version | [string](#string) |  |  |
 | entity | [Entity](#diode-v1-Entity) |  |  |
-| error | [IngestionError](#diode-v1-IngestionError) |  |  |
+| error | [DeviationError](#diode-v1-DeviationError) |  |  |
 | change_set | [ChangeSet](#diode-v1-ChangeSet) |  |  |
 | object_type | [string](#string) |  |  |
 | source_ts | [int64](#int64) |  |  |
