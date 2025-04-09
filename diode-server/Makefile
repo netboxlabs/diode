@@ -67,6 +67,8 @@ $(DOCKER_SERVICES):
 
 	@GOOS=$(GOOS) GOARCH=$(GOARCH) $(MAKE) build-$(SVC)
 
+	$(eval DOCKERFILE := $(if $(filter auth,$(SVC)),Dockerfile.auth,Dockerfile))
+
 	docker build \
 	  --no-cache \
 	  --build-arg SVC=$(SVC) \
@@ -74,7 +76,7 @@ $(DOCKER_SERVICES):
 	  --build-arg GOARCH=$(GOARCH) \
 	  --build-arg GOARM=$(GOARM) \
   	  --tag=$(ORG_NAME)/$(REPO_NAME)-$(SVC):$(DIODE_VERSION)-$(COMMIT_SHA) \
-  	  -f docker/Dockerfile .
+  	  -f docker/$(DOCKERFILE) .
 
 .PHONY: docker-all
 docker-all: $(DOCKER_SERVICES)
