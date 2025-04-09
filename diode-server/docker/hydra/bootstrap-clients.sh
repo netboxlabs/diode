@@ -3,7 +3,7 @@
 set -e
 
 # Constants
-CREDENTIALS_FILE="/etc/config/oauth2/clients/client-credentials.json"
+CREDENTIALS_FILE="/etc/config/oauth2/client/client-credentials.json"
 TEMP_CREDENTIALS_FILE="/tmp/client-credentials.json"
 
 # Wait for Hydra to be ready

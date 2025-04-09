@@ -85,7 +85,7 @@ services:
     ports: [ ]
     volumes:
       - ../dbstore/postgres/migrations:/etc/diode/migrations:z,ro
-      - ./hydra/init/client-credentials.json:/etc/config/oauth2/clients/client-credentials.json:z,ro
+      - ./oauth2/client/client-credentials.json:/etc/config/oauth2/client/client-credentials.json:z,ro
     depends_on:
       diode-redis:
         condition: service_started
@@ -178,7 +178,7 @@ services:
       - HYDRA_ADMIN_URL=http://diode-hydra:4445
     volumes:
       - ./hydra/bootstrap-clients.sh:/etc/config/hydra/bootstrap-clients.sh:z,ro
-      - ./hydra/init/client-credentials.json:/etc/config/oauth2/clients/client-credentials.json:z
+      - ./oauth2/client/client-credentials.json:/etc/config/oauth2/client/client-credentials.json:z
     restart: on-failure
     depends_on:
       - diode-hydra
