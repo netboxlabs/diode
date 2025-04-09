@@ -6,6 +6,12 @@ set -e
 CREDENTIALS_FILE="/etc/config/oauth2/client/client-credentials.json"
 TEMP_CREDENTIALS_FILE="/tmp/client-credentials.json"
 
+# Create the credentials file if it doesn't exist
+if [ ! -f "$CREDENTIALS_FILE" ]; then
+  echo "ERROR: credentials file $CREDENTIALS_FILE not found, creating it"
+  touch "$CREDENTIALS_FILE"
+fi
+
 # Wait for Hydra to be ready
 sleep 3
 

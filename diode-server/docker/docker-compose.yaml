@@ -171,14 +171,14 @@ services:
     depends_on:
       - diode-hydra
 
-  diode-authn-bootstrap:
+  diode-auth-bootstrap:
     image: netboxlabs/diode-auth:${DIODE_TAG:-latest}
-    command: ["/bin/sh", "/etc/config/hydra/bootstrap-clients.sh"]
+    command: ["/bin/sh", "/etc/config/oauth2/bootstrap-clients.sh"]
     environment:
       - HYDRA_ADMIN_URL=http://diode-hydra:4445
     volumes:
-      - ./hydra/bootstrap-clients.sh:/etc/config/hydra/bootstrap-clients.sh:z,ro
-      - ./oauth2/client/client-credentials.json:/etc/config/oauth2/client/client-credentials.json:z
+      - ./oauth2/bootstrap-clients.sh:/etc/config/oauth2/bootstrap-clients.sh:z,ro
+      - ./oauth2/client:/etc/config/oauth2/client:z
     restart: on-failure
     depends_on:
       - diode-hydra
