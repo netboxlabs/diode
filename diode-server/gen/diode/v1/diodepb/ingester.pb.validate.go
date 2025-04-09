@@ -17534,6 +17534,47 @@ func (m *CustomFieldValue) validate(all bool) error {
 			errors = append(errors, err)
 		}
 		// no validation rules for Json
+	case *CustomFieldValue_Date:
+		if v == nil {
+			err := CustomFieldValueValidationError{
+				field:  "Value",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetDate()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, CustomFieldValueValidationError{
+						field:  "Date",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, CustomFieldValueValidationError{
+						field:  "Date",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetDate()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return CustomFieldValueValidationError{
+					field:  "Date",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	default:
 		_ = v // ensures v is used
 	}
