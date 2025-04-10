@@ -66,6 +66,7 @@ get_or_create_client() {
       --grant-type "client_credentials" \
       --response-type "token" \
       --scope $scope \
+      --token-endpoint-auth-method "client_secret_post" \
       --format json)
 
     # Filter client_output to keep only the specified fields
