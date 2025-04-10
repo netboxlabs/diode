@@ -34,6 +34,10 @@ func Diff(ctx context.Context, entity IngestEntity, branchID string, netboxAPI n
 		return nil, err
 	}
 
+	if res.ChangeSet == nil {
+		return nil, fmt.Errorf("no change set returned")
+	}
+
 	changes := make([]changeset.Change, 0)
 	for _, change := range res.ChangeSet.Changes {
 		changes = append(changes, changeset.Change{

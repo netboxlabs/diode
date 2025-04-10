@@ -101,47 +101,6 @@ func (m *Entity) validate(all bool) error {
 	}
 
 	switch v := m.Entity.(type) {
-	case *Entity_AsnRange:
-		if v == nil {
-			err := EntityValidationError{
-				field:  "Entity",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetAsnRange()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, EntityValidationError{
-						field:  "AsnRange",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, EntityValidationError{
-						field:  "AsnRange",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetAsnRange()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return EntityValidationError{
-					field:  "AsnRange",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
 	case *Entity_Asn:
 		if v == nil {
 			err := EntityValidationError{
@@ -177,6 +136,47 @@ func (m *Entity) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return EntityValidationError{
 					field:  "Asn",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *Entity_AsnRange:
+		if v == nil {
+			err := EntityValidationError{
+				field:  "Entity",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetAsnRange()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "AsnRange",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "AsnRange",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetAsnRange()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return EntityValidationError{
+					field:  "AsnRange",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -224,47 +224,6 @@ func (m *Entity) validate(all bool) error {
 			}
 		}
 
-	case *Entity_CablePath:
-		if v == nil {
-			err := EntityValidationError{
-				field:  "Entity",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetCablePath()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, EntityValidationError{
-						field:  "CablePath",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, EntityValidationError{
-						field:  "CablePath",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetCablePath()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return EntityValidationError{
-					field:  "CablePath",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
 	case *Entity_Cable:
 		if v == nil {
 			err := EntityValidationError{
@@ -300,6 +259,47 @@ func (m *Entity) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return EntityValidationError{
 					field:  "Cable",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *Entity_CablePath:
+		if v == nil {
+			err := EntityValidationError{
+				field:  "Entity",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetCablePath()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "CablePath",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "CablePath",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetCablePath()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return EntityValidationError{
+					field:  "CablePath",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -347,7 +347,7 @@ func (m *Entity) validate(all bool) error {
 			}
 		}
 
-	case *Entity_CircuitTermination:
+	case *Entity_Circuit:
 		if v == nil {
 			err := EntityValidationError{
 				field:  "Entity",
@@ -360,11 +360,11 @@ func (m *Entity) validate(all bool) error {
 		}
 
 		if all {
-			switch v := interface{}(m.GetCircuitTermination()).(type) {
+			switch v := interface{}(m.GetCircuit()).(type) {
 			case interface{ ValidateAll() error }:
 				if err := v.ValidateAll(); err != nil {
 					errors = append(errors, EntityValidationError{
-						field:  "CircuitTermination",
+						field:  "Circuit",
 						reason: "embedded message failed validation",
 						cause:  err,
 					})
@@ -372,57 +372,16 @@ func (m *Entity) validate(all bool) error {
 			case interface{ Validate() error }:
 				if err := v.Validate(); err != nil {
 					errors = append(errors, EntityValidationError{
-						field:  "CircuitTermination",
+						field:  "Circuit",
 						reason: "embedded message failed validation",
 						cause:  err,
 					})
 				}
 			}
-		} else if v, ok := interface{}(m.GetCircuitTermination()).(interface{ Validate() error }); ok {
+		} else if v, ok := interface{}(m.GetCircuit()).(interface{ Validate() error }); ok {
 			if err := v.Validate(); err != nil {
 				return EntityValidationError{
-					field:  "CircuitTermination",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
-	case *Entity_CircuitGroupAssignment:
-		if v == nil {
-			err := EntityValidationError{
-				field:  "Entity",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetCircuitGroupAssignment()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, EntityValidationError{
-						field:  "CircuitGroupAssignment",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, EntityValidationError{
-						field:  "CircuitGroupAssignment",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetCircuitGroupAssignment()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return EntityValidationError{
-					field:  "CircuitGroupAssignment",
+					field:  "Circuit",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -470,7 +429,7 @@ func (m *Entity) validate(all bool) error {
 			}
 		}
 
-	case *Entity_Circuit:
+	case *Entity_CircuitGroupAssignment:
 		if v == nil {
 			err := EntityValidationError{
 				field:  "Entity",
@@ -483,11 +442,11 @@ func (m *Entity) validate(all bool) error {
 		}
 
 		if all {
-			switch v := interface{}(m.GetCircuit()).(type) {
+			switch v := interface{}(m.GetCircuitGroupAssignment()).(type) {
 			case interface{ ValidateAll() error }:
 				if err := v.ValidateAll(); err != nil {
 					errors = append(errors, EntityValidationError{
-						field:  "Circuit",
+						field:  "CircuitGroupAssignment",
 						reason: "embedded message failed validation",
 						cause:  err,
 					})
@@ -495,16 +454,57 @@ func (m *Entity) validate(all bool) error {
 			case interface{ Validate() error }:
 				if err := v.Validate(); err != nil {
 					errors = append(errors, EntityValidationError{
-						field:  "Circuit",
+						field:  "CircuitGroupAssignment",
 						reason: "embedded message failed validation",
 						cause:  err,
 					})
 				}
 			}
-		} else if v, ok := interface{}(m.GetCircuit()).(interface{ Validate() error }); ok {
+		} else if v, ok := interface{}(m.GetCircuitGroupAssignment()).(interface{ Validate() error }); ok {
 			if err := v.Validate(); err != nil {
 				return EntityValidationError{
-					field:  "Circuit",
+					field:  "CircuitGroupAssignment",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *Entity_CircuitTermination:
+		if v == nil {
+			err := EntityValidationError{
+				field:  "Entity",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetCircuitTermination()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "CircuitTermination",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "CircuitTermination",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetCircuitTermination()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return EntityValidationError{
+					field:  "CircuitTermination",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -552,47 +552,6 @@ func (m *Entity) validate(all bool) error {
 			}
 		}
 
-	case *Entity_ClusterGroup:
-		if v == nil {
-			err := EntityValidationError{
-				field:  "Entity",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetClusterGroup()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, EntityValidationError{
-						field:  "ClusterGroup",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, EntityValidationError{
-						field:  "ClusterGroup",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetClusterGroup()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return EntityValidationError{
-					field:  "ClusterGroup",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
 	case *Entity_Cluster:
 		if v == nil {
 			err := EntityValidationError{
@@ -628,6 +587,47 @@ func (m *Entity) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return EntityValidationError{
 					field:  "Cluster",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *Entity_ClusterGroup:
+		if v == nil {
+			err := EntityValidationError{
+				field:  "Entity",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetClusterGroup()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "ClusterGroup",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "ClusterGroup",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetClusterGroup()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return EntityValidationError{
+					field:  "ClusterGroup",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -757,6 +757,47 @@ func (m *Entity) validate(all bool) error {
 			}
 		}
 
+	case *Entity_Contact:
+		if v == nil {
+			err := EntityValidationError{
+				field:  "Entity",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetContact()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "Contact",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "Contact",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetContact()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return EntityValidationError{
+					field:  "Contact",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	case *Entity_ContactAssignment:
 		if v == nil {
 			err := EntityValidationError{
@@ -880,7 +921,7 @@ func (m *Entity) validate(all bool) error {
 			}
 		}
 
-	case *Entity_Contact:
+	case *Entity_Device:
 		if v == nil {
 			err := EntityValidationError{
 				field:  "Entity",
@@ -893,11 +934,11 @@ func (m *Entity) validate(all bool) error {
 		}
 
 		if all {
-			switch v := interface{}(m.GetContact()).(type) {
+			switch v := interface{}(m.GetDevice()).(type) {
 			case interface{ ValidateAll() error }:
 				if err := v.ValidateAll(); err != nil {
 					errors = append(errors, EntityValidationError{
-						field:  "Contact",
+						field:  "Device",
 						reason: "embedded message failed validation",
 						cause:  err,
 					})
@@ -905,57 +946,16 @@ func (m *Entity) validate(all bool) error {
 			case interface{ Validate() error }:
 				if err := v.Validate(); err != nil {
 					errors = append(errors, EntityValidationError{
-						field:  "Contact",
+						field:  "Device",
 						reason: "embedded message failed validation",
 						cause:  err,
 					})
 				}
 			}
-		} else if v, ok := interface{}(m.GetContact()).(interface{ Validate() error }); ok {
+		} else if v, ok := interface{}(m.GetDevice()).(interface{ Validate() error }); ok {
 			if err := v.Validate(); err != nil {
 				return EntityValidationError{
-					field:  "Contact",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
-	case *Entity_Vlan:
-		if v == nil {
-			err := EntityValidationError{
-				field:  "Entity",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetVlan()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, EntityValidationError{
-						field:  "Vlan",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, EntityValidationError{
-						field:  "Vlan",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetVlan()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return EntityValidationError{
-					field:  "Vlan",
+					field:  "Device",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -1044,47 +1044,6 @@ func (m *Entity) validate(all bool) error {
 			}
 		}
 
-	case *Entity_Device:
-		if v == nil {
-			err := EntityValidationError{
-				field:  "Entity",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetDevice()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, EntityValidationError{
-						field:  "Device",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, EntityValidationError{
-						field:  "Device",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetDevice()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return EntityValidationError{
-					field:  "Device",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
 	case *Entity_DeviceType:
 		if v == nil {
 			err := EntityValidationError{
@@ -1120,47 +1079,6 @@ func (m *Entity) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return EntityValidationError{
 					field:  "DeviceType",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
-	case *Entity_FhrpGroupAssignment:
-		if v == nil {
-			err := EntityValidationError{
-				field:  "Entity",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetFhrpGroupAssignment()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, EntityValidationError{
-						field:  "FhrpGroupAssignment",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, EntityValidationError{
-						field:  "FhrpGroupAssignment",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetFhrpGroupAssignment()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return EntityValidationError{
-					field:  "FhrpGroupAssignment",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -1208,7 +1126,7 @@ func (m *Entity) validate(all bool) error {
 			}
 		}
 
-	case *Entity_RearPort:
+	case *Entity_FhrpGroupAssignment:
 		if v == nil {
 			err := EntityValidationError{
 				field:  "Entity",
@@ -1221,11 +1139,11 @@ func (m *Entity) validate(all bool) error {
 		}
 
 		if all {
-			switch v := interface{}(m.GetRearPort()).(type) {
+			switch v := interface{}(m.GetFhrpGroupAssignment()).(type) {
 			case interface{ ValidateAll() error }:
 				if err := v.ValidateAll(); err != nil {
 					errors = append(errors, EntityValidationError{
-						field:  "RearPort",
+						field:  "FhrpGroupAssignment",
 						reason: "embedded message failed validation",
 						cause:  err,
 					})
@@ -1233,16 +1151,16 @@ func (m *Entity) validate(all bool) error {
 			case interface{ Validate() error }:
 				if err := v.Validate(); err != nil {
 					errors = append(errors, EntityValidationError{
-						field:  "RearPort",
+						field:  "FhrpGroupAssignment",
 						reason: "embedded message failed validation",
 						cause:  err,
 					})
 				}
 			}
-		} else if v, ok := interface{}(m.GetRearPort()).(interface{ Validate() error }); ok {
+		} else if v, ok := interface{}(m.GetFhrpGroupAssignment()).(interface{ Validate() error }); ok {
 			if err := v.Validate(); err != nil {
 				return EntityValidationError{
-					field:  "RearPort",
+					field:  "FhrpGroupAssignment",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -1284,47 +1202,6 @@ func (m *Entity) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return EntityValidationError{
 					field:  "FrontPort",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
-	case *Entity_GenericObject:
-		if v == nil {
-			err := EntityValidationError{
-				field:  "Entity",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetGenericObject()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, EntityValidationError{
-						field:  "GenericObject",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, EntityValidationError{
-						field:  "GenericObject",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetGenericObject()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return EntityValidationError{
-					field:  "GenericObject",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -1659,47 +1536,6 @@ func (m *Entity) validate(all bool) error {
 			}
 		}
 
-	case *Entity_InventoryItemRole:
-		if v == nil {
-			err := EntityValidationError{
-				field:  "Entity",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetInventoryItemRole()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, EntityValidationError{
-						field:  "InventoryItemRole",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, EntityValidationError{
-						field:  "InventoryItemRole",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetInventoryItemRole()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return EntityValidationError{
-					field:  "InventoryItemRole",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
 	case *Entity_InventoryItem:
 		if v == nil {
 			err := EntityValidationError{
@@ -1735,6 +1571,47 @@ func (m *Entity) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return EntityValidationError{
 					field:  "InventoryItem",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *Entity_InventoryItemRole:
+		if v == nil {
+			err := EntityValidationError{
+				field:  "Entity",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetInventoryItemRole()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "InventoryItemRole",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "InventoryItemRole",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetInventoryItemRole()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return EntityValidationError{
+					field:  "InventoryItemRole",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -1946,47 +1823,6 @@ func (m *Entity) validate(all bool) error {
 			}
 		}
 
-	case *Entity_ModuleBay:
-		if v == nil {
-			err := EntityValidationError{
-				field:  "Entity",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetModuleBay()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, EntityValidationError{
-						field:  "ModuleBay",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, EntityValidationError{
-						field:  "ModuleBay",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetModuleBay()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return EntityValidationError{
-					field:  "ModuleBay",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
 	case *Entity_Module:
 		if v == nil {
 			err := EntityValidationError{
@@ -2028,6 +1864,47 @@ func (m *Entity) validate(all bool) error {
 			}
 		}
 
+	case *Entity_ModuleBay:
+		if v == nil {
+			err := EntityValidationError{
+				field:  "Entity",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetModuleBay()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "ModuleBay",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "ModuleBay",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetModuleBay()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return EntityValidationError{
+					field:  "ModuleBay",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	case *Entity_ModuleType:
 		if v == nil {
 			err := EntityValidationError{
@@ -2063,334 +1940,6 @@ func (m *Entity) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return EntityValidationError{
 					field:  "ModuleType",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
-	case *Entity_Region:
-		if v == nil {
-			err := EntityValidationError{
-				field:  "Entity",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetRegion()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, EntityValidationError{
-						field:  "Region",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, EntityValidationError{
-						field:  "Region",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetRegion()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return EntityValidationError{
-					field:  "Region",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
-	case *Entity_SiteGroup:
-		if v == nil {
-			err := EntityValidationError{
-				field:  "Entity",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetSiteGroup()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, EntityValidationError{
-						field:  "SiteGroup",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, EntityValidationError{
-						field:  "SiteGroup",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetSiteGroup()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return EntityValidationError{
-					field:  "SiteGroup",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
-	case *Entity_Tag:
-		if v == nil {
-			err := EntityValidationError{
-				field:  "Entity",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetTag()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, EntityValidationError{
-						field:  "Tag",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, EntityValidationError{
-						field:  "Tag",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetTag()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return EntityValidationError{
-					field:  "Tag",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
-	case *Entity_TenantGroup:
-		if v == nil {
-			err := EntityValidationError{
-				field:  "Entity",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetTenantGroup()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, EntityValidationError{
-						field:  "TenantGroup",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, EntityValidationError{
-						field:  "TenantGroup",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetTenantGroup()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return EntityValidationError{
-					field:  "TenantGroup",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
-	case *Entity_VmInterface:
-		if v == nil {
-			err := EntityValidationError{
-				field:  "Entity",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetVmInterface()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, EntityValidationError{
-						field:  "VmInterface",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, EntityValidationError{
-						field:  "VmInterface",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetVmInterface()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return EntityValidationError{
-					field:  "VmInterface",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
-	case *Entity_VirtualMachine:
-		if v == nil {
-			err := EntityValidationError{
-				field:  "Entity",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetVirtualMachine()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, EntityValidationError{
-						field:  "VirtualMachine",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, EntityValidationError{
-						field:  "VirtualMachine",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetVirtualMachine()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return EntityValidationError{
-					field:  "VirtualMachine",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
-	case *Entity_WirelessLanGroup:
-		if v == nil {
-			err := EntityValidationError{
-				field:  "Entity",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetWirelessLanGroup()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, EntityValidationError{
-						field:  "WirelessLanGroup",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, EntityValidationError{
-						field:  "WirelessLanGroup",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetWirelessLanGroup()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return EntityValidationError{
-					field:  "WirelessLanGroup",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
-	case *Entity_WirelessLink:
-		if v == nil {
-			err := EntityValidationError{
-				field:  "Entity",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetWirelessLink()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, EntityValidationError{
-						field:  "WirelessLink",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, EntityValidationError{
-						field:  "WirelessLink",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetWirelessLink()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return EntityValidationError{
-					field:  "WirelessLink",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -2643,6 +2192,47 @@ func (m *Entity) validate(all bool) error {
 			}
 		}
 
+	case *Entity_Provider:
+		if v == nil {
+			err := EntityValidationError{
+				field:  "Entity",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetProvider()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "Provider",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "Provider",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetProvider()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return EntityValidationError{
+					field:  "Provider",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	case *Entity_ProviderAccount:
 		if v == nil {
 			err := EntityValidationError{
@@ -2725,47 +2315,6 @@ func (m *Entity) validate(all bool) error {
 			}
 		}
 
-	case *Entity_Provider:
-		if v == nil {
-			err := EntityValidationError{
-				field:  "Entity",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetProvider()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, EntityValidationError{
-						field:  "Provider",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, EntityValidationError{
-						field:  "Provider",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetProvider()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return EntityValidationError{
-					field:  "Provider",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
 	case *Entity_Rir:
 		if v == nil {
 			err := EntityValidationError{
@@ -2801,6 +2350,47 @@ func (m *Entity) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return EntityValidationError{
 					field:  "Rir",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *Entity_Rack:
+		if v == nil {
+			err := EntityValidationError{
+				field:  "Entity",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetRack()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "Rack",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "Rack",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetRack()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return EntityValidationError{
+					field:  "Rack",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -2889,47 +2479,6 @@ func (m *Entity) validate(all bool) error {
 			}
 		}
 
-	case *Entity_Rack:
-		if v == nil {
-			err := EntityValidationError{
-				field:  "Entity",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetRack()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, EntityValidationError{
-						field:  "Rack",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, EntityValidationError{
-						field:  "Rack",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetRack()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return EntityValidationError{
-					field:  "Rack",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
 	case *Entity_RackType:
 		if v == nil {
 			err := EntityValidationError{
@@ -2965,6 +2514,88 @@ func (m *Entity) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return EntityValidationError{
 					field:  "RackType",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *Entity_RearPort:
+		if v == nil {
+			err := EntityValidationError{
+				field:  "Entity",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetRearPort()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "RearPort",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "RearPort",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetRearPort()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return EntityValidationError{
+					field:  "RearPort",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *Entity_Region:
+		if v == nil {
+			err := EntityValidationError{
+				field:  "Entity",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetRegion()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "Region",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "Region",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetRegion()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return EntityValidationError{
+					field:  "Region",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -3135,6 +2766,88 @@ func (m *Entity) validate(all bool) error {
 			}
 		}
 
+	case *Entity_SiteGroup:
+		if v == nil {
+			err := EntityValidationError{
+				field:  "Entity",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetSiteGroup()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "SiteGroup",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "SiteGroup",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetSiteGroup()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return EntityValidationError{
+					field:  "SiteGroup",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *Entity_Tag:
+		if v == nil {
+			err := EntityValidationError{
+				field:  "Entity",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetTag()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "Tag",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "Tag",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetTag()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return EntityValidationError{
+					field:  "Tag",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	case *Entity_Tenant:
 		if v == nil {
 			err := EntityValidationError{
@@ -3176,7 +2889,7 @@ func (m *Entity) validate(all bool) error {
 			}
 		}
 
-	case *Entity_TunnelGroup:
+	case *Entity_TenantGroup:
 		if v == nil {
 			err := EntityValidationError{
 				field:  "Entity",
@@ -3189,11 +2902,11 @@ func (m *Entity) validate(all bool) error {
 		}
 
 		if all {
-			switch v := interface{}(m.GetTunnelGroup()).(type) {
+			switch v := interface{}(m.GetTenantGroup()).(type) {
 			case interface{ ValidateAll() error }:
 				if err := v.ValidateAll(); err != nil {
 					errors = append(errors, EntityValidationError{
-						field:  "TunnelGroup",
+						field:  "TenantGroup",
 						reason: "embedded message failed validation",
 						cause:  err,
 					})
@@ -3201,16 +2914,16 @@ func (m *Entity) validate(all bool) error {
 			case interface{ Validate() error }:
 				if err := v.Validate(); err != nil {
 					errors = append(errors, EntityValidationError{
-						field:  "TunnelGroup",
+						field:  "TenantGroup",
 						reason: "embedded message failed validation",
 						cause:  err,
 					})
 				}
 			}
-		} else if v, ok := interface{}(m.GetTunnelGroup()).(interface{ Validate() error }); ok {
+		} else if v, ok := interface{}(m.GetTenantGroup()).(interface{ Validate() error }); ok {
 			if err := v.Validate(); err != nil {
 				return EntityValidationError{
-					field:  "TunnelGroup",
+					field:  "TenantGroup",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -3258,6 +2971,47 @@ func (m *Entity) validate(all bool) error {
 			}
 		}
 
+	case *Entity_TunnelGroup:
+		if v == nil {
+			err := EntityValidationError{
+				field:  "Entity",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetTunnelGroup()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "TunnelGroup",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "TunnelGroup",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetTunnelGroup()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return EntityValidationError{
+					field:  "TunnelGroup",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	case *Entity_TunnelTermination:
 		if v == nil {
 			err := EntityValidationError{
@@ -3293,6 +3047,47 @@ func (m *Entity) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return EntityValidationError{
 					field:  "TunnelTermination",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *Entity_Vlan:
+		if v == nil {
+			err := EntityValidationError{
+				field:  "Entity",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetVlan()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "Vlan",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "Vlan",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetVlan()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return EntityValidationError{
+					field:  "Vlan",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -3416,6 +3211,47 @@ func (m *Entity) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return EntityValidationError{
 					field:  "VlanTranslationRule",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *Entity_VmInterface:
+		if v == nil {
+			err := EntityValidationError{
+				field:  "Entity",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetVmInterface()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "VmInterface",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "VmInterface",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetVmInterface()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return EntityValidationError{
+					field:  "VmInterface",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -3709,6 +3545,47 @@ func (m *Entity) validate(all bool) error {
 			}
 		}
 
+	case *Entity_VirtualMachine:
+		if v == nil {
+			err := EntityValidationError{
+				field:  "Entity",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetVirtualMachine()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "VirtualMachine",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "VirtualMachine",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetVirtualMachine()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return EntityValidationError{
+					field:  "VirtualMachine",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	case *Entity_WirelessLan:
 		if v == nil {
 			err := EntityValidationError{
@@ -3744,6 +3621,88 @@ func (m *Entity) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return EntityValidationError{
 					field:  "WirelessLan",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *Entity_WirelessLanGroup:
+		if v == nil {
+			err := EntityValidationError{
+				field:  "Entity",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetWirelessLanGroup()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "WirelessLanGroup",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "WirelessLanGroup",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetWirelessLanGroup()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return EntityValidationError{
+					field:  "WirelessLanGroup",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *Entity_WirelessLink:
+		if v == nil {
+			err := EntityValidationError{
+				field:  "Entity",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetWirelessLink()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "WirelessLink",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "WirelessLink",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetWirelessLink()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return EntityValidationError{
+					field:  "WirelessLink",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -13602,47 +13561,6 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 	var errors []error
 
 	switch v := m.Object.(type) {
-	case *CustomFieldObjectReference_AsnRange:
-		if v == nil {
-			err := CustomFieldObjectReferenceValidationError{
-				field:  "Object",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetAsnRange()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "AsnRange",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "AsnRange",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetAsnRange()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return CustomFieldObjectReferenceValidationError{
-					field:  "AsnRange",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
 	case *CustomFieldObjectReference_Asn:
 		if v == nil {
 			err := CustomFieldObjectReferenceValidationError{
@@ -13678,6 +13596,47 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return CustomFieldObjectReferenceValidationError{
 					field:  "Asn",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *CustomFieldObjectReference_AsnRange:
+		if v == nil {
+			err := CustomFieldObjectReferenceValidationError{
+				field:  "Object",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetAsnRange()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "AsnRange",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "AsnRange",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetAsnRange()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return CustomFieldObjectReferenceValidationError{
+					field:  "AsnRange",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -13725,47 +13684,6 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 			}
 		}
 
-	case *CustomFieldObjectReference_CablePath:
-		if v == nil {
-			err := CustomFieldObjectReferenceValidationError{
-				field:  "Object",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetCablePath()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "CablePath",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "CablePath",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetCablePath()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return CustomFieldObjectReferenceValidationError{
-					field:  "CablePath",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
 	case *CustomFieldObjectReference_Cable:
 		if v == nil {
 			err := CustomFieldObjectReferenceValidationError{
@@ -13801,6 +13719,47 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return CustomFieldObjectReferenceValidationError{
 					field:  "Cable",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *CustomFieldObjectReference_CablePath:
+		if v == nil {
+			err := CustomFieldObjectReferenceValidationError{
+				field:  "Object",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetCablePath()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "CablePath",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "CablePath",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetCablePath()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return CustomFieldObjectReferenceValidationError{
+					field:  "CablePath",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -13848,7 +13807,7 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 			}
 		}
 
-	case *CustomFieldObjectReference_CircuitTermination:
+	case *CustomFieldObjectReference_Circuit:
 		if v == nil {
 			err := CustomFieldObjectReferenceValidationError{
 				field:  "Object",
@@ -13861,11 +13820,11 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 		}
 
 		if all {
-			switch v := interface{}(m.GetCircuitTermination()).(type) {
+			switch v := interface{}(m.GetCircuit()).(type) {
 			case interface{ ValidateAll() error }:
 				if err := v.ValidateAll(); err != nil {
 					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "CircuitTermination",
+						field:  "Circuit",
 						reason: "embedded message failed validation",
 						cause:  err,
 					})
@@ -13873,57 +13832,16 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 			case interface{ Validate() error }:
 				if err := v.Validate(); err != nil {
 					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "CircuitTermination",
+						field:  "Circuit",
 						reason: "embedded message failed validation",
 						cause:  err,
 					})
 				}
 			}
-		} else if v, ok := interface{}(m.GetCircuitTermination()).(interface{ Validate() error }); ok {
+		} else if v, ok := interface{}(m.GetCircuit()).(interface{ Validate() error }); ok {
 			if err := v.Validate(); err != nil {
 				return CustomFieldObjectReferenceValidationError{
-					field:  "CircuitTermination",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
-	case *CustomFieldObjectReference_CircuitGroupAssignment:
-		if v == nil {
-			err := CustomFieldObjectReferenceValidationError{
-				field:  "Object",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetCircuitGroupAssignment()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "CircuitGroupAssignment",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "CircuitGroupAssignment",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetCircuitGroupAssignment()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return CustomFieldObjectReferenceValidationError{
-					field:  "CircuitGroupAssignment",
+					field:  "Circuit",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -13971,7 +13889,7 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 			}
 		}
 
-	case *CustomFieldObjectReference_Circuit:
+	case *CustomFieldObjectReference_CircuitGroupAssignment:
 		if v == nil {
 			err := CustomFieldObjectReferenceValidationError{
 				field:  "Object",
@@ -13984,11 +13902,11 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 		}
 
 		if all {
-			switch v := interface{}(m.GetCircuit()).(type) {
+			switch v := interface{}(m.GetCircuitGroupAssignment()).(type) {
 			case interface{ ValidateAll() error }:
 				if err := v.ValidateAll(); err != nil {
 					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "Circuit",
+						field:  "CircuitGroupAssignment",
 						reason: "embedded message failed validation",
 						cause:  err,
 					})
@@ -13996,16 +13914,57 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 			case interface{ Validate() error }:
 				if err := v.Validate(); err != nil {
 					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "Circuit",
+						field:  "CircuitGroupAssignment",
 						reason: "embedded message failed validation",
 						cause:  err,
 					})
 				}
 			}
-		} else if v, ok := interface{}(m.GetCircuit()).(interface{ Validate() error }); ok {
+		} else if v, ok := interface{}(m.GetCircuitGroupAssignment()).(interface{ Validate() error }); ok {
 			if err := v.Validate(); err != nil {
 				return CustomFieldObjectReferenceValidationError{
-					field:  "Circuit",
+					field:  "CircuitGroupAssignment",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *CustomFieldObjectReference_CircuitTermination:
+		if v == nil {
+			err := CustomFieldObjectReferenceValidationError{
+				field:  "Object",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetCircuitTermination()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "CircuitTermination",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "CircuitTermination",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetCircuitTermination()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return CustomFieldObjectReferenceValidationError{
+					field:  "CircuitTermination",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -14053,47 +14012,6 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 			}
 		}
 
-	case *CustomFieldObjectReference_ClusterGroup:
-		if v == nil {
-			err := CustomFieldObjectReferenceValidationError{
-				field:  "Object",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetClusterGroup()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "ClusterGroup",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "ClusterGroup",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetClusterGroup()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return CustomFieldObjectReferenceValidationError{
-					field:  "ClusterGroup",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
 	case *CustomFieldObjectReference_Cluster:
 		if v == nil {
 			err := CustomFieldObjectReferenceValidationError{
@@ -14129,6 +14047,47 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return CustomFieldObjectReferenceValidationError{
 					field:  "Cluster",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *CustomFieldObjectReference_ClusterGroup:
+		if v == nil {
+			err := CustomFieldObjectReferenceValidationError{
+				field:  "Object",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetClusterGroup()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "ClusterGroup",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "ClusterGroup",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetClusterGroup()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return CustomFieldObjectReferenceValidationError{
+					field:  "ClusterGroup",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -14258,6 +14217,47 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 			}
 		}
 
+	case *CustomFieldObjectReference_Contact:
+		if v == nil {
+			err := CustomFieldObjectReferenceValidationError{
+				field:  "Object",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetContact()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "Contact",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "Contact",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetContact()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return CustomFieldObjectReferenceValidationError{
+					field:  "Contact",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	case *CustomFieldObjectReference_ContactAssignment:
 		if v == nil {
 			err := CustomFieldObjectReferenceValidationError{
@@ -14381,7 +14381,7 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 			}
 		}
 
-	case *CustomFieldObjectReference_Contact:
+	case *CustomFieldObjectReference_Device:
 		if v == nil {
 			err := CustomFieldObjectReferenceValidationError{
 				field:  "Object",
@@ -14394,11 +14394,11 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 		}
 
 		if all {
-			switch v := interface{}(m.GetContact()).(type) {
+			switch v := interface{}(m.GetDevice()).(type) {
 			case interface{ ValidateAll() error }:
 				if err := v.ValidateAll(); err != nil {
 					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "Contact",
+						field:  "Device",
 						reason: "embedded message failed validation",
 						cause:  err,
 					})
@@ -14406,57 +14406,16 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 			case interface{ Validate() error }:
 				if err := v.Validate(); err != nil {
 					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "Contact",
+						field:  "Device",
 						reason: "embedded message failed validation",
 						cause:  err,
 					})
 				}
 			}
-		} else if v, ok := interface{}(m.GetContact()).(interface{ Validate() error }); ok {
+		} else if v, ok := interface{}(m.GetDevice()).(interface{ Validate() error }); ok {
 			if err := v.Validate(); err != nil {
 				return CustomFieldObjectReferenceValidationError{
-					field:  "Contact",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
-	case *CustomFieldObjectReference_Vlan:
-		if v == nil {
-			err := CustomFieldObjectReferenceValidationError{
-				field:  "Object",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetVlan()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "Vlan",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "Vlan",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetVlan()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return CustomFieldObjectReferenceValidationError{
-					field:  "Vlan",
+					field:  "Device",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -14545,47 +14504,6 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 			}
 		}
 
-	case *CustomFieldObjectReference_Device:
-		if v == nil {
-			err := CustomFieldObjectReferenceValidationError{
-				field:  "Object",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetDevice()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "Device",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "Device",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetDevice()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return CustomFieldObjectReferenceValidationError{
-					field:  "Device",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
 	case *CustomFieldObjectReference_DeviceType:
 		if v == nil {
 			err := CustomFieldObjectReferenceValidationError{
@@ -14621,47 +14539,6 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return CustomFieldObjectReferenceValidationError{
 					field:  "DeviceType",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
-	case *CustomFieldObjectReference_FhrpGroupAssignment:
-		if v == nil {
-			err := CustomFieldObjectReferenceValidationError{
-				field:  "Object",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetFhrpGroupAssignment()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "FhrpGroupAssignment",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "FhrpGroupAssignment",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetFhrpGroupAssignment()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return CustomFieldObjectReferenceValidationError{
-					field:  "FhrpGroupAssignment",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -14709,7 +14586,7 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 			}
 		}
 
-	case *CustomFieldObjectReference_RearPort:
+	case *CustomFieldObjectReference_FhrpGroupAssignment:
 		if v == nil {
 			err := CustomFieldObjectReferenceValidationError{
 				field:  "Object",
@@ -14722,11 +14599,11 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 		}
 
 		if all {
-			switch v := interface{}(m.GetRearPort()).(type) {
+			switch v := interface{}(m.GetFhrpGroupAssignment()).(type) {
 			case interface{ ValidateAll() error }:
 				if err := v.ValidateAll(); err != nil {
 					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "RearPort",
+						field:  "FhrpGroupAssignment",
 						reason: "embedded message failed validation",
 						cause:  err,
 					})
@@ -14734,16 +14611,16 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 			case interface{ Validate() error }:
 				if err := v.Validate(); err != nil {
 					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "RearPort",
+						field:  "FhrpGroupAssignment",
 						reason: "embedded message failed validation",
 						cause:  err,
 					})
 				}
 			}
-		} else if v, ok := interface{}(m.GetRearPort()).(interface{ Validate() error }); ok {
+		} else if v, ok := interface{}(m.GetFhrpGroupAssignment()).(interface{ Validate() error }); ok {
 			if err := v.Validate(); err != nil {
 				return CustomFieldObjectReferenceValidationError{
-					field:  "RearPort",
+					field:  "FhrpGroupAssignment",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -14785,47 +14662,6 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return CustomFieldObjectReferenceValidationError{
 					field:  "FrontPort",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
-	case *CustomFieldObjectReference_GenericObject:
-		if v == nil {
-			err := CustomFieldObjectReferenceValidationError{
-				field:  "Object",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetGenericObject()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "GenericObject",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "GenericObject",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetGenericObject()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return CustomFieldObjectReferenceValidationError{
-					field:  "GenericObject",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -15160,47 +14996,6 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 			}
 		}
 
-	case *CustomFieldObjectReference_InventoryItemRole:
-		if v == nil {
-			err := CustomFieldObjectReferenceValidationError{
-				field:  "Object",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetInventoryItemRole()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "InventoryItemRole",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "InventoryItemRole",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetInventoryItemRole()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return CustomFieldObjectReferenceValidationError{
-					field:  "InventoryItemRole",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
 	case *CustomFieldObjectReference_InventoryItem:
 		if v == nil {
 			err := CustomFieldObjectReferenceValidationError{
@@ -15236,6 +15031,47 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return CustomFieldObjectReferenceValidationError{
 					field:  "InventoryItem",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *CustomFieldObjectReference_InventoryItemRole:
+		if v == nil {
+			err := CustomFieldObjectReferenceValidationError{
+				field:  "Object",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetInventoryItemRole()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "InventoryItemRole",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "InventoryItemRole",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetInventoryItemRole()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return CustomFieldObjectReferenceValidationError{
+					field:  "InventoryItemRole",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -15447,47 +15283,6 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 			}
 		}
 
-	case *CustomFieldObjectReference_ModuleBay:
-		if v == nil {
-			err := CustomFieldObjectReferenceValidationError{
-				field:  "Object",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetModuleBay()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "ModuleBay",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "ModuleBay",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetModuleBay()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return CustomFieldObjectReferenceValidationError{
-					field:  "ModuleBay",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
 	case *CustomFieldObjectReference_Module:
 		if v == nil {
 			err := CustomFieldObjectReferenceValidationError{
@@ -15529,6 +15324,47 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 			}
 		}
 
+	case *CustomFieldObjectReference_ModuleBay:
+		if v == nil {
+			err := CustomFieldObjectReferenceValidationError{
+				field:  "Object",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetModuleBay()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "ModuleBay",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "ModuleBay",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetModuleBay()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return CustomFieldObjectReferenceValidationError{
+					field:  "ModuleBay",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	case *CustomFieldObjectReference_ModuleType:
 		if v == nil {
 			err := CustomFieldObjectReferenceValidationError{
@@ -15564,334 +15400,6 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return CustomFieldObjectReferenceValidationError{
 					field:  "ModuleType",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
-	case *CustomFieldObjectReference_Region:
-		if v == nil {
-			err := CustomFieldObjectReferenceValidationError{
-				field:  "Object",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetRegion()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "Region",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "Region",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetRegion()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return CustomFieldObjectReferenceValidationError{
-					field:  "Region",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
-	case *CustomFieldObjectReference_SiteGroup:
-		if v == nil {
-			err := CustomFieldObjectReferenceValidationError{
-				field:  "Object",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetSiteGroup()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "SiteGroup",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "SiteGroup",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetSiteGroup()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return CustomFieldObjectReferenceValidationError{
-					field:  "SiteGroup",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
-	case *CustomFieldObjectReference_Tag:
-		if v == nil {
-			err := CustomFieldObjectReferenceValidationError{
-				field:  "Object",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetTag()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "Tag",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "Tag",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetTag()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return CustomFieldObjectReferenceValidationError{
-					field:  "Tag",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
-	case *CustomFieldObjectReference_TenantGroup:
-		if v == nil {
-			err := CustomFieldObjectReferenceValidationError{
-				field:  "Object",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetTenantGroup()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "TenantGroup",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "TenantGroup",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetTenantGroup()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return CustomFieldObjectReferenceValidationError{
-					field:  "TenantGroup",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
-	case *CustomFieldObjectReference_VmInterface:
-		if v == nil {
-			err := CustomFieldObjectReferenceValidationError{
-				field:  "Object",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetVmInterface()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "VmInterface",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "VmInterface",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetVmInterface()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return CustomFieldObjectReferenceValidationError{
-					field:  "VmInterface",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
-	case *CustomFieldObjectReference_VirtualMachine:
-		if v == nil {
-			err := CustomFieldObjectReferenceValidationError{
-				field:  "Object",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetVirtualMachine()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "VirtualMachine",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "VirtualMachine",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetVirtualMachine()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return CustomFieldObjectReferenceValidationError{
-					field:  "VirtualMachine",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
-	case *CustomFieldObjectReference_WirelessLanGroup:
-		if v == nil {
-			err := CustomFieldObjectReferenceValidationError{
-				field:  "Object",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetWirelessLanGroup()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "WirelessLanGroup",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "WirelessLanGroup",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetWirelessLanGroup()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return CustomFieldObjectReferenceValidationError{
-					field:  "WirelessLanGroup",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
-	case *CustomFieldObjectReference_WirelessLink:
-		if v == nil {
-			err := CustomFieldObjectReferenceValidationError{
-				field:  "Object",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetWirelessLink()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "WirelessLink",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "WirelessLink",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetWirelessLink()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return CustomFieldObjectReferenceValidationError{
-					field:  "WirelessLink",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -16144,6 +15652,47 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 			}
 		}
 
+	case *CustomFieldObjectReference_Provider:
+		if v == nil {
+			err := CustomFieldObjectReferenceValidationError{
+				field:  "Object",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetProvider()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "Provider",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "Provider",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetProvider()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return CustomFieldObjectReferenceValidationError{
+					field:  "Provider",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	case *CustomFieldObjectReference_ProviderAccount:
 		if v == nil {
 			err := CustomFieldObjectReferenceValidationError{
@@ -16226,47 +15775,6 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 			}
 		}
 
-	case *CustomFieldObjectReference_Provider:
-		if v == nil {
-			err := CustomFieldObjectReferenceValidationError{
-				field:  "Object",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetProvider()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "Provider",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "Provider",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetProvider()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return CustomFieldObjectReferenceValidationError{
-					field:  "Provider",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
 	case *CustomFieldObjectReference_Rir:
 		if v == nil {
 			err := CustomFieldObjectReferenceValidationError{
@@ -16302,6 +15810,47 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return CustomFieldObjectReferenceValidationError{
 					field:  "Rir",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *CustomFieldObjectReference_Rack:
+		if v == nil {
+			err := CustomFieldObjectReferenceValidationError{
+				field:  "Object",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetRack()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "Rack",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "Rack",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetRack()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return CustomFieldObjectReferenceValidationError{
+					field:  "Rack",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -16390,47 +15939,6 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 			}
 		}
 
-	case *CustomFieldObjectReference_Rack:
-		if v == nil {
-			err := CustomFieldObjectReferenceValidationError{
-				field:  "Object",
-				reason: "oneof value cannot be a typed-nil",
-			}
-			if !all {
-				return err
-			}
-			errors = append(errors, err)
-		}
-
-		if all {
-			switch v := interface{}(m.GetRack()).(type) {
-			case interface{ ValidateAll() error }:
-				if err := v.ValidateAll(); err != nil {
-					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "Rack",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			case interface{ Validate() error }:
-				if err := v.Validate(); err != nil {
-					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "Rack",
-						reason: "embedded message failed validation",
-						cause:  err,
-					})
-				}
-			}
-		} else if v, ok := interface{}(m.GetRack()).(interface{ Validate() error }); ok {
-			if err := v.Validate(); err != nil {
-				return CustomFieldObjectReferenceValidationError{
-					field:  "Rack",
-					reason: "embedded message failed validation",
-					cause:  err,
-				}
-			}
-		}
-
 	case *CustomFieldObjectReference_RackType:
 		if v == nil {
 			err := CustomFieldObjectReferenceValidationError{
@@ -16466,6 +15974,88 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return CustomFieldObjectReferenceValidationError{
 					field:  "RackType",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *CustomFieldObjectReference_RearPort:
+		if v == nil {
+			err := CustomFieldObjectReferenceValidationError{
+				field:  "Object",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetRearPort()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "RearPort",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "RearPort",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetRearPort()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return CustomFieldObjectReferenceValidationError{
+					field:  "RearPort",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *CustomFieldObjectReference_Region:
+		if v == nil {
+			err := CustomFieldObjectReferenceValidationError{
+				field:  "Object",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetRegion()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "Region",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "Region",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetRegion()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return CustomFieldObjectReferenceValidationError{
+					field:  "Region",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -16636,6 +16226,88 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 			}
 		}
 
+	case *CustomFieldObjectReference_SiteGroup:
+		if v == nil {
+			err := CustomFieldObjectReferenceValidationError{
+				field:  "Object",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetSiteGroup()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "SiteGroup",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "SiteGroup",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetSiteGroup()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return CustomFieldObjectReferenceValidationError{
+					field:  "SiteGroup",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *CustomFieldObjectReference_Tag:
+		if v == nil {
+			err := CustomFieldObjectReferenceValidationError{
+				field:  "Object",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetTag()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "Tag",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "Tag",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetTag()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return CustomFieldObjectReferenceValidationError{
+					field:  "Tag",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	case *CustomFieldObjectReference_Tenant:
 		if v == nil {
 			err := CustomFieldObjectReferenceValidationError{
@@ -16677,7 +16349,7 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 			}
 		}
 
-	case *CustomFieldObjectReference_TunnelGroup:
+	case *CustomFieldObjectReference_TenantGroup:
 		if v == nil {
 			err := CustomFieldObjectReferenceValidationError{
 				field:  "Object",
@@ -16690,11 +16362,11 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 		}
 
 		if all {
-			switch v := interface{}(m.GetTunnelGroup()).(type) {
+			switch v := interface{}(m.GetTenantGroup()).(type) {
 			case interface{ ValidateAll() error }:
 				if err := v.ValidateAll(); err != nil {
 					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "TunnelGroup",
+						field:  "TenantGroup",
 						reason: "embedded message failed validation",
 						cause:  err,
 					})
@@ -16702,16 +16374,16 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 			case interface{ Validate() error }:
 				if err := v.Validate(); err != nil {
 					errors = append(errors, CustomFieldObjectReferenceValidationError{
-						field:  "TunnelGroup",
+						field:  "TenantGroup",
 						reason: "embedded message failed validation",
 						cause:  err,
 					})
 				}
 			}
-		} else if v, ok := interface{}(m.GetTunnelGroup()).(interface{ Validate() error }); ok {
+		} else if v, ok := interface{}(m.GetTenantGroup()).(interface{ Validate() error }); ok {
 			if err := v.Validate(); err != nil {
 				return CustomFieldObjectReferenceValidationError{
-					field:  "TunnelGroup",
+					field:  "TenantGroup",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -16759,6 +16431,47 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 			}
 		}
 
+	case *CustomFieldObjectReference_TunnelGroup:
+		if v == nil {
+			err := CustomFieldObjectReferenceValidationError{
+				field:  "Object",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetTunnelGroup()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "TunnelGroup",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "TunnelGroup",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetTunnelGroup()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return CustomFieldObjectReferenceValidationError{
+					field:  "TunnelGroup",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	case *CustomFieldObjectReference_TunnelTermination:
 		if v == nil {
 			err := CustomFieldObjectReferenceValidationError{
@@ -16794,6 +16507,47 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return CustomFieldObjectReferenceValidationError{
 					field:  "TunnelTermination",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *CustomFieldObjectReference_Vlan:
+		if v == nil {
+			err := CustomFieldObjectReferenceValidationError{
+				field:  "Object",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetVlan()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "Vlan",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "Vlan",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetVlan()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return CustomFieldObjectReferenceValidationError{
+					field:  "Vlan",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -16917,6 +16671,47 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return CustomFieldObjectReferenceValidationError{
 					field:  "VlanTranslationRule",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *CustomFieldObjectReference_VmInterface:
+		if v == nil {
+			err := CustomFieldObjectReferenceValidationError{
+				field:  "Object",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetVmInterface()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "VmInterface",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "VmInterface",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetVmInterface()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return CustomFieldObjectReferenceValidationError{
+					field:  "VmInterface",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -17210,6 +17005,47 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 			}
 		}
 
+	case *CustomFieldObjectReference_VirtualMachine:
+		if v == nil {
+			err := CustomFieldObjectReferenceValidationError{
+				field:  "Object",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetVirtualMachine()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "VirtualMachine",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "VirtualMachine",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetVirtualMachine()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return CustomFieldObjectReferenceValidationError{
+					field:  "VirtualMachine",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	case *CustomFieldObjectReference_WirelessLan:
 		if v == nil {
 			err := CustomFieldObjectReferenceValidationError{
@@ -17245,6 +17081,88 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return CustomFieldObjectReferenceValidationError{
 					field:  "WirelessLan",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *CustomFieldObjectReference_WirelessLanGroup:
+		if v == nil {
+			err := CustomFieldObjectReferenceValidationError{
+				field:  "Object",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetWirelessLanGroup()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "WirelessLanGroup",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "WirelessLanGroup",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetWirelessLanGroup()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return CustomFieldObjectReferenceValidationError{
+					field:  "WirelessLanGroup",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *CustomFieldObjectReference_WirelessLink:
+		if v == nil {
+			err := CustomFieldObjectReferenceValidationError{
+				field:  "Object",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetWirelessLink()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "WirelessLink",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "WirelessLink",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetWirelessLink()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return CustomFieldObjectReferenceValidationError{
+					field:  "WirelessLink",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -17357,7 +17275,7 @@ func (m *CustomFieldValue) validate(all bool) error {
 
 	var errors []error
 
-	for idx, item := range m.GetObjectArray() {
+	for idx, item := range m.GetMultipleObjects() {
 		_, _ = idx, item
 
 		if all {
@@ -17365,7 +17283,7 @@ func (m *CustomFieldValue) validate(all bool) error {
 			case interface{ ValidateAll() error }:
 				if err := v.ValidateAll(); err != nil {
 					errors = append(errors, CustomFieldValueValidationError{
-						field:  fmt.Sprintf("ObjectArray[%v]", idx),
+						field:  fmt.Sprintf("MultipleObjects[%v]", idx),
 						reason: "embedded message failed validation",
 						cause:  err,
 					})
@@ -17373,7 +17291,7 @@ func (m *CustomFieldValue) validate(all bool) error {
 			case interface{ Validate() error }:
 				if err := v.Validate(); err != nil {
 					errors = append(errors, CustomFieldValueValidationError{
-						field:  fmt.Sprintf("ObjectArray[%v]", idx),
+						field:  fmt.Sprintf("MultipleObjects[%v]", idx),
 						reason: "embedded message failed validation",
 						cause:  err,
 					})
@@ -17382,7 +17300,7 @@ func (m *CustomFieldValue) validate(all bool) error {
 		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
 			if err := v.Validate(); err != nil {
 				return CustomFieldValueValidationError{
-					field:  fmt.Sprintf("ObjectArray[%v]", idx),
+					field:  fmt.Sprintf("MultipleObjects[%v]", idx),
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -17404,6 +17322,18 @@ func (m *CustomFieldValue) validate(all bool) error {
 			errors = append(errors, err)
 		}
 		// no validation rules for Text
+	case *CustomFieldValue_LongText:
+		if v == nil {
+			err := CustomFieldValueValidationError{
+				field:  "Value",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+		// no validation rules for LongText
 	case *CustomFieldValue_Integer:
 		if v == nil {
 			err := CustomFieldValueValidationError{
@@ -17440,7 +17370,7 @@ func (m *CustomFieldValue) validate(all bool) error {
 			errors = append(errors, err)
 		}
 		// no validation rules for Boolean
-	case *CustomFieldValue_Timestamp:
+	case *CustomFieldValue_Date:
 		if v == nil {
 			err := CustomFieldValueValidationError{
 				field:  "Value",
@@ -17453,11 +17383,11 @@ func (m *CustomFieldValue) validate(all bool) error {
 		}
 
 		if all {
-			switch v := interface{}(m.GetTimestamp()).(type) {
+			switch v := interface{}(m.GetDate()).(type) {
 			case interface{ ValidateAll() error }:
 				if err := v.ValidateAll(); err != nil {
 					errors = append(errors, CustomFieldValueValidationError{
-						field:  "Timestamp",
+						field:  "Date",
 						reason: "embedded message failed validation",
 						cause:  err,
 					})
@@ -17465,22 +17395,99 @@ func (m *CustomFieldValue) validate(all bool) error {
 			case interface{ Validate() error }:
 				if err := v.Validate(); err != nil {
 					errors = append(errors, CustomFieldValueValidationError{
-						field:  "Timestamp",
+						field:  "Date",
 						reason: "embedded message failed validation",
 						cause:  err,
 					})
 				}
 			}
-		} else if v, ok := interface{}(m.GetTimestamp()).(interface{ Validate() error }); ok {
+		} else if v, ok := interface{}(m.GetDate()).(interface{ Validate() error }); ok {
 			if err := v.Validate(); err != nil {
 				return CustomFieldValueValidationError{
-					field:  "Timestamp",
+					field:  "Date",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
 			}
 		}
 
+	case *CustomFieldValue_Datetime:
+		if v == nil {
+			err := CustomFieldValueValidationError{
+				field:  "Value",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetDatetime()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, CustomFieldValueValidationError{
+						field:  "Datetime",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, CustomFieldValueValidationError{
+						field:  "Datetime",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetDatetime()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return CustomFieldValueValidationError{
+					field:  "Datetime",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *CustomFieldValue_Url:
+		if v == nil {
+			err := CustomFieldValueValidationError{
+				field:  "Value",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+		// no validation rules for Url
+	case *CustomFieldValue_Json:
+		if v == nil {
+			err := CustomFieldValueValidationError{
+				field:  "Value",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+		// no validation rules for Json
+	case *CustomFieldValue_Selection:
+		if v == nil {
+			err := CustomFieldValueValidationError{
+				field:  "Value",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+		// no validation rules for Selection
 	case *CustomFieldValue_Object:
 		if v == nil {
 			err := CustomFieldValueValidationError{
