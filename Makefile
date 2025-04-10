@@ -21,3 +21,7 @@ gen-diode-netbox-plugin-reconciler-sdk-python:
 	@find ../diode-netbox-plugin/netbox_diode_plugin/reconciler/sdk/ \( -name '*.py' -o -name '*.pyi' \) \
 	-exec sed -i.bak -e 's/^from diode.v1/from netbox_diode_plugin.reconciler.sdk.v1/' \
 	-e 's/^from validate/from netbox_diode_plugin.reconciler.sdk.validate/' {} \; -exec rm -f {}.bak \;
+
+.PHONY: detect-breaking-changes
+detect-breaking-changes:
+	@cd diode-proto/ && buf breaking --against '../.git#subdir=diode-proto'
