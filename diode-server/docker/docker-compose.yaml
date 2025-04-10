@@ -9,11 +9,8 @@ services:
       upstream diode-reconciler {
         server diode-reconciler:8081;
       }
-      upstream diode-reconcilermetrics {
-        server diode-reconciler:9090;
-      }
-      upstream diode-ingestermetrics {
-        server diode-ingester:9090;
+      upstream diode-auth {
+        server diode-auth:8080;
       }
       server {
         listen 80;
@@ -28,13 +25,9 @@ services:
           rewrite /diode/(.*) /$$1 break;
           grpc_pass grpc://diode-reconciler;
         }
-        location /diode/reconciler/metrics {
-          rewrite /diode/reconciler/(.*) /$$1 break;
-          proxy_pass http://diode-reconcilermetrics;
-        }
-        location /diode/ingester/metrics {
-          rewrite /diode/ingester/(.*) /$$1 break;
-          proxy_pass http://diode-ingestermetrics;
+        location /diode/auth {
+          rewrite /diode/auth/(.*) /$$1 break;
+          proxy_pass http://diode-auth;
         }
       }'
       > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"
@@ -44,6 +37,7 @@ services:
     ports:
       - ${DIODE_NGINX_PORT}:80
     depends_on:
+      - diode-auth
       - diode-ingester
       - diode-reconciler
 
@@ -53,8 +47,6 @@ services:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
-      - RECONCILER_GRPC_HOST=${RECONCILER_GRPC_HOST}
-      - RECONCILER_GRPC_PORT=${RECONCILER_GRPC_PORT}
       - DIODE_API_KEY=${DIODE_API_KEY}
       - SENTRY_DSN=${SENTRY_DSN}
       - TELEMETRY_METRICS_EXPORTER=${TELEMETRY_METRICS_EXPORTER}
@@ -93,6 +85,7 @@ services:
     ports: [ ]
     volumes:
       - ../dbstore/postgres/migrations:/etc/diode/migrations:z,ro
+      - ./oauth2/client/client-credentials.json:/etc/config/oauth2/client/client-credentials.json:z,ro
     depends_on:
       diode-redis:
         condition: service_started
@@ -153,6 +146,7 @@ services:
     depends_on:
       - diode-hydra-migrate
       - diode-postgres
+
   diode-hydra-migrate:
     image: oryd/hydra:v2.3.0
     command: migrate sql up -e --yes
@@ -163,6 +157,31 @@ services:
     restart: on-failure
     depends_on:
       - diode-postgres
+
+  diode-auth:
+    image: netboxlabs/diode-auth:${DIODE_TAG:-latest}
+    environment:
+      - HTTP_PORT=${AUTH_HTTP_PORT}
+      - SENTRY_DSN=${SENTRY_DSN}
+      - TELEMETRY_METRICS_EXPORTER=${TELEMETRY_METRICS_EXPORTER}
+      - TELEMETRY_TRACES_EXPORTER=${TELEMETRY_TRACES_EXPORTER}
+      - TELEMETRY_ENVIRONMENT=${TELEMETRY_ENVIRONMENT}
+    restart: always
+    ports: []
+    depends_on:
+      - diode-hydra
+
+  diode-auth-bootstrap:
+    image: netboxlabs/diode-auth:${DIODE_TAG:-latest}
+    command: ["/bin/sh", "/etc/config/oauth2/bootstrap-clients.sh"]
+    environment:
+      - HYDRA_ADMIN_URL=http://diode-hydra:4445
+    volumes:
+      - ./oauth2/bootstrap-clients.sh:/etc/config/oauth2/bootstrap-clients.sh:z,ro
+      - ./oauth2/client:/etc/config/oauth2/client:z
+    restart: on-failure
+    depends_on:
+      - diode-hydra
 
 volumes:
   diode-redis-data:
