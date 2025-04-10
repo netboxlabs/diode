@@ -1028,36 +1028,33 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| asn_range | [ASNRange](#diode-v1-ASNRange) |  |  |
 | asn | [ASN](#diode-v1-ASN) |  |  |
+| asn_range | [ASNRange](#diode-v1-ASNRange) |  |  |
 | aggregate | [Aggregate](#diode-v1-Aggregate) |  |  |
-| cable_path | [CablePath](#diode-v1-CablePath) |  |  |
 | cable | [Cable](#diode-v1-Cable) |  |  |
+| cable_path | [CablePath](#diode-v1-CablePath) |  |  |
 | cable_termination | [CableTermination](#diode-v1-CableTermination) |  |  |
-| circuit_termination | [CircuitTermination](#diode-v1-CircuitTermination) |  |  |
-| circuit_group_assignment | [CircuitGroupAssignment](#diode-v1-CircuitGroupAssignment) |  |  |
-| circuit_group | [CircuitGroup](#diode-v1-CircuitGroup) |  |  |
 | circuit | [Circuit](#diode-v1-Circuit) |  |  |
+| circuit_group | [CircuitGroup](#diode-v1-CircuitGroup) |  |  |
+| circuit_group_assignment | [CircuitGroupAssignment](#diode-v1-CircuitGroupAssignment) |  |  |
+| circuit_termination | [CircuitTermination](#diode-v1-CircuitTermination) |  |  |
 | circuit_type | [CircuitType](#diode-v1-CircuitType) |  |  |
-| cluster_group | [ClusterGroup](#diode-v1-ClusterGroup) |  |  |
 | cluster | [Cluster](#diode-v1-Cluster) |  |  |
+| cluster_group | [ClusterGroup](#diode-v1-ClusterGroup) |  |  |
 | cluster_type | [ClusterType](#diode-v1-ClusterType) |  |  |
 | console_port | [ConsolePort](#diode-v1-ConsolePort) |  |  |
 | console_server_port | [ConsoleServerPort](#diode-v1-ConsoleServerPort) |  |  |
+| contact | [Contact](#diode-v1-Contact) |  |  |
 | contact_assignment | [ContactAssignment](#diode-v1-ContactAssignment) |  |  |
 | contact_group | [ContactGroup](#diode-v1-ContactGroup) |  |  |
 | contact_role | [ContactRole](#diode-v1-ContactRole) |  |  |
-| contact | [Contact](#diode-v1-Contact) |  |  |
-| vlan | [VLAN](#diode-v1-VLAN) |  |  |
+| device | [Device](#diode-v1-Device) |  |  |
 | device_bay | [DeviceBay](#diode-v1-DeviceBay) |  |  |
 | device_role | [DeviceRole](#diode-v1-DeviceRole) |  |  |
-| device | [Device](#diode-v1-Device) |  |  |
 | device_type | [DeviceType](#diode-v1-DeviceType) |  |  |
-| fhrp_group_assignment | [FHRPGroupAssignment](#diode-v1-FHRPGroupAssignment) |  |  |
 | fhrp_group | [FHRPGroup](#diode-v1-FHRPGroup) |  |  |
-| rear_port | [RearPort](#diode-v1-RearPort) |  |  |
+| fhrp_group_assignment | [FHRPGroupAssignment](#diode-v1-FHRPGroupAssignment) |  |  |
 | front_port | [FrontPort](#diode-v1-FrontPort) |  |  |
-| generic_object | [GenericObject](#diode-v1-GenericObject) |  |  |
 | ike_policy | [IKEPolicy](#diode-v1-IKEPolicy) |  |  |
 | ike_proposal | [IKEProposal](#diode-v1-IKEProposal) |  |  |
 | ip_address | [IPAddress](#diode-v1-IPAddress) |  |  |
@@ -1066,49 +1063,48 @@
 | ip_sec_profile | [IPSecProfile](#diode-v1-IPSecProfile) |  |  |
 | ip_sec_proposal | [IPSecProposal](#diode-v1-IPSecProposal) |  |  |
 | interface | [Interface](#diode-v1-Interface) |  |  |
-| inventory_item_role | [InventoryItemRole](#diode-v1-InventoryItemRole) |  |  |
 | inventory_item | [InventoryItem](#diode-v1-InventoryItem) |  |  |
+| inventory_item_role | [InventoryItemRole](#diode-v1-InventoryItemRole) |  |  |
 | l2vpn | [L2VPN](#diode-v1-L2VPN) |  |  |
 | l2vpn_termination | [L2VPNTermination](#diode-v1-L2VPNTermination) |  |  |
 | location | [Location](#diode-v1-Location) |  |  |
 | mac_address | [MACAddress](#diode-v1-MACAddress) |  |  |
 | manufacturer | [Manufacturer](#diode-v1-Manufacturer) |  |  |
-| module_bay | [ModuleBay](#diode-v1-ModuleBay) |  |  |
 | module | [Module](#diode-v1-Module) |  |  |
+| module_bay | [ModuleBay](#diode-v1-ModuleBay) |  |  |
 | module_type | [ModuleType](#diode-v1-ModuleType) |  |  |
-| region | [Region](#diode-v1-Region) |  |  |
-| site_group | [SiteGroup](#diode-v1-SiteGroup) |  |  |
-| tag | [Tag](#diode-v1-Tag) |  |  |
-| tenant_group | [TenantGroup](#diode-v1-TenantGroup) |  |  |
-| vm_interface | [VMInterface](#diode-v1-VMInterface) |  |  |
-| virtual_machine | [VirtualMachine](#diode-v1-VirtualMachine) |  |  |
-| wireless_lan_group | [WirelessLANGroup](#diode-v1-WirelessLANGroup) |  |  |
-| wireless_link | [WirelessLink](#diode-v1-WirelessLink) |  |  |
 | platform | [Platform](#diode-v1-Platform) |  |  |
 | power_feed | [PowerFeed](#diode-v1-PowerFeed) |  |  |
 | power_outlet | [PowerOutlet](#diode-v1-PowerOutlet) |  |  |
 | power_panel | [PowerPanel](#diode-v1-PowerPanel) |  |  |
 | power_port | [PowerPort](#diode-v1-PowerPort) |  |  |
 | prefix | [Prefix](#diode-v1-Prefix) |  |  |
+| provider | [Provider](#diode-v1-Provider) |  |  |
 | provider_account | [ProviderAccount](#diode-v1-ProviderAccount) |  |  |
 | provider_network | [ProviderNetwork](#diode-v1-ProviderNetwork) |  |  |
-| provider | [Provider](#diode-v1-Provider) |  |  |
 | rir | [RIR](#diode-v1-RIR) |  |  |
+| rack | [Rack](#diode-v1-Rack) |  |  |
 | rack_reservation | [RackReservation](#diode-v1-RackReservation) |  |  |
 | rack_role | [RackRole](#diode-v1-RackRole) |  |  |
-| rack | [Rack](#diode-v1-Rack) |  |  |
 | rack_type | [RackType](#diode-v1-RackType) |  |  |
+| rear_port | [RearPort](#diode-v1-RearPort) |  |  |
+| region | [Region](#diode-v1-Region) |  |  |
 | role | [Role](#diode-v1-Role) |  |  |
 | route_target | [RouteTarget](#diode-v1-RouteTarget) |  |  |
 | service | [Service](#diode-v1-Service) |  |  |
 | site | [Site](#diode-v1-Site) |  |  |
+| site_group | [SiteGroup](#diode-v1-SiteGroup) |  |  |
+| tag | [Tag](#diode-v1-Tag) |  |  |
 | tenant | [Tenant](#diode-v1-Tenant) |  |  |
-| tunnel_group | [TunnelGroup](#diode-v1-TunnelGroup) |  |  |
+| tenant_group | [TenantGroup](#diode-v1-TenantGroup) |  |  |
 | tunnel | [Tunnel](#diode-v1-Tunnel) |  |  |
+| tunnel_group | [TunnelGroup](#diode-v1-TunnelGroup) |  |  |
 | tunnel_termination | [TunnelTermination](#diode-v1-TunnelTermination) |  |  |
+| vlan | [VLAN](#diode-v1-VLAN) |  |  |
 | vlan_group | [VLANGroup](#diode-v1-VLANGroup) |  |  |
 | vlan_translation_policy | [VLANTranslationPolicy](#diode-v1-VLANTranslationPolicy) |  |  |
 | vlan_translation_rule | [VLANTranslationRule](#diode-v1-VLANTranslationRule) |  |  |
+| vm_interface | [VMInterface](#diode-v1-VMInterface) |  |  |
 | vrf | [VRF](#diode-v1-VRF) |  |  |
 | virtual_chassis | [VirtualChassis](#diode-v1-VirtualChassis) |  |  |
 | virtual_circuit | [VirtualCircuit](#diode-v1-VirtualCircuit) |  |  |
@@ -1116,7 +1112,10 @@
 | virtual_circuit_type | [VirtualCircuitType](#diode-v1-VirtualCircuitType) |  |  |
 | virtual_device_context | [VirtualDeviceContext](#diode-v1-VirtualDeviceContext) |  |  |
 | virtual_disk | [VirtualDisk](#diode-v1-VirtualDisk) |  |  |
+| virtual_machine | [VirtualMachine](#diode-v1-VirtualMachine) |  |  |
 | wireless_lan | [WirelessLAN](#diode-v1-WirelessLAN) |  |  |
+| wireless_lan_group | [WirelessLANGroup](#diode-v1-WirelessLANGroup) |  |  |
+| wireless_link | [WirelessLink](#diode-v1-WirelessLink) |  |  |
 
 
 
@@ -1131,16 +1130,19 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
+| multiple_selection | [string](#string) | repeated |  |
+| multiple_objects | [CustomFieldObjectReference](#diode-v1-CustomFieldObjectReference) | repeated |  |
 | text | [string](#string) |  |  |
+| long_text | [string](#string) |  |  |
 | integer | [int64](#int64) |  |  |
 | decimal | [double](#double) |  |  |
 | boolean | [bool](#bool) |  |  |
-| timestamp | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  |  |
-| object | [CustomFieldObjectReference](#diode-v1-CustomFieldObjectReference) |  |  |
-| json | [string](#string) |  |  |
 | date | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  |  |
-| string_array | [string](#string) | repeated |  |
-| object_array | [CustomFieldObjectReference](#diode-v1-CustomFieldObjectReference) | repeated |  |
+| datetime | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  |  |
+| url | [string](#string) |  |  |
+| json | [string](#string) |  |  |
+| selection | [string](#string) |  |  |
+| object | [CustomFieldObjectReference](#diode-v1-CustomFieldObjectReference) |  |  |
 
 
 
@@ -1333,36 +1335,33 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | timestamp | [google.protobuf.Timestamp](#google-protobuf-Timestamp) |  |  |
-| asn_range | [ASNRange](#diode-v1-ASNRange) |  |  |
 | asn | [ASN](#diode-v1-ASN) |  |  |
+| asn_range | [ASNRange](#diode-v1-ASNRange) |  |  |
 | aggregate | [Aggregate](#diode-v1-Aggregate) |  |  |
-| cable_path | [CablePath](#diode-v1-CablePath) |  |  |
 | cable | [Cable](#diode-v1-Cable) |  |  |
+| cable_path | [CablePath](#diode-v1-CablePath) |  |  |
 | cable_termination | [CableTermination](#diode-v1-CableTermination) |  |  |
-| circuit_termination | [CircuitTermination](#diode-v1-CircuitTermination) |  |  |
-| circuit_group_assignment | [CircuitGroupAssignment](#diode-v1-CircuitGroupAssignment) |  |  |
-| circuit_group | [CircuitGroup](#diode-v1-CircuitGroup) |  |  |
 | circuit | [Circuit](#diode-v1-Circuit) |  |  |
+| circuit_group | [CircuitGroup](#diode-v1-CircuitGroup) |  |  |
+| circuit_group_assignment | [CircuitGroupAssignment](#diode-v1-CircuitGroupAssignment) |  |  |
+| circuit_termination | [CircuitTermination](#diode-v1-CircuitTermination) |  |  |
 | circuit_type | [CircuitType](#diode-v1-CircuitType) |  |  |
-| cluster_group | [ClusterGroup](#diode-v1-ClusterGroup) |  |  |
 | cluster | [Cluster](#diode-v1-Cluster) |  |  |
+| cluster_group | [ClusterGroup](#diode-v1-ClusterGroup) |  |  |
 | cluster_type | [ClusterType](#diode-v1-ClusterType) |  |  |
 | console_port | [ConsolePort](#diode-v1-ConsolePort) |  |  |
 | console_server_port | [ConsoleServerPort](#diode-v1-ConsoleServerPort) |  |  |
+| contact | [Contact](#diode-v1-Contact) |  |  |
 | contact_assignment | [ContactAssignment](#diode-v1-ContactAssignment) |  |  |
 | contact_group | [ContactGroup](#diode-v1-ContactGroup) |  |  |
 | contact_role | [ContactRole](#diode-v1-ContactRole) |  |  |
-| contact | [Contact](#diode-v1-Contact) |  |  |
-| vlan | [VLAN](#diode-v1-VLAN) |  |  |
+| device | [Device](#diode-v1-Device) |  |  |
 | device_bay | [DeviceBay](#diode-v1-DeviceBay) |  |  |
 | device_role | [DeviceRole](#diode-v1-DeviceRole) |  |  |
-| device | [Device](#diode-v1-Device) |  |  |
 | device_type | [DeviceType](#diode-v1-DeviceType) |  |  |
-| fhrp_group_assignment | [FHRPGroupAssignment](#diode-v1-FHRPGroupAssignment) |  |  |
 | fhrp_group | [FHRPGroup](#diode-v1-FHRPGroup) |  |  |
-| rear_port | [RearPort](#diode-v1-RearPort) |  |  |
+| fhrp_group_assignment | [FHRPGroupAssignment](#diode-v1-FHRPGroupAssignment) |  |  |
 | front_port | [FrontPort](#diode-v1-FrontPort) |  |  |
-| generic_object | [GenericObject](#diode-v1-GenericObject) |  |  |
 | ike_policy | [IKEPolicy](#diode-v1-IKEPolicy) |  |  |
 | ike_proposal | [IKEProposal](#diode-v1-IKEProposal) |  |  |
 | ip_address | [IPAddress](#diode-v1-IPAddress) |  |  |
@@ -1371,49 +1370,48 @@
 | ip_sec_profile | [IPSecProfile](#diode-v1-IPSecProfile) |  |  |
 | ip_sec_proposal | [IPSecProposal](#diode-v1-IPSecProposal) |  |  |
 | interface | [Interface](#diode-v1-Interface) |  |  |
-| inventory_item_role | [InventoryItemRole](#diode-v1-InventoryItemRole) |  |  |
 | inventory_item | [InventoryItem](#diode-v1-InventoryItem) |  |  |
+| inventory_item_role | [InventoryItemRole](#diode-v1-InventoryItemRole) |  |  |
 | l2vpn | [L2VPN](#diode-v1-L2VPN) |  |  |
 | l2vpn_termination | [L2VPNTermination](#diode-v1-L2VPNTermination) |  |  |
 | location | [Location](#diode-v1-Location) |  |  |
 | mac_address | [MACAddress](#diode-v1-MACAddress) |  |  |
 | manufacturer | [Manufacturer](#diode-v1-Manufacturer) |  |  |
-| module_bay | [ModuleBay](#diode-v1-ModuleBay) |  |  |
 | module | [Module](#diode-v1-Module) |  |  |
+| module_bay | [ModuleBay](#diode-v1-ModuleBay) |  |  |
 | module_type | [ModuleType](#diode-v1-ModuleType) |  |  |
-| region | [Region](#diode-v1-Region) |  |  |
-| site_group | [SiteGroup](#diode-v1-SiteGroup) |  |  |
-| tag | [Tag](#diode-v1-Tag) |  |  |
-| tenant_group | [TenantGroup](#diode-v1-TenantGroup) |  |  |
-| vm_interface | [VMInterface](#diode-v1-VMInterface) |  |  |
-| virtual_machine | [VirtualMachine](#diode-v1-VirtualMachine) |  |  |
-| wireless_lan_group | [WirelessLANGroup](#diode-v1-WirelessLANGroup) |  |  |
-| wireless_link | [WirelessLink](#diode-v1-WirelessLink) |  |  |
 | platform | [Platform](#diode-v1-Platform) |  |  |
 | power_feed | [PowerFeed](#diode-v1-PowerFeed) |  |  |
 | power_outlet | [PowerOutlet](#diode-v1-PowerOutlet) |  |  |
 | power_panel | [PowerPanel](#diode-v1-PowerPanel) |  |  |
 | power_port | [PowerPort](#diode-v1-PowerPort) |  |  |
 | prefix | [Prefix](#diode-v1-Prefix) |  |  |
+| provider | [Provider](#diode-v1-Provider) |  |  |
 | provider_account | [ProviderAccount](#diode-v1-ProviderAccount) |  |  |
 | provider_network | [ProviderNetwork](#diode-v1-ProviderNetwork) |  |  |
-| provider | [Provider](#diode-v1-Provider) |  |  |
 | rir | [RIR](#diode-v1-RIR) |  |  |
+| rack | [Rack](#diode-v1-Rack) |  |  |
 | rack_reservation | [RackReservation](#diode-v1-RackReservation) |  |  |
 | rack_role | [RackRole](#diode-v1-RackRole) |  |  |
-| rack | [Rack](#diode-v1-Rack) |  |  |
 | rack_type | [RackType](#diode-v1-RackType) |  |  |
+| rear_port | [RearPort](#diode-v1-RearPort) |  |  |
+| region | [Region](#diode-v1-Region) |  |  |
 | role | [Role](#diode-v1-Role) |  |  |
 | route_target | [RouteTarget](#diode-v1-RouteTarget) |  |  |
 | service | [Service](#diode-v1-Service) |  |  |
 | site | [Site](#diode-v1-Site) |  |  |
+| site_group | [SiteGroup](#diode-v1-SiteGroup) |  |  |
+| tag | [Tag](#diode-v1-Tag) |  |  |
 | tenant | [Tenant](#diode-v1-Tenant) |  |  |
-| tunnel_group | [TunnelGroup](#diode-v1-TunnelGroup) |  |  |
+| tenant_group | [TenantGroup](#diode-v1-TenantGroup) |  |  |
 | tunnel | [Tunnel](#diode-v1-Tunnel) |  |  |
+| tunnel_group | [TunnelGroup](#diode-v1-TunnelGroup) |  |  |
 | tunnel_termination | [TunnelTermination](#diode-v1-TunnelTermination) |  |  |
+| vlan | [VLAN](#diode-v1-VLAN) |  |  |
 | vlan_group | [VLANGroup](#diode-v1-VLANGroup) |  |  |
 | vlan_translation_policy | [VLANTranslationPolicy](#diode-v1-VLANTranslationPolicy) |  |  |
 | vlan_translation_rule | [VLANTranslationRule](#diode-v1-VLANTranslationRule) |  |  |
+| vm_interface | [VMInterface](#diode-v1-VMInterface) |  |  |
 | vrf | [VRF](#diode-v1-VRF) |  |  |
 | virtual_chassis | [VirtualChassis](#diode-v1-VirtualChassis) |  |  |
 | virtual_circuit | [VirtualCircuit](#diode-v1-VirtualCircuit) |  |  |
@@ -1421,7 +1419,10 @@
 | virtual_circuit_type | [VirtualCircuitType](#diode-v1-VirtualCircuitType) |  |  |
 | virtual_device_context | [VirtualDeviceContext](#diode-v1-VirtualDeviceContext) |  |  |
 | virtual_disk | [VirtualDisk](#diode-v1-VirtualDisk) |  |  |
+| virtual_machine | [VirtualMachine](#diode-v1-VirtualMachine) |  |  |
 | wireless_lan | [WirelessLAN](#diode-v1-WirelessLAN) |  |  |
+| wireless_lan_group | [WirelessLANGroup](#diode-v1-WirelessLANGroup) |  |  |
+| wireless_link | [WirelessLink](#diode-v1-WirelessLink) |  |  |
 
 
 
