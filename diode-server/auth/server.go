@@ -96,7 +96,6 @@ func (s *Server) introspect(w http.ResponseWriter, r *http.Request) {
 
 // token handles the token request
 func (s *Server) token(w http.ResponseWriter, r *http.Request) {
-	// Create a new request with the same method, URL, and body
 	req, err := http.NewRequest(r.Method, s.config.OAuth2.PublicServerURL+"/oauth2/token", r.Body)
 	if err != nil {
 		http.Error(w, "Failed to create request", http.StatusInternalServerError)
@@ -104,14 +103,12 @@ func (s *Server) token(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	// Copy headers from the original request
 	for name, values := range r.Header {
 		for _, value := range values {
 			req.Header.Add(name, value)
 		}
 	}
 
-	// Send the request using a standard HTTP client
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		http.Error(w, "Request failed: "+err.Error(), http.StatusBadGateway)
@@ -119,14 +116,12 @@ func (s *Server) token(w http.ResponseWriter, r *http.Request) {
 	}
 	defer resp.Body.Close()
 
-	// Copy response headers
 	for name, values := range resp.Header {
 		for _, value := range values {
 			w.Header().Add(name, value)
 		}
 	}
 
-	// Write the response status code and body back to the original client
 	w.WriteHeader(resp.StatusCode)
 	io.Copy(w, resp.Body)
 }
