@@ -3,10 +3,12 @@ module github.com/netboxlabs/diode/diode-server
 go 1.23.4
 
 require (
+	github.com/MicahParks/keyfunc v1.9.0
 	github.com/alicebob/miniredis/v2 v2.33.0
 	github.com/andybalholm/brotli v1.1.1
 	github.com/envoyproxy/protoc-gen-validate v1.1.0
 	github.com/getsentry/sentry-go v0.27.0
+	github.com/golang-jwt/jwt/v4 v4.5.1
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.7.1
 	github.com/kelseyhightower/envconfig v1.4.0
