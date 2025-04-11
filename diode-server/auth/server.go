@@ -94,12 +94,27 @@ func (s *Server) RegisterHandlers() {
 
 // introspect handles the introspect request
 func (s *Server) introspect(w http.ResponseWriter, r *http.Request) {
-	body, err := io.ReadAll(r.Body)
+	// body, err := io.ReadAll(r.Body)
+	// if err != nil {
+	// 	s.logger.Error("error reading request body", "error", err)
+	// 	w.WriteHeader(http.StatusInternalServerError)
+	// 	return
+	// }
+	// s.logger.Info("body", "value", string(body))
+
+	err := r.ParseForm()
 	if err != nil {
-		s.logger.Error("error reading request body", "error", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusUnauthorized)
 		return
 	}
+
+	jwtToken := r.FormValue("token")
+	if len(jwtToken) == 0 {
+		s.logger.Error("token not found in request body")
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
 	jwksURL := s.config.OAuth2.PublicServerURL + "/.well-known/jwks.json"
 	jwks, err := keyfunc.Get(jwksURL, keyfunc.Options{})
 	if err != nil {
@@ -108,10 +123,21 @@ func (s *Server) introspect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := jwt.Parse(string(body), jwks.Keyfunc)
+	s.logger.Info("token", "value", jwtToken)
 
-	if err != nil || !token.Valid {
-		writeJSON(w, http.StatusOK, IntrospectResponse{Active: false})
+	token, err := jwt.Parse(jwtToken, jwks.Keyfunc)
+
+	if err != nil {
+		// Invalid token format or signature
+		s.logger.Info("token validation failed", "error", err)
+		w.WriteHeader(http.StatusUnauthorized) // 401 Unauthorized
+		return
+	}
+
+	if !token.Valid {
+		// Token is invalid (e.g., expired)
+		s.logger.Info("token is invalid")
+		w.WriteHeader(http.StatusForbidden) // 403 Forbidden
 		return
 	}
 
@@ -120,13 +146,13 @@ func (s *Server) introspect(w http.ResponseWriter, r *http.Request) {
 		"path", r.URL.Path,
 		"remote_addr", r.RemoteAddr,
 		"user_agent", r.UserAgent(),
-		"payload", string(body),
+		// "payload", string(body),
 		"token", token,
 	)
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		writeJSON(w, http.StatusOK, IntrospectResponse{Active: false})
+		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 	resp := IntrospectResponse{
