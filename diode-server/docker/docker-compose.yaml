@@ -59,7 +59,7 @@ services:
     ports: [ ]
     volumes:
       - ../dbstore/postgres/migrations:/etc/diode/migrations:z,ro
-      - ./oauth2/client/client-credentials.json:/etc/config/oauth2/client/client-credentials.json:z,ro
+      - ./oauth2/client:/etc/config/oauth2/client:z,ro
     depends_on:
       diode-redis:
         condition: service_started
@@ -146,6 +146,7 @@ services:
     ports: []
     depends_on:
       - diode-hydra
+      - diode-auth-bootstrap
 
   diode-auth-bootstrap:
     image: netboxlabs/diode-auth:${DIODE_TAG:-latest}
@@ -154,7 +155,8 @@ services:
       - HYDRA_ADMIN_URL=http://diode-hydra:4445
     volumes:
       - ./oauth2/bootstrap-clients.sh:/etc/config/oauth2/bootstrap-clients.sh:z,ro
-      - ./oauth2/client:/etc/config/oauth2/client:z
+      - ./oauth2/client:/etc/config/oauth2/client
+    user: "appuser:appgroup"
     restart: on-failure
     depends_on:
       - diode-hydra
