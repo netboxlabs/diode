@@ -66,7 +66,7 @@ func CompressChangeSet(cs *ChangeSet) ([]byte, error) {
 type Error struct {
 	Message string           `json:"message"`
 	Code    errors.ErrorCode `json:"code"`
-	Details json.RawMessage  `json:"details"`
+	Details json.RawMessage  `json:"details,omitempty"`
 }
 
 // Error returns the ChangeSetError message
