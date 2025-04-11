@@ -166,7 +166,7 @@ func TestProOpsGenerateChangeSet(t *testing.T) {
 				}), m.ingestionLogDBID).Return(&m.id, nil)
 			}
 			for _, m := range tt.updateIngestionLogStateWithErrors {
-				mockRepository.EXPECT().UpdateIngestionLogStateWithError(ctx, m.ingestionLogDBID, m.state, mock.Anything).Run(func(ctx context.Context, ingestionLogDBID int32, state pb.State, err error) {
+				mockRepository.EXPECT().UpdateIngestionLogStateWithError(ctx, m.ingestionLogDBID, m.state, mock.Anything).Run(func(_ context.Context, _ int32, _ pb.State, err error) {
 					// the error given must marshal to JSON for storage in the database
 					_, jsonErr := json.Marshal(err)
 					require.NoError(t, jsonErr)
