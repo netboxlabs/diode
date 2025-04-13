@@ -31,7 +31,10 @@ func NewRepository(pool *pgxpool.Pool) *Repository {
 
 // CreateIngestionLog creates a new ingestion log.
 func (r *Repository) CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb.IngestionLog, sourceMetadata []byte) (*int32, error) {
-	entityJSON, err := protojson.Marshal(ingestionLog.Entity)
+	marshaler := protojson.MarshalOptions{
+		UseProtoNames: true,
+	}
+	entityJSON, err := marshaler.Marshal(ingestionLog.Entity)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal entity: %w", err)
 	}

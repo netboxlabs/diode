@@ -244,7 +244,10 @@ type GenerateDiffRequest struct {
 }
 
 func protoToJSON(proto proto.Message) (json.RawMessage, error) {
-	jsonBytes, err := protojson.Marshal(proto)
+	marshaler := protojson.MarshalOptions{
+		UseProtoNames: true,
+	}
+	jsonBytes, err := marshaler.Marshal(proto)
 	if err != nil {
 		return nil, err
 	}
