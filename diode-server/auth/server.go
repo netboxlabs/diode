@@ -9,8 +9,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/MicahParks/keyfunc"
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/MicahParks/keyfunc/v3"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/kelseyhightower/envconfig"
 )
 
@@ -112,7 +112,7 @@ func (s *Server) introspect(w http.ResponseWriter, r *http.Request) {
 	}
 
 	jwksURL := s.config.OAuth2.PublicServerURL + "/.well-known/jwks.json"
-	jwks, err := keyfunc.Get(jwksURL, keyfunc.Options{})
+	jwks, err := keyfunc.NewDefault([]string{jwksURL})
 	if err != nil {
 		s.logger.Error("error getting JWKS", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
