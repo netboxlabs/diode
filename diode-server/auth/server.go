@@ -197,8 +197,6 @@ func (s *Server) token(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	_ = r.Body.Close()
-
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		http.Error(w, "Request failed: "+err.Error(), http.StatusBadGateway)
