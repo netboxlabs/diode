@@ -2,11 +2,13 @@ package auth_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -23,6 +25,27 @@ type InvalidParser struct{}
 
 func (p InvalidParser) Parse(tokenString string, keyfunc jwt.Keyfunc) (*jwt.Token, error) {
 	return nil, fmt.Errorf("invalid token")
+}
+
+type ValidTokenParser struct{}
+
+func (p ValidTokenParser) Parse(tokenString string, keyfunc jwt.Keyfunc) (*jwt.Token, error) {
+	claims := jwt.MapClaims{
+		"iss":       "https://auth.example.com",
+		"sub":       "user123",
+		"aud":       "api",
+		"exp":       time.Now().Add(time.Hour).Unix(),
+		"iat":       time.Now().Unix(),
+		"client_id": "client123",
+		"scope":     "read write",
+		"username":  "testuser",
+	}
+
+	token := &jwt.Token{
+		Claims: claims,
+		Valid:  true,
+	}
+	return token, nil
 }
 
 func TestNewServer(t *testing.T) {
@@ -46,7 +69,7 @@ func TestNewServer(t *testing.T) {
 	time.Sleep(50 * time.Millisecond)
 }
 
-func TestIntrospect(t *testing.T) {
+func TestIntrospectForInvalidTokens(t *testing.T) {
 	ctx := context.Background()
 
 	setupEnv()
@@ -114,38 +137,75 @@ func TestIntrospect(t *testing.T) {
 			_ = resp.Body.Close()
 		}()
 	})
+}
 
-	// TODO: This could be tested by wrapping the jwt library so it can be mocked
-	// 	// Test case 3: Valid token
-	// 	t.Run("Valid Token", func(t *testing.T) {
-	// 		// Test with a token that our mock will consider valid
-	// 		// Create a token that would be considered valid by our server
-	// 		// This would normally be signed with the private key matching the public key in JWKS
-	// 		// but for test purposes we just need a token with the right format and claims
-	// 		testToken := "eyJhbGciOiJSUzI1NiIsImtpZCI6InRlc3Qta2V5IiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwczovL2F1dGguZXhhbXBsZS5jb20iLCJzdWIiOiJ1c2VyMTIzIiwiYXVkIjoiYXBpIiwiZXhwIjoxNjUwMDAwMDAwLCJpYXQiOjE1MDAwMDAwMDAsImNsaWVudF9pZCI6ImNsaWVudDEyMyIsInNjb3BlIjoicmVhZCB3cml0ZSIsInVzZXJuYW1lIjoidGVzdHVzZXIifQ.WcPGXClpKD7Bc1C0CCDA1060E2GGlTfamrd8-W0ghBE"
+func TestIntrospectForValidTokens(t *testing.T) {
+	ctx := context.Background()
 
-	// 		data := url.Values{}
-	// 		data.Set("token", testToken)
+	setupEnv()
+	defer teardownEnv()
 
-	// 		resp, err := http.Post(
-	// 			testServer.URL+"/introspect",
-	// 			"application/x-www-form-urlencoded",
-	// 			strings.NewReader(data.Encode()),
-	// 		)
-	// 		require.NoError(t, err)
-	// 		require.Equal(t, http.StatusOK, resp.StatusCode)
+	// Setup a test server to mock the OAuth2 server
+	mockJWKSServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/.well-known/jwks.json" {
+			// Return a mock JWKS response
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{
+				"keys": [
+					{
+						"kty": "RSA",
+						"kid": "test-key",
+						"use": "sig",
+						"alg": "RS256",
+						"n": "n_value",
+						"e": "AQAB"
+					}
+				]
+			}`))
+		}
+	}))
+	defer mockJWKSServer.Close()
 
-	// 		var introspectResp auth.IntrospectResponse
-	// 		err = json.NewDecoder(resp.Body).Decode(&introspectResp)
-	// 		require.NoError(t, err)
-	// 		require.True(t, introspectResp.Active)
-	// 		require.Equal(t, "user123", introspectResp.Subject)
-	// 		require.Equal(t, "read write", introspectResp.Scope)
-	// 		require.Equal(t, "https://auth.example.com", introspectResp.Issuer)
-	// 		require.Equal(t, "client123", introspectResp.ClientID)
+	_ = os.Setenv("OAUTH2_PUBLIC_SERVER_URL", mockJWKSServer.URL)
+	defer func() {
+		_ = os.Unsetenv("OAUTH2_PUBLIC_SERVER_URL")
+	}()
 
-	//		require.Equal(t, "testuser", introspectResp.Username)
-	//	})
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+	server, err := auth.NewServer(ctx, logger, ValidTokenParser{})
+	require.NoError(t, err)
+	require.NotNil(t, server)
+
+	// Create a test server using the server's mux
+	testServer := httptest.NewServer(server.GetMux())
+	defer testServer.Close()
+
+	t.Run("Valid Token", func(t *testing.T) {
+		// This is just a dummy token for testing purposes
+		testToken := "eyJhbGciOiJSUzI1NiIsImtpZCI6InRlc3Qta2V5IiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwczovL2F1dGguZXhhbXBsZS5jb20iLCJzdWIiOiJ1c2VyMTIzIiwiYXVkIjoiYXBpIiwiZXhwIjoxNjUwMDAwMDAwLCJpYXQiOjE1MDAwMDAwMDAsImNsaWVudF9pZCI6ImNsaWVudDEyMyIsInNjb3BlIjoicmVhZCB3cml0ZSIsInVzZXJuYW1lIjoidGVzdHVzZXIifQ.WcPGXClpKD7Bc1C0CCDA1060E2GGlTfamrd8-W0ghBE"
+
+		data := url.Values{}
+		data.Set("token", testToken)
+
+		resp, err := http.Post(
+			testServer.URL+"/introspect",
+			"application/x-www-form-urlencoded",
+			strings.NewReader(data.Encode()),
+		)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+
+		var introspectResp auth.IntrospectResponse
+		err = json.NewDecoder(resp.Body).Decode(&introspectResp)
+		require.NoError(t, err)
+		require.True(t, introspectResp.Active)
+		require.Equal(t, "user123", introspectResp.Subject)
+		require.Equal(t, "read write", introspectResp.Scope)
+		require.Equal(t, "https://auth.example.com", introspectResp.Issuer)
+		require.Equal(t, "client123", introspectResp.ClientID)
+
+		require.Equal(t, "testuser", introspectResp.Username)
+	})
 }
 
 func getFreePort() (string, error) {
