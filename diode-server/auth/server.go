@@ -123,20 +123,20 @@ func (s *Server) introspect(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// Invalid token format or signature
 		s.logger.Info("token validation failed", "error", err)
-		w.WriteHeader(http.StatusUnauthorized) // 401 Unauthorized
+		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
 	if !token.Valid {
 		// Token is invalid (e.g., expired)
 		s.logger.Info("token is invalid")
-		w.WriteHeader(http.StatusForbidden) // 403 Forbidden
+		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		w.WriteHeader(http.StatusUnauthorized)
+		w.WriteHeader(http.StatusForbidden)
 		return
 	}
 	resp := IntrospectResponse{
