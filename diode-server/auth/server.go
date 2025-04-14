@@ -16,10 +16,11 @@ import (
 
 // Server is a auth Server
 type Server struct {
-	config     Config
-	logger     *slog.Logger
-	httpServer *http.Server
-	mux        *http.ServeMux
+	config      Config
+	logger      *slog.Logger
+	httpServer  *http.Server
+	mux         *http.ServeMux
+	tokenParser TokenParser
 }
 
 // IntrospectResponse is the response for the introspect request
@@ -35,7 +36,7 @@ type IntrospectResponse struct {
 }
 
 // NewServer creates a new auth server
-func NewServer(_ context.Context, logger *slog.Logger) (*Server, error) {
+func NewServer(_ context.Context, logger *slog.Logger, tokenParser TokenParser) (*Server, error) {
 	var cfg Config
 	envconfig.MustProcess("", &cfg)
 
@@ -49,6 +50,7 @@ func NewServer(_ context.Context, logger *slog.Logger) (*Server, error) {
 			Addr:    fmt.Sprintf(":%d", cfg.HTTPPort),
 			Handler: mux,
 		},
+		tokenParser: tokenParser,
 	}
 
 	server.RegisterHandlers()
@@ -119,7 +121,7 @@ func (s *Server) introspect(w http.ResponseWriter, r *http.Request) {
 
 	s.logger.Info("token", "value", jwtToken)
 
-	token, err := jwt.Parse(jwtToken, jwks.Keyfunc)
+	token, err := s.tokenParser.Parse(jwtToken, jwks.Keyfunc)
 	if err != nil {
 		// Invalid token format or signature
 		s.logger.Info("token validation failed", "error", err)

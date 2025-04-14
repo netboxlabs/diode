@@ -57,7 +57,7 @@ func main() {
 	}
 	startupCounter.Add(ctx, 1)
 
-	httpServer, err := auth.NewServer(ctx, s.Logger())
+	httpServer, err := auth.NewServer(ctx, s.Logger(), auth.JWTParser{})
 	if err != nil {
 		s.Logger().Error("failed to instantiate HTTP server", "error", err)
 		os.Exit(1)

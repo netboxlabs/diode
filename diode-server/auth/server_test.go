@@ -2,6 +2,7 @@ package auth_test
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
@@ -12,10 +13,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang-jwt/jwt/v4"
 	"github.com/stretchr/testify/require"
 
 	"github.com/netboxlabs/diode/diode-server/auth"
 )
+
+type InvalidParser struct{}
+
+func (p InvalidParser) Parse(tokenString string, keyfunc jwt.Keyfunc) (*jwt.Token, error) {
+	return nil, fmt.Errorf("invalid token")
+}
 
 func TestNewServer(t *testing.T) {
 	ctx := context.Background()
@@ -24,7 +32,7 @@ func TestNewServer(t *testing.T) {
 	defer teardownEnv()
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
-	server, err := auth.NewServer(ctx, logger)
+	server, err := auth.NewServer(ctx, logger, InvalidParser{})
 	require.NoError(t, err)
 	require.NotNil(t, server)
 
@@ -71,7 +79,7 @@ func TestIntrospect(t *testing.T) {
 	}()
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
-	server, err := auth.NewServer(ctx, logger)
+	server, err := auth.NewServer(ctx, logger, InvalidParser{})
 	require.NoError(t, err)
 	require.NotNil(t, server)
 
