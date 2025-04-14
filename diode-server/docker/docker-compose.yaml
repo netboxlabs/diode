@@ -155,8 +155,7 @@ services:
       - HYDRA_ADMIN_URL=http://diode-hydra:4445
     volumes:
       - ./oauth2/bootstrap-clients.sh:/etc/config/oauth2/bootstrap-clients.sh:z,ro
-      - ./oauth2/client:/etc/config/oauth2/client
-    user: "appuser:appgroup"
+      - ./oauth2/client:/etc/config/oauth2/client:z,rw
     restart: on-failure
     depends_on:
       - diode-hydra
