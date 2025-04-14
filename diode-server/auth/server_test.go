@@ -110,13 +110,8 @@ func TestIntrospectForInvalidTokens(t *testing.T) {
 	testServer := httptest.NewServer(server.GetMux())
 	defer testServer.Close()
 
-	// Test case 1: Invalid token
 	t.Run("Invalid Token", func(t *testing.T) {
-		resp, err := http.Post(
-			testServer.URL+"/introspect",
-			"application/x-www-form-urlencoded",
-			strings.NewReader("invalid.token.string"),
-		)
+		resp, err := makeIntrospectRequest(testServer.URL, "invalid.token.string")
 		require.NoError(t, err)
 		require.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		defer func() {
@@ -124,13 +119,17 @@ func TestIntrospectForInvalidTokens(t *testing.T) {
 		}()
 	})
 
-	// Test case 2: Missing token
 	t.Run("Missing Token", func(t *testing.T) {
-		resp, err := http.Post(
-			testServer.URL+"/introspect",
-			"application/x-www-form-urlencoded",
-			strings.NewReader(""),
-		)
+		resp, err := makeIntrospectRequest(testServer.URL, "")
+		require.NoError(t, err)
+		require.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+		defer func() {
+			_ = resp.Body.Close()
+		}()
+	})
+
+	t.Run("Missing auth header", func(t *testing.T) {
+		resp, err := makeIntrospectRequestWithoutAuth(testServer.URL)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusUnauthorized, resp.StatusCode)
 		defer func() {
@@ -187,11 +186,7 @@ func TestIntrospectForValidTokens(t *testing.T) {
 		data := url.Values{}
 		data.Set("token", testToken)
 
-		resp, err := http.Post(
-			testServer.URL+"/introspect",
-			"application/x-www-form-urlencoded",
-			strings.NewReader(data.Encode()),
-		)
+		resp, err := makeIntrospectRequest(testServer.URL, testToken)
 
 		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, resp.StatusCode)
@@ -211,6 +206,29 @@ func TestIntrospectForValidTokens(t *testing.T) {
 
 		require.Equal(t, "testuser", introspectResp.Username)
 	})
+}
+
+func makeIntrospectRequest(serverURL, token string) (*http.Response, error) {
+	req, _ := http.NewRequest(
+		"POST",
+		serverURL+"/introspect",
+		strings.NewReader(""),
+	)
+	req.Header.Set("Authorization", "Bearer "+token)
+
+	client := &http.Client{}
+	return client.Do(req)
+}
+
+func makeIntrospectRequestWithoutAuth(serverURL string) (*http.Response, error) {
+	req, _ := http.NewRequest(
+		"POST",
+		serverURL+"/introspect",
+		strings.NewReader(""),
+	)
+
+	client := &http.Client{}
+	return client.Do(req)
 }
 
 func getFreePort() (string, error) {

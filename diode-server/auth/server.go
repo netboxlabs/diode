@@ -98,17 +98,17 @@ func (s *Server) RegisterHandlers() {
 
 // introspect handles the introspect request
 func (s *Server) introspect(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnauthorized)
+	jwtToken := r.Header.Get("Authorization")
+	if jwtToken == "" {
+		s.logger.Info("missing Authorization header")
+		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
-	jwtToken := r.FormValue("token")
-	if len(jwtToken) == 0 {
-		s.logger.Error("token not found in request body")
-		w.WriteHeader(http.StatusUnauthorized)
-		return
+	// Remove "Bearer " prefix if present
+	const bearerPrefix = "Bearer "
+	if len(jwtToken) > len(bearerPrefix) && jwtToken[:len(bearerPrefix)] == bearerPrefix {
+		jwtToken = jwtToken[len(bearerPrefix):]
 	}
 
 	jwksURL := s.config.OAuth2.PublicServerURL + "/.well-known/jwks.json"
@@ -118,8 +118,6 @@ func (s *Server) introspect(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-
-	s.logger.Info("token", "value", jwtToken)
 
 	token, err := s.tokenParser.Parse(jwtToken, jwks.Keyfunc)
 	if err != nil {
