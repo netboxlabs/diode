@@ -22,6 +22,7 @@ type Server struct {
 	mux        *http.ServeMux
 }
 
+// IntrospectResponse is the response for the introspect request
 type IntrospectResponse struct {
 	Active    bool   `json:"active"`
 	Subject   string `json:"sub,omitempty"`
@@ -66,6 +67,7 @@ func (s *Server) Start(_ context.Context) error {
 	return s.httpServer.ListenAndServe()
 }
 
+// GetMux returns the http.ServeMux of the auth server
 func (s *Server) GetMux() *http.ServeMux {
 	return s.mux
 }
@@ -94,14 +96,6 @@ func (s *Server) RegisterHandlers() {
 
 // introspect handles the introspect request
 func (s *Server) introspect(w http.ResponseWriter, r *http.Request) {
-	// body, err := io.ReadAll(r.Body)
-	// if err != nil {
-	// 	s.logger.Error("error reading request body", "error", err)
-	// 	w.WriteHeader(http.StatusInternalServerError)
-	// 	return
-	// }
-	// s.logger.Info("body", "value", string(body))
-
 	err := r.ParseForm()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
@@ -126,7 +120,6 @@ func (s *Server) introspect(w http.ResponseWriter, r *http.Request) {
 	s.logger.Info("token", "value", jwtToken)
 
 	token, err := jwt.Parse(jwtToken, jwks.Keyfunc)
-
 	if err != nil {
 		// Invalid token format or signature
 		s.logger.Info("token validation failed", "error", err)
@@ -146,7 +139,6 @@ func (s *Server) introspect(w http.ResponseWriter, r *http.Request) {
 		"path", r.URL.Path,
 		"remote_addr", r.RemoteAddr,
 		"user_agent", r.UserAgent(),
-		// "payload", string(body),
 		"token", token,
 	)
 
@@ -166,13 +158,18 @@ func (s *Server) introspect(w http.ResponseWriter, r *http.Request) {
 		Username:  getStringClaim(claims, "username"),
 	}
 
-	writeJSON(w, http.StatusOK, resp)
+	err = writeJSON(w, http.StatusOK, resp)
+	if err != nil {
+		s.logger.Error("error writing response", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 }
 
-func writeJSON(w http.ResponseWriter, status int, v interface{}) {
+func writeJSON(w http.ResponseWriter, status int, v interface{}) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(v)
+	return json.NewEncoder(w).Encode(v)
 }
 
 func getStringClaim(claims jwt.MapClaims, key string) string {
@@ -201,7 +198,6 @@ func (s *Server) token(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to create request", http.StatusInternalServerError)
 		return
 	}
-	defer r.Body.Close()
 
 	for name, values := range r.Header {
 		for _, value := range values {
@@ -209,12 +205,16 @@ func (s *Server) token(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	_ = r.Body.Close()
+
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		http.Error(w, "Request failed: "+err.Error(), http.StatusBadGateway)
 		return
 	}
-	defer resp.Body.Close()
+	defer func() {
+		_ = resp.Body.Close()
+	}()
 
 	for name, values := range resp.Header {
 		for _, value := range values {
@@ -223,5 +223,9 @@ func (s *Server) token(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(resp.StatusCode)
-	io.Copy(w, resp.Body)
+	_, err = io.Copy(w, resp.Body)
+	if err != nil {
+		http.Error(w, "Failed to write response body", http.StatusInternalServerError)
+		return
+	}
 }

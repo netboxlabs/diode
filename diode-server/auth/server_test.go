@@ -49,7 +49,7 @@ func TestIntrospect(t *testing.T) {
 		if r.URL.Path == "/.well-known/jwks.json" {
 			// Return a mock JWKS response
 			w.Header().Set("Content-Type", "application/json")
-			w.Write([]byte(`{
+			_, _ = w.Write([]byte(`{
 				"keys": [
 					{
 						"kty": "RSA",
@@ -65,8 +65,10 @@ func TestIntrospect(t *testing.T) {
 	}))
 	defer mockJWKSServer.Close()
 
-	os.Setenv("OAUTH2_PUBLIC_SERVER_URL", mockJWKSServer.URL)
-	defer os.Unsetenv("OAUTH2_PUBLIC_SERVER_URL")
+	_ = os.Setenv("OAUTH2_PUBLIC_SERVER_URL", mockJWKSServer.URL)
+	defer func() {
+		_ = os.Unsetenv("OAUTH2_PUBLIC_SERVER_URL")
+	}()
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
 	server, err := auth.NewServer(ctx, logger)
@@ -86,6 +88,9 @@ func TestIntrospect(t *testing.T) {
 		)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+		defer func() {
+			_ = resp.Body.Close()
+		}()
 	})
 
 	// Test case 2: Missing token
@@ -97,6 +102,9 @@ func TestIntrospect(t *testing.T) {
 		)
 		require.NoError(t, err)
 		require.Equal(t, http.StatusUnauthorized, resp.StatusCode)
+		defer func() {
+			_ = resp.Body.Close()
+		}()
 	})
 
 	// TODO: This could be tested by wrapping the jwt library so it can be mocked
