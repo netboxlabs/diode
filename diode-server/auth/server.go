@@ -134,14 +134,6 @@ func (s *Server) introspect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.logger.Info("introspecting request",
-		"method", r.Method,
-		"path", r.URL.Path,
-		"remote_addr", r.RemoteAddr,
-		"user_agent", r.UserAgent(),
-		"token", token,
-	)
-
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
 		w.WriteHeader(http.StatusUnauthorized)
