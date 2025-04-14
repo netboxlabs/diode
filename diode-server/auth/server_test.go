@@ -23,13 +23,13 @@ import (
 
 type InvalidParser struct{}
 
-func (p InvalidParser) Parse(tokenString string, keyfunc jwt.Keyfunc) (*jwt.Token, error) {
+func (p InvalidParser) Parse(_ string, _ jwt.Keyfunc) (*jwt.Token, error) {
 	return nil, fmt.Errorf("invalid token")
 }
 
 type ValidTokenParser struct{}
 
-func (p ValidTokenParser) Parse(tokenString string, keyfunc jwt.Keyfunc) (*jwt.Token, error) {
+func (p ValidTokenParser) Parse(_ string, _ jwt.Keyfunc) (*jwt.Token, error) {
 	claims := jwt.MapClaims{
 		"iss":       "https://auth.example.com",
 		"sub":       "user123",
@@ -192,8 +192,13 @@ func TestIntrospectForValidTokens(t *testing.T) {
 			"application/x-www-form-urlencoded",
 			strings.NewReader(data.Encode()),
 		)
+
 		require.NoError(t, err)
 		require.Equal(t, http.StatusOK, resp.StatusCode)
+
+		defer func() {
+			_ = resp.Body.Close()
+		}()
 
 		var introspectResp auth.IntrospectResponse
 		err = json.NewDecoder(resp.Body).Decode(&introspectResp)
