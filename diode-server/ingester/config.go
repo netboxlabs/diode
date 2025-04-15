@@ -9,7 +9,6 @@ type Config struct {
 	RedisPort     string `envconfig:"REDIS_PORT" default:"6379"`
 	RedisPassword string `envconfig:"REDIS_PASSWORD" required:"true"`
 	RedisStreamDB int    `envconfig:"REDIS_STREAM_DB" default:"1"`
-	DiodeAPIKey   string `envconfig:"DIODE_API_KEY" required:"true"`
 
 	Telemetry telemetry.Config `envconfig:"TELEMETRY"`
 }
