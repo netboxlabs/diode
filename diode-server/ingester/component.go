@@ -2,7 +2,6 @@ package ingester
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"net"
@@ -23,13 +22,6 @@ import (
 
 const (
 	streamID = "diode.v1.ingest-stream"
-)
-
-var (
-	errMetadataNotFound = errors.New("no request metadata found")
-
-	// ErrUnauthorized is an error for unauthorized requests
-	ErrUnauthorized = errors.New("missing or invalid authorization header")
 )
 
 // Component asynchronously ingests data from the distributor
