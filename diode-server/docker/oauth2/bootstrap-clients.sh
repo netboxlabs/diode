@@ -8,7 +8,7 @@ TEMP_CREDENTIALS_FILE="/tmp/client-credentials.json"
 
 # Create the credentials file if it doesn't exist
 if [ ! -f "$CREDENTIALS_FILE" ]; then
-  echo "ERROR: credentials file $CREDENTIALS_FILE not found, creating it"
+  echo "DEBUG: credentials file $CREDENTIALS_FILE not found, creating it"
   touch "$CREDENTIALS_FILE"
 fi
 

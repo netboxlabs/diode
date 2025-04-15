@@ -59,7 +59,7 @@ services:
     ports: [ ]
     volumes:
       - ../dbstore/postgres/migrations:/etc/diode/migrations:z,ro
-      - ./oauth2/client/client-credentials.json:/etc/config/oauth2/client/client-credentials.json:z,ro
+      - ./oauth2/client:/etc/config/oauth2/client:z,ro
     depends_on:
       diode-redis:
         condition: service_started
@@ -136,6 +136,8 @@ services:
     image: netboxlabs/diode-auth:${DIODE_TAG:-latest}
     environment:
       - HTTP_PORT=${AUTH_HTTP_PORT}
+      - OAUTH2_PUBLIC_SERVER_URL=${OAUTH2_PUBLIC_SERVER_URL}
+      - OAUTH2_ADMIN_SERVER_URL=${OAUTH2_ADMIN_SERVER_URL}
       - SENTRY_DSN=${SENTRY_DSN}
       - TELEMETRY_METRICS_EXPORTER=${TELEMETRY_METRICS_EXPORTER}
       - TELEMETRY_TRACES_EXPORTER=${TELEMETRY_TRACES_EXPORTER}
@@ -144,6 +146,7 @@ services:
     ports: []
     depends_on:
       - diode-hydra
+      - diode-auth-bootstrap
 
   diode-auth-bootstrap:
     image: netboxlabs/diode-auth:${DIODE_TAG:-latest}
@@ -152,7 +155,7 @@ services:
       - HYDRA_ADMIN_URL=http://diode-hydra:4445
     volumes:
       - ./oauth2/bootstrap-clients.sh:/etc/config/oauth2/bootstrap-clients.sh:z,ro
-      - ./oauth2/client:/etc/config/oauth2/client:z
+      - ./oauth2/client:/etc/config/oauth2/client:z,rw
     restart: on-failure
     depends_on:
       - diode-hydra
