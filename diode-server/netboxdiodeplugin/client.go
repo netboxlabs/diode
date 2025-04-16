@@ -133,6 +133,7 @@ type Client struct {
 	clientID     string
 	clientSecret string
 	tokenUrl     string
+	token        string
 }
 
 // NewHTTPTransport creates a http Transport Layer
@@ -248,6 +249,39 @@ func protoToJSON(proto proto.Message) (json.RawMessage, error) {
 	return json.RawMessage(jsonBytes), nil
 }
 
+func (c *Client) Authenticate() error {
+	req, err := http.NewRequest(http.MethodPost, c.tokenUrl, nil)
+	if err != nil {
+		return err
+	}
+
+	body := url.Values{}
+	body.Add("client_id", c.clientID)
+	body.Add("client_secret", c.clientSecret)
+	req.Body = io.NopCloser(strings.NewReader(body.Encode()))
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	respBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	var tokenResponse struct {
+		Token string `json:"token"`
+	}
+	if err := json.Unmarshal(respBytes, &tokenResponse); err != nil {
+		return err
+	}
+
+	c.token = tokenResponse.Token
+	return nil
+}
+
 // GenerateDiff generates a diff between an ingested entity and NetBox object state
 func (c *Client) GenerateDiff(ctx context.Context, payload GenerateDiffRequest) (*ChangeSetResult, error) {
 	endpointURL, err := url.Parse(fmt.Sprintf("%s/generate-diff/", c.baseURL.String()))
@@ -276,6 +310,7 @@ func (c *Client) GenerateDiff(ctx context.Context, payload GenerateDiffRequest) 
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.token))
 
 	branchID := strings.TrimSpace(payload.BranchID)
 	if branchID != "" {
@@ -343,6 +378,7 @@ func (c *Client) ApplyChangeSet(ctx context.Context, payload ApplyChangeSetReque
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.token))
 
 	branchID := strings.TrimSpace(payload.BranchID)
 	if branchID != "" {
