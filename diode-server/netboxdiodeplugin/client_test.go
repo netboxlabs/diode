@@ -752,6 +752,65 @@ func TestApplyChangeSetRateLimiting(t *testing.T) {
 	}
 }
 
+func TestAuthenticate(t *testing.T) {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+
+	tests := []struct {
+		name           string
+		mockStatusCode int
+		mockResponse   string
+		shouldError    bool
+		expectedToken  string
+	}{
+		{
+			name:           "successful authentication",
+			mockStatusCode: http.StatusOK,
+			mockResponse:   `{"token": "test-token"}`,
+			shouldError:    false,
+			expectedToken:  "test-token",
+		},
+		{
+			name:           "authentication failure",
+			mockStatusCode: http.StatusUnauthorized,
+			mockResponse:   `{"error": "invalid_client"}`,
+			shouldError:    true,
+			expectedToken:  "",
+		},
+		{
+			name:           "invalid response format",
+			mockStatusCode: http.StatusOK,
+			mockResponse:   `{"invalid": "response"}`,
+			shouldError:    true,
+			expectedToken:  "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mux := http.NewServeMux()
+			mux.HandleFunc("/diode/auth/token", func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(tt.mockStatusCode)
+				_, _ = w.Write([]byte(tt.mockResponse))
+			})
+			ts := httptest.NewServer(mux)
+			defer ts.Close()
+
+			client, err := netboxdiodeplugin.NewClient(logger, "test-client-id", "test-client-secret", fmt.Sprintf("%s/diode/auth/token", ts.URL), 1, 1, 3)
+			require.NoError(t, err)
+
+			err = client.Authenticate(context.Background())
+			if tt.shouldError {
+				require.Error(t, err)
+				assert.Equal(t, tt.expectedToken, client.GetToken())
+				return
+			}
+
+			require.NoError(t, err)
+			assert.Equal(t, tt.expectedToken, client.GetToken())
+		})
+	}
+}
+
 func cleanUpEnvVars() {
 	_ = os.Unsetenv(netboxdiodeplugin.BaseURLEnvVarName)
 	_ = os.Unsetenv(netboxdiodeplugin.TimeoutSecondsEnvVarName)

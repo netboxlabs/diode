@@ -279,11 +279,19 @@ func (c *Client) Authenticate(ctx context.Context) error {
 		return err
 	}
 
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code: %d, body: %s", resp.StatusCode, respBytes)
+	}
+
 	var tokenResponse struct {
 		Token string `json:"token"`
 	}
 	if err := json.Unmarshal(respBytes, &tokenResponse); err != nil {
 		return err
+	}
+
+	if tokenResponse.Token == "" {
+		return fmt.Errorf("token is required but not provided in response")
 	}
 
 	c.tokenMutex.Lock()
@@ -434,4 +442,11 @@ func (c *Client) ApplyChangeSet(ctx context.Context, payload ApplyChangeSetReque
 	}
 
 	return &changeSetResult, nil
+}
+
+// GetToken returns the current token
+func (c *Client) GetToken() string {
+	c.tokenMutex.Lock()
+	defer c.tokenMutex.Unlock()
+	return c.token
 }
