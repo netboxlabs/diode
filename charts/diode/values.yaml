@@ -103,8 +103,6 @@ diodeReconciler:
   # -- existing secret for diode-ingester
   existingSecret: ""
   secrets:
-    # -- API key for authentication between diode and NetBox API
-    diodeToNetboxAPIKey: ""
     # -- API key for authentication between NetBox API and diode
     netboxToDiodeAPIKey: ""
     # -- API key for authentication of diode ingestion requests

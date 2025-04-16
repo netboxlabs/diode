@@ -91,7 +91,6 @@ helm install my-release diode/diode --namespace my-namespace --create-namespace
 | diodeReconciler.replicas | int | `1` | number of replicas |
 | diodeReconciler.resources | object | `{}` |  |
 | diodeReconciler.secrets.diodeAPIKey | string | `""` | API key for authentication of diode ingestion requests |
-| diodeReconciler.secrets.diodeToNetboxAPIKey | string | `""` | API key for authentication between diode and NetBox API |
 | diodeReconciler.secrets.ingesterToReconcilerAPIKey | string | `""` | API key for authentication between diode-ingester and diode-reconciler |
 | diodeReconciler.secrets.netboxToDiodeAPIKey | string | `""` | API key for authentication between NetBox API and diode |
 | diodeReconciler.secrets.redisPassword | string | `""` | redis password, must match the password in the redis chart or external redis |
