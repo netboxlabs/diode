@@ -260,13 +260,13 @@ func (c *Client) Authenticate(ctx context.Context) error {
 		return err
 	}
 
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
 	body := url.Values{}
 	body.Add("client_id", c.clientID)
 	body.Add("client_secret", c.clientSecret)
 	body.Add("grant_type", "client_credentials")
 	req.Body = io.NopCloser(strings.NewReader(body.Encode()))
-
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {

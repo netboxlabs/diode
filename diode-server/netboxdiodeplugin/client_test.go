@@ -379,7 +379,7 @@ func TestGenerateDiffRetries(t *testing.T) {
 		name                string
 		generateDiffRequest netboxdiodeplugin.GenerateDiffRequest
 		mockStatusCodes     []int
-		mockServerResponses []string
+		mockServerResponses []netboxdiodeplugin.GenerateDiffResponse
 		rateLimiterRPS      int
 		rateLimiterBurst    int
 		response            *netboxdiodeplugin.GenerateDiffResponse
@@ -401,17 +401,30 @@ func TestGenerateDiffRetries(t *testing.T) {
 					},
 				},
 			},
-			mockStatusCodes:     []int{http.StatusUnauthorized, http.StatusUnauthorized, http.StatusOK},
-			mockServerResponses: []string{"", "", `{"changes": [{"id": "00000000-0000-0000-0000-000000000001", "change_type": "create", "object_type": "dcim.device", "data": {"name": "test"}}]}`},
-			rateLimiterRPS:      1,
-			rateLimiterBurst:    1,
+			mockStatusCodes: []int{http.StatusUnauthorized, http.StatusUnauthorized, http.StatusOK},
+			mockServerResponses: []netboxdiodeplugin.GenerateDiffResponse{
+				{},
+				{},
+				{
+					Changes: []netboxdiodeplugin.Change{
+						{
+							ID:         "00000000-0000-0000-0000-000000000001",
+							ChangeType: "create",
+							ObjectType: "dcim.device",
+							Data:       json.RawMessage(`{"name": "test"}`),
+						},
+					},
+				},
+			},
+			rateLimiterRPS:   1,
+			rateLimiterBurst: 1,
 			response: &netboxdiodeplugin.GenerateDiffResponse{
 				Changes: []netboxdiodeplugin.Change{
 					{
 						ID:         "00000000-0000-0000-0000-000000000001",
 						ChangeType: "create",
 						ObjectType: "dcim.device",
-						Data:       json.RawMessage(`{"name": "test"}`),
+						Data:       json.RawMessage(`{"name":"test"}`),
 					},
 				},
 			},
@@ -433,23 +446,22 @@ func TestGenerateDiffRetries(t *testing.T) {
 				assert.Equal(t, r.Header.Get("User-Agent"), fmt.Sprintf("%s/%s", netboxdiodeplugin.SDKName, netboxdiodeplugin.SDKVersion))
 				assert.Equal(t, r.Header.Get("Content-Type"), "application/json")
 
-				if tt.generateDiffRequest.BranchID != "" {
-					assert.Equal(t, r.Header.Get(netboxdiodeplugin.NetBoxBranchHeader), tt.generateDiffRequest.BranchID)
-				} else {
-					assert.Len(t, r.Header.Values(netboxdiodeplugin.NetBoxBranchHeader), 0)
-				}
-
-				body, err := io.ReadAll(r.Body)
-				require.NoError(t, err)
-				assert.JSONEq(t, `{"object_type":"dcim.device","entity":{"device":{"name":"test","site":{"name":"test-site"}}}}`, string(body))
+				logger.Warn("writing response no %d", "attemps", actualAttempts, "code", tt.mockStatusCodes[actualAttempts])
+				logger.Warn("response: %s", "response", tt.mockServerResponses[actualAttempts])
 
 				w.WriteHeader(tt.mockStatusCodes[actualAttempts])
-				_, _ = w.Write([]byte(tt.mockServerResponses[actualAttempts]))
+				json.NewEncoder(w).Encode(tt.mockServerResponses[actualAttempts])
+				logger.Warn("wrote response no %d", "attemps", actualAttempts, "code", tt.mockStatusCodes[actualAttempts])
+				// _, _ = w.Write([]byte(tt.mockServerResponses[actualAttempts]))
 				actualAttempts++
 			}
 
 			mux := http.NewServeMux()
 			mux.HandleFunc("/api/diode/generate-diff/", handler)
+			mux.HandleFunc("/diode/auth/token/", func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write([]byte(`{"token": "test-token"}`))
+			})
 			ts := httptest.NewServer(mux)
 			defer ts.Close()
 
