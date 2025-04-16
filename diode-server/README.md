@@ -62,7 +62,6 @@ curl -o .env https://raw.githubusercontent.com/netboxlabs/diode/release/diode-se
 Edit the `.env` to match your environment:
 
 * `NETBOX_DIODE_PLUGIN_API_BASE_URL`: URL for the Diode NetBox plugin API
-* `DIODE_TO_NETBOX_API_KEY`: API key generated with the Diode NetBox plugin installation
 * `DIODE_API_KEY`: API key generated with the Diode NetBox plugin installation
 * `NETBOX_TO_DIODE_API_KEY`: API key generated with the Diode NetBox plugin installation
   least 40 characters, example generation with shell command: `openssl rand -base64 40 | head -c 40`)

@@ -23,7 +23,6 @@ type Config struct {
 	PostgresPassword              string `envconfig:"POSTGRES_PASSWORD"`
 
 	// API keys
-	DiodeToNetBoxAPIKey string `envconfig:"DIODE_TO_NETBOX_API_KEY" required:"true"`
 	NetBoxToDiodeAPIKey string `envconfig:"NETBOX_TO_DIODE_API_KEY" required:"true"`
 
 	Telemetry telemetry.Config `envconfig:"TELEMETRY"`

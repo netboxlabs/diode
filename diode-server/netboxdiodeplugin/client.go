@@ -57,18 +57,12 @@ var ErrInvalidTimeout = errors.New("invalid timeout value")
 
 type apiRoundTripper struct {
 	transport http.RoundTripper
-	apiKey    string
 	userAgent string
 }
 
-func newAPIRoundTripper(apiKey string, next http.RoundTripper) (http.RoundTripper, error) {
-	if len(apiKey) == 0 {
-		return nil, fmt.Errorf("API key not provided")
-	}
-
+func newAPIRoundTripper(next http.RoundTripper) (http.RoundTripper, error) {
 	return &apiRoundTripper{
 		transport: next,
-		apiKey:    apiKey,
 		userAgent: userAgent(),
 	}, nil
 }
@@ -77,9 +71,6 @@ func newAPIRoundTripper(apiKey string, next http.RoundTripper) (http.RoundTrippe
 func (rt *apiRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	// Clone request to ensure thread safety
 	req2 := req.Clone(req.Context())
-
-	// Set authorization header
-	req2.Header.Set("Authorization", fmt.Sprintf("Token %s", rt.apiKey))
 
 	// Set user agent header
 	req2.Header.Set("User-Agent", rt.userAgent)
@@ -161,10 +152,10 @@ func NewHTTPTransport() *http.Transport {
 }
 
 // NewClient creates a new NetBox Diode plugin client
-func NewClient(logger *slog.Logger, apiKey string, rateLimitRps, rateLimitBurstRps int) (*Client, error) {
+func NewClient(logger *slog.Logger, rateLimitRps, rateLimitBurstRps int) (*Client, error) {
 	transport := NewHTTPTransport()
 
-	rt, err := newAPIRoundTripper(apiKey, transport)
+	rt, err := newAPIRoundTripper(transport)
 	if err != nil {
 		return nil, err
 	}

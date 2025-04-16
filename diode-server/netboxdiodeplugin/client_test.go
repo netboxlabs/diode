@@ -49,7 +49,6 @@ func TestTransportSecurity(t *testing.T) {
 func TestNewClient(t *testing.T) {
 	tests := []struct {
 		name             string
-		apiKey           string
 		baseURL          string
 		rateLimiterRPS   int
 		rateLimiterBurst int
@@ -61,7 +60,6 @@ func TestNewClient(t *testing.T) {
 	}{
 		{
 			name:             "valid client",
-			apiKey:           "test",
 			baseURL:          "http://",
 			rateLimiterRPS:   1,
 			rateLimiterBurst: 1,
@@ -73,7 +71,6 @@ func TestNewClient(t *testing.T) {
 		},
 		{
 			name:             "default base URL",
-			apiKey:           "test",
 			baseURL:          "",
 			rateLimiterRPS:   1,
 			rateLimiterBurst: 1,
@@ -84,7 +81,6 @@ func TestNewClient(t *testing.T) {
 		},
 		{
 			name:             "invalid base URL",
-			apiKey:           "test",
 			baseURL:          "http://local\nhost",
 			rateLimiterRPS:   1,
 			rateLimiterBurst: 1,
@@ -96,7 +92,6 @@ func TestNewClient(t *testing.T) {
 		},
 		{
 			name:             "default timeout",
-			apiKey:           "test",
 			baseURL:          "http://",
 			rateLimiterRPS:   1,
 			rateLimiterBurst: 1,
@@ -108,7 +103,6 @@ func TestNewClient(t *testing.T) {
 		},
 		{
 			name:             "invalid timeout",
-			apiKey:           "test",
 			baseURL:          "http://",
 			rateLimiterRPS:   1,
 			rateLimiterBurst: 1,
@@ -119,20 +113,7 @@ func TestNewClient(t *testing.T) {
 			shouldError:      true,
 		},
 		{
-			name:             "API key not provided",
-			apiKey:           "",
-			baseURL:          "http://",
-			rateLimiterRPS:   1,
-			rateLimiterBurst: 1,
-			timeout:          "5",
-			setBaseURLEnvVar: true,
-			setTimeoutEnvVar: true,
-			setTLSSkipEnvVar: false,
-			shouldError:      true,
-		},
-		{
 			name:             "set TLS skip verify",
-			apiKey:           "test",
 			baseURL:          "",
 			rateLimiterRPS:   1,
 			rateLimiterBurst: 1,
@@ -144,7 +125,6 @@ func TestNewClient(t *testing.T) {
 		},
 		{
 			name:             "invalid rate limiter rps parameter",
-			apiKey:           "test",
 			baseURL:          "http://",
 			rateLimiterRPS:   0,
 			rateLimiterBurst: 1,
@@ -156,7 +136,6 @@ func TestNewClient(t *testing.T) {
 		},
 		{
 			name:             "invalid rate limiter burst parameter",
-			apiKey:           "test",
 			baseURL:          "http://",
 			rateLimiterRPS:   1,
 			rateLimiterBurst: 0,
@@ -184,7 +163,7 @@ func TestNewClient(t *testing.T) {
 				_ = os.Setenv(netboxdiodeplugin.TLSSkipVerifyEnvVarName, "true")
 			}
 
-			client, err := netboxdiodeplugin.NewClient(logger, tt.apiKey, tt.rateLimiterRPS, tt.rateLimiterBurst)
+			client, err := netboxdiodeplugin.NewClient(logger, tt.rateLimiterRPS, tt.rateLimiterBurst)
 			if tt.shouldError {
 				require.Error(t, err)
 				return
@@ -257,7 +236,6 @@ func TestGenerateDiff(t *testing.T) {
 			handler := func(w http.ResponseWriter, r *http.Request) {
 				assert.Equal(t, r.Method, http.MethodPost)
 				assert.Equal(t, r.URL.Path, "/api/diode/generate-diff/")
-				assert.Equal(t, r.Header.Get("Authorization"), fmt.Sprintf("Token %s", tt.apiKey))
 				assert.Equal(t, r.Header.Get("User-Agent"), fmt.Sprintf("%s/%s", netboxdiodeplugin.SDKName, netboxdiodeplugin.SDKVersion))
 				assert.Equal(t, r.Header.Get("Content-Type"), "application/json")
 
@@ -279,7 +257,7 @@ func TestGenerateDiff(t *testing.T) {
 
 			_ = os.Setenv(netboxdiodeplugin.BaseURLEnvVarName, fmt.Sprintf("%s/api/diode", ts.URL))
 
-			client, err := netboxdiodeplugin.NewClient(logger, tt.apiKey, tt.rateLimiterRPS, tt.rateLimiterBurst)
+			client, err := netboxdiodeplugin.NewClient(logger, tt.rateLimiterRPS, tt.rateLimiterBurst)
 			require.NoError(t, err)
 			resp, err := client.GenerateDiff(context.Background(), tt.generateDiffRequest)
 			if tt.shouldError {
@@ -358,7 +336,6 @@ func TestGenerateDiffRateLimiting(t *testing.T) {
 				actualCalls++
 				assert.Equal(t, r.Method, http.MethodPost)
 				assert.Equal(t, r.URL.Path, "/api/diode/generate-diff/")
-				assert.Equal(t, r.Header.Get("Authorization"), fmt.Sprintf("Token %s", tt.apiKey))
 				assert.Equal(t, r.Header.Get("User-Agent"), fmt.Sprintf("%s/%s", netboxdiodeplugin.SDKName, netboxdiodeplugin.SDKVersion))
 				assert.Equal(t, r.Header.Get("Content-Type"), "application/json")
 
@@ -380,7 +357,7 @@ func TestGenerateDiffRateLimiting(t *testing.T) {
 
 			_ = os.Setenv(netboxdiodeplugin.BaseURLEnvVarName, fmt.Sprintf("%s/api/diode", ts.URL))
 
-			client, err := netboxdiodeplugin.NewClient(logger, tt.apiKey, tt.rateLimiterRPS, tt.rateLimiterBurst)
+			client, err := netboxdiodeplugin.NewClient(logger, tt.rateLimiterRPS, tt.rateLimiterBurst)
 			require.NoError(t, err)
 			resp, err := client.GenerateDiff(context.Background(), tt.generateDiffRequest)
 			_, _ = client.GenerateDiff(context.Background(), tt.generateDiffRequest)
@@ -546,7 +523,6 @@ func TestApplyChangeSet(t *testing.T) {
 			handler := func(w http.ResponseWriter, r *http.Request) {
 				assert.Equal(t, r.Method, http.MethodPost)
 				assert.Equal(t, r.URL.Path, "/api/diode/apply-change-set/")
-				assert.Equal(t, r.Header.Get("Authorization"), fmt.Sprintf("Token %s", tt.apiKey))
 				assert.Equal(t, r.Header.Get("User-Agent"), fmt.Sprintf("%s/%s", netboxdiodeplugin.SDKName, netboxdiodeplugin.SDKVersion))
 				assert.Equal(t, r.Header.Get("Content-Type"), "application/json")
 				if tt.changeSetRequest.BranchID != "" {
@@ -564,7 +540,7 @@ func TestApplyChangeSet(t *testing.T) {
 
 			_ = os.Setenv(netboxdiodeplugin.BaseURLEnvVarName, fmt.Sprintf("%s/api/diode", ts.URL))
 
-			client, err := netboxdiodeplugin.NewClient(logger, tt.apiKey, tt.rateLimiterRPS, tt.rateLimiterBurst)
+			client, err := netboxdiodeplugin.NewClient(logger, tt.rateLimiterRPS, tt.rateLimiterBurst)
 			require.NoError(t, err)
 			resp, err := client.ApplyChangeSet(context.Background(), tt.changeSetRequest)
 			if tt.shouldError {
@@ -632,7 +608,6 @@ func TestApplyChangeSetRateLimiting(t *testing.T) {
 				actualCalls++
 				assert.Equal(t, r.Method, http.MethodPost)
 				assert.Equal(t, r.URL.Path, "/api/diode/apply-change-set/")
-				assert.Equal(t, r.Header.Get("Authorization"), fmt.Sprintf("Token %s", tt.apiKey))
 				assert.Equal(t, r.Header.Get("User-Agent"), fmt.Sprintf("%s/%s", netboxdiodeplugin.SDKName, netboxdiodeplugin.SDKVersion))
 				assert.Equal(t, r.Header.Get("Content-Type"), "application/json")
 				if tt.changeSetRequest.BranchID != "" {
@@ -650,7 +625,7 @@ func TestApplyChangeSetRateLimiting(t *testing.T) {
 
 			_ = os.Setenv(netboxdiodeplugin.BaseURLEnvVarName, fmt.Sprintf("%s/api/diode", ts.URL))
 
-			client, err := netboxdiodeplugin.NewClient(logger, tt.apiKey, tt.rateLimiterRPS, tt.rateLimiterBurst)
+			client, err := netboxdiodeplugin.NewClient(logger, tt.rateLimiterRPS, tt.rateLimiterBurst)
 			require.NoError(t, err)
 			resp, err := client.ApplyChangeSet(context.Background(), tt.changeSetRequest)
 			_, _ = client.ApplyChangeSet(context.Background(), tt.changeSetRequest)

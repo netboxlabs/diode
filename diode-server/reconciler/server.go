@@ -141,7 +141,6 @@ type APIKeys map[string]string
 
 func loadAPIKeys(cfg Config) APIKeys {
 	return map[string]string{
-		"DIODE_TO_NETBOX": cfg.DiodeToNetBoxAPIKey,
 		"NETBOX_TO_DIODE": cfg.NetBoxToDiodeAPIKey,
 	}
 }
