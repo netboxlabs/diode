@@ -49,7 +49,6 @@ func setupEnv(redisAddr string) {
 	_ = os.Setenv("REDIS_STREAM_DB", "1")
 	_ = os.Setenv("NETBOX_API_URL", "http://example.com")
 	_ = os.Setenv("DIODE_TO_NETBOX_API_KEY", "diode_to_netbox_api_key")
-	_ = os.Setenv("NETBOX_TO_DIODE_API_KEY", "netbox_to_diode_api_key")
 }
 
 func teardownEnv() {
@@ -62,7 +61,6 @@ func teardownEnv() {
 	_ = os.Unsetenv("REDIS_STREAM_DB")
 	_ = os.Unsetenv("NETBOX_API_URL")
 	_ = os.Unsetenv("DIODE_TO_NETBOX_API_KEY")
-	_ = os.Unsetenv("NETBOX_TO_DIODE_API_KEY")
 }
 
 const bufSize = 1024 * 1024

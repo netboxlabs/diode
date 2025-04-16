@@ -63,6 +63,7 @@ Edit the `.env` to match your environment:
 
 * `NETBOX_DIODE_PLUGIN_API_BASE_URL`: URL for the Diode NetBox plugin API
   least 40 characters, example generation with shell command: `openssl rand -base64 40 | head -c 40`)
+* `DIODE_TO_NETBOX_API_KEY`: API key generated with the Diode NetBox plugin installation
 * `MIGRATION_ENABLED`: Set to `false` to disable the migration, default: `true`
 * `RECONCILER_RATE_LIMITER_RPS`: Rate limit for the reconciler service for generating and applying change sets concurrently, default: `20`
 * `RECONCILER_RATE_LIMITER_BURST`: Burst limit for the reconciler service for generating and applying change sets concurrently, default: `1`

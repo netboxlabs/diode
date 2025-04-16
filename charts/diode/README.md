@@ -66,6 +66,7 @@ helm install my-release diode/diode --namespace my-namespace --create-namespace
 | diodeIngester.podSecurityContext | object | `{}` | additional pod security context |
 | diodeIngester.replicas | int | `1` | number of replicas |
 | diodeIngester.resources | object | `{}` | resources to allocate for the container |
+| diodeReconciler.secrets.diodeToNetboxAPIKey | string | `""` | API key for authentication between diode and NetBox API |
 | diodeIngester.secrets.redisPassword | string | `""` | redis password, must match the password in the redis chart or external redis |
 | diodeIngester.serviceAccount.create | bool | `true` | create service account |
 | diodeIngester.serviceAccount.name | string | `"diode-ingester"` | service account name |
