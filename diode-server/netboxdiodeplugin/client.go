@@ -126,10 +126,13 @@ type NetBoxAPI interface {
 
 // Client is a NetBox Diode plugin client
 type Client struct {
-	logger     *slog.Logger
-	httpClient *http.Client
-	baseURL    *url.URL
-	limiter    *rate.Limiter
+	logger       *slog.Logger
+	httpClient   *http.Client
+	baseURL      *url.URL
+	limiter      *rate.Limiter
+	clientID     string
+	clientSecret string
+	tokenUrl     string
 }
 
 // NewHTTPTransport creates a http Transport Layer
@@ -152,7 +155,7 @@ func NewHTTPTransport() *http.Transport {
 }
 
 // NewClient creates a new NetBox Diode plugin client
-func NewClient(logger *slog.Logger, rateLimitRps, rateLimitBurstRps int) (*Client, error) {
+func NewClient(logger *slog.Logger, clientID, clientSecret, tokenUrl string, rateLimitRps, rateLimitBurstRps int) (*Client, error) {
 	transport := NewHTTPTransport()
 
 	rt, err := newAPIRoundTripper(transport)
@@ -180,10 +183,13 @@ func NewClient(logger *slog.Logger, rateLimitRps, rateLimitBurstRps int) (*Clien
 	}
 
 	client := &Client{
-		logger:     logger,
-		httpClient: httpClient,
-		baseURL:    u,
-		limiter:    rate.NewLimiter(rate.Limit(rateLimitRps), rateLimitBurstRps),
+		logger:       logger,
+		httpClient:   httpClient,
+		baseURL:      u,
+		limiter:      rate.NewLimiter(rate.Limit(rateLimitRps), rateLimitBurstRps),
+		clientID:     clientID,
+		clientSecret: clientSecret,
+		tokenUrl:     tokenUrl,
 	}
 
 	return client, nil

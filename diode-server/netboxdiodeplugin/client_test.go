@@ -163,7 +163,7 @@ func TestNewClient(t *testing.T) {
 				_ = os.Setenv(netboxdiodeplugin.TLSSkipVerifyEnvVarName, "true")
 			}
 
-			client, err := netboxdiodeplugin.NewClient(logger, tt.rateLimiterRPS, tt.rateLimiterBurst)
+			client, err := netboxdiodeplugin.NewClient(logger, "test-client-id", "test-client-secret", "http://localhost:8000/diode/auth/token", tt.rateLimiterRPS, tt.rateLimiterBurst)
 			if tt.shouldError {
 				require.Error(t, err)
 				return
@@ -257,7 +257,7 @@ func TestGenerateDiff(t *testing.T) {
 
 			_ = os.Setenv(netboxdiodeplugin.BaseURLEnvVarName, fmt.Sprintf("%s/api/diode", ts.URL))
 
-			client, err := netboxdiodeplugin.NewClient(logger, tt.rateLimiterRPS, tt.rateLimiterBurst)
+			client, err := netboxdiodeplugin.NewClient(logger, "test-client-id", "test-client-secret", fmt.Sprintf("%s/diode/auth/token", ts.URL), tt.rateLimiterRPS, tt.rateLimiterBurst)
 			require.NoError(t, err)
 			resp, err := client.GenerateDiff(context.Background(), tt.generateDiffRequest)
 			if tt.shouldError {
@@ -357,7 +357,7 @@ func TestGenerateDiffRateLimiting(t *testing.T) {
 
 			_ = os.Setenv(netboxdiodeplugin.BaseURLEnvVarName, fmt.Sprintf("%s/api/diode", ts.URL))
 
-			client, err := netboxdiodeplugin.NewClient(logger, tt.rateLimiterRPS, tt.rateLimiterBurst)
+			client, err := netboxdiodeplugin.NewClient(logger, "test-client-id", "test-client-secret", fmt.Sprintf("%s/diode/auth/token", ts.URL), tt.rateLimiterRPS, tt.rateLimiterBurst)
 			require.NoError(t, err)
 			resp, err := client.GenerateDiff(context.Background(), tt.generateDiffRequest)
 			_, _ = client.GenerateDiff(context.Background(), tt.generateDiffRequest)
@@ -540,7 +540,7 @@ func TestApplyChangeSet(t *testing.T) {
 
 			_ = os.Setenv(netboxdiodeplugin.BaseURLEnvVarName, fmt.Sprintf("%s/api/diode", ts.URL))
 
-			client, err := netboxdiodeplugin.NewClient(logger, tt.rateLimiterRPS, tt.rateLimiterBurst)
+			client, err := netboxdiodeplugin.NewClient(logger, "test-client-id", "test-client-secret", fmt.Sprintf("%s/diode/auth/token", ts.URL), tt.rateLimiterRPS, tt.rateLimiterBurst)
 			require.NoError(t, err)
 			resp, err := client.ApplyChangeSet(context.Background(), tt.changeSetRequest)
 			if tt.shouldError {
@@ -625,7 +625,7 @@ func TestApplyChangeSetRateLimiting(t *testing.T) {
 
 			_ = os.Setenv(netboxdiodeplugin.BaseURLEnvVarName, fmt.Sprintf("%s/api/diode", ts.URL))
 
-			client, err := netboxdiodeplugin.NewClient(logger, tt.rateLimiterRPS, tt.rateLimiterBurst)
+			client, err := netboxdiodeplugin.NewClient(logger, "test-client-id", "test-client-secret", fmt.Sprintf("%s/diode/auth/token", ts.URL), tt.rateLimiterRPS, tt.rateLimiterBurst)
 			require.NoError(t, err)
 			resp, err := client.ApplyChangeSet(context.Background(), tt.changeSetRequest)
 			_, _ = client.ApplyChangeSet(context.Background(), tt.changeSetRequest)

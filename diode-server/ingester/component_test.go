@@ -50,6 +50,9 @@ func setupEnv(redisAddr string) {
 	_ = os.Setenv("NETBOX_API_URL", "http://example.com")
 	_ = os.Setenv("NETBOX_TO_DIODE_API_KEY", "netbox_to_diode_api_key")
 	_ = os.Setenv("DIODE_API_KEY", "diode_api_key")
+	_ = os.Setenv("DIODE_CLIENT_ID", "diode_client_id")
+	_ = os.Setenv("DIODE_CLIENT_SECRET", "diode_client_secret")
+	_ = os.Setenv("DIODE_AUTH_TOKEN_URL", "http://localhost:8000/diode/auth/token")
 }
 
 func teardownEnv() {
@@ -63,6 +66,9 @@ func teardownEnv() {
 	_ = os.Unsetenv("NETBOX_API_URL")
 	_ = os.Unsetenv("NETBOX_TO_DIODE_API_KEY")
 	_ = os.Unsetenv("DIODE_API_KEY")
+	_ = os.Unsetenv("DIODE_CLIENT_ID")
+	_ = os.Unsetenv("DIODE_CLIENT_SECRET")
+	_ = os.Unsetenv("DIODE_AUTH_TOKEN_URL")
 }
 
 const bufSize = 1024 * 1024
