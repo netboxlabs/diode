@@ -15,6 +15,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"golang.org/x/time/rate"
@@ -134,6 +135,7 @@ type Client struct {
 	clientSecret string
 	tokenUrl     string
 	token        string
+	tokenMutex   sync.Mutex
 }
 
 // NewHTTPTransport creates a http Transport Layer
@@ -191,6 +193,7 @@ func NewClient(logger *slog.Logger, clientID, clientSecret, tokenUrl string, rat
 		clientID:     clientID,
 		clientSecret: clientSecret,
 		tokenUrl:     tokenUrl,
+		tokenMutex:   sync.Mutex{},
 	}
 
 	return client, nil
@@ -278,7 +281,9 @@ func (c *Client) Authenticate() error {
 		return err
 	}
 
+	c.tokenMutex.Lock()
 	c.token = tokenResponse.Token
+	c.tokenMutex.Unlock()
 	return nil
 }
 
