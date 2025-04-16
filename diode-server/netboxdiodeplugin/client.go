@@ -136,6 +136,7 @@ type Client struct {
 	tokenUrl     string
 	token        string
 	tokenMutex   sync.Mutex
+	maxRetries   int
 }
 
 // NewHTTPTransport creates a http Transport Layer
@@ -158,7 +159,7 @@ func NewHTTPTransport() *http.Transport {
 }
 
 // NewClient creates a new NetBox Diode plugin client
-func NewClient(logger *slog.Logger, clientID, clientSecret, tokenUrl string, rateLimitRps, rateLimitBurstRps int) (*Client, error) {
+func NewClient(logger *slog.Logger, clientID, clientSecret, tokenUrl string, rateLimitRps, rateLimitBurstRps int, maxRetries int) (*Client, error) {
 	transport := NewHTTPTransport()
 
 	rt, err := newAPIRoundTripper(transport)
@@ -194,6 +195,7 @@ func NewClient(logger *slog.Logger, clientID, clientSecret, tokenUrl string, rat
 		clientSecret: clientSecret,
 		tokenUrl:     tokenUrl,
 		tokenMutex:   sync.Mutex{},
+		maxRetries:   maxRetries,
 	}
 
 	return client, nil
@@ -252,8 +254,8 @@ func protoToJSON(proto proto.Message) (json.RawMessage, error) {
 	return json.RawMessage(jsonBytes), nil
 }
 
-func (c *Client) Authenticate() error {
-	req, err := http.NewRequest(http.MethodPost, c.tokenUrl, nil)
+func (c *Client) Authenticate(ctx context.Context) error {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.tokenUrl, nil)
 	if err != nil {
 		return err
 	}
@@ -261,7 +263,10 @@ func (c *Client) Authenticate() error {
 	body := url.Values{}
 	body.Add("client_id", c.clientID)
 	body.Add("client_secret", c.clientSecret)
+	body.Add("grant_type", "client_credentials")
 	req.Body = io.NopCloser(strings.NewReader(body.Encode()))
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -287,6 +292,47 @@ func (c *Client) Authenticate() error {
 	return nil
 }
 
+func (c *Client) doRequestWithRetries(ctx context.Context, method, url string, body io.Reader, headers map[string]string) ([]byte, error) {
+	for attempt := 0; attempt < c.maxRetries; attempt++ {
+		req, err := http.NewRequestWithContext(ctx, method, url, body)
+		if err != nil {
+			return nil, err
+		}
+
+		for key, value := range headers {
+			req.Header.Set(key, value)
+		}
+
+		resp, err := c.httpClient.Do(req)
+		if err != nil {
+			return nil, err
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode == http.StatusUnauthorized && attempt < c.maxRetries-1 {
+			c.logger.Info("received 401, attempting reauthentication and retry", "attempt", attempt+1)
+			if err := c.Authenticate(ctx); err != nil {
+				return nil, fmt.Errorf("reauthentication failed: %w", err)
+			}
+			continue // retry
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			body, _ := io.ReadAll(resp.Body)
+			return nil, fmt.Errorf("unexpected status code: %d, body: %s", resp.StatusCode, body)
+		}
+
+		respBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read response body: %w", err)
+		}
+
+		return respBytes, nil // success
+	}
+
+	return nil, fmt.Errorf("max retries reached after receiving 401 responses")
+}
+
 // GenerateDiff generates a diff between an ingested entity and NetBox object state
 func (c *Client) GenerateDiff(ctx context.Context, payload GenerateDiffRequest) (*ChangeSetResult, error) {
 	endpointURL, err := url.Parse(fmt.Sprintf("%s/generate-diff/", c.baseURL.String()))
@@ -306,35 +352,19 @@ func (c *Client) GenerateDiff(ctx context.Context, payload GenerateDiffRequest) 
 		return nil, err
 	}
 
-	if err := c.limiter.Wait(ctx); err != nil {
-		return nil, err
+	headers := map[string]string{
+		"Content-Type":  "application/json",
+		"Authorization": fmt.Sprintf("Bearer %s", c.token),
 	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpointURL.String(), bytes.NewBuffer(reqBody))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.token))
 
 	branchID := strings.TrimSpace(payload.BranchID)
 	if branchID != "" {
-		req.Header.Set(NetBoxBranchHeader, branchID)
+		headers[NetBoxBranchHeader] = branchID
 	}
 
-	resp, err := c.httpClient.Do(req)
+	respBytes, err := c.doRequestWithRetries(ctx, http.MethodPost, endpointURL.String(), bytes.NewBuffer(reqBody), headers)
 	if err != nil {
 		return nil, err
-	}
-	defer func() {
-		if closeErr := resp.Body.Close(); closeErr != nil {
-			c.logger.Warn("failed to close response body", "error", closeErr)
-		}
-	}()
-
-	respBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body %w", err)
 	}
 
 	c.logger.Debug("generate diff", "statusCode", resp.StatusCode, "response", string(respBytes))
@@ -344,9 +374,9 @@ func (c *Client) GenerateDiff(ctx context.Context, payload GenerateDiffRequest) 
 		return nil, changeset.NewError("generate diff failed", diodeErrors.ErrCodeOpsGenerateDiff, respBytes)
 	}
 
-	var changeSetResult ChangeSetResult
-	if err = json.Unmarshal(respBytes, &changeSetResult); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal response body %w", err)
+	var generateDiffResponse GenerateDiffResponse
+	if err = json.Unmarshal(respBytes, &generateDiffResponse); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response body: %w", err)
 	}
 
 	return &changeSetResult, nil
@@ -372,41 +402,22 @@ func (c *Client) ApplyChangeSet(ctx context.Context, payload ApplyChangeSetReque
 		return nil, err
 	}
 
-	if err := c.limiter.Wait(ctx); err != nil {
-		return nil, err
+	headers := map[string]string{
+		"Content-Type":  "application/json",
+		"Authorization": fmt.Sprintf("Bearer %s", c.token),
 	}
-
-	c.logger.Debug("apply change set", "payload", string(reqBody))
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpointURL.String(), bytes.NewBuffer(reqBody))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.token))
 
 	branchID := strings.TrimSpace(payload.BranchID)
 	if branchID != "" {
-		req.Header.Set(NetBoxBranchHeader, branchID)
+		headers[NetBoxBranchHeader] = branchID
 	}
 
-	resp, err := c.httpClient.Do(req)
+	respBytes, err := c.doRequestWithRetries(ctx, http.MethodPost, endpointURL.String(), bytes.NewBuffer(reqBody), headers)
 	if err != nil {
 		return nil, err
 	}
-	defer func() {
-		if closeErr := resp.Body.Close(); closeErr != nil {
-			c.logger.Warn("failed to close response body", "error", closeErr)
-		}
-	}()
 
-	respBytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body %w", err)
-	}
-
-	c.logger.Debug("apply change set", "response", string(respBytes))
-
+<<<<<<< HEAD
 	var changeSetResult ChangeSetResult
 	if err = json.Unmarshal(respBytes, &changeSetResult); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal response body %w", err)
@@ -415,6 +426,11 @@ func (c *Client) ApplyChangeSet(ctx context.Context, payload ApplyChangeSetReque
 	// return errors with 4xx status code
 	if resp.StatusCode >= http.StatusBadRequest {
 		return nil, changeset.NewError("apply change set failed", diodeErrors.ErrCodeOpsApplyChangeSet, respBytes)
+=======
+	var changeSetResponse ApplyChangeSetResponse
+	if err = json.Unmarshal(respBytes, &changeSetResponse); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response body: %w", err)
+>>>>>>> 5139ba8 (adds retries for when unauthenticated)
 	}
 
 	return &changeSetResult, nil

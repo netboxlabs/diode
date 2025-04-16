@@ -25,9 +25,10 @@ type Config struct {
 	// API keys
 	NetBoxToDiodeAPIKey string `envconfig:"NETBOX_TO_DIODE_API_KEY" required:"true"`
 
-	DiodeClientID     string `envconfig:"DIODE_CLIENT_ID" required:"true"`
-	DiodeClientSecret string `envconfig:"DIODE_CLIENT_SECRET" required:"true"`
-	DiodeAuthTokenUrl string `envconfig:"DIODE_AUTH_TOKEN_URL" required:"true"`
+	DiodeClientID       string `envconfig:"DIODE_CLIENT_ID" required:"true"`
+	DiodeClientSecret   string `envconfig:"DIODE_CLIENT_SECRET" required:"true"`
+	DiodeAuthTokenUrl   string `envconfig:"DIODE_AUTH_TOKEN_URL" required:"true"`
+	DiodeMaxAuthRetries int    `envconfig:"DIODE_MAX_AUTH_RETRIES" default:"3"`
 
 	Telemetry telemetry.Config `envconfig:"TELEMETRY"`
 }
