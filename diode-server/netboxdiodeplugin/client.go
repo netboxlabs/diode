@@ -244,7 +244,10 @@ type GenerateDiffRequest struct {
 }
 
 func protoToJSON(proto proto.Message) (json.RawMessage, error) {
-	jsonBytes, err := protojson.Marshal(proto)
+	marshaler := protojson.MarshalOptions{
+		UseProtoNames: true,
+	}
+	jsonBytes, err := marshaler.Marshal(proto)
 	if err != nil {
 		return nil, err
 	}
@@ -302,14 +305,14 @@ func (c *Client) GenerateDiff(ctx context.Context, payload GenerateDiffRequest) 
 
 	c.logger.Debug("generate diff", "statusCode", resp.StatusCode, "response", string(respBytes))
 
-	// return errors with 4xx status code
-	if resp.StatusCode >= http.StatusBadRequest {
-		return nil, changeset.NewError("generate diff failed", diodeErrors.ErrCodeOpsGenerateDiff, respBytes)
-	}
-
 	var changeSetResult ChangeSetResult
 	if err = json.Unmarshal(respBytes, &changeSetResult); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal response body %w", err)
+	}
+
+	// return errors with 4xx status code
+	if resp.StatusCode >= http.StatusBadRequest {
+		return nil, changeset.NewError("generate diff failed", diodeErrors.ErrCodeOpsGenerateDiff, respBytes)
 	}
 
 	return &changeSetResult, nil

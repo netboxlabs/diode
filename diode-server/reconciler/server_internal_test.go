@@ -2,6 +2,7 @@ package reconciler
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"log/slog"
 	"os"
@@ -11,6 +12,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
+	errs "github.com/netboxlabs/diode/diode-server/errors"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 	mr "github.com/netboxlabs/diode/diode-server/reconciler/mocks"
@@ -224,19 +226,10 @@ func TestRetrieveLogs(t *testing.T) {
 							},
 						},
 					},
-					Error: &reconcilerpb.IngestionError{
+					Error: &reconcilerpb.DeviationError{
 						Message: "failed to apply change set",
-						Code:    400,
-						Details: &reconcilerpb.IngestionError_Details{
-							ChangeSetId: "6304c706-f955-4bcb-a1cc-514293d53d07",
-							Result:      "failed",
-							Errors: []*reconcilerpb.IngestionError_Details_Error{
-								{
-									ChangeId: "ff9e29b2-7a64-40ba-99a8-21f44768f60a",
-									Error:    "address: Duplicate IP address found in global table: 192.168.1.1/32",
-								},
-							},
-						},
+						Code:    errs.ErrCodeOpsApplyChangeSet.String(),
+						Details: json.RawMessage(`{"change_set_id": "6304c706-f955-4bcb-a1cc-514293d53d07", "result": "failed", "errors": [{"change_id": "ff9e29b2-7a64-40ba-99a8-21f44768f60a", "error": "address: Duplicate IP address found in global table: 192.168.1.1/32"}]}`),
 					},
 				},
 			},
@@ -260,19 +253,10 @@ func TestRetrieveLogs(t *testing.T) {
 								},
 							},
 						},
-						Error: &reconcilerpb.IngestionError{
+						Error: &reconcilerpb.DeviationError{
 							Message: "failed to apply change set",
-							Code:    400,
-							Details: &reconcilerpb.IngestionError_Details{
-								ChangeSetId: "6304c706-f955-4bcb-a1cc-514293d53d07",
-								Result:      "failed",
-								Errors: []*reconcilerpb.IngestionError_Details_Error{
-									{
-										ChangeId: "ff9e29b2-7a64-40ba-99a8-21f44768f60a",
-										Error:    "address: Duplicate IP address found in global table: 192.168.1.1/32",
-									},
-								},
-							},
+							Code:    errs.ErrCodeOpsApplyChangeSet.String(),
+							Details: json.RawMessage(`{"change_set_id": "6304c706-f955-4bcb-a1cc-514293d53d07", "result": "failed", "errors": [{"change_id": "ff9e29b2-7a64-40ba-99a8-21f44768f60a", "error": "address: Duplicate IP address found in global table: 192.168.1.1/32"}]}`),
 						},
 					},
 				},

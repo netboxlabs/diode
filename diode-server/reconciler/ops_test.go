@@ -2,6 +2,7 @@ package reconciler_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os"
@@ -165,13 +166,20 @@ func TestProOpsGenerateChangeSet(t *testing.T) {
 				}), m.ingestionLogDBID).Return(&m.id, nil)
 			}
 			for _, m := range tt.updateIngestionLogStateWithErrors {
-				mockRepository.EXPECT().UpdateIngestionLogStateWithError(ctx, m.ingestionLogDBID, m.state, mock.Anything).Return(m.err)
+				mockRepository.EXPECT().UpdateIngestionLogStateWithError(ctx, m.ingestionLogDBID, m.state, mock.Anything).Run(func(_ context.Context, _ int32, _ pb.State, err error) {
+					// the error given must marshal to JSON for storage in the database
+					_, jsonErr := json.Marshal(err)
+					require.NoError(t, jsonErr)
+				}).Return(m.err)
 			}
 
 			csid, cs, err := ops.GenerateChangeSet(ctx, tt.logDBID, tt.log, tt.branchID)
 			if tt.hasError {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), tt.errorMessage)
+				if cse, ok := err.(*changeset.Error); ok {
+					require.True(t, json.Valid(cse.Details))
+				}
 			} else {
 				require.NoError(t, err)
 				require.NotNil(t, csid)
