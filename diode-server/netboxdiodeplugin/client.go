@@ -308,7 +308,7 @@ func (c *Client) Authenticate(ctx context.Context) error {
 	return nil
 }
 
-func (c *Client) doRequestWithRetries(ctx context.Context, method, url string, body io.Reader, headers map[string]string) ([]byte, error) {
+func (c *Client) doRequestWithRetries(ctx context.Context, method, url string, body io.Reader, headers map[string]string, badRequestErrorCode diodeErrors.ErrorCode) ([]byte, error) {
 	for attempt := 0; attempt < c.maxRetries; attempt++ {
 		req, err := http.NewRequestWithContext(ctx, method, url, body)
 		if err != nil {
@@ -346,7 +346,13 @@ func (c *Client) doRequestWithRetries(ctx context.Context, method, url string, b
 
 		// return errors with 4xx status code
 		if resp.StatusCode >= http.StatusBadRequest {
-			return nil, changeset.NewError("generate diff failed", diodeErrors.ErrCodeOpsGenerateDiff, respBytes)
+			var jsonMessage json.RawMessage
+			err := json.Unmarshal(respBytes, &jsonMessage)
+			errorDetails := jsonMessage
+			if err != nil {
+				errorDetails = json.RawMessage(`{"response":"` + string(respBytes) + `"}`)
+			}
+			return nil, changeset.NewError("netbox operation failed", badRequestErrorCode, errorDetails)
 		}
 
 		return respBytes, nil // success
@@ -384,7 +390,7 @@ func (c *Client) GenerateDiff(ctx context.Context, payload GenerateDiffRequest) 
 		headers[NetBoxBranchHeader] = branchID
 	}
 
-	respBytes, err := c.doRequestWithRetries(ctx, http.MethodPost, endpointURL.String(), bytes.NewBuffer(reqBody), headers)
+	respBytes, err := c.doRequestWithRetries(ctx, http.MethodPost, endpointURL.String(), bytes.NewBuffer(reqBody), headers, diodeErrors.ErrCodeOpsGenerateDiff)
 	if err != nil {
 		return nil, err
 	}
@@ -427,14 +433,14 @@ func (c *Client) ApplyChangeSet(ctx context.Context, payload ApplyChangeSetReque
 		headers[NetBoxBranchHeader] = branchID
 	}
 
-	respBytes, err := c.doRequestWithRetries(ctx, http.MethodPost, endpointURL.String(), bytes.NewBuffer(reqBody), headers)
+	respBytes, err := c.doRequestWithRetries(ctx, http.MethodPost, endpointURL.String(), bytes.NewBuffer(reqBody), headers, diodeErrors.ErrCodeOpsApplyChangeSet)
 	if err != nil {
 		return nil, err
 	}
 
 	var changeSetResult ChangeSetResult
 	if err = json.Unmarshal(respBytes, &changeSetResult); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal response body: %w", err)
+		return nil, changeset.NewError("failed to unmarshal response body", diodeErrors.ErrCodeOpsApplyChangeSet, json.RawMessage(`{"response":"`+string(respBytes)+`"}`))
 	}
 
 	return &changeSetResult, nil

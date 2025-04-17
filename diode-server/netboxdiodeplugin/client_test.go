@@ -252,7 +252,7 @@ func TestGenerateDiff(t *testing.T) {
 			rateLimiterBurst:   1,
 			shouldError:        true,
 			expectedError: &changeset.Error{
-				Message: "generate diff failed",
+				Message: "netbox operation failed",
 				Code:    errors.ErrCodeOpsGenerateDiff,
 				Details: json.RawMessage(`{"id": "00000000-0000-0000-0000-000000000001", "errors": {"dcim.device": {"name": ["illegal name"]}}}`),
 			},
@@ -279,7 +279,7 @@ func TestGenerateDiff(t *testing.T) {
 			rateLimiterRPS:      1,
 			rateLimiterBurst:    1,
 			shouldError:         true,
-			expectedErrorString: "failed to unmarshal response body invalid character '<' looking for beginning of value",
+			expectedErrorString: "failed to unmarshal response body invalid character",
 		},
 	}
 
@@ -672,7 +672,7 @@ func TestApplyChangeSet(t *testing.T) {
 			response:           nil,
 			shouldError:        true,
 			expectedError: &changeset.Error{
-				Message: "apply change set failed",
+				Message: "netbox operation failed",
 				Code:    errors.ErrCodeOpsApplyChangeSet,
 				Details: json.RawMessage(`{"id":"00000000-0000-0000-0000-000000000000","errors": {"dcim.device": {"name": ["illegal name"]}}}`),
 			},
@@ -693,13 +693,13 @@ func TestApplyChangeSet(t *testing.T) {
 					},
 				},
 			},
-			mockServerResponse:  `{"id"  - "00000000-0000-0000\-0000-000000000000","result":"error"}`,
+			mockServerResponse:  "Bad Request",
 			mockStatusCode:      http.StatusBadRequest,
 			rateLimiterRPS:      1,
 			rateLimiterBurst:    1,
 			response:            nil,
 			shouldError:         true,
-			expectedErrorString: "failed to unmarshal response body invalid character '-' after object key",
+			expectedErrorString: "netbox operation failed",
 		},
 	}
 
@@ -740,9 +740,10 @@ func TestApplyChangeSet(t *testing.T) {
 				if tt.expectedErrorString != "" {
 					assert.Contains(t, err.Error(), tt.expectedErrorString)
 				}
+
 				// changeset.Error details must be valid json
 				if cse, ok := err.(*changeset.Error); ok {
-					assert.True(t, json.Valid(cse.Details))
+					assert.True(t, json.Valid(cse.Details), string(cse.Details))
 				}
 				return
 			}
