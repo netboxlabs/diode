@@ -24,7 +24,7 @@ type Config struct {
 
 	DiodeClientID       string `envconfig:"DIODE_CLIENT_ID" required:"true"`
 	DiodeClientSecret   string `envconfig:"DIODE_CLIENT_SECRET" required:"true"`
-	DiodeAuthTokenURL   string `envconfig:"DIODE_AUTH_TOKEN_URL" required:"true"`
+	DiodeAuthTokenURL   string `envconfig:"DIODE_AUTH_TOKEN_URL" default:"http://localhost:8080/diode/auth/token"`
 	DiodeMaxAuthRetries int    `envconfig:"DIODE_MAX_AUTH_RETRIES" default:"3"`
 
 	Telemetry telemetry.Config `envconfig:"TELEMETRY"`
