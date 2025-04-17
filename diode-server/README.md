@@ -65,6 +65,8 @@ Edit the `.env` to match your environment:
 * `MIGRATION_ENABLED`: Set to `false` to disable the migration, default: `true`
 * `RECONCILER_RATE_LIMITER_RPS`: Rate limit for the reconciler service for generating and applying change sets concurrently, default: `20`
 * `RECONCILER_RATE_LIMITER_BURST`: Burst limit for the reconciler service for generating and applying change sets concurrently, default: `1`
+* `DIODE_CLIENT_ID`: The OAuth2 Client ID to authenticate with
+* `DIODE_CLIENT_SECRET`: The OAuth2 Client secret to authenticate with
 
 ### Running the Diode server
 
