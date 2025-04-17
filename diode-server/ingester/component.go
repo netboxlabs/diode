@@ -2,19 +2,16 @@ package ingester
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"net"
 	"os"
-	"slices"
 	"time"
 
 	"github.com/redis/go-redis/v9"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/proto"
 
@@ -25,13 +22,6 @@ import (
 
 const (
 	streamID = "diode.v1.ingest-stream"
-)
-
-var (
-	errMetadataNotFound = errors.New("no request metadata found")
-
-	// ErrUnauthorized is an error for unauthorized requests
-	ErrUnauthorized = errors.New("missing or invalid authorization header")
 )
 
 // Component asynchronously ingests data from the distributor
@@ -70,9 +60,7 @@ func New(ctx context.Context, logger *slog.Logger, cfg Config, meter metric.Mete
 		return nil, fmt.Errorf("failed to get hostname: %v", err)
 	}
 
-	apiKeys := loadAPIKeys(cfg)
-	auth := newAuthUnaryInterceptor(apiKeys)
-	grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(auth))
+	grpcServer := grpc.NewServer()
 
 	metrics, err := NewMetrics(meter)
 	if err != nil {
@@ -94,19 +82,6 @@ func New(ctx context.Context, logger *slog.Logger, cfg Config, meter metric.Mete
 	reflection.Register(grpcServer)
 
 	return component, nil
-}
-
-func newAuthUnaryInterceptor(apiKeys []string) grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		md, ok := metadata.FromIncomingContext(ctx)
-		if !ok {
-			return nil, errMetadataNotFound
-		}
-		if !isAuthenticated(apiKeys, md["diode-api-key"]) {
-			return nil, ErrUnauthorized
-		}
-		return handler(ctx, req)
-	}
 }
 
 // Name returns the name of the component
@@ -220,18 +195,4 @@ func validateRequest(in *diodepb.IngestRequest) error {
 	}
 
 	return nil
-}
-
-func loadAPIKeys(cfg Config) []string {
-	return []string{
-		cfg.DiodeAPIKey,
-	}
-}
-
-func isAuthenticated(apiKeys []string, authorization []string) bool {
-	if len(apiKeys) < 1 || len(authorization) != 1 {
-		return false
-	}
-
-	return slices.Contains(apiKeys, authorization[0])
 }
