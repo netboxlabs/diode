@@ -379,10 +379,10 @@ func TestGenerateDiffRetries(t *testing.T) {
 		name                string
 		generateDiffRequest netboxdiodeplugin.GenerateDiffRequest
 		mockStatusCodes     []int
-		mockServerResponses []netboxdiodeplugin.GenerateDiffResponse
+		mockServerResponses []netboxdiodeplugin.ChangeSetResult
 		rateLimiterRPS      int
 		rateLimiterBurst    int
-		response            *netboxdiodeplugin.GenerateDiffResponse
+		response            *netboxdiodeplugin.ChangeSetResult
 		shouldError         bool
 		expectedAttempts    int
 	}{
@@ -402,31 +402,37 @@ func TestGenerateDiffRetries(t *testing.T) {
 				},
 			},
 			mockStatusCodes: []int{http.StatusUnauthorized, http.StatusUnauthorized, http.StatusOK},
-			mockServerResponses: []netboxdiodeplugin.GenerateDiffResponse{
+			mockServerResponses: []netboxdiodeplugin.ChangeSetResult{
 				{},
 				{},
 				{
+					ChangeSet: &netboxdiodeplugin.ChangeSet{
+						Changes: []netboxdiodeplugin.Change{
+							{
+								ID:         "00000000-0000-0000-0000-000000000001",
+								ChangeType: "create",
+								ObjectType: "dcim.device",
+								Data:       json.RawMessage(`{"name":"test"}`),
+							},
+						},
+					},
+					Errors: nil,
+				},
+			},
+			rateLimiterRPS:   1,
+			rateLimiterBurst: 1,
+			response: &netboxdiodeplugin.ChangeSetResult{
+				ChangeSet: &netboxdiodeplugin.ChangeSet{
 					Changes: []netboxdiodeplugin.Change{
 						{
 							ID:         "00000000-0000-0000-0000-000000000001",
 							ChangeType: "create",
 							ObjectType: "dcim.device",
-							Data:       json.RawMessage(`{"name": "test"}`),
+							Data:       json.RawMessage(`{"name":"test"}`),
 						},
 					},
 				},
-			},
-			rateLimiterRPS:   1,
-			rateLimiterBurst: 1,
-			response: &netboxdiodeplugin.GenerateDiffResponse{
-				Changes: []netboxdiodeplugin.Change{
-					{
-						ID:         "00000000-0000-0000-0000-000000000001",
-						ChangeType: "create",
-						ObjectType: "dcim.device",
-						Data:       json.RawMessage(`{"name":"test"}`),
-					},
-				},
+				Errors: json.RawMessage(`null`),
 			},
 			shouldError:      false,
 			expectedAttempts: 3,
@@ -451,7 +457,7 @@ func TestGenerateDiffRetries(t *testing.T) {
 
 				w.WriteHeader(tt.mockStatusCodes[actualAttempts])
 				json.NewEncoder(w).Encode(tt.mockServerResponses[actualAttempts])
-				logger.Warn("wrote response no %d", "attemps", actualAttempts, "code", tt.mockStatusCodes[actualAttempts])
+				logger.Warn("wrote response", "attemps", actualAttempts, "code", tt.mockStatusCodes[actualAttempts])
 				// _, _ = w.Write([]byte(tt.mockServerResponses[actualAttempts]))
 				actualAttempts++
 			}
@@ -478,6 +484,7 @@ func TestGenerateDiffRetries(t *testing.T) {
 			}
 
 			require.NoError(t, err)
+			logger.Warn("response", "response", resp.Errors, "expected", tt.response.Errors)
 			assert.Equal(t, tt.response, resp)
 			assert.Equal(t, tt.expectedAttempts, actualAttempts)
 		})

@@ -18,12 +18,12 @@ import (
 	"sync"
 	"time"
 
+	diodeErrors "github.com/netboxlabs/diode/diode-server/errors"
+	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
+
 	"golang.org/x/time/rate"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
-
-	diodeErrors "github.com/netboxlabs/diode/diode-server/errors"
-	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
 )
 
 const (
@@ -317,6 +317,13 @@ func (c *Client) doRequestWithRetries(ctx context.Context, method, url string, b
 		}
 		defer resp.Body.Close()
 
+		respBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read response body: %w", err)
+		}
+
+		c.logger.Debug("Request to netbox", "statusCode", resp.StatusCode, "response", string(respBytes))
+
 		if resp.StatusCode == http.StatusUnauthorized && attempt < c.maxRetries-1 {
 			c.logger.Info("received 401, attempting reauthentication and retry", "attempt", attempt+1)
 			if err := c.Authenticate(ctx); err != nil {
@@ -325,14 +332,9 @@ func (c *Client) doRequestWithRetries(ctx context.Context, method, url string, b
 			continue // retry
 		}
 
-		if resp.StatusCode != http.StatusOK {
-			body, _ := io.ReadAll(resp.Body)
-			return nil, fmt.Errorf("unexpected status code: %d, body: %s", resp.StatusCode, body)
-		}
-
-		respBytes, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return nil, fmt.Errorf("failed to read response body: %w", err)
+		// return errors with 4xx status code
+		if resp.StatusCode >= http.StatusBadRequest {
+			return nil, changeset.NewError("generate diff failed", diodeErrors.ErrCodeOpsGenerateDiff, respBytes)
 		}
 
 		return respBytes, nil // success
@@ -375,15 +377,8 @@ func (c *Client) GenerateDiff(ctx context.Context, payload GenerateDiffRequest) 
 		return nil, err
 	}
 
-	c.logger.Debug("generate diff", "statusCode", resp.StatusCode, "response", string(respBytes))
-
-	// return errors with 4xx status code
-	if resp.StatusCode >= http.StatusBadRequest {
-		return nil, changeset.NewError("generate diff failed", diodeErrors.ErrCodeOpsGenerateDiff, respBytes)
-	}
-
-	var generateDiffResponse GenerateDiffResponse
-	if err = json.Unmarshal(respBytes, &generateDiffResponse); err != nil {
+	var changeSetResult ChangeSetResult
+	if err = json.Unmarshal(respBytes, &changeSetResult); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal response body: %w", err)
 	}
 
@@ -425,20 +420,9 @@ func (c *Client) ApplyChangeSet(ctx context.Context, payload ApplyChangeSetReque
 		return nil, err
 	}
 
-<<<<<<< HEAD
 	var changeSetResult ChangeSetResult
 	if err = json.Unmarshal(respBytes, &changeSetResult); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal response body %w", err)
-	}
-
-	// return errors with 4xx status code
-	if resp.StatusCode >= http.StatusBadRequest {
-		return nil, changeset.NewError("apply change set failed", diodeErrors.ErrCodeOpsApplyChangeSet, respBytes)
-=======
-	var changeSetResponse ApplyChangeSetResponse
-	if err = json.Unmarshal(respBytes, &changeSetResponse); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal response body: %w", err)
->>>>>>> 5139ba8 (adds retries for when unauthenticated)
 	}
 
 	return &changeSetResult, nil
