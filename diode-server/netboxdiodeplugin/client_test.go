@@ -519,7 +519,7 @@ func TestGenerateDiffRetries(t *testing.T) {
 				logger.Warn("response: %s", "response", tt.mockServerResponses[actualAttempts])
 
 				w.WriteHeader(tt.mockStatusCodes[actualAttempts])
-				json.NewEncoder(w).Encode(tt.mockServerResponses[actualAttempts])
+				_ = json.NewEncoder(w).Encode(tt.mockServerResponses[actualAttempts])
 				logger.Warn("wrote response", "attemps", actualAttempts, "code", tt.mockStatusCodes[actualAttempts])
 				// _, _ = w.Write([]byte(tt.mockServerResponses[actualAttempts]))
 				actualAttempts++
@@ -527,7 +527,7 @@ func TestGenerateDiffRetries(t *testing.T) {
 
 			mux := http.NewServeMux()
 			mux.HandleFunc("/api/diode/generate-diff/", handler)
-			mux.HandleFunc("/diode/auth/token/", func(w http.ResponseWriter, r *http.Request) {
+			mux.HandleFunc("/diode/auth/token/", func(w http.ResponseWriter, _ *http.Request) {
 				w.WriteHeader(http.StatusOK)
 				_, _ = w.Write([]byte(`{"token": "test-token"}`))
 			})
@@ -876,7 +876,7 @@ func TestAuthenticate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mux := http.NewServeMux()
-			mux.HandleFunc("/diode/auth/token", func(w http.ResponseWriter, r *http.Request) {
+			mux.HandleFunc("/diode/auth/token", func(w http.ResponseWriter, _ *http.Request) {
 				w.WriteHeader(tt.mockStatusCode)
 				_, _ = w.Write([]byte(tt.mockResponse))
 			})

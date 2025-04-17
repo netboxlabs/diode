@@ -18,12 +18,12 @@ import (
 	"sync"
 	"time"
 
-	diodeErrors "github.com/netboxlabs/diode/diode-server/errors"
-	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
-
 	"golang.org/x/time/rate"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
+
+	diodeErrors "github.com/netboxlabs/diode/diode-server/errors"
+	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
 )
 
 const (
@@ -133,7 +133,7 @@ type Client struct {
 	limiter      *rate.Limiter
 	clientID     string
 	clientSecret string
-	tokenUrl     string
+	tokenURL     string
 	token        string
 	tokenMutex   sync.Mutex
 	maxRetries   int
@@ -159,7 +159,7 @@ func NewHTTPTransport() *http.Transport {
 }
 
 // NewClient creates a new NetBox Diode plugin client
-func NewClient(logger *slog.Logger, clientID, clientSecret, tokenUrl string, rateLimitRps, rateLimitBurstRps int, maxRetries int) (*Client, error) {
+func NewClient(logger *slog.Logger, clientID, clientSecret, tokenURL string, rateLimitRps, rateLimitBurstRps int, maxRetries int) (*Client, error) {
 	transport := NewHTTPTransport()
 
 	rt, err := newAPIRoundTripper(transport)
@@ -193,7 +193,7 @@ func NewClient(logger *slog.Logger, clientID, clientSecret, tokenUrl string, rat
 		limiter:      rate.NewLimiter(rate.Limit(rateLimitRps), rateLimitBurstRps),
 		clientID:     clientID,
 		clientSecret: clientSecret,
-		tokenUrl:     tokenUrl,
+		tokenURL:     tokenURL,
 		tokenMutex:   sync.Mutex{},
 		maxRetries:   maxRetries,
 	}
@@ -257,8 +257,9 @@ func protoToJSON(proto proto.Message) (json.RawMessage, error) {
 	return json.RawMessage(jsonBytes), nil
 }
 
+// Authenticate authenticates the client
 func (c *Client) Authenticate(ctx context.Context) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.tokenUrl, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.tokenURL, nil)
 	if err != nil {
 		return err
 	}
@@ -275,7 +276,11 @@ func (c *Client) Authenticate(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			c.logger.Warn("failed to close response body", "error", closeErr)
+		}
+	}()
 
 	respBytes, err := io.ReadAll(resp.Body)
 	if err != nil {

@@ -36,7 +36,7 @@ func TestNewIngestionProcessor(t *testing.T) {
 	mockRepository := mocks.NewRepository(t)
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
-	nbClient, err := netboxdiodeplugin.NewClient(logger, cfg.DiodeClientID, cfg.DiodeClientSecret, cfg.DiodeAuthTokenUrl, cfg.DiodeToNetBoxRateLimiterRPS, cfg.DiodeToNetBoxRateLimiterBurst, cfg.DiodeMaxAuthRetries)
+	nbClient, err := netboxdiodeplugin.NewClient(logger, cfg.DiodeClientID, cfg.DiodeClientSecret, cfg.DiodeAuthTokenURL, cfg.DiodeToNetBoxRateLimiterRPS, cfg.DiodeToNetBoxRateLimiterBurst, cfg.DiodeMaxAuthRetries)
 	require.NoError(t, err)
 	metrics := mocks.NewIngestionProcessorMetrics(t)
 	processor, err := reconciler.NewIngestionProcessor(ctx, logger, reconciler.NewOps(mockRepository, nbClient, logger), metrics)
@@ -62,7 +62,7 @@ func TestIngestionProcessorStart(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	ctx := context.Background()
 
-	nbClient, err := netboxdiodeplugin.NewClient(logger, cfg.DiodeClientID, cfg.DiodeClientSecret, cfg.DiodeAuthTokenUrl, cfg.DiodeToNetBoxRateLimiterRPS, cfg.DiodeToNetBoxRateLimiterBurst, cfg.DiodeMaxAuthRetries)
+	nbClient, err := netboxdiodeplugin.NewClient(logger, cfg.DiodeClientID, cfg.DiodeClientSecret, cfg.DiodeAuthTokenURL, cfg.DiodeToNetBoxRateLimiterRPS, cfg.DiodeToNetBoxRateLimiterBurst, cfg.DiodeMaxAuthRetries)
 	require.NoError(t, err)
 	mockMetrics := new(mocks.IngestionProcessorMetrics)
 	mockMetrics.On("RecordHandleMessage", mock.Anything, mock.Anything).Return()
