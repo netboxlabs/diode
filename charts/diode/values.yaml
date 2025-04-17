@@ -46,8 +46,6 @@ diodeIngester:
   # -- existing secret for diode-ingester
   existingSecret: ""
   secrets:
-    # -- API key for authentication between diode-ingester and diode-reconciler
-    ingesterToReconcilerAPIKey: ""
     # -- redis password, must match the password in the redis chart or external redis
     redisPassword: ""
   config:
@@ -103,12 +101,6 @@ diodeReconciler:
   # -- existing secret for diode-ingester
   existingSecret: ""
   secrets:
-    # -- API key for authentication between NetBox API and diode
-    netboxToDiodeAPIKey: ""
-    # -- API key for authentication of diode ingestion requests
-    diodeAPIKey: ""
-    # -- API key for authentication between diode-ingester and diode-reconciler
-    ingesterToReconcilerAPIKey: ""
     # -- redis password, must match the password in the redis chart or external redis
     redisPassword: ""
   config:

@@ -22,9 +22,6 @@ type Config struct {
 	PostgresUser                  string `envconfig:"POSTGRES_USER"`
 	PostgresPassword              string `envconfig:"POSTGRES_PASSWORD"`
 
-	// API keys
-	NetBoxToDiodeAPIKey string `envconfig:"NETBOX_TO_DIODE_API_KEY" required:"true"`
-
 	DiodeClientID       string `envconfig:"DIODE_CLIENT_ID" required:"true"`
 	DiodeClientSecret   string `envconfig:"DIODE_CLIENT_SECRET" required:"true"`
 	DiodeAuthTokenURL   string `envconfig:"DIODE_AUTH_TOKEN_URL" required:"true"`

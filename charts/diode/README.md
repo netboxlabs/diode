@@ -66,7 +66,7 @@ helm install my-release diode/diode --namespace my-namespace --create-namespace
 | diodeIngester.podSecurityContext | object | `{}` | additional pod security context |
 | diodeIngester.replicas | int | `1` | number of replicas |
 | diodeIngester.resources | object | `{}` | resources to allocate for the container |
-| diodeIngester.secrets.ingesterToReconcilerAPIKey | string | `""` | API key for authentication between diode-ingester and diode-reconciler |
+| diodeReconciler.secrets.diodeToNetboxAPIKey | string | `""` | API key for authentication between diode and NetBox API |
 | diodeIngester.secrets.redisPassword | string | `""` | redis password, must match the password in the redis chart or external redis |
 | diodeIngester.serviceAccount.create | bool | `true` | create service account |
 | diodeIngester.serviceAccount.name | string | `"diode-ingester"` | service account name |
@@ -90,9 +90,6 @@ helm install my-release diode/diode --namespace my-namespace --create-namespace
 | diodeReconciler.podSecurityContext | object | `{}` | additional pod security context |
 | diodeReconciler.replicas | int | `1` | number of replicas |
 | diodeReconciler.resources | object | `{}` |  |
-| diodeReconciler.secrets.diodeAPIKey | string | `""` | API key for authentication of diode ingestion requests |
-| diodeReconciler.secrets.ingesterToReconcilerAPIKey | string | `""` | API key for authentication between diode-ingester and diode-reconciler |
-| diodeReconciler.secrets.netboxToDiodeAPIKey | string | `""` | API key for authentication between NetBox API and diode |
 | diodeReconciler.secrets.redisPassword | string | `""` | redis password, must match the password in the redis chart or external redis |
 | diodeReconciler.serviceAccount.create | bool | `true` | create service account |
 | diodeReconciler.serviceAccount.name | string | `"diode-reconciler"` | service account name |
