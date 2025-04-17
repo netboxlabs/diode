@@ -14,8 +14,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/netboxlabs/diode/diode-server/errors"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
+	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
 )
 
 func TestTransportSecurity(t *testing.T) {
@@ -187,6 +189,8 @@ func TestGenerateDiff(t *testing.T) {
 		rateLimiterBurst    int
 		response            *netboxdiodeplugin.ChangeSetResult
 		shouldError         bool
+		expectedError       error
+		expectedErrorString string
 	}{
 		{
 			name:   "valid generate diff response",
@@ -225,6 +229,58 @@ func TestGenerateDiff(t *testing.T) {
 			},
 			shouldError: false,
 		},
+		{
+			name:   "valid error diff response",
+			apiKey: "foobar",
+			generateDiffRequest: netboxdiodeplugin.GenerateDiffRequest{
+				ObjectType: "dcim.device",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Device{
+						Device: &diodepb.Device{
+							Name: strPtr("test"),
+							Site: &diodepb.Site{
+								Name: "test-site",
+							},
+						},
+					},
+				},
+			},
+			mockStatusCode:     http.StatusBadRequest,
+			expectedBody:       `{"object_type":"dcim.device","entity":{"device":{"name":"test","site":{"name":"test-site"}}}}`,
+			mockServerResponse: `{"id": "00000000-0000-0000-0000-000000000001", "errors": {"dcim.device": {"name": ["illegal name"]}}}`,
+			rateLimiterRPS:     1,
+			rateLimiterBurst:   1,
+			shouldError:        true,
+			expectedError: &changeset.Error{
+				Message: "generate diff failed",
+				Code:    errors.ErrCodeOpsGenerateDiff,
+				Details: json.RawMessage(`{"id": "00000000-0000-0000-0000-000000000001", "errors": {"dcim.device": {"name": ["illegal name"]}}}`),
+			},
+		},
+		{
+			name:   "invalid error diff response",
+			apiKey: "foobar",
+			generateDiffRequest: netboxdiodeplugin.GenerateDiffRequest{
+				ObjectType: "dcim.device",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Device{
+						Device: &diodepb.Device{
+							Name: strPtr("test"),
+							Site: &diodepb.Site{
+								Name: "test-site",
+							},
+						},
+					},
+				},
+			},
+			mockStatusCode:      http.StatusInternalServerError,
+			expectedBody:        `{"object_type":"dcim.device","entity":{"device":{"name":"test","site":{"name":"test-site"}}}}`,
+			mockServerResponse:  `<html><body><h1>500 Internal Server Error</h1></body></html>`,
+			rateLimiterRPS:      1,
+			rateLimiterBurst:    1,
+			shouldError:         true,
+			expectedErrorString: "failed to unmarshal response body invalid character '<' looking for beginning of value",
+		},
 	}
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
@@ -262,6 +318,13 @@ func TestGenerateDiff(t *testing.T) {
 			resp, err := client.GenerateDiff(context.Background(), tt.generateDiffRequest)
 			if tt.shouldError {
 				require.Error(t, err)
+				if tt.expectedError != nil {
+					assert.Equal(t, tt.expectedError, err)
+				}
+				// changeset.Error details must be valid json
+				if cse, ok := err.(*changeset.Error); ok {
+					assert.True(t, json.Valid(cse.Details))
+				}
 				assert.Equal(t, tt.response, resp)
 				return
 			}
@@ -493,15 +556,17 @@ func TestGenerateDiffRetries(t *testing.T) {
 
 func TestApplyChangeSet(t *testing.T) {
 	tests := []struct {
-		name               string
-		apiKey             string
-		changeSetRequest   netboxdiodeplugin.ApplyChangeSetRequest
-		mockServerResponse string
-		mockStatusCode     int
-		rateLimiterRPS     int
-		rateLimiterBurst   int
-		response           *netboxdiodeplugin.ChangeSetResult
-		shouldError        bool
+		name                string
+		apiKey              string
+		changeSetRequest    netboxdiodeplugin.ApplyChangeSetRequest
+		mockServerResponse  string
+		mockStatusCode      int
+		rateLimiterRPS      int
+		rateLimiterBurst    int
+		response            *netboxdiodeplugin.ChangeSetResult
+		shouldError         bool
+		expectedError       error
+		expectedErrorString string
 	}{
 		{
 			name:   "valid apply change set response",
@@ -578,6 +643,7 @@ func TestApplyChangeSet(t *testing.T) {
 					},
 				},
 			},
+			mockStatusCode:   http.StatusBadRequest,
 			rateLimiterRPS:   1,
 			rateLimiterBurst: 1,
 			response:         nil,
@@ -599,12 +665,17 @@ func TestApplyChangeSet(t *testing.T) {
 					},
 				},
 			},
-			mockServerResponse: `{"id":"00000000-0000-0000-0000-000000000000","result":"error"}`,
+			mockServerResponse: `{"id":"00000000-0000-0000-0000-000000000000","errors": {"dcim.device": {"name": ["illegal name"]}}}`,
 			mockStatusCode:     http.StatusBadRequest,
 			rateLimiterRPS:     1,
 			rateLimiterBurst:   1,
 			response:           nil,
 			shouldError:        true,
+			expectedError: &changeset.Error{
+				Message: "apply change set failed",
+				Code:    errors.ErrCodeOpsApplyChangeSet,
+				Details: json.RawMessage(`{"id":"00000000-0000-0000-0000-000000000000","errors": {"dcim.device": {"name": ["illegal name"]}}}`),
+			},
 		},
 		{
 			name:   "unmarshal error",
@@ -622,12 +693,13 @@ func TestApplyChangeSet(t *testing.T) {
 					},
 				},
 			},
-			mockServerResponse: `{"id"  - "00000000-0000-0000\-0000-000000000000","result":"error"}`,
-			mockStatusCode:     http.StatusBadRequest,
-			rateLimiterRPS:     1,
-			rateLimiterBurst:   1,
-			response:           nil,
-			shouldError:        true,
+			mockServerResponse:  `{"id"  - "00000000-0000-0000\-0000-000000000000","result":"error"}`,
+			mockStatusCode:      http.StatusBadRequest,
+			rateLimiterRPS:      1,
+			rateLimiterBurst:    1,
+			response:            nil,
+			shouldError:         true,
+			expectedErrorString: "failed to unmarshal response body invalid character '-' after object key",
 		},
 	}
 
@@ -662,7 +734,16 @@ func TestApplyChangeSet(t *testing.T) {
 			resp, err := client.ApplyChangeSet(context.Background(), tt.changeSetRequest)
 			if tt.shouldError {
 				require.Error(t, err)
-				assert.Equal(t, tt.response, resp)
+				if tt.expectedError != nil {
+					assert.Equal(t, tt.expectedError, err)
+				}
+				if tt.expectedErrorString != "" {
+					assert.Contains(t, err.Error(), tt.expectedErrorString)
+				}
+				// changeset.Error details must be valid json
+				if cse, ok := err.(*changeset.Error); ok {
+					assert.True(t, json.Valid(cse.Details))
+				}
 				return
 			}
 			require.NoError(t, err)

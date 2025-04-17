@@ -247,7 +247,10 @@ type GenerateDiffRequest struct {
 }
 
 func protoToJSON(proto proto.Message) (json.RawMessage, error) {
-	jsonBytes, err := protojson.Marshal(proto)
+	marshaler := protojson.MarshalOptions{
+		UseProtoNames: true,
+	}
+	jsonBytes, err := marshaler.Marshal(proto)
 	if err != nil {
 		return nil, err
 	}
@@ -315,7 +318,11 @@ func (c *Client) doRequestWithRetries(ctx context.Context, method, url string, b
 		if err != nil {
 			return nil, err
 		}
-		defer resp.Body.Close()
+		defer func() {
+			if closeErr := resp.Body.Close(); closeErr != nil {
+				c.logger.Warn("failed to close response body", "error", closeErr)
+			}
+		}()
 
 		respBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
