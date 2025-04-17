@@ -1,0 +1,57 @@
+{{- if .Values.diodeAuthBootstrap.enabled -}}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "diode.auth.bootstrapjobname" . }}
+  namespace: {{ include "diode.namespace" . }}
+  labels:
+    {{- include "diode.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ include "diode.auth.bootstrapjobname" . }}
+spec:
+  backoffLimit: {{ .Values.diodeAuthBootstrap.job.backoffLimit }}
+  template:
+    metadata:
+      labels:
+        {{- include "diode.selectorlabels" . | nindent 8 }}
+        app.kubernetes.io/component: {{ include "diode.auth.bootstrapjobname" . }}
+    spec:
+      serviceAccountName: {{ include "diode.auth.serviceaccountname" . }}
+      initContainers:
+        {{- if .Values.hydra.enabled }}
+        - name: wait-for-oauth2-server
+          image: {{ include "diode.busybox.image" . }}
+          command:
+            - sh
+            - -c
+            - |
+              host={{ include "diode.hydra.public.hostname" . }}
+              port={{ include "diode.hydra.public.port" . }}
+              until nc -z $host $port; do
+                echo "Waiting for OAuth2 server";
+                sleep 3;
+              done;
+              echo "OAuth2 server is up and running";
+        {{- end }}
+      containers:
+        - name: {{ include "diode.auth.bootstrapjobname" . }}
+          image: "{{ .Values.diode.image.registry }}/{{ .Values.diodeAuthBootstrap.image.name }}"
+          imagePullPolicy: {{ .Values.diodeAuthBootstrap.image.pullPolicy | default "IfNotPresent" }}
+          command: ["/bin/sh", "/etc/config/oauth2-bootstrap/bootstrap-clients.sh"]
+          envFrom:
+            - configMapRef:
+                name: {{ include "diode.auth.bootstrapconfigmapname" . }}
+          volumeMounts:
+            - name: bootstrap-config
+              mountPath: /etc/config/oauth2-bootstrap
+            - name: oauth2-secret
+              mountPath: /etc/config/oauth2/client
+              readOnly: true
+      volumes:
+        - name: bootstrap-config
+          configMap:
+            name: {{ include "diode.auth.bootstrapconfigmapname" . }}
+        - name: oauth2-secret
+          secret:
+            secretName: {{ include "diode.auth.oauth2.secret" . }}
+      restartPolicy: OnFailure
+{{- end }} 

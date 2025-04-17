@@ -1,0 +1,44 @@
+{{- $ingressNginx := index .Values.ingressNginx -}}
+{{- if $ingressNginx.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "diode.ingress.name" . }}-grpc
+  namespace: {{ include "diode.namespace" . }}
+  labels:
+    {{- include "diode.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ include "diode.ingress.name" . }}
+  annotations:
+    nginx.ingress.kubernetes.io/auth-url: "http://{{ include "diode.auth.hostname" . }}:{{ .Values.diodeAuth.containerPort }}/introspect"
+    nginx.ingress.kubernetes.io/auth-method: "POST"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+    nginx.ingress.kubernetes.io/proxy-body-size: "25m"
+    nginx.ingress.kubernetes.io/custom-http-errors: "401,403"
+    {{- with $ingressNginx.grpcAnnotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  ingressClassName: {{ $ingressNginx.ingressClass | default "nginx" }}
+  rules:
+    - {{- if $ingressNginx.hostname  }}
+      host: {{ $ingressNginx.hostname | quote }}
+      {{- end }}
+      http:
+        paths:
+          - path: {{ include "diode.ingress.path" . }}/(diode.v1.IngesterService.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ include "diode.ingester.servicename" . }}
+                port:
+                  number: {{ .Values.diodeIngester.containerPort }}
+          - path: {{ include "diode.ingress.path" . }}/(diode.v1.ReconcilerService.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ include "diode.reconciler.servicename" . }}
+                port:
+                  number: {{ .Values.diodeReconciler.containerPort }}
+{{- end }}
