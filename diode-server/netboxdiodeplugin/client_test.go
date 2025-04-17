@@ -515,12 +515,12 @@ func TestGenerateDiffRetries(t *testing.T) {
 				assert.Equal(t, r.Header.Get("User-Agent"), fmt.Sprintf("%s/%s", netboxdiodeplugin.SDKName, netboxdiodeplugin.SDKVersion))
 				assert.Equal(t, r.Header.Get("Content-Type"), "application/json")
 
-				logger.Warn("writing response no %d", "attemps", actualAttempts, "code", tt.mockStatusCodes[actualAttempts])
+				logger.Warn("writing response no %d", "attempts", actualAttempts, "code", tt.mockStatusCodes[actualAttempts])
 				logger.Warn("response: %s", "response", tt.mockServerResponses[actualAttempts])
 
 				w.WriteHeader(tt.mockStatusCodes[actualAttempts])
 				_ = json.NewEncoder(w).Encode(tt.mockServerResponses[actualAttempts])
-				logger.Warn("wrote response", "attemps", actualAttempts, "code", tt.mockStatusCodes[actualAttempts])
+				logger.Warn("wrote response", "attempts", actualAttempts, "code", tt.mockStatusCodes[actualAttempts])
 				// _, _ = w.Write([]byte(tt.mockServerResponses[actualAttempts]))
 				actualAttempts++
 			}
