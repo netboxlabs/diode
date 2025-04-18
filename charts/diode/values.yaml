@@ -1,12 +1,28 @@
 diode:
   # -- environment name
   environment: development
+  # -- image configuration
   image:
     # -- image registry
     registry: docker.io
+  # -- busybox image configuration
   busybox:
     # -- image name
     image: busybox:latest
+
+# External PostgreSQL configuration (optional)
+externalPostgresql:
+  # -- hostname
+  hostname: localhost
+  # -- port
+  port: 5432
+
+# External Redis configuration (optional)
+externalRedis:
+  # -- hostname
+  hostname: localhost
+  # -- port
+  port: 6379
 
 # Diode Auth configuration
 diodeAuth:
@@ -285,7 +301,7 @@ hydra:
     extraInitContainers: |
       - name: wait-for-postgres
         image: {{ include "diode.busybox.image" . }}
-        command: ['sh', '-c', 'until nc -zv diode-postgresql.{{ .Release.Namespace }}.svc.cluster.local 5432; do echo waiting for PostgreSQL; sleep 2; done;']
+        command: ['sh', '-c', 'until nc -zv {{ include "diode.postgresql.hostname" . }} {{ include "diode.postgresql.port" . }}; do echo waiting for PostgreSQL; sleep 2; done;']
     # -- resources
     resources:
       requests:
@@ -304,7 +320,7 @@ hydra:
     extraInitContainers: |
       - name: wait-for-postgres
         image: {{ include "diode.busybox.image" . }}
-        command: ['sh', '-c', 'until nc -zv diode-postgresql.{{ .Release.Namespace }}.svc.cluster.local 5432; do echo waiting for PostgreSQL; sleep 2; done;']
+        command: ['sh', '-c', 'until nc -zv {{ include "diode.postgresql.hostname" . }} {{ include "diode.postgresql.port" . }}; do echo waiting for PostgreSQL; sleep 2; done;']
 
 # Ingress Nginx Controller configuration (optional)
 # -- ref: https://github.com/kubernetes/ingress-nginx/blob/main/charts/ingress-nginx/values.yaml

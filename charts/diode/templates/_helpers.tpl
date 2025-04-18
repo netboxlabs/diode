@@ -190,34 +190,54 @@ Create the name of the PostgreSQL initialization database scripts ConfigMap
 
 {{/*
 Create the hostname of the PostgreSQL database
-TODO: add support for external PostgreSQL
 */}}
 {{- define "diode.postgresql.hostname" -}}
+{{- if and .Values.postgresql (hasKey .Values.postgresql "enabled") (eq .Values.postgresql.enabled true) -}}
 {{- printf "diode-postgresql.%s.svc.cluster.local" .Release.Namespace }}
+{{- else if and .Values.externalPostgresql (hasKey .Values.externalPostgresql "hostname") -}}
+{{- .Values.externalPostgresql.hostname }}
+{{- else -}}
+{{- fail "externalPostgresql.hostname must be defined when postgresql.enabled is false" }}
+{{- end }}
 {{- end }}
 
 {{/*
 Create the port of the PostgreSQL database
-TODO: add support for external PostgreSQL
 */}}
 {{- define "diode.postgresql.port" -}}
+{{- if and .Values.postgresql (hasKey .Values.postgresql "enabled") (eq .Values.postgresql.enabled true) -}}
 {{- printf "5432" }}
+{{- else if and .Values.externalPostgresql (hasKey .Values.externalPostgresql "port") -}}
+{{- .Values.externalPostgresql.port }}
+{{- else -}}
+{{- fail "externalPostgresql.port must be defined when postgresql.enabled is false" }}
+{{- end }}
 {{- end }}
 
 {{/*
 Create the hostname of the Redis database
-TODO: add support for external Redis
 */}}
 {{- define "diode.redis.hostname" -}}
+{{- if and .Values.redis (hasKey .Values.redis "enabled") (eq .Values.redis.enabled true) -}}
 {{- printf "diode-redis-master.%s.svc.cluster.local" .Release.Namespace }}
+{{- else if and .Values.externalRedis (hasKey .Values.externalRedis "hostname") -}}
+{{- .Values.externalRedis.hostname }}
+{{- else -}}
+{{- fail "externalRedis.hostname must be defined when redis.enabled is false" }}
+{{- end }}
 {{- end }}
 
 {{/*
 Create the port of the Redis database
-TODO: add support for external Redis
 */}}
 {{- define "diode.redis.port" -}}
+{{- if and .Values.redis (hasKey .Values.redis "enabled") (eq .Values.redis.enabled true) -}}
 {{- printf "6379" }}
+{{- else if and .Values.externalRedis (hasKey .Values.externalRedis "port") -}}
+{{- .Values.externalRedis.port }}
+{{- else -}}
+{{- fail "externalRedis.port must be defined when redis.enabled is false" }}
+{{- end }}
 {{- end }}
 
 {{/*
