@@ -29,7 +29,7 @@ jobs:
       - name: Get apps
         id: apps
         run: |
-          echo 'apps=["ingester", "reconciler"]' >> "$GITHUB_OUTPUT"
+          echo 'apps=["auth", "ingester", "reconciler"]' >> "$GITHUB_OUTPUT"
 
   get-next-version:
     name: Get next version - ${{ matrix.app }}
@@ -81,7 +81,7 @@ jobs:
         uses: docker/build-push-action@48aba3b46d1b1fec4febb7c5d0c644b249a11355 # v6
         with:
           context: diode-server
-          file: diode-server/docker/Dockerfile-build
+          file: diode-server/docker/Dockerfile-build.${{ matrix.app }}
           platforms: linux/amd64,linux/arm64
           push: true
           cache-from: type=gha
