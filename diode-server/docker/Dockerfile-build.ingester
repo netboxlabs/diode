@@ -1,19 +1,25 @@
-FROM alpine:3.21
+ARG GO_VERSION=1.23
 
-RUN apk add --no-cache jq
+FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine AS build
 
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+WORKDIR /diode-server
 
-COPY --chown=appuser:appgroup --from=oryd/hydra:v2.3.0 /usr/bin/hydra /usr/bin/hydra
+COPY . .
+
+ARG TARGETOS TARGETARCH SVC
+
+RUN --mount=target=. \
+    --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg \
+    GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o /build/$SVC ./cmd/$SVC
+
+FROM gcr.io/distroless/base:latest
+
+USER nonroot
 
 ARG SVC
 
-COPY --chown=appuser:appgroup /build/$SVC /usr/local/bin/diode-server
-COPY --chown=appuser:appgroup /docker/oauth2/bootstrap-clients.sh /etc/config/oauth2/
-
-RUN chmod +x /etc/config/oauth2/bootstrap-clients.sh
-
-USER appuser
+COPY --from=build /build/$SVC /usr/local/bin/diode-server
 
 LABEL maintainer="techops@netboxlabs.com"
 LABEL org.opencontainers.image.title="Diode $SVC"
