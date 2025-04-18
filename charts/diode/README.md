@@ -210,13 +210,13 @@ helm show values diode/diode
 | diodeAuth.config.telemetryTracesExporter | string | `"none"` | telemetry traces exporter |
 | diodeAuth.containerPort | int | `8080` | port to listen on |
 | diodeAuth.enabled | bool | `true` | enabled |
-| diodeAuth.image.name | string | `"netboxlabs/diode-auth:0.0.0-9a79d1d"` | image name |
+| diodeAuth.image.name | string | `"netboxlabs/diode-auth:1.0.0"` | image name |
 | diodeAuth.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
 | diodeAuth.replicaCount | int | `1` | replica count |
 | diodeAuth.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
 | diodeAuth.serviceAccount.create | bool | `true` | create service account |
 | diodeAuthBootstrap.enabled | bool | `true` | enabled |
-| diodeAuthBootstrap.image.name | string | `"netboxlabs/diode-auth:0.0.0-9a79d1d"` | image name |
+| diodeAuthBootstrap.image.name | string | `"netboxlabs/diode-auth:1.0.0"` | image name |
 | diodeAuthBootstrap.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
 | diodeAuthBootstrap.job.backoffLimit | int | `20` | backoff limit |
 | diodeIngester.config.sentryDsn | string | `""` | sentry DSN  |
@@ -226,7 +226,7 @@ helm show values diode/diode
 | diodeIngester.containerPort | int | `8081` | port to listen on |
 | diodeIngester.enabled | bool | `true` | enabled |
 | diodeIngester.existingSecret | string | `"diode-ingester-secret"` | existing secret name |
-| diodeIngester.image.name | string | `"netboxlabs/diode-ingester:0.0.0-9a79d1d"` | image name |
+| diodeIngester.image.name | string | `"netboxlabs/diode-ingester:1.0.0"` | image name |
 | diodeIngester.pullPolicy | string | `"IfNotPresent"` | pull policy |
 | diodeIngester.replicaCount | int | `1` | replica count |
 | diodeIngester.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
@@ -248,7 +248,7 @@ helm show values diode/diode
 | diodeReconciler.containerPort | int | `8081` | port to listen on |
 | diodeReconciler.enabled | bool | `true` | enabled |
 | diodeReconciler.existingSecret | string | `"diode-reconciler-secret"` | existing secret name |
-| diodeReconciler.image.name | string | `"netboxlabs/diode-reconciler:0.0.0-9a79d1d"` | image name |
+| diodeReconciler.image.name | string | `"netboxlabs/diode-reconciler:1.0.0"` | image name |
 | diodeReconciler.pullPolicy | string | `"IfNotPresent"` | pull policy |
 | diodeReconciler.replicaCount | int | `1` | replica count |
 | diodeReconciler.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
