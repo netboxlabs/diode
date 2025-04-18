@@ -57,22 +57,26 @@ kubectl create namespace diode-cert-manager
 
 Create the following secrets in the `[NAMESPACE]` namespace:
 
-- if not using existing resources, generate passwords for Redis and PostgreSQL and set them to the following variables:
+- if not using external resources, generate passwords for Redis and PostgreSQL and set them to the following variables:
 
 ```console
 REDIS_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 | base64 | head -c 32)
 POSTGRES_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 | base64 | head -c 32)
 DIODE_POSTGRES_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 | base64 | head -c 32)
 HYDRA_POSTGRES_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 | base64 | head -c 32)
+POSTGRES_HOSTNAME=diode-postgresql.$NAMESPACE.svc.cluster.local
+POSTGRES_PORT=5432
 ```
 
-- if using existing resources, set the passwords to the existing resources:
+- if using external resources, set the passwords, host and port of the existing resources:
 
 ```console
 REDIS_PASSWORD=<redis-password>
 POSTGRES_PASSWORD=<postgres-password>
 DIODE_POSTGRES_PASSWORD=<diode-postgres-password>
 HYDRA_POSTGRES_PASSWORD=<hydra-postgres-password>
+POSTGRES_HOSTNAME=<postgresql-hostname>
+POSTGRES_PORT=<postgresql-port>
 ```
 
 - create a secret for PostgreSQL credentials in the `[NAMESPACE]` namespace:
@@ -103,7 +107,7 @@ kubectl create secret generic diode-redis-secret --namespace $NAMESPACE \
 kubectl create secret generic diode-hydra-secret --namespace $NAMESPACE \
   --from-literal=secretsCookie=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 | base64 | head -c 32) \
   --from-literal=secretsSystem=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 | base64 | head -c 32) \
-  --from-literal=dsn=postgres://hydra:$HYDRA_POSTGRES_PASSWORD@diode-postgresql.$NAMESPACE.svc.cluster.local:5432/hydra
+  --from-literal=dsn=postgres://hydra:$HYDRA_POSTGRES_PASSWORD@$POSTGRES_HOSTNAME:$POSTGRES_PORT/hydra
 ```
 
 - create a secret for the Diode Ingester service:

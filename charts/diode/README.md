@@ -58,22 +58,26 @@ kubectl create namespace diode-cert-manager
 
 Create the following secrets in the `[NAMESPACE]` namespace:
 
-- if not using existing resources, generate passwords for Redis and PostgreSQL and set them to the following variables:
+- if not using external resources, generate passwords for Redis and PostgreSQL and set them to the following variables:
 
 ```console
 REDIS_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 | base64 | head -c 32)
 POSTGRES_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 | base64 | head -c 32)
 DIODE_POSTGRES_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 | base64 | head -c 32)
 HYDRA_POSTGRES_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 | base64 | head -c 32)
+POSTGRES_HOSTNAME=diode-postgresql.$NAMESPACE.svc.cluster.local
+POSTGRES_PORT=5432
 ```
 
-- if using existing resources, set the passwords to the existing resources:
+- if using external resources, set the passwords, host and port of the existing resources:
 
 ```console
 REDIS_PASSWORD=<redis-password>
 POSTGRES_PASSWORD=<postgres-password>
 DIODE_POSTGRES_PASSWORD=<diode-postgres-password>
 HYDRA_POSTGRES_PASSWORD=<hydra-postgres-password>
+POSTGRES_HOSTNAME=<postgresql-hostname>
+POSTGRES_PORT=<postgresql-port>
 ```
 
 - create a secret for PostgreSQL credentials in the `[NAMESPACE]` namespace:
@@ -104,7 +108,7 @@ kubectl create secret generic diode-redis-secret --namespace $NAMESPACE \
 kubectl create secret generic diode-hydra-secret --namespace $NAMESPACE \
   --from-literal=secretsCookie=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 | base64 | head -c 32) \
   --from-literal=secretsSystem=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 | base64 | head -c 32) \
-  --from-literal=dsn=postgres://hydra:$HYDRA_POSTGRES_PASSWORD@diode-postgresql.$NAMESPACE.svc.cluster.local:5432/hydra
+  --from-literal=dsn=postgres://hydra:$HYDRA_POSTGRES_PASSWORD@$POSTGRES_HOSTNAME:$POSTGRES_PORT/hydra
 ```
 
 - create a secret for the Diode Ingester service:
@@ -200,8 +204,10 @@ helm show values diode/diode
 | certManager.namespace | string | `"diode-cert-manager"` | cert-manager namespace |
 | certManager.prometheus | object | `{"enabled":false}` | prometheus enabled |
 | certManager.webhook | object | `{"enabled":true}` | webhook enabled |
+| diode.busybox | object | `{"image":"busybox:latest"}` | busybox image configuration |
 | diode.busybox.image | string | `"busybox:latest"` | image name |
 | diode.environment | string | `"development"` | environment name |
+| diode.image | object | `{"registry":"docker.io"}` | image configuration |
 | diode.image.registry | string | `"docker.io"` | image registry |
 | diodeAuth.config.httpPort | int | `8080` | http port |
 | diodeAuth.config.sentryDsn | string | `""` | sentry DSN  |
@@ -253,8 +259,12 @@ helm show values diode/diode
 | diodeReconciler.replicaCount | int | `1` | replica count |
 | diodeReconciler.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
 | diodeReconciler.serviceAccount.create | bool | `true` | create service account |
-| hydra | object | `{"deployment":{"extraInitContainers":"- name: wait-for-postgres\n  image: {{ include \"diode.busybox.image\" . }}\n  command: ['sh', '-c', 'until nc -zv diode-postgresql.{{ .Release.Namespace }}.svc.cluster.local 5432; do echo waiting for PostgreSQL; sleep 2; done;']\n","resources":{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}},"enabled":true,"fullnameOverride":"diode-hydra","hydra":{"automigration":{"enabled":true},"config":{"oidc":{"subject_identifiers":{"supported_types":["public"]}},"strategies":{"access_token":"jwt"},"ttl":{"access_token":"1h"},"urls":{"self":{"issuer":"http://diode-hydra-public.{{ .Release.Namespace }}.svc.cluster.local:4444"}}},"dev":true,"ingress":{"admin":{"enabled":false},"public":{"enabled":false}},"service":{"admin":{"enabled":true,"port":4445,"type":"ClusterIP"},"public":{"enabled":true,"port":4444,"type":"ClusterIP"}}},"job":{"annotations":{"helm.sh/hook":"post-install, post-upgrade","helm.sh/hook-delete-policy":"hook-succeeded","helm.sh/hook-weight":"1"},"extraInitContainers":"- name: wait-for-postgres\n  image: {{ include \"diode.busybox.image\" . }}\n  command: ['sh', '-c', 'until nc -zv diode-postgresql.{{ .Release.Namespace }}.svc.cluster.local 5432; do echo waiting for PostgreSQL; sleep 2; done;']\n"},"secret":{"enabled":false,"nameOverride":"diode-hydra-secret"}}` | ref: https://github.com/ory/k8s/blob/master/helm/charts/hydra/values.yaml |
-| hydra.deployment.extraInitContainers | string | `"- name: wait-for-postgres\n  image: {{ include \"diode.busybox.image\" . }}\n  command: ['sh', '-c', 'until nc -zv diode-postgresql.{{ .Release.Namespace }}.svc.cluster.local 5432; do echo waiting for PostgreSQL; sleep 2; done;']\n"` | extra init containers |
+| externalPostgresql.hostname | string | `"localhost"` | hostname |
+| externalPostgresql.port | int | `5432` | port |
+| externalRedis.hostname | string | `"localhost"` | hostname |
+| externalRedis.port | int | `6379` | port |
+| hydra | object | `{"deployment":{"extraInitContainers":"- name: wait-for-postgres\n  image: {{ include \"diode.busybox.image\" . }}\n  command: ['sh', '-c', 'until nc -zv {{ include \"diode.postgresql.hostname\" . }} {{ include \"diode.postgresql.port\" . }}; do echo waiting for PostgreSQL; sleep 2; done;']\n","resources":{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}},"enabled":true,"fullnameOverride":"diode-hydra","hydra":{"automigration":{"enabled":true},"config":{"oidc":{"subject_identifiers":{"supported_types":["public"]}},"strategies":{"access_token":"jwt"},"ttl":{"access_token":"1h"},"urls":{"self":{"issuer":"http://diode-hydra-public.{{ .Release.Namespace }}.svc.cluster.local:4444"}}},"dev":true,"ingress":{"admin":{"enabled":false},"public":{"enabled":false}},"service":{"admin":{"enabled":true,"port":4445,"type":"ClusterIP"},"public":{"enabled":true,"port":4444,"type":"ClusterIP"}}},"job":{"annotations":{"helm.sh/hook":"post-install, post-upgrade","helm.sh/hook-delete-policy":"hook-succeeded","helm.sh/hook-weight":"1"},"extraInitContainers":"- name: wait-for-postgres\n  image: {{ include \"diode.busybox.image\" . }}\n  command: ['sh', '-c', 'until nc -zv {{ include \"diode.postgresql.hostname\" . }} {{ include \"diode.postgresql.port\" . }}; do echo waiting for PostgreSQL; sleep 2; done;']\n"},"secret":{"enabled":false,"nameOverride":"diode-hydra-secret"}}` | ref: https://github.com/ory/k8s/blob/master/helm/charts/hydra/values.yaml |
+| hydra.deployment.extraInitContainers | string | `"- name: wait-for-postgres\n  image: {{ include \"diode.busybox.image\" . }}\n  command: ['sh', '-c', 'until nc -zv {{ include \"diode.postgresql.hostname\" . }} {{ include \"diode.postgresql.port\" . }}; do echo waiting for PostgreSQL; sleep 2; done;']\n"` | extra init containers |
 | hydra.deployment.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
 | hydra.enabled | bool | `true` | enabled |
 | hydra.fullnameOverride | string | `"diode-hydra"` | fullname override |
@@ -274,7 +284,7 @@ helm show values diode/diode
 | hydra.hydra.service.public.port | int | `4444` | public service port |
 | hydra.hydra.service.public.type | string | `"ClusterIP"` | public service type |
 | hydra.job.annotations | object | `{"helm.sh/hook":"post-install, post-upgrade","helm.sh/hook-delete-policy":"hook-succeeded","helm.sh/hook-weight":"1"}` | job annotations |
-| hydra.job.extraInitContainers | string | `"- name: wait-for-postgres\n  image: {{ include \"diode.busybox.image\" . }}\n  command: ['sh', '-c', 'until nc -zv diode-postgresql.{{ .Release.Namespace }}.svc.cluster.local 5432; do echo waiting for PostgreSQL; sleep 2; done;']\n"` | extra init containers |
+| hydra.job.extraInitContainers | string | `"- name: wait-for-postgres\n  image: {{ include \"diode.busybox.image\" . }}\n  command: ['sh', '-c', 'until nc -zv {{ include \"diode.postgresql.hostname\" . }} {{ include \"diode.postgresql.port\" . }}; do echo waiting for PostgreSQL; sleep 2; done;']\n"` | extra init containers |
 | hydra.secret.enabled | bool | `false` | secret enabled |
 | hydra.secret.nameOverride | string | `"diode-hydra-secret"` | existing secret name |
 | ingressNginx | object | `{"annotations":{"nginx.ingress.kubernetes.io/proxy-body-size":"25m"},"controller":{"allowSnippetAnnotations":true},"enabled":true,"extraHttpPaths":{},"grpcAnnotations":{},"hostname":"","httpAnnotations":{},"ingressClass":"nginx","pathPrefix":"/diode","tls":{}}` | ref: https://github.com/kubernetes/ingress-nginx/blob/main/charts/ingress-nginx/values.yaml |
