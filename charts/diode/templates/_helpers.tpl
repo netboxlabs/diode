@@ -185,7 +185,7 @@ Create the name of the reconciler secret to use
 Create the name of the PostgreSQL initialization database scripts ConfigMap
 */}}
 {{- define "diode.postgresql.initdb.scriptsconfigmap" -}}
-{{- printf "%s-postgresql-initdb-scripts-configmap" (include "diode.fullname" .) }}
+{{- printf "%s-postgresql-initdb-scripts-configmap" (include "diode.name" .) }}
 {{- end }}
 
 {{/*
