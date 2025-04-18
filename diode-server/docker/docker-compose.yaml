@@ -3,7 +3,7 @@ services:
   ingress-nginx:
     image: nginx:latest
     command: nginx -g 'daemon off;'
-    restart: always
+    restart: on-failure
     environment:
       - DIODE_NGINX_PORT=${DIODE_NGINX_PORT}
     ports:
@@ -25,7 +25,7 @@ services:
       - TELEMETRY_METRICS_EXPORTER=${TELEMETRY_METRICS_EXPORTER}
       - TELEMETRY_TRACES_EXPORTER=${TELEMETRY_TRACES_EXPORTER}
       - TELEMETRY_ENVIRONMENT=${TELEMETRY_ENVIRONMENT}
-    restart: always
+    restart: on-failure
     ports: [ ]
     depends_on:
       - redis
@@ -52,7 +52,7 @@ services:
       - TELEMETRY_METRICS_EXPORTER=${TELEMETRY_METRICS_EXPORTER}
       - TELEMETRY_TRACES_EXPORTER=${TELEMETRY_TRACES_EXPORTER}
       - TELEMETRY_ENVIRONMENT=${TELEMETRY_ENVIRONMENT}
-    restart: always
+    restart: on-failure
     ports: [ ]
     volumes:
       - ./oauth2/client:/etc/config/oauth2/client:z,ro
@@ -72,6 +72,7 @@ services:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - REDIS_PORT=${REDIS_PORT}
     ports: [ ]
+    restart: on-failure
     volumes:
       - diode-redis-data:/data
 
@@ -118,6 +119,7 @@ services:
       interval: 1s
       timeout: 5s
       retries: 5
+    restart: on-failure
     volumes:
       - diode-postgres-data:/var/lib/postgresql/data
       - type: tmpfs
@@ -139,7 +141,7 @@ services:
       - OIDC_SUBJECT_IDENTIFIERS_SUPPORTED_TYPES=${HYDRA_OIDC_SUBJECT_IDENTIFIERS_SUPPORTED_TYPES}
       - URLS_SELF_ISSUER=${HYDRA_URLS_SELF_ISSUER}
       - SECRETS_SYSTEM=${HYDRA_SECRETS_SYSTEM_0}
-    restart: unless-stopped
+    restart: on-failure
     depends_on:
       - hydra-migrate
       - postgres
@@ -165,7 +167,7 @@ services:
       - TELEMETRY_METRICS_EXPORTER=${TELEMETRY_METRICS_EXPORTER}
       - TELEMETRY_TRACES_EXPORTER=${TELEMETRY_TRACES_EXPORTER}
       - TELEMETRY_ENVIRONMENT=${TELEMETRY_ENVIRONMENT}
-    restart: always
+    restart: on-failure
     ports: []
     depends_on:
       - hydra
