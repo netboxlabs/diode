@@ -36,20 +36,15 @@ spec:
         - name: {{ include "diode.auth.bootstrapjobname" . }}
           image: "{{ .Values.diode.image.registry }}/{{ .Values.diodeAuthBootstrap.image.name }}"
           imagePullPolicy: {{ .Values.diodeAuthBootstrap.image.pullPolicy | default "IfNotPresent" }}
-          command: ["/bin/sh", "/etc/config/oauth2-bootstrap/bootstrap-clients.sh"]
-          envFrom:
-            - configMapRef:
-                name: {{ include "diode.auth.bootstrapconfigmapname" . }}
+          command: ["/bin/sh", "/etc/config/oauth2/bootstrap-clients.sh"]
+          env:
+            - name: HYDRA_ADMIN_URL
+              value: {{ include "diode.hydra.admin.url" . }}
           volumeMounts:
-            - name: bootstrap-config
-              mountPath: /etc/config/oauth2-bootstrap
             - name: oauth2-secret
               mountPath: /etc/config/oauth2/client
               readOnly: true
       volumes:
-        - name: bootstrap-config
-          configMap:
-            name: {{ include "diode.auth.bootstrapconfigmapname" . }}
         - name: oauth2-secret
           secret:
             secretName: {{ include "diode.auth.oauth2.secret" . }}
