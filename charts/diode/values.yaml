@@ -1,14 +1,20 @@
+global:
+  # -- diode global configuration
+  diode:
+    # -- busybox image configuration
+    busybox:
+      image: busybox:latest
+    # -- hydra additional init containers configuration
+    hydra:
+      # -- wait for PostgreSQL
+      waitForPostgres: true
+
 diode:
   # -- environment name
   environment: development
-  # -- image configuration
   image:
     # -- image registry
     registry: docker.io
-  # -- busybox image configuration
-  busybox:
-    # -- image name
-    image: busybox:latest
 
 # External PostgreSQL configuration (optional)
 externalPostgresql:
@@ -298,10 +304,8 @@ hydra:
     dev: true # Hydra is not exposed to the public internet
   deployment:
     # -- extra init containers
-    extraInitContainers: |
-      - name: wait-for-postgres
-        image: {{ include "diode.busybox.image" . }}
-        command: ['sh', '-c', 'until nc -zv {{ include "diode.postgresql.hostname" . }} {{ include "diode.postgresql.port" . }}; do echo waiting for PostgreSQL; sleep 2; done;']
+    extraInitContainers: |-
+      {{ include "diode.hydra.extrainitcontainers" . }}
     # -- resources
     resources:
       requests:
@@ -317,10 +321,8 @@ hydra:
       "helm.sh/hook-weight": "1"
       "helm.sh/hook-delete-policy": hook-succeeded
     # -- extra init containers
-    extraInitContainers: |
-      - name: wait-for-postgres
-        image: {{ include "diode.busybox.image" . }}
-        command: ['sh', '-c', 'until nc -zv {{ include "diode.postgresql.hostname" . }} {{ include "diode.postgresql.port" . }}; do echo waiting for PostgreSQL; sleep 2; done;']
+    extraInitContainers: |-
+      {{ include "diode.hydra.extrainitcontainers" . }}
 
 # Ingress Nginx Controller configuration (optional)
 # -- ref: https://github.com/kubernetes/ingress-nginx/blob/main/charts/ingress-nginx/values.yaml
@@ -335,11 +337,7 @@ ingressNginx:
   controller:
     # -- allow snippet annotations
     allowSnippetAnnotations: true
-  annotations:
-    # nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    nginx.ingress.kubernetes.io/proxy-body-size: "25m"
-    # nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
-    # nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+  annotations: {}
   # -- ingress tls
   tls: {}
     # - secretName: diode-tls
@@ -348,7 +346,8 @@ ingressNginx:
   # -- ingress http annotations
   httpAnnotations: {}
   # -- ingress grpc annotations
-  grpcAnnotations: {}
+  grpcAnnotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "25m"
   # -- ingress path prefix
   pathPrefix: /diode
   # -- ingress extra http paths

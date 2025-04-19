@@ -14,7 +14,6 @@ metadata:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
     nginx.ingress.kubernetes.io/rewrite-target: /$1
-    nginx.ingress.kubernetes.io/proxy-body-size: "25m"
     nginx.ingress.kubernetes.io/custom-http-errors: "401,403"
     {{- with $ingressNginx.grpcAnnotations }}
     {{- toYaml . | nindent 4 }}

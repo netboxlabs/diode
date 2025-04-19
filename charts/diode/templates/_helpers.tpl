@@ -62,8 +62,8 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 Create the name of the busybox image to use
 */}}
 {{- define "diode.busybox.image" -}}
-{{- if and .Values.diode (hasKey .Values.diode "busybox") (hasKey .Values.diode.busybox "image") -}}
-{{- .Values.diode.busybox.image | quote -}}
+{{- if .Values.global.diode.busybox.image -}}
+{{- .Values.global.diode.busybox.image | quote -}}
 {{- else -}}
 {{- "busybox:latest" | quote -}}
 {{- end -}}
@@ -192,7 +192,7 @@ Create the name of the PostgreSQL initialization database scripts ConfigMap
 Create the hostname of the PostgreSQL database
 */}}
 {{- define "diode.postgresql.hostname" -}}
-{{- if and .Values.postgresql (hasKey .Values.postgresql "enabled") (eq .Values.postgresql.enabled true) -}}
+{{- if .Values.postgresql.enabled -}}
 {{- printf "diode-postgresql.%s.svc.cluster.local" .Release.Namespace }}
 {{- else if and .Values.externalPostgresql (hasKey .Values.externalPostgresql "hostname") -}}
 {{- .Values.externalPostgresql.hostname }}
@@ -205,7 +205,7 @@ Create the hostname of the PostgreSQL database
 Create the port of the PostgreSQL database
 */}}
 {{- define "diode.postgresql.port" -}}
-{{- if and .Values.postgresql (hasKey .Values.postgresql "enabled") (eq .Values.postgresql.enabled true) -}}
+{{- if .Values.postgresql.enabled -}}
 {{- printf "5432" }}
 {{- else if and .Values.externalPostgresql (hasKey .Values.externalPostgresql "port") -}}
 {{- .Values.externalPostgresql.port }}
@@ -218,7 +218,7 @@ Create the port of the PostgreSQL database
 Create the hostname of the Redis database
 */}}
 {{- define "diode.redis.hostname" -}}
-{{- if and .Values.redis (hasKey .Values.redis "enabled") (eq .Values.redis.enabled true) -}}
+{{- if .Values.redis.enabled -}}
 {{- printf "diode-redis-master.%s.svc.cluster.local" .Release.Namespace }}
 {{- else if and .Values.externalRedis (hasKey .Values.externalRedis "hostname") -}}
 {{- .Values.externalRedis.hostname }}
@@ -231,7 +231,7 @@ Create the hostname of the Redis database
 Create the port of the Redis database
 */}}
 {{- define "diode.redis.port" -}}
-{{- if and .Values.redis (hasKey .Values.redis "enabled") (eq .Values.redis.enabled true) -}}
+{{- if .Values.redis.enabled -}}
 {{- printf "6379" }}
 {{- else if and .Values.externalRedis (hasKey .Values.externalRedis "port") -}}
 {{- .Values.externalRedis.port }}
@@ -280,6 +280,27 @@ Create the URL to the admin Hydra service
 */}}
 {{- define "diode.hydra.admin.url" -}}
 {{- printf "http://%s:%d" (include "diode.hydra.admin.hostname" .) (include "diode.hydra.admin.port" . | int) }}
+{{- end }}
+
+{{/*
+Create the name of the extra Hydra init container configmap to use
+*/}}
+{{- define "diode.hydra.extrainitcontainerconfigmap" -}}
+{{- printf "%s-hydra-extra-initcontainer-configmap" .Release.Name }}
+{{- end }}
+
+{{/*
+Create the name of the extra Hydra init container configmap to use
+*/}}
+{{- define "diode.hydra.extrainitcontainers" -}}
+{{- if .Values.global.diode.hydra.waitForPostgres -}}
+- name: wait-for-postgres
+  image: {{ .Values.global.diode.busybox.image }}
+  command: ['sh', '-c', 'until nc -zv $POSTGRES_HOST $POSTGRES_PORT; do echo waiting for PostgreSQL; sleep 2; done;']
+  envFrom:
+    - configMapRef:
+        name: {{ include "diode.hydra.extrainitcontainerconfigmap" . }}
+{{- end -}}
 {{- end }}
 
 {{/*

@@ -204,10 +204,7 @@ helm show values diode/diode
 | certManager.namespace | string | `"diode-cert-manager"` | cert-manager namespace |
 | certManager.prometheus | object | `{"enabled":false}` | prometheus enabled |
 | certManager.webhook | object | `{"enabled":true}` | webhook enabled |
-| diode.busybox | object | `{"image":"busybox:latest"}` | busybox image configuration |
-| diode.busybox.image | string | `"busybox:latest"` | image name |
 | diode.environment | string | `"development"` | environment name |
-| diode.image | object | `{"registry":"docker.io"}` | image configuration |
 | diode.image.registry | string | `"docker.io"` | image registry |
 | diodeAuth.config.httpPort | int | `8080` | http port |
 | diodeAuth.config.sentryDsn | string | `""` | sentry DSN  |
@@ -263,8 +260,12 @@ helm show values diode/diode
 | externalPostgresql.port | int | `5432` | port |
 | externalRedis.hostname | string | `"localhost"` | hostname |
 | externalRedis.port | int | `6379` | port |
-| hydra | object | `{"deployment":{"extraInitContainers":"- name: wait-for-postgres\n  image: {{ include \"diode.busybox.image\" . }}\n  command: ['sh', '-c', 'until nc -zv {{ include \"diode.postgresql.hostname\" . }} {{ include \"diode.postgresql.port\" . }}; do echo waiting for PostgreSQL; sleep 2; done;']\n","resources":{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}},"enabled":true,"fullnameOverride":"diode-hydra","hydra":{"automigration":{"enabled":true},"config":{"oidc":{"subject_identifiers":{"supported_types":["public"]}},"strategies":{"access_token":"jwt"},"ttl":{"access_token":"1h"},"urls":{"self":{"issuer":"http://diode-hydra-public.{{ .Release.Namespace }}.svc.cluster.local:4444"}}},"dev":true,"ingress":{"admin":{"enabled":false},"public":{"enabled":false}},"service":{"admin":{"enabled":true,"port":4445,"type":"ClusterIP"},"public":{"enabled":true,"port":4444,"type":"ClusterIP"}}},"job":{"annotations":{"helm.sh/hook":"post-install, post-upgrade","helm.sh/hook-delete-policy":"hook-succeeded","helm.sh/hook-weight":"1"},"extraInitContainers":"- name: wait-for-postgres\n  image: {{ include \"diode.busybox.image\" . }}\n  command: ['sh', '-c', 'until nc -zv {{ include \"diode.postgresql.hostname\" . }} {{ include \"diode.postgresql.port\" . }}; do echo waiting for PostgreSQL; sleep 2; done;']\n"},"secret":{"enabled":false,"nameOverride":"diode-hydra-secret"}}` | ref: https://github.com/ory/k8s/blob/master/helm/charts/hydra/values.yaml |
-| hydra.deployment.extraInitContainers | string | `"- name: wait-for-postgres\n  image: {{ include \"diode.busybox.image\" . }}\n  command: ['sh', '-c', 'until nc -zv {{ include \"diode.postgresql.hostname\" . }} {{ include \"diode.postgresql.port\" . }}; do echo waiting for PostgreSQL; sleep 2; done;']\n"` | extra init containers |
+| global.diode | object | `{"busybox":{"image":"busybox:latest"},"hydra":{"waitForPostgres":true}}` | diode global configuration |
+| global.diode.busybox | object | `{"image":"busybox:latest"}` | busybox image configuration |
+| global.diode.hydra | object | `{"waitForPostgres":true}` | hydra additional init containers configuration |
+| global.diode.hydra.waitForPostgres | bool | `true` | wait for PostgreSQL |
+| hydra | object | `{"deployment":{"extraInitContainers":"{{ include \"diode.hydra.extrainitcontainers\" . }}","resources":{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}},"enabled":true,"fullnameOverride":"diode-hydra","hydra":{"automigration":{"enabled":true},"config":{"oidc":{"subject_identifiers":{"supported_types":["public"]}},"strategies":{"access_token":"jwt"},"ttl":{"access_token":"1h"},"urls":{"self":{"issuer":"http://diode-hydra-public.{{ .Release.Namespace }}.svc.cluster.local:4444"}}},"dev":true,"ingress":{"admin":{"enabled":false},"public":{"enabled":false}},"service":{"admin":{"enabled":true,"port":4445,"type":"ClusterIP"},"public":{"enabled":true,"port":4444,"type":"ClusterIP"}}},"job":{"annotations":{"helm.sh/hook":"post-install, post-upgrade","helm.sh/hook-delete-policy":"hook-succeeded","helm.sh/hook-weight":"1"},"extraInitContainers":"{{ include \"diode.hydra.extrainitcontainers\" . }}"},"secret":{"enabled":false,"nameOverride":"diode-hydra-secret"}}` | ref: https://github.com/ory/k8s/blob/master/helm/charts/hydra/values.yaml |
+| hydra.deployment.extraInitContainers | string | `"{{ include \"diode.hydra.extrainitcontainers\" . }}"` | extra init containers |
 | hydra.deployment.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
 | hydra.enabled | bool | `true` | enabled |
 | hydra.fullnameOverride | string | `"diode-hydra"` | fullname override |
@@ -284,15 +285,15 @@ helm show values diode/diode
 | hydra.hydra.service.public.port | int | `4444` | public service port |
 | hydra.hydra.service.public.type | string | `"ClusterIP"` | public service type |
 | hydra.job.annotations | object | `{"helm.sh/hook":"post-install, post-upgrade","helm.sh/hook-delete-policy":"hook-succeeded","helm.sh/hook-weight":"1"}` | job annotations |
-| hydra.job.extraInitContainers | string | `"- name: wait-for-postgres\n  image: {{ include \"diode.busybox.image\" . }}\n  command: ['sh', '-c', 'until nc -zv {{ include \"diode.postgresql.hostname\" . }} {{ include \"diode.postgresql.port\" . }}; do echo waiting for PostgreSQL; sleep 2; done;']\n"` | extra init containers |
+| hydra.job.extraInitContainers | string | `"{{ include \"diode.hydra.extrainitcontainers\" . }}"` | extra init containers |
 | hydra.secret.enabled | bool | `false` | secret enabled |
 | hydra.secret.nameOverride | string | `"diode-hydra-secret"` | existing secret name |
-| ingressNginx | object | `{"annotations":{"nginx.ingress.kubernetes.io/proxy-body-size":"25m"},"controller":{"allowSnippetAnnotations":true},"enabled":true,"extraHttpPaths":{},"grpcAnnotations":{},"hostname":"","httpAnnotations":{},"ingressClass":"nginx","pathPrefix":"/diode","tls":{}}` | ref: https://github.com/kubernetes/ingress-nginx/blob/main/charts/ingress-nginx/values.yaml |
+| ingressNginx | object | `{"annotations":{},"controller":{"allowSnippetAnnotations":true},"enabled":true,"extraHttpPaths":{},"grpcAnnotations":{"nginx.ingress.kubernetes.io/proxy-body-size":"25m"},"hostname":"","httpAnnotations":{},"ingressClass":"nginx","pathPrefix":"/diode","tls":{}}` | ref: https://github.com/kubernetes/ingress-nginx/blob/main/charts/ingress-nginx/values.yaml |
 | ingressNginx.controller | object | `{"allowSnippetAnnotations":true}` | ingress annotations |
 | ingressNginx.controller.allowSnippetAnnotations | bool | `true` | allow snippet annotations |
 | ingressNginx.enabled | bool | `true` | ingress-nginx enabled |
 | ingressNginx.extraHttpPaths | object | `{}` | ingress extra http paths |
-| ingressNginx.grpcAnnotations | object | `{}` | ingress grpc annotations |
+| ingressNginx.grpcAnnotations | object | `{"nginx.ingress.kubernetes.io/proxy-body-size":"25m"}` | ingress grpc annotations |
 | ingressNginx.hostname | string | `""` | hostname |
 | ingressNginx.httpAnnotations | object | `{}` | ingress http annotations |
 | ingressNginx.ingressClass | string | `"nginx"` | ingress class |
