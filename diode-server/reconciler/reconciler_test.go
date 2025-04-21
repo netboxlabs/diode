@@ -31,7 +31,6 @@ func setupEnv(redisAddr string) {
 	_ = os.Setenv("REDIS_STREAM_DB", "1")
 	_ = os.Setenv("MIGRATION_ENABLED", "false")
 	_ = os.Setenv("NETBOX_API_URL", "http://example.com")
-	_ = os.Setenv("DIODE_TO_NETBOX_API_KEY", "diode_to_netbox_api_key")
 	_ = os.Setenv("AUTO_APPLY_CHANGESETS", "true")
 	_ = os.Setenv("RECONCILER_RATE_LIMITER_RPS", "20")
 	_ = os.Setenv("RECONCILER_RATE_LIMITER_BURST", "1")
@@ -40,6 +39,10 @@ func setupEnv(redisAddr string) {
 	_ = os.Setenv("POSTGRES_DB_NAME", "diode")
 	_ = os.Setenv("POSTGRES_USER", "diode")
 	_ = os.Setenv("POSTGRES_PASSWORD", "diode")
+	_ = os.Setenv("NETBOX_DIODE_PLUGIN_API_BASE_URL", "http://127.0.0.1:8080/api/plugins/diode")
+	_ = os.Setenv("DIODE_AUTH_TOKEN_URL", "http://diode-auth:8080/diode/auth/token")
+	_ = os.Setenv("DIODE_TO_NETBOX_CLIENT_ID", "not-real-client-id")
+	_ = os.Setenv("DIODE_TO_NETBOX_CLIENT_SECRET", "not-real-client-secret")
 }
 
 func teardownEnv() {
@@ -51,7 +54,6 @@ func teardownEnv() {
 	_ = os.Unsetenv("REDIS_STREAM_DB")
 	_ = os.Unsetenv("MIGRATION_ENABLED")
 	_ = os.Unsetenv("NETBOX_API_URL")
-	_ = os.Unsetenv("DIODE_TO_NETBOX_API_KEY")
 	_ = os.Unsetenv("AUTO_APPLY_CHANGESETS")
 	_ = os.Unsetenv("RECONCILER_RATE_LIMITER_RPS")
 	_ = os.Unsetenv("RECONCILER_RATE_LIMITER_BURST")
@@ -60,4 +62,8 @@ func teardownEnv() {
 	_ = os.Unsetenv("POSTGRES_DB_NAME")
 	_ = os.Unsetenv("POSTGRES_USER")
 	_ = os.Unsetenv("POSTGRES_PASSWORD")
+	_ = os.Unsetenv("NETBOX_DIODE_PLUGIN_API_BASE_URL")
+	_ = os.Unsetenv("DIODE_AUTH_TOKEN_URL")
+	_ = os.Unsetenv("DIODE_TO_NETBOX_CLIENT_ID")
+	_ = os.Unsetenv("DIODE_TO_NETBOX_CLIENT_SECRET")
 }
