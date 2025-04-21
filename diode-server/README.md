@@ -62,6 +62,8 @@ curl -o generate-client-credentials.sh https://raw.githubusercontent.com/netboxl
 curl -o generate-env-secrets.sh https://raw.githubusercontent.com/netboxlabs/diode/release/diode-server/docker/scripts/generate-env-secrets.sh
 ```
 
+Note: to run following scripts `bash` 4.x is required.
+
 Generate OAuth2 client credentials into `client-credentials.json` file:
 
 ```bash
