@@ -41,26 +41,30 @@ func setupEnv(redisAddr string) {
 	host, port, _ := net.SplitHostPort(redisAddr)
 	grpcPort, _ := getFreePort()
 	_ = os.Setenv("GRPC_PORT", grpcPort)
-	_ = os.Setenv("RECONCILER_GRPC_PORT", grpcPort)
 	_ = os.Setenv("REDIS_HOST", host)
 	_ = os.Setenv("REDIS_PORT", port)
 	_ = os.Setenv("REDIS_PASSWORD", "")
 	_ = os.Setenv("REDIS_DB", "0")
 	_ = os.Setenv("REDIS_STREAM_DB", "1")
-	_ = os.Setenv("NETBOX_API_URL", "http://example.com")
-	_ = os.Setenv("DIODE_TO_NETBOX_API_KEY", "diode_to_netbox_api_key")
+	_ = os.Setenv("NETBOX_DIODE_PLUGIN_API_BASE_URL", "http://example.com")
+	_ = os.Setenv("NETBOX_DIODE_PLUGIN_SKIP_TLS_VERIFY", "true")
+	_ = os.Setenv("DIODE_AUTH_TOKEN_URL", "http://example.com")
+	_ = os.Setenv("DIODE_TO_NETBOX_CLIENT_ID", "test-client-id")
+	_ = os.Setenv("DIODE_TO_NETBOX_CLIENT_SECRET", "test-client-secret")
 }
 
 func teardownEnv() {
 	_ = os.Unsetenv("GRPC_PORT")
-	_ = os.Unsetenv("RECONCILER_GRPC_PORT")
 	_ = os.Unsetenv("REDIS_HOST")
 	_ = os.Unsetenv("REDIS_PORT")
 	_ = os.Unsetenv("REDIS_PASSWORD")
 	_ = os.Unsetenv("REDIS_DB")
 	_ = os.Unsetenv("REDIS_STREAM_DB")
-	_ = os.Unsetenv("NETBOX_API_URL")
-	_ = os.Unsetenv("DIODE_TO_NETBOX_API_KEY")
+	_ = os.Unsetenv("NETBOX_DIODE_PLUGIN_API_BASE_URL")
+	_ = os.Unsetenv("NETBOX_DIODE_PLUGIN_SKIP_TLS_VERIFY")
+	_ = os.Unsetenv("DIODE_AUTH_TOKEN_URL")
+	_ = os.Unsetenv("DIODE_TO_NETBOX_CLIENT_ID")
+	_ = os.Unsetenv("DIODE_TO_NETBOX_CLIENT_SECRET")
 }
 
 const bufSize = 1024 * 1024
