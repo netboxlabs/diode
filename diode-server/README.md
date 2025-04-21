@@ -76,6 +76,19 @@ chmod +x generate-env-secrets.sh
 ./generate-env-secrets.sh .env
 ```
 
+Set `DIODE_TO_NETBOX_CLIENT_SECRET` in `.env` extracted from generated `client-credentials.json` file:
+
+```bash
+DIODE_TO_NETBOX_CLIENT_SECRET=$(jq -r '.[] | select(.client_id == "diode-to-netbox") | .client_secret' ./oauth2/client/client-credentials.json)
+
+# linux
+sed -i "s|<PLACEHOLDER_DIODE_TO_NETBOX_CLIENT_SECRET>|$DIODE_TO_NETBOX_CLIENT_SECRET|g" .env
+
+# macos
+sed -i '' "s|<PLACEHOLDER_DIODE_TO_NETBOX_CLIENT_SECRET>|$DIODE_TO_NETBOX_CLIENT_SECRET|g" .env
+```
+
+
 Edit the `.env` to match your environment:
 
 * `DIODE_NGINX_PORT`: Port number for the Nginx service that handles incoming HTTP requests, default: `8080`
