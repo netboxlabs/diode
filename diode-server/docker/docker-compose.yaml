@@ -3,7 +3,7 @@ services:
   ingress-nginx:
     image: nginx:latest
     command: nginx -g 'daemon off;'
-    restart: always
+    restart: on-failure
     environment:
       - DIODE_NGINX_PORT=${DIODE_NGINX_PORT}
     ports:
@@ -25,10 +25,10 @@ services:
       - TELEMETRY_METRICS_EXPORTER=${TELEMETRY_METRICS_EXPORTER}
       - TELEMETRY_TRACES_EXPORTER=${TELEMETRY_TRACES_EXPORTER}
       - TELEMETRY_ENVIRONMENT=${TELEMETRY_ENVIRONMENT}
-    restart: always
+    restart: on-failure
     ports: [ ]
     depends_on:
-      - diode-redis
+      - redis
       - diode-reconciler
 
   diode-reconciler:
@@ -39,7 +39,6 @@ services:
       - REDIS_PORT=${REDIS_PORT}
       - NETBOX_DIODE_PLUGIN_API_BASE_URL=${NETBOX_DIODE_PLUGIN_API_BASE_URL}
       - NETBOX_DIODE_PLUGIN_SKIP_TLS_VERIFY=${NETBOX_DIODE_PLUGIN_SKIP_TLS_VERIFY}
-      - DIODE_TO_NETBOX_API_KEY=${DIODE_TO_NETBOX_API_KEY}
       - LOGGING_LEVEL=${LOGGING_LEVEL}
       - SENTRY_DSN=${SENTRY_DSN}
       - MIGRATION_ENABLED=${MIGRATION_ENABLED}
@@ -53,18 +52,20 @@ services:
       - TELEMETRY_METRICS_EXPORTER=${TELEMETRY_METRICS_EXPORTER}
       - TELEMETRY_TRACES_EXPORTER=${TELEMETRY_TRACES_EXPORTER}
       - TELEMETRY_ENVIRONMENT=${TELEMETRY_ENVIRONMENT}
-    restart: always
+      - DIODE_AUTH_TOKEN_URL=${DIODE_AUTH_TOKEN_URL}
+      - DIODE_TO_NETBOX_CLIENT_ID=${DIODE_TO_NETBOX_CLIENT_ID}
+      - DIODE_TO_NETBOX_CLIENT_SECRET=${DIODE_TO_NETBOX_CLIENT_SECRET}
+    restart: on-failure
     ports: [ ]
     volumes:
-      - ../dbstore/postgres/migrations:/etc/diode/migrations:z,ro
       - ./oauth2/client:/etc/config/oauth2/client:z,ro
     depends_on:
-      diode-redis:
+      redis:
         condition: service_started
-      diode-postgres:
+      postgres:
         condition: service_healthy
 
-  diode-redis:
+  redis:
     image: redis/redis-stack-server:latest
     command:
       - sh
@@ -74,10 +75,11 @@ services:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - REDIS_PORT=${REDIS_PORT}
     ports: [ ]
+    restart: on-failure
     volumes:
       - diode-redis-data:/data
 
-  diode-postgres:
+  postgres:
     image: docker.io/postgres:16-alpine
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
@@ -88,6 +90,30 @@ services:
       - HYDRA_POSTGRES_DB_NAME=${HYDRA_POSTGRES_DB_NAME}
       - HYDRA_POSTGRES_USER=${HYDRA_POSTGRES_USER}
       - HYDRA_POSTGRES_PASSWORD=${HYDRA_POSTGRES_PASSWORD}
+      - |
+        POSTGRES_INIT_SCRIPT=#!/bin/bash
+
+        set -euo pipefail
+
+        # Create databases and users with privileges for each service
+
+        psql -v ON_ERROR_STOP=1 --username "$$POSTGRES_USER" --dbname "$$POSTGRES_DB" <<-EOSQL
+            -- Diode
+            CREATE USER $${DIODE_POSTGRES_USER} WITH PASSWORD '$${DIODE_POSTGRES_PASSWORD}';
+            CREATE DATABASE $${DIODE_POSTGRES_DB_NAME} OWNER $${DIODE_POSTGRES_USER};
+            GRANT ALL PRIVILEGES ON DATABASE $${DIODE_POSTGRES_DB_NAME} TO $${DIODE_POSTGRES_USER};
+
+            -- Hydra
+            CREATE USER $${HYDRA_POSTGRES_USER} WITH PASSWORD '$${HYDRA_POSTGRES_PASSWORD}';
+            CREATE DATABASE $${HYDRA_POSTGRES_DB_NAME} OWNER $${HYDRA_POSTGRES_USER};
+            GRANT ALL PRIVILEGES ON DATABASE $${HYDRA_POSTGRES_DB_NAME} TO $${HYDRA_POSTGRES_USER};
+        EOSQL
+    command: |
+      sh -c "
+        echo \"$$POSTGRES_INIT_SCRIPT\" > /docker-entrypoint-initdb.d/01-init-databases.sh && \
+        chmod +x /docker-entrypoint-initdb.d/01-init-databases.sh && \
+        docker-entrypoint.sh postgres
+      "
     ports:
       - ${POSTGRES_PORT:-5432}:5432
     healthcheck:
@@ -96,11 +122,15 @@ services:
       interval: 1s
       timeout: 5s
       retries: 5
+    restart: on-failure
     volumes:
       - diode-postgres-data:/var/lib/postgresql/data
-      - ./postgres/init:/docker-entrypoint-initdb.d:z,ro
-  
-  diode-hydra:
+      - type: tmpfs
+        target: /docker-entrypoint-initdb.d
+        tmpfs:
+          size: 1000000
+
+  hydra:
     image: oryd/hydra:v2.3.0
     expose:
       - "4444" # Public port
@@ -114,12 +144,12 @@ services:
       - OIDC_SUBJECT_IDENTIFIERS_SUPPORTED_TYPES=${HYDRA_OIDC_SUBJECT_IDENTIFIERS_SUPPORTED_TYPES}
       - URLS_SELF_ISSUER=${HYDRA_URLS_SELF_ISSUER}
       - SECRETS_SYSTEM=${HYDRA_SECRETS_SYSTEM_0}
-    restart: unless-stopped
+    restart: on-failure
     depends_on:
-      - diode-hydra-migrate
-      - diode-postgres
+      - hydra-migrate
+      - postgres
 
-  diode-hydra-migrate:
+  hydra-migrate:
     image: oryd/hydra:v2.3.0
     command: migrate sql up -e --yes
     environment:
@@ -128,7 +158,7 @@ services:
       - SECRETS_SYSTEM=${HYDRA_SECRETS_SYSTEM_0}
     restart: on-failure
     depends_on:
-      - diode-postgres
+      - postgres
 
   diode-auth:
     image: netboxlabs/diode-auth:${DIODE_TAG:-latest}
@@ -140,23 +170,22 @@ services:
       - TELEMETRY_METRICS_EXPORTER=${TELEMETRY_METRICS_EXPORTER}
       - TELEMETRY_TRACES_EXPORTER=${TELEMETRY_TRACES_EXPORTER}
       - TELEMETRY_ENVIRONMENT=${TELEMETRY_ENVIRONMENT}
-    restart: always
+    restart: on-failure
     ports: []
     depends_on:
-      - diode-hydra
+      - hydra
       - diode-auth-bootstrap
 
   diode-auth-bootstrap:
     image: netboxlabs/diode-auth:${DIODE_TAG:-latest}
     command: ["/bin/sh", "/etc/config/oauth2/bootstrap-clients.sh"]
     environment:
-      - HYDRA_ADMIN_URL=http://diode-hydra:4445
+      - HYDRA_ADMIN_URL=http://hydra:4445
     volumes:
-      - ./oauth2/bootstrap-clients.sh:/etc/config/oauth2/bootstrap-clients.sh:z,ro
-      - ./oauth2/client:/etc/config/oauth2/client:z,rw
+      - ./oauth2/client:/etc/config/oauth2/client:z,ro
     restart: on-failure
     depends_on:
-      - diode-hydra
+      - hydra
 
 volumes:
   diode-redis-data:
