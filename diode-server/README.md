@@ -66,6 +66,7 @@ Generate OAuth2 client credentials into `client-credentials.json` file:
 
 ```bash
 chmod +x generate-client-credentials.sh
+mkdir oauth2/client
 ./generate-client-credentials.sh > ./oauth2/client/client-credentials.json
 ```
 
