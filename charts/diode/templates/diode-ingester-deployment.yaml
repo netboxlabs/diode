@@ -1,69 +1,48 @@
+{{- if .Values.diodeIngester.enabled -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ .Values.diodeIngester.serviceName }}
-  namespace: {{ .Release.Namespace }}
+  name: {{ include "diode.ingester.servicename" . }}
+  namespace: {{ include "diode.namespace" . }}
   labels:
-    app: {{ .Values.diodeIngester.serviceName }}
+    {{- include "diode.labels" . | nindent 4 }}
+    app: {{ include "diode.ingester.servicename" . }}
+    app.kubernetes.io/component: {{ include "diode.ingester.servicename" . }}
 spec:
-  replicas: {{ .Values.diodeIngester.replicas }}
+  replicas: {{ .Values.diodeIngester.replicaCount }}
   selector:
     matchLabels:
-      app: {{ .Values.diodeIngester.serviceName }}
+      {{- include "diode.selectorlabels" . | nindent 6 }}
+      app: {{ include "diode.ingester.servicename" . }}
+      app.kubernetes.io/component: {{ include "diode.ingester.servicename" . }}
   template:
     metadata:
       annotations:
-        checksum/config-ingester: {{ include (printf "%s/%s-configmap.yaml" $.Template.BasePath .Values.diodeIngester.serviceName) . | sha256sum }}
-        checksum/config-reconciler: {{ include (printf "%s/%s-configmap.yaml" $.Template.BasePath .Values.diodeReconciler.serviceName) . | sha256sum }}
-        {{- if not .Values.diodeIngester.existingSecret }}
-        checksum/secret-ingester: {{ include (printf "%s/%s-secret.yaml" $.Template.BasePath .Values.diodeIngester.serviceName ) . | sha256sum }}
-        {{- end }}
-        {{- if not .Values.diodeReconciler.existingSecret }}
-        checksum/secret-reconciler: {{ include (printf "%s/%s-secret.yaml" $.Template.BasePath .Values.diodeReconciler.serviceName ) . | sha256sum }}
-        {{- end }}
-        {{- with .Values.diodeIngester.podAnnotations }}
-        {{- toYaml . | nindent 8 }}
-        {{- end }}
+        checksum/config-ingester: {{ include (printf "%s/%s-ingester-configmap.yaml" $.Template.BasePath (include "diode.name" .)) . | sha256sum }}
       labels:
-        app: {{ .Values.diodeIngester.serviceName }}
-        {{- with .Values.diodeIngester.podLabels }}
-        {{- toYaml . | nindent 8 }}
-        {{- end }}
+        {{- include "diode.selectorlabels" . | nindent 8 }}
+        app: {{ include "diode.ingester.servicename" . }}
+        app.kubernetes.io/component: {{ include "diode.ingester.servicename" . }}
     spec:
-      serviceAccountName: {{ .Values.diodeIngester.serviceAccount.name }}
-      {{- with .Values.diodeIngester.affinity }}
-      affinity:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.diodeIngester.tolerations }}
-      tolerations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.diodeIngester.nodeSelector }}
-      nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.diodeIngester.podSecurityContext }}
-      securityContext:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      volumes:
-        - name: {{ include "diode-ingester.secret" . }}
-          secret:
-            secretName: {{ include "diode-ingester.secret" . }}
+      serviceAccountName: {{ include "diode.ingester.serviceaccountname" . }}
       initContainers:
         {{- if .Values.redis.enabled }}
         - name: wait-for-redis
-          image: busybox:latest
-          command: [ 'sh', '-c', 'until nc -z {{ include "diode.redis.host" . }} {{ include "diode.redis.port" . }}; do echo "Waiting for Redis"; sleep 3; done; echo "Redis is up and running";' ]
+          image: {{ include "diode.busybox.image" . }}
+          command:
+            - sh
+            - -c
+            - |
+              until nc -z {{ include "diode.redis.hostname" . }} {{ include "diode.redis.port" . }}; do
+                echo "Waiting for Redis server";
+                sleep 3;
+              done;
+              echo "Redis server is up and running";
         {{- end }}
-        - name: wait-for-diode-reconciler
-          image: busybox:latest
-          command: [ 'sh', '-c', 'until nc -z {{ .Values.diodeReconciler.serviceName }} {{ .Values.diodeReconciler.containerPort | default 8081 }}; do echo "Waiting for Diode Reconciler"; sleep 3; done; echo "Diode Reconciler is up and running";' ]
       containers:
-        - name: diode-ingester
-          image: "{{ .Values.diodeIngester.image.repository }}:{{ .Values.diodeIngester.image.tag }}"
-          imagePullPolicy: {{ .Values.diodeIngester.image.pullPolicy }}
+        - name: {{ include "diode.ingester.servicename" . }}
+          image: "{{ .Values.diode.image.registry }}/{{ .Values.diodeIngester.image.name }}"
+          imagePullPolicy: {{ .Values.diodeIngester.image.pullPolicy | default "IfNotPresent" }}
           ports:
             - containerPort: {{ .Values.diodeIngester.containerPort | default 8081 }}
           {{- with .Values.diodeIngester.securityContext }}
@@ -72,14 +51,12 @@ spec:
           {{- end }}
           {{- with .Values.diodeIngester.resources }}
           resources:
-            {{- toYaml . | nindent 12 }}
+            {{- toYaml .| nindent 12 }}
           {{- end }}
-          volumeMounts:
-            - mountPath: /{{ include "diode-ingester.secret" . }}
-              name: {{ include "diode-ingester.secret" . }}
-              readOnly: true
           envFrom:
             - configMapRef:
-                name: {{ .Values.diodeIngester.serviceName }}-config
+                name: {{ include "diode.ingester.configmap" . }}
             - secretRef:
-                name: {{ include "diode-ingester.secret" . }}
+                name: {{ include "diode.ingester.secret" . }}
+
+{{- end }} 
