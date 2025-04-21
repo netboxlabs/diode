@@ -1,19 +1,8 @@
-FROM alpine:3.21
+FROM gcr.io/distroless/base:latest
 
-RUN apk add --no-cache jq
-
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-
-COPY --chown=appuser:appgroup --from=oryd/hydra:v2.3.0 /usr/bin/hydra /usr/bin/hydra
+USER nonroot
 
 ARG SVC
-
-COPY --chown=appuser:appgroup /build/$SVC /usr/local/bin/diode-server
-COPY --chown=appuser:appgroup /docker/oauth2/bootstrap-clients.sh /etc/config/oauth2/
-
-RUN chmod +x /etc/config/oauth2/bootstrap-clients.sh
-
-USER appuser
 
 LABEL maintainer="techops@netboxlabs.com"
 LABEL org.opencontainers.image.title="Diode $SVC"
@@ -23,5 +12,7 @@ LABEL org.opencontainers.image.description="NetBox Labs diode $SVC image"
 LABEL org.opencontainers.image.vendor="NetBox Labs, Inc"
 LABEL org.opencontainers.image.authors="techops@netboxlabs.com"
 LABEL org.opencontainers.image.licenses="PolyForm Shield License 1.0.0"
+
+COPY build/$SVC /usr/local/bin/diode-server
 
 CMD ["/usr/local/bin/diode-server"]

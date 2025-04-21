@@ -67,7 +67,7 @@ $(DOCKER_SERVICES):
 
 	@GOOS=$(GOOS) GOARCH=$(GOARCH) $(MAKE) build-$(SVC)
 
-	$(eval DOCKERFILE := $(if $(filter auth,$(SVC)),Dockerfile.auth,Dockerfile))
+	@$(eval DOCKERFILE=Dockerfile.$(SVC))
 
 	docker build \
 	  --no-cache \
