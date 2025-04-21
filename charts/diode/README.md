@@ -8,6 +8,7 @@ A Helm chart for Diode
 
 - Kubernetes 1.19+
 - Helm 3.2.0+
+- jq
 
 ## Components
 
@@ -111,21 +112,6 @@ kubectl create secret generic diode-hydra-secret --namespace $NAMESPACE \
   --from-literal=dsn=postgres://hydra:$HYDRA_POSTGRES_PASSWORD@$POSTGRES_HOSTNAME:$POSTGRES_PORT/hydra
 ```
 
-- create a secret for the Diode Ingester service:
-
-```console
-kubectl create secret generic diode-ingester-secret --namespace $NAMESPACE \
-  --from-literal=REDIS_PASSWORD=$REDIS_PASSWORD
-```
-
-- create a secret for the Diode Reconciler service:
-
-```console
-kubectl create secret generic diode-reconciler-secret --namespace $NAMESPACE \
-  --from-literal=REDIS_PASSWORD=$REDIS_PASSWORD \
-  --from-literal=POSTGRES_PASSWORD=$DIODE_POSTGRES_PASSWORD
-```
-
 - generate client credentials for OAuth2 server (Ory Hydra):
 
 ```console
@@ -139,6 +125,22 @@ chmod +x generate-client-credentials.sh
 ```console
 kubectl create secret generic diode-auth-oauth2-secret --namespace $NAMESPACE \
   --from-file=client-credentials.json=<YOUR_PATH>/client-credentials.json
+```
+
+- create a secret for the Diode Ingester service:
+
+```console
+kubectl create secret generic diode-ingester-secret --namespace $NAMESPACE \
+  --from-literal=REDIS_PASSWORD=$REDIS_PASSWORD
+```
+
+- create a secret for the Diode Reconciler service:
+
+```console
+kubectl create secret generic diode-reconciler-secret --namespace $NAMESPACE \
+  --from-literal=REDIS_PASSWORD=$REDIS_PASSWORD \
+  --from-literal=POSTGRES_PASSWORD=$DIODE_POSTGRES_PASSWORD \
+  --from-literal=DIODE_TO_NETBOX_CLIENT_SECRET=$(jq -r '.[] | select(.client_id == "diode-to-netbox") | .client_secret' <YOUR_PATH>/client-credentials.json)
 ```
 
 Install chart with release name `[RELEASE_NAME]` in namespace `[NAMESPACE]` with default values:
@@ -234,6 +236,7 @@ helm show values diode/diode
 | diodeIngester.replicaCount | int | `1` | replica count |
 | diodeIngester.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
 | diodeIngester.serviceAccount.create | bool | `true` | create service account |
+| diodeReconciler.config.diodeToNetBoxClientId | string | `"diode-to-netbox"` | diode to netbox client id |
 | diodeReconciler.config.diodeToNetboxRateLimiterBurst | int | `1` | diode to netbox rate limiter burst |
 | diodeReconciler.config.diodeToNetboxRateLimiterRps | int | `20` | diode to netbox rate limiter rps |
 | diodeReconciler.config.loggingLevel | string | `"DEBUG"` | logging level |

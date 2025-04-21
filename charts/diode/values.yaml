@@ -170,6 +170,8 @@ diodeReconciler:
     telemetryTracesExporter: none
     # -- telemetry environment
     telemetryEnvironment: dev
+    # -- diode to netbox client id
+    diodeToNetBoxClientId: diode-to-netbox
 
 # Redis configuration (optional)
 # -- ref: https://github.com/bitnami/charts/tree/main/bitnami/redis
