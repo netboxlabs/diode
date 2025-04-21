@@ -27,6 +27,6 @@ data:
   TELEMETRY_METRICS_EXPORTER: {{ $config.telemetryMetricsExporter | quote }}
   TELEMETRY_TRACES_EXPORTER: {{ $config.telemetryTracesExporter | default "none" | quote }}
   TELEMETRY_ENVIRONMENT: {{ $config.telemetryEnvironment | default .Values.diode.environment | quote }}
-  DIODE_AUTH_TOKEN_URL: {{ printf "http://%s/oauth2/token" (include "diode.hydra.public.url" .) | quote }}
+  DIODE_AUTH_TOKEN_URL: {{ printf "%s/token" (include "diode.auth.url" .) | quote }}
   DIODE_TO_NETBOX_CLIENT_ID: {{ $config.diodeToNetBoxClientId | quote }}
 {{- end }}

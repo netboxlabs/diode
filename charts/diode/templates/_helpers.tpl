@@ -112,6 +112,13 @@ Create the hostname of the auth service
 {{- end }}
 
 {{/*
+Create the URL to the auth service
+*/}}
+{{- define "diode.auth.url" -}}
+{{- printf "http://%s:%d" (include "diode.auth.hostname" .) (int .Values.diodeAuth.containerPort) }}
+{{- end }}
+
+{{/*
 Create the name of the auth configmap to use
 */}}
 {{- define "diode.auth.configmap" -}}
