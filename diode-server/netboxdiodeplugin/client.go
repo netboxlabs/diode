@@ -173,7 +173,6 @@ func NewClient(logger *slog.Logger, baseURL, clientID, clientSecret, tokenURL st
 	rhttp.RetryWaitMax = 2 * time.Second
 	rhttp.Logger = logger
 
-	// Inject your custom RoundTripper
 	rhttp.HTTPClient.Transport = headerRoundTripper
 
 	oauthConfig := &clientcredentials.Config{
@@ -185,7 +184,7 @@ func NewClient(logger *slog.Logger, baseURL, clientID, clientSecret, tokenURL st
 
 	oauthTransport := &oauth2.Transport{
 		Source: oauthConfig.TokenSource(context.Background()),
-		Base:   rhttp.HTTPClient.Transport, // retryable -> header -> baseTransport
+		Base:   rhttp.HTTPClient.Transport,
 	}
 
 	httpClient := &http.Client{
@@ -284,7 +283,6 @@ func (c *Client) GenerateDiff(ctx context.Context, payload GenerateDiffRequest) 
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Content-Type", "application/json")
 
 	branchID := strings.TrimSpace(payload.BranchID)
 	if branchID != "" {
@@ -351,7 +349,6 @@ func (c *Client) ApplyChangeSet(ctx context.Context, payload ApplyChangeSetReque
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Content-Type", "application/json")
 
 	branchID := strings.TrimSpace(payload.BranchID)
 	if branchID != "" {

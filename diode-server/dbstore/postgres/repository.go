@@ -86,7 +86,6 @@ func (r *Repository) UpdateIngestionLogStateWithError(ctx context.Context, id in
 			return fmt.Errorf("failed to marshal error: %w", err)
 		}
 		params.Error = errJSON
-		fmt.Printf("UpdateIngestionLogStateWithError error: %s\n, err: %s\n", string(errJSON), err)
 	}
 	return r.queries.UpdateIngestionLogStateWithError(ctx, params)
 }
