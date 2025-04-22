@@ -84,12 +84,10 @@ func main() {
 
 	repository := postgres.NewRepository(dbPool)
 
-	diodeToNetBoxTokenScopes := []string{"default:diode:netbox"}
-
 	diodeToNetBoxMaxRetries := 3
 
 	nbClient, err := netboxdiodeplugin.NewClient(s.Logger(), cfg.NetBoxDiodePluginAPIBaseURL, cfg.DiodeToNetBoxClientID,
-		cfg.DiodeToNetBoxClientSecret, cfg.DiodeAuthTokenURL, diodeToNetBoxTokenScopes, cfg.DiodeToNetBoxRateLimiterRPS,
+		cfg.DiodeToNetBoxClientSecret, cfg.DiodeAuthTokenURL, cfg.DiodeToNetBoxRateLimiterRPS,
 		cfg.DiodeToNetBoxRateLimiterBurst, diodeToNetBoxMaxRetries)
 	if err != nil {
 		s.Logger().Error("failed to create netbox diode plugin client", "error", err)
