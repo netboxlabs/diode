@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -82,8 +83,8 @@ func (s *Server) Stop() error {
 	defer cancel()
 
 	if err := s.httpServer.Shutdown(ctx); err != nil {
-		s.logger.Error("error during server shutdown", "error", err)
-		return fmt.Errorf("error during server shutdown: %w", err)
+		s.logger.Error("failed to shutdown server", "error", err)
+		return fmt.Errorf("failed to shutdown server: %w", err)
 	}
 
 	return nil
@@ -100,7 +101,7 @@ func (s *Server) RegisterHandlers() {
 func (s *Server) introspect(w http.ResponseWriter, r *http.Request) {
 	jwtToken := r.Header.Get("Authorization")
 	if jwtToken == "" {
-		s.logger.Info("missing Authorization header")
+		s.logger.Warn("missing Authorization header")
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -114,7 +115,7 @@ func (s *Server) introspect(w http.ResponseWriter, r *http.Request) {
 	jwksURL := s.config.OAuth2.PublicServerURL + "/.well-known/jwks.json"
 	jwks, err := keyfunc.NewDefault([]string{jwksURL})
 	if err != nil {
-		s.logger.Error("error getting JWKS", "error", err)
+		s.logger.Error("failed to get JWKS", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -122,14 +123,14 @@ func (s *Server) introspect(w http.ResponseWriter, r *http.Request) {
 	token, err := s.tokenParser.Parse(jwtToken, jwks.Keyfunc)
 	if err != nil {
 		// Invalid token format or signature
-		s.logger.Info("token validation failed", "error", err)
+		s.logger.Warn("failed to validate token", "error", err)
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
 	if !token.Valid {
 		// Token is invalid (e.g., expired)
-		s.logger.Info("token is invalid")
+		s.logger.Warn("token is invalid")
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
@@ -152,7 +153,7 @@ func (s *Server) introspect(w http.ResponseWriter, r *http.Request) {
 
 	err = writeJSON(w, http.StatusOK, resp)
 	if err != nil {
-		s.logger.Error("error writing response", "error", err)
+		s.logger.Error("failed to write response", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -185,9 +186,23 @@ func getInt64Claim(claims jwt.MapClaims, key string) int64 {
 
 // token handles the token request
 func (s *Server) token(w http.ResponseWriter, r *http.Request) {
-	req, err := http.NewRequest(r.Method, s.config.OAuth2.PublicServerURL+"/oauth2/token", r.Body)
+	// Copy and buffer the request body in case it needs to be read again
+	var bodyBuf bytes.Buffer
+	if _, err := io.Copy(&bodyBuf, r.Body); err != nil {
+		s.logger.Error("failed to read request body", "error", err)
+		http.Error(w, "failed to read request body", http.StatusInternalServerError)
+		return
+	}
+
+	defer func() {
+		_ = r.Body.Close()
+	}()
+
+	// Create a new request with the same method and buffered body
+	req, err := http.NewRequestWithContext(r.Context(), r.Method, s.config.OAuth2.PublicServerURL+"/oauth2/token", bytes.NewReader(bodyBuf.Bytes()))
 	if err != nil {
-		http.Error(w, "Failed to create request", http.StatusInternalServerError)
+		s.logger.Error("failed to create request to token endpoint", "error", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 
@@ -197,25 +212,32 @@ func (s *Server) token(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	// Use a custom HTTP client with a timeout
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+
+	resp, err := client.Do(req)
 	if err != nil {
-		http.Error(w, "Request failed: "+err.Error(), http.StatusBadGateway)
+		s.logger.Error("failed to send token request", "error", err)
+		http.Error(w, "failed to obtain the token", http.StatusBadGateway)
 		return
 	}
+
 	defer func() {
 		_ = resp.Body.Close()
 	}()
 
+	// Copy headers from the response (avoid duplication if needed)
 	for name, values := range resp.Header {
 		for _, value := range values {
-			w.Header().Add(name, value)
+			w.Header().Add(name, value) // Use Set() instead if you want to overwrite duplicates
 		}
 	}
 
 	w.WriteHeader(resp.StatusCode)
-	_, err = io.Copy(w, resp.Body)
-	if err != nil {
-		http.Error(w, "Failed to write response body", http.StatusInternalServerError)
-		return
+	if _, err := io.Copy(w, resp.Body); err != nil {
+		// Response headers already sent — cannot modify response at this point
+		s.logger.Error("failed to stream response body to client", "error", err)
 	}
 }
