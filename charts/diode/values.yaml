@@ -286,6 +286,9 @@ hydra:
       strategies:
         # -- access token strategy
         access_token: jwt
+        jwt:
+          # -- scope claim
+          scope_claim: both
       ttl:
         # -- access token TTL
         access_token: 1h
