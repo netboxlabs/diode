@@ -39,7 +39,7 @@ create_client() {
       --secret $client_secret \
       --grant-type "client_credentials" \
       --response-type "token" \
-      --scope $scope \
+      --scope "$scope" \
       --token-endpoint-auth-method "client_secret_post" \
       --format json)
 
