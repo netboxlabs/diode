@@ -1,0 +1,57 @@
+{{- $ingressNginx := index .Values.ingressNginx -}}
+{{- $certManager := index .Values.certManager -}}
+{{- $certIssuer := index .Values.certIssuer -}}
+{{- if $ingressNginx.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "diode.ingress.name" . }}-http
+  namespace: {{ include "diode.namespace" . }}
+  labels:
+    {{- include "diode.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ include "diode.ingress.name" . }}
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/rewrite-target: /$1
+    {{- with $ingressNginx.httpAnnotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- if and $certManager.enabled $certIssuer.enabled }}
+    {{ if eq $certIssuer.kind "Issuer" }}
+    cert-manager.io/issuer: {{ $certIssuer.name }}
+    {{- else }}
+    cert-manager.io/cluster-issuer: {{ $certIssuer.name }}
+    {{- end }}
+    {{- end }}
+spec:
+  ingressClassName: {{ $ingressNginx.ingressClass | default "nginx" }}
+  {{- if and $ingressNginx.tls $ingressNginx.hostname }}
+  tls:
+    - hosts:
+        - {{ $ingressNginx.hostname | quote }}
+      secretName: {{ include "diode.ingress.name" . }}-tls
+  {{- end }}
+  rules:
+    - {{- if $ingressNginx.hostname }}
+      host: {{ $ingressNginx.hostname | quote }}
+      {{- end }}
+      http:
+        paths:
+          - path: {{ include "diode.ingress.path" . }}/auth/(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ include "diode.auth.servicename" . }}
+                port:
+                  number: {{ .Values.diodeAuth.containerPort }}
+          {{- range $path := $ingressNginx.extraHttpPaths }}
+          - path: {{ $path.path }}
+            pathType: {{ $path.pathType }}
+            backend:
+              service:
+                name: {{ $path.serviceName }}
+                port:
+                  number: {{ $path.servicePort }}
+          {{- end }}
+{{- end }}

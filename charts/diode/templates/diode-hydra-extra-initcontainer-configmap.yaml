@@ -1,0 +1,12 @@
+{{- if and .Values.hydra.enabled -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "diode.hydra.extrainitcontainerconfigmap" . }}
+  namespace: {{ include "diode.namespace" . }}
+  labels:
+    {{- include "diode.labels" . | nindent 4 }}
+data:
+  POSTGRES_HOST: {{ include "diode.postgresql.hostname" . | quote }}
+  POSTGRES_PORT: {{ include "diode.postgresql.port" . | quote }}
+{{- end }}

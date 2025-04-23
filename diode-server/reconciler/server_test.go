@@ -10,6 +10,7 @@ import (
 	"github.com/alicebob/miniredis/v2"
 	"github.com/stretchr/testify/require"
 
+	"github.com/netboxlabs/diode/diode-server/authutil"
 	"github.com/netboxlabs/diode/diode-server/reconciler"
 	"github.com/netboxlabs/diode/diode-server/reconciler/mocks"
 )
@@ -24,7 +25,7 @@ func TestNewServer(t *testing.T) {
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
 	mockRepository := mocks.NewRepository(t)
-	server, err := reconciler.NewServer(ctx, logger, mockRepository)
+	server, err := reconciler.NewServer(ctx, logger, mockRepository, authutil.NewUnverifiedJWTAuthorizer(logger))
 	require.NoError(t, err)
 	require.NotNil(t, server)
 

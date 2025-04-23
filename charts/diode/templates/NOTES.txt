@@ -1,4 +1,4 @@
-CHART NAME: {{ .Chart.Name  }}
-CHART VERSION: {{ .Chart.Version  }}
-APP VERSION: {{ .Chart.AppVersion  }}
-DESCRIPTION: {{ .Chart.Description  }}
+CHART NAME: {{ .Chart.Name }}
+CHART VERSION: {{ .Chart.Version }}
+APP VERSION: {{ .Chart.AppVersion }}
+DESCRIPTION: {{ .Chart.Description }}

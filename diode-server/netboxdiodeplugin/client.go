@@ -17,10 +17,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/go-retryablehttp"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/clientcredentials"
 	"golang.org/x/time/rate"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/netboxlabs/diode/diode-server/authutil"
 	diodeErrors "github.com/netboxlabs/diode/diode-server/errors"
 	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
 )
@@ -32,17 +36,13 @@ const (
 	// SDKVersion is the version of the SDK
 	SDKVersion = "0.1.0" // TODO: consider making this same as diode-reconciler version
 
-	// BaseURLEnvVarName is the environment variable name for the NetBox Diode plugin HTTP base URL
-	BaseURLEnvVarName = "NETBOX_DIODE_PLUGIN_API_BASE_URL"
-
 	// TLSSkipVerifyEnvVarName is the environment variable name for NetBox Diode plugin TLS verification
 	TLSSkipVerifyEnvVarName = "NETBOX_DIODE_PLUGIN_SKIP_TLS_VERIFY"
 
 	// TimeoutSecondsEnvVarName is the environment variable name for the NetBox Diode plugin HTTP timeout
 	TimeoutSecondsEnvVarName = "NETBOX_DIODE_PLUGIN_API_TIMEOUT_SECONDS"
 
-	defaultBaseURL = "http://127.0.0.1:8080/api/plugins/diode"
-
+	// defaultHTTPTimeoutSeconds is the default HTTP timeout
 	defaultHTTPTimeoutSeconds = 5
 
 	// NetBoxBranchHeader is an HTTP header that indicates the NetBox branch to target
@@ -54,41 +54,6 @@ const (
 
 // ErrInvalidTimeout is an error for invalid timeout value
 var ErrInvalidTimeout = errors.New("invalid timeout value")
-
-type apiRoundTripper struct {
-	transport http.RoundTripper
-	apiKey    string
-	userAgent string
-}
-
-func newAPIRoundTripper(apiKey string, next http.RoundTripper) (http.RoundTripper, error) {
-	if len(apiKey) == 0 {
-		return nil, fmt.Errorf("API key not provided")
-	}
-
-	return &apiRoundTripper{
-		transport: next,
-		apiKey:    apiKey,
-		userAgent: userAgent(),
-	}, nil
-}
-
-// RoundTrip implements the RoundTripper interface
-func (rt *apiRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
-	// Clone request to ensure thread safety
-	req2 := req.Clone(req.Context())
-
-	// Set authorization header
-	req2.Header.Set("Authorization", fmt.Sprintf("Token %s", rt.apiKey))
-
-	// Set user agent header
-	req2.Header.Set("User-Agent", rt.userAgent)
-
-	// Set content type header
-	req2.Header.Set("Content-Type", "application/json")
-
-	return rt.transport.RoundTrip(req2)
-}
 
 // ChangeSetResult represents a change set result
 type ChangeSetResult struct {
@@ -124,21 +89,29 @@ type Branch struct {
 	Name string `json:"name"`
 }
 
-// NetBoxAPI is the interface for the NetBox Diode plugin API
-type NetBoxAPI interface {
-	// GenerateDiff generates diff between ingested entity and NetBox object state
-	GenerateDiff(context.Context, GenerateDiffRequest) (*ChangeSetResult, error)
-
-	// ApplyChangeSet applies a change set
-	ApplyChangeSet(context.Context, ApplyChangeSetRequest) (*ChangeSetResult, error)
-}
-
 // Client is a NetBox Diode plugin client
 type Client struct {
-	logger     *slog.Logger
-	httpClient *http.Client
-	baseURL    *url.URL
-	limiter    *rate.Limiter
+	logger    *slog.Logger
+	http      *http.Client
+	baseURL   *url.URL
+	userAgent string
+	limiter   *rate.Limiter
+}
+
+// headerRoundTripper adds common headers to all requests
+type headerRoundTripper struct {
+	transport http.RoundTripper
+}
+
+// RoundTrip adds common headers to all requests
+func (rt *headerRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	reqClone := req.Clone(req.Context())
+
+	reqClone.Header.Set("User-Agent", SDKName+"/"+SDKVersion)
+	reqClone.Header.Set("Content-Type", "application/json")
+	reqClone.Header.Set("Accept", "application/json")
+
+	return rt.transport.RoundTrip(reqClone)
 }
 
 // NewHTTPTransport creates a http Transport Layer
@@ -161,25 +134,21 @@ func NewHTTPTransport() *http.Transport {
 }
 
 // NewClient creates a new NetBox Diode plugin client
-func NewClient(logger *slog.Logger, apiKey string, rateLimitRps, rateLimitBurstRps int) (*Client, error) {
-	transport := NewHTTPTransport()
-
-	rt, err := newAPIRoundTripper(apiKey, transport)
+func NewClient(logger *slog.Logger, baseURL, clientID, clientSecret, tokenURL string, rateLimitRps, rateLimitBurstRps int, maxRetries int) (*Client, error) {
+	u, err := url.Parse(baseURL)
 	if err != nil {
 		return nil, err
+	}
+
+	if len(clientID) == 0 || len(clientSecret) == 0 {
+		return nil, fmt.Errorf("client ID or secret not provided")
+	}
+
+	if len(tokenURL) == 0 {
+		return nil, fmt.Errorf("token URL not provided")
 	}
 
 	timeout, err := httpTimeout()
-	if err != nil {
-		return nil, err
-	}
-
-	httpClient := &http.Client{
-		Transport: rt,
-		Timeout:   timeout,
-	}
-
-	u, err := url.Parse(baseURL())
 	if err != nil {
 		return nil, err
 	}
@@ -188,26 +157,51 @@ func NewClient(logger *slog.Logger, apiKey string, rateLimitRps, rateLimitBurstR
 		return nil, fmt.Errorf("invalid rate limit values: %d %d", rateLimitRps, rateLimitBurstRps)
 	}
 
+	t, err := url.Parse(tokenURL)
+	if err != nil {
+		return nil, err
+	}
+
+	baseTransport := NewHTTPTransport()
+
+	headerRoundTripper := &headerRoundTripper{
+		transport: baseTransport,
+	}
+
+	rhttp := retryablehttp.NewClient()
+	rhttp.RetryMax = maxRetries
+	rhttp.RetryWaitMin = 150 * time.Millisecond
+	rhttp.RetryWaitMax = 2 * time.Second
+	rhttp.Logger = logger
+
+	rhttp.HTTPClient.Transport = headerRoundTripper
+
+	oauthConfig := &clientcredentials.Config{
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		TokenURL:     t.String(),
+		Scopes:       []string{authutil.ScopeNetBoxRead, authutil.ScopeNetBoxWrite},
+	}
+
+	oauthTransport := &oauth2.Transport{
+		Source: oauthConfig.TokenSource(context.Background()),
+		Base:   rhttp.HTTPClient.Transport,
+	}
+
+	httpClient := &http.Client{
+		Transport: oauthTransport,
+		Timeout:   timeout,
+	}
+
 	client := &Client{
-		logger:     logger,
-		httpClient: httpClient,
-		baseURL:    u,
-		limiter:    rate.NewLimiter(rate.Limit(rateLimitRps), rateLimitBurstRps),
+		logger:    logger,
+		http:      httpClient,
+		baseURL:   u,
+		userAgent: fmt.Sprintf("%s/%s", SDKName, SDKVersion),
+		limiter:   rate.NewLimiter(rate.Limit(rateLimitRps), rateLimitBurstRps),
 	}
 
 	return client, nil
-}
-
-func userAgent() string {
-	return fmt.Sprintf("%s/%s", SDKName, SDKVersion)
-}
-
-func baseURL() string {
-	u, ok := os.LookupEnv(BaseURLEnvVarName)
-	if !ok {
-		u = defaultBaseURL
-	}
-	return u
 }
 
 func skipTLS() bool {
@@ -233,6 +227,15 @@ func httpTimeout() (time.Duration, error) {
 		return 0, ErrInvalidTimeout
 	}
 	return time.Duration(timeout) * time.Second, nil
+}
+
+// NetBoxAPI is the interface for the NetBox Diode plugin API
+type NetBoxAPI interface {
+	// GenerateDiff generates diff between ingested entity and NetBox object state
+	GenerateDiff(context.Context, GenerateDiffRequest) (*ChangeSetResult, error)
+
+	// ApplyChangeSet applies a change set
+	ApplyChangeSet(context.Context, ApplyChangeSetRequest) (*ChangeSetResult, error)
 }
 
 // GenerateDiffRequest represents a generate diff request
@@ -281,14 +284,13 @@ func (c *Client) GenerateDiff(ctx context.Context, payload GenerateDiffRequest) 
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Content-Type", "application/json")
 
 	branchID := strings.TrimSpace(payload.BranchID)
 	if branchID != "" {
 		req.Header.Set(NetBoxBranchHeader, branchID)
 	}
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.http.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -348,14 +350,13 @@ func (c *Client) ApplyChangeSet(ctx context.Context, payload ApplyChangeSetReque
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Content-Type", "application/json")
 
 	branchID := strings.TrimSpace(payload.BranchID)
 	if branchID != "" {
 		req.Header.Set(NetBoxBranchHeader, branchID)
 	}
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.http.Do(req)
 	if err != nil {
 		return nil, err
 	}

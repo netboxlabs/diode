@@ -1,16 +1,20 @@
+{{- if .Values.diodeIngester.enabled -}}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Values.diodeIngester.serviceName }}
+  name: {{ include "diode.ingester.servicename" . }}
   namespace: {{ .Release.Namespace }}
   labels:
-    app: {{ .Values.diodeIngester.serviceName }}
+    {{- include "diode.labels" . | nindent 4 }}
+    app: {{ include "diode.ingester.servicename" . }}
+    app.kubernetes.io/component: {{ include "diode.ingester.servicename" . }}
 spec:
   type: ClusterIP
   selector:
-    app: {{ .Values.diodeIngester.serviceName }}
+    app: {{ include "diode.ingester.servicename" . }}
   ports:
     - name: grpc
       port: {{ .Values.diodeIngester.containerPort }}
       targetPort: {{ .Values.diodeIngester.containerPort }}
       protocol: TCP
+{{- end }}

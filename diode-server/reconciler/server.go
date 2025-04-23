@@ -5,26 +5,15 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
-	"strings"
 
 	"github.com/kelseyhightower/envconfig"
 	"github.com/redis/go-redis/v9"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
-	"google.golang.org/grpc/status"
 
+	"github.com/netboxlabs/diode/diode-server/authutil"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
-)
-
-const (
-	// ErrMetadataNotFoundMsg is an error for missing metadata
-	ErrMetadataNotFoundMsg = "no request metadata found"
-
-	// ErrUnauthenticatedMsg is an error for unauthenticated requests
-	ErrUnauthenticatedMsg = "missing or invalid authorization header"
 )
 
 // Server is a reconciler Server
@@ -37,11 +26,10 @@ type Server struct {
 	grpcServer   *grpc.Server
 	redisClient  RedisClient
 	repository   Repository
-	apiKeys      APIKeys
 }
 
 // NewServer creates a new reconciler server
-func NewServer(ctx context.Context, logger *slog.Logger, repository Repository) (*Server, error) {
+func NewServer(ctx context.Context, logger *slog.Logger, repository Repository, authorizer authutil.Authorizer) (*Server, error) {
 	var cfg Config
 	envconfig.MustProcess("", &cfg)
 
@@ -60,11 +48,8 @@ func NewServer(ctx context.Context, logger *slog.Logger, repository Repository) 
 		return nil, fmt.Errorf("failed to listen on port %d: %v", cfg.GRPCPort, err)
 	}
 
-	apiKeys := loadAPIKeys(cfg)
-
-	auth := newAuthUnaryInterceptor(logger, apiKeys)
 	grpcServer := grpc.NewServer(
-		grpc.ChainUnaryInterceptor(auth),
+		grpc.ChainUnaryInterceptor(newAuthUnaryInterceptor(authorizer)),
 		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 	)
 
@@ -75,27 +60,12 @@ func NewServer(ctx context.Context, logger *slog.Logger, repository Repository) 
 		grpcServer:   grpcServer,
 		redisClient:  redisClient,
 		repository:   repository,
-		apiKeys:      apiKeys,
 	}
 
 	reconcilerpb.RegisterReconcilerServiceServer(grpcServer, component)
 	reflection.Register(grpcServer)
 
 	return component, nil
-}
-
-func newAuthUnaryInterceptor(logger *slog.Logger, apiKeys APIKeys) grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, serverInfo *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		md, ok := metadata.FromIncomingContext(ctx)
-		if !ok {
-			return nil, status.Errorf(codes.InvalidArgument, ErrMetadataNotFoundMsg)
-		}
-
-		if !isAuthenticated(logger, serverInfo.FullMethod, apiKeys, md["authorization"]) {
-			return nil, status.Errorf(codes.Unauthenticated, ErrUnauthenticatedMsg)
-		}
-		return handler(ctx, req)
-	}
 }
 
 // Name returns the name of the server
@@ -136,29 +106,14 @@ func (s *Server) RetrieveDeviationByID(ctx context.Context, req *reconcilerpb.Re
 	return retrieveDeviationByID(ctx, s.logger, s.repository, req)
 }
 
-// APIKeys is a map of API keys
-type APIKeys map[string]string
+func newAuthUnaryInterceptor(authorizer authutil.Authorizer) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		// TODO: this is applied to all rpcs but could be checked per rpc
+		// if the permissions differ (all are reads currently)
+		if err := authorizer.RequireScopesContext(ctx, []string{authutil.ScopeDiodeRead}); err != nil {
+			return nil, err
+		}
 
-func loadAPIKeys(cfg Config) APIKeys {
-	return map[string]string{
-		"DIODE_TO_NETBOX": cfg.DiodeToNetBoxAPIKey,
-		"NETBOX_TO_DIODE": cfg.NetBoxToDiodeAPIKey,
+		return handler(ctx, req)
 	}
-}
-
-// isAuthenticated checks if the request is authenticated
-func isAuthenticated(logger *slog.Logger, rpcMethod string, apiKeys APIKeys, authorization []string) bool {
-	if len(authorization) < 1 {
-		logger.Debug("missing authorization metadata", "rpcMethod", rpcMethod)
-		return false
-	}
-
-	apiKey := strings.TrimSpace(authorization[0])
-
-	netboxToDiode, ok := apiKeys["NETBOX_TO_DIODE"]
-	if !ok {
-		logger.Debug("missing NETBOX_TO_DIODE API key")
-		return false
-	}
-	return apiKey == netboxToDiode
 }

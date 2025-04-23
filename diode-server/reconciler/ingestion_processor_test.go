@@ -2,7 +2,10 @@ package reconciler_test
 
 import (
 	"context"
+	"encoding/json"
 	"log/slog"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"testing"
 	"time"
@@ -36,7 +39,15 @@ func TestNewIngestionProcessor(t *testing.T) {
 	mockRepository := mocks.NewRepository(t)
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
-	nbClient, err := netboxdiodeplugin.NewClient(logger, cfg.DiodeToNetBoxAPIKey, cfg.DiodeToNetBoxRateLimiterRPS, cfg.DiodeToNetBoxRateLimiterBurst)
+
+	expectedToken := "mocked-token"
+	authTokenURL := "/diode/auth/token"
+	mockOAuth2Server := newMockOAuth2Server(authTokenURL, cfg.DiodeToNetBoxClientID, cfg.DiodeToNetBoxClientSecret, expectedToken)
+	defer mockOAuth2Server.Close()
+
+	mockOAuth2ServerURL := mockOAuth2Server.URL + authTokenURL
+
+	nbClient, err := netboxdiodeplugin.NewClient(logger, cfg.NetBoxDiodePluginAPIBaseURL, cfg.DiodeToNetBoxClientID, cfg.DiodeToNetBoxClientSecret, mockOAuth2ServerURL, cfg.DiodeToNetBoxRateLimiterRPS, cfg.DiodeToNetBoxRateLimiterBurst, 0)
 	require.NoError(t, err)
 	metrics := mocks.NewIngestionProcessorMetrics(t)
 	processor, err := reconciler.NewIngestionProcessor(ctx, logger, reconciler.NewOps(mockRepository, nbClient, logger), metrics)
@@ -62,7 +73,15 @@ func TestIngestionProcessorStart(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	ctx := context.Background()
 
-	nbClient, err := netboxdiodeplugin.NewClient(logger, cfg.DiodeToNetBoxAPIKey, cfg.DiodeToNetBoxRateLimiterRPS, cfg.DiodeToNetBoxRateLimiterBurst)
+	expectedToken := "mocked-token"
+	authTokenURL := "/diode/auth/token"
+	mockOAuth2Server := newMockOAuth2Server(authTokenURL, cfg.DiodeToNetBoxClientID, cfg.DiodeToNetBoxClientSecret, expectedToken)
+	defer mockOAuth2Server.Close()
+
+	mockOAuth2ServerURL := mockOAuth2Server.URL + authTokenURL
+
+	maxRetries := 3
+	nbClient, err := netboxdiodeplugin.NewClient(logger, cfg.NetBoxDiodePluginAPIBaseURL, cfg.DiodeToNetBoxClientID, cfg.DiodeToNetBoxClientSecret, mockOAuth2ServerURL, cfg.DiodeToNetBoxRateLimiterRPS, cfg.DiodeToNetBoxRateLimiterBurst, maxRetries)
 	require.NoError(t, err)
 	mockMetrics := new(mocks.IngestionProcessorMetrics)
 	mockMetrics.On("RecordHandleMessage", mock.Anything, mock.Anything).Return()
@@ -255,17 +274,64 @@ func TestIngestionProcessorStart(t *testing.T) {
 		"request", string(reqBytes),
 		"ingestion_ts", "1720425600",
 	}
+	streamID := "diode.v1.ingest-stream"
 	err = redisClient.XAdd(context.Background(), &redis.XAddArgs{
-		Stream: "diode.v1.ingest-stream",
+		Stream: streamID,
 		Values: metadata,
 	}).Err()
 	assert.NoError(t, err)
 
-	// Wait for the message to be processed
-	time.Sleep(100 * time.Millisecond)
+	// Wait for the stream to be empty (message processed)
+	for {
+		streamLen, err := redisClient.XLen(context.Background(), streamID).Result()
+		assert.NoError(t, err)
+		if streamLen == 0 {
+			break
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
 
 	// Stop the processor
 	err = processor.Stop()
 	assert.NoError(t, err)
 	mockRepository.AssertExpectations(t)
+}
+
+func newMockOAuth2Server(authTokenURL, wantClientID, wantClientSecret, mockedToken string) *httptest.Server {
+	handler := http.NewServeMux()
+
+	handler.HandleFunc(authTokenURL, func(w http.ResponseWriter, r *http.Request) {
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "invalid form", http.StatusBadRequest)
+			return
+		}
+
+		// Optional: Validate client credentials
+		if r.PostForm.Get("client_id") != wantClientID || r.PostForm.Get("client_secret") != wantClientSecret {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusUnauthorized)
+			if err := json.NewEncoder(w).Encode(map[string]string{
+				"error":             "unauthorized",
+				"error_description": "Authentication required",
+			}); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			return
+		}
+
+		// Simulate token response
+		resp := map[string]any{
+			"access_token": mockedToken,
+			"token_type":   "Bearer",
+			"expires_in":   3600,
+		}
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	})
+
+	return httptest.NewServer(handler)
 }

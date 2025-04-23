@@ -1,0 +1,61 @@
+{{- if .Values.diodeAuth.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "diode.auth.servicename" . }}
+  namespace: {{ include "diode.namespace" . }}
+  labels:
+    {{- include "diode.labels" . | nindent 4 }}
+    app: {{ include "diode.auth.servicename" . }}
+    app.kubernetes.io/component: {{ include "diode.auth.servicename" . }}
+spec:
+  replicas: {{ .Values.diodeAuth.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "diode.selectorlabels" . | nindent 6 }}
+      app: {{ include "diode.auth.servicename" . }}
+      app.kubernetes.io/component: {{ include "diode.auth.servicename" . }}
+  template:
+    metadata:
+      annotations:
+        checksum/config-auth: {{ include (printf "%s/%s-auth-configmap.yaml" $.Template.BasePath (include "diode.name" .)) . | sha256sum }}
+      labels:
+        {{- include "diode.selectorlabels" . | nindent 8 }}
+        app: {{ include "diode.auth.servicename" . }}
+        app.kubernetes.io/component: {{ include "diode.auth.servicename" . }}
+    spec:
+      serviceAccountName: {{ include "diode.auth.serviceaccountname" . }}
+      initContainers:
+        {{- if .Values.hydra.enabled }}
+        - name: wait-for-oauth2-server
+          image: {{ include "diode.busybox.image" . }}
+          command:
+            - sh
+            - -c
+            - |
+              host={{ include "diode.hydra.public.hostname" . }}
+              port={{ include "diode.hydra.public.port" . }}
+              until nc -z $host $port; do
+                echo "Waiting for OAuth2 server";
+                sleep 3;
+              done;
+              echo "OAuth2 server is up and running";
+        {{- end }}
+      containers:
+        - name: {{ include "diode.auth.servicename" . }}
+          image: "{{ .Values.diode.image.registry }}/{{ .Values.diodeAuth.image.name }}"
+          imagePullPolicy: {{ .Values.diodeAuth.image.pullPolicy | default "IfNotPresent" }}
+          ports:
+            - containerPort: {{ .Values.diodeAuth.containerPort }}
+          {{- with .Values.diodeAuth.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.diodeAuth.resources }}
+          resources:
+            {{- toYaml .| nindent 12 }}
+          {{- end }}
+          envFrom:
+            - configMapRef:
+                name: {{ include "diode.auth.configmap" . }}
+{{- end }} 

@@ -22,9 +22,11 @@ type Config struct {
 	PostgresUser                  string `envconfig:"POSTGRES_USER"`
 	PostgresPassword              string `envconfig:"POSTGRES_PASSWORD"`
 
-	// API keys
-	DiodeToNetBoxAPIKey string `envconfig:"DIODE_TO_NETBOX_API_KEY" required:"true"`
-	NetBoxToDiodeAPIKey string `envconfig:"NETBOX_TO_DIODE_API_KEY" required:"true"`
+	NetBoxDiodePluginAPIBaseURL    string `envconfig:"NETBOX_DIODE_PLUGIN_API_BASE_URL" required:"true"`
+	NetBoxDiodePluginSkipTLSVerify bool   `envconfig:"NETBOX_DIODE_PLUGIN_SKIP_TLS_VERIFY" default:"false"`
+	DiodeAuthTokenURL              string `envconfig:"DIODE_AUTH_TOKEN_URL" required:"true"`
+	DiodeToNetBoxClientID          string `envconfig:"DIODE_TO_NETBOX_CLIENT_ID" required:"true"`
+	DiodeToNetBoxClientSecret      string `envconfig:"DIODE_TO_NETBOX_CLIENT_SECRET" required:"true"`
 
 	Telemetry telemetry.Config `envconfig:"TELEMETRY"`
 }

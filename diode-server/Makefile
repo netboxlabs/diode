@@ -55,8 +55,8 @@ test-coverage:
 .PHONY: $(BUILD_SERVICES)
 $(BUILD_SERVICES):
 	@$(eval SVC=$(subst build-,,$@))
-	@CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(GOARCH) GOARM=$(GOARM)
-	@go build -ldflags "$(LD_FLAGS)" -o $(BUILD_DIR)/$(SVC) ./cmd/$(SVC)
+	@CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(GOARCH) GOARM=$(GOARM) \
+	go build -ldflags "$(LD_FLAGS)" -o $(BUILD_DIR)/$(SVC) ./cmd/$(SVC)
 
 .PHONY: build-all
 build-all: $(BUILD_SERVICES)
@@ -67,6 +67,8 @@ $(DOCKER_SERVICES):
 
 	@GOOS=$(GOOS) GOARCH=$(GOARCH) $(MAKE) build-$(SVC)
 
+	@$(eval DOCKERFILE=Dockerfile.$(SVC))
+
 	docker build \
 	  --no-cache \
 	  --build-arg SVC=$(SVC) \
@@ -74,7 +76,7 @@ $(DOCKER_SERVICES):
 	  --build-arg GOARCH=$(GOARCH) \
 	  --build-arg GOARM=$(GOARM) \
   	  --tag=$(ORG_NAME)/$(REPO_NAME)-$(SVC):$(DIODE_VERSION)-$(COMMIT_SHA) \
-  	  -f docker/Dockerfile .
+  	  -f docker/$(DOCKERFILE) .
 
 .PHONY: docker-all
 docker-all: $(DOCKER_SERVICES)
@@ -91,6 +93,11 @@ docker-compose-down:
 docker-compose-dev-up: docker-all
 	@DIODE_VERSION=$(DIODE_VERSION) COMMIT_SHA=$(COMMIT_SHA) DIODE_TAG=$(DIODE_VERSION)-$(COMMIT_SHA) PROJECT_NAME=diode-dev \
 	$(DOCKER_COMPOSE) --env-file docker/sample.env --env-file docker/dev.env -f docker/docker-compose.yaml -f docker/docker-compose.dev.yaml up -d --build
+
+.PHONY: docker-compose-dev-logs
+docker-compose-dev-logs:
+	@DIODE_VERSION=$(DIODE_VERSION) COMMIT_SHA=$(COMMIT_SHA) DIODE_TAG=$(DIODE_VERSION)-$(COMMIT_SHA) PROJECT_NAME=diode-dev \
+	$(DOCKER_COMPOSE) --env-file docker/sample.env --env-file docker/dev.env -f docker/docker-compose.yaml -f docker/docker-compose.dev.yaml logs
 
 .PHONY: docker-compose-dev-down
 docker-compose-dev-down:

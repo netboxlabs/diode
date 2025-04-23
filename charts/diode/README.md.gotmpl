@@ -3,39 +3,199 @@
 
 {{ template "chart.versionBadge" . }}{{ template "chart.typeBadge" . }}{{ template "chart.appVersionBadge" . }}
 
+## Prerequisites
+
+- Kubernetes 1.19+
+- Helm 3.2.0+
+- jq
+
+## Components
+
+The chart includes the following components:
+
+- Diode Auth
+- Diode Ingester
+- Diode Reconciler
+- Hydra (OAuth2 server)
+- PostgreSQL (optional)
+- Redis (optional)
+- Ingress Nginx Controller (optional)
+- Cert Manager (optional)
+
 ## Installing the Chart
 
-{{- define "cert-manager-version" }}
-{{- range .Dependencies }}
-{{- if eq .Name "cert-manager" }}
-{{- .Version }}
-{{- end }}
-{{- end }}
-{{- end }}
-
-Install custom resource definitions for cert-manager (if enabled):
+Add diode repository:
 
 ```console
-kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v{{ template "cert-manager-version" . }}/cert-manager.crds.yaml
+helm repo add diode https://netboxlabs.github.io/diode/charts
+helm repo update
 ```
 
-Create namespaces for ingress-nginx and cert-manager:
+Add dependencies repositories:
 
 ```console
-kubectl create namespace diode-ingress
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm repo add jetstack https://charts.jetstack.io
+helm repo add ory https://k8s.ory.sh/helm/charts
+helm repo update
+```
+
+Create namespace for Diode:
+
+```console
+export NAMESPACE=[NAMESPACE]
+
+kubectl create namespace $NAMESPACE
+```
+
+Create namespaces for optional components:
+
+```console
+# Create namespace for cert-manager if enabled
 kubectl create namespace diode-cert-manager
 ```
 
-Install the chart with the release name `my-release`:
+Create the following secrets in the `[NAMESPACE]` namespace:
+
+- if not using external resources, generate passwords for Redis and PostgreSQL and set them to the following variables:
 
 ```console
-helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-helm repo add jetstack https://charts.jetstack.io
-helm repo add bitnami https://charts.bitnami.com/bitnami
-helm repo add diode https://netboxlabs.github.io/diode/charts
-helm install my-release diode/{{ template "chart.name" . }} --namespace my-namespace --create-namespace
+REDIS_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 | base64 | head -c 32)
+POSTGRES_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 | base64 | head -c 32)
+DIODE_POSTGRES_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 | base64 | head -c 32)
+HYDRA_POSTGRES_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 | base64 | head -c 32)
+POSTGRES_HOSTNAME=diode-postgresql.$NAMESPACE.svc.cluster.local
+POSTGRES_PORT=5432
 ```
+
+- if using external resources, set the passwords, host and port of the existing resources:
+
+```console
+REDIS_PASSWORD=<redis-password>
+POSTGRES_PASSWORD=<postgres-password>
+DIODE_POSTGRES_PASSWORD=<diode-postgres-password>
+HYDRA_POSTGRES_PASSWORD=<hydra-postgres-password>
+POSTGRES_HOSTNAME=<postgresql-hostname>
+POSTGRES_PORT=<postgresql-port>
+```
+
+- create a secret for PostgreSQL credentials in the `[NAMESPACE]` namespace:
+
+```console
+kubectl create secret generic diode-postgresql-secret --namespace $NAMESPACE \
+  --from-literal=postgres-database=postgres \
+  --from-literal=postgres-username=postgres \
+  --from-literal=postgres-password=$POSTGRES_PASSWORD \
+  --from-literal=diode-database=diode \
+  --from-literal=diode-username=diode \
+  --from-literal=diode-password=$DIODE_POSTGRES_PASSWORD \
+  --from-literal=hydra-database=hydra \
+  --from-literal=hydra-username=hydra \
+  --from-literal=hydra-password=$HYDRA_POSTGRES_PASSWORD
+```
+
+- create a secret for Redis credentials in the `[NAMESPACE]` namespace:
+
+```console
+kubectl create secret generic diode-redis-secret --namespace $NAMESPACE \
+  --from-literal=redis-password=$REDIS_PASSWORD
+```
+
+- create a secret for Ory Hydra credentials in the `[NAMESPACE]` namespace:
+
+```console
+kubectl create secret generic diode-hydra-secret --namespace $NAMESPACE \
+  --from-literal=secretsCookie=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 | base64 | head -c 32) \
+  --from-literal=secretsSystem=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 | base64 | head -c 32) \
+  --from-literal=dsn=postgres://hydra:$HYDRA_POSTGRES_PASSWORD@$POSTGRES_HOSTNAME:$POSTGRES_PORT/hydra
+```
+
+- generate client credentials for OAuth2 server (Ory Hydra):
+
+```console
+curl -o generate-client-credentials.sh https://raw.githubusercontent.com/netboxlabs/diode/release/charts/diode/scripts/generate-client-credentials.sh
+chmod +x generate-client-credentials.sh
+./generate-client-credentials.sh > <YOUR_PATH>/client-credentials.json
+```
+
+- create a secret for the OAuth2 server (Ory Hydra) client credentials with the generated client credentials:
+
+```console
+kubectl create secret generic diode-auth-oauth2-secret --namespace $NAMESPACE \
+  --from-file=client-credentials.json=<YOUR_PATH>/client-credentials.json
+```
+
+- create a secret for the Diode Ingester service:
+
+```console
+kubectl create secret generic diode-ingester-secret --namespace $NAMESPACE \
+  --from-literal=REDIS_PASSWORD=$REDIS_PASSWORD
+```
+
+- create a secret for the Diode Reconciler service:
+
+```console
+kubectl create secret generic diode-reconciler-secret --namespace $NAMESPACE \
+  --from-literal=REDIS_PASSWORD=$REDIS_PASSWORD \
+  --from-literal=POSTGRES_PASSWORD=$DIODE_POSTGRES_PASSWORD \
+  --from-literal=DIODE_TO_NETBOX_CLIENT_SECRET=$(jq -r '.[] | select(.client_id == "diode-to-netbox") | .client_secret' <YOUR_PATH>/client-credentials.json)
+```
+
+Install chart with release name `[RELEASE_NAME]` in namespace `[NAMESPACE]` with default values:
+
+```console
+helm install [RELEASE_NAME] diode/{{ template "chart.name" . }} --namespace $NAMESPACE --create-namespace
+```
+
+Install chart with release name `[RELEASE_NAME]` in namespace `[NAMESPACE]` with your own `values.yaml` (see [Configuration](#configuration)):
+
+```console
+helm install [RELEASE_NAME] diode/{{ template "chart.name" . }} --namespace $NAMESPACE --create-namespace -f values.yaml
+```
+
+Install chart with release name `[RELEASE_NAME]` in namespace `[NAMESPACE]` with overridden values using `--set` flag (see [Configuration](#configuration)):
+
+```console
+helm install [RELEASE_NAME] diode/{{ template "chart.name" . }} --namespace $NAMESPACE --create-namespace --set [KEY]=[VALUE]
+```
+
+## Uninstalling the Chart
+
+To uninstall the `[RELEASE_NAME]` deployment:
+
+```console
+helm uninstall [RELEASE_NAME] --namespace $NAMESPACE
+```
+
+## Configuration
+
+Default configuration values are set in `values.yaml` file that can be overridden by providing your own `values.yaml` 
+file or by using the `--set` flag to override individual values.
+
+See default values in the [Values](#values) or in `values.yaml` file:
+
+```console
+helm show values diode/diode
+```
+
 
 {{ template "chart.requirementsSection" . }}
 
 {{ template "chart.valuesSection" . }}
+
+## License
+
+Copyright &copy; 2025 NetBox Labs, Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.

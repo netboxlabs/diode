@@ -14,6 +14,7 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric"
 
+	"github.com/netboxlabs/diode/diode-server/authutil"
 	"github.com/netboxlabs/diode/diode-server/dbstore/postgres"
 	"github.com/netboxlabs/diode/diode-server/migrator"
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
@@ -84,9 +85,14 @@ func main() {
 
 	repository := postgres.NewRepository(dbPool)
 
-	nbClient, err := netboxdiodeplugin.NewClient(s.Logger(), cfg.DiodeToNetBoxAPIKey, cfg.DiodeToNetBoxRateLimiterRPS, cfg.DiodeToNetBoxRateLimiterBurst)
+	diodeToNetBoxMaxRetries := 3
+
+	nbClient, err := netboxdiodeplugin.NewClient(s.Logger(), cfg.NetBoxDiodePluginAPIBaseURL, cfg.DiodeToNetBoxClientID,
+		cfg.DiodeToNetBoxClientSecret, cfg.DiodeAuthTokenURL, cfg.DiodeToNetBoxRateLimiterRPS,
+		cfg.DiodeToNetBoxRateLimiterBurst, diodeToNetBoxMaxRetries)
 	if err != nil {
 		s.Logger().Error("failed to create netbox diode plugin client", "error", err)
+		os.Exit(1)
 	}
 
 	ops := reconciler.NewOps(repository, nbClient, s.Logger())
@@ -107,7 +113,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	gRPCServer, err := reconciler.NewServer(ctx, s.Logger(), repository)
+	authorizer := authutil.NewUnverifiedJWTAuthorizer(s.Logger())
+
+	gRPCServer, err := reconciler.NewServer(ctx, s.Logger(), repository, authorizer)
 	if err != nil {
 		s.Logger().Error("failed to instantiate gRPC server", "error", err)
 		os.Exit(1)
