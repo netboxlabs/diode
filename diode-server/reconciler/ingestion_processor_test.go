@@ -47,7 +47,7 @@ func TestNewIngestionProcessor(t *testing.T) {
 
 	mockOAuth2ServerURL := mockOAuth2Server.URL + authTokenURL
 
-	nbClient, err := netboxdiodeplugin.NewClient(logger, cfg.NetBoxDiodePluginAPIBaseURL, cfg.DiodeToNetBoxClientID, cfg.DiodeToNetBoxClientSecret, mockOAuth2ServerURL, []string{"scope1", "scope2"}, cfg.DiodeToNetBoxRateLimiterRPS, cfg.DiodeToNetBoxRateLimiterBurst, 0)
+	nbClient, err := netboxdiodeplugin.NewClient(logger, cfg.NetBoxDiodePluginAPIBaseURL, cfg.DiodeToNetBoxClientID, cfg.DiodeToNetBoxClientSecret, mockOAuth2ServerURL, cfg.DiodeToNetBoxRateLimiterRPS, cfg.DiodeToNetBoxRateLimiterBurst, 0)
 	require.NoError(t, err)
 	metrics := mocks.NewIngestionProcessorMetrics(t)
 	processor, err := reconciler.NewIngestionProcessor(ctx, logger, reconciler.NewOps(mockRepository, nbClient, logger), metrics)
@@ -81,7 +81,7 @@ func TestIngestionProcessorStart(t *testing.T) {
 	mockOAuth2ServerURL := mockOAuth2Server.URL + authTokenURL
 
 	maxRetries := 3
-	nbClient, err := netboxdiodeplugin.NewClient(logger, cfg.NetBoxDiodePluginAPIBaseURL, cfg.DiodeToNetBoxClientID, cfg.DiodeToNetBoxClientSecret, mockOAuth2ServerURL, []string{"default:diode:netbox"}, cfg.DiodeToNetBoxRateLimiterRPS, cfg.DiodeToNetBoxRateLimiterBurst, maxRetries)
+	nbClient, err := netboxdiodeplugin.NewClient(logger, cfg.NetBoxDiodePluginAPIBaseURL, cfg.DiodeToNetBoxClientID, cfg.DiodeToNetBoxClientSecret, mockOAuth2ServerURL, cfg.DiodeToNetBoxRateLimiterRPS, cfg.DiodeToNetBoxRateLimiterBurst, maxRetries)
 	require.NoError(t, err)
 	mockMetrics := new(mocks.IngestionProcessorMetrics)
 	mockMetrics.On("RecordHandleMessage", mock.Anything, mock.Anything).Return()

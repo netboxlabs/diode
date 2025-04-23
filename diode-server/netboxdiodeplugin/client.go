@@ -49,6 +49,12 @@ const (
 
 	// NetBoxBranchParam is a query parameter that indicates the NetBox branch to target
 	NetBoxBranchParam = "_branch"
+
+	// DiodeOAuth2NetBoxReadScope is the OAuth2 scope for NetBox read access
+	DiodeOAuth2NetBoxReadScope = "netbox:read"
+
+	// DiodeOAuth2NetBoxWriteScope is the OAuth2 scope for NetBox write access
+	DiodeOAuth2NetBoxWriteScope = "netbox:write"
 )
 
 // ErrInvalidTimeout is an error for invalid timeout value
@@ -133,7 +139,7 @@ func NewHTTPTransport() *http.Transport {
 }
 
 // NewClient creates a new NetBox Diode plugin client
-func NewClient(logger *slog.Logger, baseURL, clientID, clientSecret, tokenURL string, tokenScopes []string, rateLimitRps, rateLimitBurstRps int, maxRetries int) (*Client, error) {
+func NewClient(logger *slog.Logger, baseURL, clientID, clientSecret, tokenURL string, rateLimitRps, rateLimitBurstRps int, maxRetries int) (*Client, error) {
 	u, err := url.Parse(baseURL)
 	if err != nil {
 		return nil, err
@@ -179,7 +185,7 @@ func NewClient(logger *slog.Logger, baseURL, clientID, clientSecret, tokenURL st
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
 		TokenURL:     t.String(),
-		Scopes:       tokenScopes,
+		Scopes:       []string{DiodeOAuth2NetBoxReadScope, DiodeOAuth2NetBoxWriteScope},
 	}
 
 	oauthTransport := &oauth2.Transport{

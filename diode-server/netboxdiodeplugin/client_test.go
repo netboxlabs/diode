@@ -55,7 +55,6 @@ func TestNewClient(t *testing.T) {
 		diodeAuthTokenURL         string
 		diodeToNetBoxClientID     string
 		diodeToNetBoxClientSecret string
-		diodeToNetBoxTokenScopes  []string
 		rateLimiterRPS            int
 		rateLimiterBurst          int
 		timeout                   string
@@ -69,7 +68,6 @@ func TestNewClient(t *testing.T) {
 			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
 			diodeToNetBoxClientID:     "test",
 			diodeToNetBoxClientSecret: "test",
-			diodeToNetBoxTokenScopes:  []string{"default:diode:netbox"},
 			rateLimiterRPS:            1,
 			rateLimiterBurst:          1,
 			timeout:                   "5",
@@ -83,7 +81,6 @@ func TestNewClient(t *testing.T) {
 			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
 			diodeToNetBoxClientID:     "test",
 			diodeToNetBoxClientSecret: "test",
-			diodeToNetBoxTokenScopes:  []string{"default:diode:netbox"},
 			rateLimiterRPS:            1,
 			rateLimiterBurst:          1,
 			timeout:                   "5",
@@ -97,7 +94,6 @@ func TestNewClient(t *testing.T) {
 			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
 			diodeToNetBoxClientID:     "test",
 			diodeToNetBoxClientSecret: "test",
-			diodeToNetBoxTokenScopes:  []string{"default:diode:netbox"},
 			rateLimiterRPS:            1,
 			rateLimiterBurst:          1,
 			timeout:                   "",
@@ -111,7 +107,6 @@ func TestNewClient(t *testing.T) {
 			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
 			diodeToNetBoxClientID:     "test",
 			diodeToNetBoxClientSecret: "test",
-			diodeToNetBoxTokenScopes:  []string{"default:diode:netbox"},
 			rateLimiterRPS:            1,
 			rateLimiterBurst:          1,
 			timeout:                   "-1",
@@ -125,7 +120,6 @@ func TestNewClient(t *testing.T) {
 			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
 			diodeToNetBoxClientID:     "",
 			diodeToNetBoxClientSecret: "test",
-			diodeToNetBoxTokenScopes:  []string{"default:diode:netbox"},
 			rateLimiterRPS:            1,
 			rateLimiterBurst:          1,
 			timeout:                   "5",
@@ -139,7 +133,6 @@ func TestNewClient(t *testing.T) {
 			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
 			diodeToNetBoxClientID:     "test",
 			diodeToNetBoxClientSecret: "",
-			diodeToNetBoxTokenScopes:  []string{"default:diode:netbox"},
 			rateLimiterRPS:            1,
 			rateLimiterBurst:          1,
 			timeout:                   "5",
@@ -153,7 +146,6 @@ func TestNewClient(t *testing.T) {
 			diodeAuthTokenURL:         "",
 			diodeToNetBoxClientID:     "test",
 			diodeToNetBoxClientSecret: "test",
-			diodeToNetBoxTokenScopes:  []string{"default:diode:netbox"},
 			rateLimiterRPS:            1,
 			rateLimiterBurst:          1,
 			timeout:                   "5",
@@ -167,7 +159,6 @@ func TestNewClient(t *testing.T) {
 			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
 			diodeToNetBoxClientID:     "test",
 			diodeToNetBoxClientSecret: "test",
-			diodeToNetBoxTokenScopes:  []string{"default:diode:netbox"},
 			rateLimiterRPS:            1,
 			rateLimiterBurst:          1,
 			timeout:                   "5",
@@ -181,7 +172,6 @@ func TestNewClient(t *testing.T) {
 			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
 			diodeToNetBoxClientID:     "test",
 			diodeToNetBoxClientSecret: "test",
-			diodeToNetBoxTokenScopes:  []string{"default:diode:netbox"},
 			rateLimiterRPS:            0,
 			rateLimiterBurst:          1,
 			timeout:                   "5",
@@ -195,7 +185,6 @@ func TestNewClient(t *testing.T) {
 			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
 			diodeToNetBoxClientID:     "test",
 			diodeToNetBoxClientSecret: "test",
-			diodeToNetBoxTokenScopes:  []string{"default:diode:netbox"},
 			rateLimiterRPS:            1,
 			rateLimiterBurst:          0,
 			timeout:                   "5",
@@ -220,7 +209,7 @@ func TestNewClient(t *testing.T) {
 
 			maxRetries := 3
 
-			client, err := netboxdiodeplugin.NewClient(logger, tt.baseURL, tt.diodeToNetBoxClientID, tt.diodeToNetBoxClientSecret, tt.diodeAuthTokenURL, tt.diodeToNetBoxTokenScopes, tt.rateLimiterRPS, tt.rateLimiterBurst, maxRetries)
+			client, err := netboxdiodeplugin.NewClient(logger, tt.baseURL, tt.diodeToNetBoxClientID, tt.diodeToNetBoxClientSecret, tt.diodeAuthTokenURL, tt.rateLimiterRPS, tt.rateLimiterBurst, maxRetries)
 			if tt.shouldError {
 				require.Error(t, err)
 				return
@@ -239,7 +228,6 @@ func TestGenerateDiff(t *testing.T) {
 		diodeAuthTokenURL         string
 		diodeToNetBoxClientID     string
 		diodeToNetBoxClientSecret string
-		diodeToNetBoxTokenScopes  []string
 		generateDiffRequest       netboxdiodeplugin.GenerateDiffRequest
 		mockStatusCode            int
 		expectedBody              string
@@ -258,7 +246,6 @@ func TestGenerateDiff(t *testing.T) {
 			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
 			diodeToNetBoxClientID:     "test",
 			diodeToNetBoxClientSecret: "test",
-			diodeToNetBoxTokenScopes:  []string{"default:diode:netbox"},
 			generateDiffRequest: netboxdiodeplugin.GenerateDiffRequest{
 				ObjectType: "dcim.device",
 				Entity: &diodepb.Entity{
@@ -300,7 +287,6 @@ func TestGenerateDiff(t *testing.T) {
 			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
 			diodeToNetBoxClientID:     "test",
 			diodeToNetBoxClientSecret: "test",
-			diodeToNetBoxTokenScopes:  []string{"default:diode:netbox"},
 			generateDiffRequest: netboxdiodeplugin.GenerateDiffRequest{
 				ObjectType: "dcim.device",
 				Entity: &diodepb.Entity{
@@ -333,7 +319,6 @@ func TestGenerateDiff(t *testing.T) {
 			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
 			diodeToNetBoxClientID:     "test",
 			diodeToNetBoxClientSecret: "test",
-			diodeToNetBoxTokenScopes:  []string{"default:diode:netbox"},
 			generateDiffRequest: netboxdiodeplugin.GenerateDiffRequest{
 				ObjectType: "dcim.device",
 				Entity: &diodepb.Entity{
@@ -396,7 +381,7 @@ func TestGenerateDiff(t *testing.T) {
 			defer ts.Close()
 
 			baseURL := fmt.Sprintf("%s/api/diode", ts.URL)
-			client, err := netboxdiodeplugin.NewClient(logger, baseURL, tt.diodeToNetBoxClientID, tt.diodeToNetBoxClientSecret, mockOAuth2ServerURL, tt.diodeToNetBoxTokenScopes, tt.rateLimiterRPS, tt.rateLimiterBurst, tt.maxRetries)
+			client, err := netboxdiodeplugin.NewClient(logger, baseURL, tt.diodeToNetBoxClientID, tt.diodeToNetBoxClientSecret, mockOAuth2ServerURL, tt.rateLimiterRPS, tt.rateLimiterBurst, tt.maxRetries)
 			require.NoError(t, err)
 			resp, err := client.GenerateDiff(context.Background(), tt.generateDiffRequest)
 			if tt.shouldError {
@@ -425,7 +410,6 @@ func TestGenerateDiffRateLimiting(t *testing.T) {
 		diodeAuthTokenURL         string
 		diodeToNetBoxClientID     string
 		diodeToNetBoxClientSecret string
-		diodeToNetBoxTokenScopes  []string
 		expectedCalls             int
 		generateDiffRequest       netboxdiodeplugin.GenerateDiffRequest
 		mockStatusCode            int
@@ -443,7 +427,6 @@ func TestGenerateDiffRateLimiting(t *testing.T) {
 			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
 			diodeToNetBoxClientID:     "test",
 			diodeToNetBoxClientSecret: "test",
-			diodeToNetBoxTokenScopes:  []string{"default:diode:netbox"},
 			expectedCalls:             2,
 			generateDiffRequest: netboxdiodeplugin.GenerateDiffRequest{
 				ObjectType: "dcim.device",
@@ -521,7 +504,7 @@ func TestGenerateDiffRateLimiting(t *testing.T) {
 			defer ts.Close()
 
 			baseURL := fmt.Sprintf("%s/api/diode", ts.URL)
-			client, err := netboxdiodeplugin.NewClient(logger, baseURL, tt.diodeToNetBoxClientID, tt.diodeToNetBoxClientSecret, mockOAuth2ServerURL, tt.diodeToNetBoxTokenScopes, tt.rateLimiterRPS, tt.rateLimiterBurst, tt.maxRetries)
+			client, err := netboxdiodeplugin.NewClient(logger, baseURL, tt.diodeToNetBoxClientID, tt.diodeToNetBoxClientSecret, mockOAuth2ServerURL, tt.rateLimiterRPS, tt.rateLimiterBurst, tt.maxRetries)
 			require.NoError(t, err)
 			resp, err := client.GenerateDiff(context.Background(), tt.generateDiffRequest)
 			_, _ = client.GenerateDiff(context.Background(), tt.generateDiffRequest)
@@ -545,7 +528,6 @@ func TestApplyChangeSet(t *testing.T) {
 		diodeAuthTokenURL         string
 		diodeToNetBoxClientID     string
 		diodeToNetBoxClientSecret string
-		diodeToNetBoxTokenScopes  []string
 		changeSetRequest          netboxdiodeplugin.ApplyChangeSetRequest
 		mockServerResponse        string
 		mockStatusCode            int
@@ -563,7 +545,6 @@ func TestApplyChangeSet(t *testing.T) {
 			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
 			diodeToNetBoxClientID:     "test",
 			diodeToNetBoxClientSecret: "test",
-			diodeToNetBoxTokenScopes:  []string{"default:diode:netbox"},
 			changeSetRequest: netboxdiodeplugin.ApplyChangeSetRequest{
 				ID: "00000000-0000-0000-0000-000000000000",
 				Changes: []netboxdiodeplugin.Change{
@@ -601,7 +582,6 @@ func TestApplyChangeSet(t *testing.T) {
 			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
 			diodeToNetBoxClientID:     "test",
 			diodeToNetBoxClientSecret: "test",
-			diodeToNetBoxTokenScopes:  []string{"default:diode:netbox"},
 			changeSetRequest: netboxdiodeplugin.ApplyChangeSetRequest{
 				ID:       "00000000-0000-0000-0000-000000000000",
 				BranchID: "test-branch",
@@ -632,7 +612,6 @@ func TestApplyChangeSet(t *testing.T) {
 			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
 			diodeToNetBoxClientID:     "test",
 			diodeToNetBoxClientSecret: "test",
-			diodeToNetBoxTokenScopes:  []string{"default:diode:netbox"},
 			changeSetRequest: netboxdiodeplugin.ApplyChangeSetRequest{
 				ID: "00000000-0000-0000-0000-000000000000",
 				Changes: []netboxdiodeplugin.Change{
@@ -659,7 +638,6 @@ func TestApplyChangeSet(t *testing.T) {
 			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
 			diodeToNetBoxClientID:     "test",
 			diodeToNetBoxClientSecret: "test",
-			diodeToNetBoxTokenScopes:  []string{"default:diode:netbox"},
 			changeSetRequest: netboxdiodeplugin.ApplyChangeSetRequest{
 				ID: "00000000-0000-0000-0000-000000000000",
 				Changes: []netboxdiodeplugin.Change{
@@ -692,7 +670,6 @@ func TestApplyChangeSet(t *testing.T) {
 			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
 			diodeToNetBoxClientID:     "test",
 			diodeToNetBoxClientSecret: "test",
-			diodeToNetBoxTokenScopes:  []string{"default:diode:netbox"},
 			changeSetRequest: netboxdiodeplugin.ApplyChangeSetRequest{
 				ID: "00000000-0000-0000-0000-000000000000",
 				Changes: []netboxdiodeplugin.Change{
@@ -750,7 +727,7 @@ func TestApplyChangeSet(t *testing.T) {
 			defer ts.Close()
 
 			baseURL := fmt.Sprintf("%s/api/diode", ts.URL)
-			client, err := netboxdiodeplugin.NewClient(logger, baseURL, tt.diodeToNetBoxClientID, tt.diodeToNetBoxClientSecret, mockOAuth2ServerURL, tt.diodeToNetBoxTokenScopes, tt.rateLimiterRPS, tt.rateLimiterBurst, tt.maxRetries)
+			client, err := netboxdiodeplugin.NewClient(logger, baseURL, tt.diodeToNetBoxClientID, tt.diodeToNetBoxClientSecret, mockOAuth2ServerURL, tt.rateLimiterRPS, tt.rateLimiterBurst, tt.maxRetries)
 			require.NoError(t, err)
 			resp, err := client.ApplyChangeSet(context.Background(), tt.changeSetRequest)
 			if tt.shouldError {
@@ -780,7 +757,6 @@ func TestApplyChangeSetRateLimiting(t *testing.T) {
 		baseURL                   string
 		diodeToNetBoxClientID     string
 		diodeToNetBoxClientSecret string
-		diodeToNetBoxTokenScopes  []string
 		changeSetRequest          netboxdiodeplugin.ApplyChangeSetRequest
 		expectedCalls             int
 		mockServerResponse        string
@@ -795,7 +771,6 @@ func TestApplyChangeSetRateLimiting(t *testing.T) {
 			name:                      "rate limit error",
 			diodeToNetBoxClientID:     "test",
 			diodeToNetBoxClientSecret: "test",
-			diodeToNetBoxTokenScopes:  []string{"default:diode:netbox"},
 			changeSetRequest: netboxdiodeplugin.ApplyChangeSetRequest{
 				ID:       "00000000-0000-0000-0000-000000000000",
 				BranchID: "test-branch",
@@ -859,7 +834,7 @@ func TestApplyChangeSetRateLimiting(t *testing.T) {
 
 			baseURL := fmt.Sprintf("%s/api/diode", ts.URL)
 
-			client, err := netboxdiodeplugin.NewClient(logger, baseURL, tt.diodeToNetBoxClientID, tt.diodeToNetBoxClientSecret, mockOAuth2ServerURL, tt.diodeToNetBoxTokenScopes, tt.rateLimiterRPS, tt.rateLimiterBurst, tt.maxRetries)
+			client, err := netboxdiodeplugin.NewClient(logger, baseURL, tt.diodeToNetBoxClientID, tt.diodeToNetBoxClientSecret, mockOAuth2ServerURL, tt.rateLimiterRPS, tt.rateLimiterBurst, tt.maxRetries)
 			require.NoError(t, err)
 			resp, err := client.ApplyChangeSet(context.Background(), tt.changeSetRequest)
 			_, _ = client.ApplyChangeSet(context.Background(), tt.changeSetRequest)
@@ -917,6 +892,7 @@ func newMockOAuth2Server(authTokenURL, wantClientID, wantClientSecret, mockedTok
 			"access_token": mockedToken,
 			"token_type":   "Bearer",
 			"expires_in":   3600,
+			"scope":        "dummy-scope",
 		}
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(resp); err != nil {
