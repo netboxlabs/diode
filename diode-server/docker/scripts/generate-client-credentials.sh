@@ -9,9 +9,9 @@ generate_secret() {
 
 # Define client credentials in an associative array
 declare -A CLIENT_CREDENTIALS
-CLIENT_CREDENTIALS["diode-ingest"]="default:diode:ingest"
-CLIENT_CREDENTIALS["diode-to-netbox"]="default:diode:netbox"
-CLIENT_CREDENTIALS["netbox-to-diode"]="default:netbox:diode"
+CLIENT_CREDENTIALS["diode-ingest"]="diode:ingest"
+CLIENT_CREDENTIALS["diode-to-netbox"]="netbox:read netbox:write"
+CLIENT_CREDENTIALS["netbox-to-diode"]="diode:read diode:write"
 
 output="["
 first=true
