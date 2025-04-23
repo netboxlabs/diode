@@ -231,6 +231,7 @@ helm show values diode/diode
 | diodeIngester.containerPort | int | `8081` | port to listen on |
 | diodeIngester.enabled | bool | `true` | enabled |
 | diodeIngester.existingSecret | string | `"diode-ingester-secret"` | existing secret name |
+| diodeIngester.grpc.serviceName | string | `"diode.v1.IngesterService"` | grpc service name |
 | diodeIngester.image.name | string | `"netboxlabs/diode-ingester:1.0.0"` | image name |
 | diodeIngester.pullPolicy | string | `"IfNotPresent"` | pull policy |
 | diodeIngester.replicaCount | int | `1` | replica count |
@@ -254,6 +255,7 @@ helm show values diode/diode
 | diodeReconciler.containerPort | int | `8081` | port to listen on |
 | diodeReconciler.enabled | bool | `true` | enabled |
 | diodeReconciler.existingSecret | string | `"diode-reconciler-secret"` | existing secret name |
+| diodeReconciler.grpc.serviceName | string | `"diode.v1.ReconcilerService"` | grpc service name |
 | diodeReconciler.image.name | string | `"netboxlabs/diode-reconciler:1.0.0"` | image name |
 | diodeReconciler.pullPolicy | string | `"IfNotPresent"` | pull policy |
 | diodeReconciler.replicaCount | int | `1` | replica count |

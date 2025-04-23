@@ -105,6 +105,9 @@ diodeIngester:
     limits:
       cpu: 500m
       memory: 512Mi
+  grpc:
+    # -- grpc service name
+    serviceName: diode.v1.IngesterService
   config:
     # -- sentry DSN 
     sentryDsn: ""
@@ -141,6 +144,9 @@ diodeReconciler:
     limits:
       cpu: 500m
       memory: 512Mi
+  grpc:
+    # -- grpc service name
+    serviceName: diode.v1.ReconcilerService
   config:
     # -- netbox diode plugin api base url
     netboxDiodePluginApiBaseUrl: http://localhost:8000/netbox/api/plugins/diode

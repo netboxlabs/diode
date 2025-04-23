@@ -26,14 +26,14 @@ spec:
       {{- end }}
       http:
         paths:
-          - path: {{ include "diode.ingress.path" . }}/(diode.v1.IngesterService.*)
+          - path: {{ include "diode.ingress.path" . }}/({{ include "diode.ingester.grpc.servicename" . }}.*)
             pathType: ImplementationSpecific
             backend:
               service:
                 name: {{ include "diode.ingester.servicename" . }}
                 port:
                   number: {{ .Values.diodeIngester.containerPort }}
-          - path: {{ include "diode.ingress.path" . }}/(diode.v1.ReconcilerService.*)
+          - path: {{ include "diode.ingress.path" . }}/({{ include "diode.reconciler.grpc.servicename" . }}.*)
             pathType: ImplementationSpecific
             backend:
               service:
