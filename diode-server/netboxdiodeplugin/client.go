@@ -24,6 +24,7 @@ import (
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/netboxlabs/diode/diode-server/authutil"
 	diodeErrors "github.com/netboxlabs/diode/diode-server/errors"
 	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
 )
@@ -49,12 +50,6 @@ const (
 
 	// NetBoxBranchParam is a query parameter that indicates the NetBox branch to target
 	NetBoxBranchParam = "_branch"
-
-	// DiodeOAuth2NetBoxReadScope is the OAuth2 scope for NetBox read access
-	DiodeOAuth2NetBoxReadScope = "netbox:read"
-
-	// DiodeOAuth2NetBoxWriteScope is the OAuth2 scope for NetBox write access
-	DiodeOAuth2NetBoxWriteScope = "netbox:write"
 )
 
 // ErrInvalidTimeout is an error for invalid timeout value
@@ -185,7 +180,7 @@ func NewClient(logger *slog.Logger, baseURL, clientID, clientSecret, tokenURL st
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
 		TokenURL:     t.String(),
-		Scopes:       []string{DiodeOAuth2NetBoxReadScope, DiodeOAuth2NetBoxWriteScope},
+		Scopes:       []string{authutil.ScopeNetBoxRead, authutil.ScopeNetBoxWrite},
 	}
 
 	oauthTransport := &oauth2.Transport{
