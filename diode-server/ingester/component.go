@@ -206,7 +206,7 @@ func validateRequest(in *diodepb.IngestRequest) error {
 
 func newAuthUnaryInterceptor(authorizer authutil.Authorizer) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		if err := authorizer.RequireScopesContext(ctx, []string{"diode:ingest"}); err != nil {
+		if err := authorizer.RequireScopesContext(ctx, []string{authutil.ScopeDiodeIngest}); err != nil {
 			return nil, err
 		}
 

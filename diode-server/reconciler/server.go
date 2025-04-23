@@ -110,7 +110,7 @@ func newAuthUnaryInterceptor(authorizer authutil.Authorizer) grpc.UnaryServerInt
 	return func(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		// TODO: this is applied to all rpcs but could be checked per rpc
 		// if the permissions differ (all are reads currently)
-		if err := authorizer.RequireScopesContext(ctx, []string{"diode:read"}); err != nil {
+		if err := authorizer.RequireScopesContext(ctx, []string{authutil.ScopeDiodeRead}); err != nil {
 			return nil, err
 		}
 

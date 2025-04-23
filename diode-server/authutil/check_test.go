@@ -25,25 +25,25 @@ func TestRequireScopes(t *testing.T) {
 		wantErr       error
 	}
 
-	validToken := validWithScopes(t, []string{"diode:read", "diode:write"})
+	validToken := validWithScopes(t, []string{authutil.ScopeDiodeRead, authutil.ScopeDiodeWrite})
 
 	tests := []test{
 		{
 			name:          "valid with valid scopes",
 			token:         validToken,
-			requireScopes: []string{"diode:read", "diode:write"},
+			requireScopes: []string{authutil.ScopeDiodeRead, authutil.ScopeDiodeWrite},
 			wantErr:       nil,
 		},
 		{
 			name:          "valid with valid read scope",
 			token:         validToken,
-			requireScopes: []string{"diode:read"},
+			requireScopes: []string{authutil.ScopeDiodeRead},
 			wantErr:       nil,
 		},
 		{
 			name:          "valid with valid write scopes",
 			token:         validToken,
-			requireScopes: []string{"diode:write"},
+			requireScopes: []string{authutil.ScopeDiodeWrite},
 			wantErr:       nil,
 		},
 		{
@@ -55,13 +55,13 @@ func TestRequireScopes(t *testing.T) {
 		{
 			name:          "valid with some missing scopes",
 			token:         validToken,
-			requireScopes: []string{"diode:read", "diode:write", "diode:sleep"},
+			requireScopes: []string{authutil.ScopeDiodeRead, authutil.ScopeDiodeWrite, "diode:sleep"},
 			wantErr:       status.Errorf(codes.Unauthenticated, authutil.ErrMissingScopeMsg),
 		},
 		{
 			name:          "invalid token",
 			token:         "some-invalid-token",
-			requireScopes: []string{"diode:read"},
+			requireScopes: []string{authutil.ScopeDiodeRead},
 			wantErr:       status.Errorf(codes.Unauthenticated, authutil.ErrUnauthenticatedMsg),
 		},
 	}
@@ -81,7 +81,7 @@ func TestRequireScopes(t *testing.T) {
 
 func TestRequireScopesContext(t *testing.T) {
 	authorizer := authutil.NewUnverifiedJWTAuthorizer(slog.Default())
-	validToken := validWithScopes(t, []string{"diode:read", "diode:write"})
+	validToken := validWithScopes(t, []string{authutil.ScopeDiodeRead, authutil.ScopeDiodeWrite})
 
 	type test struct {
 		name          string
@@ -94,7 +94,7 @@ func TestRequireScopesContext(t *testing.T) {
 		{
 			name:          "valid with valid scopes",
 			ctx:           contextWithToken(validToken),
-			requireScopes: []string{"diode:read", "diode:write"},
+			requireScopes: []string{authutil.ScopeDiodeRead, authutil.ScopeDiodeWrite},
 			wantErr:       nil,
 		},
 		{
@@ -106,13 +106,13 @@ func TestRequireScopesContext(t *testing.T) {
 		{
 			name:          "no metadata",
 			ctx:           context.Background(),
-			requireScopes: []string{"diode:read"},
+			requireScopes: []string{authutil.ScopeDiodeRead},
 			wantErr:       status.Errorf(codes.InvalidArgument, authutil.ErrMetadataNotFoundMsg),
 		},
 		{
 			name:          "invalid token",
 			ctx:           contextWithToken("some-invalid-token"),
-			requireScopes: []string{"diode:read"},
+			requireScopes: []string{authutil.ScopeDiodeRead},
 			wantErr:       status.Errorf(codes.Unauthenticated, authutil.ErrUnauthenticatedMsg),
 		},
 	}
