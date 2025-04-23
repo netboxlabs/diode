@@ -140,6 +140,17 @@ Create the name of the ingester service to use
 {{- end }}
 
 {{/*
+Create the name of the ingester grpc service to use
+*/}}
+{{- define "diode.ingester.grpc.servicename" -}}
+{{- if and (hasKey .Values.diodeIngester "grpc") (hasKey .Values.diodeIngester.grpc "serviceName")  (not (empty .Values.diodeIngester.grpc.serviceName)) }}
+{{- .Values.diodeIngester.grpc.serviceName }}
+{{- else }}
+{{- printf "diode.v1.IngesterService" }}
+{{- end }}
+{{- end }}
+
+{{/*
 Create the name of the ingester service account to use
 */}}
 {{- define "diode.ingester.serviceaccountname" -}}
@@ -165,6 +176,17 @@ Create the name of the reconciler service to use
 */}}
 {{- define "diode.reconciler.servicename" -}}
 {{- printf "%s-reconciler" (include "diode.fullname" .) }}
+{{- end }}
+
+{{/*
+Create the name of the reconciler grpc service to use
+*/}}
+{{- define "diode.reconciler.grpc.servicename" -}}
+{{- if and (hasKey .Values.diodeReconciler "grpc") (hasKey .Values.diodeReconciler.grpc "serviceName") (not (empty .Values.diodeReconciler.grpc.serviceName)) }}
+{{- .Values.diodeReconciler.grpc.serviceName }}
+{{- else }}
+{{- printf "diode.v1.ReconcilerService" }}
+{{- end }}
 {{- end }}
 
 {{/*
