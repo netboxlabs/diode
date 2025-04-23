@@ -2,117 +2,344 @@
 
 A Helm chart for Diode
 
-![Version: 0.1.0](https://img.shields.io/badge/Version-0.1.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 0.6.0](https://img.shields.io/badge/AppVersion-0.6.0-informational?style=flat-square)
+![Version: 1.0.0](https://img.shields.io/badge/Version-1.0.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
+
+## Prerequisites
+
+- Kubernetes 1.19+
+- Helm 3.2.0+
+- jq
+
+## Components
+
+The chart includes the following components:
+
+- Diode Auth
+- Diode Ingester
+- Diode Reconciler
+- Hydra (OAuth2 server)
+- PostgreSQL (optional)
+- Redis (optional)
+- Ingress Nginx Controller (optional)
+- Cert Manager (optional)
 
 ## Installing the Chart
 
-Install custom resource definitions for cert-manager (if enabled):
+Add diode repository:
 
 ```console
-kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.16.1/cert-manager.crds.yaml
+helm repo add diode https://netboxlabs.github.io/diode/charts
+helm repo update
 ```
 
-Create namespaces for ingress-nginx and cert-manager:
+Add dependencies repositories:
 
 ```console
-kubectl create namespace diode-ingress
+helm repo add bitnami https://charts.bitnami.com/bitnami
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm repo add jetstack https://charts.jetstack.io
+helm repo add ory https://k8s.ory.sh/helm/charts
+helm repo update
+```
+
+Create namespace for Diode:
+
+```console
+export NAMESPACE=[NAMESPACE]
+
+kubectl create namespace $NAMESPACE
+```
+
+Create namespaces for optional components:
+
+```console
+# Create namespace for cert-manager if enabled
 kubectl create namespace diode-cert-manager
 ```
 
-Install the chart with the release name `my-release`:
+Create the following secrets in the `[NAMESPACE]` namespace:
+
+- if not using external resources, generate passwords for Redis and PostgreSQL and set them to the following variables:
 
 ```console
-helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-helm repo add jetstack https://charts.jetstack.io
-helm repo add bitnami https://charts.bitnami.com/bitnami
-helm repo add diode https://netboxlabs.github.io/diode/charts
-helm install my-release diode/diode --namespace my-namespace --create-namespace
+REDIS_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 | base64 | head -c 32)
+POSTGRES_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 | base64 | head -c 32)
+DIODE_POSTGRES_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 | base64 | head -c 32)
+HYDRA_POSTGRES_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 | base64 | head -c 32)
+POSTGRES_HOSTNAME=diode-postgresql.$NAMESPACE.svc.cluster.local
+POSTGRES_PORT=5432
+```
+
+- if using external resources, set the passwords, host and port of the existing resources:
+
+```console
+REDIS_PASSWORD=<redis-password>
+POSTGRES_PASSWORD=<postgres-password>
+DIODE_POSTGRES_PASSWORD=<diode-postgres-password>
+HYDRA_POSTGRES_PASSWORD=<hydra-postgres-password>
+POSTGRES_HOSTNAME=<postgresql-hostname>
+POSTGRES_PORT=<postgresql-port>
+```
+
+- create a secret for PostgreSQL credentials in the `[NAMESPACE]` namespace:
+
+```console
+kubectl create secret generic diode-postgresql-secret --namespace $NAMESPACE \
+  --from-literal=postgres-database=postgres \
+  --from-literal=postgres-username=postgres \
+  --from-literal=postgres-password=$POSTGRES_PASSWORD \
+  --from-literal=diode-database=diode \
+  --from-literal=diode-username=diode \
+  --from-literal=diode-password=$DIODE_POSTGRES_PASSWORD \
+  --from-literal=hydra-database=hydra \
+  --from-literal=hydra-username=hydra \
+  --from-literal=hydra-password=$HYDRA_POSTGRES_PASSWORD
+```
+
+- create a secret for Redis credentials in the `[NAMESPACE]` namespace:
+
+```console
+kubectl create secret generic diode-redis-secret --namespace $NAMESPACE \
+  --from-literal=redis-password=$REDIS_PASSWORD
+```
+
+- create a secret for Ory Hydra credentials in the `[NAMESPACE]` namespace:
+
+```console
+kubectl create secret generic diode-hydra-secret --namespace $NAMESPACE \
+  --from-literal=secretsCookie=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 | base64 | head -c 32) \
+  --from-literal=secretsSystem=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 | base64 | head -c 32) \
+  --from-literal=dsn=postgres://hydra:$HYDRA_POSTGRES_PASSWORD@$POSTGRES_HOSTNAME:$POSTGRES_PORT/hydra
+```
+
+- generate client credentials for OAuth2 server (Ory Hydra):
+
+```console
+curl -o generate-client-credentials.sh https://raw.githubusercontent.com/netboxlabs/diode/release/charts/diode/scripts/generate-client-credentials.sh
+chmod +x generate-client-credentials.sh
+./generate-client-credentials.sh > <YOUR_PATH>/client-credentials.json
+```
+
+- create a secret for the OAuth2 server (Ory Hydra) client credentials with the generated client credentials:
+
+```console
+kubectl create secret generic diode-auth-oauth2-secret --namespace $NAMESPACE \
+  --from-file=client-credentials.json=<YOUR_PATH>/client-credentials.json
+```
+
+- create a secret for the Diode Ingester service:
+
+```console
+kubectl create secret generic diode-ingester-secret --namespace $NAMESPACE \
+  --from-literal=REDIS_PASSWORD=$REDIS_PASSWORD
+```
+
+- create a secret for the Diode Reconciler service:
+
+```console
+kubectl create secret generic diode-reconciler-secret --namespace $NAMESPACE \
+  --from-literal=REDIS_PASSWORD=$REDIS_PASSWORD \
+  --from-literal=POSTGRES_PASSWORD=$DIODE_POSTGRES_PASSWORD \
+  --from-literal=DIODE_TO_NETBOX_CLIENT_SECRET=$(jq -r '.[] | select(.client_id == "diode-to-netbox") | .client_secret' <YOUR_PATH>/client-credentials.json)
+```
+
+Install chart with release name `[RELEASE_NAME]` in namespace `[NAMESPACE]` with default values:
+
+```console
+helm install [RELEASE_NAME] diode/diode --namespace $NAMESPACE --create-namespace
+```
+
+Install chart with release name `[RELEASE_NAME]` in namespace `[NAMESPACE]` with your own `values.yaml` (see [Configuration](#configuration)):
+
+```console
+helm install [RELEASE_NAME] diode/diode --namespace $NAMESPACE --create-namespace -f values.yaml
+```
+
+Install chart with release name `[RELEASE_NAME]` in namespace `[NAMESPACE]` with overridden values using `--set` flag (see [Configuration](#configuration)):
+
+```console
+helm install [RELEASE_NAME] diode/diode --namespace $NAMESPACE --create-namespace --set [KEY]=[VALUE]
+```
+
+## Uninstalling the Chart
+
+To uninstall the `[RELEASE_NAME]` deployment:
+
+```console
+helm uninstall [RELEASE_NAME] --namespace $NAMESPACE
+```
+
+## Configuration
+
+Default configuration values are set in `values.yaml` file that can be overridden by providing your own `values.yaml`
+file or by using the `--set` flag to override individual values.
+
+See default values in the [Values](#values) or in `values.yaml` file:
+
+```console
+helm show values diode/diode
 ```
 
 ## Requirements
 
 | Repository | Name | Version |
 |------------|------|---------|
-| https://charts.jetstack.io | cert-manager | 1.16.1 |
-| https://kubernetes.github.io/ingress-nginx | ingress-nginx | 4.11.2 |
-| oci://registry-1.docker.io/bitnamicharts | redis | 20.1.4 |
+| https://charts.bitnami.com/bitnami | postgresql | 16.6.3 |
+| https://charts.bitnami.com/bitnami | redis | 20.11.5 |
+| https://charts.jetstack.io | cert-manager | v1.12.0 |
+| https://k8s.ory.sh/helm/charts | hydra | 0.53.0 |
+| https://kubernetes.github.io/ingress-nginx | ingress-nginx | 4.12.1 |
 
 ## Values
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| cert-manager | object | `{"enabled":false,"namespace":"diode-cert-manager"}` | ref: https://github.com/cert-manager/cert-manager/blob/master/deploy/charts/cert-manager/values.yaml |
-| cert-manager.enabled | bool | `false` | cert-manager enabled |
-| cert-manager.namespace | string | `"diode-cert-manager"` | cert-manager namespace |
-| certIssuer.email | string | `""` | email address for ACME registration |
+| certIssuer | object | `{"email":"admin@example.com","enabled":false,"kind":"Issuer","name":"letsencrypt-development"}` | ref: https://cert-manager.io/docs/configuration/acme/ |
+| certIssuer.email | string | `"admin@example.com"` | email address for Let's Encrypt notifications |
 | certIssuer.enabled | bool | `false` | enable certificate issuer creation |
 | certIssuer.kind | string | `"Issuer"` | issuer kind (Issuer or ClusterIssuer) ref: https://cert-manager.io/docs/configuration/acme/ |
-| certIssuer.name | string | `""` | issuer name |
-| certIssuer.prod | bool | `false` | determines whether to use Let's Encrypt production or staging environment |
-| certIssuer.solvers | list | `[{"http01":{"ingress":{"ingressClassName":"nginx"}}}]` | solvers for the issuer |
-| diodeIngester.affinity | object | `{}` | custom affinity rules for the pod |
-| diodeIngester.config.reconcilerGrpcHost | string | `"diode-reconciler"` | diode-reconciler gRPC host |
-| diodeIngester.config.reconcilerGrpcPort | int | `8081` | diode-reconciler gRPC port |
-| diodeIngester.config.sentryDsn | string | `""` | sentry DSN |
+| certIssuer.name | string | `"letsencrypt-development"` | issuer name |
+| certManager | object | `{"cainjector":{"enabled":true},"crds":{"enabled":true},"enabled":false,"namespace":"diode-cert-manager","prometheus":{"enabled":false},"webhook":{"enabled":true}}` | ref: https://github.com/cert-manager/cert-manager/blob/master/deploy/charts/cert-manager/values.yaml |
+| certManager.cainjector | object | `{"enabled":true}` | cainjector enabled |
+| certManager.crds | object | `{"enabled":true}` | install CRDs |
+| certManager.enabled | bool | `false` | cert-manager enabled |
+| certManager.namespace | string | `"diode-cert-manager"` | cert-manager namespace |
+| certManager.prometheus | object | `{"enabled":false}` | prometheus enabled |
+| certManager.webhook | object | `{"enabled":true}` | webhook enabled |
+| diode.environment | string | `"development"` | environment name |
+| diode.image.registry | string | `"docker.io"` | image registry |
+| diodeAuth.config.httpPort | int | `8080` | http port |
+| diodeAuth.config.sentryDsn | string | `""` | sentry DSN  |
+| diodeAuth.config.telemetryEnvironment | string | `"dev"` | telemetry environment |
+| diodeAuth.config.telemetryMetricsExporter | string | `"prometheus"` | telemetry metrics exporter |
+| diodeAuth.config.telemetryTracesExporter | string | `"none"` | telemetry traces exporter |
+| diodeAuth.containerPort | int | `8080` | port to listen on |
+| diodeAuth.enabled | bool | `true` | enabled |
+| diodeAuth.image.name | string | `"netboxlabs/diode-auth:1.0.0"` | image name |
+| diodeAuth.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
+| diodeAuth.replicaCount | int | `1` | replica count |
+| diodeAuth.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
+| diodeAuth.serviceAccount.create | bool | `true` | create service account |
+| diodeAuthBootstrap.enabled | bool | `true` | enabled |
+| diodeAuthBootstrap.image.name | string | `"netboxlabs/diode-auth:1.0.0"` | image name |
+| diodeAuthBootstrap.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
+| diodeAuthBootstrap.job.backoffLimit | int | `20` | backoff limit |
+| diodeIngester.config.sentryDsn | string | `""` | sentry DSN  |
+| diodeIngester.config.telemetryEnvironment | string | `"dev"` | telemetry environment |
+| diodeIngester.config.telemetryMetricsExporter | string | `"prometheus"` | telemetry metrics exporter |
+| diodeIngester.config.telemetryTracesExporter | string | `"none"` | telemetry traces exporter |
 | diodeIngester.containerPort | int | `8081` | port to listen on |
-| diodeIngester.existingSecret | string | `""` | existing secret for diode-ingester |
-| diodeIngester.image.pullPolicy | string | `"IfNotPresent"` | image pull policy |
-| diodeIngester.image.repository | string | `"netboxlabs/diode-ingester"` | image repository |
-| diodeIngester.image.securityContext | object | `{}` | security context for the container |
-| diodeIngester.image.tag | string | `"v0.6.0"` | image tag |
-| diodeIngester.nodeSelector | object | `{}` | node selector for the pod |
-| diodeIngester.podAnnotations | object | `{}` | additional pod annotations |
-| diodeIngester.podLabels | object | `{}` | additional pod labels |
-| diodeIngester.podSecurityContext | object | `{}` | additional pod security context |
-| diodeIngester.replicas | int | `1` | number of replicas |
-| diodeIngester.resources | object | `{}` | resources to allocate for the container |
-| diodeIngester.secrets.ingesterToReconcilerAPIKey | string | `""` | API key for authentication between diode-ingester and diode-reconciler |
-| diodeIngester.secrets.redisPassword | string | `""` | redis password, must match the password in the redis chart or external redis |
+| diodeIngester.enabled | bool | `true` | enabled |
+| diodeIngester.existingSecret | string | `"diode-ingester-secret"` | existing secret name |
+| diodeIngester.grpc.serviceName | string | `"diode.v1.IngesterService"` | grpc service name |
+| diodeIngester.image.name | string | `"netboxlabs/diode-ingester:1.0.0"` | image name |
+| diodeIngester.pullPolicy | string | `"IfNotPresent"` | pull policy |
+| diodeIngester.replicaCount | int | `1` | replica count |
+| diodeIngester.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
 | diodeIngester.serviceAccount.create | bool | `true` | create service account |
-| diodeIngester.serviceAccount.name | string | `"diode-ingester"` | service account name |
-| diodeIngester.serviceName | string | `"diode-ingester"` | service name |
-| diodeIngester.tolerations | list | `[]` | tolerations to use with node taints |
-| diodeReconciler.affinity | object | `{}` | custom affinity rules for the pod |
+| diodeReconciler.config.diodeToNetBoxClientId | string | `"diode-to-netbox"` | diode to netbox client id |
+| diodeReconciler.config.diodeToNetboxRateLimiterBurst | int | `1` | diode to netbox rate limiter burst |
+| diodeReconciler.config.diodeToNetboxRateLimiterRps | int | `20` | diode to netbox rate limiter rps |
 | diodeReconciler.config.loggingLevel | string | `"DEBUG"` | logging level |
 | diodeReconciler.config.migrationEnabled | bool | `true` | migration enabled |
-| diodeReconciler.config.netboxDiodePluginAPIBaseURL | string | `"https://<NETBOX_BASE_URL>/api/plugins/diode"` | NetBox plugin API base URL |
-| diodeReconciler.config.netboxDiodePluginSkipTLSVerify | bool | `false` | NetBox plugin skip TLS verify |
-| diodeReconciler.config.sentryDsn | string | `""` | sentry DSN |
+| diodeReconciler.config.netboxDiodePluginApiBaseUrl | string | `"http://localhost:8000/netbox/api/plugins/diode"` | netbox diode plugin api base url |
+| diodeReconciler.config.netboxDiodePluginSkipTlsVerify | bool | `false` | netbox diode plugin skip tls verify |
+| diodeReconciler.config.postgresDbName | string | `"diode"` | postgres db name |
+| diodeReconciler.config.postgresUser | string | `"diode"` | postgres user |
+| diodeReconciler.config.reconcilerRateLimiterBurst | int | `1` | reconciler rate limiter burst |
+| diodeReconciler.config.reconcilerRateLimiterRps | int | `20` | reconciler rate limiter rps |
+| diodeReconciler.config.sentryDsn | string | `""` | sentry DSN  |
+| diodeReconciler.config.telemetryEnvironment | string | `"dev"` | telemetry environment |
+| diodeReconciler.config.telemetryMetricsExporter | string | `"prometheus"` | telemetry metrics exporter |
+| diodeReconciler.config.telemetryTracesExporter | string | `"none"` | telemetry traces exporter |
 | diodeReconciler.containerPort | int | `8081` | port to listen on |
-| diodeReconciler.existingSecret | string | `""` | existing secret for diode-ingester |
-| diodeReconciler.image.pullPolicy | string | `"IfNotPresent"` | image pull policy |
-| diodeReconciler.image.repository | string | `"netboxlabs/diode-reconciler"` | image repository |
-| diodeReconciler.image.securityContext | object | `{}` | security context for the container |
-| diodeReconciler.image.tag | string | `"v0.6.0"` | image tag |
-| diodeReconciler.nodeSelector | object | `{}` | node selector for the pod |
-| diodeReconciler.podAnnotations | object | `{}` | additional pod annotations |
-| diodeReconciler.podLabels | object | `{}` | additional pod labels |
-| diodeReconciler.podSecurityContext | object | `{}` | additional pod security context |
-| diodeReconciler.replicas | int | `1` | number of replicas |
-| diodeReconciler.resources | object | `{}` |  |
-| diodeReconciler.secrets.diodeAPIKey | string | `""` | API key for authentication of diode ingestion requests |
-| diodeReconciler.secrets.diodeToNetboxAPIKey | string | `""` | API key for authentication between diode and NetBox API |
-| diodeReconciler.secrets.ingesterToReconcilerAPIKey | string | `""` | API key for authentication between diode-ingester and diode-reconciler |
-| diodeReconciler.secrets.netboxToDiodeAPIKey | string | `""` | API key for authentication between NetBox API and diode |
-| diodeReconciler.secrets.redisPassword | string | `""` | redis password, must match the password in the redis chart or external redis |
+| diodeReconciler.enabled | bool | `true` | enabled |
+| diodeReconciler.existingSecret | string | `"diode-reconciler-secret"` | existing secret name |
+| diodeReconciler.grpc.serviceName | string | `"diode.v1.ReconcilerService"` | grpc service name |
+| diodeReconciler.image.name | string | `"netboxlabs/diode-reconciler:1.0.0"` | image name |
+| diodeReconciler.pullPolicy | string | `"IfNotPresent"` | pull policy |
+| diodeReconciler.replicaCount | int | `1` | replica count |
+| diodeReconciler.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
 | diodeReconciler.serviceAccount.create | bool | `true` | create service account |
-| diodeReconciler.serviceAccount.name | string | `"diode-reconciler"` | service account name |
-| diodeReconciler.serviceName | string | `"diode-reconciler"` | service name |
-| diodeReconciler.tolerations | list | `[]` | tolerations to use with node taints |
-| externalRedis.host | string | `""` | external redis host |
-| externalRedis.port | int | `6379` | external redis port |
-| ingress-nginx | object | `{"controller":{"allowSnippetAnnotations":true},"enabled":true,"hostname":"","ingressClass":"nginx","namespaceOverride":"diode-ingress"}` | ref: https://github.com/kubernetes/ingress-nginx/blob/main/charts/ingress-nginx/values.yaml |
-| ingress-nginx.controller.allowSnippetAnnotations | bool | `true` | allow snippet annotations |
-| ingress-nginx.enabled | bool | `true` | ingress-nginx enabled |
-| ingress-nginx.hostname | string | `""` | hostname |
-| ingress-nginx.ingressClass | string | `"nginx"` | ingress class |
-| ingress-nginx.namespaceOverride | string | `"diode-ingress"` | override ingress-nginx namespace |
-| redis | object | `{"auth":{"existingSecret":"diode-ingester-secret","existingSecretPasswordKey":"REDIS_PASSWORD"},"commonConfiguration":"appendonly yes\nsave 60 1\nloadmodule /opt/redis-stack/lib/rejson.so\nloadmodule /opt/redis-stack/lib/redisearch.so","enabled":true,"image":{"pullPolicy":"IfNotPresent","repository":"redis/redis-stack-server","tag":"latest"},"replica":{"replicaCount":1}}` | ref: https://github.com/bitnami/charts/blob/main/bitnami/redis/values.yaml |
-| redis.auth.existingSecret | string | `"diode-ingester-secret"` | existing secret for redis password, either diodeIngester.existingSecret, diode-ingester-secret (created from diodeIngester.secrets) or your custom secret |
-| redis.auth.existingSecretPasswordKey | string | `"REDIS_PASSWORD"` | existing secret key for redis password |
-| redis.commonConfiguration | string | `"appendonly yes\nsave 60 1\nloadmodule /opt/redis-stack/lib/rejson.so\nloadmodule /opt/redis-stack/lib/redisearch.so"` | redis configuration |
-| redis.enabled | bool | `true` | redis enabled |
-| redis.image.pullPolicy | string | `"IfNotPresent"` | redis image pull policy |
-| redis.image.repository | string | `"redis/redis-stack-server"` | redis image repository |
-| redis.image.tag | string | `"latest"` | redis image tag |
-| redis.replica.replicaCount | int | `1` | number of redis replicas |
+| externalPostgresql.hostname | string | `"localhost"` | hostname |
+| externalPostgresql.port | int | `5432` | port |
+| externalRedis.hostname | string | `"localhost"` | hostname |
+| externalRedis.port | int | `6379` | port |
+| global.diode | object | `{"busybox":{"image":"busybox:latest"},"hydra":{"waitForPostgres":true}}` | diode global configuration |
+| global.diode.busybox | object | `{"image":"busybox:latest"}` | busybox image configuration |
+| global.diode.hydra | object | `{"waitForPostgres":true}` | hydra additional init containers configuration |
+| global.diode.hydra.waitForPostgres | bool | `true` | wait for PostgreSQL |
+| hydra | object | `{"deployment":{"extraInitContainers":"{{ include \"diode.hydra.extrainitcontainers\" . }}","resources":{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}},"enabled":true,"fullnameOverride":"diode-hydra","hydra":{"automigration":{"enabled":true},"config":{"oidc":{"subject_identifiers":{"supported_types":["public"]}},"strategies":{"access_token":"jwt","jwt":{"scope_claim":"both"}},"ttl":{"access_token":"1h"},"urls":{"self":{"issuer":"http://diode-hydra-public.{{ .Release.Namespace }}.svc.cluster.local:4444"}}},"dev":true,"ingress":{"admin":{"enabled":false},"public":{"enabled":false}},"service":{"admin":{"enabled":true,"port":4445,"type":"ClusterIP"},"public":{"enabled":true,"port":4444,"type":"ClusterIP"}}},"job":{"annotations":{"helm.sh/hook":"post-install, post-upgrade","helm.sh/hook-delete-policy":"hook-succeeded","helm.sh/hook-weight":"1"},"extraInitContainers":"{{ include \"diode.hydra.extrainitcontainers\" . }}"},"secret":{"enabled":false,"nameOverride":"diode-hydra-secret"}}` | ref: https://github.com/ory/k8s/blob/master/helm/charts/hydra/values.yaml |
+| hydra.deployment.extraInitContainers | string | `"{{ include \"diode.hydra.extrainitcontainers\" . }}"` | extra init containers |
+| hydra.deployment.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
+| hydra.enabled | bool | `true` | enabled |
+| hydra.fullnameOverride | string | `"diode-hydra"` | fullname override |
+| hydra.hydra.automigration.enabled | bool | `true` | automigration enabled |
+| hydra.hydra.config.oidc.subject_identifiers | object | `{"supported_types":["public"]}` | subject identifiers |
+| hydra.hydra.config.strategies.access_token | string | `"jwt"` | access token strategy |
+| hydra.hydra.config.strategies.jwt.scope_claim | string | `"both"` | scope claim |
+| hydra.hydra.config.ttl.access_token | string | `"1h"` | access token TTL |
+| hydra.hydra.config.urls.self | object | `{"issuer":"http://diode-hydra-public.{{ .Release.Namespace }}.svc.cluster.local:4444"}` | self issuer |
+| hydra.hydra.config.urls.self.issuer | string | `"http://diode-hydra-public.{{ .Release.Namespace }}.svc.cluster.local:4444"` | hydra public url |
+| hydra.hydra.dev | bool | `true` | dev mode |
+| hydra.hydra.ingress.admin.enabled | bool | `false` | admin ingress enabled |
+| hydra.hydra.ingress.public.enabled | bool | `false` | public ingress enabled |
+| hydra.hydra.service.admin.enabled | bool | `true` | admin service enabled |
+| hydra.hydra.service.admin.port | int | `4445` | admin service port |
+| hydra.hydra.service.admin.type | string | `"ClusterIP"` | admin service type |
+| hydra.hydra.service.public.enabled | bool | `true` | public service enabled |
+| hydra.hydra.service.public.port | int | `4444` | public service port |
+| hydra.hydra.service.public.type | string | `"ClusterIP"` | public service type |
+| hydra.job.annotations | object | `{"helm.sh/hook":"post-install, post-upgrade","helm.sh/hook-delete-policy":"hook-succeeded","helm.sh/hook-weight":"1"}` | job annotations |
+| hydra.job.extraInitContainers | string | `"{{ include \"diode.hydra.extrainitcontainers\" . }}"` | extra init containers |
+| hydra.secret.enabled | bool | `false` | secret enabled |
+| hydra.secret.nameOverride | string | `"diode-hydra-secret"` | existing secret name |
+| ingressNginx | object | `{"annotations":{},"controller":{"allowSnippetAnnotations":true},"enabled":true,"extraHttpPaths":{},"grpcAnnotations":{"nginx.ingress.kubernetes.io/proxy-body-size":"25m"},"hostname":"","httpAnnotations":{},"ingressClass":"nginx","pathPrefix":"/diode","tls":{}}` | ref: https://github.com/kubernetes/ingress-nginx/blob/main/charts/ingress-nginx/values.yaml |
+| ingressNginx.controller | object | `{"allowSnippetAnnotations":true}` | ingress annotations |
+| ingressNginx.controller.allowSnippetAnnotations | bool | `true` | allow snippet annotations |
+| ingressNginx.enabled | bool | `true` | ingress-nginx enabled |
+| ingressNginx.extraHttpPaths | object | `{}` | ingress extra http paths |
+| ingressNginx.grpcAnnotations | object | `{"nginx.ingress.kubernetes.io/proxy-body-size":"25m"}` | ingress grpc annotations |
+| ingressNginx.hostname | string | `""` | hostname |
+| ingressNginx.httpAnnotations | object | `{}` | ingress http annotations |
+| ingressNginx.ingressClass | string | `"nginx"` | ingress class |
+| ingressNginx.pathPrefix | string | `"/diode"` | ingress path prefix |
+| ingressNginx.tls | object | `{}` | ingress tls |
+| postgresql | object | `{"auth":{"existingSecret":"diode-postgresql-secret","secretKeys":{"adminPasswordKey":"postgres-password"}},"enabled":true,"fullnameOverride":"diode-postgresql","primary":{"extraVolumeMounts":[{"mountPath":"/docker-entrypoint-initdb.d/init_diode_databases.sh","name":"custom-init-scripts","subPath":"init_diode_databases.sh"}],"initdb":{"scriptsConfigMap":"diode-postgresql-initdb-scripts-configmap"},"livenessProbe":{"enabled":true,"failureThreshold":6,"initialDelaySeconds":30,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":5},"persistence":{"enabled":true,"size":"10Gi"},"readinessProbe":{"enabled":true,"failureThreshold":6,"initialDelaySeconds":5,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":5}}}` | ref: https://github.com/bitnami/charts/tree/main/bitnami/postgresql |
+| postgresql.auth.existingSecret | string | `"diode-postgresql-secret"` | existing secret name |
+| postgresql.auth.secretKeys | object | `{"adminPasswordKey":"postgres-password"}` | existing secret password key |
+| postgresql.enabled | bool | `true` | enabled |
+| postgresql.fullnameOverride | string | `"diode-postgresql"` | fullname override |
+| postgresql.primary.extraVolumeMounts | list | `[{"mountPath":"/docker-entrypoint-initdb.d/init_diode_databases.sh","name":"custom-init-scripts","subPath":"init_diode_databases.sh"}]` | extra volume mounts |
+| postgresql.primary.initdb.scriptsConfigMap | string | `"diode-postgresql-initdb-scripts-configmap"` | scripts config map |
+| postgresql.primary.livenessProbe | object | `{"enabled":true,"failureThreshold":6,"initialDelaySeconds":30,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":5}` | liveness probe |
+| postgresql.primary.persistence.enabled | bool | `true` | persistence enabled |
+| postgresql.primary.persistence.size | string | `"10Gi"` | persistence size |
+| postgresql.primary.readinessProbe | object | `{"enabled":true,"failureThreshold":6,"initialDelaySeconds":5,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":5}` | readiness probe |
+| redis | object | `{"auth":{"enabled":true,"existingSecret":"diode-redis-secret","existingSecretPasswordKey":"redis-password"},"containerPorts":{"redis":6379},"enabled":true,"fullnameOverride":"diode-redis","persistence":{"enabled":true,"size":"1Gi"},"replica":{"replicaCount":1},"service":{"port":6379}}` | ref: https://github.com/bitnami/charts/tree/main/bitnami/redis |
+| redis.auth.enabled | bool | `true` | auth enabled |
+| redis.auth.existingSecret | string | `"diode-redis-secret"` | existing secret name |
+| redis.auth.existingSecretPasswordKey | string | `"redis-password"` | existing secret password key |
+| redis.containerPorts | object | `{"redis":6379}` | container ports |
+| redis.enabled | bool | `true` | enabled |
+| redis.fullnameOverride | string | `"diode-redis"` | fullname override |
+| redis.persistence.enabled | bool | `true` | persistence enabled |
+| redis.persistence.size | string | `"1Gi"` | persistence size |
+| redis.replica.replicaCount | int | `1` | replica count |
+| redis.service.port | int | `6379` | service port |
+
+## License
+
+Copyright &copy; 2025 NetBox Labs, Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.

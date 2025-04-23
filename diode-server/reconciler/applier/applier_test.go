@@ -2,13 +2,13 @@ package applier_test
 
 import (
 	"context"
+	"encoding/json"
 	"log/slog"
 	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/netboxlabs/diode/diode-server/netbox"
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
 	nbClientMock "github.com/netboxlabs/diode/diode-server/netboxdiodeplugin/mocks"
 	"github.com/netboxlabs/diode/diode-server/reconciler/applier"
@@ -21,49 +21,42 @@ func TestApplyChangeSet(t *testing.T) {
 
 	mockNetBoxAPI := new(nbClientMock.NetBoxAPI)
 	cs := changeset.ChangeSet{
-		ChangeSetID: "00000000-0000-0000-0000-000000000000",
-		ChangeSet: []changeset.Change{
+		ID: "00000000-0000-0000-0000-000000000000",
+		Changes: []changeset.Change{
 			{
-				ChangeID:   "00000000-0000-0000-0000-000000000001",
+				ID:         "00000000-0000-0000-0000-000000000001",
 				ChangeType: "create",
 				ObjectType: "dcim.site",
-				Data: &netbox.DcimSite{
-					Name:   "Site A",
-					Slug:   "site-a",
-					Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-				},
+				After:      json.RawMessage(`{"name": "Site A", "slug": "site-a", "status": "active"}`),
 			},
 		},
+		BranchID: func() *string { s := "branch_name (123)"; return &s }(),
 	}
 
-	req := netboxdiodeplugin.ChangeSetRequest{
-		ChangeSetID: "00000000-0000-0000-0000-000000000000",
-		ChangeSet: []netboxdiodeplugin.Change{
+	req := netboxdiodeplugin.ApplyChangeSetRequest{
+		ID: "00000000-0000-0000-0000-000000000000",
+		Changes: []netboxdiodeplugin.Change{
 			{
-				ChangeID:      "00000000-0000-0000-0000-000000000001",
+				ID:            "00000000-0000-0000-0000-000000000001",
 				ChangeType:    "create",
 				ObjectType:    "dcim.site",
 				ObjectID:      nil,
 				ObjectVersion: nil,
-				Data: &netbox.DcimSite{
-					Name:   "Site A",
-					Slug:   "site-a",
-					Status: (*netbox.DcimSiteStatus)(strPtr(string(netbox.DcimSiteStatusActive))),
-				},
+				Data:          json.RawMessage(`{"name": "Site A", "slug": "site-a", "status": "active"}`),
 			},
 		},
+		BranchID: "123",
 	}
 
-	resp := &netboxdiodeplugin.ChangeSetResponse{
-		ChangeSetID: "00000000-0000-0000-0000-000000000000",
-		Result:      "success",
+	resp := &netboxdiodeplugin.ChangeSetResult{
+		ChangeSet: &netboxdiodeplugin.ChangeSet{
+			ID: "00000000-0000-0000-0000-000000000000",
+		},
 	}
 
 	mockNetBoxAPI.On("ApplyChangeSet", ctx, req).Return(resp, nil)
 
-	err := applier.ApplyChangeSet(ctx, logger, cs, "", mockNetBoxAPI)
+	err := applier.ApplyChangeSet(ctx, logger, cs, mockNetBoxAPI)
 	assert.NoError(t, err)
 	mockNetBoxAPI.AssertExpectations(t)
 }
-
-func strPtr(s string) *string { return &s }

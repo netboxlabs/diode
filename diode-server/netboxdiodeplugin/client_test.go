@@ -2,19 +2,22 @@ package netboxdiodeplugin_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/netboxlabs/diode/diode-server/netbox"
+	"github.com/netboxlabs/diode/diode-server/errors"
+	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
+	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
 )
 
 func TestTransportSecurity(t *testing.T) {
@@ -47,83 +50,147 @@ func TestTransportSecurity(t *testing.T) {
 
 func TestNewClient(t *testing.T) {
 	tests := []struct {
-		name             string
-		apiKey           string
-		baseURL          string
-		timeout          string
-		setBaseURLEnvVar bool
-		setTimeoutEnvVar bool
-		setTLSSkipEnvVar bool
-		shouldError      bool
+		name                      string
+		baseURL                   string
+		diodeAuthTokenURL         string
+		diodeToNetBoxClientID     string
+		diodeToNetBoxClientSecret string
+		rateLimiterRPS            int
+		rateLimiterBurst          int
+		timeout                   string
+		setTimeoutEnvVar          bool
+		setTLSSkipEnvVar          bool
+		shouldError               bool
 	}{
 		{
-			name:             "valid client",
-			apiKey:           "test",
-			baseURL:          "http://",
-			timeout:          "5",
-			setBaseURLEnvVar: true,
-			setTimeoutEnvVar: true,
-			setTLSSkipEnvVar: false,
-			shouldError:      false,
+			name:                      "valid client",
+			baseURL:                   "http://",
+			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
+			diodeToNetBoxClientID:     "test",
+			diodeToNetBoxClientSecret: "test",
+			rateLimiterRPS:            1,
+			rateLimiterBurst:          1,
+			timeout:                   "5",
+			setTimeoutEnvVar:          true,
+			setTLSSkipEnvVar:          false,
+			shouldError:               false,
 		},
 		{
-			name:             "default base URL",
-			apiKey:           "test",
-			baseURL:          "",
-			timeout:          "5",
-			setBaseURLEnvVar: false,
-			setTimeoutEnvVar: true,
-			shouldError:      false,
+			name:                      "invalid base URL",
+			baseURL:                   "http://local\nhost",
+			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
+			diodeToNetBoxClientID:     "test",
+			diodeToNetBoxClientSecret: "test",
+			rateLimiterRPS:            1,
+			rateLimiterBurst:          1,
+			timeout:                   "5",
+			setTimeoutEnvVar:          true,
+			setTLSSkipEnvVar:          false,
+			shouldError:               true,
 		},
 		{
-			name:             "invalid base URL",
-			apiKey:           "test",
-			baseURL:          "http://local\nhost",
-			timeout:          "5",
-			setBaseURLEnvVar: true,
-			setTimeoutEnvVar: true,
-			setTLSSkipEnvVar: false,
-			shouldError:      true,
+			name:                      "default timeout",
+			baseURL:                   "http://",
+			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
+			diodeToNetBoxClientID:     "test",
+			diodeToNetBoxClientSecret: "test",
+			rateLimiterRPS:            1,
+			rateLimiterBurst:          1,
+			timeout:                   "",
+			setTimeoutEnvVar:          false,
+			setTLSSkipEnvVar:          false,
+			shouldError:               false,
 		},
 		{
-			name:             "default timeout",
-			apiKey:           "test",
-			baseURL:          "http://",
-			timeout:          "",
-			setBaseURLEnvVar: true,
-			setTimeoutEnvVar: false,
-			setTLSSkipEnvVar: false,
-			shouldError:      false,
+			name:                      "invalid timeout",
+			baseURL:                   "http://",
+			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
+			diodeToNetBoxClientID:     "test",
+			diodeToNetBoxClientSecret: "test",
+			rateLimiterRPS:            1,
+			rateLimiterBurst:          1,
+			timeout:                   "-1",
+			setTimeoutEnvVar:          true,
+			setTLSSkipEnvVar:          false,
+			shouldError:               true,
 		},
 		{
-			name:             "invalid timeout",
-			apiKey:           "test",
-			baseURL:          "http://",
-			timeout:          "-1",
-			setBaseURLEnvVar: true,
-			setTimeoutEnvVar: true,
-			setTLSSkipEnvVar: false,
-			shouldError:      true,
+			name:                      "client ID not provided",
+			baseURL:                   "http://",
+			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
+			diodeToNetBoxClientID:     "",
+			diodeToNetBoxClientSecret: "test",
+			rateLimiterRPS:            1,
+			rateLimiterBurst:          1,
+			timeout:                   "5",
+			setTimeoutEnvVar:          true,
+			setTLSSkipEnvVar:          false,
+			shouldError:               true,
 		},
 		{
-			name:             "API key not provided",
-			apiKey:           "",
-			baseURL:          "http://",
-			timeout:          "5",
-			setBaseURLEnvVar: true,
-			setTimeoutEnvVar: true,
-			setTLSSkipEnvVar: false,
-			shouldError:      true,
+			name:                      "client secret not provided",
+			baseURL:                   "http://",
+			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
+			diodeToNetBoxClientID:     "test",
+			diodeToNetBoxClientSecret: "",
+			rateLimiterRPS:            1,
+			rateLimiterBurst:          1,
+			timeout:                   "5",
+			setTimeoutEnvVar:          true,
+			setTLSSkipEnvVar:          false,
+			shouldError:               true,
 		},
 		{
-			name:             "set TLS skip verify",
-			apiKey:           "test",
-			baseURL:          "",
-			timeout:          "5",
-			setBaseURLEnvVar: false,
-			setTimeoutEnvVar: true,
-			setTLSSkipEnvVar: true,
-			shouldError:      false,
+			name:                      "token URL not provided",
+			baseURL:                   "http://",
+			diodeAuthTokenURL:         "",
+			diodeToNetBoxClientID:     "test",
+			diodeToNetBoxClientSecret: "test",
+			rateLimiterRPS:            1,
+			rateLimiterBurst:          1,
+			timeout:                   "5",
+			setTimeoutEnvVar:          true,
+			setTLSSkipEnvVar:          false,
+			shouldError:               true,
+		},
+		{
+			name:                      "set TLS skip verify",
+			baseURL:                   "http://",
+			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
+			diodeToNetBoxClientID:     "test",
+			diodeToNetBoxClientSecret: "test",
+			rateLimiterRPS:            1,
+			rateLimiterBurst:          1,
+			timeout:                   "5",
+			setTimeoutEnvVar:          true,
+			setTLSSkipEnvVar:          true,
+			shouldError:               false,
+		},
+		{
+			name:                      "invalid rate limiter rps parameter",
+			baseURL:                   "http://",
+			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
+			diodeToNetBoxClientID:     "test",
+			diodeToNetBoxClientSecret: "test",
+			rateLimiterRPS:            0,
+			rateLimiterBurst:          1,
+			timeout:                   "5",
+			setTimeoutEnvVar:          true,
+			setTLSSkipEnvVar:          false,
+			shouldError:               true,
+		},
+		{
+			name:                      "invalid rate limiter burst parameter",
+			baseURL:                   "http://",
+			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
+			diodeToNetBoxClientID:     "test",
+			diodeToNetBoxClientSecret: "test",
+			rateLimiterRPS:            1,
+			rateLimiterBurst:          0,
+			timeout:                   "5",
+			setTimeoutEnvVar:          true,
+			setTLSSkipEnvVar:          false,
+			shouldError:               true,
 		},
 	}
 
@@ -133,9 +200,6 @@ func TestNewClient(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cleanUpEnvVars()
 
-			if tt.setBaseURLEnvVar {
-				_ = os.Setenv(netboxdiodeplugin.BaseURLEnvVarName, tt.baseURL)
-			}
 			if tt.setTimeoutEnvVar {
 				_ = os.Setenv(netboxdiodeplugin.TimeoutSecondsEnvVarName, tt.timeout)
 			}
@@ -143,7 +207,9 @@ func TestNewClient(t *testing.T) {
 				_ = os.Setenv(netboxdiodeplugin.TLSSkipVerifyEnvVarName, "true")
 			}
 
-			client, err := netboxdiodeplugin.NewClient(logger, tt.apiKey)
+			maxRetries := 3
+
+			client, err := netboxdiodeplugin.NewClient(logger, tt.baseURL, tt.diodeToNetBoxClientID, tt.diodeToNetBoxClientSecret, tt.diodeAuthTokenURL, tt.rateLimiterRPS, tt.rateLimiterBurst, maxRetries)
 			if tt.shouldError {
 				require.Error(t, err)
 				return
@@ -155,400 +221,125 @@ func TestNewClient(t *testing.T) {
 	}
 }
 
-func TestRetrieveObjectState(t *testing.T) {
+func TestGenerateDiff(t *testing.T) {
 	tests := []struct {
-		name               string
-		params             netboxdiodeplugin.RetrieveObjectStateQueryParams
-		apiKey             string
-		mockServerResponse string
-		response           any
-		tlsSkipVerify      bool
-		shouldError        bool
+		name                      string
+		baseURL                   string
+		diodeAuthTokenURL         string
+		diodeToNetBoxClientID     string
+		diodeToNetBoxClientSecret string
+		generateDiffRequest       netboxdiodeplugin.GenerateDiffRequest
+		mockStatusCode            int
+		expectedBody              string
+		mockServerResponse        string
+		rateLimiterRPS            int
+		rateLimiterBurst          int
+		maxRetries                int
+		response                  *netboxdiodeplugin.ChangeSetResult
+		shouldError               bool
+		expectedError             error
+		expectedErrorString       string
 	}{
 		{
-			name:               "valid response for DCIM device",
-			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.DcimDeviceObjectType, ObjectID: 1},
-			mockServerResponse: `{"object_type":"dcim.device","object_change_id":1,"object":{"id":1,"name":"test"}}`,
-			apiKey:             "foobar",
-			response: &netboxdiodeplugin.ObjectState{
-				ObjectType:     netbox.DcimDeviceObjectType,
-				ObjectChangeID: 1,
-				Object: &netbox.DcimDeviceDataWrapper{
-					Device: &netbox.DcimDevice{
-						ID:   1,
-						Name: "test",
-					},
-				},
-			},
-			tlsSkipVerify: true,
-			shouldError:   false,
-		},
-		{
-			name:               "valid response for DCIM site with query",
-			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.DcimSiteObjectType, Params: map[string]string{"q": "site 01"}},
-			mockServerResponse: `{"object_type":"dcim.site","object_change_id":1,"object":{"id":1,"name":"site 01", "slug": "site-01"}}`,
-			apiKey:             "foobar",
-			response: &netboxdiodeplugin.ObjectState{
-				ObjectType:     netbox.DcimSiteObjectType,
-				ObjectChangeID: 1,
-				Object: &netbox.DcimSiteDataWrapper{
-					Site: &netbox.DcimSite{
-						ID:   1,
-						Name: "site 01",
-						Slug: "site-01",
-					},
-				},
-			},
-			tlsSkipVerify: true,
-			shouldError:   false,
-		},
-		{
-			name:               "valid response for DCIM site with branch",
-			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.DcimSiteObjectType, ObjectID: 1, BranchID: "branch_id"},
-			mockServerResponse: `{"object_type":"dcim.site","object_change_id":1,"object":{"id":1,"name":"site 01", "slug": "site-01"}}`,
-			apiKey:             "foobar",
-			response: &netboxdiodeplugin.ObjectState{
-				ObjectType:     netbox.DcimSiteObjectType,
-				ObjectChangeID: 1,
-				Object: &netbox.DcimSiteDataWrapper{
-					Site: &netbox.DcimSite{
-						ID:   1,
-						Name: "site 01",
-						Slug: "site-01",
-					},
-				},
-			},
-			tlsSkipVerify: true,
-			shouldError:   false,
-		},
-		{
-			name:               "valid response for DCIM DeviceRole",
-			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.DcimDeviceRoleObjectType, ObjectID: 1},
-			mockServerResponse: `{"object_type":"dcim.devicerole","object_change_id":1,"object":{"id":1,"name":"test"}}`,
-			apiKey:             "foobar",
-			response: &netboxdiodeplugin.ObjectState{
-				ObjectType:     netbox.DcimDeviceRoleObjectType,
-				ObjectChangeID: 1,
-				Object: &netbox.DcimDeviceRoleDataWrapper{
-					DeviceRole: &netbox.DcimDeviceRole{
-						ID:   1,
-						Name: "test",
-					},
-				},
-			},
-			tlsSkipVerify: true,
-			shouldError:   false,
-		},
-		{
-			name:               "valid response for DCIM DeviceType",
-			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.DcimDeviceTypeObjectType, ObjectID: 1},
-			mockServerResponse: `{"object_type":"dcim.devicetype","object_change_id":1,"object":{"id":1,"model":"test"}}`,
-			apiKey:             "foobar",
-			response: &netboxdiodeplugin.ObjectState{
-				ObjectType:     netbox.DcimDeviceTypeObjectType,
-				ObjectChangeID: 1,
-				Object: &netbox.DcimDeviceTypeDataWrapper{
-					DeviceType: &netbox.DcimDeviceType{
-						ID:    1,
-						Model: "test",
-					},
-				},
-			},
-			tlsSkipVerify: true,
-			shouldError:   false,
-		},
-		{
-			name:               "valid response for DCIM Interface",
-			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.DcimInterfaceObjectType, ObjectID: 1},
-			mockServerResponse: `{"object_type":"dcim.interface","object_change_id":1,"object":{"id":1,"name":"test"}}`,
-			apiKey:             "foobar",
-			response: &netboxdiodeplugin.ObjectState{
-				ObjectType:     netbox.DcimInterfaceObjectType,
-				ObjectChangeID: 1,
-				Object: &netbox.DcimInterfaceDataWrapper{
-					Interface: &netbox.DcimInterface{
-						ID:   1,
-						Name: "test",
-					},
-				},
-			},
-			tlsSkipVerify: true,
-			shouldError:   false,
-		},
-		{
-			name:               "valid response for DCIM Manufacturer",
-			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.DcimManufacturerObjectType, ObjectID: 1},
-			mockServerResponse: `{"object_type":"dcim.manufacturer","object_change_id":1,"object":{"id":1,"name":"test"}}`,
-			apiKey:             "foobar",
-			response: &netboxdiodeplugin.ObjectState{
-				ObjectType:     netbox.DcimManufacturerObjectType,
-				ObjectChangeID: 1,
-				Object: &netbox.DcimManufacturerDataWrapper{
-					Manufacturer: &netbox.DcimManufacturer{
-						ID:   1,
-						Name: "test",
-					},
-				},
-			},
-			tlsSkipVerify: true,
-			shouldError:   false,
-		},
-		{
-			name:               "valid response for DCIM Platform",
-			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.DcimPlatformObjectType, ObjectID: 1},
-			mockServerResponse: `{"object_type":"dcim.platform","object_change_id":1,"object":{"id":1,"name":"test"}}`,
-			apiKey:             "foobar",
-			response: &netboxdiodeplugin.ObjectState{
-				ObjectType:     netbox.DcimPlatformObjectType,
-				ObjectChangeID: 1,
-				Object: &netbox.DcimPlatformDataWrapper{
-					Platform: &netbox.DcimPlatform{
-						ID:   1,
-						Name: "test",
-					},
-				},
-			},
-			tlsSkipVerify: true,
-			shouldError:   false,
-		},
-		{
-			name:               "valid response for Extra tags",
-			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.ExtrasTagObjectType, ObjectID: 1},
-			mockServerResponse: `{"object_type":"extras.tag","object_change_id":1,"object":{"id":1,"name":"test"}}`,
-			apiKey:             "foobar",
-			response: &netboxdiodeplugin.ObjectState{
-				ObjectType:     netbox.ExtrasTagObjectType,
-				ObjectChangeID: 1,
-				Object: &netbox.TagDataWrapper{
-					Tag: &netbox.Tag{
-						ID:   1,
-						Name: "test",
-					},
-				},
-			},
-			tlsSkipVerify: true,
-			shouldError:   false,
-		},
-		{
-			name:               "valid response for IPAM IP Address",
-			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.IpamIPAddressObjectType, ObjectID: 1},
-			mockServerResponse: `{"object_type":"ipam.ipaddress","object_change_id":1,"object":{"id":1,"address":"192.168.0.1/22"}}`,
-			apiKey:             "foobar",
-			response: &netboxdiodeplugin.ObjectState{
-				ObjectType:     netbox.IpamIPAddressObjectType,
-				ObjectChangeID: 1,
-				Object: &netbox.IpamIPAddressDataWrapper{
-					IPAddress: &netbox.IpamIPAddress{
-						ID:      1,
-						Address: "192.168.0.1/22",
-					},
-				},
-			},
-			tlsSkipVerify: true,
-			shouldError:   false,
-		},
-		{
-			name:               "valid response for IPAM Prefix",
-			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.IpamPrefixObjectType, ObjectID: 1},
-			mockServerResponse: `{"object_type":"ipam.prefix","object_change_id":1,"object":{"id":1,"prefix":"192.168.0.0/22"}}`,
-			apiKey:             "foobar",
-			response: &netboxdiodeplugin.ObjectState{
-				ObjectType:     netbox.IpamPrefixObjectType,
-				ObjectChangeID: 1,
-				Object: &netbox.IpamPrefixDataWrapper{
-					Prefix: &netbox.IpamPrefix{
-						ID:     1,
-						Prefix: "192.168.0.0/22",
-					},
-				},
-			},
-			tlsSkipVerify: true,
-			shouldError:   false,
-		},
-		{
-			name:               "valid response for Virtualization Cluster Group",
-			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.VirtualizationClusterGroupObjectType, ObjectID: 1},
-			mockServerResponse: `{"object_type":"virtualization.clustergroup","object_change_id":1,"object":{"id":1,"name":"test"}}`,
-			apiKey:             "foobar",
-			response: &netboxdiodeplugin.ObjectState{
-				ObjectType:     netbox.VirtualizationClusterGroupObjectType,
-				ObjectChangeID: 1,
-				Object: &netbox.VirtualizationClusterGroupDataWrapper{
-					ClusterGroup: &netbox.VirtualizationClusterGroup{
-						ID:   1,
-						Name: "test",
-					},
-				},
-			},
-			tlsSkipVerify: true,
-			shouldError:   false,
-		},
-		{
-			name:               "valid response for Virtualization Cluster Type",
-			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.VirtualizationClusterTypeObjectType, ObjectID: 1},
-			mockServerResponse: `{"object_type":"virtualization.clustertype","object_change_id":1,"object":{"id":1,"name":"test"}}`,
-			apiKey:             "foobar",
-			response: &netboxdiodeplugin.ObjectState{
-				ObjectType:     netbox.VirtualizationClusterTypeObjectType,
-				ObjectChangeID: 1,
-				Object: &netbox.VirtualizationClusterTypeDataWrapper{
-					ClusterType: &netbox.VirtualizationClusterType{
-						ID:   1,
-						Name: "test",
-					},
-				},
-			},
-			tlsSkipVerify: true,
-			shouldError:   false,
-		},
-		{
-			name:               "valid response for Virtualization Cluster",
-			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.VirtualizationClusterObjectType, ObjectID: 1},
-			mockServerResponse: `{"object_type":"virtualization.cluster","object_change_id":1,"object":{"id":1,"name":"test"}}`,
-			apiKey:             "foobar",
-			response: &netboxdiodeplugin.ObjectState{
-				ObjectType:     netbox.VirtualizationClusterObjectType,
-				ObjectChangeID: 1,
-				Object: &netbox.VirtualizationClusterDataWrapper{
-					Cluster: &netbox.VirtualizationCluster{
-						ID:   1,
-						Name: "test",
-					},
-				},
-			},
-			tlsSkipVerify: true,
-			shouldError:   false,
-		},
-		{
-			name:               "valid response for Virtualization Virtual Machine",
-			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.VirtualizationVirtualMachineObjectType, ObjectID: 1},
-			mockServerResponse: `{"object_type":"virtualization.virtualmachine","object_change_id":1,"object":{"id":1,"name":"test"}}`,
-			apiKey:             "foobar",
-			response: &netboxdiodeplugin.ObjectState{
-				ObjectType:     netbox.VirtualizationVirtualMachineObjectType,
-				ObjectChangeID: 1,
-				Object: &netbox.VirtualizationVirtualMachineDataWrapper{
-					VirtualMachine: &netbox.VirtualizationVirtualMachine{
-						ID:   1,
-						Name: "test",
-					},
-				},
-			},
-			tlsSkipVerify: true,
-			shouldError:   false,
-		},
-		{
-			name:               "valid response for Virtualization Interface",
-			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.VirtualizationVMInterfaceObjectType, ObjectID: 1},
-			mockServerResponse: `{"object_type":"virtualization.vminterface","object_change_id":1,"object":{"id":1,"name":"test"}}`,
-			apiKey:             "foobar",
-			response: &netboxdiodeplugin.ObjectState{
-				ObjectType:     netbox.VirtualizationVMInterfaceObjectType,
-				ObjectChangeID: 1,
-				Object: &netbox.VirtualizationVMInterfaceDataWrapper{
-					VMInterface: &netbox.VirtualizationVMInterface{
-						ID:   1,
-						Name: "test",
-					},
-				},
-			},
-			tlsSkipVerify: true,
-			shouldError:   false,
-		},
-		{
-			name:               "valid response for Virtualization Virtual Disk",
-			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.VirtualizationVirtualDiskObjectType, ObjectID: 1},
-			mockServerResponse: `{"object_type":"virtualization.virtualdisk","object_change_id":1,"object":{"id":1,"name":"test"}}`,
-			apiKey:             "foobar",
-			response: &netboxdiodeplugin.ObjectState{
-				ObjectType:     netbox.VirtualizationVirtualDiskObjectType,
-				ObjectChangeID: 1,
-				Object: &netbox.VirtualizationVirtualDiskDataWrapper{
-					VirtualDisk: &netbox.VirtualizationVirtualDisk{
-						ID:   1,
-						Name: "test",
-					},
-				},
-			},
-			tlsSkipVerify: true,
-			shouldError:   false,
-		},
-		{
-			name: "valid response for DCIM device with query and additional attributes",
-			params: netboxdiodeplugin.RetrieveObjectStateQueryParams{
-				ObjectType: netbox.DcimDeviceObjectType,
-				ObjectID:   1,
-				Params:     map[string]string{"q": "dev1", "attr_name": "site.id", "attr_value": "2"},
-			},
-			mockServerResponse: `{"object_type":"dcim.device","object_change_id":1,"object":{"id":1,"name":"dev1", "site": {"id": 2}}}`,
-			apiKey:             "foobar",
-			response: &netboxdiodeplugin.ObjectState{
-				ObjectType:     netbox.DcimDeviceObjectType,
-				ObjectChangeID: 1,
-				Object: &netbox.DcimDeviceDataWrapper{
-					Device: &netbox.DcimDevice{
-						ID:   1,
-						Name: "dev1",
-						Site: &netbox.DcimSite{
-							ID: 2,
+			name:                      "valid generate diff response",
+			baseURL:                   "http://",
+			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
+			diodeToNetBoxClientID:     "test",
+			diodeToNetBoxClientSecret: "test",
+			generateDiffRequest: netboxdiodeplugin.GenerateDiffRequest{
+				ObjectType: "dcim.device",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Device{
+						Device: &diodepb.Device{
+							Name: strPtr("test"),
+							Site: &diodepb.Site{
+								Name: "test-site",
+							},
 						},
 					},
 				},
 			},
-			tlsSkipVerify: true,
-			shouldError:   false,
-		},
-		{
-			name:               "response for invalid object - empty object",
-			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.DcimDeviceObjectType, ObjectID: 1},
-			mockServerResponse: `{"object_type":"dcim.device","object_change_id":1,"object":{"InvalidObjectType": {"id":1,"name":"test"}}}`,
-			apiKey:             "foobar",
-			response: &netboxdiodeplugin.ObjectState{
-				ObjectType:     netbox.DcimDeviceObjectType,
-				ObjectChangeID: 1,
-				Object: &netbox.DcimDeviceDataWrapper{
-					Device: &netbox.DcimDevice{},
+			mockStatusCode:     http.StatusOK,
+			expectedBody:       `{"object_type":"dcim.device","entity":{"device":{"name":"test","site":{"name":"test-site"}}}}`,
+			mockServerResponse: `{"id": "00000000-0000-0000-0000-000000000001", "change_set": {"id": "00000000-0000-0000-0000-000000000001", "changes": [{"id": "00000000-0000-0000-0000-000000000002", "change_type": "create", "object_type": "dcim.device", "data": {"name": "test"}}]}}`,
+			rateLimiterRPS:     1,
+			rateLimiterBurst:   1,
+			maxRetries:         3,
+			response: &netboxdiodeplugin.ChangeSetResult{
+				ID: "00000000-0000-0000-0000-000000000001",
+				ChangeSet: &netboxdiodeplugin.ChangeSet{
+					ID: "00000000-0000-0000-0000-000000000001",
+					Changes: []netboxdiodeplugin.Change{
+						{
+							ID:         "00000000-0000-0000-0000-000000000002",
+							ChangeType: "create",
+							ObjectType: "dcim.device",
+							Data:       json.RawMessage(`{"name": "test"}`),
+						},
+					},
 				},
 			},
-			tlsSkipVerify: true,
-			shouldError:   false,
+			shouldError: false,
 		},
 		{
-			name:               "invalid server response",
-			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.DcimDeviceObjectType, ObjectID: 1},
-			apiKey:             "barfoo",
-			mockServerResponse: ``,
-			tlsSkipVerify:      true,
-			shouldError:        true,
-		},
-		{
-			name:               "tls bad certificate",
-			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.DcimDeviceObjectType, ObjectID: 1},
-			apiKey:             "barfoo",
-			mockServerResponse: ``,
-			tlsSkipVerify:      false,
-			shouldError:        true,
-		},
-		{
-			name:               "unmarshal error",
-			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.DcimDeviceObjectType, ObjectID: 1},
-			mockServerResponse: `{invalid - json}`,
-			apiKey:             "foobar",
-			tlsSkipVerify:      true,
-			shouldError:        true,
-		},
-		{
-			name:               "invalid object type",
-			params:             netboxdiodeplugin.RetrieveObjectStateQueryParams{ObjectType: netbox.DcimDeviceObjectType, ObjectID: 1},
-			mockServerResponse: `{"object_type":"invalid.type","object_change_id":1}`,
-			apiKey:             "foobar",
-			response: &netboxdiodeplugin.ObjectState{
-				ObjectType:     "invalid.type",
-				ObjectChangeID: 1,
-				Object:         &netbox.DcimDeviceDataWrapper{},
+			name:                      "valid error diff response",
+			baseURL:                   "http://",
+			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
+			diodeToNetBoxClientID:     "test",
+			diodeToNetBoxClientSecret: "test",
+			generateDiffRequest: netboxdiodeplugin.GenerateDiffRequest{
+				ObjectType: "dcim.device",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Device{
+						Device: &diodepb.Device{
+							Name: strPtr("test"),
+							Site: &diodepb.Site{
+								Name: "test-site",
+							},
+						},
+					},
+				},
 			},
-			tlsSkipVerify: true,
-			shouldError:   false,
+			mockStatusCode:     http.StatusBadRequest,
+			expectedBody:       `{"object_type":"dcim.device","entity":{"device":{"name":"test","site":{"name":"test-site"}}}}`,
+			mockServerResponse: `{"id": "00000000-0000-0000-0000-000000000001", "errors": {"dcim.device": {"name": ["illegal name"]}}}`,
+			rateLimiterRPS:     1,
+			rateLimiterBurst:   1,
+			maxRetries:         3,
+			shouldError:        true,
+			expectedError: &changeset.Error{
+				Message: "generate diff failed",
+				Code:    errors.ErrCodeOpsGenerateDiff,
+				Details: json.RawMessage(`{"id": "00000000-0000-0000-0000-000000000001", "errors": {"dcim.device": {"name": ["illegal name"]}}}`),
+			},
+		},
+		{
+			name:                      "invalid error diff response",
+			baseURL:                   "http://",
+			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
+			diodeToNetBoxClientID:     "test",
+			diodeToNetBoxClientSecret: "test",
+			generateDiffRequest: netboxdiodeplugin.GenerateDiffRequest{
+				ObjectType: "dcim.device",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Device{
+						Device: &diodepb.Device{
+							Name: strPtr("test"),
+							Site: &diodepb.Site{
+								Name: "test-site",
+							},
+						},
+					},
+				},
+			},
+			mockStatusCode:      http.StatusInternalServerError,
+			expectedBody:        `{"object_type":"dcim.device","entity":{"device":{"name":"test","site":{"name":"test-site"}}}}`,
+			mockServerResponse:  `<html><body><h1>500 Internal Server Error</h1></body></html>`,
+			rateLimiterRPS:      1,
+			rateLimiterBurst:    1,
+			maxRetries:          3,
+			shouldError:         true,
+			expectedErrorString: "failed to unmarshal response body invalid character '<' looking for beginning of value",
 		},
 	}
 
@@ -558,132 +349,274 @@ func TestRetrieveObjectState(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cleanUpEnvVars()
 
+			expectedToken := "mocked-token"
+			authTokenURL := "/diode/auth/token"
+			mockOAuth2Server := newMockOAuth2Server(authTokenURL, tt.diodeToNetBoxClientID, tt.diodeToNetBoxClientSecret, expectedToken)
+			defer mockOAuth2Server.Close()
+
+			mockOAuth2ServerURL := mockOAuth2Server.URL + authTokenURL
+
 			handler := func(w http.ResponseWriter, r *http.Request) {
-				assert.Equal(t, r.Method, http.MethodGet)
-				assert.Equal(t, r.URL.Path, "/api/diode/object-state/")
-				assert.Equal(t, r.URL.Query().Get("object_type"), tt.params.ObjectType)
-				var objectID string
-				if tt.params.ObjectID > 0 {
-					objectID = strconv.Itoa(tt.params.ObjectID)
-				}
-				for k, v := range tt.params.Params {
-					assert.Equal(t, r.URL.Query().Get(k), v)
-				}
-				assert.Equal(t, r.URL.Query().Get("object_id"), objectID)
-				assert.Equal(t, r.Header.Get("Authorization"), fmt.Sprintf("Token %s", tt.apiKey))
+				assert.Equal(t, r.Method, http.MethodPost)
+				assert.Equal(t, r.URL.Path, "/api/diode/generate-diff/")
+				assert.Equal(t, r.Header.Get("Authorization"), fmt.Sprintf("Bearer %s", expectedToken))
 				assert.Equal(t, r.Header.Get("User-Agent"), fmt.Sprintf("%s/%s", netboxdiodeplugin.SDKName, netboxdiodeplugin.SDKVersion))
-				if tt.params.BranchID != "" {
-					assert.Equal(t, r.URL.Query().Get(netboxdiodeplugin.NetBoxBranchParam), tt.params.BranchID)
+				assert.Equal(t, r.Header.Get("Content-Type"), "application/json")
+				assert.Equal(t, r.Header.Get("Accept"), "application/json")
+
+				if tt.generateDiffRequest.BranchID != "" {
+					assert.Equal(t, r.Header.Get(netboxdiodeplugin.NetBoxBranchHeader), tt.generateDiffRequest.BranchID)
 				} else {
-					assert.False(t, r.URL.Query().Has(netboxdiodeplugin.NetBoxBranchParam))
+					assert.Len(t, r.Header.Values(netboxdiodeplugin.NetBoxBranchHeader), 0)
 				}
+				body, err := io.ReadAll(r.Body)
+				require.NoError(t, err)
+				assert.Equal(t, tt.expectedBody, string(body))
+				w.WriteHeader(tt.mockStatusCode)
 				_, _ = w.Write([]byte(tt.mockServerResponse))
 			}
-
 			mux := http.NewServeMux()
-			mux.HandleFunc("/api/diode/object-state/", handler)
-			ts := httptest.NewTLSServer(mux)
+			mux.HandleFunc("/api/diode/generate-diff/", handler)
+			ts := httptest.NewServer(mux)
 			defer ts.Close()
 
-			_ = os.Setenv(netboxdiodeplugin.BaseURLEnvVarName, fmt.Sprintf("%s/api/diode", ts.URL))
-			if tt.tlsSkipVerify {
-				_ = os.Setenv(netboxdiodeplugin.TLSSkipVerifyEnvVarName, "true")
-			}
-
-			client, err := netboxdiodeplugin.NewClient(logger, tt.apiKey)
+			baseURL := fmt.Sprintf("%s/api/diode", ts.URL)
+			client, err := netboxdiodeplugin.NewClient(logger, baseURL, tt.diodeToNetBoxClientID, tt.diodeToNetBoxClientSecret, mockOAuth2ServerURL, tt.rateLimiterRPS, tt.rateLimiterBurst, tt.maxRetries)
 			require.NoError(t, err)
-			resp, err := client.RetrieveObjectState(context.Background(), tt.params)
+			resp, err := client.GenerateDiff(context.Background(), tt.generateDiffRequest)
 			if tt.shouldError {
 				require.Error(t, err)
+				if tt.expectedError != nil {
+					assert.Equal(t, tt.expectedError, err)
+				}
+				// changeset.Error details must be valid json
+				if cse, ok := err.(*changeset.Error); ok {
+					assert.True(t, json.Valid(cse.Details))
+				}
+				assert.Equal(t, tt.response, resp)
 				return
 			}
 			require.NoError(t, err)
 			assert.Equal(t, tt.response, resp)
+			assert.Equal(t, tt.mockStatusCode, http.StatusOK)
+		})
+	}
+}
+
+func TestGenerateDiffRateLimiting(t *testing.T) {
+	tests := []struct {
+		name                      string
+		baseURL                   string
+		diodeAuthTokenURL         string
+		diodeToNetBoxClientID     string
+		diodeToNetBoxClientSecret string
+		expectedCalls             int
+		generateDiffRequest       netboxdiodeplugin.GenerateDiffRequest
+		mockStatusCode            int
+		expectedBody              string
+		mockServerResponse        string
+		rateLimiterRPS            int
+		rateLimiterBurst          int
+		maxRetries                int
+		response                  *netboxdiodeplugin.ChangeSetResult
+		shouldError               bool
+	}{
+		{
+			name:                      "rate limited requests",
+			baseURL:                   "http://",
+			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
+			diodeToNetBoxClientID:     "test",
+			diodeToNetBoxClientSecret: "test",
+			expectedCalls:             2,
+			generateDiffRequest: netboxdiodeplugin.GenerateDiffRequest{
+				ObjectType: "dcim.device",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Device{
+						Device: &diodepb.Device{
+							Name: strPtr("test"),
+							Site: &diodepb.Site{
+								Name: "test-site",
+							},
+						},
+					},
+				},
+			},
+			mockStatusCode:     http.StatusOK,
+			expectedBody:       `{"object_type":"dcim.device","entity":{"device":{"name":"test","site":{"name":"test-site"}}}}`,
+			mockServerResponse: `{"id": "00000000-0000-0000-0000-000000000001", "change_set": {"id": "00000000-0000-0000-0000-000000000001", "changes": [{"id": "00000000-0000-0000-0000-000000000002", "change_type": "create", "object_type": "dcim.device", "data": {"name": "test"}}]}}`,
+			rateLimiterRPS:     1,
+			rateLimiterBurst:   1,
+			maxRetries:         3,
+			response: &netboxdiodeplugin.ChangeSetResult{
+				ID: "00000000-0000-0000-0000-000000000001",
+				ChangeSet: &netboxdiodeplugin.ChangeSet{
+					ID: "00000000-0000-0000-0000-000000000001",
+					Changes: []netboxdiodeplugin.Change{
+						{
+							ID:         "00000000-0000-0000-0000-000000000002",
+							ChangeType: "create",
+							ObjectType: "dcim.device",
+							Data:       json.RawMessage(`{"name": "test"}`),
+						},
+					},
+				},
+			},
+			shouldError: false,
+		},
+	}
+
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cleanUpEnvVars()
+
+			expectedToken := "mocked-token"
+			authTokenURL := "/diode/auth/token"
+			mockOAuth2Server := newMockOAuth2Server(authTokenURL, tt.diodeToNetBoxClientID, tt.diodeToNetBoxClientSecret, expectedToken)
+			defer mockOAuth2Server.Close()
+
+			mockOAuth2ServerURL := mockOAuth2Server.URL + authTokenURL
+
+			actualCalls := 0
+			handler := func(w http.ResponseWriter, r *http.Request) {
+				actualCalls++
+				assert.Equal(t, r.Method, http.MethodPost)
+				assert.Equal(t, r.URL.Path, "/api/diode/generate-diff/")
+				assert.Equal(t, r.Header.Get("Authorization"), fmt.Sprintf("Bearer %s", expectedToken))
+				assert.Equal(t, r.Header.Get("User-Agent"), fmt.Sprintf("%s/%s", netboxdiodeplugin.SDKName, netboxdiodeplugin.SDKVersion))
+				assert.Equal(t, r.Header.Get("Content-Type"), "application/json")
+
+				if tt.generateDiffRequest.BranchID != "" {
+					assert.Equal(t, r.Header.Get(netboxdiodeplugin.NetBoxBranchHeader), tt.generateDiffRequest.BranchID)
+				} else {
+					assert.Len(t, r.Header.Values(netboxdiodeplugin.NetBoxBranchHeader), 0)
+				}
+				body, err := io.ReadAll(r.Body)
+				require.NoError(t, err)
+				assert.Equal(t, tt.expectedBody, string(body))
+				w.WriteHeader(tt.mockStatusCode)
+				_, _ = w.Write([]byte(tt.mockServerResponse))
+			}
+			mux := http.NewServeMux()
+			mux.HandleFunc("/api/diode/generate-diff/", handler)
+			ts := httptest.NewServer(mux)
+			defer ts.Close()
+
+			baseURL := fmt.Sprintf("%s/api/diode", ts.URL)
+			client, err := netboxdiodeplugin.NewClient(logger, baseURL, tt.diodeToNetBoxClientID, tt.diodeToNetBoxClientSecret, mockOAuth2ServerURL, tt.rateLimiterRPS, tt.rateLimiterBurst, tt.maxRetries)
+			require.NoError(t, err)
+			resp, err := client.GenerateDiff(context.Background(), tt.generateDiffRequest)
+			_, _ = client.GenerateDiff(context.Background(), tt.generateDiffRequest)
+			if tt.shouldError {
+				require.Error(t, err)
+				assert.Equal(t, tt.response, resp)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tt.response, resp)
+			assert.Equal(t, tt.mockStatusCode, http.StatusOK)
+			assert.Equal(t, tt.expectedCalls, actualCalls)
 		})
 	}
 }
 
 func TestApplyChangeSet(t *testing.T) {
 	tests := []struct {
-		name               string
-		apiKey             string
-		changeSetRequest   netboxdiodeplugin.ChangeSetRequest
-		mockServerResponse string
-		mockStatusCode     int
-		response           *netboxdiodeplugin.ChangeSetResponse
-		shouldError        bool
+		name                      string
+		baseURL                   string
+		diodeAuthTokenURL         string
+		diodeToNetBoxClientID     string
+		diodeToNetBoxClientSecret string
+		changeSetRequest          netboxdiodeplugin.ApplyChangeSetRequest
+		mockServerResponse        string
+		mockStatusCode            int
+		rateLimiterRPS            int
+		rateLimiterBurst          int
+		maxRetries                int
+		response                  *netboxdiodeplugin.ChangeSetResult
+		shouldError               bool
+		expectedError             error
+		expectedErrorString       string
 	}{
 		{
-			name:   "valid apply change set response",
-			apiKey: "foobar",
-			changeSetRequest: netboxdiodeplugin.ChangeSetRequest{
-				ChangeSetID: "00000000-0000-0000-0000-000000000000",
-				ChangeSet: []netboxdiodeplugin.Change{
+			name:                      "valid apply change set response",
+			baseURL:                   "http://",
+			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
+			diodeToNetBoxClientID:     "test",
+			diodeToNetBoxClientSecret: "test",
+			changeSetRequest: netboxdiodeplugin.ApplyChangeSetRequest{
+				ID: "00000000-0000-0000-0000-000000000000",
+				Changes: []netboxdiodeplugin.Change{
 					{
-						ChangeID:      "00000000-0000-0000-0000-000000000001",
+						ID:            "00000000-0000-0000-0000-000000000001",
 						ChangeType:    "create",
 						ObjectType:    "dcim.device",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimDevice{
-							Name: "test",
-						},
+						Data:          json.RawMessage(`{"name": "test"}`),
 					},
 					{
-						ChangeID:      "00000000-0000-0000-0000-000000000002",
+						ID:            "00000000-0000-0000-0000-000000000002",
 						ChangeType:    "update",
 						ObjectType:    "dcim.device",
 						ObjectID:      ptrInt(1),
 						ObjectVersion: ptrInt(2),
-						Data: &netbox.DcimDevice{
-							Name: "test",
-						},
+						Data:          json.RawMessage(`{"name": "test"}`),
 					},
 				},
 			},
-			mockServerResponse: `{"change_set_id":"00000000-0000-0000-0000-000000000000","result":"success"}`,
+			mockServerResponse: `{"id":"00000000-0000-0000-0000-000000000000"}`,
 			mockStatusCode:     http.StatusOK,
-			response: &netboxdiodeplugin.ChangeSetResponse{
-				ChangeSetID: "00000000-0000-0000-0000-000000000000",
-				Result:      "success",
+			rateLimiterRPS:     1,
+			rateLimiterBurst:   1,
+			maxRetries:         3,
+			response: &netboxdiodeplugin.ChangeSetResult{
+				ID: "00000000-0000-0000-0000-000000000000",
 			},
 			shouldError: false,
 		},
 		{
-			name:   "valid apply change set response with branch",
-			apiKey: "foobar",
-			changeSetRequest: netboxdiodeplugin.ChangeSetRequest{
-				ChangeSetID: "00000000-0000-0000-0000-000000000000",
-				BranchID:    "test-branch",
-				ChangeSet: []netboxdiodeplugin.Change{
+			name:                      "valid apply change set response with branch",
+			baseURL:                   "http://",
+			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
+			diodeToNetBoxClientID:     "test",
+			diodeToNetBoxClientSecret: "test",
+			changeSetRequest: netboxdiodeplugin.ApplyChangeSetRequest{
+				ID:       "00000000-0000-0000-0000-000000000000",
+				BranchID: "test-branch",
+				Changes: []netboxdiodeplugin.Change{
 					{
-						ChangeID:      "00000000-0000-0000-0000-000000000001",
+						ID:            "00000000-0000-0000-0000-000000000001",
 						ChangeType:    "create",
 						ObjectType:    "dcim.device",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimDevice{
-							Name: "test",
-						},
+						Data:          json.RawMessage(`{"name": "test"}`),
 					},
 				},
 			},
-			mockServerResponse: `{"change_set_id":"00000000-0000-0000-0000-000000000000","result":"success"}`,
+			mockServerResponse: `{"id":"00000000-0000-0000-0000-000000000000"}`,
 			mockStatusCode:     http.StatusOK,
-			response: &netboxdiodeplugin.ChangeSetResponse{
-				ChangeSetID: "00000000-0000-0000-0000-000000000000",
-				Result:      "success",
+			rateLimiterRPS:     1,
+			rateLimiterBurst:   1,
+			maxRetries:         3,
+			response: &netboxdiodeplugin.ChangeSetResult{
+				ID: "00000000-0000-0000-0000-000000000000",
 			},
 			shouldError: false,
 		},
 		{
-			name:   "invalid request",
-			apiKey: "foobar",
-			changeSetRequest: netboxdiodeplugin.ChangeSetRequest{
-				ChangeSetID: "00000000-0000-0000-0000-000000000000",
-				ChangeSet: []netboxdiodeplugin.Change{
+			name:                      "invalid request",
+			baseURL:                   "http://",
+			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
+			diodeToNetBoxClientID:     "test",
+			diodeToNetBoxClientSecret: "test",
+			changeSetRequest: netboxdiodeplugin.ApplyChangeSetRequest{
+				ID: "00000000-0000-0000-0000-000000000000",
+				Changes: []netboxdiodeplugin.Change{
 					{
-						ChangeID:      "00000000-0000-0000-0000-000000000001",
+						ID:            "00000000-0000-0000-0000-000000000001",
 						ChangeType:    "create",
 						ObjectType:    "",
 						ObjectID:      nil,
@@ -692,73 +625,72 @@ func TestApplyChangeSet(t *testing.T) {
 					},
 				},
 			},
-			response:    nil,
-			shouldError: true,
+			mockStatusCode:   http.StatusBadRequest,
+			rateLimiterRPS:   1,
+			rateLimiterBurst: 1,
+			maxRetries:       3,
+			response:         nil,
+			shouldError:      true,
 		},
 		{
-			name:   "marshal error",
-			apiKey: "foobar",
-			changeSetRequest: netboxdiodeplugin.ChangeSetRequest{
-				ChangeSetID: "00000000-0000-0000-0000-000000000000",
-				ChangeSet: []netboxdiodeplugin.Change{
+			name:                      "invalid post message",
+			baseURL:                   "http://",
+			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
+			diodeToNetBoxClientID:     "test",
+			diodeToNetBoxClientSecret: "test",
+			changeSetRequest: netboxdiodeplugin.ApplyChangeSetRequest{
+				ID: "00000000-0000-0000-0000-000000000000",
+				Changes: []netboxdiodeplugin.Change{
 					{
-						ChangeID:      "00000000-0000-0000-0000-000000000001",
-						ChangeType:    "create",
-						ObjectType:    "",
-						ObjectID:      nil,
-						ObjectVersion: nil,
-						Data:          map[string]any{"invalid": make(chan int)},
-					},
-				},
-			},
-			response:    nil,
-			shouldError: true,
-		},
-		{
-			name:   "invalid post message",
-			apiKey: "foobar",
-			changeSetRequest: netboxdiodeplugin.ChangeSetRequest{
-				ChangeSetID: "00000000-0000-0000-0000-000000000000",
-				ChangeSet: []netboxdiodeplugin.Change{
-					{
-						ChangeID:      "00000000-0000-0000-0000-000000000001",
+						ID:            "00000000-0000-0000-0000-000000000001",
 						ChangeType:    "create",
 						ObjectType:    "dcim.device",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimDevice{
-							Name: "test",
-						},
+						Data:          json.RawMessage(`{"name": "test"}`),
 					},
 				},
 			},
-			mockServerResponse: `{"change_set_id":"00000000-0000-0000-0000-000000000000","result":"error"}`,
+			mockServerResponse: `{"id":"00000000-0000-0000-0000-000000000000","errors": {"dcim.device": {"name": ["illegal name"]}}}`,
 			mockStatusCode:     http.StatusBadRequest,
+			rateLimiterRPS:     1,
+			rateLimiterBurst:   1,
+			maxRetries:         3,
 			response:           nil,
 			shouldError:        true,
+			expectedError: &changeset.Error{
+				Message: "apply change set failed",
+				Code:    errors.ErrCodeOpsApplyChangeSet,
+				Details: json.RawMessage(`{"id":"00000000-0000-0000-0000-000000000000","errors": {"dcim.device": {"name": ["illegal name"]}}}`),
+			},
 		},
 		{
-			name:   "unmarshal error",
-			apiKey: "foobar",
-			changeSetRequest: netboxdiodeplugin.ChangeSetRequest{
-				ChangeSetID: "00000000-0000-0000-0000-000000000000",
-				ChangeSet: []netboxdiodeplugin.Change{
+			name:                      "unmarshal error",
+			baseURL:                   "http://",
+			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
+			diodeToNetBoxClientID:     "test",
+			diodeToNetBoxClientSecret: "test",
+			changeSetRequest: netboxdiodeplugin.ApplyChangeSetRequest{
+				ID: "00000000-0000-0000-0000-000000000000",
+				Changes: []netboxdiodeplugin.Change{
 					{
-						ChangeID:      "00000000-0000-0000-0000-000000000001",
+						ID:            "00000000-0000-0000-0000-000000000001",
 						ChangeType:    "create",
 						ObjectType:    "dcim.device",
 						ObjectID:      nil,
 						ObjectVersion: nil,
-						Data: &netbox.DcimDevice{
-							Name: "test",
-						},
+						Data:          json.RawMessage(`{"name": "test"}`),
 					},
 				},
 			},
-			mockServerResponse: `{"change_set_id"  - "00000000-0000-0000\-0000-000000000000","result":"error"}`,
-			mockStatusCode:     http.StatusBadRequest,
-			response:           nil,
-			shouldError:        true,
+			mockServerResponse:  `{"id"  - "00000000-0000-0000\-0000-000000000000","result":"error"}`,
+			mockStatusCode:      http.StatusBadRequest,
+			rateLimiterRPS:      1,
+			rateLimiterBurst:    1,
+			maxRetries:          3,
+			response:            nil,
+			shouldError:         true,
+			expectedErrorString: "failed to unmarshal response body invalid character '-' after object key",
 		},
 	}
 
@@ -768,10 +700,17 @@ func TestApplyChangeSet(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			cleanUpEnvVars()
 
+			expectedToken := "mocked-token"
+			authTokenURL := "/diode/auth/token"
+			mockOAuth2Server := newMockOAuth2Server(authTokenURL, tt.diodeToNetBoxClientID, tt.diodeToNetBoxClientSecret, expectedToken)
+			defer mockOAuth2Server.Close()
+
+			mockOAuth2ServerURL := mockOAuth2Server.URL + authTokenURL
+
 			handler := func(w http.ResponseWriter, r *http.Request) {
 				assert.Equal(t, r.Method, http.MethodPost)
 				assert.Equal(t, r.URL.Path, "/api/diode/apply-change-set/")
-				assert.Equal(t, r.Header.Get("Authorization"), fmt.Sprintf("Token %s", tt.apiKey))
+				assert.Equal(t, r.Header.Get("Authorization"), fmt.Sprintf("Bearer %s", expectedToken))
 				assert.Equal(t, r.Header.Get("User-Agent"), fmt.Sprintf("%s/%s", netboxdiodeplugin.SDKName, netboxdiodeplugin.SDKVersion))
 				assert.Equal(t, r.Header.Get("Content-Type"), "application/json")
 				if tt.changeSetRequest.BranchID != "" {
@@ -787,14 +726,22 @@ func TestApplyChangeSet(t *testing.T) {
 			ts := httptest.NewServer(mux)
 			defer ts.Close()
 
-			_ = os.Setenv(netboxdiodeplugin.BaseURLEnvVarName, fmt.Sprintf("%s/api/diode", ts.URL))
-
-			client, err := netboxdiodeplugin.NewClient(logger, tt.apiKey)
+			baseURL := fmt.Sprintf("%s/api/diode", ts.URL)
+			client, err := netboxdiodeplugin.NewClient(logger, baseURL, tt.diodeToNetBoxClientID, tt.diodeToNetBoxClientSecret, mockOAuth2ServerURL, tt.rateLimiterRPS, tt.rateLimiterBurst, tt.maxRetries)
 			require.NoError(t, err)
 			resp, err := client.ApplyChangeSet(context.Background(), tt.changeSetRequest)
 			if tt.shouldError {
 				require.Error(t, err)
-				assert.Equal(t, tt.response, resp)
+				if tt.expectedError != nil {
+					assert.Equal(t, tt.expectedError, err)
+				}
+				if tt.expectedErrorString != "" {
+					assert.Contains(t, err.Error(), tt.expectedErrorString)
+				}
+				// changeset.Error details must be valid json
+				if cse, ok := err.(*changeset.Error); ok {
+					assert.True(t, json.Valid(cse.Details))
+				}
 				return
 			}
 			require.NoError(t, err)
@@ -804,12 +751,155 @@ func TestApplyChangeSet(t *testing.T) {
 	}
 }
 
+func TestApplyChangeSetRateLimiting(t *testing.T) {
+	tests := []struct {
+		name                      string
+		baseURL                   string
+		diodeToNetBoxClientID     string
+		diodeToNetBoxClientSecret string
+		changeSetRequest          netboxdiodeplugin.ApplyChangeSetRequest
+		expectedCalls             int
+		mockServerResponse        string
+		mockStatusCode            int
+		rateLimiterRPS            int
+		rateLimiterBurst          int
+		maxRetries                int
+		response                  *netboxdiodeplugin.ChangeSetResult
+		shouldError               bool
+	}{
+		{
+			name:                      "rate limit error",
+			diodeToNetBoxClientID:     "test",
+			diodeToNetBoxClientSecret: "test",
+			changeSetRequest: netboxdiodeplugin.ApplyChangeSetRequest{
+				ID:       "00000000-0000-0000-0000-000000000000",
+				BranchID: "test-branch",
+				Changes: []netboxdiodeplugin.Change{
+					{
+						ID:            "00000000-0000-0000-0000-000000000001",
+						ChangeType:    "create",
+						ObjectType:    "dcim.device",
+						ObjectID:      nil,
+						ObjectVersion: nil,
+						Data:          json.RawMessage(`{"name": "test"}`),
+					},
+				},
+			},
+			expectedCalls:      2,
+			mockServerResponse: `{"id":"00000000-0000-0000-0000-000000000000"}`,
+			mockStatusCode:     http.StatusOK,
+			rateLimiterRPS:     1,
+			rateLimiterBurst:   1,
+			maxRetries:         3,
+			response: &netboxdiodeplugin.ChangeSetResult{
+				ID: "00000000-0000-0000-0000-000000000000",
+			},
+			shouldError: false,
+		},
+	}
+
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cleanUpEnvVars()
+			actualCalls := 0
+
+			expectedToken := "mocked-token"
+			authTokenURL := "/diode/auth/token"
+			mockOAuth2Server := newMockOAuth2Server(authTokenURL, tt.diodeToNetBoxClientID, tt.diodeToNetBoxClientSecret, expectedToken)
+			defer mockOAuth2Server.Close()
+
+			mockOAuth2ServerURL := mockOAuth2Server.URL + authTokenURL
+
+			handler := func(w http.ResponseWriter, r *http.Request) {
+				actualCalls++
+				assert.Equal(t, r.Method, http.MethodPost)
+				assert.Equal(t, r.URL.Path, "/api/diode/apply-change-set/")
+				assert.Equal(t, r.Header.Get("Authorization"), fmt.Sprintf("Bearer %s", expectedToken))
+				assert.Equal(t, r.Header.Get("User-Agent"), fmt.Sprintf("%s/%s", netboxdiodeplugin.SDKName, netboxdiodeplugin.SDKVersion))
+				assert.Equal(t, r.Header.Get("Content-Type"), "application/json")
+				if tt.changeSetRequest.BranchID != "" {
+					assert.Equal(t, r.Header.Get(netboxdiodeplugin.NetBoxBranchHeader), tt.changeSetRequest.BranchID)
+				} else {
+					assert.Len(t, r.Header.Values(netboxdiodeplugin.NetBoxBranchHeader), 0)
+				}
+				w.WriteHeader(tt.mockStatusCode)
+				_, _ = w.Write([]byte(tt.mockServerResponse))
+			}
+			mux := http.NewServeMux()
+			mux.HandleFunc("/api/diode/apply-change-set/", handler)
+			ts := httptest.NewServer(mux)
+			defer ts.Close()
+
+			baseURL := fmt.Sprintf("%s/api/diode", ts.URL)
+
+			client, err := netboxdiodeplugin.NewClient(logger, baseURL, tt.diodeToNetBoxClientID, tt.diodeToNetBoxClientSecret, mockOAuth2ServerURL, tt.rateLimiterRPS, tt.rateLimiterBurst, tt.maxRetries)
+			require.NoError(t, err)
+			resp, err := client.ApplyChangeSet(context.Background(), tt.changeSetRequest)
+			_, _ = client.ApplyChangeSet(context.Background(), tt.changeSetRequest)
+			if tt.shouldError {
+				require.Error(t, err)
+				assert.Equal(t, tt.response, resp)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tt.response, resp)
+			assert.Equal(t, tt.mockStatusCode, http.StatusOK)
+			assert.Equal(t, tt.expectedCalls, actualCalls)
+		})
+	}
+}
+
 func cleanUpEnvVars() {
-	_ = os.Unsetenv(netboxdiodeplugin.BaseURLEnvVarName)
 	_ = os.Unsetenv(netboxdiodeplugin.TimeoutSecondsEnvVarName)
 	_ = os.Unsetenv(netboxdiodeplugin.TLSSkipVerifyEnvVarName)
 }
 
 func ptrInt(i int) *int {
 	return &i
+}
+
+func strPtr(s string) *string {
+	return &s
+}
+
+func newMockOAuth2Server(authTokenURL, wantClientID, wantClientSecret, mockedToken string) *httptest.Server {
+	handler := http.NewServeMux()
+
+	handler.HandleFunc(authTokenURL, func(w http.ResponseWriter, r *http.Request) {
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "invalid form", http.StatusBadRequest)
+			return
+		}
+
+		// Optional: Validate client credentials
+		if r.PostForm.Get("client_id") != wantClientID || r.PostForm.Get("client_secret") != wantClientSecret {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusUnauthorized)
+			if err := json.NewEncoder(w).Encode(map[string]string{
+				"error":             "unauthorized",
+				"error_description": "Authentication required",
+			}); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			return
+		}
+
+		// Simulate token response
+		resp := map[string]any{
+			"access_token": mockedToken,
+			"token_type":   "Bearer",
+			"expires_in":   3600,
+			"scope":        "dummy-scope",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	})
+
+	return httptest.NewServer(handler)
 }

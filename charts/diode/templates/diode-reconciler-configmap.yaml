@@ -1,13 +1,32 @@
+{{- if .Values.diodeReconciler.enabled -}}
+{{- $config := index .Values.diodeReconciler.config -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ .Values.diodeReconciler.serviceName }}-config
-  namespace: {{ .Release.Namespace }}
+  name: {{ include "diode.reconciler.configmap" . }}
+  namespace: {{ include "diode.namespace" . }}
+  labels:
+    {{- include "diode.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ include "diode.reconciler.servicename" . }}
 data:
-  REDIS_HOST: {{ include "diode.redis.host" . | quote }}
+  NETBOX_DIODE_PLUGIN_API_BASE_URL: {{ $config.netboxDiodePluginApiBaseUrl | quote }}
+  NETBOX_DIODE_PLUGIN_SKIP_TLS_VERIFY: {{ $config.netboxDiodePluginSkipTlsVerify | quote }}
+  LOGGING_LEVEL: {{ $config.loggingLevel | default "INFO" | quote }}
+  MIGRATION_ENABLED: {{ $config.migrationEnabled | default "true" | quote }}
+  RECONCILER_RATE_LIMITER_RPS: {{ $config.reconcilerRateLimiterRps | default "20" | quote }}
+  RECONCILER_RATE_LIMITER_BURST: {{ $config.reconcilerRateLimiterBurst | default "1" | quote }}
+  DIODE_TO_NETBOX_RATE_LIMITER_RPS: {{ $config.diodeToNetboxRateLimiterRps | default "20" | quote }}
+  DIODE_TO_NETBOX_RATE_LIMITER_BURST: {{ $config.diodeToNetboxRateLimiterBurst | default "1" | quote }}
+  POSTGRES_HOST: {{ include "diode.postgresql.hostname" . | quote }}
+  POSTGRES_PORT: {{ include "diode.postgresql.port" . | quote }}
+  POSTGRES_DB_NAME: {{ $config.postgresDbName | default "diode" | quote }}
+  POSTGRES_USER: {{ $config.postgresUser | default "diode" | quote }}
+  REDIS_HOST: {{ include "diode.redis.hostname" . | quote }}
   REDIS_PORT: {{ include "diode.redis.port" . | quote }}
-  NETBOX_DIODE_PLUGIN_API_BASE_URL: {{ .Values.diodeReconciler.config.netboxDiodePluginAPIBaseURL | quote }}
-  NETBOX_DIODE_PLUGIN_SKIP_TLS_VERIFY: {{ .Values.diodeReconciler.config.netboxDiodePluginSkipTLSVerify | quote }}
-  LOGGING_LEVEL: {{ .Values.diodeReconciler.config.loggingLevel | quote }}
-  MIGRATION_ENABLED: {{ .Values.diodeReconciler.config.migrationEnabled | quote }}
-  SENTRY_DSN: {{ .Values.diodeReconciler.config.sentryDsn | quote }}
+  SENTRY_DSN: {{ $config.sentryDsn | quote }}
+  TELEMETRY_METRICS_EXPORTER: {{ $config.telemetryMetricsExporter | quote }}
+  TELEMETRY_TRACES_EXPORTER: {{ $config.telemetryTracesExporter | default "none" | quote }}
+  TELEMETRY_ENVIRONMENT: {{ $config.telemetryEnvironment | default .Values.diode.environment | quote }}
+  DIODE_AUTH_TOKEN_URL: {{ printf "%s/token" (include "diode.auth.url" .) | quote }}
+  DIODE_TO_NETBOX_CLIENT_ID: {{ $config.diodeToNetBoxClientId | quote }}
+{{- end }}

@@ -1,0 +1,25 @@
+name: Buf Breaking Change Check
+
+on:
+  workflow_dispatch:
+
+jobs:
+  buf-breaking-check:
+    name: Buf Breaking Check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Needed to access other branches for comparison
+
+      - name: Run Buf Breaking Change Check
+        uses: bufbuild/buf-action@5150a1eef5c10b6a5cf8a69fc872f24a09473195 # v1.1.1
+        with:
+          input: diode-proto
+          command: breaking
+          github_token: "${{ secrets.GITHUB_TOKEN }}"
+          args: --against 'https://github.com/${{ github.repository }}.git#branch=develop'

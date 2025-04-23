@@ -10,14 +10,18 @@ import (
 	"time"
 
 	"github.com/alicebob/miniredis/v2"
+	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/test/bufconn"
 
+	"github.com/netboxlabs/diode/diode-server/authutil"
 	pb "github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/ingester"
 	"github.com/netboxlabs/diode/diode-server/reconciler"
+	"github.com/netboxlabs/diode/diode-server/reconciler/mocks"
 )
 
 func getFreePort() (string, error) {
@@ -38,39 +42,38 @@ func setupEnv(redisAddr string) {
 	host, port, _ := net.SplitHostPort(redisAddr)
 	grpcPort, _ := getFreePort()
 	_ = os.Setenv("GRPC_PORT", grpcPort)
-	_ = os.Setenv("RECONCILER_GRPC_PORT", grpcPort)
 	_ = os.Setenv("REDIS_HOST", host)
 	_ = os.Setenv("REDIS_PORT", port)
 	_ = os.Setenv("REDIS_PASSWORD", "")
 	_ = os.Setenv("REDIS_DB", "0")
 	_ = os.Setenv("REDIS_STREAM_DB", "1")
-	_ = os.Setenv("NETBOX_API_URL", "http://example.com")
-	_ = os.Setenv("DIODE_TO_NETBOX_API_KEY", "diode_to_netbox_api_key")
-	_ = os.Setenv("NETBOX_TO_DIODE_API_KEY", "netbox_to_diode_api_key")
-	_ = os.Setenv("DIODE_API_KEY", "diode_api_key")
-	_ = os.Setenv("INGESTER_TO_RECONCILER_API_KEY", "ingester_to_reconciler_api_key")
+	_ = os.Setenv("NETBOX_DIODE_PLUGIN_API_BASE_URL", "http://example.com")
+	_ = os.Setenv("NETBOX_DIODE_PLUGIN_SKIP_TLS_VERIFY", "true")
+	_ = os.Setenv("DIODE_AUTH_TOKEN_URL", "http://example.com")
+	_ = os.Setenv("DIODE_TO_NETBOX_CLIENT_ID", "test-client-id")
+	_ = os.Setenv("DIODE_TO_NETBOX_CLIENT_SECRET", "test-client-secret")
 }
 
 func teardownEnv() {
 	_ = os.Unsetenv("GRPC_PORT")
-	_ = os.Unsetenv("RECONCILER_GRPC_PORT")
 	_ = os.Unsetenv("REDIS_HOST")
 	_ = os.Unsetenv("REDIS_PORT")
 	_ = os.Unsetenv("REDIS_PASSWORD")
 	_ = os.Unsetenv("REDIS_DB")
 	_ = os.Unsetenv("REDIS_STREAM_DB")
-	_ = os.Unsetenv("NETBOX_API_URL")
-	_ = os.Unsetenv("DIODE_TO_NETBOX_API_KEY")
-	_ = os.Unsetenv("NETBOX_TO_DIODE_API_KEY")
-	_ = os.Unsetenv("DIODE_API_KEY")
-	_ = os.Unsetenv("INGESTER_TO_RECONCILER_API_KEY")
+	_ = os.Unsetenv("NETBOX_DIODE_PLUGIN_API_BASE_URL")
+	_ = os.Unsetenv("NETBOX_DIODE_PLUGIN_SKIP_TLS_VERIFY")
+	_ = os.Unsetenv("DIODE_AUTH_TOKEN_URL")
+	_ = os.Unsetenv("DIODE_TO_NETBOX_CLIENT_ID")
+	_ = os.Unsetenv("DIODE_TO_NETBOX_CLIENT_SECRET")
 }
 
 const bufSize = 1024 * 1024
 
 func startReconcilerServer(ctx context.Context, t *testing.T) *reconciler.Server {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
-	server, err := reconciler.NewServer(ctx, logger)
+	mockRepository := mocks.NewRepository(t)
+	server, err := reconciler.NewServer(ctx, logger, mockRepository, authutil.NewUnverifiedJWTAuthorizer(logger))
 	require.NoError(t, err)
 
 	errChan := make(chan error, 1)
@@ -94,8 +97,14 @@ func startTestComponent(ctx context.Context, t *testing.T) (*ingester.Component,
 	listener := bufconn.Listen(bufSize)
 	s := grpc.NewServer()
 
+	var cfg ingester.Config
+	err := envconfig.Process("", &cfg)
+	require.NoError(t, err)
+
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
-	component, err := ingester.New(ctx, logger)
+
+	meter := otel.GetMeterProvider().Meter("test.ingester")
+	component, err := ingester.New(ctx, logger, cfg, meter)
 	require.NoError(t, err)
 
 	pb.RegisterIngesterServiceServer(s, component)
@@ -134,7 +143,12 @@ func TestNewComponent(t *testing.T) {
 	_ = os.Setenv("GRPC_PORT", grpcPort)
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
 
-	component, err := ingester.New(ctx, logger)
+	var cfg ingester.Config
+	err := envconfig.Process("", &cfg)
+	require.NoError(t, err)
+
+	meter := otel.GetMeterProvider().Meter("test.ingester")
+	component, err := ingester.New(ctx, logger, cfg, meter)
 
 	require.NoError(t, err)
 	require.NotNil(t, component)

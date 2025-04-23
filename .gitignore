@@ -25,6 +25,8 @@ coverage.txt
 diode-server/.coverage/
 diode-server/build/
 diode-server/docker/dev.env
+diode-server/docker/oauth2/client/*
+!diode-server/docker/oauth2/client/.keep
 
 # Python
 __pycache__/

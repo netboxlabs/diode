@@ -3,12 +3,13 @@
 -- Create the ingestion_logs table
 CREATE TABLE IF NOT EXISTS ingestion_logs
 (
-    id                   SERIAL PRIMARY KEY,
-    ingestion_log_ksuid  CHAR(27) NOT NULL,
-    data_type            VARCHAR(255),
+    id                   INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    external_id          VARCHAR(255) NOT NULL,
+    object_type          VARCHAR(255),
     state                INTEGER,
     request_id           VARCHAR(255),
     ingestion_ts         BIGINT,
+    source_ts            BIGINT,
     producer_app_name    VARCHAR(255),
     producer_app_version VARCHAR(255),
     sdk_name             VARCHAR(255),
@@ -21,12 +22,31 @@ CREATE TABLE IF NOT EXISTS ingestion_logs
 );
 
 -- Create indices
-CREATE INDEX IF NOT EXISTS idx_ingestion_logs_ingestion_log_ksuid ON ingestion_logs(ingestion_log_ksuid);
-CREATE INDEX IF NOT EXISTS idx_ingestion_logs_data_type ON ingestion_logs(data_type);
-CREATE INDEX IF NOT EXISTS idx_ingestion_logs_state ON ingestion_logs(state);
-CREATE INDEX IF NOT EXISTS idx_ingestion_logs_request_id ON ingestion_logs(request_id);
+CREATE INDEX IF NOT EXISTS idx_ingestion_logs_external_id ON ingestion_logs (external_id);
+CREATE INDEX IF NOT EXISTS idx_ingestion_logs_object_type ON ingestion_logs (object_type);
+CREATE INDEX IF NOT EXISTS idx_ingestion_logs_state ON ingestion_logs (state);
+CREATE INDEX IF NOT EXISTS idx_ingestion_logs_request_id ON ingestion_logs (request_id);
+
+-- Create trigger function
+-- +goose StatementBegin
+CREATE OR REPLACE FUNCTION update_updated_at_column() RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+-- +goose StatementEnd
+
+-- Create trigger
+-- +goose StatementBegin
+CREATE TRIGGER update_ingestion_logs_updated_at
+    BEFORE UPDATE ON ingestion_logs
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+-- +goose StatementEnd
 
 -- +goose Down
 
 -- Drop the ingestion_logs table
 DROP TABLE ingestion_logs;
+DROP FUNCTION IF EXISTS update_updated_at_column();

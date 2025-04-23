@@ -13,15 +13,20 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"reflect"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/mitchellh/mapstructure"
+	"github.com/hashicorp/go-retryablehttp"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/clientcredentials"
+	"golang.org/x/time/rate"
+	"google.golang.org/protobuf/encoding/protojson"
+	"google.golang.org/protobuf/proto"
 
-	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
-	"github.com/netboxlabs/diode/diode-server/netbox"
+	"github.com/netboxlabs/diode/diode-server/authutil"
+	diodeErrors "github.com/netboxlabs/diode/diode-server/errors"
+	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
 )
 
 const (
@@ -29,138 +34,84 @@ const (
 	SDKName = "netbox-diode-plugin-sdk-go"
 
 	// SDKVersion is the version of the SDK
-	SDKVersion = "0.1.0"
+	SDKVersion = "0.1.0" // TODO: consider making this same as diode-reconciler version
 
-	// BaseURLEnvVarName is the environment variable name for the NetBox Diode plugin HTTP base URL
-	BaseURLEnvVarName = "NETBOX_DIODE_PLUGIN_API_BASE_URL"
-
-	// TLSSkipVerifyEnvVarName is the environment variable name for Netbox Diode plugin TLS verification
+	// TLSSkipVerifyEnvVarName is the environment variable name for NetBox Diode plugin TLS verification
 	TLSSkipVerifyEnvVarName = "NETBOX_DIODE_PLUGIN_SKIP_TLS_VERIFY"
 
 	// TimeoutSecondsEnvVarName is the environment variable name for the NetBox Diode plugin HTTP timeout
 	TimeoutSecondsEnvVarName = "NETBOX_DIODE_PLUGIN_API_TIMEOUT_SECONDS"
 
-	defaultBaseURL = "http://127.0.0.1:8080/api/plugins/diode"
-
+	// defaultHTTPTimeoutSeconds is the default HTTP timeout
 	defaultHTTPTimeoutSeconds = 5
 
 	// NetBoxBranchHeader is an HTTP header that indicates the NetBox branch to target
 	NetBoxBranchHeader = "X-NetBox-Branch"
+
 	// NetBoxBranchParam is a query parameter that indicates the NetBox branch to target
 	NetBoxBranchParam = "_branch"
 )
 
-var (
-	// ErrInvalidTimeout is an error for invalid timeout value
-	ErrInvalidTimeout = errors.New("invalid timeout value")
+// ErrInvalidTimeout is an error for invalid timeout value
+var ErrInvalidTimeout = errors.New("invalid timeout value")
 
-	// ErrApplyChangeSetFailed is an error for failed to apply change set
-	ErrApplyChangeSetFailed = errors.New("failed to apply change set")
-)
-
-type apiRoundTripper struct {
-	transport http.RoundTripper
-	apiKey    string
-	userAgent string
+// ChangeSetResult represents a change set result
+type ChangeSetResult struct {
+	ID        string          `json:"id"`
+	ChangeSet *ChangeSet      `json:"change_set"`
+	Errors    json.RawMessage `json:"errors"`
 }
 
-func newAPIRoundTripper(apiKey string, next http.RoundTripper) (http.RoundTripper, error) {
-	if len(apiKey) == 0 {
-		return nil, fmt.Errorf("API key not provided")
-	}
-
-	return &apiRoundTripper{
-		transport: next,
-		apiKey:    apiKey,
-		userAgent: userAgent(),
-	}, nil
+// ChangeSet represents a change set
+type ChangeSet struct {
+	ID      string   `json:"id"`
+	Changes []Change `json:"changes"`
+	Branch  *Branch  `json:"branch"`
 }
 
-// RoundTrip implements the RoundTripper interface
-func (rt *apiRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
-	// Clone request to ensure thread safety
-	req2 := req.Clone(req.Context())
-
-	// Set authorization header
-	req2.Header.Set("Authorization", fmt.Sprintf("Token %s", rt.apiKey))
-
-	// Set user agent header
-	req2.Header.Set("User-Agent", rt.userAgent)
-
-	// Set content type header
-	req2.Header.Set("Content-Type", "application/json")
-
-	return rt.transport.RoundTrip(req2)
+// Change represents a change
+type Change struct {
+	ID                 string          `json:"id"`
+	ChangeType         string          `json:"change_type"`
+	ObjectType         string          `json:"object_type"`
+	ObjectID           *int            `json:"object_id,omitempty"`
+	RefID              *string         `json:"ref_id,omitempty"`
+	ObjectVersion      *int            `json:"object_version,omitempty"`
+	Data               json.RawMessage `json:"data"`
+	Before             json.RawMessage `json:"before,omitempty"`
+	ObjectPrimaryValue string          `json:"object_primary_value,omitempty"`
+	NewRefs            []string        `json:"new_refs,omitempty"`
 }
 
-// ApplyChangeSetError represents an error when applying a change set
-type ApplyChangeSetError struct {
-	Message string
-	Code    int
-	Details ChangeSetResponse
-}
-
-// Error returns the NetBoxDiodePluginError message
-func (e *ApplyChangeSetError) Error() string {
-	detailsErrorsJSON, _ := json.Marshal(e.Details.Errors)
-	return fmt.Sprintf("msg: %s, code: %d, change set id: %s, result: %s, errors: %s", e.Message, e.Code, e.Details.ChangeSetID, e.Details.Result, detailsErrorsJSON)
-}
-
-// NewApplyChangeSetError creates a new ApplyChangeSetError
-func NewApplyChangeSetError(msg string, code int, response ChangeSetResponse) error {
-	return &ApplyChangeSetError{
-		Message: msg,
-		Code:    code,
-		Details: response,
-	}
-}
-
-// ToIngestionError converts ApplyChangeSetError to *reconcilerpb.IngestionError
-func (e *ApplyChangeSetError) ToIngestionError() *reconcilerpb.IngestionError {
-	changeSetErrors := make([]*reconcilerpb.IngestionError_Details_Error, 0)
-
-	ingestionErr := &reconcilerpb.IngestionError{
-		Message: e.Message,
-		Code:    int32(e.Code),
-		Details: &reconcilerpb.IngestionError_Details{
-			ChangeSetId: e.Details.ChangeSetID,
-			Result:      e.Details.Result,
-		},
-	}
-
-	if len(e.Details.Errors) > 0 {
-		for _, detailsErr := range e.Details.Errors {
-			changeID := detailsErr["change_id"]
-			for errKey, errValue := range detailsErr {
-				if errKey == "change_id" {
-					continue
-				}
-				changeSetErrors = append(changeSetErrors, &reconcilerpb.IngestionError_Details_Error{
-					ChangeId: changeID,
-					Error:    errValue,
-				})
-			}
-		}
-		ingestionErr.Details.Errors = changeSetErrors
-	}
-
-	return ingestionErr
-}
-
-// NetBoxAPI is the interface for the NetBox Diode plugin API
-type NetBoxAPI interface {
-	// RetrieveObjectState retrieves the object state
-	RetrieveObjectState(context.Context, RetrieveObjectStateQueryParams) (*ObjectState, error)
-
-	// ApplyChangeSet applies a change set
-	ApplyChangeSet(context.Context, ChangeSetRequest) (*ChangeSetResponse, error)
+// Branch represents a NetBox branch details
+type Branch struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }
 
 // Client is a NetBox Diode plugin client
 type Client struct {
-	logger     *slog.Logger
-	httpClient *http.Client
-	baseURL    *url.URL
+	logger    *slog.Logger
+	http      *http.Client
+	baseURL   *url.URL
+	userAgent string
+	limiter   *rate.Limiter
+}
+
+// headerRoundTripper adds common headers to all requests
+type headerRoundTripper struct {
+	transport http.RoundTripper
+}
+
+// RoundTrip adds common headers to all requests
+func (rt *headerRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	reqClone := req.Clone(req.Context())
+
+	reqClone.Header.Set("User-Agent", SDKName+"/"+SDKVersion)
+	reqClone.Header.Set("Content-Type", "application/json")
+	reqClone.Header.Set("Accept", "application/json")
+
+	return rt.transport.RoundTrip(reqClone)
 }
 
 // NewHTTPTransport creates a http Transport Layer
@@ -183,12 +134,18 @@ func NewHTTPTransport() *http.Transport {
 }
 
 // NewClient creates a new NetBox Diode plugin client
-func NewClient(logger *slog.Logger, apiKey string) (*Client, error) {
-	transport := NewHTTPTransport()
-
-	rt, err := newAPIRoundTripper(apiKey, transport)
+func NewClient(logger *slog.Logger, baseURL, clientID, clientSecret, tokenURL string, rateLimitRps, rateLimitBurstRps int, maxRetries int) (*Client, error) {
+	u, err := url.Parse(baseURL)
 	if err != nil {
 		return nil, err
+	}
+
+	if len(clientID) == 0 || len(clientSecret) == 0 {
+		return nil, fmt.Errorf("client ID or secret not provided")
+	}
+
+	if len(tokenURL) == 0 {
+		return nil, fmt.Errorf("token URL not provided")
 	}
 
 	timeout, err := httpTimeout()
@@ -196,35 +153,55 @@ func NewClient(logger *slog.Logger, apiKey string) (*Client, error) {
 		return nil, err
 	}
 
-	httpClient := &http.Client{
-		Transport: rt,
-		Timeout:   timeout,
+	if rateLimitRps <= 0 || rateLimitBurstRps <= 0 {
+		return nil, fmt.Errorf("invalid rate limit values: %d %d", rateLimitRps, rateLimitBurstRps)
 	}
 
-	u, err := url.Parse(baseURL())
+	t, err := url.Parse(tokenURL)
 	if err != nil {
 		return nil, err
 	}
 
+	baseTransport := NewHTTPTransport()
+
+	headerRoundTripper := &headerRoundTripper{
+		transport: baseTransport,
+	}
+
+	rhttp := retryablehttp.NewClient()
+	rhttp.RetryMax = maxRetries
+	rhttp.RetryWaitMin = 150 * time.Millisecond
+	rhttp.RetryWaitMax = 2 * time.Second
+	rhttp.Logger = logger
+
+	rhttp.HTTPClient.Transport = headerRoundTripper
+
+	oauthConfig := &clientcredentials.Config{
+		ClientID:     clientID,
+		ClientSecret: clientSecret,
+		TokenURL:     t.String(),
+		Scopes:       []string{authutil.ScopeNetBoxRead, authutil.ScopeNetBoxWrite},
+	}
+
+	oauthTransport := &oauth2.Transport{
+		Source: oauthConfig.TokenSource(context.Background()),
+		Base:   rhttp.HTTPClient.Transport,
+	}
+
+	httpClient := &http.Client{
+		Transport: oauthTransport,
+		Timeout:   timeout,
+	}
+
 	client := &Client{
-		logger:     logger,
-		httpClient: httpClient,
-		baseURL:    u,
+		logger:    logger,
+		http:      httpClient,
+		baseURL:   u,
+		userAgent: fmt.Sprintf("%s/%s", SDKName, SDKVersion),
+		limiter:   rate.NewLimiter(rate.Limit(rateLimitRps), rateLimitBurstRps),
 	}
 
 	return client, nil
-}
-
-func userAgent() string {
-	return fmt.Sprintf("%s/%s", SDKName, SDKVersion)
-}
-
-func baseURL() string {
-	u, ok := os.LookupEnv(BaseURLEnvVarName)
-	if !ok {
-		u = defaultBaseURL
-	}
-	return u
 }
 
 func skipTLS() bool {
@@ -252,57 +229,68 @@ func httpTimeout() (time.Duration, error) {
 	return time.Duration(timeout) * time.Second, nil
 }
 
-type objectStateRaw struct {
-	ObjectID       int    `json:"object_id"`
-	ObjectType     string `json:"object_type"`
-	ObjectChangeID int    `json:"object_change_id"`
-	Object         any    `json:"object"`
+// NetBoxAPI is the interface for the NetBox Diode plugin API
+type NetBoxAPI interface {
+	// GenerateDiff generates diff between ingested entity and NetBox object state
+	GenerateDiff(context.Context, GenerateDiffRequest) (*ChangeSetResult, error)
+
+	// ApplyChangeSet applies a change set
+	ApplyChangeSet(context.Context, ApplyChangeSetRequest) (*ChangeSetResult, error)
 }
 
-// ObjectState represents the NetBox object state
-type ObjectState struct {
-	ObjectID       int                   `json:"object_id"`
-	ObjectType     string                `json:"object_type"`
-	ObjectChangeID int                   `json:"object_change_id"`
-	Object         netbox.ComparableData `json:"object"`
+// GenerateDiffRequest represents a generate diff request
+type GenerateDiffRequest struct {
+	ObjectType string          `json:"object_type"`
+	BranchID   string          `json:"-"` // Supplied as header
+	Entity     proto.Message   `json:"-"`
+	EntityJSON json.RawMessage `json:"entity"` // Variable structure based on object type
 }
 
-// RetrieveObjectStateQueryParams represents the query parameters for retrieving the object state
-type RetrieveObjectStateQueryParams struct {
-	ObjectType string
-	ObjectID   int
-	BranchID   string
-	Params     map[string]string
-}
-
-// RetrieveObjectState retrieves the object state
-func (c *Client) RetrieveObjectState(ctx context.Context, params RetrieveObjectStateQueryParams) (*ObjectState, error) {
-	endpointURL, err := url.Parse(fmt.Sprintf("%s/object-state/", c.baseURL.String()))
+func protoToJSON(proto proto.Message) (json.RawMessage, error) {
+	marshaler := protojson.MarshalOptions{
+		UseProtoNames: true,
+	}
+	jsonBytes, err := marshaler.Marshal(proto)
 	if err != nil {
 		return nil, err
 	}
-	queryParams := endpointURL.Query()
+	return json.RawMessage(jsonBytes), nil
+}
 
-	queryParams.Set("object_type", params.ObjectType)
-	if params.ObjectID > 0 {
-		queryParams.Set("object_id", strconv.Itoa(params.ObjectID))
+// GenerateDiff generates a diff between an ingested entity and NetBox object state
+func (c *Client) GenerateDiff(ctx context.Context, payload GenerateDiffRequest) (*ChangeSetResult, error) {
+	endpointURL, err := url.Parse(fmt.Sprintf("%s/generate-diff/", c.baseURL.String()))
+	if err != nil {
+		return nil, err
 	}
-	branchID := strings.TrimSpace(params.BranchID)
+
+	if payload.Entity != nil {
+		payload.EntityJSON, err = protoToJSON(payload.Entity)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	reqBody, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := c.limiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpointURL.String(), bytes.NewBuffer(reqBody))
+	if err != nil {
+		return nil, err
+	}
+
+	branchID := strings.TrimSpace(payload.BranchID)
 	if branchID != "" {
-		queryParams.Set(NetBoxBranchParam, branchID)
-	}
-	for k, v := range params.Params {
-		queryParams.Set(k, v)
+		req.Header.Set(NetBoxBranchHeader, branchID)
 	}
 
-	endpointURL.RawQuery = queryParams.Encode()
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpointURL.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.http.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -312,118 +300,36 @@ func (c *Client) RetrieveObjectState(ctx context.Context, params RetrieveObjectS
 		}
 	}()
 
-	respBodyBytes, err := io.ReadAll(resp.Body)
+	respBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read response body %w", err)
 	}
 
-	var objStateRaw objectStateRaw
-	if err := json.Unmarshal(respBodyBytes, &objStateRaw); err != nil {
-		return nil, err
+	c.logger.Debug("generate diff", "statusCode", resp.StatusCode, "response", string(respBytes))
+
+	var changeSetResult ChangeSetResult
+	if err = json.Unmarshal(respBytes, &changeSetResult); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response body %w", err)
 	}
 
-	objState, err := extractObjectState(&objStateRaw, params.ObjectType)
-	if err != nil {
-		return nil, err
+	// return errors with 4xx status code
+	if resp.StatusCode >= http.StatusBadRequest {
+		return nil, changeset.NewError("generate diff failed", diodeErrors.ErrCodeOpsGenerateDiff, respBytes)
 	}
 
-	return &ObjectState{
-		ObjectID:       objStateRaw.ObjectID,
-		ObjectType:     objStateRaw.ObjectType,
-		ObjectChangeID: objStateRaw.ObjectChangeID,
-		Object:         objState,
-	}, nil
+	return &changeSetResult, nil
 }
 
-func extractObjectState(objState *objectStateRaw, objectType string) (netbox.ComparableData, error) {
-	if objState == nil {
-		return nil, fmt.Errorf("raw object state response is nil")
-	}
-
-	dw, err := netbox.NewDataWrapper(objectType)
-	if err != nil {
-		return nil, err
-	}
-
-	wrappedData, err := wrapObjectState(objectType, objState.Object)
-	if err != nil {
-		return nil, err
-	}
-
-	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
-		Result:    &dw,
-		MatchName: netbox.IpamIPAddressAssignedObjectMatchName,
-		DecodeHook: mapstructure.ComposeDecodeHookFunc(
-			statusMapToStringHookFunc(),
-			netbox.IpamIPAddressAssignedObjectHookFunc(),
-		),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	if err := decoder.Decode(wrappedData); err != nil {
-		return nil, fmt.Errorf("failed to decode ingest entity data %w", err)
-	}
-
-	return dw, nil
-}
-
-func statusMapToStringHookFunc() mapstructure.DecodeHookFunc {
-	return func(
-		f reflect.Kind,
-		t reflect.Kind,
-		data interface{},
-	) (interface{}, error) {
-		if f != reflect.Map {
-			return data, nil
-		}
-
-		raw := data.(map[string]any)
-
-		if len(raw) == 0 {
-			return data, nil
-		}
-
-		if t == reflect.String && f == reflect.Map {
-			val, ok := raw["value"]
-			if !ok {
-				return data, nil
-			}
-			return val, nil
-		}
-
-		return data, nil
-	}
-}
-
-// ChangeSetRequest represents a apply change set request
+// ApplyChangeSetRequest represents a apply change set request
 // type ChangeSetRequest changeset.ChangeSet
-type ChangeSetRequest struct {
-	ChangeSetID string   `json:"change_set_id"`
-	ChangeSet   []Change `json:"change_set"`
-	BranchID    string   `json:"-"` // Supplied as header
-}
-
-// Change represents a change
-type Change struct {
-	ChangeID      string `json:"change_id"`
-	ChangeType    string `json:"change_type"`
-	ObjectType    string `json:"object_type"`
-	ObjectID      *int   `json:"object_id,omitempty"`
-	ObjectVersion *int   `json:"object_version,omitempty"`
-	Data          any    `json:"data"`
-}
-
-// ChangeSetResponse represents an apply change set response
-type ChangeSetResponse struct {
-	ChangeSetID string              `json:"change_set_id"`
-	Result      string              `json:"result"`
-	Errors      []map[string]string `json:"errors"`
+type ApplyChangeSetRequest struct {
+	ID       string   `json:"id"`
+	Changes  []Change `json:"changes"`
+	BranchID string   `json:"-"` // Supplied as header
 }
 
 // ApplyChangeSet applies a change set
-func (c *Client) ApplyChangeSet(ctx context.Context, payload ChangeSetRequest) (*ChangeSetResponse, error) {
+func (c *Client) ApplyChangeSet(ctx context.Context, payload ApplyChangeSetRequest) (*ChangeSetResult, error) {
 	endpointURL, err := url.Parse(fmt.Sprintf("%s/apply-change-set/", c.baseURL.String()))
 	if err != nil {
 		return nil, err
@@ -434,20 +340,23 @@ func (c *Client) ApplyChangeSet(ctx context.Context, payload ChangeSetRequest) (
 		return nil, err
 	}
 
+	if err := c.limiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
 	c.logger.Debug("apply change set", "payload", string(reqBody))
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpointURL.String(), bytes.NewBuffer(reqBody))
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Content-Type", "application/json")
 
 	branchID := strings.TrimSpace(payload.BranchID)
 	if branchID != "" {
 		req.Header.Set(NetBoxBranchHeader, branchID)
 	}
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := c.http.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -464,118 +373,15 @@ func (c *Client) ApplyChangeSet(ctx context.Context, payload ChangeSetRequest) (
 
 	c.logger.Debug("apply change set", "response", string(respBytes))
 
-	var changeSetResponse ChangeSetResponse
-	if err = json.Unmarshal(respBytes, &changeSetResponse); err != nil {
+	var changeSetResult ChangeSetResult
+	if err = json.Unmarshal(respBytes, &changeSetResult); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal response body %w", err)
 	}
 
 	// return errors with 4xx status code
 	if resp.StatusCode >= http.StatusBadRequest {
-		return nil, NewApplyChangeSetError(ErrApplyChangeSetFailed.Error(), resp.StatusCode, changeSetResponse)
+		return nil, changeset.NewError("apply change set failed", diodeErrors.ErrCodeOpsApplyChangeSet, respBytes)
 	}
 
-	return &changeSetResponse, nil
-}
-
-func wrapObjectState(dataType string, object any) (any, error) {
-	switch dataType {
-	case netbox.DcimDeviceObjectType:
-		return struct {
-			Device any
-		}{
-			Device: object,
-		}, nil
-	case netbox.DcimDeviceRoleObjectType:
-		return struct {
-			DeviceRole any
-		}{
-			DeviceRole: object,
-		}, nil
-	case netbox.DcimDeviceTypeObjectType:
-		return struct {
-			DeviceType any
-		}{
-			DeviceType: object,
-		}, nil
-	case netbox.DcimInterfaceObjectType:
-		return struct {
-			Interface any
-		}{
-			Interface: object,
-		}, nil
-	case netbox.DcimManufacturerObjectType:
-		return struct {
-			Manufacturer any
-		}{
-			Manufacturer: object,
-		}, nil
-	case netbox.DcimPlatformObjectType:
-		return struct {
-			Platform any
-		}{
-			Platform: object,
-		}, nil
-	case netbox.DcimSiteObjectType:
-		return struct {
-			Site any
-		}{
-			Site: object,
-		}, nil
-	case netbox.ExtrasTagObjectType:
-		return struct {
-			Tag any
-		}{
-			Tag: object,
-		}, nil
-	case netbox.IpamIPAddressObjectType:
-		return struct {
-			IPAddress any
-		}{
-			IPAddress: object,
-		}, nil
-	case netbox.IpamPrefixObjectType:
-		return struct {
-			Prefix any
-		}{
-			Prefix: object,
-		}, nil
-	case netbox.VirtualizationClusterGroupObjectType:
-		return struct {
-			ClusterGroup any
-		}{
-			ClusterGroup: object,
-		}, nil
-	case netbox.VirtualizationClusterTypeObjectType:
-		return struct {
-			ClusterType any
-		}{
-			ClusterType: object,
-		}, nil
-	case netbox.VirtualizationClusterObjectType:
-		return struct {
-			Cluster any
-		}{
-			Cluster: object,
-		}, nil
-	case netbox.VirtualizationVirtualMachineObjectType:
-		return struct {
-			VirtualMachine any
-		}{
-			VirtualMachine: object,
-		}, nil
-	case netbox.VirtualizationVMInterfaceObjectType:
-		return struct {
-			VMInterface any
-		}{
-			VMInterface: object,
-		}, nil
-	case netbox.VirtualizationVirtualDiskObjectType:
-		return struct {
-			VirtualDisk any
-		}{
-			VirtualDisk: object,
-		}, nil
-	default:
-		return nil, fmt.Errorf("unsupported data type %s", dataType)
-	}
+	return &changeSetResult, nil
 }

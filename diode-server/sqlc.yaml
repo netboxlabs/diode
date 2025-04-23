@@ -10,3 +10,20 @@ sql:
         sql_package: "pgx/v5"
         output_models_file_name: "types.go"
         emit_json_tags: true
+        overrides:
+          - column: v_deviations.change_set
+            go_type:
+              type: ChangeSet
+              pointer: true
+          - column: changes.before
+            go_type:
+              type: json.RawMessage
+          - column: changes.after
+            go_type:
+              type: json.RawMessage
+          - column: ingestion_logs.error
+            go_type:
+              type: json.RawMessage
+          - column: v_deviations.error
+            go_type:
+              type: json.RawMessage

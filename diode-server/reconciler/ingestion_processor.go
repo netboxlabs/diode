@@ -1,32 +1,26 @@
 package reconciler
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
 	"os"
-	"regexp"
 	"strconv"
 
-	"github.com/andybalholm/brotli"
+	"github.com/google/uuid"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/redis/go-redis/v9"
-	"github.com/segmentio/ksuid"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/time/rate"
-	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
-	"github.com/netboxlabs/diode/diode-server/netbox"
-	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
-	"github.com/netboxlabs/diode/diode-server/reconciler/applier"
+	"github.com/netboxlabs/diode/diode-server/gen/netbox"
 	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
-	"github.com/netboxlabs/diode/diode-server/reconciler/differ"
 	"github.com/netboxlabs/diode/diode-server/sentry"
+	"github.com/netboxlabs/diode/diode-server/telemetry"
 )
 
 const (
@@ -57,26 +51,40 @@ type RedisClient interface {
 
 // IngestionProcessor processes ingested data
 type IngestionProcessor struct {
-	Config                 Config
-	logger                 *slog.Logger
-	hostname               string
-	redisClient            RedisClient
-	redisStreamClient      RedisClient
-	nbClient               netboxdiodeplugin.NetBoxAPI
-	ingestionLogRepository IngestionLogRepository
-	changeSetRepository    ChangeSetRepository
+	Config            Config
+	logger            *slog.Logger
+	hostname          string
+	redisClient       RedisClient
+	redisStreamClient RedisClient
+	ops               IngestionProcessorOps
+	metrics           IngestionProcessorMetrics
 }
 
 // IngestionLogToProcess represents an ingestion log to process
 type IngestionLogToProcess struct {
-	key          string
-	ingestionLog *reconcilerpb.IngestionLog
-	changeSet    *changeset.ChangeSet
-	errors       []error
+	ingestionLogID int32
+	ingestionLog   *reconcilerpb.IngestionLog
+	changeSetID    int32
+	changeSet      *changeset.ChangeSet
+}
+
+// IngestionProcessorOps represents the basic operations that the ingestion processor performs
+type IngestionProcessorOps interface {
+	CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb.IngestionLog, sourceMetadata []byte) (*int32, error)
+	GenerateChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, branchID string) (*int32, *changeset.ChangeSet, error)
+	ApplyChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, changeSetID int32, changeSet *changeset.ChangeSet) error
+}
+
+// IngestionProcessorMetrics represents the metrics collecteingestion processor
+type IngestionProcessorMetrics interface {
+	RecordHandleMessage(ctx context.Context, success bool)
+	RecordIngestionLogCreate(ctx context.Context, success bool)
+	RecordChangeSetCreate(ctx context.Context, success bool, changes int64)
+	RecordChangeSetApply(ctx context.Context, success bool, changes int64)
 }
 
 // NewIngestionProcessor creates a new ingestion processor
-func NewIngestionProcessor(ctx context.Context, logger *slog.Logger, ingestionLogRepo IngestionLogRepository, changeSetRepo ChangeSetRepository) (*IngestionProcessor, error) {
+func NewIngestionProcessor(ctx context.Context, logger *slog.Logger, ops IngestionProcessorOps, metrics IngestionProcessorMetrics) (*IngestionProcessor, error) {
 	var cfg Config
 	envconfig.MustProcess("", &cfg)
 
@@ -105,20 +113,14 @@ func NewIngestionProcessor(ctx context.Context, logger *slog.Logger, ingestionLo
 		return nil, fmt.Errorf("failed to get hostname: %v", err)
 	}
 
-	nbClient, err := netboxdiodeplugin.NewClient(logger, cfg.DiodeToNetBoxAPIKey)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create netbox diode plugin client: %v", err)
-	}
-
 	component := &IngestionProcessor{
-		Config:                 cfg,
-		logger:                 logger,
-		hostname:               hostname,
-		redisClient:            redisClient,
-		redisStreamClient:      redisStreamClient,
-		nbClient:               nbClient,
-		ingestionLogRepository: ingestionLogRepo,
-		changeSetRepository:    changeSetRepo,
+		Config:            cfg,
+		logger:            logger,
+		hostname:          hostname,
+		redisClient:       redisClient,
+		redisStreamClient: redisStreamClient,
+		ops:               ops,
+		metrics:           metrics,
 	}
 
 	return component, nil
@@ -132,13 +134,6 @@ func (p *IngestionProcessor) Name() string {
 // Start starts the component
 func (p *IngestionProcessor) Start(ctx context.Context) error {
 	p.logger.Info("starting component", "name", p.Name())
-
-	if p.Config.MigrationEnabled {
-		if err := migrate(ctx, p.logger, p.redisClient); err != nil {
-			return fmt.Errorf("failed to migrate: %v", err)
-		}
-	}
-
 	return p.consumeIngestionStream(ctx, redisStreamID, redisConsumerGroup, fmt.Sprintf("%s-%s", redisConsumerGroup, p.hostname))
 }
 
@@ -168,7 +163,8 @@ func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, stream,
 			continue
 		}
 		for _, msg := range streams[0].Messages {
-			if err := p.handleStreamMessage(ctx, msg); err != nil {
+			_, err := p.handleStreamMessage(ctx, msg)
+			if err != nil {
 				p.logger.Error("failed to handle stream message", "error", err, "message", msg)
 
 				contextMap := map[string]any{
@@ -184,13 +180,30 @@ func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, stream,
 	}
 }
 
-func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.XMessage) error {
-	p.logger.Debug("received stream message", "message", msg.Values, "id", msg.ID)
+func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.XMessage) (chan struct{}, error) {
+	doneChan := make(chan struct{})
+	defer close(doneChan)
+
+	// Create attributes for metrics
+	attrs := []attribute.KeyValue{
+		attribute.String(telemetry.AttributeHostname, p.hostname),
+	}
+	ctx = telemetry.ContextWithMetricAttributes(ctx, attrs...)
 
 	ingestReq := &diodepb.IngestRequest{}
 	if err := proto.Unmarshal([]byte(msg.Values["request"].(string)), ingestReq); err != nil {
-		return err
+		p.metrics.RecordHandleMessage(ctx, false)
+		return doneChan, err
 	}
+
+	// Add request-specific attributes
+	attrs = append(attrs,
+		attribute.String(telemetry.AttributeSDKName, ingestReq.SdkName),
+		attribute.String(telemetry.AttributeSDKVersion, ingestReq.SdkVersion),
+		attribute.String(telemetry.AttributeProducerAppName, ingestReq.ProducerAppName),
+		attribute.String(telemetry.AttributeProducerAppVersion, ingestReq.ProducerAppVersion),
+	)
+	ctx = telemetry.ContextWithMetricAttributes(ctx, attrs...)
 
 	errs := make([]error, 0)
 
@@ -217,7 +230,20 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 
 	if p.Config.AutoApplyChangesets {
 		p.ApplyChangeSet(ctx, applyChangeSetChan, applyChangeSetDoneChan)
+	} else {
+		// Only close the channel if it's not nil to avoid panic
+		if applyChangeSetDoneChan != nil {
+			close(applyChangeSetDoneChan)
+		}
 	}
+
+	allDone := make(chan struct{})
+	go func() {
+		<-doneChan
+		<-generateIngestionLogDoneChan
+		<-applyChangeSetDoneChan
+		close(allDone)
+	}()
 
 	createIngestionLogsErrs := p.CreateIngestionLogs(ctx, ingestReq, ingestionTs, generateIngestionLogChan)
 	if len(createIngestionLogsErrs) > 0 {
@@ -239,11 +265,13 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 			"hostname":            p.hostname,
 		}
 		sentry.CaptureError(fmt.Errorf("failed to handle ingest request: %v", errs), nil, "Ingestion request", contextMap)
+		p.metrics.RecordHandleMessage(ctx, false)
 	} else {
 		p.redisStreamClient.XDel(ctx, redisStreamID, msg.ID)
+		p.metrics.RecordHandleMessage(ctx, true)
 	}
 
-	return nil
+	return allDone, nil
 }
 
 // GenerateChangeSet generates a change set for an ingestion log
@@ -265,7 +293,7 @@ func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChan
 			case <-ctx.Done():
 				p.logger.Debug("context cancelled", "error", ctx.Err())
 				return
-			case ingestionLog, ok := <-generateChangeSetChan:
+			case msg, ok := <-generateChangeSetChan:
 				if !ok {
 					return
 				}
@@ -274,75 +302,24 @@ func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChan
 					return
 				}
 
-				p.logger.Debug("generating change set", "ingestionLogID", ingestionLog.ingestionLog.GetId())
-
-				ingestEntity := differ.IngestEntity{
-					RequestID: ingestionLog.ingestionLog.GetId(),
-					DataType:  ingestionLog.ingestionLog.GetDataType(),
-					Entity:    ingestionLog.ingestionLog.GetEntity(),
-					State:     int(ingestionLog.ingestionLog.GetState()),
-				}
-
-				changeSet, err := differ.Diff(ctx, ingestEntity, "", p.nbClient)
+				id, changeSet, err := p.ops.GenerateChangeSet(ctx, msg.ingestionLogID, msg.ingestionLog, "")
 				if err != nil {
-					tags := map[string]string{
-						"request_id": ingestEntity.RequestID,
-					}
-					contextMap := map[string]any{
-						"request_id": ingestEntity.RequestID,
-						"data_type":  ingestEntity.DataType,
-					}
-					sentry.CaptureError(err, tags, "Ingest Entity", contextMap)
-					p.logger.Debug("failed to prepare change set", "ingestionLogID", ingestionLog.ingestionLog.GetId(), "error", err)
-
-					ingestionLog.errors = append(ingestionLog.errors, fmt.Errorf("failed to prepare change set: %v", err))
-
-					ingestionLog.ingestionLog.State = reconcilerpb.State_FAILED
-					ingestionLog.ingestionLog.Error = extractIngestionError(err)
-
-					if _, err = p.writeIngestionLog(ctx, ingestionLog.key, ingestionLog.ingestionLog); err != nil {
-						ingestionLog.errors = append(ingestionLog.errors, err)
-					}
-					break
+					p.logger.Error("error generating changeset", "error", err)
+					p.metrics.RecordChangeSetCreate(ctx, false, 0)
+				} else {
+					p.metrics.RecordChangeSetCreate(ctx, true, int64(len(changeSet.Changes)))
 				}
 
-				ingestionLog.changeSet = changeSet
-
-				if len(changeSet.ChangeSet) > 0 {
-					csCompressed, err := compressChangeSet(changeSet)
-					if err != nil {
-						ingestionLog.ingestionLog.State = reconcilerpb.State_FAILED
-						ingestionLog.errors = append(ingestionLog.errors, err)
-
-						if _, err = p.writeIngestionLog(ctx, ingestionLog.key, ingestionLog.ingestionLog); err != nil {
-							ingestionLog.errors = append(ingestionLog.errors, err)
-						}
-						break
-					}
-
-					ingestionLog.ingestionLog.ChangeSet = &reconcilerpb.ChangeSet{
-						Id:   changeSet.ChangeSetID,
-						Data: csCompressed,
-					}
-
-					if _, err = p.writeIngestionLog(ctx, ingestionLog.key, ingestionLog.ingestionLog); err != nil {
-						ingestionLog.errors = append(ingestionLog.errors, err)
-					}
-
+				if changeSet != nil && len(changeSet.Changes) > 0 {
 					if applyChangeSetChan != nil {
 						applyChangeSetChan <- IngestionLogToProcess{
-							key:          ingestionLog.key,
-							ingestionLog: ingestionLog.ingestionLog,
-							changeSet:    ingestionLog.changeSet,
+							ingestionLogID: msg.ingestionLogID,
+							ingestionLog:   msg.ingestionLog,
+							changeSetID:    *id,
+							changeSet:      changeSet,
 						}
 					}
-				} else {
-					ingestionLog.ingestionLog.State = reconcilerpb.State_NO_CHANGES
-					if _, err = p.writeIngestionLog(ctx, ingestionLog.key, ingestionLog.ingestionLog); err != nil {
-						ingestionLog.errors = append(ingestionLog.errors, err)
-					}
 				}
-				p.logger.Debug("change set generated", "ingestionLogID", ingestionLog.ingestionLog.GetId(), "changeSetID", ingestionLog.changeSet.ChangeSetID)
 			}
 		}
 	}()
@@ -364,7 +341,7 @@ func (p *IngestionProcessor) ApplyChangeSet(ctx context.Context, applyChan <-cha
 			case <-ctx.Done():
 				p.logger.Debug("context cancelled", "error", ctx.Err())
 				return
-			case ingestionLog, ok := <-applyChan:
+			case msg, ok := <-applyChan:
 				if !ok {
 					return
 				}
@@ -373,26 +350,12 @@ func (p *IngestionProcessor) ApplyChangeSet(ctx context.Context, applyChan <-cha
 					return
 				}
 
-				p.logger.Debug("applying change set", "ingestionLogID", ingestionLog.ingestionLog.GetId(), "changeSetID", ingestionLog.changeSet.ChangeSetID)
-
-				if err := applier.ApplyChangeSet(ctx, p.logger, *ingestionLog.changeSet, "", p.nbClient); err != nil {
-					p.logger.Debug("failed to apply change set", "ingestionLogID", ingestionLog.ingestionLog.GetId(), "changeSetID", ingestionLog.changeSet.ChangeSetID, "error", err)
-					ingestionLog.errors = append(ingestionLog.errors, fmt.Errorf("failed to apply chang eset: %v", err))
-
-					ingestionLog.ingestionLog.State = reconcilerpb.State_FAILED
-					ingestionLog.ingestionLog.Error = extractIngestionError(err)
-
-					if _, err = p.writeIngestionLog(ctx, ingestionLog.key, ingestionLog.ingestionLog); err != nil {
-						ingestionLog.errors = append(ingestionLog.errors, err)
-					}
-					break
+				if err := p.ops.ApplyChangeSet(ctx, msg.ingestionLogID, msg.ingestionLog, msg.changeSetID, msg.changeSet); err != nil {
+					p.logger.Error("error applying changeset", "error", err)
+					p.metrics.RecordChangeSetApply(ctx, false, 0)
+				} else {
+					p.metrics.RecordChangeSetApply(ctx, true, int64(len(msg.changeSet.Changes)))
 				}
-
-				ingestionLog.ingestionLog.State = reconcilerpb.State_RECONCILED
-				if _, err := p.writeIngestionLog(ctx, ingestionLog.key, ingestionLog.ingestionLog); err != nil {
-					ingestionLog.errors = append(ingestionLog.errors, err)
-				}
-				p.logger.Debug("change set applied", "ingestionLogID", ingestionLog.ingestionLog.GetId(), "changeSetID", ingestionLog.changeSet.ChangeSetID)
 			}
 		}
 	}()
@@ -410,133 +373,42 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 			continue
 		}
 
-		objectType, err := extractObjectType(v)
+		objectType, err := netbox.GetObjectType(v)
 		if err != nil {
-			errs = append(errs, fmt.Errorf("failed to extract data type for index %d: %v", i, err))
+			errs = append(errs, fmt.Errorf("failed to extract object type for index %d: %v", i, err))
 			continue
 		}
 
-		ingestionLogID := ksuid.New().String()
-
-		key := fmt.Sprintf("ingest-entity:%s-%d-%s", objectType, ingestionTs, ingestionLogID)
-		p.logger.Debug("ingest entity key", "key", key)
-
 		ingestionLog := &reconcilerpb.IngestionLog{
-			Id:                 ingestionLogID,
+			Id:                 uuid.NewString(),
 			RequestId:          ingestReq.GetId(),
 			ProducerAppName:    ingestReq.GetProducerAppName(),
 			ProducerAppVersion: ingestReq.GetProducerAppVersion(),
 			SdkName:            ingestReq.GetSdkName(),
 			SdkVersion:         ingestReq.GetSdkVersion(),
-			DataType:           objectType,
+			DataType:           objectType, // backwards compatibility
+			ObjectType:         objectType,
 			Entity:             v,
 			IngestionTs:        int64(ingestionTs),
 			State:              reconcilerpb.State_QUEUED,
+			SourceTs:           v.GetTimestamp().AsTime().UnixNano(),
 		}
 
-		if _, err = p.writeIngestionLog(ctx, key, ingestionLog); err != nil {
-			errs = append(errs, fmt.Errorf("failed to write JSON: %v", err))
+		id, err := p.ops.CreateIngestionLog(ctx, ingestionLog, nil)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("failed to create ingestion log: %v", err))
+			p.metrics.RecordIngestionLogCreate(ctx, false)
 			continue
 		}
 
+		p.metrics.RecordIngestionLogCreate(ctx, true)
+		p.logger.Debug("created ingestion log", "id", id, "externalID", ingestionLog.GetId())
+
 		generateIngestionLogChan <- IngestionLogToProcess{
-			key:          key,
-			ingestionLog: ingestionLog,
+			ingestionLogID: *id,
+			ingestionLog:   ingestionLog,
 		}
 	}
 
 	return errs
-}
-
-func extractIngestionError(err error) *reconcilerpb.IngestionError {
-	var ingestionErr *reconcilerpb.IngestionError
-	var applyChangeSetErr *netboxdiodeplugin.ApplyChangeSetError
-
-	switch {
-	case errors.As(err, &applyChangeSetErr):
-		ingestionErr = applyChangeSetErr.ToIngestionError()
-	default:
-		ingestionErr = &reconcilerpb.IngestionError{
-			Message: err.Error(),
-			Code:    0,
-		}
-	}
-
-	return ingestionErr
-}
-
-func (p *IngestionProcessor) writeIngestionLog(ctx context.Context, key string, ingestionLog *reconcilerpb.IngestionLog) ([]byte, error) {
-	ingestionLogJSON, err := protojson.Marshal(ingestionLog)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal JSON: %v", err)
-	}
-
-	ingestionLogJSON = normalizeIngestionLog(ingestionLogJSON)
-
-	if _, err := p.redisClient.Do(ctx, "JSON.SET", key, "$", ingestionLogJSON).Result(); err != nil {
-		return nil, fmt.Errorf("failed to set JSON redis key: %v", err)
-	}
-
-	return ingestionLogJSON, nil
-}
-
-func normalizeIngestionLog(l []byte) []byte {
-	// replace ingestionTs string value as integer, see: https://github.com/golang/protobuf/issues/1414
-	re := regexp.MustCompile(`"ingestionTs":"(\d+)"`)
-	return re.ReplaceAll(l, []byte(`"ingestionTs":$1`))
-}
-
-func compressChangeSet(cs *changeset.ChangeSet) ([]byte, error) {
-	csJSON, err := json.Marshal(cs)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal change set JSON: %v", err)
-	}
-
-	var brotliBuf bytes.Buffer
-	brotliWriter := brotli.NewWriter(&brotliBuf)
-	if _, err = brotliWriter.Write(csJSON); err != nil {
-		return nil, fmt.Errorf("failed to compress change set: %v", err)
-	}
-	if err = brotliWriter.Close(); err != nil {
-		return nil, fmt.Errorf("failed to compress change set: %v", err)
-	}
-
-	return brotliBuf.Bytes(), nil
-}
-
-func extractObjectType(in *diodepb.Entity) (string, error) {
-	switch in.GetEntity().(type) {
-	case *diodepb.Entity_Device:
-		return netbox.DcimDeviceObjectType, nil
-	case *diodepb.Entity_DeviceRole:
-		return netbox.DcimDeviceRoleObjectType, nil
-	case *diodepb.Entity_DeviceType:
-		return netbox.DcimDeviceTypeObjectType, nil
-	case *diodepb.Entity_Interface:
-		return netbox.DcimInterfaceObjectType, nil
-	case *diodepb.Entity_Manufacturer:
-		return netbox.DcimManufacturerObjectType, nil
-	case *diodepb.Entity_Platform:
-		return netbox.DcimPlatformObjectType, nil
-	case *diodepb.Entity_Site:
-		return netbox.DcimSiteObjectType, nil
-	case *diodepb.Entity_IpAddress:
-		return netbox.IpamIPAddressObjectType, nil
-	case *diodepb.Entity_Prefix:
-		return netbox.IpamPrefixObjectType, nil
-	case *diodepb.Entity_ClusterGroup:
-		return netbox.VirtualizationClusterGroupObjectType, nil
-	case *diodepb.Entity_ClusterType:
-		return netbox.VirtualizationClusterTypeObjectType, nil
-	case *diodepb.Entity_Cluster:
-		return netbox.VirtualizationClusterObjectType, nil
-	case *diodepb.Entity_VirtualMachine:
-		return netbox.VirtualizationVirtualMachineObjectType, nil
-	case *diodepb.Entity_Vminterface:
-		return netbox.VirtualizationVMInterfaceObjectType, nil
-	case *diodepb.Entity_VirtualDisk:
-		return netbox.VirtualizationVirtualDiskObjectType, nil
-	default:
-		return "", fmt.Errorf("unknown data type")
-	}
 }

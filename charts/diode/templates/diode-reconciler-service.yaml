@@ -1,16 +1,20 @@
+{{- if .Values.diodeReconciler.enabled -}}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .Values.diodeReconciler.serviceName }}
-  namespace: {{ .Release.Namespace }}
+  name: {{ include "diode.reconciler.servicename" . }}
+  namespace: {{ include "diode.namespace" . }}
   labels:
-    app: {{ .Values.diodeReconciler.serviceName }}
+    {{- include "diode.labels" . | nindent 4 }}
+    app: {{ include "diode.reconciler.servicename" . }}
+    app.kubernetes.io/component: {{ include "diode.reconciler.servicename" . }}
 spec:
   type: ClusterIP
   selector:
-    app: {{ .Values.diodeReconciler.serviceName }}
+    app: {{ include "diode.reconciler.servicename" . }}
   ports:
     - name: grpc
       port: {{ .Values.diodeReconciler.containerPort }}
       targetPort: {{ .Values.diodeReconciler.containerPort }}
       protocol: TCP
+{{- end }}
