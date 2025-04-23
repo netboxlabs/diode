@@ -9,12 +9,14 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/netboxlabs/diode/diode-server/authutil"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/sentry"
 	"github.com/netboxlabs/diode/diode-server/telemetry"
@@ -60,7 +62,12 @@ func New(ctx context.Context, logger *slog.Logger, cfg Config, meter metric.Mete
 		return nil, fmt.Errorf("failed to get hostname: %v", err)
 	}
 
-	grpcServer := grpc.NewServer()
+	authorizer := authutil.NewUnverifiedJWTAuthorizer(logger)
+
+	grpcServer := grpc.NewServer(
+		grpc.ChainUnaryInterceptor(newAuthUnaryInterceptor(authorizer)),
+		grpc.StatsHandler(otelgrpc.NewServerHandler()),
+	)
 
 	metrics, err := NewMetrics(meter)
 	if err != nil {
@@ -195,4 +202,14 @@ func validateRequest(in *diodepb.IngestRequest) error {
 	}
 
 	return nil
+}
+
+func newAuthUnaryInterceptor(authorizer authutil.Authorizer) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		if err := authorizer.RequireScopesContext(ctx, []string{authutil.ScopeDiodeIngest}); err != nil {
+			return nil, err
+		}
+
+		return handler(ctx, req)
+	}
 }
