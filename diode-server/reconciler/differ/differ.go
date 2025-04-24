@@ -83,11 +83,20 @@ func genDeviationName(objects []changeset.Change, objectType string) *string {
 	deviationName := fmt.Sprintf("%s %s", objectTypeName, primaryObject.ObjectPrimaryValue)
 
 	if primaryObject.ChangeType == changeset.ChangeTypeUpdate {
-		deviationName += " modified"
+		if primaryObject.RefID != nil {
+			// this is an update of a new object created
+			// earlier in the change set (ref id)
+			deviationName += " created"
+		} else {
+			deviationName += " modified"
+		}
 	} else if primaryObject.ChangeType == changeset.ChangeTypeCreate {
 		deviationName += " created"
 	} else if primaryObject.ChangeType == changeset.ChangeTypeNoop {
-		deviationName += " unchanged"
+		// TODO: this means some subbordinate object was modified,
+		// but the primary object itself was not modified.
+		// for now we consider this a modification of the primary object.
+		deviationName += " modified"
 	} else {
 		deviationName += " (unrecognized change type " + primaryObject.ChangeType + ")"
 	}

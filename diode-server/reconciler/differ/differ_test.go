@@ -188,6 +188,150 @@ func TestGenDeviationName(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "[P1] ingest dcim.site create then modify - is a create",
+			ingestEntity: differ.IngestEntity{
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "dcim.site",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Site{
+						Site: &diodepb.Site{
+							Name: "Site A",
+						},
+					},
+				},
+			},
+			response: &mockGenerateDiffResponse{
+				result: &netboxdiodeplugin.ChangeSetResult{
+					ChangeSet: &netboxdiodeplugin.ChangeSet{
+						Changes: []netboxdiodeplugin.Change{
+							{
+								ID:                 "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+								ChangeType:         "create",
+								ObjectType:         "dcim.site",
+								ObjectID:           nil,
+								RefID:              strPtr("ref-1"),
+								Data:               json.RawMessage(`{"name": "Site A"}`),
+								ObjectPrimaryValue: "Site A",
+							},
+							{
+								ID:                 "5663a77f-9bad-4981-afe9-77d8a9f2b8b5",
+								ChangeType:         "update",
+								ObjectType:         "dcim.site",
+								ObjectID:           nil,
+								RefID:              strPtr("ref-1"),
+								Data:               json.RawMessage(`{"name": "Site A", "status": "active"}`),
+								Before:             json.RawMessage(`{"name": "Site A"}`),
+								ObjectPrimaryValue: "Site A",
+							},
+						},
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				Changes: []changeset.Change{
+					{
+						ID:                 "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:         changeset.ChangeTypeCreate,
+						ObjectType:         "dcim.site",
+						ObjectID:           nil,
+						ObjectVersion:      nil,
+						RefID:              strPtr("ref-1"),
+						ObjectPrimaryValue: "Site A",
+						After:              json.RawMessage(`{"name": "Site A"}`),
+					},
+					{
+						ID:                 "5663a77f-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:         "update",
+						ObjectType:         "dcim.site",
+						ObjectID:           nil,
+						RefID:              strPtr("ref-1"),
+						After:              json.RawMessage(`{"name": "Site A", "status": "active"}`),
+						Before:             json.RawMessage(`{"name": "Site A"}`),
+						ObjectPrimaryValue: "Site A",
+					},
+				},
+				// this is still a create because the ref id is set
+				// and the object was created in the same change set
+				DeviationName: strPtr("Site Site A created"),
+			},
+			wantErr: false,
+		},
+		{
+			name: "[P1] ingest dcim.site modify subordinate object - is a modification",
+			ingestEntity: differ.IngestEntity{
+				RequestID:  "cfa0f129-125c-440d-9e41-e87583cd7d89",
+				ObjectType: "dcim.site",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Site{
+						Site: &diodepb.Site{
+							Name: "Site A",
+							Region: &diodepb.Region{
+								Name: "Region A",
+							},
+						},
+					},
+				},
+			},
+			response: &mockGenerateDiffResponse{
+				result: &netboxdiodeplugin.ChangeSetResult{
+					ChangeSet: &netboxdiodeplugin.ChangeSet{
+						Changes: []netboxdiodeplugin.Change{
+							{
+								ID:                 "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+								ChangeType:         "create",
+								ObjectType:         "dcim.region",
+								ObjectID:           nil,
+								RefID:              strPtr("ref-1"),
+								Data:               json.RawMessage(`{"name": "Region A"}`),
+								ObjectPrimaryValue: "Region A",
+							},
+							{
+								ID:                 "5663a77f-9bad-4981-afe9-77d8a9f2b8b5",
+								ChangeType:         "noop",
+								ObjectType:         "dcim.site",
+								ObjectID:           intPtr(1),
+								RefID:              nil,
+								Data:               json.RawMessage(`{"name": "Site A", "region": "ref-1"}`),
+								Before:             json.RawMessage(`{}`),
+								ObjectPrimaryValue: "Site A",
+								NewRefs:            []string{"region"},
+							},
+						},
+					},
+				},
+			},
+			wantChangeSet: changeset.ChangeSet{
+				ID: "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+				Changes: []changeset.Change{
+					{
+						ID:                 "5663a77e-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:         "create",
+						ObjectType:         "dcim.region",
+						ObjectID:           nil,
+						RefID:              strPtr("ref-1"),
+						After:              json.RawMessage(`{"name": "Region A"}`),
+						ObjectPrimaryValue: "Region A",
+					},
+					{
+						ID:                 "5663a77f-9bad-4981-afe9-77d8a9f2b8b5",
+						ChangeType:         "noop",
+						ObjectType:         "dcim.site",
+						ObjectID:           intPtr(1),
+						RefID:              nil,
+						After:              json.RawMessage(`{"name": "Site A", "region": "ref-1"}`),
+						Before:             json.RawMessage(`{}`),
+						ObjectPrimaryValue: "Site A",
+						NewRefs:            []string{"region"},
+					},
+				},
+				// this is still a modification because the subordinate object
+				// changed, even though the primary object is the same
+				DeviationName: strPtr("Site Site A modified"),
+			},
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range tests {
