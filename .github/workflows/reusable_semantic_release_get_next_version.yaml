@@ -17,8 +17,11 @@ on:
         value: ${{ jobs.get-next-version.outputs.short-sha }}
 
 env:
-  GH_TOKEN: ${{ secrets.ORB_CI_GH_TOKEN }}
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   SLACK_SEMANTIC_RELEASE_WEBHOOK: ${{ secrets.SLACK_OBSERVABILITY_RELEASE_WEBHOOK }}
+
+permissions:
+  contents: write
 
 jobs:
   get-next-version:
@@ -33,7 +36,7 @@ jobs:
         with:
           node-version: "lts/*"
       - name: Write package.json
-        uses: DamianReeves/write-file-action@master
+        uses: DamianReeves/write-file-action@6929a9a6d1807689191dcc8bbe62b54d70a32b42 # v1.3
         with:
           path: ${{ inputs.app_dir }}/package.json
           write-mode: overwrite
@@ -50,7 +53,7 @@ jobs:
               }
             }
       - name: Write .releaserc.json
-        uses: DamianReeves/write-file-action@master
+        uses: DamianReeves/write-file-action@6929a9a6d1807689191dcc8bbe62b54d70a32b42 # v1.3
         with:
           path: ${{ inputs.app_dir }}/.releaserc.json
           write-mode: overwrite
@@ -102,8 +105,11 @@ jobs:
         run: echo "short-sha=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
       - name: Set release version
         id: release-version
+        env:
+          NEXT_RELEASE_VERSION: ${{ steps.get-next-version.outputs.new-release-version }}
+          APP_NAME: ${{ inputs.app_name }}
         run: |
-          echo "release-version=`echo ${{ steps.get-next-version.outputs.new-release-version }} | sed 's/${{ inputs.app_name }}-v//g'`" >> $GITHUB_OUTPUT
+          echo "release-version=`echo $NEXT_RELEASE_VERSION | sed 's/${APP_NAME}-v//g'`" >> $GITHUB_OUTPUT
     outputs:
       new-release-published: ${{ steps.get-next-version.outputs.new-release-published }}
       new-release-version: ${{ steps.release-version.outputs.release-version }}
@@ -116,4 +122,8 @@ jobs:
     if: needs.get-next-version.outputs.new-release-published == 'true'
     steps:
       - uses: actions/checkout@v4
-      - run: echo "The new release version is ${{ needs.get-next-version.outputs.new-release-version }} commit ${{ needs.get-next-version.outputs.short-sha }}"
+      - name: Confirm version
+        env:
+          NEXT_RELEASE_VERSION: ${{ needs.get-next-version.outputs.new-release-version }}
+          NEXT_RELEASE_SHORT_SHA: ${{ needs.get-next-version.outputs.short-sha }}
+        run: echo "The new release version is $NEXT_RELEASE_VERSION commit $NEXT_RELEASE_SHORT_SHA"

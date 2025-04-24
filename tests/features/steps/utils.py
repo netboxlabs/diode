@@ -44,6 +44,8 @@ def send_get_request(endpoint, params=None):
 
 def send_delete_request(endpoint, id):
     """Send a request to the API with the given endpoint and headers. Return the response."""
+    if endpoint.endswith("/"):
+        endpoint = endpoint[:-1]
     try:
         response = requests.delete(f"{api_root_path}/{endpoint}/{id}/", headers=headers)
     except Exception as e:
@@ -99,7 +101,7 @@ def ingester(entities):
     """Ingest the site object using the Diode SDK"""
     api_key = str(configs["api_key"])
     with DiodeClient(
-        target="grpc://localhost:8081",
+        target="grpc://localhost:8080/diode",
         app_name="my-test-app",
         app_version="0.0.1",
         api_key=api_key,

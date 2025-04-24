@@ -44,6 +44,7 @@ Diode requires a configuration file and an environment file to execute successfu
 
 * `docker-compose.yaml` - to configure and run the Diode server containers
 * `.env` - to store the specific environmental settings
+* `client-credentials.json` - to create OAuth2 clients required for communication between Orb Agent / Diode SDK, diode server and Diode NetBox plugins
 
 We recommend placing both files in a clean directory:
 
@@ -52,22 +53,55 @@ mkdir /opt/diode
 cd /opt/diode
 ```
 
-Download the default `docker-compose.yaml` and `.env` files from this repository:
+Download the default `docker-compose.yaml` and other required files from this repository:
 
 ```bash
-curl -o docker-compose.yaml https://raw.githubusercontent.com/netboxlabs/diode/develop/diode-server/docker/docker-compose.yaml
-curl -o .env https://raw.githubusercontent.com/netboxlabs/diode/develop/diode-server/docker/sample.env
+curl -o docker-compose.yaml https://raw.githubusercontent.com/netboxlabs/diode/release/diode-server/docker/docker-compose.yaml
+curl -o .env https://raw.githubusercontent.com/netboxlabs/diode/release/diode-server/docker/sample.env
+curl -o generate-client-credentials.sh https://raw.githubusercontent.com/netboxlabs/diode/release/diode-server/docker/scripts/generate-client-credentials.sh
+curl -o generate-env-secrets.sh https://raw.githubusercontent.com/netboxlabs/diode/release/diode-server/docker/scripts/generate-env-secrets.sh
 ```
+
+Note: to run following scripts `bash` 4.x is required.
+
+Generate OAuth2 client credentials into `client-credentials.json` file:
+
+```bash
+chmod +x generate-client-credentials.sh
+mkdir -p oauth2/client
+./generate-client-credentials.sh > ./oauth2/client/client-credentials.json
+```
+
+Generate secrets and replace placeholders in `.env`:
+
+```bash
+chmod +x generate-env-secrets.sh
+./generate-env-secrets.sh .env
+```
+
+Set `DIODE_TO_NETBOX_CLIENT_SECRET` in `.env` extracted from generated `client-credentials.json` file:
+
+```bash
+DIODE_TO_NETBOX_CLIENT_SECRET=$(jq -r '.[] | select(.client_id == "diode-to-netbox") | .client_secret' ./oauth2/client/client-credentials.json)
+
+# linux
+sed -i "s|<PLACEHOLDER_DIODE_TO_NETBOX_CLIENT_SECRET>|$DIODE_TO_NETBOX_CLIENT_SECRET|g" .env
+
+# macos
+sed -i '' "s|<PLACEHOLDER_DIODE_TO_NETBOX_CLIENT_SECRET>|$DIODE_TO_NETBOX_CLIENT_SECRET|g" .env
+```
+
 
 Edit the `.env` to match your environment:
 
-* `NETBOX_DIODE_PLUGIN_API_BASE_URL`: URL for the Diode NetBox plugin API
-* `DIODE_TO_NETBOX_API_KEY`: API key generated with the Diode NetBox plugin installation
-* `DIODE_API_KEY`: API key generated with the Diode NetBox plugin installation
-* `NETBOX_TO_DIODE_API_KEY`: API key generated with the Diode NetBox plugin installation
-* `INGESTER_TO_RECONCILER_API_KEY`: API key to authorize RPC calls between the Ingester and Reconciler services (at
-  least 40 characters, example generation with shell command: `openssl rand -base64 40 | head -c 40`)
-* `MIGRATION_ENABLED`: Set to `false` to disable the migration, default is `true`
+* `DIODE_NGINX_PORT`: Port number for the Nginx service that handles incoming HTTP requests, default: `8080`
+* `NETBOX_DIODE_PLUGIN_API_BASE_URL`: URL for the Diode NetBox plugin API, replace `<http://NETBOX_HOST>` with your NetBox URL
+* `RECONCILER_RATE_LIMITER_RPS`: Rate limit for the reconciler service for generating and applying change sets concurrently, default: `20`
+* `RECONCILER_RATE_LIMITER_BURST`: Burst limit for the reconciler service for generating and applying change sets concurrently, default: `1`
+* `DIODE_TO_NETBOX_RATE_LIMITER_RPC`: Rate limit for the number of RPC calls per second from Diode to NetBox, default: `20`
+* `DIODE_TO_NETBOX_RATE_LIMITER_BURST`: Burst limit for the number of RPC calls from Diode to NetBox, default: `1`
+* `LOGGING_LEVEL`: Controls the verbosity of logs, options include: `DEBUG`, `INFO`, `WARN`, `ERROR`, default: `INFO`
+* `LOGGING_FORMAT`: Controls the format of log output, options include: `json`, `text`, default: `json`
 
 ### Running the Diode server
 
@@ -79,4 +113,4 @@ docker compose -f docker-compose.yaml up -d
 
 ## License
 
-Distributed under the PolyForm Shield License 1.0.0 License. See [LICENSE.md](./LICENSE.md) for more information.
+Distributed under the NetBox Limited Use License 1.0. See [LICENSE.md](../LICENSE.md) for more information.

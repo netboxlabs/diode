@@ -1,15 +1,13 @@
 package changeset
 
 import (
-	"context"
+	"bytes"
+	"encoding/json"
 	"fmt"
 
-	"github.com/google/uuid"
-	"github.com/mitchellh/mapstructure"
+	"github.com/andybalholm/brotli"
 
-	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
-	"github.com/netboxlabs/diode/diode-server/netbox"
-	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
+	"github.com/netboxlabs/diode/diode-server/errors"
 )
 
 const (
@@ -18,191 +16,69 @@ const (
 
 	// ChangeTypeUpdate is the change type for an update
 	ChangeTypeUpdate = "update"
+
+	// ChangeTypeNoop is the change type for a no-op
+	ChangeTypeNoop = "noop"
 )
-
-// IngestEntity represents an ingest entity
-type IngestEntity struct {
-	RequestID string `json:"request_id"`
-	DataType  string `json:"data_type"`
-	Entity    any    `json:"entity"`
-	State     int    `json:"state"`
-}
-
-// ObjectState represents a object state
-type ObjectState struct {
-	ObjectID       int    `json:"object_id"`
-	ObjectType     string `json:"object_type"`
-	ObjectChangeID int    `json:"object_change_id"`
-	Object         any    `json:"object"`
-}
 
 // ChangeSet represents a change set
 type ChangeSet struct {
-	ChangeSetID string   `json:"change_set_id"`
-	ChangeSet   []Change `json:"change_set"`
+	ID            string   `json:"id"`
+	Changes       []Change `json:"changes"`
+	BranchID      *string  `json:"branch_id,omitempty"`
+	DeviationName *string  `json:"deviation_name,omitempty"`
 }
 
 // Change represents a change for the change set
 type Change struct {
-	ChangeID      string `json:"change_id"`
-	ChangeType    string `json:"change_type"`
-	ObjectType    string `json:"object_type"`
-	ObjectID      *int   `json:"object_id,omitempty"`
-	ObjectVersion *int   `json:"object_version,omitempty"`
-	Data          any    `json:"data"`
+	ID                 string          `json:"id"`
+	ChangeType         string          `json:"change_type"`
+	ObjectType         string          `json:"object_type"`
+	ObjectPrimaryValue string          `json:"object_primary_value"`
+	ObjectID           *int            `json:"object_id,omitempty"`
+	RefID              *string         `json:"ref_id,omitempty"`
+	ObjectVersion      *int            `json:"object_version,omitempty"`
+	Before             json.RawMessage `json:"before"`
+	After              json.RawMessage `json:"after"`
+	NewRefs            []string        `json:"new_refs,omitempty"`
 }
 
-// Prepare prepares a change set
-func Prepare(entity IngestEntity, netboxAPI netboxdiodeplugin.NetBoxAPI) (*ChangeSet, error) {
-	// extract ingested entity (actual)
-	actual, err := extractIngestEntityData(entity)
+// CompressChangeSet compresses a change set
+func CompressChangeSet(cs *ChangeSet) ([]byte, error) {
+	csJSON, err := json.Marshal(cs)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to marshal change set JSON: %v", err)
 	}
 
-	// get root object and all its nested objects (actual)
-	actualNestedObjects, err := actual.NestedObjects()
-	if err != nil {
-		return nil, err
+	var brotliBuf bytes.Buffer
+	brotliWriter := brotli.NewWriter(&brotliBuf)
+	if _, err = brotliWriter.Write(csJSON); err != nil {
+		return nil, fmt.Errorf("failed to compress change set: %v", err)
+	}
+	if err = brotliWriter.Close(); err != nil {
+		return nil, fmt.Errorf("failed to compress change set: %v", err)
 	}
 
-	// map out root object and all its nested objects (actual)
-	actualNestedObjectsMap := make(map[string]netbox.ComparableData)
-	for _, obj := range actualNestedObjects {
-		actualNestedObjectsMap[fmt.Sprintf("%p", obj.Data())] = obj
-	}
-
-	// retrieve root object all its nested objects from NetBox (intended)
-	intendedNestedObjectsMap := make(map[string]netbox.ComparableData)
-	for _, obj := range actualNestedObjects {
-		intended, err := retrieveObjectState(netboxAPI, obj)
-		if err != nil {
-			return nil, err
-		}
-		intendedNestedObjectsMap[fmt.Sprintf("%p", obj.Data())] = intended
-	}
-
-	// map out retrieved root object and all its nested objects (current)
-	var current netbox.ComparableData
-	for _, obj := range actualNestedObjects {
-		if obj.DataType() == entity.DataType {
-			current = intendedNestedObjectsMap[fmt.Sprintf("%p", obj.Data())]
-			break
-		}
-	}
-
-	objectsToReconcile, err := actual.Patch(current, intendedNestedObjectsMap)
-	if err != nil {
-		return nil, err
-	}
-
-	// process objectsToReconcile and prepare changeset to return
-	changes := make([]Change, 0)
-
-	for _, obj := range objectsToReconcile {
-		operation := ChangeTypeCreate
-		var objectID *int
-
-		id := obj.ID()
-		if id > 0 {
-			objectID = &id
-			operation = ChangeTypeUpdate
-		}
-
-		changes = append(changes, Change{
-			ChangeID:      uuid.NewString(),
-			ChangeType:    operation,
-			ObjectType:    obj.DataType(),
-			ObjectID:      objectID,
-			ObjectVersion: nil,
-			Data:          obj.Data(),
-		})
-	}
-
-	return &ChangeSet{ChangeSetID: uuid.NewString(), ChangeSet: changes}, nil
+	return brotliBuf.Bytes(), nil
 }
 
-func retrieveObjectState(netboxAPI netboxdiodeplugin.NetBoxAPI, change netbox.ComparableData) (netbox.ComparableData, error) {
-	params := netboxdiodeplugin.RetrieveObjectStateQueryParams{
-		ObjectID:   0,
-		ObjectType: change.DataType(),
-		Params:     change.ObjectStateQueryParams(),
-	}
-	resp, err := netboxAPI.RetrieveObjectState(context.Background(), params)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.Object.IsValid() {
-		objectState := &ObjectState{
-			ObjectID:       resp.ObjectID,
-			ObjectType:     change.DataType(),
-			ObjectChangeID: resp.ObjectChangeID,
-			Object:         resp.Object,
-		}
-
-		return extractNetBoxObjectStateData(*objectState)
-	}
-
-	return nil, nil
+// Error represents an error when diffing or applying change set
+type Error struct {
+	Message string           `json:"message"`
+	Code    errors.ErrorCode `json:"code"`
+	Details json.RawMessage  `json:"details,omitempty"`
 }
 
-func extractIngestEntityData(ingestEntity IngestEntity) (netbox.ComparableData, error) {
-	if ingestEntity.Entity == nil {
-		return nil, fmt.Errorf("ingest entity is nil")
-	}
-
-	dw, err := netbox.NewDataWrapper(ingestEntity.DataType)
-	if err != nil {
-		return nil, err
-	}
-
-	protoEntity, ok := ingestEntity.Entity.(*diodepb.Entity)
-	if !ok {
-		return nil, fmt.Errorf("ingest entity is not a proto entity")
-	}
-
-	if err = dw.FromProtoEntity(protoEntity); err != nil {
-		return nil, err
-	}
-
-	if !dw.IsValid() {
-		return nil, fmt.Errorf("invalid ingest entity")
-	}
-
-	return dw, nil
+// Error returns the ChangeSetError message
+func (e *Error) Error() string {
+	return fmt.Sprintf("%s - %s - %s", e.Message, e.Code, string(e.Details))
 }
 
-func extractNetBoxObjectStateData(obj ObjectState) (netbox.ComparableData, error) {
-	if obj.Object == nil {
-		return nil, fmt.Errorf("object state is nil")
+// NewError creates a new Error
+func NewError(message string, code errors.ErrorCode, details []byte) error {
+	return &Error{
+		Message: message,
+		Code:    code,
+		Details: details,
 	}
-
-	dw, err := netbox.NewDataWrapper(obj.ObjectType)
-	if err != nil {
-		return nil, err
-	}
-
-	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
-		Result:    &dw,
-		MatchName: netbox.IpamIPAddressAssignedObjectMatchName,
-		DecodeHook: mapstructure.ComposeDecodeHookFunc(
-			netbox.IpamIPAddressAssignedObjectHookFunc(),
-		),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	if err := decoder.Decode(obj.Object); err != nil {
-		return nil, fmt.Errorf("failed to decode object entity %w", err)
-	}
-
-	if !dw.IsValid() {
-		return nil, fmt.Errorf("invalid object state")
-	}
-
-	dw.Normalise()
-
-	return dw, nil
 }

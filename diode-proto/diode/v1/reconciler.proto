@@ -7,58 +7,15 @@ import "validate/validate.proto";
 
 option go_package = "github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb";
 
-// An ingestion data source
-message IngestionDataSource {
-  string name = 1 [(validate.rules).string = {
-    min_len: 1
-    max_len: 255
-  }];
-  string api_key = 2 [(validate.rules).string = {
-    min_len: 40
-    max_len: 40
-  }];
-}
-
-// The request to retrieve ingestion data sources
-message RetrieveIngestionDataSourcesRequest {
-  string name = 1 [(validate.rules).string = {
-    min_len: 1
-    max_len: 255
-  }];
-  string sdk_name = 2 [(validate.rules).string = {
-    min_len: 1
-    max_len: 255
-  }];
-  string sdk_version = 3 [(validate.rules).string = {pattern: "^(\\d)+\\.(\\d)+\\.(\\d)+$"}];
-}
-
-// The response from the retrieve ingestion data sources request
-message RetrieveIngestionDataSourcesResponse {
-  repeated IngestionDataSource ingestion_data_sources = 1;
-}
-
-// IngestionError represents an error occurring while processing an ingestion entity
-message IngestionError {
-  message Details {
-    message Error {
-      string error = 1; //key value pair of the error
-      string change_id = 2;
-    }
-    string change_set_id = 1;
-    string result = 2;
-    repeated Error errors = 3;
-  }
-  string message = 1;
-  int32 code = 2;
-  Details details = 3;
-}
-
 enum State {
-  UNSPECIFIED = 0;
+  STATE_UNSPECIFIED = 0;
   QUEUED = 1;
-  RECONCILED = 2;
-  FAILED = 3;
-  NO_CHANGES = 4;
+  OPEN = 2;
+  APPLIED = 3;
+  FAILED = 4;
+  NO_CHANGES = 5;
+  IGNORED = 6;
+  ERRORED = 7;
 }
 
 // Ingestion metrics
@@ -74,12 +31,14 @@ message IngestionMetrics {
 message ChangeSet {
   string id = 1; // A change set ID
   bytes data = 2; // Binary data representing the change set
+  optional string branch_id = 3; // branch ID against which the change set was generated
+  optional string deviation_name = 4; // deviation name
 }
 
 // An ingestion log
 message IngestionLog {
   string id = 1;
-  string data_type = 2;
+  string data_type = 2 [deprecated = true];
   State state = 3;
   string request_id = 4;
   int64 ingestion_ts = 5;
@@ -88,20 +47,23 @@ message IngestionLog {
   string sdk_name = 8;
   string sdk_version = 9;
   diode.v1.Entity entity = 10;
-  IngestionError error = 11;
+  DeviationError error = 11;
   ChangeSet change_set = 12;
+  string object_type = 13;
+  int64 source_ts = 14;
 }
 
 // The request to retrieve ingestion logs
 message RetrieveIngestionLogsRequest {
   optional int32 page_size = 1; // Number of logs per page, default is 100
   optional State state = 2; // Optional filter by state field
-  string data_type = 3; // Optional filter by data type field
+  string data_type = 3 [deprecated = true]; // Optional filter by data type field
   string request_id = 4; // Optional filter by request ID
   int64 ingestion_ts_start = 5; // Optional start of ingestion timestamp range
   int64 ingestion_ts_end = 6; // Optional end of ingestion timestamp range
   string page_token = 7; // Token to fetch the next page of results
   bool only_metrics = 8; // Flag to return only the ingestion metrics
+  string object_type = 9; // Optional filter by object type
 }
 
 // The response from the retrieve ingestion logs request
@@ -111,10 +73,76 @@ message RetrieveIngestionLogsResponse {
   string next_page_token = 3; // Token for the next page of results, if any
 }
 
+// The request to retrieve deviations
+message RetrieveDeviationsRequest {
+  optional int32 page_size = 1; // Number of deviations per page, default is 100
+  string page_token = 2; // Token to fetch the next page of results
+  int64 ingestion_ts_start = 3; // Optional start of ingestion timestamp range
+  int64 ingestion_ts_end = 4; // Optional end of ingestion timestamp range
+  repeated State state = 5; // Optional filter by states
+  repeated string object_type = 6; // Optional filter by object types
+  repeated string branch_id = 7; // Optional filter by branch IDs
+}
+
+// Deviation error
+message DeviationError {
+  string message = 1;
+  string code = 2;
+  bytes details = 3;
+}
+
+// A change
+message Change {
+  string id = 1;
+  string object_type = 2;
+  string object_primary_value = 3;
+  string change_type = 4;
+  bytes before = 5;
+  bytes after = 6;
+}
+
+// A deviation
+message Deviation {
+  string id = 1;
+  int64 ingestion_ts = 2;
+  int64 last_update_ts = 3;
+  string name = 4;
+  string source = 5;
+  State state = 6;
+  string object_type = 7;
+  optional string branch_id = 8;
+  diode.v1.Entity ingested_entity = 9;
+  DeviationError error = 10;
+  repeated Change changes = 11;
+  int64 source_ts = 12;
+}
+
+// The response from the retrieve deviations request
+message RetrieveDeviationsResponse {
+  repeated Deviation deviations = 1; // List of deviations
+  string next_page_token = 2; // Token for the next page of results, if any
+}
+
+// The request to retrieve deviation by ID
+message RetrieveDeviationByIDRequest {
+  string id = 1; // Deviation ID
+}
+
+// The response from the retrieve deviation by ID request
+message RetrieveDeviationByIDResponse {
+  Deviation deviation = 1; // Deviation
+}
+
 // Reconciler service API
 service ReconcilerService {
-  // Retrieves ingestion data sources
-  rpc RetrieveIngestionDataSources(RetrieveIngestionDataSourcesRequest) returns (RetrieveIngestionDataSourcesResponse) {}
   // Retrieves ingestion logs
-  rpc RetrieveIngestionLogs(RetrieveIngestionLogsRequest) returns (RetrieveIngestionLogsResponse);
+  rpc RetrieveIngestionLogs(RetrieveIngestionLogsRequest) returns (RetrieveIngestionLogsResponse) {
+    option deprecated = true;
+  }
+
+  // Retrieve deviations
+  rpc RetrieveDeviations(RetrieveDeviationsRequest) returns (RetrieveDeviationsResponse);
+
+  // Retrieve deviation by ID
+  rpc RetrieveDeviationByID(RetrieveDeviationByIDRequest) returns (RetrieveDeviationByIDResponse);
 }

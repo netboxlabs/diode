@@ -1,0 +1,18 @@
+{{- if .Values.diodeAuth.enabled -}}
+{{- $config := index .Values.diodeAuth.config -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "diode.auth.configmap" . }}
+  namespace: {{ include "diode.namespace" . }}
+  labels:
+    {{- include "diode.labels" . | nindent 4 }}
+    app.kubernetes.io/component: {{ include "diode.auth.servicename" . }}
+data:
+  OAUTH2_PUBLIC_SERVER_URL: {{ include "diode.hydra.public.url" . | quote }}
+  OAUTH2_ADMIN_SERVER_URL: {{ include "diode.hydra.admin.url" . | quote }}
+  SENTRY_DSN: {{ $config.sentryDsn | quote }}
+  TELEMETRY_METRICS_EXPORTER: {{ $config.telemetryMetricsExporter | quote }}
+  TELEMETRY_TRACES_EXPORTER: {{ $config.telemetryTracesExporter | quote }}
+  TELEMETRY_ENVIRONMENT: {{ $config.telemetryEnvironment | quote }}
+{{- end }}

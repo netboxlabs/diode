@@ -1,0 +1,82 @@
+package migrator
+
+import (
+	"context"
+	"database/sql"
+	"errors"
+	"fmt"
+	"log/slog"
+	"os"
+
+	"github.com/pressly/goose/v3"
+	goosedb "github.com/pressly/goose/v3/database"
+)
+
+// Operation is the type of migration operation
+type Operation string
+
+const (
+	// OperationUp applies all pending migrations
+	OperationUp Operation = "up"
+	// OperationDown rolls back the most recently applied migration
+	OperationDown Operation = "down"
+)
+
+// A Migrator runs migrations against a database
+type Migrator struct {
+	logger         *slog.Logger
+	migrationsPath string
+	provider       *goose.Provider
+}
+
+// NewMigrator creates a new migrator
+func NewMigrator(logger *slog.Logger, dialect string, db *sql.DB, migrationsPath string, migrationsTable string) (*Migrator, error) {
+	migrationsFS := os.DirFS(migrationsPath)
+	if migrationsTable == "" {
+		migrationsTable = goose.DefaultTablename
+	}
+	store, err := goosedb.NewStore(goose.Dialect(dialect), migrationsTable)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create migration store: %w", err)
+	}
+	provider, err := goose.NewProvider("", db, migrationsFS, goose.WithStore(store))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create migration provider: %w", err)
+	}
+
+	return &Migrator{
+		logger:         logger,
+		migrationsPath: migrationsPath,
+		provider:       provider,
+	}, nil
+}
+
+// Run runs the migrations
+func (m *Migrator) Run(ctx context.Context, op Operation) error {
+	switch op {
+	case OperationUp:
+		results, err := m.provider.Up(ctx)
+		if err != nil && !errors.Is(err, goose.ErrAlreadyApplied) {
+			return fmt.Errorf("failed to apply migrations: %w", err)
+		}
+		if len(results) == 0 {
+			m.logger.Debug("no migrations to apply")
+			return nil
+		}
+		m.logger.Debug("applied migrations", "results", results)
+	case OperationDown:
+		result, err := m.provider.Down(ctx)
+		if err != nil && !errors.Is(err, goose.ErrNoNextVersion) {
+			return fmt.Errorf("failed to rollback migrations: %w", err)
+		}
+		if result == nil {
+			m.logger.Debug("no migrations to rollback")
+			return nil
+		}
+		m.logger.Debug("rolled back migrations", "result", result)
+	default:
+		return fmt.Errorf("unsupported operation: %s", op)
+	}
+
+	return nil
+}

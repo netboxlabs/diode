@@ -1,0 +1,20 @@
+{{- if .Values.diodeAuth.enabled -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "diode.auth.servicename" . }}
+  namespace: {{ include "diode.namespace" . }}
+  labels:
+    {{- include "diode.labels" . | nindent 4 }}
+    app: {{ include "diode.auth.servicename" . }}
+    app.kubernetes.io/component: {{ include "diode.auth.servicename" . }}
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ include "diode.auth.servicename" . }}
+  ports:
+    - name: http
+      port: {{ .Values.diodeAuth.containerPort }}
+      targetPort: {{ .Values.diodeAuth.containerPort }}
+      protocol: TCP
+{{- end }}

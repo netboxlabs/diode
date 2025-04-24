@@ -16,6 +16,7 @@ linters:
     - gosimple
     - bodyclose
     - gci
+    - gofumpt
 
 issues:
   exclude-use-default: false
@@ -24,6 +25,10 @@ issues:
       text: "package-comments: should have a package comment"
       linters:
         - revive
+    - path: /*.go
+      text: 'SA1019: filter.DataType is deprecated'
+    - path: /*.go
+      text: 'SA1019: g.client.RetrieveIngestionLogs is deprecated'
 
 severity:
   default-severity: error
@@ -35,3 +40,5 @@ linters-settings:
       - default
       - prefix(github.com/netboxlabs/diode)
     custom-order: true
+  go-fumpt:
+    extra-rules: true

@@ -2,57 +2,46 @@ package ingester
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"net"
 	"os"
 	"time"
 
-	"github.com/kelseyhightower/envconfig"
 	"github.com/redis/go-redis/v9"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/netboxlabs/diode/diode-server/authutil"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
-	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
-	"github.com/netboxlabs/diode/diode-server/reconciler"
 	"github.com/netboxlabs/diode/diode-server/sentry"
+	"github.com/netboxlabs/diode/diode-server/telemetry"
 )
 
 const (
 	streamID = "diode.v1.ingest-stream"
 )
 
-var (
-	errMetadataNotFound = errors.New("no request metadata found")
-
-	// ErrUnauthorized is an error for unauthorized requests
-	ErrUnauthorized = errors.New("missing or invalid authorization header")
-)
-
 // Component asynchronously ingests data from the distributor
 type Component struct {
 	diodepb.UnimplementedIngesterServiceServer
 
-	ctx                  context.Context
-	config               Config
-	logger               *slog.Logger
-	hostname             string
-	grpcListener         net.Listener
-	grpcServer           *grpc.Server
-	redisStreamClient    *redis.Client
-	reconcilerClient     reconciler.Client
-	ingestionDataSources []*reconcilerpb.IngestionDataSource
+	ctx               context.Context
+	config            Config
+	logger            *slog.Logger
+	hostname          string
+	grpcListener      net.Listener
+	grpcServer        *grpc.Server
+	redisStreamClient *redis.Client
+	metrics           *Metrics
 }
 
 // New creates a new ingester component
-func New(ctx context.Context, logger *slog.Logger) (*Component, error) {
-	var cfg Config
-	envconfig.MustProcess("", &cfg)
-
+func New(ctx context.Context, logger *slog.Logger, cfg Config, meter metric.Meter) (*Component, error) {
 	grpcListener, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.GRPCPort))
 	if err != nil {
 		return nil, fmt.Errorf("failed to listen on port %d: %v", cfg.GRPCPort, err)
@@ -73,52 +62,33 @@ func New(ctx context.Context, logger *slog.Logger) (*Component, error) {
 		return nil, fmt.Errorf("failed to get hostname: %v", err)
 	}
 
-	reconcilerClient, err := reconciler.NewClient()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create reconciler client: %v", err)
-	}
+	authorizer := authutil.NewUnverifiedJWTAuthorizer(logger)
 
-	dataSources, err := reconcilerClient.RetrieveIngestionDataSources(
-		metadata.NewOutgoingContext(ctx, metadata.Pairs("authorization", cfg.IngesterToReconcilerAPIKey)),
-		&reconcilerpb.RetrieveIngestionDataSourcesRequest{},
+	grpcServer := grpc.NewServer(
+		grpc.ChainUnaryInterceptor(newAuthUnaryInterceptor(authorizer)),
+		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve ingestion data sources: %v", err)
-	}
 
-	ingestionDataSources := dataSources.GetIngestionDataSources()
-	auth := newAuthUnaryInterceptor(ingestionDataSources)
-	grpcServer := grpc.NewServer(grpc.ChainUnaryInterceptor(auth))
+	metrics, err := NewMetrics(meter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create ingester metrics: %v", err)
+	}
 
 	component := &Component{
-		ctx:                  ctx,
-		config:               cfg,
-		logger:               logger,
-		hostname:             hostname,
-		grpcListener:         grpcListener,
-		grpcServer:           grpcServer,
-		redisStreamClient:    redisStreamClient,
-		reconcilerClient:     reconcilerClient,
-		ingestionDataSources: ingestionDataSources,
+		ctx:               ctx,
+		config:            cfg,
+		logger:            logger,
+		hostname:          hostname,
+		grpcListener:      grpcListener,
+		grpcServer:        grpcServer,
+		redisStreamClient: redisStreamClient,
+		metrics:           metrics,
 	}
 
 	diodepb.RegisterIngesterServiceServer(grpcServer, component)
 	reflection.Register(grpcServer)
 
 	return component, nil
-}
-
-func newAuthUnaryInterceptor(dataSources []*reconcilerpb.IngestionDataSource) grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		md, ok := metadata.FromIncomingContext(ctx)
-		if !ok {
-			return nil, errMetadataNotFound
-		}
-		if !authorized(dataSources, md["diode-api-key"]) {
-			return nil, ErrUnauthorized
-		}
-		return handler(ctx, req)
-	}
 }
 
 // Name returns the name of the component
@@ -141,7 +111,20 @@ func (c *Component) Stop() error {
 
 // Ingest handles the ingest request
 func (c *Component) Ingest(ctx context.Context, in *diodepb.IngestRequest) (*diodepb.IngestResponse, error) {
+	// Create attributes for metrics
+	attrs := []attribute.KeyValue{
+		attribute.String(telemetry.AttributeSDKName, in.SdkName),
+		attribute.String(telemetry.AttributeSDKVersion, in.SdkVersion),
+		attribute.String(telemetry.AttributeHostname, c.hostname),
+		attribute.String(telemetry.AttributeProducerAppName, in.ProducerAppName),
+		attribute.String(telemetry.AttributeProducerAppVersion, in.ProducerAppVersion),
+		attribute.String(telemetry.AttributeStream, in.Stream),
+	}
+	ctx = telemetry.ContextWithMetricAttributes(ctx, attrs...)
+
 	if err := validateRequest(in); err != nil {
+		c.metrics.RecordIngestRequest(ctx, false)
+
 		tags := map[string]string{
 			"hostname":    c.hostname,
 			"sdk_name":    in.SdkName,
@@ -163,6 +146,7 @@ func (c *Component) Ingest(ctx context.Context, in *diodepb.IngestRequest) (*dio
 
 	encodedRequest, err := proto.Marshal(in)
 	if err != nil {
+		c.metrics.RecordIngestRequest(ctx, false)
 		c.logger.Error("failed to marshal request", "error", err, "request", in)
 	}
 
@@ -182,7 +166,11 @@ func (c *Component) Ingest(ctx context.Context, in *diodepb.IngestRequest) (*dio
 		Stream: streamID,
 		Values: msg,
 	}).Err(); err != nil {
+		c.metrics.RecordIngestRequest(ctx, false)
 		c.logger.Error("failed to add element to the stream", "error", err, "streamID", streamID, "value", msg)
+	} else {
+		c.metrics.RecordIngestRequest(ctx, true)
+		c.metrics.RecordIngestEntities(ctx, int64(len(in.GetEntities())))
 	}
 
 	return &diodepb.IngestResponse{Errors: errs}, nil
@@ -216,15 +204,12 @@ func validateRequest(in *diodepb.IngestRequest) error {
 	return nil
 }
 
-func authorized(dataSources []*reconcilerpb.IngestionDataSource, authorization []string) bool {
-	if len(dataSources) < 1 || len(authorization) != 1 {
-		return false
-	}
-
-	for _, v := range dataSources {
-		if v.GetApiKey() == authorization[0] {
-			return true
+func newAuthUnaryInterceptor(authorizer authutil.Authorizer) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+		if err := authorizer.RequireScopesContext(ctx, []string{authutil.ScopeDiodeIngest}); err != nil {
+			return nil, err
 		}
+
+		return handler(ctx, req)
 	}
-	return false
 }

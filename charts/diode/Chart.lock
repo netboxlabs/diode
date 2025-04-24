@@ -1,12 +1,18 @@
 dependencies:
+- name: redis
+  repository: https://charts.bitnami.com/bitnami
+  version: 20.11.5
+- name: postgresql
+  repository: https://charts.bitnami.com/bitnami
+  version: 16.6.3
+- name: hydra
+  repository: https://k8s.ory.sh/helm/charts
+  version: 0.53.0
 - name: ingress-nginx
   repository: https://kubernetes.github.io/ingress-nginx
-  version: 4.11.2
+  version: 4.12.1
 - name: cert-manager
   repository: https://charts.jetstack.io
-  version: v1.16.1
-- name: redis
-  repository: oci://registry-1.docker.io/bitnamicharts
-  version: 20.1.4
-digest: sha256:f89ee5fc93ebfc48d7566073c20cbe8ab7b632e73f2fbd860b84d1b7a01ecf48
-generated: "2024-10-14T19:29:43.398885+01:00"
+  version: v1.12.0
+digest: sha256:4c2a148051fe71f62a1d53ad163b0ece13013544cf7c29c72405813a9d957296
+generated: "2025-04-17T20:05:02.485698+02:00"

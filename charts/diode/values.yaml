@@ -1,202 +1,405 @@
-# Default values for diode.
+global:
+  # -- diode global configuration
+  diode:
+    # -- busybox image configuration
+    busybox:
+      image: busybox:latest
+    # -- hydra additional init containers configuration
+    hydra:
+      # -- wait for PostgreSQL
+      waitForPostgres: true
 
-# diode-ingester service configuration
-diodeIngester:
+diode:
+  # -- environment name
+  environment: development
   image:
-    # -- image repository
-    repository: netboxlabs/diode-ingester
-    # -- image tag
-    tag: v0.6.0
-    # -- image pull policy
+    # -- image registry
+    registry: docker.io
+
+# External PostgreSQL configuration (optional)
+externalPostgresql:
+  # -- hostname
+  hostname: localhost
+  # -- port
+  port: 5432
+
+# External Redis configuration (optional)
+externalRedis:
+  # -- hostname
+  hostname: localhost
+  # -- port
+  port: 6379
+
+# Diode Auth configuration
+diodeAuth:
+  # -- enabled
+  enabled: true
+  image:
+    # -- image name
+    name: netboxlabs/diode-auth:1.0.0
+    # -- pull policy
     pullPolicy: IfNotPresent
-    # -- security context for the container
-    securityContext: { }
-  # -- number of replicas
-  replicas: 1
-  # -- service name
-  serviceName: diode-ingester
+  # -- replica count
+  replicaCount: 1
   serviceAccount:
     # -- create service account
     create: true
-    # -- service account name
-    name: diode-ingester
-  # -- custom affinity rules for the pod
-  affinity: { }
-  # -- tolerations to use with node taints
-  tolerations: [ ]
-  # -- node selector for the pod
-  nodeSelector: { }
-  # -- additional pod annotations
-  podAnnotations: { }
-  # -- additional pod labels
-  podLabels: { }
-  # -- additional pod security context
-  podSecurityContext: { }
   # -- port to listen on
-  containerPort: 8081
-  # -- resources to allocate for the container
-  resources: { }
-  #resources:
-  #  limits:
-  #    cpu: 100m
-  #    memory: 128Mi
-  #  requests:
-  #    cpu: 100m
-  #    memory: 128Mi
-  # -- existing secret for diode-ingester
-  existingSecret: ""
-  secrets:
-    # -- API key for authentication between diode-ingester and diode-reconciler
-    ingesterToReconcilerAPIKey: ""
-    # -- redis password, must match the password in the redis chart or external redis
-    redisPassword: ""
+  containerPort: 8080
+  # -- resources
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
   config:
-    # -- diode-reconciler gRPC host
-    reconcilerGrpcHost: diode-reconciler
-    # -- diode-reconciler gRPC port
-    reconcilerGrpcPort: 8081
-    # -- sentry DSN
+    # -- http port
+    httpPort: 8080
+    # -- sentry DSN 
     sentryDsn: ""
+    # -- telemetry metrics exporter
+    telemetryMetricsExporter: prometheus
+    # -- telemetry traces exporter
+    telemetryTracesExporter: none
+    # -- telemetry environment
+    telemetryEnvironment: dev
 
-# diode-reconciler service configuration
-diodeReconciler:
+# Diode Auth Bootstrap configuration
+diodeAuthBootstrap:
+  # -- enabled
+  enabled: true
   image:
-    # -- image repository
-    repository: netboxlabs/diode-reconciler
-    # -- image tag
-    tag: v0.6.0
-    # -- image pull policy
+    # -- image name
+    name: netboxlabs/diode-auth:1.0.0
+    # -- pull policy
     pullPolicy: IfNotPresent
-    # -- security context for the container
-    securityContext: { }
-  # -- number of replicas
-  replicas: 1
-  # -- service name
-  serviceName: diode-reconciler
+  job:
+    # -- backoff limit
+    backoffLimit: 20
+
+# Diode Ingester configuration
+diodeIngester:
+  # -- enabled
+  enabled: true
+  image:
+    # -- image name
+    name: netboxlabs/diode-ingester:1.0.0
+  # -- pull policy
+  pullPolicy: IfNotPresent
+  # -- replica count
+  replicaCount: 1
   serviceAccount:
     # -- create service account
     create: true
-    # -- service account name
-    name: diode-reconciler
-  # -- custom affinity rules for the pod
-  affinity: { }
-  # -- tolerations to use with node taints
-  tolerations: [ ]
-  # -- node selector for the pod
-  nodeSelector: { }
-  # -- additional pod annotations
-  podAnnotations: { }
-  # -- additional pod labels
-  podLabels: { }
-  # -- additional pod security context
-  podSecurityContext: { }
+  # -- existing secret name
+  existingSecret: diode-ingester-secret
   # -- port to listen on
   containerPort: 8081
-  resources: { }
-  #resources:
-  #  limits:
-  #    cpu: 100m
-  #    memory: 128Mi
-  #  requests:
-  #    cpu: 100m
-  #    memory: 128Mi
-  # -- existing secret for diode-ingester
-  existingSecret: ""
-  secrets:
-    # -- API key for authentication between diode and NetBox API
-    diodeToNetboxAPIKey: ""
-    # -- API key for authentication between NetBox API and diode
-    netboxToDiodeAPIKey: ""
-    # -- API key for authentication of diode ingestion requests
-    diodeAPIKey: ""
-    # -- API key for authentication between diode-ingester and diode-reconciler
-    ingesterToReconcilerAPIKey: ""
-    # -- redis password, must match the password in the redis chart or external redis
-    redisPassword: ""
+  # -- resources
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  grpc:
+    # -- grpc service name
+    serviceName: diode.v1.IngesterService
   config:
-    # -- NetBox plugin API base URL
-    netboxDiodePluginAPIBaseURL: https://<NETBOX_BASE_URL>/api/plugins/diode
-    # -- NetBox plugin skip TLS verify
-    netboxDiodePluginSkipTLSVerify: false
+    # -- sentry DSN 
+    sentryDsn: ""
+    # -- telemetry metrics exporter
+    telemetryMetricsExporter: prometheus
+    # -- telemetry traces exporter
+    telemetryTracesExporter: none
+    # -- telemetry environment
+    telemetryEnvironment: dev
+
+# Diode Reconciler configuration
+diodeReconciler:
+  # -- enabled
+  enabled: true
+  image:
+    # -- image name
+    name: netboxlabs/diode-reconciler:1.0.0
+  # -- pull policy
+  pullPolicy: IfNotPresent
+  # -- replica count
+  replicaCount: 1
+  serviceAccount:
+    # -- create service account
+    create: true
+  # -- existing secret name
+  existingSecret: diode-reconciler-secret
+  # -- port to listen on
+  containerPort: 8081
+  # -- resources
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  grpc:
+    # -- grpc service name
+    serviceName: diode.v1.ReconcilerService
+  config:
+    # -- netbox diode plugin api base url
+    netboxDiodePluginApiBaseUrl: http://localhost:8000/netbox/api/plugins/diode
+    # -- netbox diode plugin skip tls verify
+    netboxDiodePluginSkipTlsVerify: false
     # -- logging level
     loggingLevel: DEBUG
     # -- migration enabled
     migrationEnabled: true
-    # -- sentry DSN
+    # -- reconciler rate limiter rps
+    reconcilerRateLimiterRps: 20
+    # -- reconciler rate limiter burst
+    reconcilerRateLimiterBurst: 1
+    # -- diode to netbox rate limiter rps
+    diodeToNetboxRateLimiterRps: 20
+    # -- diode to netbox rate limiter burst
+    diodeToNetboxRateLimiterBurst: 1
+    # -- postgres db name
+    postgresDbName: diode
+    # -- postgres user
+    postgresUser: diode
+    # -- sentry DSN 
     sentryDsn: ""
+    # -- telemetry metrics exporter
+    telemetryMetricsExporter: prometheus
+    # -- telemetry traces exporter
+    telemetryTracesExporter: none
+    # -- telemetry environment
+    telemetryEnvironment: dev
+    # -- diode to netbox client id
+    diodeToNetBoxClientId: diode-to-netbox
 
-# ingress-nginx configuration
+# Redis configuration (optional)
+# -- ref: https://github.com/bitnami/charts/tree/main/bitnami/redis
+redis:
+  # -- enabled
+  enabled: true
+  # -- fullname override
+  fullnameOverride: diode-redis
+  auth:
+    # -- auth enabled
+    enabled: true
+    # -- existing secret name
+    existingSecret: diode-redis-secret
+    # -- existing secret password key
+    existingSecretPasswordKey: redis-password
+  # -- container ports
+  containerPorts:
+    redis: 6379
+  service:
+    # -- service port
+    port: 6379
+  replica:
+    # -- replica count
+    replicaCount: 1
+  persistence:
+    # -- persistence enabled
+    enabled: true
+    # -- persistence size
+    size: 1Gi
+
+# PostgreSQL configuration (optional)
+# -- ref: https://github.com/bitnami/charts/tree/main/bitnami/postgresql
+postgresql:
+  # -- enabled
+  enabled: true
+  # -- fullname override
+  fullnameOverride: diode-postgresql
+  auth:
+    # -- existing secret name
+    existingSecret: diode-postgresql-secret
+    # -- existing secret password key
+    secretKeys:
+      adminPasswordKey: postgres-password
+  primary:
+    persistence:
+      # -- persistence enabled
+      enabled: true
+      # -- persistence size
+      size: 10Gi
+    # -- extra volume mounts
+    extraVolumeMounts:
+      - name: custom-init-scripts
+        mountPath: /docker-entrypoint-initdb.d/init_diode_databases.sh
+        subPath: init_diode_databases.sh
+    initdb:
+      # -- scripts config map
+      scriptsConfigMap: diode-postgresql-initdb-scripts-configmap
+    # -- readiness probe
+    readinessProbe:
+      enabled: true
+      initialDelaySeconds: 5
+      periodSeconds: 10
+      timeoutSeconds: 5
+      successThreshold: 1
+      failureThreshold: 6
+    # -- liveness probe
+    livenessProbe:
+      enabled: true
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      successThreshold: 1
+      failureThreshold: 6
+
+# Hydra configuration
+# -- ref: https://github.com/ory/k8s/blob/master/helm/charts/hydra/values.yaml
+hydra:
+  # -- enabled
+  enabled: true
+  # -- fullname override
+  fullnameOverride: diode-hydra
+  secret:
+    # -- secret enabled
+    enabled: false
+    # -- existing secret name
+    nameOverride: diode-hydra-secret
+  # Hydra chart configuration
+  hydra:
+    service:
+      public:
+        # -- public service enabled
+        enabled: true
+        # -- public service type
+        type: ClusterIP # Ensure service is only internal
+        # -- public service port
+        port: 4444
+      admin:
+        # -- admin service enabled
+        enabled: true
+        # -- admin service type
+        type: ClusterIP # Ensure service is only internal
+        # -- admin service port
+        port: 4445
+    ingress:
+      public:
+        # -- public ingress enabled
+        enabled: false
+      admin:
+        # -- admin ingress enabled
+        enabled: false
+    config:
+      strategies:
+        # -- access token strategy
+        access_token: jwt
+        jwt:
+          # -- scope claim
+          scope_claim: both
+      ttl:
+        # -- access token TTL
+        access_token: 1h
+      oidc:
+        # -- subject identifiers
+        subject_identifiers:
+          supported_types:
+            - public
+      urls:
+        # -- self issuer
+        self:
+          # -- hydra public url
+          issuer: http://diode-hydra-public.{{ .Release.Namespace }}.svc.cluster.local:4444
+    automigration:
+      # -- automigration enabled
+      enabled: true
+    # -- dev mode
+    dev: true # Hydra is not exposed to the public internet
+  deployment:
+    # -- extra init containers
+    extraInitContainers: |-
+      {{ include "diode.hydra.extrainitcontainers" . }}
+    # -- resources
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+  job:
+    # -- job annotations
+    annotations:
+      "helm.sh/hook": post-install, post-upgrade
+      "helm.sh/hook-weight": "1"
+      "helm.sh/hook-delete-policy": hook-succeeded
+    # -- extra init containers
+    extraInitContainers: |-
+      {{ include "diode.hydra.extrainitcontainers" . }}
+
+# Ingress Nginx Controller configuration (optional)
 # -- ref: https://github.com/kubernetes/ingress-nginx/blob/main/charts/ingress-nginx/values.yaml
-ingress-nginx:
+ingressNginx:
   # -- ingress-nginx enabled
   enabled: true
-  # -- override ingress-nginx namespace
-  namespaceOverride: diode-ingress
   # -- hostname
   hostname: ""
   # -- ingress class
   ingressClass: nginx
+  # -- ingress annotations
   controller:
     # -- allow snippet annotations
     allowSnippetAnnotations: true
+  annotations: {}
+  # -- ingress tls
+  tls: {}
+    # - secretName: diode-tls
+    #   hosts:
+    #     - diode.example.com
+  # -- ingress http annotations
+  httpAnnotations: {}
+  # -- ingress grpc annotations
+  grpcAnnotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "25m"
+  # -- ingress path prefix
+  pathPrefix: /diode
+  # -- ingress extra http paths
+  extraHttpPaths: {}
+    # - path: /
+    #   pathType: Prefix
+    #   serviceName: netbox
+    #   servicePort: 80
+    # - path: /(.*)
+    #   pathType: ImplementationSpecific
+    #   serviceName: netbox
+    #   servicePort: 80
 
-# cert-manager configuration
+# Cert Manager configuration (optional)
 # -- ref: https://github.com/cert-manager/cert-manager/blob/master/deploy/charts/cert-manager/values.yaml
-cert-manager:
+certManager:
   # -- cert-manager enabled
   enabled: false
+  # -- install CRDs
+  crds:
+    enabled: true
   # -- cert-manager namespace
   namespace: diode-cert-manager
+  # -- prometheus enabled
+  prometheus:
+    enabled: false
+  # -- webhook enabled
+  webhook:
+    enabled: true
+  # -- cainjector enabled
+  cainjector:
+    enabled: true
 
 # Certificate issuer configuration
+# -- ref: https://cert-manager.io/docs/configuration/acme/
 certIssuer:
   # -- enable certificate issuer creation
   enabled: false
-  # -- determines whether to use Let's Encrypt production or staging environment
-  prod: false
   # -- issuer kind (Issuer or ClusterIssuer) ref: https://cert-manager.io/docs/configuration/acme/
   kind: Issuer
   # -- issuer name
-  name: ""
-  # -- email address for ACME registration
-  email: ""
-  # -- solvers for the issuer
-  solvers:
-    - http01:
-        ingress:
-          ingressClassName: nginx
-
-# external redis configuration
-externalRedis:
-  # -- external redis host
-  host: ""
-  # -- external redis port
-  port: 6379
-
-# redis configuration
-# -- ref: https://github.com/bitnami/charts/blob/main/bitnami/redis/values.yaml
-redis:
-  # -- redis enabled
-  enabled: true
-  image:
-    # -- redis image repository
-    repository: redis/redis-stack-server
-    # -- redis image tag
-    tag: latest
-    # -- redis image pull policy
-    pullPolicy: IfNotPresent
-  replica:
-    # -- number of redis replicas
-    replicaCount: 1
-  auth:
-    # -- existing secret for redis password, either diodeIngester.existingSecret, diode-ingester-secret (created from
-    # diodeIngester.secrets) or your custom secret
-    existingSecret: "diode-ingester-secret"
-    # -- existing secret key for redis password
-    existingSecretPasswordKey: "REDIS_PASSWORD"
-  # -- redis configuration
-  commonConfiguration: |-
-    appendonly yes
-    save 60 1
-    loadmodule /opt/redis-stack/lib/rejson.so
-    loadmodule /opt/redis-stack/lib/redisearch.so
+  name: letsencrypt-development
+  # -- email address for Let's Encrypt notifications
+  email: admin@example.com
