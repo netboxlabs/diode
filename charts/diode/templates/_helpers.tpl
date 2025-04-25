@@ -168,7 +168,11 @@ Create the name of the ingester configmap to use
 Create the name of the ingester secret to use
 */}}
 {{- define "diode.ingester.secret" -}}
+{{- if .Values.diodeIngester.existingSecret }}
+{{- .Values.diodeIngester.existingSecret }}
+{{- else }}
 {{- printf "%s-ingester-secret" (include "diode.name" .) }}
+{{- end }}
 {{- end }}
 
 {{/*
@@ -207,7 +211,11 @@ Create the name of the reconciler configmap to use
 Create the name of the reconciler secret to use
 */}}
 {{- define "diode.reconciler.secret" -}}
+{{- if .Values.diodeReconciler.existingSecret }}
+{{- .Values.diodeReconciler.existingSecret }}
+{{- else }}
 {{- printf "%s-reconciler-secret" (include "diode.name" .) }}
+{{- end }}
 {{- end }}
 
 {{/*
