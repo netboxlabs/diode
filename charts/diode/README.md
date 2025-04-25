@@ -207,7 +207,6 @@ helm show values diode/diode
 | certManager.prometheus | object | `{"enabled":false}` | prometheus enabled |
 | certManager.webhook | object | `{"enabled":true}` | webhook enabled |
 | diode.environment | string | `"development"` | environment name |
-| diode.image.registry | string | `"docker.io"` | image registry |
 | diodeAuth.config.httpPort | int | `8080` | http port |
 | diodeAuth.config.sentryDsn | string | `""` | sentry DSN  |
 | diodeAuth.config.telemetryEnvironment | string | `"dev"` | telemetry environment |
@@ -215,14 +214,16 @@ helm show values diode/diode
 | diodeAuth.config.telemetryTracesExporter | string | `"none"` | telemetry traces exporter |
 | diodeAuth.containerPort | int | `8080` | port to listen on |
 | diodeAuth.enabled | bool | `true` | enabled |
-| diodeAuth.image.name | string | `"netboxlabs/diode-auth:1.0.0"` | image name |
 | diodeAuth.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
+| diodeAuth.image.repository | string | `"docker.io/netboxlabs/diode-auth"` | image repository |
+| diodeAuth.image.tag | string | `"1.0.0"` | image tag |
 | diodeAuth.replicaCount | int | `1` | replica count |
 | diodeAuth.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
 | diodeAuth.serviceAccount.create | bool | `true` | create service account |
 | diodeAuthBootstrap.enabled | bool | `true` | enabled |
-| diodeAuthBootstrap.image.name | string | `"netboxlabs/diode-auth:1.0.0"` | image name |
 | diodeAuthBootstrap.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
+| diodeAuthBootstrap.image.repository | string | `"docker.io/netboxlabs/diode-auth"` | image repository |
+| diodeAuthBootstrap.image.tag | string | `"1.0.0"` | image tag |
 | diodeAuthBootstrap.job.backoffLimit | int | `20` | backoff limit |
 | diodeIngester.config.sentryDsn | string | `""` | sentry DSN  |
 | diodeIngester.config.telemetryEnvironment | string | `"dev"` | telemetry environment |
@@ -232,8 +233,9 @@ helm show values diode/diode
 | diodeIngester.enabled | bool | `true` | enabled |
 | diodeIngester.existingSecret | string | `"diode-ingester-secret"` | existing secret name |
 | diodeIngester.grpc.serviceName | string | `"diode.v1.IngesterService"` | grpc service name |
-| diodeIngester.image.name | string | `"netboxlabs/diode-ingester:1.0.0"` | image name |
-| diodeIngester.pullPolicy | string | `"IfNotPresent"` | pull policy |
+| diodeIngester.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
+| diodeIngester.image.repository | string | `"docker.io/netboxlabs/diode-ingester"` | image repository |
+| diodeIngester.image.tag | string | `"1.0.0"` | image tag |
 | diodeIngester.replicaCount | int | `1` | replica count |
 | diodeIngester.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
 | diodeIngester.serviceAccount.create | bool | `true` | create service account |
@@ -256,7 +258,8 @@ helm show values diode/diode
 | diodeReconciler.enabled | bool | `true` | enabled |
 | diodeReconciler.existingSecret | string | `"diode-reconciler-secret"` | existing secret name |
 | diodeReconciler.grpc.serviceName | string | `"diode.v1.ReconcilerService"` | grpc service name |
-| diodeReconciler.image.name | string | `"netboxlabs/diode-reconciler:1.0.0"` | image name |
+| diodeReconciler.image.repository | string | `"docker.io/netboxlabs/diode-reconciler"` | image repository |
+| diodeReconciler.image.tag | string | `"1.0.0"` | image tag |
 | diodeReconciler.pullPolicy | string | `"IfNotPresent"` | pull policy |
 | diodeReconciler.replicaCount | int | `1` | replica count |
 | diodeReconciler.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
