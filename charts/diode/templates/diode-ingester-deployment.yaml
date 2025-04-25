@@ -41,7 +41,7 @@ spec:
         {{- end }}
       containers:
         - name: {{ include "diode.ingester.servicename" . }}
-          image: "{{ .Values.diode.image.registry }}/{{ .Values.diodeIngester.image.name }}"
+          image: "{{ .Values.diodeIngester.image.repository }}:{{ .Values.diodeIngester.image.tag }}"
           imagePullPolicy: {{ .Values.diodeIngester.image.pullPolicy | default "IfNotPresent" }}
           ports:
             - containerPort: {{ .Values.diodeIngester.containerPort | default 8081 }}

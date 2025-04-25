@@ -54,7 +54,7 @@ spec:
         {{- end }}
       containers:
         - name: {{ include "diode.reconciler.servicename" . }}
-          image: "{{ .Values.diode.image.registry }}/{{ .Values.diodeReconciler.image.name }}"
+          image: "{{ .Values.diodeReconciler.image.repository }}:{{ .Values.diodeReconciler.image.tag }}"
           imagePullPolicy: {{ .Values.diodeReconciler.image.pullPolicy | default "IfNotPresent" }}
           ports:
             - containerPort: {{ .Values.diodeReconciler.containerPort | default 8081 }}

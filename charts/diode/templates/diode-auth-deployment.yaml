@@ -43,7 +43,7 @@ spec:
         {{- end }}
       containers:
         - name: {{ include "diode.auth.servicename" . }}
-          image: "{{ .Values.diode.image.registry }}/{{ .Values.diodeAuth.image.name }}"
+          image: "{{ .Values.diodeAuth.image.repository }}:{{ .Values.diodeAuth.image.tag }}"
           imagePullPolicy: {{ .Values.diodeAuth.image.pullPolicy | default "IfNotPresent" }}
           ports:
             - containerPort: {{ .Values.diodeAuth.containerPort }}
