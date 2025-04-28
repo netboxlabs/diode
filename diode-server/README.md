@@ -40,76 +40,51 @@ Diode server requires Docker version 27.0.3 or above.
 
 ### Installation
 
-Diode requires a configuration file and an environment file to execute successfully:
+We prepared a `quickstart.sh` file to download all required Diode configuration files:
 
 * `docker-compose.yaml` - to configure and run the Diode server containers
 * `.env` - to store the specific environmental settings
+* `nginx.conf` - to configure Nginx with Diode endpoints
 * `client-credentials.json` - to create OAuth2 clients required for communication between Orb Agent / Diode SDK, diode server and Diode NetBox plugins
 
-We recommend placing both files in a clean directory:
+We recommend placing all files in a clean directory, e.g:
 
 ```bash
 mkdir /opt/diode
 cd /opt/diode
 ```
 
-Download the default `docker-compose.yaml` and other required files from this repository:
+Download `quickstart.sh`:
 
 ```bash
-curl -o docker-compose.yaml https://raw.githubusercontent.com/netboxlabs/diode/release/diode-server/docker/docker-compose.yaml
-curl -o .env https://raw.githubusercontent.com/netboxlabs/diode/release/diode-server/docker/sample.env
-curl -o generate-client-credentials.sh https://raw.githubusercontent.com/netboxlabs/diode/release/diode-server/docker/scripts/generate-client-credentials.sh
-curl -o generate-env-secrets.sh https://raw.githubusercontent.com/netboxlabs/diode/release/diode-server/docker/scripts/generate-env-secrets.sh
+curl -sSfL https://raw.githubusercontent.com/netboxlabs/diode/release/diode-server/scripts/quickstart.sh
+chmod +x quickstart.sh
 ```
 
-Note: to run following scripts `bash` 4.x is required.
-
-Generate OAuth2 client credentials into `client-credentials.json` file:
-
+Run `quickstart.sh` with your NetBox address (e.g. `http://my.netbox:8080`):
 ```bash
-chmod +x generate-client-credentials.sh
-mkdir -p oauth2/client
-./generate-client-credentials.sh > ./oauth2/client/client-credentials.json
+./quickstart.sh http://my.netbox:8080
 ```
-
-Generate secrets and replace placeholders in `.env`:
-
-```bash
-chmod +x generate-env-secrets.sh
-./generate-env-secrets.sh .env
-```
-
-Set `DIODE_TO_NETBOX_CLIENT_SECRET` in `.env` extracted from generated `client-credentials.json` file:
-
-```bash
-DIODE_TO_NETBOX_CLIENT_SECRET=$(jq -r '.[] | select(.client_id == "diode-to-netbox") | .client_secret' ./oauth2/client/client-credentials.json)
-
-# linux
-sed -i "s|<PLACEHOLDER_DIODE_TO_NETBOX_CLIENT_SECRET>|$DIODE_TO_NETBOX_CLIENT_SECRET|g" .env
-
-# macos
-sed -i '' "s|<PLACEHOLDER_DIODE_TO_NETBOX_CLIENT_SECRET>|$DIODE_TO_NETBOX_CLIENT_SECRET|g" .env
-```
-
-
-Edit the `.env` to match your environment:
-
-* `DIODE_NGINX_PORT`: Port number for the Nginx service that handles incoming HTTP requests, default: `8080`
-* `NETBOX_DIODE_PLUGIN_API_BASE_URL`: URL for the Diode NetBox plugin API, replace `<http://NETBOX_HOST>` with your NetBox URL
-* `RECONCILER_RATE_LIMITER_RPS`: Rate limit for the reconciler service for generating and applying change sets concurrently, default: `20`
-* `RECONCILER_RATE_LIMITER_BURST`: Burst limit for the reconciler service for generating and applying change sets concurrently, default: `1`
-* `DIODE_TO_NETBOX_RATE_LIMITER_RPC`: Rate limit for the number of RPC calls per second from Diode to NetBox, default: `20`
-* `DIODE_TO_NETBOX_RATE_LIMITER_BURST`: Burst limit for the number of RPC calls from Diode to NetBox, default: `1`
-* `LOGGING_LEVEL`: Controls the verbosity of logs, options include: `DEBUG`, `INFO`, `WARN`, `ERROR`, default: `INFO`
-* `LOGGING_FORMAT`: Controls the format of log output, options include: `json`, `text`, default: `json`
 
 ### Running the Diode server
 
 Start the Diode server:
 
 ```bash
-docker compose -f docker-compose.yaml up -d
+docker compose up -d
 ```
+
+### Environment variables
+
+Edit the `.env` to match your environment:
+
+* `DIODE_NGINX_PORT`: Port number for the Nginx service that handles incoming HTTP requests, default: `8080`
+* `RECONCILER_RATE_LIMITER_RPS`: Rate limit for the reconciler service for generating and applying change sets concurrently, default: `20`
+* `RECONCILER_RATE_LIMITER_BURST`: Burst limit for the reconciler service for generating and applying change sets concurrently, default: `1`
+* `DIODE_TO_NETBOX_RATE_LIMITER_RPC`: Rate limit for the number of RPC calls per second from Diode to NetBox, default: `20`
+* `DIODE_TO_NETBOX_RATE_LIMITER_BURST`: Burst limit for the number of RPC calls from Diode to NetBox, default: `1`
+* `LOGGING_LEVEL`: Controls the verbosity of logs, options include: `DEBUG`, `INFO`, `WARN`, `ERROR`, default: `INFO`
+* `LOGGING_FORMAT`: Controls the format of log output, options include: `json`, `text`, default: `json`
 
 ## License
 
