@@ -32,7 +32,7 @@ helm repo add diode https://netboxlabs.github.io/diode/charts
 helm repo update
 ```
 
-### Quickstart
+### Quick Installation
 
 Download the quickstart script:
 
@@ -59,7 +59,7 @@ To uninstall the `[RELEASE_NAME]` deployment:
 helm uninstall [RELEASE_NAME] --namespace [NAMESPACE]
 ```
 
-### Step-by-step installation
+### Step-by-step Installation
 
 Create namespace for Diode:
 
