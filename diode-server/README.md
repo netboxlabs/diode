@@ -76,7 +76,7 @@ Run the script to download and configure required files with your NetBox server 
 ./quickstart.sh http://my.netbox:8080
 ```
 
-### Starting the Server
+### Starting Diode
 
 Once setup is complete, start the Diode server:
 
@@ -99,6 +99,22 @@ Edit the `.env` file to adjust Diode server settings as needed:
 | `DIODE_TO_NETBOX_RATE_LIMITER_BURST` | Burst limit for RPC calls to NetBox. | `1` |
 | `LOGGING_LEVEL` | Log verbosity: `DEBUG`, `INFO`, `WARN`, `ERROR`. | `INFO` |
 | `LOGGING_FORMAT` | Log output format: `json` or `text`. | `json` |
+
+---
+
+### Stopping Diode
+
+To stop the Diode:
+
+```bash
+docker compose down
+```
+
+To stop the Diode and also delete PostgeSQL and Redis volumes:
+
+```bash
+docker compose down --volumes
+```
 
 ---
 
