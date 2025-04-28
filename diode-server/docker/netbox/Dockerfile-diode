@@ -1,8 +1,0 @@
-FROM netboxcommunity/netbox:v4.1-3.0.1
-
-COPY ./netbox/configuration/ /etc/netbox/config/
-RUN chmod 755 /etc/netbox/config/* && \
-    chown unit:root /etc/netbox/config/*
-
-COPY ./netbox/requirements-plugins.txt /opt/netbox/
-RUN /opt/netbox/venv/bin/pip install  --no-warn-script-location -r /opt/netbox/requirements-plugins.txt
