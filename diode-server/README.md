@@ -1,4 +1,4 @@
-# Diode server
+# Diode Server
 
 The Diode server is a required component of the [Diode](https://github.com/netboxlabs/diode) ingestion service.
 
@@ -9,83 +9,100 @@ pipelines.
 More information about Diode can be found
 at [https://netboxlabs.com/blog/introducing-diode-streamlining-data-ingestion-in-netbox/](https://netboxlabs.com/blog/introducing-diode-streamlining-data-ingestion-in-netbox/).
 
-## Diode services
 
-Diode server is composed of two services:
+---
+
+## Overview of Diode Services
+
+The Diode server is composed of three core services:
+
+### Auth Service
+
+- Issues and introspects OAuth2 tokens
 
 ### Ingester Service
 
-- Responsible for receiving and validating ingestion data.
-- Utilizes `IngesterService.Ingest` RPC method.
-- Supports single API key for data source authorization.
-- Validates incoming data and pushes it into Redis streams.
+- Accepts and pushes ingested data into Redis streams for further processing
 
 ### Reconciler Service
 
-- Processes data from Redis streams and converts it for storage.
-- Manages data sources and their API keys.
-- Implements a reconciliation engine to detect and store deltas between ingested data and the current NetBox object
-  state.
+- Processes and reconciles ingested data against existing NetBox objects, detecting and storing any changes
+
+---
 
 ## Compatibility
 
-The Diode server has been tested with NetBox versions 3.7.2 and above. The Diode server also requires
-the [Diode NetBox Plugin](https://github.com/netboxlabs/diode-netbox-plugin).
+The Diode server has been tested with NetBox version **4.2.3**.  
+It also requires the [Diode NetBox Plugin](https://github.com/netboxlabs/diode-netbox-plugin) **1.x.x**.
 
-## Running the Diode server
+---
+
+## Getting Started
 
 ### Requirements
 
-Diode server requires Docker version 27.0.3 or above.
+- Docker version **27.0.3** or newer
+- bash 4.x or newer
+- jq
 
-### Installation
+### Quick Installation
 
-We prepared a `quickstart.sh` file to download all required Diode configuration files:
+We provide a `quickstart.sh` script to automate the setup process.
 
-* `docker-compose.yaml` - to configure and run the Diode server containers
-* `.env` - to store the specific environmental settings
-* `nginx.conf` - to configure Nginx with Diode endpoints
-* `client-credentials.json` - to create OAuth2 clients required for communication between Orb Agent / Diode SDK, diode server and Diode NetBox plugins
+The following files will be downloaded:
 
-We recommend placing all files in a clean directory, e.g:
+- `docker-compose.yaml` — Defines Diode server containers
+- `.env` — Environment settings for customization
+- `nginx.conf` — Nginx configuration for routing Diode endpoints
+- `client-credentials.json` — Defines OAuth2 clients for secure communication between the Orb Agent, Diode SDK, Diode server, and Diode NetBox plugin
+
+We recommend placing these files in a clean working directory, for example:
 
 ```bash
 mkdir /opt/diode
 cd /opt/diode
 ```
 
-Download `quickstart.sh`:
+Download and prepare the quickstart script:
 
 ```bash
-curl -sSfL https://raw.githubusercontent.com/netboxlabs/diode/release/diode-server/scripts/quickstart.sh
+curl -sSfL https://raw.githubusercontent.com/netboxlabs/diode/release/diode-server/scripts/quickstart.sh -o quickstart.sh
 chmod +x quickstart.sh
 ```
 
-Run `quickstart.sh` with your NetBox address (e.g. `http://my.netbox:8080`):
+Run the script to download and configure required files with your NetBox server address:
+
 ```bash
 ./quickstart.sh http://my.netbox:8080
 ```
 
-### Running the Diode server
+### Starting the Server
 
-Start the Diode server:
+Once setup is complete, start the Diode server:
 
 ```bash
 docker compose up -d
 ```
 
-### Environment variables
+---
 
-Edit the `.env` to match your environment:
+## Configuration
 
-* `DIODE_NGINX_PORT`: Port number for the Nginx service that handles incoming HTTP requests, default: `8080`
-* `RECONCILER_RATE_LIMITER_RPS`: Rate limit for the reconciler service for generating and applying change sets concurrently, default: `20`
-* `RECONCILER_RATE_LIMITER_BURST`: Burst limit for the reconciler service for generating and applying change sets concurrently, default: `1`
-* `DIODE_TO_NETBOX_RATE_LIMITER_RPC`: Rate limit for the number of RPC calls per second from Diode to NetBox, default: `20`
-* `DIODE_TO_NETBOX_RATE_LIMITER_BURST`: Burst limit for the number of RPC calls from Diode to NetBox, default: `1`
-* `LOGGING_LEVEL`: Controls the verbosity of logs, options include: `DEBUG`, `INFO`, `WARN`, `ERROR`, default: `INFO`
-* `LOGGING_FORMAT`: Controls the format of log output, options include: `json`, `text`, default: `json`
+Edit the `.env` file to adjust Diode server settings as needed:
+
+| Variable | Description | Default |
+|:---|:---|:---|
+| `DIODE_NGINX_PORT` | Port for the Nginx HTTP service. | `8080` |
+| `RECONCILER_RATE_LIMITER_RPS` | Rate limit (requests per second) for reconciler change set generation. | `20` |
+| `RECONCILER_RATE_LIMITER_BURST` | Burst limit for reconciler operations. | `1` |
+| `DIODE_TO_NETBOX_RATE_LIMITER_RPC` | Rate limit for RPC calls to NetBox. | `20` |
+| `DIODE_TO_NETBOX_RATE_LIMITER_BURST` | Burst limit for RPC calls to NetBox. | `1` |
+| `LOGGING_LEVEL` | Log verbosity: `DEBUG`, `INFO`, `WARN`, `ERROR`. | `INFO` |
+| `LOGGING_FORMAT` | Log output format: `json` or `text`. | `json` |
+
+---
 
 ## License
 
-Distributed under the NetBox Limited Use License 1.0. See [LICENSE.md](../LICENSE.md) for more information.
+Distributed under the NetBox Limited Use License 1.0.  
+See [LICENSE.md](../LICENSE.md) for more information.
