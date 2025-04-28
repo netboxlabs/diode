@@ -13,3 +13,6 @@ services:
     - REDIS_HOSTS=local:$REDIS_HOST:$REDIS_PORT:0:$REDIS_PASSWORD
     ports:
     - "8082:8081"
+  postgres:
+    ports:
+      - ${POSTGRES_PORT:-5432}:5432
