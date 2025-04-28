@@ -32,7 +32,7 @@ error() {
 }
 
 usage() {
-    echo "Usage: $0 <netbox-host>"
+    echo "Usage: $0 NETBOX_HOST"
     echo
     echo "Example:"
     echo "  $0 http://localhost:8000"
