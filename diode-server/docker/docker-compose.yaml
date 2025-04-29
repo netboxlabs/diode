@@ -114,8 +114,7 @@ services:
         chmod +x /docker-entrypoint-initdb.d/01-init-databases.sh && \
         docker-entrypoint.sh postgres
       "
-    ports:
-      - ${POSTGRES_PORT:-5432}:5432
+    ports: [ ]
     healthcheck:
       test: pg_isready -q -t 2 -d $$DIODE_POSTGRES_DB_NAME -U $$DIODE_POSTGRES_USER
       start_period: 20s
