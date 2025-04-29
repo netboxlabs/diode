@@ -66,7 +66,7 @@ cd /opt/diode
 Download and prepare the quickstart script:
 
 ```bash
-curl -sSfLo quickstart.sh https://raw.githubusercontent.com/netboxlabs/diode/release/diode-server/scripts/quickstart.sh
+curl -sSfLo quickstart.sh https://raw.githubusercontent.com/netboxlabs/diode/release/diode-server/docker/scripts/quickstart.sh
 chmod +x quickstart.sh
 ```
 
