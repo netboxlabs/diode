@@ -1,4 +1,4 @@
-# Diode server
+# Diode Server
 
 The Diode server is a required component of the [Diode](https://github.com/netboxlabs/diode) ingestion service.
 
@@ -9,108 +9,116 @@ pipelines.
 More information about Diode can be found
 at [https://netboxlabs.com/blog/introducing-diode-streamlining-data-ingestion-in-netbox/](https://netboxlabs.com/blog/introducing-diode-streamlining-data-ingestion-in-netbox/).
 
-## Diode services
 
-Diode server is composed of two services:
+---
+
+## Overview of Diode Services
+
+The Diode server is composed of three core services:
+
+### Auth Service
+
+- Issues and introspects OAuth2 tokens
 
 ### Ingester Service
 
-- Responsible for receiving and validating ingestion data.
-- Utilizes `IngesterService.Ingest` RPC method.
-- Supports single API key for data source authorization.
-- Validates incoming data and pushes it into Redis streams.
+- Accepts and pushes ingested data into Redis streams for further processing
 
 ### Reconciler Service
 
-- Processes data from Redis streams and converts it for storage.
-- Manages data sources and their API keys.
-- Implements a reconciliation engine to detect and store deltas between ingested data and the current NetBox object
-  state.
+- Processes and reconciles ingested data against existing NetBox objects, detecting and storing any changes
+
+---
 
 ## Compatibility
 
-The Diode server has been tested with NetBox versions 3.7.2 and above. The Diode server also requires
-the [Diode NetBox Plugin](https://github.com/netboxlabs/diode-netbox-plugin).
+The Diode server has been tested with NetBox version **4.2.3**.  
+It also requires the [Diode NetBox Plugin](https://github.com/netboxlabs/diode-netbox-plugin) **1.x.x**.
 
-## Running the Diode server
+---
+
+## Getting Started
 
 ### Requirements
 
-Diode server requires Docker version 27.0.3 or above.
+- Docker version **27.0.3** or newer
+- bash 4.x or newer
+- jq
 
-### Installation
+### Quick Installation
 
-Diode requires a configuration file and an environment file to execute successfully:
+We provide a `quickstart.sh` script to automate the setup process.
 
-* `docker-compose.yaml` - to configure and run the Diode server containers
-* `.env` - to store the specific environmental settings
-* `client-credentials.json` - to create OAuth2 clients required for communication between Orb Agent / Diode SDK, diode server and Diode NetBox plugins
+The following files will be downloaded:
 
-We recommend placing both files in a clean directory:
+- `docker-compose.yaml` — Defines Diode server containers
+- `.env` — Environment settings for customization
+- `nginx.conf` — Nginx configuration for routing Diode endpoints
+- `client-credentials.json` — Defines OAuth2 clients for secure communication between the Orb Agent, Diode SDK, Diode server, and Diode NetBox plugin
+
+We recommend placing these files in a clean working directory, for example:
 
 ```bash
 mkdir /opt/diode
 cd /opt/diode
 ```
 
-Download the default `docker-compose.yaml` and other required files from this repository:
+Download and prepare the quickstart script:
 
 ```bash
-curl -o docker-compose.yaml https://raw.githubusercontent.com/netboxlabs/diode/release/diode-server/docker/docker-compose.yaml
-curl -o .env https://raw.githubusercontent.com/netboxlabs/diode/release/diode-server/docker/sample.env
-curl -o generate-client-credentials.sh https://raw.githubusercontent.com/netboxlabs/diode/release/diode-server/docker/scripts/generate-client-credentials.sh
-curl -o generate-env-secrets.sh https://raw.githubusercontent.com/netboxlabs/diode/release/diode-server/docker/scripts/generate-env-secrets.sh
+curl -sSfLo quickstart.sh https://raw.githubusercontent.com/netboxlabs/diode/release/diode-server/docker/scripts/quickstart.sh
+chmod +x quickstart.sh
 ```
 
-Note: to run following scripts `bash` 4.x is required.
-
-Generate OAuth2 client credentials into `client-credentials.json` file:
+Run the script to download and configure required files with your NetBox server address:
 
 ```bash
-chmod +x generate-client-credentials.sh
-mkdir -p oauth2/client
-./generate-client-credentials.sh > ./oauth2/client/client-credentials.json
+./quickstart.sh http://my.netbox:8080
 ```
 
-Generate secrets and replace placeholders in `.env`:
+### Starting Diode
+
+Once setup is complete, start the Diode server:
 
 ```bash
-chmod +x generate-env-secrets.sh
-./generate-env-secrets.sh .env
+docker compose up -d
 ```
 
-Set `DIODE_TO_NETBOX_CLIENT_SECRET` in `.env` extracted from generated `client-credentials.json` file:
+---
+
+## Configuration
+
+Edit the `.env` file to adjust Diode server settings as needed:
+
+| Variable | Description | Default |
+|:---|:---|:---|
+| `DIODE_NGINX_PORT` | Port for the Nginx HTTP service. | `8080` |
+| `RECONCILER_RATE_LIMITER_RPS` | Rate limit (requests per second) for reconciler change set generation. | `20` |
+| `RECONCILER_RATE_LIMITER_BURST` | Burst limit for reconciler operations. | `1` |
+| `DIODE_TO_NETBOX_RATE_LIMITER_RPC` | Rate limit for RPC calls to NetBox. | `20` |
+| `DIODE_TO_NETBOX_RATE_LIMITER_BURST` | Burst limit for RPC calls to NetBox. | `1` |
+| `LOGGING_LEVEL` | Log verbosity: `DEBUG`, `INFO`, `WARN`, `ERROR`. | `INFO` |
+| `LOGGING_FORMAT` | Log output format: `json` or `text`. | `json` |
+
+---
+
+### Stopping Diode
+
+To stop the Diode:
 
 ```bash
-DIODE_TO_NETBOX_CLIENT_SECRET=$(jq -r '.[] | select(.client_id == "diode-to-netbox") | .client_secret' ./oauth2/client/client-credentials.json)
-
-# linux
-sed -i "s|<PLACEHOLDER_DIODE_TO_NETBOX_CLIENT_SECRET>|$DIODE_TO_NETBOX_CLIENT_SECRET|g" .env
-
-# macos
-sed -i '' "s|<PLACEHOLDER_DIODE_TO_NETBOX_CLIENT_SECRET>|$DIODE_TO_NETBOX_CLIENT_SECRET|g" .env
+docker compose down
 ```
 
-
-Edit the `.env` to match your environment:
-
-* `DIODE_NGINX_PORT`: Port number for the Nginx service that handles incoming HTTP requests, default: `8080`
-* `NETBOX_DIODE_PLUGIN_API_BASE_URL`: URL for the Diode NetBox plugin API, replace `<http://NETBOX_HOST>` with your NetBox URL
-* `RECONCILER_RATE_LIMITER_RPS`: Rate limit for the reconciler service for generating and applying change sets concurrently, default: `20`
-* `RECONCILER_RATE_LIMITER_BURST`: Burst limit for the reconciler service for generating and applying change sets concurrently, default: `1`
-* `DIODE_TO_NETBOX_RATE_LIMITER_RPC`: Rate limit for the number of RPC calls per second from Diode to NetBox, default: `20`
-* `DIODE_TO_NETBOX_RATE_LIMITER_BURST`: Burst limit for the number of RPC calls from Diode to NetBox, default: `1`
-* `LOGGING_LEVEL`: Controls the verbosity of logs, options include: `DEBUG`, `INFO`, `WARN`, `ERROR`, default: `INFO`
-* `LOGGING_FORMAT`: Controls the format of log output, options include: `json`, `text`, default: `json`
-
-### Running the Diode server
-
-Start the Diode server:
+To stop the Diode and also delete PostgeSQL and Redis volumes:
 
 ```bash
-docker compose -f docker-compose.yaml up -d
+docker compose down --volumes
 ```
+
+---
 
 ## License
 
-Distributed under the NetBox Limited Use License 1.0. See [LICENSE.md](../LICENSE.md) for more information.
+Distributed under the NetBox Limited Use License 1.0.  
+See [LICENSE.md](../LICENSE.md) for more information.

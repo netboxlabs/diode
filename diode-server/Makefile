@@ -104,14 +104,6 @@ docker-compose-dev-down:
 	@DIODE_VERSION=$(DIODE_VERSION) COMMIT_SHA=$(COMMIT_SHA) DIODE_TAG=$(DIODE_VERSION)-$(COMMIT_SHA) PROJECT_NAME=diode-dev \
 	$(DOCKER_COMPOSE) --env-file docker/sample.env --env-file docker/dev.env -f docker/docker-compose.yaml -f docker/docker-compose.dev.yaml down --remove-orphans
 
-.PHONY: docker-compose-netbox-up
-docker-compose-netbox-up:
-	$(DOCKER_COMPOSE) -f docker/docker-compose.netbox.yaml up -d --build
-
-.PHONY: docker-compose-netbox-down
-docker-compose-netbox-down:
-	$(DOCKER_COMPOSE) -f docker/docker-compose.netbox.yaml down
-
 .PHONY: clean
 clean:
 	@rm -rf $(BUILD_DIR)/*

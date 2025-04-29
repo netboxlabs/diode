@@ -31,15 +31,34 @@ helm repo add diode https://netboxlabs.github.io/diode/charts
 helm repo update
 ```
 
-Add dependencies repositories:
+### Quick Installation
+
+Download the quickstart script:
 
 ```console
-helm repo add bitnami https://charts.bitnami.com/bitnami
-helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-helm repo add jetstack https://charts.jetstack.io
-helm repo add ory https://k8s.ory.sh/helm/charts
-helm repo update
+curl -sSfLo quickstart.sh https://raw.githubusercontent.com/netboxlabs/diode/release/charts/diode/scripts/quickstart.sh
+chmod +x quickstart.sh
 ```
+
+Run the following command to create a new namespace and all required resources:
+
+```console
+./quickstart.sh [NAMESPACE]
+```
+
+Run the following command to install the chart with release name `[RELEASE_NAME]` in namespace `[NAMESPACE]` with default values:
+
+```console
+helm install [RELEASE_NAME] diode/diode --namespace [NAMESPACE]
+```
+
+To uninstall the `[RELEASE_NAME]` deployment:
+
+```console
+helm uninstall [RELEASE_NAME] --namespace [NAMESPACE]
+```
+
+### Step-by-step Installation
 
 Create namespace for Diode:
 

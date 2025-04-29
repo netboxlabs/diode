@@ -12,9 +12,6 @@ global:
 diode:
   # -- environment name
   environment: development
-  image:
-    # -- image registry
-    registry: docker.io
 
 # External PostgreSQL configuration (optional)
 externalPostgresql:
@@ -35,8 +32,10 @@ diodeAuth:
   # -- enabled
   enabled: true
   image:
-    # -- image name
-    name: netboxlabs/diode-auth:1.0.0
+    # -- image repository
+    repository: docker.io/netboxlabs/diode-auth
+    # -- image tag
+    tag: 1.0.0
     # -- pull policy
     pullPolicy: IfNotPresent
   # -- replica count
@@ -71,8 +70,10 @@ diodeAuthBootstrap:
   # -- enabled
   enabled: true
   image:
-    # -- image name
-    name: netboxlabs/diode-auth:1.0.0
+    # -- image repository
+    repository: docker.io/netboxlabs/diode-auth
+    # -- image tag
+    tag: 1.0.0
     # -- pull policy
     pullPolicy: IfNotPresent
   job:
@@ -84,10 +85,12 @@ diodeIngester:
   # -- enabled
   enabled: true
   image:
-    # -- image name
-    name: netboxlabs/diode-ingester:1.0.0
-  # -- pull policy
-  pullPolicy: IfNotPresent
+    # -- image repository
+    repository: docker.io/netboxlabs/diode-ingester
+    # -- image tag
+    tag: 1.0.0
+    # -- pull policy
+    pullPolicy: IfNotPresent
   # -- replica count
   replicaCount: 1
   serviceAccount:
@@ -123,8 +126,10 @@ diodeReconciler:
   # -- enabled
   enabled: true
   image:
-    # -- image name
-    name: netboxlabs/diode-reconciler:1.0.0
+    # -- image repository
+    repository: docker.io/netboxlabs/diode-reconciler
+    # -- image tag
+    tag: 1.0.0
   # -- pull policy
   pullPolicy: IfNotPresent
   # -- replica count
