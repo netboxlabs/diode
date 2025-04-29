@@ -6,6 +6,8 @@ on:
     paths:
       - "diode-server/**"
       - "!diode-server/docker/**"
+      - "!diode-server/Makefile"
+      - "!diode-server/README.md"
 
 concurrency:
   group: ${{ github.workflow }}
