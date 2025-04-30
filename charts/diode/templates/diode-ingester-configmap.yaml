@@ -9,9 +9,12 @@ metadata:
     {{- include "diode.labels" . | nindent 4 }}
     app.kubernetes.io/component: {{ include "diode.ingester.servicename" . }}
 data:
+  GRPC_PORT: {{ .Values.diodeIngester.containerPort | default "8081" | quote }}
+  LOGGING_LEVEL: {{ $config.loggingLevel | default "INFO" | quote }}
+  SENTRY_DSN: {{ $config.sentryDsn | quote }}
   REDIS_HOST: {{ include "diode.redis.hostname" . | quote }}
   REDIS_PORT: {{ include "diode.redis.port" . | quote }}
-  SENTRY_DSN: {{ $config.sentryDsn | quote }}
+  REDIS_STREAM_DB: {{ $config.redisStreamDb | default "1" | quote }}
   TELEMETRY_METRICS_EXPORTER: {{ $config.telemetryMetricsExporter | quote }}
   TELEMETRY_TRACES_EXPORTER: {{ $config.telemetryTracesExporter | default "none" | quote }}
   TELEMETRY_ENVIRONMENT: {{ $config.telemetryEnvironment | default .Values.diode.environment | quote }}

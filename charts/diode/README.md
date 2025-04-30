@@ -2,7 +2,7 @@
 
 A Helm chart for Diode
 
-![Version: 1.1.0](https://img.shields.io/badge/Version-1.1.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
+![Version: 1.1.1](https://img.shields.io/badge/Version-1.1.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
 
 ## Prerequisites
 
@@ -226,7 +226,7 @@ helm show values diode/diode
 | certManager.prometheus | object | `{"enabled":false}` | prometheus enabled |
 | certManager.webhook | object | `{"enabled":true}` | webhook enabled |
 | diode.environment | string | `"development"` | environment name |
-| diodeAuth.config.httpPort | int | `8080` | http port |
+| diodeAuth.config.loggingLevel | string | `"INFO"` | logging level |
 | diodeAuth.config.sentryDsn | string | `""` | sentry DSN  |
 | diodeAuth.config.telemetryEnvironment | string | `"dev"` | telemetry environment |
 | diodeAuth.config.telemetryMetricsExporter | string | `"prometheus"` | telemetry metrics exporter |
@@ -244,6 +244,8 @@ helm show values diode/diode
 | diodeAuthBootstrap.image.repository | string | `"docker.io/netboxlabs/diode-auth"` | image repository |
 | diodeAuthBootstrap.image.tag | string | `"1.0.0"` | image tag |
 | diodeAuthBootstrap.job.backoffLimit | int | `20` | backoff limit |
+| diodeIngester.config.loggingLevel | string | `"INFO"` | logging level |
+| diodeIngester.config.redisStreamDb | int | `1` | redis stream db |
 | diodeIngester.config.sentryDsn | string | `""` | sentry DSN  |
 | diodeIngester.config.telemetryEnvironment | string | `"dev"` | telemetry environment |
 | diodeIngester.config.telemetryMetricsExporter | string | `"prometheus"` | telemetry metrics exporter |
@@ -258,10 +260,11 @@ helm show values diode/diode
 | diodeIngester.replicaCount | int | `1` | replica count |
 | diodeIngester.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
 | diodeIngester.serviceAccount.create | bool | `true` | create service account |
+| diodeReconciler.config.autoApplyChangesets | bool | `true` | auto apply changesets |
 | diodeReconciler.config.diodeToNetBoxClientId | string | `"diode-to-netbox"` | diode to netbox client id |
 | diodeReconciler.config.diodeToNetboxRateLimiterBurst | int | `1` | diode to netbox rate limiter burst |
 | diodeReconciler.config.diodeToNetboxRateLimiterRps | int | `20` | diode to netbox rate limiter rps |
-| diodeReconciler.config.loggingLevel | string | `"DEBUG"` | logging level |
+| diodeReconciler.config.loggingLevel | string | `"INFO"` | logging level |
 | diodeReconciler.config.migrationEnabled | bool | `true` | migration enabled |
 | diodeReconciler.config.netboxDiodePluginApiBaseUrl | string | `"http://localhost:8000/netbox/api/plugins/diode"` | netbox diode plugin api base url |
 | diodeReconciler.config.netboxDiodePluginSkipTlsVerify | bool | `false` | netbox diode plugin skip tls verify |
@@ -269,7 +272,9 @@ helm show values diode/diode
 | diodeReconciler.config.postgresUser | string | `"diode"` | postgres user |
 | diodeReconciler.config.reconcilerRateLimiterBurst | int | `1` | reconciler rate limiter burst |
 | diodeReconciler.config.reconcilerRateLimiterRps | int | `20` | reconciler rate limiter rps |
-| diodeReconciler.config.sentryDsn | string | `""` | sentry DSN  |
+| diodeReconciler.config.redisDb | int | `0` | redis db |
+| diodeReconciler.config.redisStreamDb | int | `1` | redis stream db |
+| diodeReconciler.config.sentryDsn | string | `""` | sentry DSN |
 | diodeReconciler.config.telemetryEnvironment | string | `"dev"` | telemetry environment |
 | diodeReconciler.config.telemetryMetricsExporter | string | `"prometheus"` | telemetry metrics exporter |
 | diodeReconciler.config.telemetryTracesExporter | string | `"none"` | telemetry traces exporter |
