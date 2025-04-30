@@ -1,4 +1,6 @@
-SERVICES         := $(shell find ./cmd/* -type d -exec basename {} \;)
+UTILITIES        = auth_manage
+BUILD_UTILITIES  = $(addprefix build-,$(UTILITIES))
+SERVICES         := $(filter-out $(UTILITIES),$(shell find ./cmd/* -type d -exec basename {} \;))
 BUILD_SERVICES   = $(addprefix build-,$(SERVICES))
 DOCKER_SERVICES  = $(addprefix docker-,$(SERVICES))
 BUILD_DIR        ?= ./build
@@ -58,11 +60,17 @@ $(BUILD_SERVICES):
 	@CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(GOARCH) GOARM=$(GOARM) \
 	go build -ldflags "$(LD_FLAGS)" -o $(BUILD_DIR)/$(SVC) ./cmd/$(SVC)
 
+.PHONY: $(BUILD_UTILITIES)
+$(BUILD_UTILITIES):
+	@$(eval UTIL=$(subst build-,,$@))
+	@CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(GOARCH) GOARM=$(GOARM) \
+	go build -ldflags "$(LD_FLAGS)" -o $(BUILD_DIR)/$(UTIL) ./cmd/$(UTIL)
+
 .PHONY: build-all
-build-all: $(BUILD_SERVICES)
+build-all: $(BUILD_SERVICES) $(BUILD_UTILITIES)
 
 .PHONY: $(DOCKER_SERVICES)
-$(DOCKER_SERVICES):
+$(DOCKER_SERVICES): $(BUILD_UTILITIES)
 	@$(eval SVC=$(subst docker-,,$@))
 
 	@GOOS=$(GOOS) GOARCH=$(GOARCH) $(MAKE) build-$(SVC)
@@ -103,6 +111,11 @@ docker-compose-dev-logs:
 docker-compose-dev-down:
 	@DIODE_VERSION=$(DIODE_VERSION) COMMIT_SHA=$(COMMIT_SHA) DIODE_TAG=$(DIODE_VERSION)-$(COMMIT_SHA) PROJECT_NAME=diode-dev \
 	$(DOCKER_COMPOSE) --env-file docker/sample.env --env-file docker/dev.env -f docker/docker-compose.yaml -f docker/docker-compose.dev.yaml down --remove-orphans
+
+.PHONY: docker-compose-dev-auth-manage
+docker-compose-dev-auth-manage:
+	@DIODE_VERSION=$(DIODE_VERSION) COMMIT_SHA=$(COMMIT_SHA) DIODE_TAG=$(DIODE_VERSION)-$(COMMIT_SHA) PROJECT_NAME=diode-dev \
+	$(DOCKER_COMPOSE) --env-file docker/sample.env --env-file docker/dev.env -f docker/docker-compose.yaml -f docker/docker-compose.dev.yaml run --rm --no-deps diode-auth auth_manage $(auth_manage_command)
 
 .PHONY: clean
 clean:

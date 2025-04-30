@@ -118,6 +118,104 @@ docker compose down --volumes
 
 ---
 
+### Provisioning and Managing Agent Credentials via Comand Line
+
+Additional agent credentials may be provisioned by calling the `auth_manage` command in the auth service container.
+
+**Create a new client with the right to ingest**
+```bash
+docker compose run --rm --no-deps diode-auth auth_manage create-client --client-id my-agent-001 --allow-ingest
+
+** NOTE: The client secret is only displayed once and cannot be retrieved later.
+  Store credentials in a secure location. If you lose them, you will need to
+  destroy and regenerate the client.
+{
+  "client_id": "my-agent-001",
+  "scope": "diode:ingest",
+  "client_secret": "a_new_generated_secret"
+}
+```
+
+**Create a client with a supplied secret** (in this case the secret is not returned)
+```bash
+docker compose run --rm --no-deps diode-auth auth_manage create-client --client-id my-agent-002 --allow-ingest --client-secret="a_secret_key_from_some_other_source"
+
+client created successfully.
+{
+  "client_id": "my-agent-002",
+  "scope": "diode:ingest"
+}
+```
+
+**Retrieve info of an existing client**
+```bash
+docker compose run --rm --no-deps diode-auth auth_manage get-client --client-id my-agent-001
+
+{
+  "client_id": "my-agent-001",
+  "scope": "diode:ingest"
+}
+```
+
+**List existing clients**
+```bash
+docker compose run --rm --no-deps diode-auth auth_manage list-clients
+
+[
+  {
+    "client_id": "diode-ingest",
+    "scope": "diode:ingest"
+  },
+  {
+    "client_id": "diode-to-netbox",
+    "scope": "netbox:read netbox:write"
+  },
+  {
+    "client_id": "my-agent-001",
+    "scope": "diode:ingest"
+  },
+  {
+    "client_id": "my-agent-002",
+    "scope": "diode:ingest"
+  },
+  {
+    "client_id": "netbox-to-diode",
+    "scope": "diode:read diode:write"
+  }
+]
+```
+
+**Delete an existing client**
+```bash
+docker compose run --rm --no-deps diode-auth auth_manage delete-client --client-id my-agent-002
+
+client my-agent-002 deleted successfully
+```
+
+**List auth utility subcommands**
+```bash
+docker compose run --rm --no-deps diode-auth auth_manage
+
+usage: auth_manage <subcommand>
+subcommands: list-clients get-client delete-client create-client
+```
+
+**Additional help on a subcommand**
+```bash
+docker compose run --rm --no-deps diode-auth auth_manage create-client --help
+
+Usage of create-client:
+  -allow-ingest
+    	include scopes that allow the client to ingest data
+  -client-id string
+    	client id
+  -client-secret string
+    	client secret [generated if not provided]
+  -scope string
+    	space separated list of scopes to allow
+```
+---
+
 ## License
 
 Distributed under the NetBox Limited Use License 1.0.  

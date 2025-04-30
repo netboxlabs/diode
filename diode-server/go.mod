@@ -14,6 +14,7 @@ require (
 	github.com/jackc/pgx/v5 v5.7.4
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/oklog/run v1.1.0
+	github.com/ory/hydra-client-go/v2 v2.2.1
 	github.com/pressly/goose/v3 v3.24.2
 	github.com/prometheus/client_golang v1.22.0
 	github.com/redis/go-redis/v9 v9.7.3
