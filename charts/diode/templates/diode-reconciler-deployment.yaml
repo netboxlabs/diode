@@ -25,6 +25,10 @@ spec:
         app.kubernetes.io/component: {{ include "diode.reconciler.servicename" . }}
     spec:
       serviceAccountName: {{ include "diode.reconciler.serviceaccountname" . }}
+      {{- if .Values.diodeReconciler.image.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .Values.diodeReconciler.image.imagePullSecrets | nindent 8 }}
+      {{- end }}
       initContainers:
         {{- if .Values.redis.enabled }}
         - name: wait-for-redis

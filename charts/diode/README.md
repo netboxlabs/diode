@@ -2,7 +2,7 @@
 
 A Helm chart for Diode
 
-![Version: 1.1.1](https://img.shields.io/badge/Version-1.1.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
+![Version: 1.2.0](https://img.shields.io/badge/Version-1.2.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
 
 ## Prerequisites
 
@@ -233,6 +233,7 @@ helm show values diode/diode
 | diodeAuth.config.telemetryTracesExporter | string | `"none"` | telemetry traces exporter |
 | diodeAuth.containerPort | int | `8080` | port to listen on |
 | diodeAuth.enabled | bool | `true` | enabled |
+| diodeAuth.image.imagePullSecrets | list | `[]` | secrets with credentials to pull images from a private registry |
 | diodeAuth.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
 | diodeAuth.image.repository | string | `"docker.io/netboxlabs/diode-auth"` | image repository |
 | diodeAuth.image.tag | string | `"1.0.0"` | image tag |
@@ -240,6 +241,7 @@ helm show values diode/diode
 | diodeAuth.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
 | diodeAuth.serviceAccount.create | bool | `true` | create service account |
 | diodeAuthBootstrap.enabled | bool | `true` | enabled |
+| diodeAuthBootstrap.image.imagePullSecrets | list | `[]` | secrets with credentials to pull images from a private registry |
 | diodeAuthBootstrap.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
 | diodeAuthBootstrap.image.repository | string | `"docker.io/netboxlabs/diode-auth"` | image repository |
 | diodeAuthBootstrap.image.tag | string | `"1.0.0"` | image tag |
@@ -254,6 +256,7 @@ helm show values diode/diode
 | diodeIngester.enabled | bool | `true` | enabled |
 | diodeIngester.existingSecret | string | `"diode-ingester-secret"` | existing secret name |
 | diodeIngester.grpc.serviceName | string | `"diode.v1.IngesterService"` | grpc service name |
+| diodeIngester.image.imagePullSecrets | list | `[]` | secrets with credentials to pull images from a private registry |
 | diodeIngester.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
 | diodeIngester.image.repository | string | `"docker.io/netboxlabs/diode-ingester"` | image repository |
 | diodeIngester.image.tag | string | `"1.0.0"` | image tag |
@@ -282,9 +285,10 @@ helm show values diode/diode
 | diodeReconciler.enabled | bool | `true` | enabled |
 | diodeReconciler.existingSecret | string | `"diode-reconciler-secret"` | existing secret name |
 | diodeReconciler.grpc.serviceName | string | `"diode.v1.ReconcilerService"` | grpc service name |
+| diodeReconciler.image.imagePullSecrets | list | `[]` | secrets with credentials to pull images from a private registry |
+| diodeReconciler.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
 | diodeReconciler.image.repository | string | `"docker.io/netboxlabs/diode-reconciler"` | image repository |
 | diodeReconciler.image.tag | string | `"1.0.0"` | image tag |
-| diodeReconciler.pullPolicy | string | `"IfNotPresent"` | pull policy |
 | diodeReconciler.replicaCount | int | `1` | replica count |
 | diodeReconciler.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
 | diodeReconciler.serviceAccount.create | bool | `true` | create service account |

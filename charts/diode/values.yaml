@@ -36,6 +36,8 @@ diodeAuth:
     repository: docker.io/netboxlabs/diode-auth
     # -- image tag
     tag: 1.0.0
+    # -- secrets with credentials to pull images from a private registry
+    imagePullSecrets: [ ]
     # -- pull policy
     pullPolicy: IfNotPresent
   # -- replica count
@@ -74,6 +76,8 @@ diodeAuthBootstrap:
     repository: docker.io/netboxlabs/diode-auth
     # -- image tag
     tag: 1.0.0
+    # -- secrets with credentials to pull images from a private registry
+    imagePullSecrets: [ ]
     # -- pull policy
     pullPolicy: IfNotPresent
   job:
@@ -89,6 +93,8 @@ diodeIngester:
     repository: docker.io/netboxlabs/diode-ingester
     # -- image tag
     tag: 1.0.0
+    # -- secrets with credentials to pull images from a private registry
+    imagePullSecrets: [ ]
     # -- pull policy
     pullPolicy: IfNotPresent
   # -- replica count
@@ -134,8 +140,10 @@ diodeReconciler:
     repository: docker.io/netboxlabs/diode-reconciler
     # -- image tag
     tag: 1.0.0
-  # -- pull policy
-  pullPolicy: IfNotPresent
+    # -- secrets with credentials to pull images from a private registry
+    imagePullSecrets: [ ]
+    # -- pull policy
+    pullPolicy: IfNotPresent
   # -- replica count
   replicaCount: 1
   serviceAccount:
