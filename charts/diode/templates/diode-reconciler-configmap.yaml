@@ -9,10 +9,15 @@ metadata:
     {{- include "diode.labels" . | nindent 4 }}
     app.kubernetes.io/component: {{ include "diode.reconciler.servicename" . }}
 data:
-  NETBOX_DIODE_PLUGIN_API_BASE_URL: {{ $config.netboxDiodePluginApiBaseUrl | quote }}
-  NETBOX_DIODE_PLUGIN_SKIP_TLS_VERIFY: {{ $config.netboxDiodePluginSkipTlsVerify | quote }}
+  GRPC_PORT: {{ .Values.diodeReconciler.containerPort | default "8081" | quote }}
   LOGGING_LEVEL: {{ $config.loggingLevel | default "INFO" | quote }}
+  SENTRY_DSN: {{ $config.sentryDsn | quote }}
+  REDIS_HOST: {{ include "diode.redis.hostname" . | quote }}
+  REDIS_PORT: {{ include "diode.redis.port" . | quote }}
+  REDIS_DB: {{ $config.redisDb | default "0" | quote }}
+  REDIS_STREAM_DB: {{ $config.redisStreamDb | default "1" | quote }}
   MIGRATION_ENABLED: {{ $config.migrationEnabled | default "true" | quote }}
+  AUTO_APPLY_CHANGESETS: {{ $config.autoApplyChangesets | default "true" | quote }}
   RECONCILER_RATE_LIMITER_RPS: {{ $config.reconcilerRateLimiterRps | default "20" | quote }}
   RECONCILER_RATE_LIMITER_BURST: {{ $config.reconcilerRateLimiterBurst | default "1" | quote }}
   DIODE_TO_NETBOX_RATE_LIMITER_RPS: {{ $config.diodeToNetboxRateLimiterRps | default "20" | quote }}
@@ -21,12 +26,11 @@ data:
   POSTGRES_PORT: {{ include "diode.postgresql.port" . | quote }}
   POSTGRES_DB_NAME: {{ $config.postgresDbName | default "diode" | quote }}
   POSTGRES_USER: {{ $config.postgresUser | default "diode" | quote }}
-  REDIS_HOST: {{ include "diode.redis.hostname" . | quote }}
-  REDIS_PORT: {{ include "diode.redis.port" . | quote }}
-  SENTRY_DSN: {{ $config.sentryDsn | quote }}
+  NETBOX_DIODE_PLUGIN_API_BASE_URL: {{ $config.netboxDiodePluginApiBaseUrl | quote }}
+  NETBOX_DIODE_PLUGIN_SKIP_TLS_VERIFY: {{ $config.netboxDiodePluginSkipTlsVerify | quote }}
+  DIODE_AUTH_TOKEN_URL: {{ printf "%s/token" (include "diode.auth.url" .) | quote }}
+  DIODE_TO_NETBOX_CLIENT_ID: {{ $config.diodeToNetBoxClientId | quote }}
   TELEMETRY_METRICS_EXPORTER: {{ $config.telemetryMetricsExporter | quote }}
   TELEMETRY_TRACES_EXPORTER: {{ $config.telemetryTracesExporter | default "none" | quote }}
   TELEMETRY_ENVIRONMENT: {{ $config.telemetryEnvironment | default .Values.diode.environment | quote }}
-  DIODE_AUTH_TOKEN_URL: {{ printf "%s/token" (include "diode.auth.url" .) | quote }}
-  DIODE_TO_NETBOX_CLIENT_ID: {{ $config.diodeToNetBoxClientId | quote }}
 {{- end }}
