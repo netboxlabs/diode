@@ -25,6 +25,10 @@ spec:
         app.kubernetes.io/component: {{ include "diode.auth.servicename" . }}
     spec:
       serviceAccountName: {{ include "diode.auth.serviceaccountname" . }}
+      {{- if .Values.diodeAuth.image.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .Values.diodeAuth.image.imagePullSecrets | nindent 8 }}
+      {{- end }}
       initContainers:
         {{- if .Values.hydra.enabled }}
         - name: wait-for-oauth2-server

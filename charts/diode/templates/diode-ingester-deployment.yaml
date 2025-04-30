@@ -25,6 +25,10 @@ spec:
         app.kubernetes.io/component: {{ include "diode.ingester.servicename" . }}
     spec:
       serviceAccountName: {{ include "diode.ingester.serviceaccountname" . }}
+      {{- if .Values.diodeIngester.image.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .Values.diodeIngester.image.imagePullSecrets | nindent 8 }}
+      {{- end }}
       initContainers:
         {{- if .Values.redis.enabled }}
         - name: wait-for-redis
