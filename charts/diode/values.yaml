@@ -54,8 +54,8 @@ diodeAuth:
       cpu: 500m
       memory: 512Mi
   config:
-    # -- http port
-    httpPort: 8080
+    # -- logging level
+    loggingLevel: INFO
     # -- sentry DSN 
     sentryDsn: ""
     # -- telemetry metrics exporter
@@ -112,8 +112,12 @@ diodeIngester:
     # -- grpc service name
     serviceName: diode.v1.IngesterService
   config:
+    # -- logging level
+    loggingLevel: INFO
     # -- sentry DSN 
     sentryDsn: ""
+    # -- redis stream db
+    redisStreamDb: 1
     # -- telemetry metrics exporter
     telemetryMetricsExporter: prometheus
     # -- telemetry traces exporter
@@ -158,9 +162,13 @@ diodeReconciler:
     # -- netbox diode plugin skip tls verify
     netboxDiodePluginSkipTlsVerify: false
     # -- logging level
-    loggingLevel: DEBUG
+    loggingLevel: INFO
+    # -- sentry DSN
+    sentryDsn: ""
     # -- migration enabled
     migrationEnabled: true
+    # -- auto apply changesets
+    autoApplyChangesets: true
     # -- reconciler rate limiter rps
     reconcilerRateLimiterRps: 20
     # -- reconciler rate limiter burst
@@ -173,8 +181,10 @@ diodeReconciler:
     postgresDbName: diode
     # -- postgres user
     postgresUser: diode
-    # -- sentry DSN 
-    sentryDsn: ""
+    # -- redis db
+    redisDb: 0
+    # -- redis stream db
+    redisStreamDb: 1
     # -- telemetry metrics exporter
     telemetryMetricsExporter: prometheus
     # -- telemetry traces exporter

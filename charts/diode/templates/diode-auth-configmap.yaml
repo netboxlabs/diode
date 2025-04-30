@@ -9,6 +9,8 @@ metadata:
     {{- include "diode.labels" . | nindent 4 }}
     app.kubernetes.io/component: {{ include "diode.auth.servicename" . }}
 data:
+  HTTP_PORT: {{ .Values.diodeAuth.containerPort | default "8080" | quote }}
+  LOGGING_LEVEL: {{ $config.loggingLevel | default "INFO" | quote }}
   OAUTH2_PUBLIC_SERVER_URL: {{ include "diode.hydra.public.url" . | quote }}
   OAUTH2_ADMIN_SERVER_URL: {{ include "diode.hydra.admin.url" . | quote }}
   SENTRY_DSN: {{ $config.sentryDsn | quote }}
