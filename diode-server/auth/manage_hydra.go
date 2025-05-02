@@ -50,15 +50,15 @@ func (h *HydraClientManager) CreateClient(ctx context.Context, clientInfo Client
 				h.logger.Error("failed to close response body", "error", err)
 			}
 		}()
-	}
-	if response.StatusCode == 409 {
-		return ClientInfo{}, fmt.Errorf("failed to create client: client with id %s already exists", *newClient.ClientId)
-	}
-	if response.StatusCode == 400 {
-		return ClientInfo{}, fmt.Errorf("failed to create client: invalid request")
-	}
-	if response.StatusCode != 201 {
-		return ClientInfo{}, fmt.Errorf("failed to create client: status=%s", response.Status)
+		if response.StatusCode == 409 {
+			return ClientInfo{}, fmt.Errorf("failed to create client: client with id %s already exists", *newClient.ClientId)
+		}
+		if response.StatusCode == 400 {
+			return ClientInfo{}, fmt.Errorf("failed to create client: invalid request")
+		}
+		if response.StatusCode != 201 {
+			return ClientInfo{}, fmt.Errorf("failed to create client: status=%s", response.Status)
+		}
 	}
 	// these can be confusing and related to internal client failures, so handled after http status codes
 	if err != nil {
@@ -77,13 +77,12 @@ func (h *HydraClientManager) DeleteClientByID(ctx context.Context, clientID stri
 				h.logger.Error("failed to close response body", "error", err)
 			}
 		}()
-	}
-
-	if response.StatusCode == 404 {
-		return fmt.Errorf("client %s not found", clientID)
-	}
-	if response.StatusCode != 204 {
-		return fmt.Errorf("failed to delete client from hydra: status=%s", response.Status)
+		if response.StatusCode == 404 {
+			return fmt.Errorf("client %s not found", clientID)
+		}
+		if response.StatusCode != 204 {
+			return fmt.Errorf("failed to delete client from hydra: status=%s", response.Status)
+		}
 	}
 	// these can be confusing and related to internal client failures, so handled after http status codes
 	if err != nil {
@@ -102,13 +101,12 @@ func (h *HydraClientManager) RetrieveClientByID(ctx context.Context, clientID st
 				h.logger.Error("failed to close response body", "error", err)
 			}
 		}()
-	}
-
-	if response.StatusCode == 404 {
-		return ClientInfo{}, fmt.Errorf("client %s not found", clientID)
-	}
-	if response.StatusCode != 200 {
-		return ClientInfo{}, fmt.Errorf("failed to retrieve client: status=%s", response.Status)
+		if response.StatusCode == 404 {
+			return ClientInfo{}, fmt.Errorf("client %s not found", clientID)
+		}
+		if response.StatusCode != 200 {
+			return ClientInfo{}, fmt.Errorf("failed to retrieve client: status=%s", response.Status)
+		}
 	}
 	// these tend to be confusing and related to internal client failures, so handled after http status codes
 	if err != nil {
@@ -129,11 +127,10 @@ func (h *HydraClientManager) RetrieveClients(ctx context.Context, q RetrieveClie
 				h.logger.Error("failed to close response body", "error", err)
 			}
 		}()
+		if response.StatusCode != 200 {
+			return out, fmt.Errorf("failed to retrieve clients: status=%s", response.Status)
+		}
 	}
-	if response.StatusCode != 200 {
-		return out, fmt.Errorf("failed to retrieve clients: status=%s", response.Status)
-	}
-	// these can be confusing and related to internal client failures, so handled after http status codes
 	if err != nil {
 		return out, fmt.Errorf("failed to retrieve clients: %w", err)
 	}

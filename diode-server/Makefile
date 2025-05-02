@@ -54,6 +54,10 @@ test-coverage:
 	@cat .coverage/cover.out.tmp | grep -Ev "gen|cmd|mocks|sentry" > .coverage/cover.out
 	@go tool cover -func=.coverage/cover.out | grep total | awk '{print substr($$3, 1, length($$3)-1)}' > .coverage/coverage.txt
 
+.PHONY: test-integration
+test-integration:
+	@go test -tags integration_test -race ./...
+
 .PHONY: $(BUILD_SERVICES)
 $(BUILD_SERVICES):
 	@$(eval SVC=$(subst build-,,$@))
