@@ -39,8 +39,7 @@ type ClientManager interface {
 // GenerateClientSecret generates a random 32 byte client secret.
 func GenerateClientSecret() (string, error) {
 	secret := make([]byte, 32)
-	_, err := rand.Read(secret)
-	if err != nil {
+	if _, err := rand.Read(secret); err != nil {
 		return "", err
 	}
 	return base64.StdEncoding.EncodeToString(secret), nil
