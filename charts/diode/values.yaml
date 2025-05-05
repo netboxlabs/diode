@@ -378,9 +378,11 @@ ingressNginx:
     #   hosts:
     #     - diode.example.com
   # -- ingress http annotations
-  httpAnnotations: {}
+  httpAnnotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: true
   # -- ingress grpc annotations
   grpcAnnotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: true
     nginx.ingress.kubernetes.io/proxy-body-size: "25m"
   # -- ingress path prefix
   pathPrefix: /diode
