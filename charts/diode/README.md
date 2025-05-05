@@ -2,7 +2,7 @@
 
 A Helm chart for Diode
 
-![Version: 1.2.0](https://img.shields.io/badge/Version-1.2.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
+![Version: 1.3.0](https://img.shields.io/badge/Version-1.3.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
 
 ## Prerequisites
 
@@ -325,14 +325,14 @@ helm show values diode/diode
 | hydra.job.extraInitContainers | string | `"{{ include \"diode.hydra.extrainitcontainers\" . }}"` | extra init containers |
 | hydra.secret.enabled | bool | `false` | secret enabled |
 | hydra.secret.nameOverride | string | `"diode-hydra-secret"` | existing secret name |
-| ingressNginx | object | `{"annotations":{},"controller":{"allowSnippetAnnotations":true},"enabled":true,"extraHttpPaths":{},"grpcAnnotations":{"nginx.ingress.kubernetes.io/proxy-body-size":"25m"},"hostname":"","httpAnnotations":{},"ingressClass":"nginx","pathPrefix":"/diode","tls":{}}` | ref: https://github.com/kubernetes/ingress-nginx/blob/main/charts/ingress-nginx/values.yaml |
+| ingressNginx | object | `{"annotations":{},"controller":{"allowSnippetAnnotations":true},"enabled":true,"extraHttpPaths":{},"grpcAnnotations":{"nginx.ingress.kubernetes.io/force-ssl-redirect":false,"nginx.ingress.kubernetes.io/proxy-body-size":"25m","nginx.ingress.kubernetes.io/ssl-redirect":false},"hostname":"","httpAnnotations":{"nginx.ingress.kubernetes.io/force-ssl-redirect":false,"nginx.ingress.kubernetes.io/ssl-redirect":false},"ingressClass":"nginx","pathPrefix":"/diode","tls":{}}` | ref: https://github.com/kubernetes/ingress-nginx/blob/main/charts/ingress-nginx/values.yaml |
 | ingressNginx.controller | object | `{"allowSnippetAnnotations":true}` | ingress annotations |
 | ingressNginx.controller.allowSnippetAnnotations | bool | `true` | allow snippet annotations |
 | ingressNginx.enabled | bool | `true` | ingress-nginx enabled |
 | ingressNginx.extraHttpPaths | object | `{}` | ingress extra http paths |
-| ingressNginx.grpcAnnotations | object | `{"nginx.ingress.kubernetes.io/proxy-body-size":"25m"}` | ingress grpc annotations |
+| ingressNginx.grpcAnnotations | object | `{"nginx.ingress.kubernetes.io/force-ssl-redirect":false,"nginx.ingress.kubernetes.io/proxy-body-size":"25m","nginx.ingress.kubernetes.io/ssl-redirect":false}` | ingress grpc annotations |
 | ingressNginx.hostname | string | `""` | hostname |
-| ingressNginx.httpAnnotations | object | `{}` | ingress http annotations |
+| ingressNginx.httpAnnotations | object | `{"nginx.ingress.kubernetes.io/force-ssl-redirect":false,"nginx.ingress.kubernetes.io/ssl-redirect":false}` | ingress http annotations |
 | ingressNginx.ingressClass | string | `"nginx"` | ingress class |
 | ingressNginx.pathPrefix | string | `"/diode"` | ingress path prefix |
 | ingressNginx.tls | object | `{}` | ingress tls |

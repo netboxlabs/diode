@@ -1,7 +1,6 @@
 {{- $ingressNginx := index .Values.ingressNginx -}}
 {{- $certManager := index .Values.certManager -}}
 {{- $certIssuer := index .Values.certIssuer -}}
-{{- if $ingressNginx.enabled -}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -11,7 +10,6 @@ metadata:
     {{- include "diode.labels" . | nindent 4 }}
     app.kubernetes.io/component: {{ include "diode.ingress.name" . }}
   annotations:
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
     nginx.ingress.kubernetes.io/rewrite-target: /$1
     {{- with $ingressNginx.httpAnnotations }}
@@ -54,4 +52,3 @@ spec:
                 port:
                   number: {{ $path.servicePort }}
           {{- end }}
-{{- end }}
