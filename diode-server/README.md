@@ -118,7 +118,7 @@ docker compose down --volumes
 
 ---
 
-### Provisioning and Managing Agent Credentials via Comand Line
+### Provisioning and Managing Agent Credentials via Command Line
 
 Additional agent credentials may be provisioned by calling the `auth_manage` command in the auth service container.
 
