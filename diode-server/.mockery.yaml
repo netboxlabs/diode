@@ -14,3 +14,8 @@ packages:
       all: true
       dir: "{{.InterfaceDir}}/mocks"
       outpkg: mocks
+  github.com/netboxlabs/diode/diode-server/auth:
+    config:
+      all: true
+      dir: "{{.InterfaceDir}}/mocks"
+      outpkg: mocks

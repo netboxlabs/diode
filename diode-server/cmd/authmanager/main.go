@@ -54,7 +54,7 @@ func main() {
 	}
 
 	usage := func() string {
-		usage := "usage: auth_manage <subcommand>\n"
+		usage := "usage: authmanager <subcommand>\n"
 		usage += "subcommands:"
 		for name := range commands {
 			usage += fmt.Sprintf(" %s", name)

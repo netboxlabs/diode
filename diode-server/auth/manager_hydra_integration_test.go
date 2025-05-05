@@ -10,10 +10,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/netboxlabs/diode/diode-server/auth"
 	"github.com/stretchr/testify/require"
 	testcontainers "github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
+
+	"github.com/netboxlabs/diode/diode-server/auth"
 )
 
 type logDumpConsumer struct{}

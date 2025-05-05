@@ -120,11 +120,11 @@ docker compose down --volumes
 
 ### Provisioning and Managing Agent Credentials via Command Line
 
-Additional agent credentials may be provisioned by calling the `auth_manage` command in the auth service container.
+Additional agent credentials may be provisioned by calling the `authmanager` command in the auth service container.
 
 **Create a new client with the right to ingest**
 ```bash
-docker compose run --rm --no-deps diode-auth auth_manage create-client --client-id my-agent-001 --allow-ingest
+docker compose run --rm --no-deps diode-auth authmanager create-client --client-id my-agent-001 --allow-ingest
 
 ** NOTE: The client secret is only displayed once and cannot be retrieved later.
   Store credentials in a secure location. If you lose them, you will need to
@@ -138,7 +138,7 @@ docker compose run --rm --no-deps diode-auth auth_manage create-client --client-
 
 **Create a client with a supplied secret** (in this case the secret is not returned)
 ```bash
-docker compose run --rm --no-deps diode-auth auth_manage create-client --client-id my-agent-002 --allow-ingest --client-secret="a_secret_key_from_some_other_source"
+docker compose run --rm --no-deps diode-auth authmanager create-client --client-id my-agent-002 --allow-ingest --client-secret="a_secret_key_from_some_other_source"
 
 client created successfully.
 {
@@ -149,7 +149,7 @@ client created successfully.
 
 **Retrieve info of an existing client**
 ```bash
-docker compose run --rm --no-deps diode-auth auth_manage get-client --client-id my-agent-001
+docker compose run --rm --no-deps diode-auth authmanager get-client --client-id my-agent-001
 
 {
   "client_id": "my-agent-001",
@@ -159,7 +159,7 @@ docker compose run --rm --no-deps diode-auth auth_manage get-client --client-id 
 
 **List existing clients**
 ```bash
-docker compose run --rm --no-deps diode-auth auth_manage list-clients
+docker compose run --rm --no-deps diode-auth authmanager list-clients
 
 [
   {
@@ -187,22 +187,22 @@ docker compose run --rm --no-deps diode-auth auth_manage list-clients
 
 **Delete an existing client**
 ```bash
-docker compose run --rm --no-deps diode-auth auth_manage delete-client --client-id my-agent-002
+docker compose run --rm --no-deps diode-auth authmanager delete-client --client-id my-agent-002
 
 client my-agent-002 deleted successfully
 ```
 
 **List auth utility subcommands**
 ```bash
-docker compose run --rm --no-deps diode-auth auth_manage
+docker compose run --rm --no-deps diode-auth authmanager
 
-usage: auth_manage <subcommand>
+usage: authmanager <subcommand>
 subcommands: list-clients get-client delete-client create-client
 ```
 
 **Additional help on a subcommand**
 ```bash
-docker compose run --rm --no-deps diode-auth auth_manage create-client --help
+docker compose run --rm --no-deps diode-auth authmanager create-client --help
 
 Usage of create-client:
   -allow-ingest

@@ -9,7 +9,7 @@ COPY --chown=appuser:appgroup --from=oryd/hydra:v2.3.0 /usr/bin/hydra /usr/bin/h
 ARG SVC
 
 COPY --chown=appuser:appgroup /build/$SVC /usr/local/bin/diode-server
-COPY --chown=appuser:appgroup /build/auth_manage /usr/local/bin/auth_manage
+COPY --chown=appuser:appgroup /build/authmanager /usr/local/bin/authmanager
 COPY --chown=appuser:appgroup /docker/oauth2/bootstrap-clients.sh /etc/config/oauth2/
 
 RUN chmod +x /etc/config/oauth2/bootstrap-clients.sh

@@ -7,4 +7,4 @@ join_with_spaces() {
 
 script_path=$(dirname "$0")
 cd ${script_path}/../..
-make auth_manage_command="$(join_with_spaces "$@")" docker-compose-dev-auth-manage
+make authmanager_command="$(join_with_spaces "$@")" docker-compose-dev-authmanager

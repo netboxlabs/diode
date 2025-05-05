@@ -1,4 +1,4 @@
-UTILITIES        = auth_manage
+UTILITIES        = authmanager
 BUILD_UTILITIES  = $(addprefix build-,$(UTILITIES))
 SERVICES         := $(filter-out $(UTILITIES),$(shell find ./cmd/* -type d -exec basename {} \;))
 BUILD_SERVICES   = $(addprefix build-,$(SERVICES))
@@ -116,10 +116,10 @@ docker-compose-dev-down:
 	@DIODE_VERSION=$(DIODE_VERSION) COMMIT_SHA=$(COMMIT_SHA) DIODE_TAG=$(DIODE_VERSION)-$(COMMIT_SHA) PROJECT_NAME=diode-dev \
 	$(DOCKER_COMPOSE) --env-file docker/sample.env --env-file docker/dev.env -f docker/docker-compose.yaml -f docker/docker-compose.dev.yaml down --remove-orphans
 
-.PHONY: docker-compose-dev-auth-manage
-docker-compose-dev-auth-manage:
+.PHONY: docker-compose-dev-authmanager
+docker-compose-dev-authmanager:
 	@DIODE_VERSION=$(DIODE_VERSION) COMMIT_SHA=$(COMMIT_SHA) DIODE_TAG=$(DIODE_VERSION)-$(COMMIT_SHA) PROJECT_NAME=diode-dev \
-	$(DOCKER_COMPOSE) --env-file docker/sample.env --env-file docker/dev.env -f docker/docker-compose.yaml -f docker/docker-compose.dev.yaml run --rm --no-deps diode-auth auth_manage $(auth_manage_command)
+	$(DOCKER_COMPOSE) --env-file docker/sample.env --env-file docker/dev.env -f docker/docker-compose.yaml -f docker/docker-compose.dev.yaml run --rm --no-deps diode-auth authmanager $(authmanager_command)
 
 .PHONY: clean
 clean:
