@@ -1,5 +1,4 @@
 {{- $ingressNginx := index .Values.ingressNginx -}}
-{{- if $ingressNginx.enabled -}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -11,10 +10,8 @@ metadata:
   annotations:
     nginx.ingress.kubernetes.io/auth-url: "http://{{ include "diode.auth.hostname" . }}:{{ .Values.diodeAuth.containerPort }}/introspect"
     nginx.ingress.kubernetes.io/auth-method: "POST"
-    nginx.ingress.kubernetes.io/ssl-redirect: "true"
     nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
     nginx.ingress.kubernetes.io/rewrite-target: /$1
-    nginx.ingress.kubernetes.io/custom-http-errors: "401,403"
     {{- with $ingressNginx.grpcAnnotations }}
     {{- toYaml . | nindent 4 }}
     {{- end }}
@@ -40,4 +37,3 @@ spec:
                 name: {{ include "diode.reconciler.servicename" . }}
                 port:
                   number: {{ .Values.diodeReconciler.containerPort }}
-{{- end }}
