@@ -1,10 +1,13 @@
-#!/usr/bin/env bash
+#!/usr/bin/env bash -x
 
-join_with_spaces() {
-  local IFS=" "
-  echo "$*"
+quote_args() {
+    local result=""
+    for arg in "$@"; do
+        result="${result:+$result }$(printf %q "$arg")"
+    done
+    echo "$result"
 }
 
 script_path=$(dirname "$0")
 cd ${script_path}/../..
-make authmanager_command="$(join_with_spaces "$@")" docker-compose-dev-authmanager
+make authmanager_command="$(quote_args "$@")" docker-compose-dev-authmanager
