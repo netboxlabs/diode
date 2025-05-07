@@ -33,6 +33,7 @@ spec:
         {{- if .Values.redis.enabled }}
         - name: wait-for-redis
           image: {{ include "diode.busybox.image" . }}
+          imagePullPolicy: {{ include "diode.busybox.imagepullpolicy" . }}
           command:
             - sh
             - -c
@@ -46,6 +47,7 @@ spec:
         {{- if .Values.postgresql.enabled }}
         - name: wait-for-postgres
           image: {{ include "diode.busybox.image" . }}
+          imagePullPolicy: {{ include "diode.busybox.imagepullpolicy" . }}
           command:
             - sh
             - -c

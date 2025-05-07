@@ -33,6 +33,7 @@ spec:
         {{- if .Values.hydra.enabled }}
         - name: wait-for-oauth2-server
           image: {{ include "diode.busybox.image" . }}
+          imagePullPolicy: {{ include "diode.busybox.imagepullpolicy" . }}
           command:
             - sh
             - -c
