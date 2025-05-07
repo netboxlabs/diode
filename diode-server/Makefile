@@ -104,22 +104,26 @@ docker-compose-down:
 .PHONY: docker-compose-dev-up
 docker-compose-dev-up: docker-all
 	@DIODE_VERSION=$(DIODE_VERSION) COMMIT_SHA=$(COMMIT_SHA) DIODE_TAG=$(DIODE_VERSION)-$(COMMIT_SHA) PROJECT_NAME=diode-dev \
-	$(DOCKER_COMPOSE) --env-file docker/sample.env --env-file docker/dev.env -f docker/docker-compose.yaml -f docker/docker-compose.dev.yaml up -d --build
+	$(DOCKER_COMPOSE) --env-file docker/.env -f docker/docker-compose.yaml -f docker/docker-compose.dev.yaml up -d --build
 
 .PHONY: docker-compose-dev-logs
 docker-compose-dev-logs:
 	@DIODE_VERSION=$(DIODE_VERSION) COMMIT_SHA=$(COMMIT_SHA) DIODE_TAG=$(DIODE_VERSION)-$(COMMIT_SHA) PROJECT_NAME=diode-dev \
-	$(DOCKER_COMPOSE) --env-file docker/sample.env --env-file docker/dev.env -f docker/docker-compose.yaml -f docker/docker-compose.dev.yaml logs
+	$(DOCKER_COMPOSE) --env-file docker/.env -f docker/docker-compose.yaml -f docker/docker-compose.dev.yaml logs
 
 .PHONY: docker-compose-dev-down
 docker-compose-dev-down:
 	@DIODE_VERSION=$(DIODE_VERSION) COMMIT_SHA=$(COMMIT_SHA) DIODE_TAG=$(DIODE_VERSION)-$(COMMIT_SHA) PROJECT_NAME=diode-dev \
-	$(DOCKER_COMPOSE) --env-file docker/sample.env --env-file docker/dev.env -f docker/docker-compose.yaml -f docker/docker-compose.dev.yaml down --remove-orphans
+	$(DOCKER_COMPOSE) --env-file docker/.env -f docker/docker-compose.yaml -f docker/docker-compose.dev.yaml down --remove-orphans
 
 .PHONY: docker-compose-dev-authmanager
 docker-compose-dev-authmanager:
 	@DIODE_VERSION=$(DIODE_VERSION) COMMIT_SHA=$(COMMIT_SHA) DIODE_TAG=$(DIODE_VERSION)-$(COMMIT_SHA) PROJECT_NAME=diode-dev \
-	$(DOCKER_COMPOSE) --env-file docker/sample.env --env-file docker/dev.env -f docker/docker-compose.yaml -f docker/docker-compose.dev.yaml run --rm --no-deps diode-auth authmanager $(authmanager_command)
+	$(DOCKER_COMPOSE) --env-file docker/.env -f docker/docker-compose.yaml -f docker/docker-compose.dev.yaml run --rm --no-deps diode-auth authmanager $(authmanager_command)
+
+.PHONY: configure-dev
+configure-dev:
+	./docker/scripts/configure-dev.sh $(NETBOX_HOST)
 
 .PHONY: clean
 clean:
