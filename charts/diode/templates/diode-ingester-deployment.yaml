@@ -33,6 +33,7 @@ spec:
         {{- if .Values.redis.enabled }}
         - name: wait-for-redis
           image: {{ include "diode.busybox.image" . }}
+          imagePullPolicy: {{ include "diode.busybox.imagepullpolicy" . }}
           command:
             - sh
             - -c

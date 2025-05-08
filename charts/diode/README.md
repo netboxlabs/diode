@@ -2,7 +2,7 @@
 
 A Helm chart for Diode
 
-![Version: 1.3.0](https://img.shields.io/badge/Version-1.3.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
+![Version: 1.4.0](https://img.shields.io/badge/Version-1.4.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.1.0](https://img.shields.io/badge/AppVersion-1.1.0-informational?style=flat-square)
 
 ## Prerequisites
 
@@ -236,7 +236,7 @@ helm show values diode/diode
 | diodeAuth.image.imagePullSecrets | list | `[]` | secrets with credentials to pull images from a private registry |
 | diodeAuth.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
 | diodeAuth.image.repository | string | `"docker.io/netboxlabs/diode-auth"` | image repository |
-| diodeAuth.image.tag | string | `"1.0.0"` | image tag |
+| diodeAuth.image.tag | string | `"1.1.0"` | image tag |
 | diodeAuth.replicaCount | int | `1` | replica count |
 | diodeAuth.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
 | diodeAuth.serviceAccount.create | bool | `true` | create service account |
@@ -244,7 +244,7 @@ helm show values diode/diode
 | diodeAuthBootstrap.image.imagePullSecrets | list | `[]` | secrets with credentials to pull images from a private registry |
 | diodeAuthBootstrap.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
 | diodeAuthBootstrap.image.repository | string | `"docker.io/netboxlabs/diode-auth"` | image repository |
-| diodeAuthBootstrap.image.tag | string | `"1.0.0"` | image tag |
+| diodeAuthBootstrap.image.tag | string | `"1.1.0"` | image tag |
 | diodeAuthBootstrap.job.backoffLimit | int | `20` | backoff limit |
 | diodeIngester.config.loggingLevel | string | `"INFO"` | logging level |
 | diodeIngester.config.redisStreamDb | int | `1` | redis stream db |
@@ -259,7 +259,7 @@ helm show values diode/diode
 | diodeIngester.image.imagePullSecrets | list | `[]` | secrets with credentials to pull images from a private registry |
 | diodeIngester.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
 | diodeIngester.image.repository | string | `"docker.io/netboxlabs/diode-ingester"` | image repository |
-| diodeIngester.image.tag | string | `"1.0.0"` | image tag |
+| diodeIngester.image.tag | string | `"1.1.0"` | image tag |
 | diodeIngester.replicaCount | int | `1` | replica count |
 | diodeIngester.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
 | diodeIngester.serviceAccount.create | bool | `true` | create service account |
@@ -288,7 +288,7 @@ helm show values diode/diode
 | diodeReconciler.image.imagePullSecrets | list | `[]` | secrets with credentials to pull images from a private registry |
 | diodeReconciler.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
 | diodeReconciler.image.repository | string | `"docker.io/netboxlabs/diode-reconciler"` | image repository |
-| diodeReconciler.image.tag | string | `"1.0.0"` | image tag |
+| diodeReconciler.image.tag | string | `"1.1.0"` | image tag |
 | diodeReconciler.replicaCount | int | `1` | replica count |
 | diodeReconciler.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
 | diodeReconciler.serviceAccount.create | bool | `true` | create service account |
@@ -296,8 +296,8 @@ helm show values diode/diode
 | externalPostgresql.port | int | `5432` | port |
 | externalRedis.hostname | string | `"localhost"` | hostname |
 | externalRedis.port | int | `6379` | port |
-| global.diode | object | `{"busybox":{"image":"busybox:latest"},"hydra":{"waitForPostgres":true}}` | diode global configuration |
-| global.diode.busybox | object | `{"image":"busybox:latest"}` | busybox image configuration |
+| global.diode | object | `{"busybox":{"image":"busybox:latest","imagePullPolicy":"IfNotPresent"},"hydra":{"waitForPostgres":true}}` | diode global configuration |
+| global.diode.busybox | object | `{"image":"busybox:latest","imagePullPolicy":"IfNotPresent"}` | busybox image configuration |
 | global.diode.hydra | object | `{"waitForPostgres":true}` | hydra additional init containers configuration |
 | global.diode.hydra.waitForPostgres | bool | `true` | wait for PostgreSQL |
 | hydra | object | `{"deployment":{"extraInitContainers":"{{ include \"diode.hydra.extrainitcontainers\" . }}","resources":{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}},"enabled":true,"fullnameOverride":"diode-hydra","hydra":{"automigration":{"enabled":true},"config":{"oidc":{"subject_identifiers":{"supported_types":["public"]}},"strategies":{"access_token":"jwt","jwt":{"scope_claim":"both"}},"ttl":{"access_token":"1h"},"urls":{"self":{"issuer":"http://diode-hydra-public.{{ .Release.Namespace }}.svc.cluster.local:4444"}}},"dev":true,"ingress":{"admin":{"enabled":false},"public":{"enabled":false}},"service":{"admin":{"enabled":true,"port":4445,"type":"ClusterIP"},"public":{"enabled":true,"port":4444,"type":"ClusterIP"}}},"job":{"annotations":{"helm.sh/hook":"post-install, post-upgrade","helm.sh/hook-delete-policy":"hook-succeeded","helm.sh/hook-weight":"1"},"extraInitContainers":"{{ include \"diode.hydra.extrainitcontainers\" . }}"},"secret":{"enabled":false,"nameOverride":"diode-hydra-secret"}}` | ref: https://github.com/ory/k8s/blob/master/helm/charts/hydra/values.yaml |
