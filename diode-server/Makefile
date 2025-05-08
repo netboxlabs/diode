@@ -1,4 +1,6 @@
-SERVICES         := $(shell find ./cmd/* -type d -exec basename {} \;)
+UTILITIES        = authmanager
+BUILD_UTILITIES  = $(addprefix build-,$(UTILITIES))
+SERVICES         := $(filter-out $(UTILITIES),$(shell find ./cmd/* -type d -exec basename {} \;))
 BUILD_SERVICES   = $(addprefix build-,$(SERVICES))
 DOCKER_SERVICES  = $(addprefix docker-,$(SERVICES))
 BUILD_DIR        ?= ./build
@@ -52,17 +54,27 @@ test-coverage:
 	@cat .coverage/cover.out.tmp | grep -Ev "gen|cmd|mocks|sentry" > .coverage/cover.out
 	@go tool cover -func=.coverage/cover.out | grep total | awk '{print substr($$3, 1, length($$3)-1)}' > .coverage/coverage.txt
 
+.PHONY: test-integration
+test-integration:
+	@go test -tags integration_test -race ./...
+
 .PHONY: $(BUILD_SERVICES)
 $(BUILD_SERVICES):
 	@$(eval SVC=$(subst build-,,$@))
 	@CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(GOARCH) GOARM=$(GOARM) \
 	go build -ldflags "$(LD_FLAGS)" -o $(BUILD_DIR)/$(SVC) ./cmd/$(SVC)
 
+.PHONY: $(BUILD_UTILITIES)
+$(BUILD_UTILITIES):
+	@$(eval UTIL=$(subst build-,,$@))
+	@CGO_ENABLED=$(CGO_ENABLED) GOOS=$(GOOS) GOARCH=$(GOARCH) GOARM=$(GOARM) \
+	go build -ldflags "$(LD_FLAGS)" -o $(BUILD_DIR)/$(UTIL) ./cmd/$(UTIL)
+
 .PHONY: build-all
-build-all: $(BUILD_SERVICES)
+build-all: $(BUILD_SERVICES) $(BUILD_UTILITIES)
 
 .PHONY: $(DOCKER_SERVICES)
-$(DOCKER_SERVICES):
+$(DOCKER_SERVICES): $(BUILD_UTILITIES)
 	@$(eval SVC=$(subst docker-,,$@))
 
 	@GOOS=$(GOOS) GOARCH=$(GOARCH) $(MAKE) build-$(SVC)
@@ -92,17 +104,26 @@ docker-compose-down:
 .PHONY: docker-compose-dev-up
 docker-compose-dev-up: docker-all
 	@DIODE_VERSION=$(DIODE_VERSION) COMMIT_SHA=$(COMMIT_SHA) DIODE_TAG=$(DIODE_VERSION)-$(COMMIT_SHA) PROJECT_NAME=diode-dev \
-	$(DOCKER_COMPOSE) --env-file docker/sample.env --env-file docker/dev.env -f docker/docker-compose.yaml -f docker/docker-compose.dev.yaml up -d --build
+	$(DOCKER_COMPOSE) --env-file docker/.env -f docker/docker-compose.yaml -f docker/docker-compose.dev.yaml up -d --build
 
 .PHONY: docker-compose-dev-logs
 docker-compose-dev-logs:
 	@DIODE_VERSION=$(DIODE_VERSION) COMMIT_SHA=$(COMMIT_SHA) DIODE_TAG=$(DIODE_VERSION)-$(COMMIT_SHA) PROJECT_NAME=diode-dev \
-	$(DOCKER_COMPOSE) --env-file docker/sample.env --env-file docker/dev.env -f docker/docker-compose.yaml -f docker/docker-compose.dev.yaml logs
+	$(DOCKER_COMPOSE) --env-file docker/.env -f docker/docker-compose.yaml -f docker/docker-compose.dev.yaml logs
 
 .PHONY: docker-compose-dev-down
 docker-compose-dev-down:
 	@DIODE_VERSION=$(DIODE_VERSION) COMMIT_SHA=$(COMMIT_SHA) DIODE_TAG=$(DIODE_VERSION)-$(COMMIT_SHA) PROJECT_NAME=diode-dev \
-	$(DOCKER_COMPOSE) --env-file docker/sample.env --env-file docker/dev.env -f docker/docker-compose.yaml -f docker/docker-compose.dev.yaml down --remove-orphans
+	$(DOCKER_COMPOSE) --env-file docker/.env -f docker/docker-compose.yaml -f docker/docker-compose.dev.yaml down --remove-orphans
+
+.PHONY: docker-compose-dev-authmanager
+docker-compose-dev-authmanager:
+	@DIODE_VERSION=$(DIODE_VERSION) COMMIT_SHA=$(COMMIT_SHA) DIODE_TAG=$(DIODE_VERSION)-$(COMMIT_SHA) PROJECT_NAME=diode-dev \
+	$(DOCKER_COMPOSE) --env-file docker/.env -f docker/docker-compose.yaml -f docker/docker-compose.dev.yaml run --rm --no-deps diode-auth authmanager $(authmanager_command)
+
+.PHONY: configure-dev
+configure-dev:
+	./docker/scripts/configure-dev.sh $(NETBOX_HOST)
 
 .PHONY: clean
 clean:

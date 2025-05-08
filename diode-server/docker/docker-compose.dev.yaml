@@ -1,8 +1,15 @@
 name: ${PROJECT_NAME:-diode}
 services:
+  diode-ingester:
+    pull_policy: build
+  diode-auth:
+    pull_policy: build
+  diode-auth-bootstrap:
+    pull_policy: build
   diode-reconciler:
+    pull_policy: build
     extra_hosts:
-    - "host.docker.internal:host-gateway"
+      - "host.docker.internal:host-gateway"
     volumes:
       - ../dbstore/postgres/migrations:/etc/diode/migrations:z,ro
   redis-commander:
@@ -10,9 +17,9 @@ services:
     image: ghcr.io/joeferner/redis-commander:latest
     restart: always
     environment:
-    - REDIS_HOSTS=local:$REDIS_HOST:$REDIS_PORT:0:$REDIS_PASSWORD
+      - REDIS_HOSTS=local:$REDIS_HOST:$REDIS_PORT:0:$REDIS_PASSWORD
     ports:
-    - "8082:8081"
+      - "8082:8081"
   postgres:
     ports:
       - ${POSTGRES_PORT:-5432}:5432

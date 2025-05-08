@@ -2,6 +2,7 @@ name: ${PROJECT_NAME:-diode}
 services:
   ingress-nginx:
     image: nginx:latest
+    pull_policy: always
     command: nginx -g 'daemon off;'
     restart: on-failure
     environment:
@@ -17,6 +18,7 @@ services:
 
   diode-ingester:
     image: netboxlabs/diode-ingester:${DIODE_TAG:-latest}
+    pull_policy: always
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - REDIS_HOST=${REDIS_HOST}
@@ -33,6 +35,7 @@ services:
 
   diode-reconciler:
     image: netboxlabs/diode-reconciler:${DIODE_TAG:-latest}
+    pull_policy: always
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - REDIS_HOST=${REDIS_HOST}
@@ -67,6 +70,7 @@ services:
 
   redis:
     image: redis/redis-stack-server:latest
+    pull_policy: always
     command:
       - sh
       - -c
@@ -81,6 +85,7 @@ services:
 
   postgres:
     image: docker.io/postgres:16-alpine
+    pull_policy: always
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
@@ -131,6 +136,7 @@ services:
 
   hydra:
     image: oryd/hydra:v2.3.0
+    pull_policy: always
     expose:
       - "4444" # Public port
       - "4445" # Admin port
@@ -151,6 +157,7 @@ services:
 
   hydra-migrate:
     image: oryd/hydra:v2.3.0
+    pull_policy: always
     command: migrate sql up -e --yes
     environment:
       - DSN=postgres://${HYDRA_POSTGRES_USER}:${HYDRA_POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT:-5432}/${HYDRA_POSTGRES_DB_NAME}?sslmode=disable&max_conns=20&max_idle_conns=4
@@ -162,6 +169,7 @@ services:
 
   diode-auth:
     image: netboxlabs/diode-auth:${DIODE_TAG:-latest}
+    pull_policy: always
     environment:
       - HTTP_PORT=${AUTH_HTTP_PORT}
       - OAUTH2_PUBLIC_SERVER_URL=${OAUTH2_PUBLIC_SERVER_URL}
@@ -178,6 +186,7 @@ services:
 
   diode-auth-bootstrap:
     image: netboxlabs/diode-auth:${DIODE_TAG:-latest}
+    pull_policy: always
     command: ["/bin/sh", "/etc/config/oauth2/bootstrap-clients.sh"]
     environment:
       - HYDRA_ADMIN_URL=http://hydra:4445
