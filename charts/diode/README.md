@@ -2,7 +2,7 @@
 
 A Helm chart for Diode
 
-![Version: 1.4.0](https://img.shields.io/badge/Version-1.4.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.0.0](https://img.shields.io/badge/AppVersion-1.0.0-informational?style=flat-square)
+![Version: 1.4.0](https://img.shields.io/badge/Version-1.4.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.1.0](https://img.shields.io/badge/AppVersion-1.1.0-informational?style=flat-square)
 
 ## Prerequisites
 
@@ -236,7 +236,7 @@ helm show values diode/diode
 | diodeAuth.image.imagePullSecrets | list | `[]` | secrets with credentials to pull images from a private registry |
 | diodeAuth.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
 | diodeAuth.image.repository | string | `"docker.io/netboxlabs/diode-auth"` | image repository |
-| diodeAuth.image.tag | string | `"1.0.0"` | image tag |
+| diodeAuth.image.tag | string | `"1.1.0"` | image tag |
 | diodeAuth.replicaCount | int | `1` | replica count |
 | diodeAuth.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
 | diodeAuth.serviceAccount.create | bool | `true` | create service account |
@@ -244,7 +244,7 @@ helm show values diode/diode
 | diodeAuthBootstrap.image.imagePullSecrets | list | `[]` | secrets with credentials to pull images from a private registry |
 | diodeAuthBootstrap.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
 | diodeAuthBootstrap.image.repository | string | `"docker.io/netboxlabs/diode-auth"` | image repository |
-| diodeAuthBootstrap.image.tag | string | `"1.0.0"` | image tag |
+| diodeAuthBootstrap.image.tag | string | `"1.1.0"` | image tag |
 | diodeAuthBootstrap.job.backoffLimit | int | `20` | backoff limit |
 | diodeIngester.config.loggingLevel | string | `"INFO"` | logging level |
 | diodeIngester.config.redisStreamDb | int | `1` | redis stream db |
@@ -259,7 +259,7 @@ helm show values diode/diode
 | diodeIngester.image.imagePullSecrets | list | `[]` | secrets with credentials to pull images from a private registry |
 | diodeIngester.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
 | diodeIngester.image.repository | string | `"docker.io/netboxlabs/diode-ingester"` | image repository |
-| diodeIngester.image.tag | string | `"1.0.0"` | image tag |
+| diodeIngester.image.tag | string | `"1.1.0"` | image tag |
 | diodeIngester.replicaCount | int | `1` | replica count |
 | diodeIngester.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
 | diodeIngester.serviceAccount.create | bool | `true` | create service account |
@@ -288,7 +288,7 @@ helm show values diode/diode
 | diodeReconciler.image.imagePullSecrets | list | `[]` | secrets with credentials to pull images from a private registry |
 | diodeReconciler.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
 | diodeReconciler.image.repository | string | `"docker.io/netboxlabs/diode-reconciler"` | image repository |
-| diodeReconciler.image.tag | string | `"1.0.0"` | image tag |
+| diodeReconciler.image.tag | string | `"1.1.0"` | image tag |
 | diodeReconciler.replicaCount | int | `1` | replica count |
 | diodeReconciler.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
 | diodeReconciler.serviceAccount.create | bool | `true` | create service account |

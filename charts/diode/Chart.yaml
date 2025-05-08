@@ -3,7 +3,7 @@ name: diode
 description: A Helm chart for Diode
 type: application
 version: 1.4.0
-appVersion: "1.0.0"
+appVersion: "1.1.0"
 home: https://github.com/netboxlabs/diode
 sources:
   - https://github.com/netboxlabs/diode
