@@ -70,6 +70,17 @@ Create the name of the busybox image to use
 {{- end }}
 
 {{/*
+Create the image pull policy of the busybox image to use
+*/}}
+{{- define "diode.busybox.imagepullpolicy" -}}
+{{- if .Values.global.diode.busybox.imagePullPolicy -}}
+{{- .Values.global.diode.busybox.imagePullPolicy | quote -}}
+{{- else -}}
+{{- "IfNotPresent" | quote -}}
+{{- end -}}
+{{- end }}
+
+{{/*
 Create the name of the auth service to use
 */}}
 {{- define "diode.auth.servicename" -}}
@@ -333,6 +344,7 @@ Create the name of the extra Hydra init container configmap to use
 {{- if .Values.global.diode.hydra.waitForPostgres -}}
 - name: wait-for-postgres
   image: {{ .Values.global.diode.busybox.image }}
+  imagePullPolicy: {{ .Values.global.diode.busybox.imagePullPolicy }}
   command: ['sh', '-c', 'until nc -zv $POSTGRES_HOST $POSTGRES_PORT; do echo waiting for PostgreSQL; sleep 2; done;']
   envFrom:
     - configMapRef:

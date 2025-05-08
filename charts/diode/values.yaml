@@ -4,6 +4,7 @@ global:
     # -- busybox image configuration
     busybox:
       image: busybox:latest
+      imagePullPolicy: IfNotPresent
     # -- hydra additional init containers configuration
     hydra:
       # -- wait for PostgreSQL
