@@ -175,9 +175,9 @@ diodeReconciler:
     # -- sentry DSN
     sentryDsn: ""
     # -- migration enabled
-    migrationEnabled: true
+    migrationEnabled: "true"
     # -- auto apply changesets
-    autoApplyChangesets: true
+    autoApplyChangesets: "true"
     # -- reconciler rate limiter rps
     reconcilerRateLimiterRps: 20
     # -- reconciler rate limiter burst
