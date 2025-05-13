@@ -2,7 +2,7 @@ apiVersion: v2
 name: diode
 description: A Helm chart for Diode
 type: application
-version: 1.4.0
+version: 1.4.1
 appVersion: "1.1.0"
 home: https://github.com/netboxlabs/diode
 sources:
@@ -23,7 +23,7 @@ dependencies:
   - name: postgresql
     version: 16.6.3
     repository: https://charts.bitnami.com/bitnami
-    condition: postgres.enabled
+    condition: postgresql.enabled
   - name: hydra
     version: 0.53.0
     repository: https://k8s.ory.sh/helm/charts
