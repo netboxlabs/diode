@@ -23,7 +23,7 @@ dependencies:
   - name: postgresql
     version: 16.6.3
     repository: https://charts.bitnami.com/bitnami
-    condition: postgres.enabled
+    condition: postgresql.enabled
   - name: hydra
     version: 0.53.0
     repository: https://k8s.ory.sh/helm/charts
