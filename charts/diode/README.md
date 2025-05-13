@@ -2,7 +2,7 @@
 
 A Helm chart for Diode
 
-![Version: 1.4.0](https://img.shields.io/badge/Version-1.4.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.1.0](https://img.shields.io/badge/AppVersion-1.1.0-informational?style=flat-square)
+![Version: 1.4.1](https://img.shields.io/badge/Version-1.4.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.1.0](https://img.shields.io/badge/AppVersion-1.1.0-informational?style=flat-square)
 
 ## Prerequisites
 
@@ -263,12 +263,12 @@ helm show values diode/diode
 | diodeIngester.replicaCount | int | `1` | replica count |
 | diodeIngester.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
 | diodeIngester.serviceAccount.create | bool | `true` | create service account |
-| diodeReconciler.config.autoApplyChangesets | bool | `true` | auto apply changesets |
+| diodeReconciler.config.autoApplyChangesets | string | `"true"` | auto apply changesets |
 | diodeReconciler.config.diodeToNetBoxClientId | string | `"diode-to-netbox"` | diode to netbox client id |
 | diodeReconciler.config.diodeToNetboxRateLimiterBurst | int | `1` | diode to netbox rate limiter burst |
 | diodeReconciler.config.diodeToNetboxRateLimiterRps | int | `20` | diode to netbox rate limiter rps |
 | diodeReconciler.config.loggingLevel | string | `"INFO"` | logging level |
-| diodeReconciler.config.migrationEnabled | bool | `true` | migration enabled |
+| diodeReconciler.config.migrationEnabled | string | `"true"` | migration enabled |
 | diodeReconciler.config.netboxDiodePluginApiBaseUrl | string | `"http://localhost:8000/netbox/api/plugins/diode"` | netbox diode plugin api base url |
 | diodeReconciler.config.netboxDiodePluginSkipTlsVerify | bool | `false` | netbox diode plugin skip tls verify |
 | diodeReconciler.config.postgresDbName | string | `"diode"` | postgres db name |
