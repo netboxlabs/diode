@@ -176,6 +176,7 @@ type ListClientsCommand struct {
 // Run implements the SubCommand interface.
 func (c *ListClientsCommand) Run() error {
 	cmd := flag.NewFlagSet("list-clients", flag.ExitOnError)
+	owner := cmd.String("owner", "", "filter by owner")
 
 	if err := cmd.Parse(os.Args[2:]); err != nil {
 		return err
@@ -187,6 +188,9 @@ func (c *ListClientsCommand) Run() error {
 	for {
 		req := auth.RetrieveClientsRequest{
 			PageToken: cur,
+		}
+		if *owner != "" {
+			req.Owner = *owner
 		}
 
 		ctx := context.Background()
