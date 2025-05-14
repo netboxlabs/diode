@@ -57,7 +57,9 @@ func main() {
 	}
 	startupCounter.Add(ctx, 1)
 
-	httpServer, err := auth.NewServer(ctx, s.Logger(), auth.JWTParser{})
+	clientManager := auth.NewHydraClientManager(cfg.OAuth2.AdminServerURL, s.Logger())
+	tokenOwner := &auth.DefaultTokenOwner{}
+	httpServer, err := auth.NewServer(ctx, s.Logger(), auth.JWTParser{}, clientManager, tokenOwner)
 	if err != nil {
 		s.Logger().Error("failed to instantiate HTTP server", "error", err)
 		os.Exit(1)
