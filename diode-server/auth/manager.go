@@ -56,7 +56,7 @@ func GenerateClientSecret() (string, error) {
 }
 
 // GenerateClientID generates a ClientID for a client.
-func GenerateClientID(_ context.Context, clientInfo ClientInfo) (string, error) {
+func GenerateClientID(clientInfo ClientInfo) (string, error) {
 	clientSlug := slug.Make(clientInfo.ClientName)
 	if len(clientSlug) > 15 {
 		clientSlug = clientSlug[:15]

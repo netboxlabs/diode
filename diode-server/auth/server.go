@@ -411,7 +411,7 @@ func (s *Server) createClient(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Generate a client ID for the client
-	clientInfo.ClientID, err = GenerateClientID(r.Context(), clientInfo)
+	clientInfo.ClientID, err = GenerateClientID(clientInfo)
 	if err != nil {
 		s.logger.Error("failed to generate client ID", "error", err)
 		w.WriteHeader(statusFromError(err))
