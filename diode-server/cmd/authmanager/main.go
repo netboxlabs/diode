@@ -92,6 +92,8 @@ func (c *CreateClientCommand) Run() error {
 	scope := cmd.String("scope", "", "space separated list of scopes to allow")
 	allowIngest := cmd.Bool("allow-ingest", false, "include scopes that allow the client to ingest data")
 	secret := cmd.String("client-secret", "", "client secret [generated if not provided]")
+	owner := cmd.String("owner", "", "owner of the client")
+	clientName := cmd.String("client-name", "", "name of the client")
 
 	if err := cmd.Parse(os.Args[2:]); err != nil {
 		return err
@@ -135,14 +137,16 @@ func (c *CreateClientCommand) Run() error {
 		ClientID:     *clientID,
 		Scope:        allScopes,
 		ClientSecret: *secret,
+		ClientName:   *clientName,
+		Owner:        *owner,
 	})
 	if err != nil {
 		return err
 	}
 	cliLog("client created successfully.")
-	if !secretProvided {
-		// will be output if we generated it.
-		created.ClientSecret = *secret
+	if secretProvided {
+		// will only be output if we generated it.
+		created.ClientSecret = ""
 	}
 
 	bytes, err := json.MarshalIndent(created, "", "  ")
