@@ -726,6 +726,136 @@ func TestDeleteClient(t *testing.T) {
 	}
 }
 
+func TestGetClient(t *testing.T) {
+	readOnlyToken := jwt.Token{
+		Claims: jwt.MapClaims{
+			"exp":       time.Now().Add(time.Hour).Unix(),
+			"iat":       time.Now().Unix(),
+			"client_id": "client123",
+			"scope":     "diode:read",
+		},
+		Valid: true,
+	}
+	invalidToken := jwt.Token{
+		Valid: false,
+	}
+
+	validAccessToken := "eyJhbGciOiJSUzI1NiIsImtpZCI6InRlc3Qta2V5IiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwczovL2F1dGguZXhhbXBsZS5jb20iLCJzdWIiOiJ1c2VyMTIzIiwiYXVkIjoiYXBpIiwiZXhwIjoxNjUwMDAwMDAwLCJpYXQiOjE1MDAwMDAwMDAsImNsaWVudF9pZCI6ImNsaWVudDEyMyIsInNjb3BlIjoicmVhZCB3cml0ZSIsInVzZXJuYW1lIjoidGVzdHVzZXIifQ.WcPGXClpKD7Bc1C0CCDA1060E2GGlTfamrd8-W0ghBE"
+	invalidAccessToken := "invalid.token.string"
+
+	tests := []struct {
+		name         string
+		accessToken  string
+		clientID     string
+		parsedToken  jwt.Token
+		lookupResult auth.ClientInfo
+		lookupErr    error
+		expectStatus int
+		expect       auth.ClientResponse
+	}{
+		{
+			name:        "can get client",
+			accessToken: validAccessToken,
+			clientID:    "test-client-1-abcdef0123567890",
+			parsedToken: readOnlyToken,
+			lookupResult: auth.ClientInfo{
+				ClientID:   "test-client-1-abcdef0123567890",
+				ClientName: "Test Client 1",
+				Scope:      "diode:ingest",
+				Owner:      "diode/user",
+				CreatedAt:  "2021-01-01T00:00:00Z",
+			},
+			expect: auth.ClientResponse{
+				ClientID:   "test-client-1-abcdef0123567890",
+				ClientName: "Test Client 1",
+				Scope:      "diode:ingest",
+				CreatedAt:  "2021-01-01T00:00:00Z",
+			},
+			expectStatus: http.StatusOK,
+		},
+		{
+			name:         "cannot get client with invalid access token",
+			accessToken:  invalidAccessToken,
+			clientID:     "test-client-1-abcdef0123567890",
+			parsedToken:  invalidToken,
+			expectStatus: http.StatusUnauthorized,
+		},
+		{
+			name:         "cannot get client that does not exist",
+			accessToken:  validAccessToken,
+			clientID:     "test-client-1-abcdef0123567890",
+			parsedToken:  readOnlyToken,
+			lookupErr:    auth.NewAuthError("client not found", http.StatusNotFound),
+			expectStatus: http.StatusNotFound,
+		},
+		{
+			name:        "cannot get a client with the wrong owner",
+			accessToken: validAccessToken,
+			clientID:    "test-client-1-abcdef0123567890",
+			parsedToken: readOnlyToken,
+			lookupResult: auth.ClientInfo{
+				ClientID:   "test-client-1-abcdef0123567890",
+				ClientName: "Test Client 1",
+				Owner:      "diode/system",
+				Scope:      "diode:read diode:write",
+				CreatedAt:  "2021-01-01T00:00:00Z",
+			},
+			expectStatus: http.StatusNotFound,
+		},
+	}
+
+	ctx := context.Background()
+	setupEnv()
+	defer teardownEnv()
+
+	// Setup a test server to mock the OAuth2 server
+	mockJWKSServer := mockJWKSServer()
+	defer mockJWKSServer.Close()
+
+	_ = os.Setenv("OAUTH2_PUBLIC_SERVER_URL", mockJWKSServer.URL)
+	defer func() {
+		_ = os.Unsetenv("OAUTH2_PUBLIC_SERVER_URL")
+	}()
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			defaultOwnership := &auth.DefaultTokenOwner{}
+			accessToken := test.accessToken
+			if accessToken == "" {
+				accessToken = validAccessToken
+			}
+			mockTokenParser := &MockTokenParser{
+				tokenMap: map[string]jwt.Token{
+					accessToken: test.parsedToken,
+				},
+			}
+			mockClientManager := &mocks.ClientManager{}
+			logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+			server, err := auth.NewServer(ctx, logger, mockTokenParser, mockClientManager, defaultOwnership)
+			require.NoError(t, err)
+			require.NotNil(t, server)
+
+			testServer := httptest.NewServer(server.GetMux())
+			defer testServer.Close()
+
+			if test.lookupResult != (auth.ClientInfo{}) || test.lookupErr != nil {
+				mockClientManager.EXPECT().RetrieveClientByID(mock.Anything, test.clientID).Return(test.lookupResult, test.lookupErr)
+			}
+
+			req, _ := http.NewRequest("GET", testServer.URL+"/clients/"+test.clientID, nil)
+			req.Header.Set("Authorization", "Bearer "+accessToken)
+			req.Header.Set("Content-Type", "application/json")
+			client := &http.Client{}
+			resp, err := client.Do(req)
+			require.NoError(t, err)
+			defer func() {
+				_ = resp.Body.Close()
+			}()
+			require.Equal(t, test.expectStatus, resp.StatusCode)
+		})
+	}
+}
+
 func makeIntrospectRequest(serverURL, token string) (*http.Response, error) {
 	req, _ := http.NewRequest(
 		"POST",

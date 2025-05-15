@@ -168,7 +168,7 @@ func (h *HydraClientManager) RetrieveClients(ctx context.Context, q RetrieveClie
 		out.Clients = append(out.Clients, clientInfoFromHydraClient(&client))
 	}
 
-	out.NextPageToken = getHydraNextPageToken(response, h.logger)
+	out.NextPageToken, out.PrevPageToken = getHydraPagingTokens(response, h.logger)
 	return out, nil
 }
 
@@ -199,7 +199,10 @@ func clientInfoFromHydraClient(client *hydra.OAuth2Client) ClientInfo {
 	return clientInfo
 }
 
-func getHydraNextPageToken(response *http.Response, logger *slog.Logger) string {
+// getHydraPagingLinks returns the next and previous page tokens from the response header
+func getHydraPagingTokens(response *http.Response, logger *slog.Logger) (string, string) {
+	next := ""
+	prev := ""
 	for _, linkHeader := range response.Header.Values("Link") {
 		links := strings.Split(linkHeader, ",")
 		for _, link := range links {
@@ -209,33 +212,40 @@ func getHydraNextPageToken(response *http.Response, logger *slog.Logger) string 
 			}
 			link := params[0]
 			params = params[1:]
-			// search for rel="next"
 			for _, param := range params {
 				vs := strings.Split(param, "=")
 				if len(vs) != 2 {
 					continue
 				}
 				k, v := strings.TrimSpace(vs[0]), strings.TrimSpace(vs[1])
-				if k == "rel" && (v == "next" || v == "\"next\"") {
-					link = strings.TrimPrefix(link, "<")
-					link = strings.TrimSuffix(link, ">")
-					parsedURL, err := url.Parse(link)
-					if err != nil {
-						logger.Warn("failed to parse url in rel=next link", "error", err, "link", linkHeader)
-						return ""
+				if k == "rel" {
+					if v == "next" || v == "\"next\"" {
+						next = getHydraPageToken(link, logger)
+					} else if v == "prev" || v == "\"prev\"" {
+						prev = getHydraPageToken(link, logger)
 					}
-					queryParams := parsedURL.Query()
-					for key, values := range queryParams {
-						if key == "page_token" {
-							logger.Info("found next page token", "token", values[0])
-							return values[0]
-						}
-					}
-					logger.Warn("failed to find next page token in rel=next url", "link", linkHeader)
-					return ""
 				}
 			}
 		}
 	}
+	return next, prev
+}
+
+func getHydraPageToken(link string, logger *slog.Logger) string {
+	link = strings.TrimPrefix(link, "<")
+	link = strings.TrimSuffix(link, ">")
+	parsedURL, err := url.Parse(link)
+	if err != nil {
+		logger.Warn("failed to parse url in hydra paging link", "error", err, "link", link)
+		return ""
+	}
+	queryParams := parsedURL.Query()
+	for key, values := range queryParams {
+		if key == "page_token" {
+			logger.Debug("found page token", "token", values[0])
+			return values[0]
+		}
+	}
+	logger.Warn("failed to find page_token in hydra paging link", "link", link)
 	return ""
 }
