@@ -150,18 +150,38 @@ func TestServerHydraIntegration(t *testing.T) {
 	require.Equal(t, 10, len(result.Data))
 	require.Equal(t, result.NextPageToken, "")
 
-	// page through the clients in pages of size 3
-	pageSize := 3
+	// get the first client
+	firstClient := client.getClient(t, result.Data[0].ClientID)
+	require.Equal(t, result.Data[0].ClientID, firstClient.ClientID)
+	require.Equal(t, result.Data[0].ClientName, firstClient.ClientName)
+	require.Equal(t, result.Data[0].Scope, firstClient.Scope)
+
+	// delete the first client
+	client.deleteClient(t, result.Data[0].ClientID)
+
+	// list clients, should include the 9 remaining test clients
+	result = client.listClients(t, "", 100)
+	require.Equal(t, 9, len(result.Data))
+
+	// page through the 9 remaining clients in pages of size 2
+	var priorResult auth.ListClientsResponse
+	pageSize := 2
 	nextToken := ""
 	seen := make(map[string]bool)
 	pages := 0
-	for range 5 { // should be 4 pages, stop after 5
+	for range 6 { // should be 5 pages, stop after 6
 		result = client.listClients(t, nextToken, pageSize)
+		// previous page should be the same as the prior result
+		if pages > 0 {
+			prevPage := client.listClients(t, result.PrevPageToken, pageSize)
+			require.Equal(t, priorResult.Data, prevPage.Data)
+		}
+		priorResult = result
+
 		pages++
 		for _, c := range result.Data {
 			seen[c.ClientID] = true
 		}
-
 		nextToken = result.NextPageToken
 		if nextToken == "" {
 			break
@@ -170,9 +190,9 @@ func TestServerHydraIntegration(t *testing.T) {
 		}
 	}
 
-	// verify that we saw all 10 clients
-	require.Equal(t, 10, len(seen))
-	require.Equal(t, 4, pages)
+	// verify that we saw all 9 clients
+	require.Equal(t, 9, len(seen))
+	require.Equal(t, 5, pages)
 }
 
 type authTestClient struct {
@@ -231,6 +251,37 @@ func (c *authTestClient) createClient(t *testing.T, clientName string, scope str
 	err = json.NewDecoder(resp.Body).Decode(&createdClient)
 	require.NoError(t, err)
 	return createdClient
+}
+
+func (c *authTestClient) getClient(t *testing.T, clientID string) auth.ClientResponse {
+	req, err := http.NewRequest(http.MethodGet, c.endpoint+"/clients/"+clientID, nil)
+	require.NoError(t, err)
+	req.Header.Set("Authorization", "Bearer "+c.token)
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	require.NoError(t, err)
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var result auth.ClientResponse
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	require.NoError(t, err)
+	return result
+}
+
+func (c *authTestClient) deleteClient(t *testing.T, clientID string) {
+	req, err := http.NewRequest(http.MethodDelete, c.endpoint+"/clients/"+clientID, nil)
+	require.NoError(t, err)
+	req.Header.Set("Authorization", "Bearer "+c.token)
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	require.NoError(t, err)
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+	require.Equal(t, http.StatusNoContent, resp.StatusCode)
 }
 
 func (c *authTestClient) authenticate(t *testing.T, clientID string, clientSecret string, scope string) {

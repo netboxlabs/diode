@@ -68,6 +68,7 @@ type ClientResponse struct {
 type ListClientsResponse struct {
 	Data          []ClientResponse `json:"data"`
 	NextPageToken string           `json:"next_page_token,omitempty"`
+	PrevPageToken string           `json:"prev_page_token,omitempty"`
 }
 
 // ClientErrorResponse error response to client requests
@@ -158,6 +159,7 @@ func (s *Server) RegisterHandlers() {
 	s.mux.HandleFunc("POST /token", s.token)
 	s.mux.HandleFunc("POST /clients", s.createClient)
 	s.mux.HandleFunc("GET /clients", s.listClients)
+	s.mux.HandleFunc("GET /clients/{clientID}", s.getClient)
 	s.mux.HandleFunc("DELETE /clients/{clientID}", s.deleteClient)
 }
 
@@ -492,6 +494,7 @@ func (s *Server) listClients(w http.ResponseWriter, r *http.Request) {
 	out := ListClientsResponse{
 		Data:          make([]ClientResponse, 0, len(clients.Clients)),
 		NextPageToken: clients.NextPageToken,
+		PrevPageToken: clients.PrevPageToken,
 	}
 	for _, client := range clients.Clients {
 		out.Data = append(out.Data, ClientResponse{
@@ -556,4 +559,48 @@ func (s *Server) deleteClient(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s *Server) getClient(w http.ResponseWriter, r *http.Request) {
+	jwtToken, _, ok := s.authorizeCall(w, r, []string{authutil.ScopeDiodeRead})
+	if !ok {
+		return
+	}
+
+	ownerID, err := s.tokenOwnership.TokenOwnerID(r.Context(), jwtToken)
+	if err != nil {
+		s.logger.Error("failed to get token owner ID", "error", err)
+		w.WriteHeader(statusFromError(err))
+		return
+	}
+
+	clientID := r.PathValue("clientID")
+	if clientID == "" {
+		err = writeJSON(w, http.StatusBadRequest, ClientErrorResponse{Error: "client ID is required"})
+		if err != nil {
+			s.logger.Error("failed to write response", "error", err)
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		return
+	}
+
+	// get the client and verify ownership
+	client, err := s.clientManager.RetrieveClientByID(r.Context(), clientID)
+	if err != nil {
+		s.logger.Error("failed to get client", "error", err)
+		w.WriteHeader(statusFromError(err))
+		return
+	}
+
+	if client.Owner != ownerID {
+		s.logger.Error("client does not belong to requestor", "client_id", clientID, "owner_id", ownerID)
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	err = writeJSON(w, http.StatusOK, client)
+	if err != nil {
+		s.logger.Error("failed to write response", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 }

@@ -32,6 +32,7 @@ type RetrieveClientsRequest struct {
 type RetrieveClientsResponse struct {
 	Clients       []ClientInfo
 	NextPageToken string
+	PrevPageToken string
 }
 
 // ClientManager is an interface for managing oauth2 clients.
