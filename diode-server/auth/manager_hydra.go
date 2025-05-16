@@ -7,8 +7,16 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	hydra "github.com/ory/hydra-client-go/v2"
+)
+
+const (
+	hydraAuthMethodClientSecretPost = "client_secret_post"
+	hydraGrantTypeClientCredentials = "client_credentials"
+	hydraResponseTypeToken          = "token"
+	hydraClientFormatJSON           = "json"
 )
 
 // HydraClientManager is a ClientManager for a hydra server
@@ -34,13 +42,22 @@ func NewHydraClientManager(adminURL string, logger *slog.Logger) *HydraClientMan
 
 // CreateClient creates a new client
 func (h *HydraClientManager) CreateClient(ctx context.Context, clientInfo ClientInfo) (ClientInfo, error) {
+	authMethod := hydraAuthMethodClientSecretPost
 	newClient := hydra.OAuth2Client{
-		ClientId:   &clientInfo.ClientID,
-		Scope:      &clientInfo.Scope,
-		GrantTypes: []string{"client_credentials"},
+		ClientId:                &clientInfo.ClientID,
+		Scope:                   &clientInfo.Scope,
+		GrantTypes:              []string{hydraGrantTypeClientCredentials},
+		TokenEndpointAuthMethod: &authMethod,
+		ResponseTypes:           []string{hydraResponseTypeToken},
 	}
 	if clientInfo.ClientSecret != "" {
 		newClient.ClientSecret = &clientInfo.ClientSecret
+	}
+	if clientInfo.Owner != "" {
+		newClient.Owner = &clientInfo.Owner
+	}
+	if clientInfo.ClientName != "" {
+		newClient.ClientName = &clientInfo.ClientName
 	}
 
 	createdClient, response, err := h.hydraAdmin.OAuth2API.CreateOAuth2Client(ctx).OAuth2Client(newClient).Execute()
@@ -51,13 +68,13 @@ func (h *HydraClientManager) CreateClient(ctx context.Context, clientInfo Client
 			}
 		}()
 		if response.StatusCode == 409 {
-			return ClientInfo{}, fmt.Errorf("failed to create client: client with id %s already exists", *newClient.ClientId)
+			return ClientInfo{}, NewAuthError(fmt.Sprintf("failed to create client: client with id %s already exists", *newClient.ClientId), http.StatusConflict)
 		}
 		if response.StatusCode == 400 {
-			return ClientInfo{}, fmt.Errorf("failed to create client: invalid request")
+			return ClientInfo{}, NewAuthError("failed to create client: invalid request", http.StatusBadRequest)
 		}
 		if response.StatusCode != 201 {
-			return ClientInfo{}, fmt.Errorf("failed to create client: status=%s", response.Status)
+			return ClientInfo{}, NewAuthError("failed to create client", response.StatusCode)
 		}
 	}
 	// these can be confusing and related to internal client failures, so handled after http status codes
@@ -78,10 +95,10 @@ func (h *HydraClientManager) DeleteClientByID(ctx context.Context, clientID stri
 			}
 		}()
 		if response.StatusCode == 404 {
-			return fmt.Errorf("client %s not found", clientID)
+			return NewAuthError(fmt.Sprintf("client %s not found", clientID), http.StatusNotFound)
 		}
 		if response.StatusCode != 204 {
-			return fmt.Errorf("failed to delete client from hydra: status=%s", response.Status)
+			return NewAuthError("failed to delete client from hydra", response.StatusCode)
 		}
 	}
 	// these can be confusing and related to internal client failures, so handled after http status codes
@@ -102,10 +119,10 @@ func (h *HydraClientManager) RetrieveClientByID(ctx context.Context, clientID st
 			}
 		}()
 		if response.StatusCode == 404 {
-			return ClientInfo{}, fmt.Errorf("client %s not found", clientID)
+			return ClientInfo{}, NewAuthError(fmt.Sprintf("client %s not found", clientID), http.StatusNotFound)
 		}
 		if response.StatusCode != 200 {
-			return ClientInfo{}, fmt.Errorf("failed to retrieve client: status=%s", response.Status)
+			return ClientInfo{}, NewAuthError("failed to retrieve client", response.StatusCode)
 		}
 	}
 	// these tend to be confusing and related to internal client failures, so handled after http status codes
@@ -120,7 +137,18 @@ func (h *HydraClientManager) RetrieveClientByID(ctx context.Context, clientID st
 func (h *HydraClientManager) RetrieveClients(ctx context.Context, q RetrieveClientsRequest) (RetrieveClientsResponse, error) {
 	var out RetrieveClientsResponse
 
-	clients, response, err := h.hydraAdmin.OAuth2API.ListOAuth2Clients(ctx).PageToken(q.PageToken).Execute()
+	req := h.hydraAdmin.OAuth2API.ListOAuth2Clients(ctx)
+	if q.Owner != "" {
+		req = req.Owner(q.Owner)
+	}
+	if q.PageToken != "" {
+		req = req.PageToken(q.PageToken)
+	}
+	if q.PageSize > 0 {
+		req = req.PageSize(int64(q.PageSize))
+	}
+
+	clients, response, err := req.Execute()
 	if response != nil {
 		defer func() {
 			if err := response.Body.Close(); err != nil {
@@ -128,7 +156,7 @@ func (h *HydraClientManager) RetrieveClients(ctx context.Context, q RetrieveClie
 			}
 		}()
 		if response.StatusCode != 200 {
-			return out, fmt.Errorf("failed to retrieve clients: status=%s", response.Status)
+			return out, NewAuthError("failed to retrieve clients", response.StatusCode)
 		}
 	}
 	if err != nil {
@@ -140,7 +168,7 @@ func (h *HydraClientManager) RetrieveClients(ctx context.Context, q RetrieveClie
 		out.Clients = append(out.Clients, clientInfoFromHydraClient(&client))
 	}
 
-	out.NextPageToken = getHydraNextPageToken(response, h.logger)
+	out.NextPageToken, out.PrevPageToken = getHydraPagingTokens(response, h.logger)
 	return out, nil
 }
 
@@ -150,45 +178,74 @@ func clientInfoFromHydraClient(client *hydra.OAuth2Client) ClientInfo {
 	if client == nil {
 		return clientInfo
 	}
-
 	if client.ClientId != nil {
 		clientInfo.ClientID = *client.ClientId
 	}
 	if client.Scope != nil {
 		clientInfo.Scope = *client.Scope
 	}
-
+	if client.Owner != nil {
+		clientInfo.Owner = *client.Owner
+	}
+	if client.ClientName != nil {
+		clientInfo.ClientName = *client.ClientName
+	}
+	if client.CreatedAt != nil {
+		clientInfo.CreatedAt = client.CreatedAt.Format(time.RFC3339)
+	}
+	if client.ClientSecret != nil {
+		clientInfo.ClientSecret = *client.ClientSecret
+	}
 	return clientInfo
 }
 
-func getHydraNextPageToken(response *http.Response, logger *slog.Logger) string {
+// getHydraPagingLinks returns the next and previous page tokens from the response header
+func getHydraPagingTokens(response *http.Response, logger *slog.Logger) (string, string) {
+	next := ""
+	prev := ""
 	for _, linkHeader := range response.Header.Values("Link") {
-		params := strings.Split(linkHeader, ";")
-		link := params[0]
-		params = params[1:]
-		// search for rel="next"
-		for _, param := range params {
-			vs := strings.Split(param, "=")
-			if len(vs) != 2 {
+		links := strings.Split(linkHeader, ",")
+		for _, link := range links {
+			params := strings.Split(link, ";")
+			if len(params) < 2 {
 				continue
 			}
-			k, v := strings.TrimSpace(vs[0]), strings.TrimSpace(vs[1])
-			if k == "rel" && (v == "next" || v == "\"next\"") {
-				parsedURL, err := url.Parse(link)
-				if err != nil {
-					logger.Warn("failed to parse url in rel=next link", "error", err, "link", linkHeader)
-					return ""
+			link := params[0]
+			params = params[1:]
+			for _, param := range params {
+				vs := strings.Split(param, "=")
+				if len(vs) != 2 {
+					continue
 				}
-				queryParams := parsedURL.Query()
-				for key, values := range queryParams {
-					if key == "page_token" {
-						return values[0]
+				k, v := strings.TrimSpace(vs[0]), strings.TrimSpace(vs[1])
+				if k == "rel" {
+					if v == "next" || v == "\"next\"" {
+						next = getHydraPageToken(link, logger)
+					} else if v == "prev" || v == "\"prev\"" {
+						prev = getHydraPageToken(link, logger)
 					}
 				}
-				logger.Warn("failed to find next page token in rel=next url", "link", linkHeader)
-				return ""
 			}
 		}
 	}
+	return next, prev
+}
+
+func getHydraPageToken(link string, logger *slog.Logger) string {
+	link = strings.TrimPrefix(link, "<")
+	link = strings.TrimSuffix(link, ">")
+	parsedURL, err := url.Parse(link)
+	if err != nil {
+		logger.Warn("failed to parse url in hydra paging link", "error", err, "link", link)
+		return ""
+	}
+	queryParams := parsedURL.Query()
+	for key, values := range queryParams {
+		if key == "page_token" {
+			logger.Debug("found page token", "token", values[0])
+			return values[0]
+		}
+	}
+	logger.Warn("failed to find page_token in hydra paging link", "link", link)
 	return ""
 }

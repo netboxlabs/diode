@@ -4,6 +4,11 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/hex"
+	"fmt"
+	"strings"
+
+	"github.com/gosimple/slug"
 )
 
 // ClientInfo is a struct that contains information about a client.
@@ -11,17 +16,23 @@ type ClientInfo struct {
 	ClientID     string `json:"client_id"`
 	Scope        string `json:"scope"`
 	ClientSecret string `json:"client_secret,omitempty"`
+	Owner        string `json:"owner,omitempty"`
+	ClientName   string `json:"client_name,omitempty"`
+	CreatedAt    string `json:"created_at,omitempty"`
 }
 
 // RetrieveClientsRequest is a struct that contains information about a request to retrieve clients.
 type RetrieveClientsRequest struct {
+	Owner     string
 	PageToken string
+	PageSize  int
 }
 
 // RetrieveClientsResponse reponse struct for listing clients
 type RetrieveClientsResponse struct {
 	Clients       []ClientInfo
 	NextPageToken string
+	PrevPageToken string
 }
 
 // ClientManager is an interface for managing oauth2 clients.
@@ -43,4 +54,22 @@ func GenerateClientSecret() (string, error) {
 		return "", err
 	}
 	return base64.StdEncoding.EncodeToString(secret), nil
+}
+
+// GenerateClientID generates a ClientID for a client.
+func GenerateClientID(clientInfo ClientInfo) (string, error) {
+	clientSlug := slug.Make(clientInfo.ClientName)
+	if len(clientSlug) > 15 {
+		clientSlug = clientSlug[:15]
+	}
+	clientSlug = strings.Trim(clientSlug, "-")
+
+	// generate a random 64 bit identifier
+	randomID := make([]byte, 8)
+	if _, err := rand.Read(randomID); err != nil {
+		return "", err
+	}
+	randomIDStr := hex.EncodeToString(randomID)
+
+	return fmt.Sprintf("%s-%s", clientSlug, randomIDStr), nil
 }

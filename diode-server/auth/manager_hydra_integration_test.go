@@ -17,9 +17,14 @@ import (
 	"github.com/netboxlabs/diode/diode-server/auth"
 )
 
-type logDumpConsumer struct{}
+type logDumpConsumer struct {
+	enabled bool
+}
 
 func (c *logDumpConsumer) Accept(log testcontainers.Log) {
+	if !c.enabled {
+		return
+	}
 	fmt.Printf("HYDRA LOG: %s\n", string(log.Content))
 }
 
@@ -58,7 +63,6 @@ func TestHydraClientManager(t *testing.T) {
 	authEndpoint, err := hydraC.Endpoint(ctx, "")
 	require.NoError(t, err)
 	authEndpoint = fmt.Sprintf("http://%s", authEndpoint)
-	fmt.Printf("HYDRA ENDPOINT: %s\n", authEndpoint)
 	manager = auth.NewHydraClientManager(authEndpoint, logger)
 
 	// no client initially
@@ -75,7 +79,7 @@ func TestHydraClientManager(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, createdClient)
 	require.Equal(t, "diode-test-client-1", createdClient.ClientID)
-	require.Equal(t, "", createdClient.ClientSecret)
+	require.Equal(t, "secret-material", createdClient.ClientSecret)
 	require.Equal(t, "test:diode:1 test:diode:2", createdClient.Scope)
 
 	// fetch the client by id

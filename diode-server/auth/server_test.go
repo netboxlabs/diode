@@ -1,6 +1,7 @@
 package auth_test
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -16,9 +17,12 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/gosimple/slug"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/netboxlabs/diode/diode-server/auth"
+	"github.com/netboxlabs/diode/diode-server/auth/mocks"
 )
 
 type InvalidParser struct{}
@@ -48,6 +52,17 @@ func (p ValidTokenParser) Parse(_ string, _ jwt.Keyfunc) (*jwt.Token, error) {
 	return token, nil
 }
 
+type MockTokenParser struct {
+	tokenMap map[string]jwt.Token
+}
+
+func (p MockTokenParser) Parse(token string, _ jwt.Keyfunc) (*jwt.Token, error) {
+	if tok, ok := p.tokenMap[token]; ok {
+		return &tok, nil
+	}
+	return nil, fmt.Errorf("token not found")
+}
+
 func TestNewServer(t *testing.T) {
 	ctx := context.Background()
 
@@ -55,7 +70,7 @@ func TestNewServer(t *testing.T) {
 	defer teardownEnv()
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
-	server, err := auth.NewServer(ctx, logger, InvalidParser{})
+	server, err := auth.NewServer(ctx, logger, InvalidParser{}, nil, nil)
 	require.NoError(t, err)
 	require.NotNil(t, server)
 
@@ -102,7 +117,7 @@ func TestIntrospectForInvalidTokens(t *testing.T) {
 	}()
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
-	server, err := auth.NewServer(ctx, logger, InvalidParser{})
+	server, err := auth.NewServer(ctx, logger, InvalidParser{}, nil, nil)
 	require.NoError(t, err)
 	require.NotNil(t, server)
 
@@ -171,7 +186,7 @@ func TestIntrospectForValidTokens(t *testing.T) {
 	}()
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
-	server, err := auth.NewServer(ctx, logger, ValidTokenParser{})
+	server, err := auth.NewServer(ctx, logger, ValidTokenParser{}, nil, nil)
 	require.NoError(t, err)
 	require.NotNil(t, server)
 
@@ -206,6 +221,639 @@ func TestIntrospectForValidTokens(t *testing.T) {
 
 		require.Equal(t, "testuser", introspectResp.Username)
 	})
+}
+
+func TestCreateClient(t *testing.T) {
+	writeToken := jwt.Token{
+		Claims: jwt.MapClaims{
+			"exp":       time.Now().Add(time.Hour).Unix(),
+			"iat":       time.Now().Unix(),
+			"client_id": "client123",
+			"scope":     "diode:write diode:read",
+		},
+		Valid: true,
+	}
+	readOnlyToken := jwt.Token{
+		Claims: jwt.MapClaims{
+			"exp":       time.Now().Add(time.Hour).Unix(),
+			"iat":       time.Now().Unix(),
+			"client_id": "client123",
+			"scope":     "diode:read",
+		},
+		Valid: true,
+	}
+	invalidToken := jwt.Token{
+		Valid: false,
+	}
+
+	validAccessToken := "eyJhbGciOiJSUzI1NiIsImtpZCI6InRlc3Qta2V5IiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwczovL2F1dGguZXhhbXBsZS5jb20iLCJzdWIiOiJ1c2VyMTIzIiwiYXVkIjoiYXBpIiwiZXhwIjoxNjUwMDAwMDAwLCJpYXQiOjE1MDAwMDAwMDAsImNsaWVudF9pZCI6ImNsaWVudDEyMyIsInNjb3BlIjoicmVhZCB3cml0ZSIsInVzZXJuYW1lIjoidGVzdHVzZXIifQ.WcPGXClpKD7Bc1C0CCDA1060E2GGlTfamrd8-W0ghBE"
+	invalidAccessToken := "invalid.token.string"
+
+	type createClientRequest struct {
+		ClientName string `json:"client_name"`
+		Scope      string `json:"scope"`
+	}
+
+	tests := []struct {
+		name         string
+		accessToken  string
+		request      createClientRequest
+		parsedToken  jwt.Token
+		expectClient auth.ClientInfo
+		expectStatus int
+	}{
+		{
+			name:        "can create ingest client",
+			parsedToken: writeToken,
+			request: createClientRequest{
+				ClientName: "Test Client 1",
+				Scope:      "diode:ingest",
+			},
+			expectStatus: http.StatusCreated,
+		},
+		{
+			name:        "cannot create ingest client with read only access",
+			parsedToken: readOnlyToken,
+			request: createClientRequest{
+				ClientName: "Test Client 2",
+				Scope:      "diode:ingest",
+			},
+			expectStatus: http.StatusForbidden,
+		},
+		{
+			name:         "cannot create ingest client with invalid access token",
+			accessToken:  invalidAccessToken,
+			parsedToken:  invalidToken,
+			request:      createClientRequest{},
+			expectStatus: http.StatusUnauthorized,
+		},
+		{
+			name:        "cannot create with non ingest scope",
+			parsedToken: writeToken,
+			request: createClientRequest{
+				ClientName: "Test Client 3",
+				Scope:      "diode:read",
+			},
+			expectStatus: http.StatusBadRequest,
+		},
+		{
+			name:        "cannot create with additional scopes",
+			parsedToken: writeToken,
+			request: createClientRequest{
+				ClientName: "Test Client 4",
+				Scope:      "diode:ingest diode:write",
+			},
+			expectStatus: http.StatusBadRequest,
+		},
+		{
+			name:        "cannot create with no scopes",
+			parsedToken: writeToken,
+			request: createClientRequest{
+				ClientName: "Test Client 5",
+				Scope:      "",
+			},
+			expectStatus: http.StatusBadRequest,
+		},
+		{
+			name:        "cannot create with no name",
+			parsedToken: writeToken,
+			request: createClientRequest{
+				ClientName: " ",
+				Scope:      "diode:ingest",
+			},
+			expectStatus: http.StatusBadRequest,
+		},
+	}
+
+	ctx := context.Background()
+	setupEnv()
+	defer teardownEnv()
+
+	// Setup a test server to mock the OAuth2 server
+	mockJWKSServer := mockJWKSServer()
+	defer mockJWKSServer.Close()
+
+	_ = os.Setenv("OAUTH2_PUBLIC_SERVER_URL", mockJWKSServer.URL)
+	defer func() {
+		_ = os.Unsetenv("OAUTH2_PUBLIC_SERVER_URL")
+	}()
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			defaultOwnership := &auth.DefaultTokenOwner{}
+			accessToken := test.accessToken
+			if accessToken == "" {
+				accessToken = validAccessToken
+			}
+			mockTokenParser := &MockTokenParser{
+				tokenMap: map[string]jwt.Token{
+					accessToken: test.parsedToken,
+				},
+			}
+			mockClientManager := &mocks.ClientManager{}
+			logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+			server, err := auth.NewServer(ctx, logger, mockTokenParser, mockClientManager, defaultOwnership)
+			require.NoError(t, err)
+			require.NotNil(t, server)
+
+			// Create a test server using the server's mux
+			testServer := httptest.NewServer(server.GetMux())
+			defer testServer.Close()
+			createdAt := time.Now().Format(time.RFC3339)
+			if test.expectStatus == http.StatusCreated {
+				mockClientManager.On("CreateClient", mock.Anything, mock.Anything).Return(func(_ context.Context, clientInfo auth.ClientInfo) (auth.ClientInfo, error) {
+					info := auth.ClientInfo{
+						ClientID:     clientInfo.ClientID,
+						ClientName:   clientInfo.ClientName,
+						Scope:        clientInfo.Scope,
+						Owner:        clientInfo.Owner,
+						CreatedAt:    createdAt,
+						ClientSecret: clientInfo.ClientSecret,
+					}
+					return info, nil
+				})
+			}
+
+			body, _ := json.Marshal(test.request)
+			req, _ := http.NewRequest(
+				"POST",
+				testServer.URL+"/clients",
+				bytes.NewBuffer(body),
+			)
+			req.Header.Set("Authorization", "Bearer "+accessToken)
+			req.Header.Set("Content-Type", "application/json")
+			client := &http.Client{}
+			resp, err := client.Do(req)
+			require.NoError(t, err)
+			defer func() {
+				_ = resp.Body.Close()
+			}()
+			require.Equal(t, test.expectStatus, resp.StatusCode)
+
+			if test.expectStatus == http.StatusCreated {
+				var clientInfo auth.ClientResponse
+				err = json.NewDecoder(resp.Body).Decode(&clientInfo)
+				require.NoError(t, err)
+				require.Equal(t, test.request.ClientName, clientInfo.ClientName)
+				require.Equal(t, test.request.Scope, clientInfo.Scope)
+				require.Equal(t, createdAt, clientInfo.CreatedAt)
+				require.NotEmpty(t, clientInfo.ClientSecret)
+				require.Greater(t, len(clientInfo.ClientSecret), 16)
+				require.NotEmpty(t, clientInfo.ClientID)
+				require.Greater(t, len(clientInfo.ClientID), 17)
+				slug := slug.Make(clientInfo.ClientName)
+				if len(slug) > 15 {
+					slug = slug[:15]
+				}
+				require.True(t, strings.HasPrefix(clientInfo.ClientID, slug))
+			}
+		})
+	}
+}
+
+func TestListClients(t *testing.T) {
+	readOnlyToken := jwt.Token{
+		Claims: jwt.MapClaims{
+			"exp":       time.Now().Add(time.Hour).Unix(),
+			"iat":       time.Now().Unix(),
+			"client_id": "client123",
+			"scope":     "diode:read",
+		},
+		Valid: true,
+	}
+	ingestOnlyToken := jwt.Token{
+		Claims: jwt.MapClaims{
+			"exp":       time.Now().Add(time.Hour).Unix(),
+			"iat":       time.Now().Unix(),
+			"client_id": "client124",
+			"scope":     "diode:ingest",
+		},
+		Valid: true,
+	}
+
+	invalidToken := jwt.Token{
+		Valid: false,
+	}
+
+	validAccessToken := "eyJhbGciOiJSUzI1NiIsImtpZCI6InRlc3Qta2V5IiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwczovL2F1dGguZXhhbXBsZS5jb20iLCJzdWIiOiJ1c2VyMTIzIiwiYXVkIjoiYXBpIiwiZXhwIjoxNjUwMDAwMDAwLCJpYXQiOjE1MDAwMDAwMDAsImNsaWVudF9pZCI6ImNsaWVudDEyMyIsInNjb3BlIjoicmVhZCB3cml0ZSIsInVzZXJuYW1lIjoidGVzdHVzZXIifQ.WcPGXClpKD7Bc1C0CCDA1060E2GGlTfamrd8-W0ghBE"
+	invalidAccessToken := "invalid.token.string"
+
+	type listClientsRequest struct {
+		PageToken string
+		PageSize  string
+	}
+
+	tests := []struct {
+		name         string
+		accessToken  string
+		request      listClientsRequest
+		parsedToken  jwt.Token
+		retrieved    auth.RetrieveClientsResponse
+		expect       auth.ListClientsResponse
+		expectError  string
+		expectStatus int
+	}{
+		{
+			name:        "can list clients",
+			parsedToken: readOnlyToken,
+			request: listClientsRequest{
+				PageSize: "2",
+			},
+			retrieved: auth.RetrieveClientsResponse{
+				Clients: []auth.ClientInfo{
+					{
+						ClientID:   "test-client-1-abcdef0123567890",
+						ClientName: "Test Client 1",
+						Scope:      "diode:read",
+						Owner:      "diode/user",
+						CreatedAt:  "2021-01-01T00:00:00Z",
+					},
+					{
+						ClientID:   "test-client-2-abcdef0123567890",
+						ClientName: "Test Client 2",
+						Scope:      "diode:read",
+						Owner:      "diode/user",
+						CreatedAt:  "2021-01-02T00:00:00Z",
+					},
+				},
+				NextPageToken: "",
+			},
+			expect: auth.ListClientsResponse{
+				Data: []auth.ClientResponse{
+					{
+						ClientID:   "test-client-1-abcdef0123567890",
+						ClientName: "Test Client 1",
+						Scope:      "diode:read",
+						CreatedAt:  "2021-01-01T00:00:00Z",
+					},
+					{
+						ClientID:   "test-client-2-abcdef0123567890",
+						ClientName: "Test Client 2",
+						Scope:      "diode:read",
+						CreatedAt:  "2021-01-02T00:00:00Z",
+					},
+				},
+			},
+			expectStatus: http.StatusOK,
+		},
+		{
+			name:         "cannot list clients with invalid access token",
+			accessToken:  invalidAccessToken,
+			parsedToken:  invalidToken,
+			expectStatus: http.StatusUnauthorized,
+		},
+		{
+			name:         "cannot list clients without read access",
+			parsedToken:  ingestOnlyToken,
+			expectStatus: http.StatusForbidden,
+		},
+		{
+			name:         "cannot list clients with invalid page size",
+			parsedToken:  readOnlyToken,
+			request:      listClientsRequest{PageSize: "not-a-number"},
+			expectStatus: http.StatusBadRequest,
+		},
+	}
+
+	ctx := context.Background()
+	setupEnv()
+	defer teardownEnv()
+
+	mockJWKSServer := mockJWKSServer()
+	defer mockJWKSServer.Close()
+
+	_ = os.Setenv("OAUTH2_PUBLIC_SERVER_URL", mockJWKSServer.URL)
+	defer func() {
+		_ = os.Unsetenv("OAUTH2_PUBLIC_SERVER_URL")
+	}()
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			defaultOwnership := &auth.DefaultTokenOwner{}
+			accessToken := test.accessToken
+			if accessToken == "" {
+				accessToken = validAccessToken
+			}
+			mockTokenParser := &MockTokenParser{
+				tokenMap: map[string]jwt.Token{
+					accessToken: test.parsedToken,
+				},
+			}
+			mockClientManager := &mocks.ClientManager{}
+			logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+			server, err := auth.NewServer(ctx, logger, mockTokenParser, mockClientManager, defaultOwnership)
+			require.NoError(t, err)
+			require.NotNil(t, server)
+
+			testServer := httptest.NewServer(server.GetMux())
+			defer testServer.Close()
+			if test.expectStatus == http.StatusOK {
+				mockClientManager.EXPECT().RetrieveClients(mock.Anything, mock.Anything).Return(test.retrieved, nil)
+			}
+
+			u, err := url.Parse(testServer.URL + "/clients")
+			require.NoError(t, err)
+			q := url.Values{}
+			if test.request.PageToken != "" {
+				q.Set("page_token", test.request.PageToken)
+			}
+			if test.request.PageSize != "" {
+				q.Set("page_size", test.request.PageSize)
+			}
+			u.RawQuery = q.Encode()
+			req, _ := http.NewRequest("GET", u.String(), nil)
+			req.Header.Set("Authorization", "Bearer "+accessToken)
+			req.Header.Set("Content-Type", "application/json")
+			client := &http.Client{}
+			resp, err := client.Do(req)
+			require.NoError(t, err)
+			defer func() {
+				_ = resp.Body.Close()
+			}()
+			require.Equal(t, test.expectStatus, resp.StatusCode)
+
+			if test.expectStatus == http.StatusOK {
+				out := auth.ListClientsResponse{}
+				err = json.NewDecoder(resp.Body).Decode(&out)
+				require.NoError(t, err)
+				require.Equal(t, test.expect.Data, out.Data)
+				require.Equal(t, test.expect.NextPageToken, out.NextPageToken)
+			}
+		})
+	}
+}
+
+func TestDeleteClient(t *testing.T) {
+	writeToken := jwt.Token{
+		Claims: jwt.MapClaims{
+			"exp":       time.Now().Add(time.Hour).Unix(),
+			"iat":       time.Now().Unix(),
+			"client_id": "client123",
+			"scope":     "diode:write diode:read",
+		},
+		Valid: true,
+	}
+	readOnlyToken := jwt.Token{
+		Claims: jwt.MapClaims{
+			"exp":       time.Now().Add(time.Hour).Unix(),
+			"iat":       time.Now().Unix(),
+			"client_id": "client123",
+			"scope":     "diode:read",
+		},
+		Valid: true,
+	}
+	invalidToken := jwt.Token{
+		Valid: false,
+	}
+
+	validAccessToken := "eyJhbGciOiJSUzI1NiIsImtpZCI6InRlc3Qta2V5IiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwczovL2F1dGguZXhhbXBsZS5jb20iLCJzdWIiOiJ1c2VyMTIzIiwiYXVkIjoiYXBpIiwiZXhwIjoxNjUwMDAwMDAwLCJpYXQiOjE1MDAwMDAwMDAsImNsaWVudF9pZCI6ImNsaWVudDEyMyIsInNjb3BlIjoicmVhZCB3cml0ZSIsInVzZXJuYW1lIjoidGVzdHVzZXIifQ.WcPGXClpKD7Bc1C0CCDA1060E2GGlTfamrd8-W0ghBE"
+	invalidAccessToken := "invalid.token.string"
+
+	tests := []struct {
+		name         string
+		accessToken  string
+		clientID     string
+		parsedToken  jwt.Token
+		lookupResult auth.ClientInfo
+		lookupErr    error
+		expectStatus int
+	}{
+		{
+			name:        "can delete client",
+			accessToken: validAccessToken,
+			clientID:    "test-client-1-abcdef0123567890",
+			parsedToken: writeToken,
+			lookupResult: auth.ClientInfo{
+				ClientID:   "test-client-1-abcdef0123567890",
+				ClientName: "Test Client 1",
+				Scope:      "diode:ingest",
+				Owner:      "diode/user",
+				CreatedAt:  "2021-01-01T00:00:00Z",
+			},
+			expectStatus: http.StatusNoContent,
+		},
+		{
+			name:         "cannot delete client with invalid access token",
+			accessToken:  invalidAccessToken,
+			clientID:     "test-client-1-abcdef0123567890",
+			parsedToken:  invalidToken,
+			expectStatus: http.StatusUnauthorized,
+		},
+		{
+			name:         "cannot delete client with read only access",
+			accessToken:  validAccessToken,
+			clientID:     "test-client-1-abcdef0123567890",
+			parsedToken:  readOnlyToken,
+			expectStatus: http.StatusForbidden,
+		},
+		{
+			name:         "cannot delete client that does not exist",
+			accessToken:  validAccessToken,
+			clientID:     "test-client-1-abcdef0123567890",
+			parsedToken:  writeToken,
+			lookupErr:    auth.NewAuthError("client not found", http.StatusNotFound),
+			expectStatus: http.StatusNotFound,
+		},
+		{
+			name:        "cannot delete a client with the wrong owner",
+			accessToken: validAccessToken,
+			clientID:    "test-client-1-abcdef0123567890",
+			parsedToken: writeToken,
+			lookupResult: auth.ClientInfo{
+				ClientID:   "test-client-1-abcdef0123567890",
+				ClientName: "Test Client 1",
+				Owner:      "diode/system",
+				Scope:      "diode:read diode:write",
+				CreatedAt:  "2021-01-01T00:00:00Z",
+			},
+			expectStatus: http.StatusNotFound,
+		},
+	}
+
+	ctx := context.Background()
+	setupEnv()
+	defer teardownEnv()
+
+	// Setup a test server to mock the OAuth2 server
+	mockJWKSServer := mockJWKSServer()
+	defer mockJWKSServer.Close()
+
+	_ = os.Setenv("OAUTH2_PUBLIC_SERVER_URL", mockJWKSServer.URL)
+	defer func() {
+		_ = os.Unsetenv("OAUTH2_PUBLIC_SERVER_URL")
+	}()
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			defaultOwnership := &auth.DefaultTokenOwner{}
+			accessToken := test.accessToken
+			if accessToken == "" {
+				accessToken = validAccessToken
+			}
+			mockTokenParser := &MockTokenParser{
+				tokenMap: map[string]jwt.Token{
+					accessToken: test.parsedToken,
+				},
+			}
+			mockClientManager := &mocks.ClientManager{}
+			logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+			server, err := auth.NewServer(ctx, logger, mockTokenParser, mockClientManager, defaultOwnership)
+			require.NoError(t, err)
+			require.NotNil(t, server)
+
+			testServer := httptest.NewServer(server.GetMux())
+			defer testServer.Close()
+
+			if test.lookupResult != (auth.ClientInfo{}) || test.lookupErr != nil {
+				mockClientManager.EXPECT().RetrieveClientByID(mock.Anything, test.clientID).Return(test.lookupResult, test.lookupErr)
+			}
+
+			if test.expectStatus == http.StatusNoContent {
+				mockClientManager.EXPECT().DeleteClientByID(mock.Anything, test.clientID).Return(nil)
+			}
+
+			req, _ := http.NewRequest("DELETE", testServer.URL+"/clients/"+test.clientID, nil)
+			req.Header.Set("Authorization", "Bearer "+accessToken)
+			req.Header.Set("Content-Type", "application/json")
+			client := &http.Client{}
+			resp, err := client.Do(req)
+			require.NoError(t, err)
+			defer func() {
+				_ = resp.Body.Close()
+			}()
+			require.Equal(t, test.expectStatus, resp.StatusCode)
+		})
+	}
+}
+
+func TestGetClient(t *testing.T) {
+	readOnlyToken := jwt.Token{
+		Claims: jwt.MapClaims{
+			"exp":       time.Now().Add(time.Hour).Unix(),
+			"iat":       time.Now().Unix(),
+			"client_id": "client123",
+			"scope":     "diode:read",
+		},
+		Valid: true,
+	}
+	invalidToken := jwt.Token{
+		Valid: false,
+	}
+
+	validAccessToken := "eyJhbGciOiJSUzI1NiIsImtpZCI6InRlc3Qta2V5IiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwczovL2F1dGguZXhhbXBsZS5jb20iLCJzdWIiOiJ1c2VyMTIzIiwiYXVkIjoiYXBpIiwiZXhwIjoxNjUwMDAwMDAwLCJpYXQiOjE1MDAwMDAwMDAsImNsaWVudF9pZCI6ImNsaWVudDEyMyIsInNjb3BlIjoicmVhZCB3cml0ZSIsInVzZXJuYW1lIjoidGVzdHVzZXIifQ.WcPGXClpKD7Bc1C0CCDA1060E2GGlTfamrd8-W0ghBE"
+	invalidAccessToken := "invalid.token.string"
+
+	tests := []struct {
+		name         string
+		accessToken  string
+		clientID     string
+		parsedToken  jwt.Token
+		lookupResult auth.ClientInfo
+		lookupErr    error
+		expectStatus int
+		expect       auth.ClientResponse
+	}{
+		{
+			name:        "can get client",
+			accessToken: validAccessToken,
+			clientID:    "test-client-1-abcdef0123567890",
+			parsedToken: readOnlyToken,
+			lookupResult: auth.ClientInfo{
+				ClientID:   "test-client-1-abcdef0123567890",
+				ClientName: "Test Client 1",
+				Scope:      "diode:ingest",
+				Owner:      "diode/user",
+				CreatedAt:  "2021-01-01T00:00:00Z",
+			},
+			expect: auth.ClientResponse{
+				ClientID:   "test-client-1-abcdef0123567890",
+				ClientName: "Test Client 1",
+				Scope:      "diode:ingest",
+				CreatedAt:  "2021-01-01T00:00:00Z",
+			},
+			expectStatus: http.StatusOK,
+		},
+		{
+			name:         "cannot get client with invalid access token",
+			accessToken:  invalidAccessToken,
+			clientID:     "test-client-1-abcdef0123567890",
+			parsedToken:  invalidToken,
+			expectStatus: http.StatusUnauthorized,
+		},
+		{
+			name:         "cannot get client that does not exist",
+			accessToken:  validAccessToken,
+			clientID:     "test-client-1-abcdef0123567890",
+			parsedToken:  readOnlyToken,
+			lookupErr:    auth.NewAuthError("client not found", http.StatusNotFound),
+			expectStatus: http.StatusNotFound,
+		},
+		{
+			name:        "cannot get a client with the wrong owner",
+			accessToken: validAccessToken,
+			clientID:    "test-client-1-abcdef0123567890",
+			parsedToken: readOnlyToken,
+			lookupResult: auth.ClientInfo{
+				ClientID:   "test-client-1-abcdef0123567890",
+				ClientName: "Test Client 1",
+				Owner:      "diode/system",
+				Scope:      "diode:read diode:write",
+				CreatedAt:  "2021-01-01T00:00:00Z",
+			},
+			expectStatus: http.StatusNotFound,
+		},
+	}
+
+	ctx := context.Background()
+	setupEnv()
+	defer teardownEnv()
+
+	// Setup a test server to mock the OAuth2 server
+	mockJWKSServer := mockJWKSServer()
+	defer mockJWKSServer.Close()
+
+	_ = os.Setenv("OAUTH2_PUBLIC_SERVER_URL", mockJWKSServer.URL)
+	defer func() {
+		_ = os.Unsetenv("OAUTH2_PUBLIC_SERVER_URL")
+	}()
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			defaultOwnership := &auth.DefaultTokenOwner{}
+			accessToken := test.accessToken
+			if accessToken == "" {
+				accessToken = validAccessToken
+			}
+			mockTokenParser := &MockTokenParser{
+				tokenMap: map[string]jwt.Token{
+					accessToken: test.parsedToken,
+				},
+			}
+			mockClientManager := &mocks.ClientManager{}
+			logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+			server, err := auth.NewServer(ctx, logger, mockTokenParser, mockClientManager, defaultOwnership)
+			require.NoError(t, err)
+			require.NotNil(t, server)
+
+			testServer := httptest.NewServer(server.GetMux())
+			defer testServer.Close()
+
+			if test.lookupResult != (auth.ClientInfo{}) || test.lookupErr != nil {
+				mockClientManager.EXPECT().RetrieveClientByID(mock.Anything, test.clientID).Return(test.lookupResult, test.lookupErr)
+			}
+
+			req, _ := http.NewRequest("GET", testServer.URL+"/clients/"+test.clientID, nil)
+			req.Header.Set("Authorization", "Bearer "+accessToken)
+			req.Header.Set("Content-Type", "application/json")
+			client := &http.Client{}
+			resp, err := client.Do(req)
+			require.NoError(t, err)
+			defer func() {
+				_ = resp.Body.Close()
+			}()
+			require.Equal(t, test.expectStatus, resp.StatusCode)
+		})
+	}
 }
 
 func makeIntrospectRequest(serverURL, token string) (*http.Response, error) {
@@ -243,6 +891,27 @@ func getFreePort() (string, error) {
 		return strconv.Itoa(0), err
 	}
 	return strconv.Itoa(addr.Port), nil
+}
+
+func mockJWKSServer() *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/.well-known/jwks.json" {
+			// Return a mock JWKS response
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{
+				"keys": [
+					{
+						"kty": "RSA",
+						"kid": "test-key",
+						"use": "sig",
+						"alg": "RS256",
+						"n": "n_value",
+						"e": "AQAB"
+					}
+				]
+			}`))
+		}
+	}))
 }
 
 func setupEnv() {
