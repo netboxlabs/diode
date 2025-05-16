@@ -2,6 +2,48 @@ apiVersion: v1
 entries:
   diode:
   - apiVersion: v2
+    appVersion: 1.2.0
+    created: "2025-05-16T15:24:00.923743856Z"
+    dependencies:
+    - condition: redis.enabled
+      name: redis
+      repository: https://charts.bitnami.com/bitnami
+      version: 20.11.5
+    - condition: postgresql.enabled
+      name: postgresql
+      repository: https://charts.bitnami.com/bitnami
+      version: 16.6.3
+    - condition: hydra.enabled
+      name: hydra
+      repository: https://k8s.ory.sh/helm/charts
+      version: 0.53.0
+    - condition: ingressNginx.enabled
+      name: ingress-nginx
+      repository: https://kubernetes.github.io/ingress-nginx
+      version: 4.12.1
+    - condition: certManager.enabled
+      name: cert-manager
+      repository: https://charts.jetstack.io
+      version: v1.12.0
+    description: A Helm chart for Diode
+    digest: 46a3ec3e991485103062b44bbc259694d1eb45d79c561fb1805826efb4617e63
+    home: https://github.com/netboxlabs/diode
+    keywords:
+    - diode
+    - netbox
+    - assurance
+    maintainers:
+    - email: support@netboxlabs.com
+      name: NetBox Labs
+      url: https://github.com/netboxlabs
+    name: diode
+    sources:
+    - https://github.com/netboxlabs/diode
+    type: application
+    urls:
+    - https://github.com/netboxlabs/diode/releases/download/helm-chart-diode-1.4.1/diode-1.4.1.tgz
+    version: 1.4.1
+  - apiVersion: v2
     appVersion: 1.1.0
     created: "2025-05-08T20:14:48.816886042Z"
     dependencies:
@@ -283,4 +325,4 @@ entries:
     urls:
     - https://github.com/netboxlabs/diode/releases/download/helm-chart-diode-0.1.0/diode-0.1.0.tgz
     version: 0.1.0
-generated: "2025-05-08T20:14:48.816918984Z"
+generated: "2025-05-16T15:24:00.923764997Z"
