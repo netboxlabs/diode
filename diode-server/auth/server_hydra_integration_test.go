@@ -17,6 +17,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/require"
 	testcontainers "github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
@@ -193,11 +194,57 @@ func TestServerHydraIntegration(t *testing.T) {
 	// verify that we saw all 9 clients
 	require.Equal(t, 9, len(seen))
 	require.Equal(t, 5, pages)
+
+	tokenClientInfo := client.createClient(t, "test-client-token-auth", ingestClientScope)
+
+	// call the token endpoint with the credentials and verify that a token comes back ...
+	resp := client.getToken(t, tokenClientInfo.ClientID, tokenClientInfo.ClientSecret, ingestClientScope)
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var tokenResult struct {
+		AccessToken string `json:"access_token"`
+	}
+	err = json.NewDecoder(resp.Body).Decode(&tokenResult)
+	require.NoError(t, err)
+	require.NotEmpty(t, tokenResult.AccessToken)
+	accessToken := tokenResult.AccessToken
+	require.NotEmpty(t, accessToken)
+
+	token, _, err := jwt.NewParser().ParseUnverified(accessToken, jwt.MapClaims{})
+	require.NoError(t, err)
+	claims, ok := token.Claims.(jwt.MapClaims)
+	require.True(t, ok)
+	scopeClaim, ok := claims["scope"]
+	require.True(t, ok)
+	require.Equal(t, ingestClientScope, scopeClaim)
+
+	// try to use the credentials to create a token with a different scope ...
+	resp = client.getToken(t, tokenClientInfo.ClientID, tokenClientInfo.ClientSecret, "netbox:read")
+	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 }
 
 type authTestClient struct {
 	endpoint string
 	token    string
+}
+
+func (c *authTestClient) getToken(t *testing.T, clientID string, clientSecret string, scope string) *http.Response {
+	data := url.Values{}
+	data.Set("grant_type", "client_credentials")
+	data.Set("client_id", clientID)
+	data.Set("client_secret", clientSecret)
+	data.Set("scope", scope)
+	req, err := http.NewRequest(http.MethodPost, c.endpoint+"/token", strings.NewReader(data.Encode()))
+	require.NoError(t, err)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	require.NoError(t, err)
+	return resp
 }
 
 func (c *authTestClient) listClients(t *testing.T, pageToken string, pageSize int) auth.ListClientsResponse {
