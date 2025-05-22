@@ -9,6 +9,7 @@ import (
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
 
 	"github.com/netboxlabs/diode/diode-server/authutil"
 	"github.com/netboxlabs/diode/diode-server/reconciler"
@@ -25,7 +26,16 @@ func TestNewServer(t *testing.T) {
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
 	mockRepository := mocks.NewRepository(t)
-	server, err := reconciler.NewServer(ctx, logger, mockRepository, authutil.NewUnverifiedJWTAuthorizer(logger))
+	authorizer := authutil.NewUnverifiedJWTAuthorizer(logger)
+	serverInterceptors := []grpc.UnaryServerInterceptor{
+		func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+			if err := authorizer.RequireScopesContext(ctx, []string{authutil.ScopeDiodeRead}); err != nil {
+				return nil, err
+			}
+			return handler(ctx, req)
+		},
+	}
+	server, err := reconciler.NewServer(ctx, logger, mockRepository, serverInterceptors...)
 	require.NoError(t, err)
 	require.NotNil(t, server)
 

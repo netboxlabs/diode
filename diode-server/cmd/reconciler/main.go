@@ -11,8 +11,10 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib" // pgx to database/sql compatibility
 	"github.com/kelseyhightower/envconfig"
 	"github.com/pressly/goose/v3"
+	"github.com/redis/go-redis/v9"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric"
+	"google.golang.org/grpc"
 
 	"github.com/netboxlabs/diode/diode-server/authutil"
 	"github.com/netboxlabs/diode/diode-server/dbstore/postgres"
@@ -76,6 +78,28 @@ func main() {
 		}
 	}
 
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:     fmt.Sprintf("%s:%s", cfg.RedisHost, cfg.RedisPort),
+		Password: cfg.RedisPassword,
+		DB:       cfg.RedisDB,
+	})
+
+	if _, err := redisClient.Ping(ctx).Result(); err != nil {
+		s.Logger().Error("failed to connect to redis", "redis", redisClient.String(), "error", err)
+		os.Exit(1)
+	}
+
+	redisStreamClient := redis.NewClient(&redis.Options{
+		Addr:     fmt.Sprintf("%s:%s", cfg.RedisHost, cfg.RedisPort),
+		Password: cfg.RedisPassword,
+		DB:       cfg.RedisStreamDB,
+	})
+
+	if _, err := redisStreamClient.Ping(ctx).Result(); err != nil {
+		s.Logger().Error("failed to connect to redis stream", "redisStream", redisStreamClient.String(), "error", err)
+		os.Exit(1)
+	}
+
 	dbPool, err := pgxpool.New(ctx, dbURL)
 	if err != nil {
 		s.Logger().Error("failed to connect to postgres database", "error", err)
@@ -102,7 +126,7 @@ func main() {
 		s.Logger().Error("failed to create ingestion processor metrics", "error", err)
 		os.Exit(1)
 	}
-	ingestionProcessor, err := reconciler.NewIngestionProcessor(ctx, s.Logger(), ops, ingestionMetrics)
+	ingestionProcessor, err := reconciler.NewIngestionProcessor(ctx, s.Logger(), redisClient, redisStreamClient, reconciler.DefaultRedisStreamID, reconciler.DefaultRedisConsumerGroup, ops, ingestionMetrics)
 	if err != nil {
 		s.Logger().Error("failed to instantiate ingestion processor", "error", err)
 		os.Exit(1)
@@ -114,8 +138,7 @@ func main() {
 	}
 
 	authorizer := authutil.NewUnverifiedJWTAuthorizer(s.Logger())
-
-	gRPCServer, err := reconciler.NewServer(ctx, s.Logger(), repository, authorizer)
+	gRPCServer, err := reconciler.NewServer(ctx, s.Logger(), repository, serverInterceptors(authorizer)...)
 	if err != nil {
 		s.Logger().Error("failed to instantiate gRPC server", "error", err)
 		os.Exit(1)
@@ -155,4 +178,18 @@ func runDBMigrations(ctx context.Context, logger *slog.Logger, dbURL string) err
 	}
 
 	return nil
+}
+
+func serverInterceptors(authorizer *authutil.UnverifiedJWTAuthorizer) []grpc.UnaryServerInterceptor {
+	return []grpc.UnaryServerInterceptor{
+		func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+			// TODO: this is applied to all rpcs but could be checked per rpc
+			// if the permissions differ (all are reads currently)
+			if err := authorizer.RequireScopesContext(ctx, []string{authutil.ScopeDiodeRead}); err != nil {
+				return nil, err
+			}
+
+			return handler(ctx, req)
+		},
+	}
 }

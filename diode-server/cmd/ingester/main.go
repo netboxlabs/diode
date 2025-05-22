@@ -2,13 +2,17 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/redis/go-redis/v9"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric"
+	"google.golang.org/grpc"
 
+	"github.com/netboxlabs/diode/diode-server/authutil"
 	"github.com/netboxlabs/diode/diode-server/ingester"
 	"github.com/netboxlabs/diode/diode-server/server"
 	"github.com/netboxlabs/diode/diode-server/telemetry"
@@ -57,7 +61,19 @@ func main() {
 	}
 	startupCounter.Add(ctx, 1)
 
-	ingesterComponent, err := ingester.New(ctx, s.Logger(), cfg, meter)
+	redisStreamClient := redis.NewClient(&redis.Options{
+		Addr:     fmt.Sprintf("%s:%s", cfg.RedisHost, cfg.RedisPort),
+		Password: cfg.RedisPassword,
+		DB:       cfg.RedisStreamDB,
+	})
+
+	if _, err := redisStreamClient.Ping(ctx).Result(); err != nil {
+		s.Logger().Error("failed to connect to redis stream", "redisStream", redisStreamClient.String(), "error", err)
+		os.Exit(1)
+	}
+
+	authorizer := authutil.NewUnverifiedJWTAuthorizer(s.Logger())
+	ingesterComponent, err := ingester.New(ctx, s.Logger(), cfg, redisStreamClient, meter, serverInterceptors(authorizer)...)
 	if err != nil {
 		s.Logger().Error("failed to instantiate ingester component", "error", err)
 		os.Exit(1)
@@ -73,5 +89,16 @@ func main() {
 	if err := s.Run(); err != nil {
 		s.Logger().Error("server failure", "serverName", s.Name(), "error", err)
 		os.Exit(1)
+	}
+}
+
+func serverInterceptors(authorizer *authutil.UnverifiedJWTAuthorizer) []grpc.UnaryServerInterceptor {
+	return []grpc.UnaryServerInterceptor{
+		func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+			if err := authorizer.RequireScopesContext(ctx, []string{authutil.ScopeDiodeIngest}); err != nil {
+				return nil, err
+			}
+			return handler(ctx, req)
+		},
 	}
 }

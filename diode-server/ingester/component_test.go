@@ -11,6 +11,7 @@ import (
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/kelseyhightower/envconfig"
+	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel"
 	"google.golang.org/grpc"
@@ -73,7 +74,16 @@ const bufSize = 1024 * 1024
 func startReconcilerServer(ctx context.Context, t *testing.T) *reconciler.Server {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
 	mockRepository := mocks.NewRepository(t)
-	server, err := reconciler.NewServer(ctx, logger, mockRepository, authutil.NewUnverifiedJWTAuthorizer(logger))
+	authorizer := authutil.NewUnverifiedJWTAuthorizer(logger)
+	serverInterceptors := []grpc.UnaryServerInterceptor{
+		func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+			if err := authorizer.RequireScopesContext(ctx, []string{authutil.ScopeDiodeRead}); err != nil {
+				return nil, err
+			}
+			return handler(ctx, req)
+		},
+	}
+	server, err := reconciler.NewServer(ctx, logger, mockRepository, serverInterceptors...)
 	require.NoError(t, err)
 
 	errChan := make(chan error, 1)
@@ -90,7 +100,7 @@ func startReconcilerServer(ctx context.Context, t *testing.T) *reconciler.Server
 	return server
 }
 
-func startTestComponent(ctx context.Context, t *testing.T) (*ingester.Component, *grpc.ClientConn) {
+func startTestComponent(ctx context.Context, t *testing.T, r *miniredis.Miniredis) (*ingester.Component, *grpc.ClientConn) {
 	grpcPort, _ := getFreePort()
 	_ = os.Setenv("GRPC_PORT", grpcPort)
 
@@ -104,7 +114,23 @@ func startTestComponent(ctx context.Context, t *testing.T) (*ingester.Component,
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
 
 	meter := otel.GetMeterProvider().Meter("test.ingester")
-	component, err := ingester.New(ctx, logger, cfg, meter)
+
+	redisStreamClient := redis.NewClient(&redis.Options{
+		Addr: r.Addr(),
+		DB:   1,
+	})
+
+	authorizer := authutil.NewUnverifiedJWTAuthorizer(logger)
+	serverInterceptors := []grpc.UnaryServerInterceptor{
+		func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+			if err := authorizer.RequireScopesContext(ctx, []string{authutil.ScopeDiodeIngest}); err != nil {
+				return nil, err
+			}
+			return handler(ctx, req)
+		},
+	}
+
+	component, err := ingester.New(ctx, logger, cfg, redisStreamClient, meter, serverInterceptors...)
 	require.NoError(t, err)
 
 	pb.RegisterIngesterServiceServer(s, component)
@@ -148,7 +174,25 @@ func TestNewComponent(t *testing.T) {
 	require.NoError(t, err)
 
 	meter := otel.GetMeterProvider().Meter("test.ingester")
-	component, err := ingester.New(ctx, logger, cfg, meter)
+
+	redisStreamClient := redis.NewClient(&redis.Options{
+		Addr: r.Addr(),
+		DB:   1,
+	})
+	defer func() {
+		_ = redisStreamClient.Close()
+	}()
+	authorizer := authutil.NewUnverifiedJWTAuthorizer(logger)
+	serverInterceptors := []grpc.UnaryServerInterceptor{
+		func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+			if err := authorizer.RequireScopesContext(ctx, []string{authutil.ScopeDiodeIngest}); err != nil {
+				return nil, err
+			}
+			return handler(ctx, req)
+		},
+	}
+
+	component, err := ingester.New(ctx, logger, cfg, redisStreamClient, meter, serverInterceptors...)
 
 	require.NoError(t, err)
 	require.NotNil(t, component)
@@ -328,7 +372,7 @@ func TestIngest(t *testing.T) {
 			defer teardownEnv()
 
 			server := startReconcilerServer(ctx, t)
-			component, conn := startTestComponent(ctx, t)
+			component, conn := startTestComponent(ctx, t, r)
 
 			client := pb.NewIngesterServiceClient(conn)
 			resp, err := client.Ingest(ctx, tt.request)
