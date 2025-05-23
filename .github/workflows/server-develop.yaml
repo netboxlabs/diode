@@ -58,8 +58,8 @@ jobs:
 
       - name: Set build info
         run: |
-          echo $BUILD_COMMIT > ./server/version/BUILD_COMMIT.txt
-          echo $BUILD_VERSION > ./server/version/BUILD_VERSION.txt
+          echo $BUILD_COMMIT > ./diode-server/version/BUILD_COMMIT.txt
+          echo $BUILD_VERSION > ./diode-server/version/BUILD_VERSION.txt
 
       - name: Setup JFrog CLI
         id: setup-jfrog-cli
@@ -80,8 +80,8 @@ jobs:
       - name: Build image and push
         uses: docker/build-push-action@48aba3b46d1b1fec4febb7c5d0c644b249a11355 # v6
         with:
-          context: .
-          file: docker/Dockerfile-build.${{ matrix.app }}
+          context: diode-server
+          file: diode-server/docker/Dockerfile-build.${{ matrix.app }}
           platforms: linux/amd64,linux/arm64
           push: true
           cache-from: type=gha
