@@ -1,44 +1,46 @@
+version: "2"
 run:
-  timeout: 5m
   modules-download-mode: readonly
-
 output:
-  formats: colored-line-number
-
+  formats:
+    text:
+      path: stdout
+      color: true
 linters:
   enable:
-    - revive
-    - errcheck
-    - unused
-    - staticcheck
-    - ineffassign
-    - govet
-    - gosimple
     - bodyclose
+    - revive
+  exclusions:
+    generated: lax
+    rules:
+      - linters:
+          - revive
+        path: /*.go
+        text: 'package-comments: should have a package comment'
+      - path: /*.go
+        text: 'SA1019: filter.DataType is deprecated'
+      - path: /*.go
+        text: 'SA1019: g.client.RetrieveIngestionLogs is deprecated'
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+severity:
+  default: error
+formatters:
+  enable:
     - gci
     - gofumpt
-
-issues:
-  exclude-use-default: false
-  exclude-rules:
-    - path: /*.go
-      text: "package-comments: should have a package comment"
-      linters:
-        - revive
-    - path: /*.go
-      text: 'SA1019: filter.DataType is deprecated'
-    - path: /*.go
-      text: 'SA1019: g.client.RetrieveIngestionLogs is deprecated'
-
-severity:
-  default-severity: error
-
-linters-settings:
-  gci:
-    sections:
-      - standard
-      - default
-      - prefix(github.com/netboxlabs/diode)
-    custom-order: true
-  go-fumpt:
-    extra-rules: true
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(github.com/netboxlabs/diode)
+      custom-order: true
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
