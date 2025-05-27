@@ -388,7 +388,7 @@ ingressNginx:
   # -- ingress path prefix
   pathPrefix: /diode
   # -- ingress extra http paths
-  extraHttpPaths: {}
+  extraHttpPaths: []
     # - path: /
     #   pathType: Prefix
     #   serviceName: netbox
