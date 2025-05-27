@@ -180,7 +180,7 @@ func runDBMigrations(ctx context.Context, logger *slog.Logger, dbURL string) err
 	return nil
 }
 
-func serverInterceptors(authorizer *authutil.UnverifiedJWTAuthorizer) []grpc.UnaryServerInterceptor {
+func serverInterceptors(authorizer authutil.Authorizer) []grpc.UnaryServerInterceptor {
 	return []grpc.UnaryServerInterceptor{
 		func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 			// TODO: this is applied to all rpcs but could be checked per rpc

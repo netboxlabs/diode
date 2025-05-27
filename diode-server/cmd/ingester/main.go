@@ -92,7 +92,7 @@ func main() {
 	}
 }
 
-func serverInterceptors(authorizer *authutil.UnverifiedJWTAuthorizer) []grpc.UnaryServerInterceptor {
+func serverInterceptors(authorizer authutil.Authorizer) []grpc.UnaryServerInterceptor {
 	return []grpc.UnaryServerInterceptor{
 		func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 			if err := authorizer.RequireScopesContext(ctx, []string{authutil.ScopeDiodeIngest}); err != nil {
