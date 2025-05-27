@@ -27,6 +27,7 @@ const (
 // Server is a auth Server
 type Server struct {
 	config         Config
+	keyfunc        keyfunc.Keyfunc
 	logger         *slog.Logger
 	httpServer     *http.Server
 	mux            *http.ServeMux
@@ -103,10 +104,17 @@ func NewServer(_ context.Context, logger *slog.Logger, tokenParser TokenParser, 
 
 	mux := http.NewServeMux()
 
+	jwkSetURL := cfg.OAuth2.PublicServerURL + "/.well-known/jwks.json"
+	k, err := keyfunc.NewDefault([]string{jwkSetURL})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create keyfunc: %w", err)
+	}
+
 	server := &Server{
-		config: cfg,
-		logger: logger,
-		mux:    mux,
+		config:  cfg,
+		keyfunc: k,
+		logger:  logger,
+		mux:     mux,
 		httpServer: &http.Server{
 			Addr:    fmt.Sprintf(":%d", cfg.HTTPPort),
 			Handler: mux,
@@ -215,13 +223,7 @@ func (s *Server) getAuthToken(r *http.Request) (string, error) {
 }
 
 func (s *Server) validateToken(jwtToken string) (jwt.MapClaims, error) {
-	jwksURL := s.config.OAuth2.PublicServerURL + "/.well-known/jwks.json"
-	jwks, err := keyfunc.NewDefault([]string{jwksURL})
-	if err != nil {
-		return nil, NewAuthError("failed to get JWKS", http.StatusInternalServerError)
-	}
-
-	token, err := s.tokenParser.Parse(jwtToken, jwks.Keyfunc)
+	token, err := s.tokenParser.Parse(jwtToken, s.keyfunc.Keyfunc)
 	if err != nil {
 		// Invalid token format or signature
 		return nil, NewAuthError("failed to validate token", http.StatusUnauthorized)
