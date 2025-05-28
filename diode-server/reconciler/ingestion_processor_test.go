@@ -50,7 +50,23 @@ func TestNewIngestionProcessor(t *testing.T) {
 	nbClient, err := netboxdiodeplugin.NewClient(logger, cfg.NetBoxDiodePluginAPIBaseURL, cfg.DiodeToNetBoxClientID, cfg.DiodeToNetBoxClientSecret, mockOAuth2ServerURL, cfg.DiodeToNetBoxRateLimiterRPS, cfg.DiodeToNetBoxRateLimiterBurst, 0)
 	require.NoError(t, err)
 	metrics := mocks.NewIngestionProcessorMetrics(t)
-	processor, err := reconciler.NewIngestionProcessor(ctx, logger, reconciler.NewOps(mockRepository, nbClient, logger), metrics)
+
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+		DB:   0,
+	})
+	defer func() {
+		_ = redisClient.Close()
+	}()
+	redisStreamClient := redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+		DB:   1,
+	})
+	defer func() {
+		_ = redisStreamClient.Close()
+	}()
+
+	processor, err := reconciler.NewIngestionProcessor(ctx, logger, redisClient, redisStreamClient, reconciler.DefaultRedisStreamID, reconciler.DefaultRedisConsumerGroup, reconciler.NewOps(mockRepository, nbClient, logger), metrics)
 	require.NoError(t, err)
 	require.NotNil(t, processor)
 
@@ -89,7 +105,22 @@ func TestIngestionProcessorStart(t *testing.T) {
 	mockMetrics.On("RecordChangeSetCreate", mock.Anything, mock.Anything, mock.Anything).Return()
 	mockMetrics.On("RecordChangeSetApply", mock.Anything, mock.Anything, mock.Anything).Return()
 
-	processor, err := reconciler.NewIngestionProcessor(ctx, logger, reconciler.NewOps(mockRepository, nbClient, logger), mockMetrics)
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+		DB:   0,
+	})
+	defer func() {
+		_ = redisClient.Close()
+	}()
+	redisStreamClient := redis.NewClient(&redis.Options{
+		Addr: s.Addr(),
+		DB:   1,
+	})
+	defer func() {
+		_ = redisStreamClient.Close()
+	}()
+
+	processor, err := reconciler.NewIngestionProcessor(ctx, logger, redisClient, redisStreamClient, reconciler.DefaultRedisStreamID, reconciler.DefaultRedisConsumerGroup, reconciler.NewOps(mockRepository, nbClient, logger), mockMetrics)
 	require.NoError(t, err)
 	require.NotNil(t, processor)
 
@@ -264,18 +295,14 @@ func TestIngestionProcessorStart(t *testing.T) {
 	mockRepository.On("CreateIngestionLog", mock.Anything, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
 	mockRepository.On("UpdateIngestionLogStateWithError", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mockRepository.On("CreateChangeSet", mock.Anything, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
-	redisClient := redis.NewClient(&redis.Options{
-		Addr: s.Addr(),
-		DB:   1,
-	})
 
 	// Add a message to the Redis stream
 	metadata := []string{
 		"request", string(reqBytes),
 		"ingestion_ts", "1720425600",
 	}
-	streamID := "diode.v1.ingest-stream"
-	err = redisClient.XAdd(context.Background(), &redis.XAddArgs{
+	streamID := reconciler.DefaultRedisStreamID
+	err = redisStreamClient.XAdd(context.Background(), &redis.XAddArgs{
 		Stream: streamID,
 		Values: metadata,
 	}).Err()
@@ -283,7 +310,7 @@ func TestIngestionProcessorStart(t *testing.T) {
 
 	// Wait for the stream to be empty (message processed)
 	for {
-		streamLen, err := redisClient.XLen(context.Background(), streamID).Result()
+		streamLen, err := redisStreamClient.XLen(context.Background(), streamID).Result()
 		assert.NoError(t, err)
 		if streamLen == 0 {
 			break
