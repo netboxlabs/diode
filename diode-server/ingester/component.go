@@ -47,7 +47,7 @@ type StreamRouter interface {
 type DefaultStreamRouter struct{}
 
 // GetIngestStreamID returns the default redis stream ID
-func (s *DefaultStreamRouter) GetIngestStreamID(ctx context.Context, in *diodepb.IngestRequest) (string, error) {
+func (s *DefaultStreamRouter) GetIngestStreamID(_ context.Context, _ *diodepb.IngestRequest) (string, error) {
 	return reconciler.DefaultRedisStreamID, nil
 }
 

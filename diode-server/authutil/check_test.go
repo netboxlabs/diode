@@ -56,7 +56,7 @@ func TestRequireScopesToken(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			interceptor := authutil.NewUnverifiedJWTInterceptor(slog.Default())
-			_, err := interceptor(tt.ctx, nil, nil, func(ctx context.Context, req any) (any, error) {
+			_, err := interceptor(tt.ctx, nil, nil, func(ctx context.Context, _ any) (any, error) {
 				return nil, authorizer.RequireScopes(ctx, tt.requireScopes)
 			})
 

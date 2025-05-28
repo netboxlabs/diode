@@ -60,6 +60,7 @@ func GetScopeClaim(token *jwt.Token) (string, error) {
 	return scopeClaimStr, nil
 }
 
+// RequireScopes checks if the scope claim contains all required scopes
 func RequireScopes(scopeClaim string, requiredScopes []string) error {
 	scopeList := strings.Split(scopeClaim, " ")
 	scopeSet := make(map[string]bool)
