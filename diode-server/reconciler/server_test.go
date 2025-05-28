@@ -26,10 +26,11 @@ func TestNewServer(t *testing.T) {
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
 	mockRepository := mocks.NewRepository(t)
-	authorizer := authutil.NewUnverifiedJWTAuthorizer(logger)
+	authorizer := authutil.NewContextAuthorizer(logger)
 	serverInterceptors := []grpc.UnaryServerInterceptor{
+		authutil.NewUnverifiedJWTInterceptor(logger),
 		func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-			if err := authorizer.RequireScopesContext(ctx, []string{authutil.ScopeDiodeRead}); err != nil {
+			if err := authorizer.RequireScopes(ctx, []string{authutil.ScopeDiodeRead}); err != nil {
 				return nil, err
 			}
 			return handler(ctx, req)

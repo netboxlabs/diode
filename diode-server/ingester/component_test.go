@@ -74,10 +74,11 @@ const bufSize = 1024 * 1024
 func startReconcilerServer(ctx context.Context, t *testing.T) *reconciler.Server {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
 	mockRepository := mocks.NewRepository(t)
-	authorizer := authutil.NewUnverifiedJWTAuthorizer(logger)
+	authorizer := authutil.NewContextAuthorizer(logger)
 	serverInterceptors := []grpc.UnaryServerInterceptor{
+		authutil.NewUnverifiedJWTInterceptor(logger),
 		func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-			if err := authorizer.RequireScopesContext(ctx, []string{authutil.ScopeDiodeRead}); err != nil {
+			if err := authorizer.RequireScopes(ctx, []string{authutil.ScopeDiodeRead}); err != nil {
 				return nil, err
 			}
 			return handler(ctx, req)
@@ -120,17 +121,18 @@ func startTestComponent(ctx context.Context, t *testing.T, r *miniredis.Miniredi
 		DB:   1,
 	})
 
-	authorizer := authutil.NewUnverifiedJWTAuthorizer(logger)
+	authorizer := authutil.NewContextAuthorizer(logger)
 	serverInterceptors := []grpc.UnaryServerInterceptor{
+		authutil.NewUnverifiedJWTInterceptor(logger),
 		func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-			if err := authorizer.RequireScopesContext(ctx, []string{authutil.ScopeDiodeIngest}); err != nil {
+			if err := authorizer.RequireScopes(ctx, []string{authutil.ScopeDiodeIngest}); err != nil {
 				return nil, err
 			}
 			return handler(ctx, req)
 		},
 	}
 
-	component, err := ingester.New(ctx, logger, cfg, redisStreamClient, meter, serverInterceptors...)
+	component, err := ingester.New(ctx, logger, cfg, redisStreamClient, meter, &ingester.DefaultStreamRouter{}, serverInterceptors...)
 	require.NoError(t, err)
 
 	pb.RegisterIngesterServiceServer(s, component)
@@ -182,17 +184,18 @@ func TestNewComponent(t *testing.T) {
 	defer func() {
 		_ = redisStreamClient.Close()
 	}()
-	authorizer := authutil.NewUnverifiedJWTAuthorizer(logger)
+	authorizer := authutil.NewContextAuthorizer(logger)
 	serverInterceptors := []grpc.UnaryServerInterceptor{
+		authutil.NewUnverifiedJWTInterceptor(logger),
 		func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-			if err := authorizer.RequireScopesContext(ctx, []string{authutil.ScopeDiodeIngest}); err != nil {
+			if err := authorizer.RequireScopes(ctx, []string{authutil.ScopeDiodeIngest}); err != nil {
 				return nil, err
 			}
 			return handler(ctx, req)
 		},
 	}
 
-	component, err := ingester.New(ctx, logger, cfg, redisStreamClient, meter, serverInterceptors...)
+	component, err := ingester.New(ctx, logger, cfg, redisStreamClient, meter, &ingester.DefaultStreamRouter{}, serverInterceptors...)
 
 	require.NoError(t, err)
 	require.NotNil(t, component)

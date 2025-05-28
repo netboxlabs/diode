@@ -11,4 +11,7 @@ const (
 	ScopeNetBoxRead = "netbox:read"
 	// ScopeNetBoxWrite is the OAuth2 scope for write access to NetBox diode data plugin
 	ScopeNetBoxWrite = "netbox:write"
+
+	// ContextKeyScope is the context key for the auth token scopes
+	ContextKeyScope = "tokenScope"
 )
