@@ -34,10 +34,25 @@ type Component struct {
 	grpcServer        *grpc.Server
 	redisStreamClient *redis.Client
 	metrics           *Metrics
+	streamRouter      StreamRouter
+}
+
+// StreamRouter is an interface for determining the stream ID to add ingested data into
+type StreamRouter interface {
+	// GetIngestStreamID returns the redis stream ID to add ingested data into
+	GetIngestStreamID(ctx context.Context, in *diodepb.IngestRequest) (string, error)
+}
+
+// DefaultStreamRouter is the default implementation of the StreamRouter interface
+type DefaultStreamRouter struct{}
+
+// GetIngestStreamID returns the default redis stream ID
+func (s *DefaultStreamRouter) GetIngestStreamID(_ context.Context, _ *diodepb.IngestRequest) (string, error) {
+	return reconciler.DefaultRedisStreamID, nil
 }
 
 // New creates a new ingester component
-func New(ctx context.Context, logger *slog.Logger, cfg Config, redisStreamClient *redis.Client, meter metric.Meter, serverInterceptors ...grpc.UnaryServerInterceptor) (*Component, error) {
+func New(ctx context.Context, logger *slog.Logger, cfg Config, redisStreamClient *redis.Client, meter metric.Meter, streamRouter StreamRouter, serverInterceptors ...grpc.UnaryServerInterceptor) (*Component, error) {
 	grpcListener, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.GRPCPort))
 	if err != nil {
 		return nil, fmt.Errorf("failed to listen on port %d: %v", cfg.GRPCPort, err)
@@ -67,6 +82,7 @@ func New(ctx context.Context, logger *slog.Logger, cfg Config, redisStreamClient
 		grpcServer:        grpcServer,
 		redisStreamClient: redisStreamClient,
 		metrics:           metrics,
+		streamRouter:      streamRouter,
 	}
 
 	diodepb.RegisterIngesterServiceServer(grpcServer, component)
@@ -102,7 +118,6 @@ func (c *Component) Ingest(ctx context.Context, in *diodepb.IngestRequest) (*dio
 		attribute.String(telemetry.AttributeHostname, c.hostname),
 		attribute.String(telemetry.AttributeProducerAppName, in.ProducerAppName),
 		attribute.String(telemetry.AttributeProducerAppVersion, in.ProducerAppVersion),
-		attribute.String(telemetry.AttributeStream, in.Stream),
 	}
 	ctx = telemetry.ContextWithMetricAttributes(ctx, attrs...)
 
@@ -120,7 +135,6 @@ func (c *Component) Ingest(ctx context.Context, in *diodepb.IngestRequest) (*dio
 			"producer_app_version": in.ProducerAppVersion,
 			"sdk_name":             in.SdkName,
 			"sdk_version":          in.SdkVersion,
-			"stream":               in.Stream,
 		}
 		sentry.CaptureError(err, tags, "Ingest Request", contextMap)
 		return nil, err
@@ -146,7 +160,17 @@ func (c *Component) Ingest(ctx context.Context, in *diodepb.IngestRequest) (*dio
 		"ingestion_ts": time.Now().UnixNano(),
 	}
 
-	streamID := c.GetRedisStreamID()
+	streamID, err := c.streamRouter.GetIngestStreamID(ctx, in)
+	if err != nil {
+		c.metrics.RecordIngestRequest(ctx, false)
+		c.logger.Error("failed to get stream ID", "error", err, "request", in)
+		return nil, err
+	}
+
+	attrs = []attribute.KeyValue{
+		attribute.String(telemetry.AttributeStream, streamID),
+	}
+	ctx = telemetry.ContextWithMetricAttributes(ctx, attrs...)
 
 	if err := c.redisStreamClient.XAdd(ctx, &redis.XAddArgs{
 		Stream: streamID,
@@ -188,9 +212,4 @@ func validateRequest(in *diodepb.IngestRequest) error {
 	}
 
 	return nil
-}
-
-// GetRedisStreamID returns the redis stream ID to add ingested data into
-func (c *Component) GetRedisStreamID() string {
-	return reconciler.DefaultRedisStreamID
 }

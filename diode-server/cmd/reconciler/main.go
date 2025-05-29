@@ -137,8 +137,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	authorizer := authutil.NewUnverifiedJWTAuthorizer(s.Logger())
-	gRPCServer, err := reconciler.NewServer(ctx, s.Logger(), repository, serverInterceptors(authorizer)...)
+	authorizer := authutil.NewContextAuthorizer(s.Logger())
+	gRPCServer, err := reconciler.NewServer(ctx, s.Logger(), repository, serverInterceptors(authorizer, s.Logger())...)
 	if err != nil {
 		s.Logger().Error("failed to instantiate gRPC server", "error", err)
 		os.Exit(1)
@@ -180,12 +180,13 @@ func runDBMigrations(ctx context.Context, logger *slog.Logger, dbURL string) err
 	return nil
 }
 
-func serverInterceptors(authorizer authutil.Authorizer) []grpc.UnaryServerInterceptor {
+func serverInterceptors(authorizer authutil.Authorizer, logger *slog.Logger) []grpc.UnaryServerInterceptor {
 	return []grpc.UnaryServerInterceptor{
+		authutil.NewUnverifiedJWTInterceptor(logger),
 		func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 			// TODO: this is applied to all rpcs but could be checked per rpc
 			// if the permissions differ (all are reads currently)
-			if err := authorizer.RequireScopesContext(ctx, []string{authutil.ScopeDiodeRead}); err != nil {
+			if err := authorizer.RequireScopes(ctx, []string{authutil.ScopeDiodeRead}); err != nil {
 				return nil, err
 			}
 

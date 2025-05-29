@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"os"
 
 	"github.com/getsentry/sentry-go"
@@ -72,8 +73,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	authorizer := authutil.NewUnverifiedJWTAuthorizer(s.Logger())
-	ingesterComponent, err := ingester.New(ctx, s.Logger(), cfg, redisStreamClient, meter, serverInterceptors(authorizer)...)
+	streamRouter := &ingester.DefaultStreamRouter{}
+	authorizer := authutil.NewContextAuthorizer(s.Logger())
+	ingesterComponent, err := ingester.New(ctx, s.Logger(), cfg, redisStreamClient, meter, streamRouter, serverInterceptors(authorizer, s.Logger())...)
 	if err != nil {
 		s.Logger().Error("failed to instantiate ingester component", "error", err)
 		os.Exit(1)
@@ -92,10 +94,11 @@ func main() {
 	}
 }
 
-func serverInterceptors(authorizer authutil.Authorizer) []grpc.UnaryServerInterceptor {
+func serverInterceptors(authorizer authutil.Authorizer, logger *slog.Logger) []grpc.UnaryServerInterceptor {
 	return []grpc.UnaryServerInterceptor{
+		authutil.NewUnverifiedJWTInterceptor(logger),
 		func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-			if err := authorizer.RequireScopesContext(ctx, []string{authutil.ScopeDiodeIngest}); err != nil {
+			if err := authorizer.RequireScopes(ctx, []string{authutil.ScopeDiodeIngest}); err != nil {
 				return nil, err
 			}
 			return handler(ctx, req)
