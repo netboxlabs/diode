@@ -2,7 +2,7 @@ package authutil
 
 import (
 	"context"
-	"log/slog"
+	"fmt"
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -22,7 +22,13 @@ const (
 	ErrMissingScopeMsg = "missing required scope"
 )
 
-// TokenStringFromMetadata returns the bearer token from incoming metadata
+// Authorizer is an interface for making authorization checks
+// on the contextual caller.
+type Authorizer interface {
+	RequireScopes(ctx context.Context, scopes []string) error
+}
+
+// TokenStringFromMetadata returns the bearer token from incoming grpc metadata
 func TokenStringFromMetadata(ctx context.Context) (string, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
@@ -36,58 +42,27 @@ func TokenStringFromMetadata(ctx context.Context) (string, error) {
 	return strings.TrimPrefix(auth[0], "Bearer "), nil
 }
 
-// Authorizer is an interface for checking if a token has the required scopes
-type Authorizer interface {
-	RequireScopes(token string, scopes []string) error
-	RequireScopesContext(ctx context.Context, scopes []string) error
-}
-
-// UnverifiedJWTAuthorizer is an authorizer that does not verify the JWT token's
-// signature. It is only used to check if the token has the required scopes
-// and is otherwise well formed.
-type UnverifiedJWTAuthorizer struct {
-	logger *slog.Logger
-}
-
-// NewUnverifiedJWTAuthorizer creates a new UnverifiedJWTAuthorizer
-func NewUnverifiedJWTAuthorizer(logger *slog.Logger) *UnverifiedJWTAuthorizer {
-	return &UnverifiedJWTAuthorizer{logger: logger}
-}
-
-// RequireScopesContext checks if the token in context has the required scopes
-func (j *UnverifiedJWTAuthorizer) RequireScopesContext(ctx context.Context, scopes []string) error {
-	tokenString, err := TokenStringFromMetadata(ctx)
-	if err != nil {
-		return err
-	}
-	return j.RequireScopes(tokenString, scopes)
-}
-
-// RequireScopes checks if the token has the required scopes
-func (j *UnverifiedJWTAuthorizer) RequireScopes(tokenString string, requiredScopes []string) error {
-	token, _, err := jwt.NewParser().ParseUnverified(tokenString, jwt.MapClaims{})
-	if err != nil {
-		j.logger.Debug("failed to parse token", "error", err)
-		return status.Errorf(codes.Unauthenticated, ErrUnauthenticatedMsg)
-	}
-
+// GetScopeClaim returns the scope claim from a JWT token
+func GetScopeClaim(token *jwt.Token) (string, error) {
 	claims, ok := token.Claims.(jwt.MapClaims)
 	if !ok {
-		j.logger.Debug("invalid claims type", "claims", claims)
-		return status.Errorf(codes.Unauthenticated, ErrUnauthenticatedMsg)
+		return "", fmt.Errorf("invalid claims type")
 	}
 
 	scopeClaim, ok := claims["scope"]
 	if !ok {
-		j.logger.Debug("missing scope claim")
-		return status.Errorf(codes.Unauthenticated, ErrUnauthenticatedMsg)
+		return "", fmt.Errorf("missing scope claim")
 	}
 	scopeClaimStr, ok := scopeClaim.(string)
 	if !ok {
-		j.logger.Debug("scope claim is not a string", "scope", scopeClaim)
-		return status.Errorf(codes.Unauthenticated, ErrUnauthenticatedMsg)
+		return "", fmt.Errorf("scope claim is not a string")
 	}
-	scopeList := strings.Split(scopeClaimStr, " ")
+	return scopeClaimStr, nil
+}
+
+// RequireScopes checks if the scope claim contains all required scopes
+func RequireScopes(scopeClaim string, requiredScopes []string) error {
+	scopeList := strings.Split(scopeClaim, " ")
 	scopeSet := make(map[string]bool)
 	for _, scope := range scopeList {
 		scopeSet[scope] = true
@@ -95,8 +70,7 @@ func (j *UnverifiedJWTAuthorizer) RequireScopes(tokenString string, requiredScop
 
 	for _, scope := range requiredScopes {
 		if !scopeSet[scope] {
-			j.logger.Debug("missing scope", "scope", scope)
-			return status.Errorf(codes.Unauthenticated, ErrMissingScopeMsg)
+			return fmt.Errorf("missing scope %s", scope)
 		}
 	}
 	return nil

@@ -15,72 +15,8 @@ import (
 	"github.com/netboxlabs/diode/diode-server/authutil"
 )
 
-func TestRequireScopes(t *testing.T) {
-	authorizer := authutil.NewUnverifiedJWTAuthorizer(slog.Default())
-
-	type test struct {
-		name          string
-		token         string
-		requireScopes []string
-		wantErr       error
-	}
-
-	validToken := validWithScopes(t, []string{authutil.ScopeDiodeRead, authutil.ScopeDiodeWrite})
-
-	tests := []test{
-		{
-			name:          "valid with valid scopes",
-			token:         validToken,
-			requireScopes: []string{authutil.ScopeDiodeRead, authutil.ScopeDiodeWrite},
-			wantErr:       nil,
-		},
-		{
-			name:          "valid with valid read scope",
-			token:         validToken,
-			requireScopes: []string{authutil.ScopeDiodeRead},
-			wantErr:       nil,
-		},
-		{
-			name:          "valid with valid write scopes",
-			token:         validToken,
-			requireScopes: []string{authutil.ScopeDiodeWrite},
-			wantErr:       nil,
-		},
-		{
-			name:          "valid with missing scope",
-			token:         validToken,
-			requireScopes: []string{"diode:sleep"},
-			wantErr:       status.Errorf(codes.Unauthenticated, authutil.ErrMissingScopeMsg),
-		},
-		{
-			name:          "valid with some missing scopes",
-			token:         validToken,
-			requireScopes: []string{authutil.ScopeDiodeRead, authutil.ScopeDiodeWrite, "diode:sleep"},
-			wantErr:       status.Errorf(codes.Unauthenticated, authutil.ErrMissingScopeMsg),
-		},
-		{
-			name:          "invalid token",
-			token:         "some-invalid-token",
-			requireScopes: []string{authutil.ScopeDiodeRead},
-			wantErr:       status.Errorf(codes.Unauthenticated, authutil.ErrUnauthenticatedMsg),
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			err := authorizer.RequireScopes(tt.token, tt.requireScopes)
-			if tt.wantErr != nil {
-				require.Error(t, err)
-				require.Equal(t, tt.wantErr.Error(), err.Error())
-			} else {
-				require.NoError(t, err)
-			}
-		})
-	}
-}
-
-func TestRequireScopesContext(t *testing.T) {
-	authorizer := authutil.NewUnverifiedJWTAuthorizer(slog.Default())
+func TestRequireScopesToken(t *testing.T) {
+	authorizer := authutil.NewContextAuthorizer(slog.Default())
 	validToken := validWithScopes(t, []string{authutil.ScopeDiodeRead, authutil.ScopeDiodeWrite})
 
 	type test struct {
@@ -119,7 +55,11 @@ func TestRequireScopesContext(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := authorizer.RequireScopesContext(tt.ctx, tt.requireScopes)
+			interceptor := authutil.NewUnverifiedJWTInterceptor(slog.Default())
+			_, err := interceptor(tt.ctx, nil, nil, func(ctx context.Context, _ any) (any, error) {
+				return nil, authorizer.RequireScopes(ctx, tt.requireScopes)
+			})
+
 			if tt.wantErr != nil {
 				require.Error(t, err)
 				require.Equal(t, tt.wantErr.Error(), err.Error())

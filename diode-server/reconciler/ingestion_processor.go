@@ -24,9 +24,11 @@ import (
 )
 
 const (
-	redisStreamID = "diode.v1.ingest-stream"
+	// DefaultRedisStreamID is the default redis stream id for ingestion
+	DefaultRedisStreamID = "diode.v1.ingest-stream"
 
-	redisConsumerGroup = "diode-reconciler"
+	// DefaultRedisConsumerGroup is the default redis consumer group for ingestion
+	DefaultRedisConsumerGroup = "diode-reconciler"
 
 	// RedisIngestEntityIndexName is the name of the redis index for ingest entities
 	RedisIngestEntityIndexName = "ingest-entity"
@@ -51,13 +53,15 @@ type RedisClient interface {
 
 // IngestionProcessor processes ingested data
 type IngestionProcessor struct {
-	Config            Config
-	logger            *slog.Logger
-	hostname          string
-	redisClient       RedisClient
-	redisStreamClient RedisClient
-	ops               IngestionProcessorOps
-	metrics           IngestionProcessorMetrics
+	Config             Config
+	logger             *slog.Logger
+	hostname           string
+	redisClient        RedisClient
+	redisStreamClient  RedisClient
+	redisStreamID      string
+	redisConsumerGroup string
+	ops                IngestionProcessorOps
+	metrics            IngestionProcessorMetrics
 }
 
 // IngestionLogToProcess represents an ingestion log to process
@@ -84,29 +88,9 @@ type IngestionProcessorMetrics interface {
 }
 
 // NewIngestionProcessor creates a new ingestion processor
-func NewIngestionProcessor(ctx context.Context, logger *slog.Logger, ops IngestionProcessorOps, metrics IngestionProcessorMetrics) (*IngestionProcessor, error) {
+func NewIngestionProcessor(_ context.Context, logger *slog.Logger, redisClient, redisStreamClient RedisClient, redisStreamID string, redisConsumerGroup string, ops IngestionProcessorOps, metrics IngestionProcessorMetrics) (*IngestionProcessor, error) {
 	var cfg Config
 	envconfig.MustProcess("", &cfg)
-
-	redisClient := redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:%s", cfg.RedisHost, cfg.RedisPort),
-		Password: cfg.RedisPassword,
-		DB:       cfg.RedisDB,
-	})
-
-	if _, err := redisClient.Ping(ctx).Result(); err != nil {
-		return nil, fmt.Errorf("failed connection to %s: %v", redisClient.String(), err)
-	}
-
-	redisStreamClient := redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:%s", cfg.RedisHost, cfg.RedisPort),
-		Password: cfg.RedisPassword,
-		DB:       cfg.RedisStreamDB,
-	})
-
-	if _, err := redisStreamClient.Ping(ctx).Result(); err != nil {
-		return nil, fmt.Errorf("failed connection to %s: %v", redisStreamClient.String(), err)
-	}
 
 	hostname, err := os.Hostname()
 	if err != nil {
@@ -114,13 +98,15 @@ func NewIngestionProcessor(ctx context.Context, logger *slog.Logger, ops Ingesti
 	}
 
 	component := &IngestionProcessor{
-		Config:            cfg,
-		logger:            logger,
-		hostname:          hostname,
-		redisClient:       redisClient,
-		redisStreamClient: redisStreamClient,
-		ops:               ops,
-		metrics:           metrics,
+		Config:             cfg,
+		logger:             logger,
+		hostname:           hostname,
+		redisClient:        redisClient,
+		redisStreamClient:  redisStreamClient,
+		redisStreamID:      redisStreamID,
+		redisConsumerGroup: redisConsumerGroup,
+		ops:                ops,
+		metrics:            metrics,
 	}
 
 	return component, nil
@@ -134,7 +120,7 @@ func (p *IngestionProcessor) Name() string {
 // Start starts the component
 func (p *IngestionProcessor) Start(ctx context.Context) error {
 	p.logger.Info("starting component", "name", p.Name())
-	return p.consumeIngestionStream(ctx, redisStreamID, redisConsumerGroup, fmt.Sprintf("%s-%s", redisConsumerGroup, p.hostname))
+	return p.consumeIngestionStream(ctx, p.redisStreamID, p.redisConsumerGroup, fmt.Sprintf("%s-%s", p.redisConsumerGroup, p.hostname))
 }
 
 // Stop stops the component
@@ -146,17 +132,17 @@ func (p *IngestionProcessor) Stop() error {
 	return errors.Join(redisStreamErr, redisClientErr)
 }
 
-func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, stream, group, consumer string) error {
-	err := p.redisStreamClient.XGroupCreateMkStream(ctx, stream, group, "$").Err()
+func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, redisStreamID string, redisConsumerGroup, redisConsumer string) error {
+	err := p.redisStreamClient.XGroupCreateMkStream(ctx, redisStreamID, redisConsumerGroup, "$").Err()
 	if err != nil && err.Error() != RedisConsumerGroupExistsErrMsg {
 		return err
 	}
 
 	for {
 		streams, err := p.redisStreamClient.XReadGroup(ctx, &redis.XReadGroupArgs{
-			Group:    group,
-			Consumer: consumer,
-			Streams:  []string{stream, ">"},
+			Group:    redisConsumerGroup,
+			Consumer: redisConsumer,
+			Streams:  []string{redisStreamID, ">"},
 			Count:    100,
 		}).Result()
 		if err != nil || len(streams) == 0 {
@@ -169,7 +155,7 @@ func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, stream,
 
 				contextMap := map[string]any{
 					"redis_stream_msg_id": msg.ID,
-					"consumer":            consumer,
+					"consumer":            redisConsumer,
 					"hostname":            p.hostname,
 				}
 				sentry.CaptureError(fmt.Errorf("failed to handle stream message: %v", err), nil, "Ingestion stream", contextMap)
@@ -250,7 +236,7 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 		errs = append(errs, createIngestionLogsErrs...)
 	}
 
-	p.redisStreamClient.XAck(ctx, redisStreamID, redisConsumerGroup, msg.ID)
+	p.redisStreamClient.XAck(ctx, p.redisStreamID, p.redisConsumerGroup, msg.ID)
 
 	if len(errs) > 0 {
 		errsStr := make([]string, 0)
@@ -261,13 +247,13 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 
 		contextMap := map[string]any{
 			"redis_stream_msg_id": msg.ID,
-			"consumer":            fmt.Sprintf("%s-%s", redisConsumerGroup, p.hostname),
+			"consumer":            fmt.Sprintf("%s-%s", p.redisConsumerGroup, p.hostname),
 			"hostname":            p.hostname,
 		}
 		sentry.CaptureError(fmt.Errorf("failed to handle ingest request: %v", errs), nil, "Ingestion request", contextMap)
 		p.metrics.RecordHandleMessage(ctx, false)
 	} else {
-		p.redisStreamClient.XDel(ctx, redisStreamID, msg.ID)
+		p.redisStreamClient.XDel(ctx, p.redisStreamID, msg.ID)
 		p.metrics.RecordHandleMessage(ctx, true)
 	}
 

@@ -31,12 +31,16 @@ jobs:
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
       - name: Setup Helm
         uses: azure/setup-helm@fe7b79cd5ee1e45176fcad797de68ecaf3ca4814 # v4
-      - name: Update helm dependencies
+      - name: Extract Helm repo dependencies from Chart.yaml
+        id: extract_repos
+        uses: mikefarah/yq@b534aa9ee5d38001fba3cd8fe254a037e4847b37 # v4.45.4
+        with:
+          cmd: yq -o=tsv '.dependencies[] | [.name, .repository] | @tsv' charts/diode/Chart.yaml
+      - name: Add Helm repos from dependencies
         run: |
-          helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-          helm repo add jetstack https://charts.jetstack.io
-          helm repo add bitnami https://charts.bitnami.com/bitnami
-          helm repo add ory https://k8s.ory.sh/helm/charts
+          echo "${{ steps.extract_repos.outputs.result }}" | while IFS=$'\t' read -r name repo; do
+            helm repo add "$name" "$repo"
+          done      
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@a917fd15b20e8b64b94d9158ad54cd6345335584 # v1.6.0
         env:

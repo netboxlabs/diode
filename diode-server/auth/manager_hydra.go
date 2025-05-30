@@ -219,9 +219,10 @@ func getHydraPagingTokens(response *http.Response, logger *slog.Logger) (string,
 				}
 				k, v := strings.TrimSpace(vs[0]), strings.TrimSpace(vs[1])
 				if k == "rel" {
-					if v == "next" || v == "\"next\"" {
+					switch v {
+					case "next", "\"next\"":
 						next = getHydraPageToken(link, logger)
-					} else if v == "prev" || v == "\"prev\"" {
+					case "prev", "\"prev\"":
 						prev = getHydraPageToken(link, logger)
 					}
 				}

@@ -12,7 +12,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
-	"github.com/netboxlabs/diode/diode-server/authutil"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 )
 
@@ -29,7 +28,7 @@ type Server struct {
 }
 
 // NewServer creates a new reconciler server
-func NewServer(ctx context.Context, logger *slog.Logger, repository Repository, authorizer authutil.Authorizer) (*Server, error) {
+func NewServer(ctx context.Context, logger *slog.Logger, repository Repository, serverInterceptors ...grpc.UnaryServerInterceptor) (*Server, error) {
 	var cfg Config
 	envconfig.MustProcess("", &cfg)
 
@@ -49,7 +48,7 @@ func NewServer(ctx context.Context, logger *slog.Logger, repository Repository, 
 	}
 
 	grpcServer := grpc.NewServer(
-		grpc.ChainUnaryInterceptor(newAuthUnaryInterceptor(authorizer)),
+		grpc.ChainUnaryInterceptor(serverInterceptors...),
 		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 	)
 
@@ -104,16 +103,4 @@ func (s *Server) RetrieveDeviations(ctx context.Context, req *reconcilerpb.Retri
 // RetrieveDeviationByID retrieves a deviation by ID
 func (s *Server) RetrieveDeviationByID(ctx context.Context, req *reconcilerpb.RetrieveDeviationByIDRequest) (*reconcilerpb.RetrieveDeviationByIDResponse, error) {
 	return retrieveDeviationByID(ctx, s.logger, s.repository, req)
-}
-
-func newAuthUnaryInterceptor(authorizer authutil.Authorizer) grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		// TODO: this is applied to all rpcs but could be checked per rpc
-		// if the permissions differ (all are reads currently)
-		if err := authorizer.RequireScopesContext(ctx, []string{authutil.ScopeDiodeRead}); err != nil {
-			return nil, err
-		}
-
-		return handler(ctx, req)
-	}
 }

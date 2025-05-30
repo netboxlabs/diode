@@ -16,7 +16,7 @@ for missing information, which means even fragmented information about the netwo
 ## Project status
 
 The Diode project is currently in the _Public Preview_ stage. Please
-see [NetBox Labs Product and Feature Lifecycle](https://docs.netboxlabs.com/product_feature_lifecycle/) for more
+see [NetBox Labs Product and Feature Lifecycle](https://netboxlabs.com/docs/console/product_feature_lifecycle/) for more
 details. We actively welcome feedback to help identify and prioritize bugs, new features and areas of improvement.
 
 ## Get started
