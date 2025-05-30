@@ -4,7 +4,11 @@ on:
   push:
     branches:
       - "!release"
+    paths:
+      - "charts/**"
   pull_request:
+    paths:
+      - "charts/**"
 
 concurrency:
   group: ${{ github.workflow }}
