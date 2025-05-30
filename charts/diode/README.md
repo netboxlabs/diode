@@ -2,7 +2,7 @@
 
 A Helm chart for Diode
 
-![Version: 1.4.2](https://img.shields.io/badge/Version-1.4.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.2.0](https://img.shields.io/badge/AppVersion-1.2.0-informational?style=flat-square)
+![Version: 1.5.0](https://img.shields.io/badge/Version-1.5.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.2.0](https://img.shields.io/badge/AppVersion-1.2.0-informational?style=flat-square)
 
 ## Prerequisites
 
@@ -203,6 +203,7 @@ helm show values diode/diode
 
 | Repository | Name | Version |
 |------------|------|---------|
+| https://charts.bitnami.com/bitnami | common | 2.31.1 |
 | https://charts.bitnami.com/bitnami | postgresql | 16.6.3 |
 | https://charts.bitnami.com/bitnami | redis | 20.11.5 |
 | https://charts.jetstack.io | cert-manager | v1.12.0 |
@@ -233,6 +234,7 @@ helm show values diode/diode
 | diodeAuth.config.telemetryTracesExporter | string | `"none"` | telemetry traces exporter |
 | diodeAuth.containerPort | int | `8080` | port to listen on |
 | diodeAuth.enabled | bool | `true` | enabled |
+| diodeAuth.extraEnvs | list | `[]` | extra environment variables to be set on containers' `env` section |
 | diodeAuth.image.imagePullSecrets | list | `[]` | secrets with credentials to pull images from a private registry |
 | diodeAuth.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
 | diodeAuth.image.repository | string | `"docker.io/netboxlabs/diode-auth"` | image repository |
@@ -255,6 +257,7 @@ helm show values diode/diode
 | diodeIngester.containerPort | int | `8081` | port to listen on |
 | diodeIngester.enabled | bool | `true` | enabled |
 | diodeIngester.existingSecret | string | `"diode-ingester-secret"` | existing secret name |
+| diodeIngester.extraEnvs | list | `[]` | extra environment variables to be set on containers' `env` section |
 | diodeIngester.grpc.serviceName | string | `"diode.v1.IngesterService"` | grpc service name |
 | diodeIngester.image.imagePullSecrets | list | `[]` | secrets with credentials to pull images from a private registry |
 | diodeIngester.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
@@ -284,6 +287,7 @@ helm show values diode/diode
 | diodeReconciler.containerPort | int | `8081` | port to listen on |
 | diodeReconciler.enabled | bool | `true` | enabled |
 | diodeReconciler.existingSecret | string | `"diode-reconciler-secret"` | existing secret name |
+| diodeReconciler.extraEnvs | list | `[]` | extra environment variables to be set on containers' `env` section |
 | diodeReconciler.grpc.serviceName | string | `"diode.v1.ReconcilerService"` | grpc service name |
 | diodeReconciler.image.imagePullSecrets | list | `[]` | secrets with credentials to pull images from a private registry |
 | diodeReconciler.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
