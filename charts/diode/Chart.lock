@@ -1,4 +1,7 @@
 dependencies:
+- name: common
+  repository: https://charts.bitnami.com/bitnami
+  version: 2.31.1
 - name: redis
   repository: https://charts.bitnami.com/bitnami
   version: 20.11.5
@@ -14,5 +17,5 @@ dependencies:
 - name: cert-manager
   repository: https://charts.jetstack.io
   version: v1.12.0
-digest: sha256:befc72d9e6eedfe03a16a502fecb33478a4e8bc94acc2497d12b758405561f6e
-generated: "2025-05-16T17:12:36.330502+02:00"
+digest: sha256:61907df8f8ab4bd2fd67195670bb6f920392f6af0655f22dce06a68fd381a1ba
+generated: "2025-05-30T12:44:47.769834-04:00"

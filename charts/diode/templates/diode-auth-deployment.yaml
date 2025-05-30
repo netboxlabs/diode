@@ -60,6 +60,9 @@ spec:
           resources:
             {{- toYaml .| nindent 12 }}
           {{- end }}
+          {{- if .Values.diodeAuth.extraEnvs }}
+          env: {{- include "common.tplvalues.render" (dict "value" .Values.diodeAuth.extraEnvs "context" $) | nindent 12 }}
+          {{- end }}
           envFrom:
             - configMapRef:
                 name: {{ include "diode.auth.configmap" . }}

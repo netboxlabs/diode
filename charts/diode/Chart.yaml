@@ -2,7 +2,7 @@ apiVersion: v2
 name: diode
 description: A Helm chart for Diode
 type: application
-version: 1.4.2
+version: 1.5.0
 appVersion: "1.2.0"
 home: https://github.com/netboxlabs/diode
 sources:
@@ -16,6 +16,9 @@ keywords:
   - netbox
   - assurance
 dependencies:
+  - name: common
+    version: 2.31.1
+    repository: https://charts.bitnami.com/bitnami
   - name: redis
     version: 20.11.5
     repository: https://charts.bitnami.com/bitnami
