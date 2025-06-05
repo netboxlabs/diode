@@ -2,13 +2,7 @@
 
 The Diode server is a required component of the [Diode](https://github.com/netboxlabs/diode) ingestion service.
 
-Diode is a NetBox ingestion service that greatly simplifies and enhances the process to add and update network data
-in NetBox, ensuring your network source of truth is always accurate and can be trusted to power your network automation
-pipelines.
-
-More information about Diode can be found
-at [https://netboxlabs.com/blog/introducing-diode-streamlining-data-ingestion-in-netbox/](https://netboxlabs.com/blog/introducing-diode-streamlining-data-ingestion-in-netbox/).
-
+Diode is a data ingestion service for NetBox that greatly simplifies and enhances the process of adding and updating data in NetBox, ensuring your network source of truth is always accurate and up to date. Our guiding principle in designing Diode has been to make it as easy as possible to get data into NetBox, removing as much burden as possible from the user while shifting that effort to technology.
 
 ---
 
@@ -33,7 +27,7 @@ The Diode server is composed of three core services:
 ## Compatibility
 
 The Diode server has been tested with NetBox version **4.2.3**.  
-It also requires the [Diode NetBox Plugin](https://github.com/netboxlabs/diode-netbox-plugin) **1.x.x**.
+It also requires the [Diode NetBox Plugin](https://github.com/netboxlabs/diode-netbox-plugin) **1.1.0**.
 
 ---
 
