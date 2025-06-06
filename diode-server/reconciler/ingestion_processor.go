@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"strconv"
+	"sync"
 
 	"github.com/google/uuid"
 	"github.com/kelseyhightower/envconfig"
@@ -62,6 +63,8 @@ type IngestionProcessor struct {
 	redisConsumerGroup string
 	ops                IngestionProcessorOps
 	metrics            IngestionProcessorMetrics
+	cancel             context.CancelFunc
+	mx                 sync.Mutex
 }
 
 // IngestionLogToProcess represents an ingestion log to process
@@ -120,12 +123,22 @@ func (p *IngestionProcessor) Name() string {
 // Start starts the component
 func (p *IngestionProcessor) Start(ctx context.Context) error {
 	p.logger.Info("starting component", "name", p.Name())
+	p.mx.Lock()
+	ctx, cancel := context.WithCancel(ctx)
+	p.cancel = cancel
+	p.mx.Unlock()
 	return p.consumeIngestionStream(ctx, p.redisStreamID, p.redisConsumerGroup, fmt.Sprintf("%s-%s", p.redisConsumerGroup, p.hostname))
 }
 
 // Stop stops the component
 func (p *IngestionProcessor) Stop() error {
 	p.logger.Info("stopping component", "name", p.Name())
+	p.mx.Lock()
+	if p.cancel != nil {
+		p.cancel()
+		p.cancel = nil
+	}
+	p.mx.Unlock()
 	redisClientErr := p.redisClient.Close()
 	redisStreamErr := p.redisStreamClient.Close()
 
@@ -139,6 +152,12 @@ func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, redisSt
 	}
 
 	for {
+		select {
+		case <-ctx.Done():
+			p.logger.Debug("ingestion processor exiting consumer loop on request")
+			return nil
+		default:
+		}
 		streams, err := p.redisStreamClient.XReadGroup(ctx, &redis.XReadGroupArgs{
 			Group:    redisConsumerGroup,
 			Consumer: redisConsumer,

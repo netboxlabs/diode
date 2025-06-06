@@ -286,7 +286,7 @@ func TestIngestionProcessorStart(t *testing.T) {
 
 	// Start processor in a separate goroutine
 	go func() {
-		err = processor.Start(ctx)
+		err := processor.Start(ctx)
 		assert.NoError(t, err)
 	}()
 	// Wait server
