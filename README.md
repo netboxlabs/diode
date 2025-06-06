@@ -15,6 +15,8 @@ The Diode project is currently in the _Public Preview_ stage. Please see [NetBox
 
 ## Quick Start
 
+For a quick step-by-step guide, see our [Getting Started Guide](./GET_STARTED.md).
+
 1. **Deploy the Diode Server**
    See [deployment instructions](https://github.com/netboxlabs/diode/blob/develop/diode-server/GET_STARTED.md)
 
@@ -22,7 +24,7 @@ The Diode project is currently in the _Public Preview_ stage. Please see [NetBox
    See [installation instructions](https://github.com/netboxlabs/diode-netbox-plugin/blob/develop/README.md)
 
 3. **Choose Your Data Ingestion Method**
-   - Use the NetBox Discovery agent for automated network discovery: see [instructions to run Orb agent](https://github.com/netboxlabs/orb-agent).
+   - Use the NetBox Discovery agent for automated network discovery: see [instructions to run Orb agent](https://github.com/netboxlabs/orb-agent)
    - Build custom integrations using our SDKs:
      - [Python SDK](https://github.com/netboxlabs/diode-sdk-python)
      - [Go SDK](https://github.com/netboxlabs/diode-sdk-go)
