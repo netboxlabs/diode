@@ -18,7 +18,7 @@ The Diode project is currently in the _Public Preview_ stage. Please see [NetBox
 For a quick step-by-step guide, see our [Getting Started Guide](./GET_STARTED.md).
 
 1. **Deploy the Diode Server**
-   See [deployment instructions](https://github.com/netboxlabs/diode/blob/develop/diode-server/GET_STARTED.md)
+   See [deployment instructions](https://github.com/netboxlabs/diode/blob/develop/diode-server/README.md)
 
 2. **Install the Diode NetBox Plugin**
    See [installation instructions](https://github.com/netboxlabs/diode-netbox-plugin/blob/develop/README.md)
