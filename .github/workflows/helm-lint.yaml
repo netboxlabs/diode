@@ -1,4 +1,5 @@
 name: Helm - lint
+
 on:
   push:
     branches:
@@ -20,16 +21,44 @@ permissions:
 jobs:
   helm-lint:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    defaults:
-      run:
-        working-directory: charts
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup Helm
-        uses: azure/setup-helm@fe7b79cd5ee1e45176fcad797de68ecaf3ca4814 # v4
-      - name: Update helm dependencies
-        run: helm dependency update diode
-      - name: Run helm lint
-        run: helm lint diode
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683  # 4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Set up Helm
+        uses: azure/setup-helm@b9e51907a09c216f16ebe8536097933489208112 # v4.3.0
+        with:
+          version: v3.17.0
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.x'
+          check-latest: true
+
+      - name: Extract Helm repo dependencies from Chart.yaml
+        id: extract_repos
+        uses: mikefarah/yq@b534aa9ee5d38001fba3cd8fe254a037e4847b37 # v4.45.4
+        with:
+          cmd: yq -o=tsv '.dependencies[] | [.name, .repository] | @tsv' charts/diode/Chart.yaml
+      - name: Add Helm repos from dependencies
+        run: |
+          echo "${{ steps.extract_repos.outputs.result }}" | while IFS=$'\t' read -r name repo; do
+            helm repo add "$name" "$repo"
+          done   
+
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@0d28d3144d3a25ea2cc349d6e59901c4ff469b3b # v2.7.0
+
+      - name: Run chart-testing (list-changed)
+        id: list-changed
+        run: |
+          changed=$(ct list-changed --target-branch ${{ github.event.repository.default_branch }})
+          if [[ -n "$changed" ]]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run chart-testing (lint)
+        if: steps.list-changed.outputs.changed == 'true'
+        run: ct lint --config .github/workflows/configs/helm-ct.yaml --target-branch ${{ github.event.repository.default_branch }}
