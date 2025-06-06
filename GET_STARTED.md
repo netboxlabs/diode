@@ -104,14 +104,14 @@ We provide a `quickstart.sh` script to automate the setup process. The script wi
 6. **Generate Diode Client Credentials**
    > **Note**: These credentials will be used by the Orb agent to send discovery results to NetBox via Diode.
 
-   1. Go to your NetBox instance (typically at http://localhost:8000/netbox)
-   2. In the left-hand pane, navigate to Diode -> Client Credentials
-   3. Click on "+ Add a Credential"
-   4. For Client Name, enter any name and click Create
-   5. **IMPORTANT**: Copy the Client ID and Client Secret and save them securely
-   6. Click "Return to List"
+   1. Go to your NetBox instance (https://<netbox-server>)
+   2. In the left-hand pane, navigate to **Diode -> Client Credentials**
+   3. Click on **+ Add a Credential**
+   4. For Client Name, enter any name and click **Create**
+   5. **IMPORTANT**: Copy the _Client ID_ and _Client Secret_ and save them securely
+   6. Click **Return to List**
 
-   You have now created your Diode credentials. These will be used as environment variables when running the Orb agent.
+   You have now created your Diode client credentials. These will be used as environment variables when running the Orb agent.
 
 ### Ingest Data with Orb Agent
 
