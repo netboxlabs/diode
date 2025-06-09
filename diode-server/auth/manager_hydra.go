@@ -59,6 +59,9 @@ func (h *HydraClientManager) CreateClient(ctx context.Context, clientInfo Client
 	if clientInfo.ClientName != "" {
 		newClient.ClientName = &clientInfo.ClientName
 	}
+	if clientInfo.Audience != nil {
+		newClient.Audience = clientInfo.Audience
+	}
 
 	createdClient, response, err := h.hydraAdmin.OAuth2API.CreateOAuth2Client(ctx).OAuth2Client(newClient).Execute()
 	if response != nil {
@@ -195,6 +198,9 @@ func clientInfoFromHydraClient(client *hydra.OAuth2Client) ClientInfo {
 	}
 	if client.ClientSecret != nil {
 		clientInfo.ClientSecret = *client.ClientSecret
+	}
+	if client.Audience != nil {
+		clientInfo.Audience = client.Audience
 	}
 	return clientInfo
 }

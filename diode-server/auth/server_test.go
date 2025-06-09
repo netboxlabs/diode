@@ -614,7 +614,7 @@ func TestDeleteClient(t *testing.T) {
 		accessToken  string
 		clientID     string
 		parsedToken  jwt.Token
-		lookupResult auth.ClientInfo
+		lookupResult *auth.ClientInfo
 		lookupErr    error
 		expectStatus int
 	}{
@@ -623,7 +623,7 @@ func TestDeleteClient(t *testing.T) {
 			accessToken: validAccessToken,
 			clientID:    "test-client-1-abcdef0123567890",
 			parsedToken: writeToken,
-			lookupResult: auth.ClientInfo{
+			lookupResult: &auth.ClientInfo{
 				ClientID:   "test-client-1-abcdef0123567890",
 				ClientName: "Test Client 1",
 				Scope:      "diode:ingest",
@@ -659,7 +659,7 @@ func TestDeleteClient(t *testing.T) {
 			accessToken: validAccessToken,
 			clientID:    "test-client-1-abcdef0123567890",
 			parsedToken: writeToken,
-			lookupResult: auth.ClientInfo{
+			lookupResult: &auth.ClientInfo{
 				ClientID:   "test-client-1-abcdef0123567890",
 				ClientName: "Test Client 1",
 				Owner:      "diode/system",
@@ -704,8 +704,10 @@ func TestDeleteClient(t *testing.T) {
 			testServer := httptest.NewServer(server.GetMux())
 			defer testServer.Close()
 
-			if test.lookupResult != (auth.ClientInfo{}) || test.lookupErr != nil {
-				mockClientManager.EXPECT().RetrieveClientByID(mock.Anything, test.clientID).Return(test.lookupResult, test.lookupErr)
+			if test.lookupResult != nil {
+				mockClientManager.EXPECT().RetrieveClientByID(mock.Anything, test.clientID).Return(*test.lookupResult, test.lookupErr)
+			} else if test.lookupErr != nil {
+				mockClientManager.EXPECT().RetrieveClientByID(mock.Anything, test.clientID).Return(auth.ClientInfo{}, test.lookupErr)
 			}
 
 			if test.expectStatus == http.StatusNoContent {
@@ -748,7 +750,7 @@ func TestGetClient(t *testing.T) {
 		accessToken  string
 		clientID     string
 		parsedToken  jwt.Token
-		lookupResult auth.ClientInfo
+		lookupResult *auth.ClientInfo
 		lookupErr    error
 		expectStatus int
 		expect       auth.ClientResponse
@@ -758,7 +760,7 @@ func TestGetClient(t *testing.T) {
 			accessToken: validAccessToken,
 			clientID:    "test-client-1-abcdef0123567890",
 			parsedToken: readOnlyToken,
-			lookupResult: auth.ClientInfo{
+			lookupResult: &auth.ClientInfo{
 				ClientID:   "test-client-1-abcdef0123567890",
 				ClientName: "Test Client 1",
 				Scope:      "diode:ingest",
@@ -793,7 +795,7 @@ func TestGetClient(t *testing.T) {
 			accessToken: validAccessToken,
 			clientID:    "test-client-1-abcdef0123567890",
 			parsedToken: readOnlyToken,
-			lookupResult: auth.ClientInfo{
+			lookupResult: &auth.ClientInfo{
 				ClientID:   "test-client-1-abcdef0123567890",
 				ClientName: "Test Client 1",
 				Owner:      "diode/system",
@@ -838,8 +840,10 @@ func TestGetClient(t *testing.T) {
 			testServer := httptest.NewServer(server.GetMux())
 			defer testServer.Close()
 
-			if test.lookupResult != (auth.ClientInfo{}) || test.lookupErr != nil {
-				mockClientManager.EXPECT().RetrieveClientByID(mock.Anything, test.clientID).Return(test.lookupResult, test.lookupErr)
+			if test.lookupResult != nil {
+				mockClientManager.EXPECT().RetrieveClientByID(mock.Anything, test.clientID).Return(*test.lookupResult, test.lookupErr)
+			} else if test.lookupErr != nil {
+				mockClientManager.EXPECT().RetrieveClientByID(mock.Anything, test.clientID).Return(auth.ClientInfo{}, test.lookupErr)
 			}
 
 			req, _ := http.NewRequest("GET", testServer.URL+"/clients/"+test.clientID, nil)
