@@ -8,6 +8,9 @@ metadata:
   labels:
     {{- include "diode.labels" . | nindent 4 }}
     app.kubernetes.io/component: {{ include "diode.auth.servicename" . }}
+  {{- if .Values.global.commonAnnotations }}
+  annotations: {{- include "common.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- end }}
 data:
   HTTP_PORT: {{ .Values.diodeAuth.containerPort | default "8080" | quote }}
   LOGGING_LEVEL: {{ $config.loggingLevel | default "INFO" | quote }}

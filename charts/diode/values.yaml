@@ -10,6 +10,13 @@ global:
       # -- wait for PostgreSQL
       waitForPostgres: true
 
+  # -- common annotations for all resources
+  commonAnnotations: {}
+
+  # -- common labels for all resources
+  commonLabels: {}
+
+
 diode:
   # -- environment name
   environment: development

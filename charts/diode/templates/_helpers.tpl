@@ -48,6 +48,9 @@ helm.sh/chart: {{ include "diode.chart" . }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
+{{- if .Values.global.commonLabels }}
+{{- include "common.labels.standard" ( dict "customLabels" .Values.global.commonLabels "context" $ ) }}
+{{- end }}
 {{- end }}
 
 {{/*

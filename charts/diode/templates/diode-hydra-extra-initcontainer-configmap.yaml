@@ -6,6 +6,9 @@ metadata:
   namespace: {{ include "diode.namespace" . }}
   labels:
     {{- include "diode.labels" . | nindent 4 }}
+  {{- if .Values.global.commonAnnotations }}
+  annotations: {{- include "common.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- end }}
 data:
   POSTGRES_HOST: {{ include "diode.postgresql.hostname" . | quote }}
   POSTGRES_PORT: {{ include "diode.postgresql.port" . | quote }}

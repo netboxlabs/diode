@@ -6,6 +6,9 @@ metadata:
   namespace: {{ include "diode.namespace" . }}
   labels:
     {{- include "diode.labels" . | nindent 4 }}
+  {{- if .Values.global.commonAnnotations }}
+  annotations: {{- include "common.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- end }}
 data:
   init_diode_databases.sh: |
     #!/bin/bash
