@@ -39,14 +39,15 @@ type Server struct {
 
 // IntrospectResponse is the response for the introspect request
 type IntrospectResponse struct {
-	Active    bool   `json:"active"`
-	Subject   string `json:"sub,omitempty"`
-	Scope     string `json:"scope,omitempty"`
-	ExpiresAt int64  `json:"exp,omitempty"`
-	IssuedAt  int64  `json:"iat,omitempty"`
-	Issuer    string `json:"iss,omitempty"`
-	ClientID  string `json:"client_id,omitempty"`
-	Username  string `json:"username,omitempty"`
+	Active    bool     `json:"active"`
+	Subject   string   `json:"sub,omitempty"`
+	Scope     string   `json:"scope,omitempty"`
+	ExpiresAt int64    `json:"exp,omitempty"`
+	IssuedAt  int64    `json:"iat,omitempty"`
+	Issuer    string   `json:"iss,omitempty"`
+	ClientID  string   `json:"client_id,omitempty"`
+	Username  string   `json:"username,omitempty"`
+	Audience  []string `json:"aud,omitempty"`
 }
 
 // CreateClientRequest request to create client
@@ -210,6 +211,11 @@ func (s *Server) introspect(w http.ResponseWriter, r *http.Request) {
 		Username:  getStringClaim(claims, "username"),
 	}
 
+	aud := getStringOrStringArrayClaim(claims, "aud")
+	if len(aud) > 0 {
+		resp.Audience = aud
+	}
+
 	err = writeJSON(w, http.StatusOK, resp)
 	if err != nil {
 		s.logger.Error("failed to write response", "error", err)
@@ -304,6 +310,27 @@ func getStringClaim(claims jwt.MapClaims, key string) string {
 		return val
 	}
 	return ""
+}
+
+func getStringOrStringArrayClaim(claims jwt.MapClaims, key string) []string {
+	// specification allows some standard claims to be either
+	// single strings or list of strings
+	if val, ok := claims[key].(string); ok {
+		if val == "" {
+			return []string{}
+		}
+		return []string{val}
+	}
+	if val, ok := claims[key].([]interface{}); ok {
+		out := make([]string, 0, len(val))
+		for _, v := range val {
+			if s, ok := v.(string); ok {
+				out = append(out, s)
+			}
+		}
+		return out
+	}
+	return []string{}
 }
 
 func getInt64Claim(claims jwt.MapClaims, key string) int64 {
