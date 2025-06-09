@@ -34,6 +34,7 @@ type Server struct {
 	tokenParser    TokenParser
 	clientManager  ClientManager
 	tokenOwnership TokenOwnershipProvider
+	decorators     []ClientInfoDecorator
 }
 
 // IntrospectResponse is the response for the introspect request
@@ -95,6 +96,11 @@ type DefaultTokenOwner struct{}
 // TokenOwnerID returns the owner of a token
 func (p *DefaultTokenOwner) TokenOwnerID(_ context.Context, _ string) (string, error) {
 	return DefaultTokenOwnerID, nil
+}
+
+// ClientInfoDecorator attaches additional information to a client info
+type ClientInfoDecorator interface {
+	VisitClientInfo(ctx context.Context, clientInfo *ClientInfo) error
 }
 
 // NewServer creates a new auth server
@@ -169,6 +175,12 @@ func (s *Server) RegisterHandlers() {
 	s.mux.HandleFunc("GET /clients", s.listClients)
 	s.mux.HandleFunc("GET /clients/{clientID}", s.getClient)
 	s.mux.HandleFunc("DELETE /clients/{clientID}", s.deleteClient)
+}
+
+// AddClientInfoDecorator adds a ClientInfoDecorator to the server
+// these are called prior to a user generated client being created.
+func (s *Server) AddClientInfoDecorator(decorator ClientInfoDecorator) {
+	s.decorators = append(s.decorators, decorator)
 }
 
 // introspect handles the introspect request
@@ -428,6 +440,15 @@ func (s *Server) createClient(w http.ResponseWriter, r *http.Request) {
 		s.logger.Error("failed to generate client secret", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
+	}
+
+	for _, decorator := range s.decorators {
+		err = decorator.VisitClientInfo(r.Context(), &clientInfo)
+		if err != nil {
+			s.logger.Error("failed to decorate client info", "error", err)
+			w.WriteHeader(statusFromError(err))
+			return
+		}
 	}
 
 	// Create the client

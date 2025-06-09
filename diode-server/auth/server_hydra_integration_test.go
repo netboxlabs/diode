@@ -101,13 +101,16 @@ func TestServerHydraIntegration(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, server)
 
+	testAudience := []string{"aud:1", "aud:2"}
+	server.AddClientInfoDecorator(&audienceDecorator{aud: testAudience})
+
 	testServer := httptest.NewServer(server.GetMux())
 	defer testServer.Close()
 
 	client := &authTestClient{
 		endpoint: testServer.URL,
 	}
-	client.authenticate(t, testClientID, testClientSecret, testClientScope)
+	client.authenticate(t, testClientID, testClientSecret, testClientScope, []string{})
 
 	// list clients (should be empty, only includes user created clients)
 	result := client.listClients(t, "", 0)
@@ -198,7 +201,7 @@ func TestServerHydraIntegration(t *testing.T) {
 	tokenClientInfo := client.createClient(t, "test-client-token-auth", ingestClientScope)
 
 	// call the token endpoint with the credentials and verify that a token comes back ...
-	resp := client.getToken(t, tokenClientInfo.ClientID, tokenClientInfo.ClientSecret, ingestClientScope)
+	resp := client.getToken(t, tokenClientInfo.ClientID, tokenClientInfo.ClientSecret, ingestClientScope, []string{"aud:2"})
 	defer func() {
 		_ = resp.Body.Close()
 	}()
@@ -220,9 +223,21 @@ func TestServerHydraIntegration(t *testing.T) {
 	scopeClaim, ok := claims["scope"]
 	require.True(t, ok)
 	require.Equal(t, ingestClientScope, scopeClaim)
+	audienceClaim, ok := claims["aud"]
+	require.True(t, ok)
+	// either of these is technically valid according to the spec
+	if audience, ok := audienceClaim.(string); ok {
+		require.Equal(t, "aud:2", audience)
+	}
+	if audiences, ok := audienceClaim.([]interface{}); ok {
+		require.Equal(t, 1, len(audiences))
+		audience, ok := audiences[0].(string)
+		require.True(t, ok)
+		require.Equal(t, "aud:2", audience)
+	}
 
 	// try to use the credentials to create a token with a different scope ...
-	resp = client.getToken(t, tokenClientInfo.ClientID, tokenClientInfo.ClientSecret, "netbox:read")
+	resp = client.getToken(t, tokenClientInfo.ClientID, tokenClientInfo.ClientSecret, "netbox:read", []string{"aud:2"})
 	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 }
 
@@ -231,12 +246,15 @@ type authTestClient struct {
 	token    string
 }
 
-func (c *authTestClient) getToken(t *testing.T, clientID string, clientSecret string, scope string) *http.Response {
+func (c *authTestClient) getToken(t *testing.T, clientID string, clientSecret string, scope string, audience []string) *http.Response {
 	data := url.Values{}
 	data.Set("grant_type", "client_credentials")
 	data.Set("client_id", clientID)
 	data.Set("client_secret", clientSecret)
 	data.Set("scope", scope)
+	if len(audience) > 0 {
+		data.Set("audience", strings.Join(audience, " "))
+	}
 	req, err := http.NewRequest(http.MethodPost, c.endpoint+"/token", strings.NewReader(data.Encode()))
 	require.NoError(t, err)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -331,12 +349,15 @@ func (c *authTestClient) deleteClient(t *testing.T, clientID string) {
 	require.Equal(t, http.StatusNoContent, resp.StatusCode)
 }
 
-func (c *authTestClient) authenticate(t *testing.T, clientID string, clientSecret string, scope string) {
+func (c *authTestClient) authenticate(t *testing.T, clientID string, clientSecret string, scope string, audience []string) {
 	data := url.Values{}
 	data.Set("grant_type", "client_credentials")
 	data.Set("client_id", clientID)
 	data.Set("client_secret", clientSecret)
 	data.Set("scope", scope)
+	if len(audience) > 0 {
+		data.Set("audience", strings.Join(audience, " "))
+	}
 	req, err := http.NewRequest(http.MethodPost, c.endpoint+"/token", strings.NewReader(data.Encode()))
 	require.NoError(t, err)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -358,4 +379,13 @@ func (c *authTestClient) authenticate(t *testing.T, clientID string, clientSecre
 	require.NotEmpty(t, result.AccessToken)
 
 	c.token = result.AccessToken
+}
+
+type audienceDecorator struct {
+	aud []string
+}
+
+func (d *audienceDecorator) VisitClientInfo(_ context.Context, clientInfo *auth.ClientInfo) error {
+	clientInfo.Audience = d.aud
+	return nil
 }
