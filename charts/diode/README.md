@@ -2,7 +2,7 @@
 
 A Helm chart for Diode
 
-![Version: 1.5.0](https://img.shields.io/badge/Version-1.5.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.2.0](https://img.shields.io/badge/AppVersion-1.2.0-informational?style=flat-square)
+![Version: 1.5.1](https://img.shields.io/badge/Version-1.5.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.2.0](https://img.shields.io/badge/AppVersion-1.2.0-informational?style=flat-square)
 
 ## Prerequisites
 
@@ -228,7 +228,7 @@ helm show values diode/diode
 | certManager.webhook | object | `{"enabled":true}` | webhook enabled |
 | diode.environment | string | `"development"` | environment name |
 | diodeAuth.config.loggingLevel | string | `"INFO"` | logging level |
-| diodeAuth.config.sentryDsn | string | `""` | sentry DSN  |
+| diodeAuth.config.sentryDsn | string | `""` | sentry DSN |
 | diodeAuth.config.telemetryEnvironment | string | `"dev"` | telemetry environment |
 | diodeAuth.config.telemetryMetricsExporter | string | `"prometheus"` | telemetry metrics exporter |
 | diodeAuth.config.telemetryTracesExporter | string | `"none"` | telemetry traces exporter |
@@ -250,7 +250,7 @@ helm show values diode/diode
 | diodeAuthBootstrap.job.backoffLimit | int | `20` | backoff limit |
 | diodeIngester.config.loggingLevel | string | `"INFO"` | logging level |
 | diodeIngester.config.redisStreamDb | int | `1` | redis stream db |
-| diodeIngester.config.sentryDsn | string | `""` | sentry DSN  |
+| diodeIngester.config.sentryDsn | string | `""` | sentry DSN |
 | diodeIngester.config.telemetryEnvironment | string | `"dev"` | telemetry environment |
 | diodeIngester.config.telemetryMetricsExporter | string | `"prometheus"` | telemetry metrics exporter |
 | diodeIngester.config.telemetryTracesExporter | string | `"none"` | telemetry traces exporter |
