@@ -88,6 +88,7 @@ func (c *CreateClientCommand) Run() error {
 	secret := cmd.String("client-secret", "", "client secret [generated if not provided]")
 	owner := cmd.String("owner", "", "owner of the client")
 	clientName := cmd.String("client-name", "", "name of the client")
+	audience := cmd.String("audience", "", "space separated list of audiences to allow")
 
 	if err := cmd.Parse(os.Args[2:]); err != nil {
 		return err
@@ -108,6 +109,11 @@ func (c *CreateClientCommand) Run() error {
 		return fmt.Errorf("one or more scopes are required")
 	}
 	allScopes := strings.Join(scopes, " ")
+
+	audiences := []string{}
+	if *audience != "" {
+		audiences = strings.Split(*audience, " ")
+	}
 
 	secretProvided := true
 	if *secret == "" {
@@ -133,6 +139,7 @@ func (c *CreateClientCommand) Run() error {
 		ClientSecret: *secret,
 		ClientName:   *clientName,
 		Owner:        *owner,
+		Audience:     audiences,
 	})
 	if err != nil {
 		return err

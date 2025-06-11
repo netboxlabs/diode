@@ -75,12 +75,14 @@ func TestHydraClientManager(t *testing.T) {
 		ClientID:     "diode-test-client-1",
 		ClientSecret: "secret-material",
 		Scope:        "test:diode:1 test:diode:2",
+		Audience:     []string{"aud:1", "aud:2"},
 	})
 	require.NoError(t, err)
 	require.NotNil(t, createdClient)
 	require.Equal(t, "diode-test-client-1", createdClient.ClientID)
 	require.Equal(t, "secret-material", createdClient.ClientSecret)
 	require.Equal(t, "test:diode:1 test:diode:2", createdClient.Scope)
+	require.Equal(t, []string{"aud:1", "aud:2"}, createdClient.Audience)
 
 	// fetch the client by id
 	client, err := manager.RetrieveClientByID(ctx, "diode-test-client-1")
@@ -88,6 +90,7 @@ func TestHydraClientManager(t *testing.T) {
 	require.Equal(t, "diode-test-client-1", client.ClientID)
 	require.Equal(t, "", client.ClientSecret)
 	require.Equal(t, "test:diode:1 test:diode:2", client.Scope)
+	require.Equal(t, []string{"aud:1", "aud:2"}, client.Audience)
 
 	// client should be in the list of clients
 	currentClients, err = manager.RetrieveClients(ctx, auth.RetrieveClientsRequest{})

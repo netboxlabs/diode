@@ -10,6 +10,13 @@ global:
       # -- wait for PostgreSQL
       waitForPostgres: true
 
+  # -- common annotations for all resources
+  commonAnnotations: {}
+
+  # -- common labels for all resources
+  commonLabels: {}
+
+
 diode:
   # -- environment name
   environment: development
@@ -38,7 +45,7 @@ diodeAuth:
     # -- image tag
     tag: 1.2.0
     # -- secrets with credentials to pull images from a private registry
-    imagePullSecrets: [ ]
+    imagePullSecrets: []
     # -- pull policy
     pullPolicy: IfNotPresent
   # -- replica count
@@ -58,10 +65,12 @@ diodeAuth:
       memory: 512Mi
   # -- extra environment variables to be set on containers' `env` section
   extraEnvs: []
+  # -- annotations to add to the auth deployment
+  annotations: {}
   config:
     # -- logging level
     loggingLevel: INFO
-    # -- sentry DSN 
+    # -- sentry DSN
     sentryDsn: ""
     # -- telemetry metrics exporter
     telemetryMetricsExporter: prometheus
@@ -80,12 +89,16 @@ diodeAuthBootstrap:
     # -- image tag
     tag: 1.2.0
     # -- secrets with credentials to pull images from a private registry
-    imagePullSecrets: [ ]
+    imagePullSecrets: []
     # -- pull policy
     pullPolicy: IfNotPresent
   job:
     # -- backoff limit
     backoffLimit: 20
+    # -- annotations to add to the auth bootstrap job
+    annotations:
+      "helm.sh/hook": post-install, post-upgrade
+      "helm.sh/hook-weight": "2"
 
 # Diode Ingester configuration
 diodeIngester:
@@ -97,7 +110,7 @@ diodeIngester:
     # -- image tag
     tag: 1.2.0
     # -- secrets with credentials to pull images from a private registry
-    imagePullSecrets: [ ]
+    imagePullSecrets: []
     # -- pull policy
     pullPolicy: IfNotPresent
   # -- replica count
@@ -122,10 +135,12 @@ diodeIngester:
     serviceName: diode.v1.IngesterService
   # -- extra environment variables to be set on containers' `env` section
   extraEnvs: []
+  # -- annotations to add to the ingester deployment
+  annotations: {}
   config:
     # -- logging level
     loggingLevel: INFO
-    # -- sentry DSN 
+    # -- sentry DSN
     sentryDsn: ""
     # -- redis stream db
     redisStreamDb: 1
@@ -146,7 +161,7 @@ diodeReconciler:
     # -- image tag
     tag: 1.2.0
     # -- secrets with credentials to pull images from a private registry
-    imagePullSecrets: [ ]
+    imagePullSecrets: []
     # -- pull policy
     pullPolicy: IfNotPresent
   # -- replica count
@@ -171,6 +186,8 @@ diodeReconciler:
     serviceName: diode.v1.ReconcilerService
   # -- extra environment variables to be set on containers' `env` section
   extraEnvs: []
+  # -- annotations to add to the reconciler deployment
+  annotations: {}
   config:
     # -- netbox diode plugin api base url
     netboxDiodePluginApiBaseUrl: http://localhost:8000/netbox/api/plugins/diode
@@ -301,14 +318,14 @@ hydra:
         # -- public service enabled
         enabled: true
         # -- public service type
-        type: ClusterIP # Ensure service is only internal
+        type: ClusterIP  # Ensure service is only internal
         # -- public service port
         port: 4444
       admin:
         # -- admin service enabled
         enabled: true
         # -- admin service type
-        type: ClusterIP # Ensure service is only internal
+        type: ClusterIP  # Ensure service is only internal
         # -- admin service port
         port: 4445
     ingress:
@@ -342,7 +359,7 @@ hydra:
       # -- automigration enabled
       enabled: true
     # -- dev mode
-    dev: true # Hydra is not exposed to the public internet
+    dev: true  # Hydra is not exposed to the public internet
   deployment:
     # -- extra init containers
     extraInitContainers: |-

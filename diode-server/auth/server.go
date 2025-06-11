@@ -34,18 +34,20 @@ type Server struct {
 	tokenParser    TokenParser
 	clientManager  ClientManager
 	tokenOwnership TokenOwnershipProvider
+	decorators     []ClientInfoDecorator
 }
 
 // IntrospectResponse is the response for the introspect request
 type IntrospectResponse struct {
-	Active    bool   `json:"active"`
-	Subject   string `json:"sub,omitempty"`
-	Scope     string `json:"scope,omitempty"`
-	ExpiresAt int64  `json:"exp,omitempty"`
-	IssuedAt  int64  `json:"iat,omitempty"`
-	Issuer    string `json:"iss,omitempty"`
-	ClientID  string `json:"client_id,omitempty"`
-	Username  string `json:"username,omitempty"`
+	Active    bool     `json:"active"`
+	Subject   string   `json:"sub,omitempty"`
+	Scope     string   `json:"scope,omitempty"`
+	ExpiresAt int64    `json:"exp,omitempty"`
+	IssuedAt  int64    `json:"iat,omitempty"`
+	Issuer    string   `json:"iss,omitempty"`
+	ClientID  string   `json:"client_id,omitempty"`
+	Username  string   `json:"username,omitempty"`
+	Audience  []string `json:"aud,omitempty"`
 }
 
 // CreateClientRequest request to create client
@@ -95,6 +97,11 @@ type DefaultTokenOwner struct{}
 // TokenOwnerID returns the owner of a token
 func (p *DefaultTokenOwner) TokenOwnerID(_ context.Context, _ string) (string, error) {
 	return DefaultTokenOwnerID, nil
+}
+
+// ClientInfoDecorator attaches additional information to a client info
+type ClientInfoDecorator interface {
+	VisitClientInfo(ctx context.Context, clientInfo *ClientInfo) error
 }
 
 // NewServer creates a new auth server
@@ -171,6 +178,12 @@ func (s *Server) RegisterHandlers() {
 	s.mux.HandleFunc("DELETE /clients/{clientID}", s.deleteClient)
 }
 
+// AddClientInfoDecorator adds a ClientInfoDecorator to the server
+// these are called prior to a user generated client being created.
+func (s *Server) AddClientInfoDecorator(decorator ClientInfoDecorator) {
+	s.decorators = append(s.decorators, decorator)
+}
+
 // introspect handles the introspect request
 func (s *Server) introspect(w http.ResponseWriter, r *http.Request) {
 	jwtToken, err := s.getAuthToken(r)
@@ -196,6 +209,11 @@ func (s *Server) introspect(w http.ResponseWriter, r *http.Request) {
 		Issuer:    getStringClaim(claims, "iss"),
 		ClientID:  getStringClaim(claims, "client_id"),
 		Username:  getStringClaim(claims, "username"),
+	}
+
+	aud := getStringOrStringArrayClaim(claims, "aud")
+	if len(aud) > 0 {
+		resp.Audience = aud
 	}
 
 	err = writeJSON(w, http.StatusOK, resp)
@@ -292,6 +310,27 @@ func getStringClaim(claims jwt.MapClaims, key string) string {
 		return val
 	}
 	return ""
+}
+
+func getStringOrStringArrayClaim(claims jwt.MapClaims, key string) []string {
+	// specification allows some standard claims to be either
+	// single strings or list of strings
+	if val, ok := claims[key].(string); ok {
+		if val == "" {
+			return []string{}
+		}
+		return []string{val}
+	}
+	if val, ok := claims[key].([]interface{}); ok {
+		out := make([]string, 0, len(val))
+		for _, v := range val {
+			if s, ok := v.(string); ok {
+				out = append(out, s)
+			}
+		}
+		return out
+	}
+	return []string{}
 }
 
 func getInt64Claim(claims jwt.MapClaims, key string) int64 {
@@ -428,6 +467,15 @@ func (s *Server) createClient(w http.ResponseWriter, r *http.Request) {
 		s.logger.Error("failed to generate client secret", "error", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
+	}
+
+	for _, decorator := range s.decorators {
+		err = decorator.VisitClientInfo(r.Context(), &clientInfo)
+		if err != nil {
+			s.logger.Error("failed to decorate client info", "error", err)
+			w.WriteHeader(statusFromError(err))
+			return
+		}
 	}
 
 	// Create the client

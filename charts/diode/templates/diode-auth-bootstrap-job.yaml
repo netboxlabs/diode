@@ -7,6 +7,15 @@ metadata:
   labels:
     {{- include "diode.labels" . | nindent 4 }}
     app.kubernetes.io/component: {{ include "diode.auth.bootstrapjobname" . }}
+  {{- if or .Values.global.commonAnnotations .Values.diodeAuthBootstrap.job.annotations }}
+  annotations:
+    {{- if .Values.diodeAuthBootstrap.job.annotations }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.diodeAuthBootstrap.job.annotations "context" $ ) | nindent 4 }}
+    {{- end }}
+    {{- if .Values.global.commonAnnotations }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
+    {{- end }}
+  {{-  end }}
 spec:
   backoffLimit: {{ .Values.diodeAuthBootstrap.job.backoffLimit }}
   template:

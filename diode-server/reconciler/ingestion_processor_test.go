@@ -47,7 +47,17 @@ func TestNewIngestionProcessor(t *testing.T) {
 
 	mockOAuth2ServerURL := mockOAuth2Server.URL + authTokenURL
 
-	nbClient, err := netboxdiodeplugin.NewClient(logger, cfg.NetBoxDiodePluginAPIBaseURL, cfg.DiodeToNetBoxClientID, cfg.DiodeToNetBoxClientSecret, mockOAuth2ServerURL, cfg.DiodeToNetBoxRateLimiterRPS, cfg.DiodeToNetBoxRateLimiterBurst, 0)
+	nbClient, err := netboxdiodeplugin.NewClient(
+		netboxdiodeplugin.ClientOptions{
+			Logger:            logger,
+			BaseURL:           cfg.NetBoxDiodePluginAPIBaseURL,
+			ClientID:          cfg.DiodeToNetBoxClientID,
+			ClientSecret:      cfg.DiodeToNetBoxClientSecret,
+			TokenURL:          mockOAuth2ServerURL,
+			RateLimitRPS:      cfg.DiodeToNetBoxRateLimiterRPS,
+			RateLimitBurstRPS: cfg.DiodeToNetBoxRateLimiterBurst,
+			MaxRetries:        0,
+		})
 	require.NoError(t, err)
 	metrics := mocks.NewIngestionProcessorMetrics(t)
 
@@ -97,7 +107,17 @@ func TestIngestionProcessorStart(t *testing.T) {
 	mockOAuth2ServerURL := mockOAuth2Server.URL + authTokenURL
 
 	maxRetries := 3
-	nbClient, err := netboxdiodeplugin.NewClient(logger, cfg.NetBoxDiodePluginAPIBaseURL, cfg.DiodeToNetBoxClientID, cfg.DiodeToNetBoxClientSecret, mockOAuth2ServerURL, cfg.DiodeToNetBoxRateLimiterRPS, cfg.DiodeToNetBoxRateLimiterBurst, maxRetries)
+	nbClient, err := netboxdiodeplugin.NewClient(
+		netboxdiodeplugin.ClientOptions{
+			Logger:            logger,
+			BaseURL:           cfg.NetBoxDiodePluginAPIBaseURL,
+			ClientID:          cfg.DiodeToNetBoxClientID,
+			ClientSecret:      cfg.DiodeToNetBoxClientSecret,
+			TokenURL:          mockOAuth2ServerURL,
+			RateLimitRPS:      cfg.DiodeToNetBoxRateLimiterRPS,
+			RateLimitBurstRPS: cfg.DiodeToNetBoxRateLimiterBurst,
+			MaxRetries:        maxRetries,
+		})
 	require.NoError(t, err)
 	mockMetrics := new(mocks.IngestionProcessorMetrics)
 	mockMetrics.On("RecordHandleMessage", mock.Anything, mock.Anything).Return()
@@ -286,7 +306,7 @@ func TestIngestionProcessorStart(t *testing.T) {
 
 	// Start processor in a separate goroutine
 	go func() {
-		err = processor.Start(ctx)
+		err := processor.Start(ctx)
 		assert.NoError(t, err)
 	}()
 	// Wait server

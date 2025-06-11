@@ -13,12 +13,13 @@ import (
 
 // ClientInfo is a struct that contains information about a client.
 type ClientInfo struct {
-	ClientID     string `json:"client_id"`
-	Scope        string `json:"scope"`
-	ClientSecret string `json:"client_secret,omitempty"`
-	Owner        string `json:"owner,omitempty"`
-	ClientName   string `json:"client_name,omitempty"`
-	CreatedAt    string `json:"created_at,omitempty"`
+	ClientID     string   `json:"client_id"`
+	Scope        string   `json:"scope"`
+	ClientSecret string   `json:"client_secret,omitempty"`
+	Owner        string   `json:"owner,omitempty"`
+	Audience     []string `json:"audience,omitempty"`
+	ClientName   string   `json:"client_name,omitempty"`
+	CreatedAt    string   `json:"created_at,omitempty"`
 }
 
 // RetrieveClientsRequest is a struct that contains information about a request to retrieve clients.
