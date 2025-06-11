@@ -133,18 +133,43 @@ func NewHTTPTransport() *http.Transport {
 	}
 }
 
+// ClientOptions represents the options for creating a new NetBox Diode plugin client
+type ClientOptions struct {
+	// BaseURL is the base URL of the NetBox Diode plugin API
+	BaseURL string
+
+	// ClientID is the client ID for the NetBox Diode plugin API
+	ClientID string
+	// ClientSecret is the client secret for the NetBox Diode plugin API
+	ClientSecret string
+	// TokenURL is the URL of the token endpoint
+	TokenURL string
+	// TokenEndpointParams are extra parameters provided to the token endpoint
+	TokenEndpointParams url.Values
+
+	// Logger is the logger for the NetBox Diode plugin client
+	Logger *slog.Logger
+
+	// RateLimitRPS is the rate limit for the NetBox Diode plugin client
+	RateLimitRPS int
+	// RateLimitBurstRPS is the rate limit burst for the NetBox Diode plugin client
+	RateLimitBurstRPS int
+	// MaxRetries is the maximum number of retries for the NetBox Diode plugin client
+	MaxRetries int
+}
+
 // NewClient creates a new NetBox Diode plugin client
-func NewClient(logger *slog.Logger, baseURL, clientID, clientSecret, tokenURL string, rateLimitRps, rateLimitBurstRps int, maxRetries int) (*Client, error) {
-	u, err := url.Parse(baseURL)
+func NewClient(options ClientOptions) (*Client, error) {
+	u, err := url.Parse(options.BaseURL)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(clientID) == 0 || len(clientSecret) == 0 {
+	if len(options.ClientID) == 0 || len(options.ClientSecret) == 0 {
 		return nil, fmt.Errorf("client ID or secret not provided")
 	}
 
-	if len(tokenURL) == 0 {
+	if len(options.TokenURL) == 0 {
 		return nil, fmt.Errorf("token URL not provided")
 	}
 
@@ -153,11 +178,11 @@ func NewClient(logger *slog.Logger, baseURL, clientID, clientSecret, tokenURL st
 		return nil, err
 	}
 
-	if rateLimitRps <= 0 || rateLimitBurstRps <= 0 {
-		return nil, fmt.Errorf("invalid rate limit values: %d %d", rateLimitRps, rateLimitBurstRps)
+	if options.RateLimitRPS <= 0 || options.RateLimitBurstRPS <= 0 {
+		return nil, fmt.Errorf("invalid rate limit values: %d %d", options.RateLimitRPS, options.RateLimitBurstRPS)
 	}
 
-	t, err := url.Parse(tokenURL)
+	t, err := url.Parse(options.TokenURL)
 	if err != nil {
 		return nil, err
 	}
@@ -169,18 +194,19 @@ func NewClient(logger *slog.Logger, baseURL, clientID, clientSecret, tokenURL st
 	}
 
 	rhttp := retryablehttp.NewClient()
-	rhttp.RetryMax = maxRetries
+	rhttp.RetryMax = options.MaxRetries
 	rhttp.RetryWaitMin = 150 * time.Millisecond
 	rhttp.RetryWaitMax = 2 * time.Second
-	rhttp.Logger = logger
+	rhttp.Logger = options.Logger
 
 	rhttp.HTTPClient.Transport = headerRoundTripper
 
 	oauthConfig := &clientcredentials.Config{
-		ClientID:     clientID,
-		ClientSecret: clientSecret,
-		TokenURL:     t.String(),
-		Scopes:       []string{authutil.ScopeNetBoxRead, authutil.ScopeNetBoxWrite},
+		ClientID:       options.ClientID,
+		ClientSecret:   options.ClientSecret,
+		TokenURL:       t.String(),
+		Scopes:         []string{authutil.ScopeNetBoxRead, authutil.ScopeNetBoxWrite},
+		EndpointParams: options.TokenEndpointParams,
 	}
 
 	oauthTransport := &oauth2.Transport{
@@ -194,11 +220,11 @@ func NewClient(logger *slog.Logger, baseURL, clientID, clientSecret, tokenURL st
 	}
 
 	client := &Client{
-		logger:    logger,
+		logger:    options.Logger,
 		http:      httpClient,
 		baseURL:   u,
 		userAgent: fmt.Sprintf("%s/%s", SDKName, SDKVersion),
-		limiter:   rate.NewLimiter(rate.Limit(rateLimitRps), rateLimitBurstRps),
+		limiter:   rate.NewLimiter(rate.Limit(options.RateLimitRPS), options.RateLimitBurstRPS),
 	}
 
 	return client, nil

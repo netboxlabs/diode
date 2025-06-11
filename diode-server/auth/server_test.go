@@ -31,27 +31,6 @@ func (p InvalidParser) Parse(_ string, _ jwt.Keyfunc) (*jwt.Token, error) {
 	return nil, fmt.Errorf("invalid token")
 }
 
-type ValidTokenParser struct{}
-
-func (p ValidTokenParser) Parse(_ string, _ jwt.Keyfunc) (*jwt.Token, error) {
-	claims := jwt.MapClaims{
-		"iss":       "https://auth.example.com",
-		"sub":       "user123",
-		"aud":       "api",
-		"exp":       time.Now().Add(time.Hour).Unix(),
-		"iat":       time.Now().Unix(),
-		"client_id": "client123",
-		"scope":     "read write",
-		"username":  "testuser",
-	}
-
-	token := &jwt.Token{
-		Claims: claims,
-		Valid:  true,
-	}
-	return token, nil
-}
-
 type MockTokenParser struct {
 	tokenMap map[string]jwt.Token
 }
@@ -154,10 +133,75 @@ func TestIntrospectForInvalidTokens(t *testing.T) {
 }
 
 func TestIntrospectForValidTokens(t *testing.T) {
-	ctx := context.Background()
-
-	setupEnv()
-	defer teardownEnv()
+	testToken := "eyJhbGciOiJSUzI1NiIsImtpZCI6InRlc3Qta2V5IiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwczovL2F1dGguZXhhbXBsZS5jb20iLCJzdWIiOiJ1c2VyMTIzIiwiYXVkIjoiYXBpIiwiZXhwIjoxNjUwMDAwMDAwLCJpYXQiOjE1MDAwMDAwMDAsImNsaWVudF9pZCI6ImNsaWVudDEyMyIsInNjb3BlIjoicmVhZCB3cml0ZSIsInVzZXJuYW1lIjoidGVzdHVzZXIifQ.WcPGXClpKD7Bc1C0CCDA1060E2GGlTfamrd8-W0ghBE"
+	tests := []struct {
+		name             string
+		token            string
+		tokenParser      auth.TokenParser
+		expectedStatus   int
+		expectedAudience []string
+		expectedSubject  string
+		expectedScope    string
+		expectedIssuer   string
+		expectedClientID string
+		expectedUsername string
+	}{
+		{
+			name:  "Valid Token",
+			token: testToken,
+			tokenParser: &MockTokenParser{
+				tokenMap: map[string]jwt.Token{
+					testToken: {
+						Claims: jwt.MapClaims{
+							"iss":       "https://auth.example.com",
+							"sub":       "user123",
+							"aud":       "api",
+							"exp":       time.Now().Add(time.Hour).Unix(),
+							"iat":       time.Now().Unix(),
+							"client_id": "client123",
+							"scope":     "read write",
+							"username":  "testuser",
+						},
+						Valid: true,
+					},
+				},
+			},
+			expectedStatus:   http.StatusOK,
+			expectedAudience: []string{"api"},
+			expectedSubject:  "user123",
+			expectedScope:    "read write",
+			expectedIssuer:   "https://auth.example.com",
+			expectedClientID: "client123",
+			expectedUsername: "testuser",
+		},
+		{
+			name: "Valid Token with empty audience",
+			tokenParser: &MockTokenParser{
+				tokenMap: map[string]jwt.Token{
+					testToken: {
+						Claims: jwt.MapClaims{
+							"iss":       "https://auth.example.com",
+							"sub":       "user123",
+							"exp":       time.Now().Add(time.Hour).Unix(),
+							"iat":       time.Now().Unix(),
+							"client_id": "client123",
+							"scope":     "read write",
+							"username":  "testuser",
+						},
+						Valid: true,
+					},
+				},
+			},
+			token:            testToken,
+			expectedStatus:   http.StatusOK,
+			expectedAudience: nil,
+			expectedSubject:  "user123",
+			expectedScope:    "read write",
+			expectedIssuer:   "https://auth.example.com",
+			expectedClientID: "client123",
+			expectedUsername: "testuser",
+		},
+	}
 
 	// Setup a test server to mock the OAuth2 server
 	mockJWKSServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -180,47 +224,52 @@ func TestIntrospectForValidTokens(t *testing.T) {
 	}))
 	defer mockJWKSServer.Close()
 
+	setupEnv()
+	defer teardownEnv()
+
 	_ = os.Setenv("OAUTH2_PUBLIC_SERVER_URL", mockJWKSServer.URL)
 	defer func() {
 		_ = os.Unsetenv("OAUTH2_PUBLIC_SERVER_URL")
 	}()
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
-	server, err := auth.NewServer(ctx, logger, ValidTokenParser{}, nil, nil)
-	require.NoError(t, err)
-	require.NotNil(t, server)
 
-	// Create a test server using the server's mux
-	testServer := httptest.NewServer(server.GetMux())
-	defer testServer.Close()
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ctx := context.Background()
 
-	t.Run("Valid Token", func(t *testing.T) {
-		// This is just a dummy token for testing purposes
-		testToken := "eyJhbGciOiJSUzI1NiIsImtpZCI6InRlc3Qta2V5IiwidHlwIjoiSldUIn0.eyJpc3MiOiJodHRwczovL2F1dGguZXhhbXBsZS5jb20iLCJzdWIiOiJ1c2VyMTIzIiwiYXVkIjoiYXBpIiwiZXhwIjoxNjUwMDAwMDAwLCJpYXQiOjE1MDAwMDAwMDAsImNsaWVudF9pZCI6ImNsaWVudDEyMyIsInNjb3BlIjoicmVhZCB3cml0ZSIsInVzZXJuYW1lIjoidGVzdHVzZXIifQ.WcPGXClpKD7Bc1C0CCDA1060E2GGlTfamrd8-W0ghBE"
+			server, err := auth.NewServer(ctx, logger, test.tokenParser, nil, nil)
+			require.NoError(t, err)
+			require.NotNil(t, server)
 
-		data := url.Values{}
-		data.Set("token", testToken)
+			// Create a test server using the server's mux
+			testServer := httptest.NewServer(server.GetMux())
+			defer testServer.Close()
 
-		resp, err := makeIntrospectRequest(testServer.URL, testToken)
+			data := url.Values{}
+			data.Set("token", test.token)
 
-		require.NoError(t, err)
-		require.Equal(t, http.StatusOK, resp.StatusCode)
+			resp, err := makeIntrospectRequest(testServer.URL, test.token)
 
-		defer func() {
-			_ = resp.Body.Close()
-		}()
+			require.NoError(t, err)
+			require.Equal(t, http.StatusOK, resp.StatusCode)
 
-		var introspectResp auth.IntrospectResponse
-		err = json.NewDecoder(resp.Body).Decode(&introspectResp)
-		require.NoError(t, err)
-		require.True(t, introspectResp.Active)
-		require.Equal(t, "user123", introspectResp.Subject)
-		require.Equal(t, "read write", introspectResp.Scope)
-		require.Equal(t, "https://auth.example.com", introspectResp.Issuer)
-		require.Equal(t, "client123", introspectResp.ClientID)
+			defer func() {
+				_ = resp.Body.Close()
+			}()
 
-		require.Equal(t, "testuser", introspectResp.Username)
-	})
+			var introspectResp auth.IntrospectResponse
+			err = json.NewDecoder(resp.Body).Decode(&introspectResp)
+			require.NoError(t, err)
+			require.True(t, introspectResp.Active)
+			require.Equal(t, test.expectedSubject, introspectResp.Subject)
+			require.Equal(t, test.expectedScope, introspectResp.Scope)
+			require.Equal(t, test.expectedIssuer, introspectResp.Issuer)
+			require.Equal(t, test.expectedClientID, introspectResp.ClientID)
+			require.Equal(t, test.expectedAudience, introspectResp.Audience)
+			require.Equal(t, test.expectedUsername, introspectResp.Username)
+		})
+	}
 }
 
 func TestCreateClient(t *testing.T) {
@@ -614,7 +663,7 @@ func TestDeleteClient(t *testing.T) {
 		accessToken  string
 		clientID     string
 		parsedToken  jwt.Token
-		lookupResult auth.ClientInfo
+		lookupResult *auth.ClientInfo
 		lookupErr    error
 		expectStatus int
 	}{
@@ -623,7 +672,7 @@ func TestDeleteClient(t *testing.T) {
 			accessToken: validAccessToken,
 			clientID:    "test-client-1-abcdef0123567890",
 			parsedToken: writeToken,
-			lookupResult: auth.ClientInfo{
+			lookupResult: &auth.ClientInfo{
 				ClientID:   "test-client-1-abcdef0123567890",
 				ClientName: "Test Client 1",
 				Scope:      "diode:ingest",
@@ -659,7 +708,7 @@ func TestDeleteClient(t *testing.T) {
 			accessToken: validAccessToken,
 			clientID:    "test-client-1-abcdef0123567890",
 			parsedToken: writeToken,
-			lookupResult: auth.ClientInfo{
+			lookupResult: &auth.ClientInfo{
 				ClientID:   "test-client-1-abcdef0123567890",
 				ClientName: "Test Client 1",
 				Owner:      "diode/system",
@@ -704,8 +753,10 @@ func TestDeleteClient(t *testing.T) {
 			testServer := httptest.NewServer(server.GetMux())
 			defer testServer.Close()
 
-			if test.lookupResult != (auth.ClientInfo{}) || test.lookupErr != nil {
-				mockClientManager.EXPECT().RetrieveClientByID(mock.Anything, test.clientID).Return(test.lookupResult, test.lookupErr)
+			if test.lookupResult != nil {
+				mockClientManager.EXPECT().RetrieveClientByID(mock.Anything, test.clientID).Return(*test.lookupResult, test.lookupErr)
+			} else if test.lookupErr != nil {
+				mockClientManager.EXPECT().RetrieveClientByID(mock.Anything, test.clientID).Return(auth.ClientInfo{}, test.lookupErr)
 			}
 
 			if test.expectStatus == http.StatusNoContent {
@@ -748,7 +799,7 @@ func TestGetClient(t *testing.T) {
 		accessToken  string
 		clientID     string
 		parsedToken  jwt.Token
-		lookupResult auth.ClientInfo
+		lookupResult *auth.ClientInfo
 		lookupErr    error
 		expectStatus int
 		expect       auth.ClientResponse
@@ -758,7 +809,7 @@ func TestGetClient(t *testing.T) {
 			accessToken: validAccessToken,
 			clientID:    "test-client-1-abcdef0123567890",
 			parsedToken: readOnlyToken,
-			lookupResult: auth.ClientInfo{
+			lookupResult: &auth.ClientInfo{
 				ClientID:   "test-client-1-abcdef0123567890",
 				ClientName: "Test Client 1",
 				Scope:      "diode:ingest",
@@ -793,7 +844,7 @@ func TestGetClient(t *testing.T) {
 			accessToken: validAccessToken,
 			clientID:    "test-client-1-abcdef0123567890",
 			parsedToken: readOnlyToken,
-			lookupResult: auth.ClientInfo{
+			lookupResult: &auth.ClientInfo{
 				ClientID:   "test-client-1-abcdef0123567890",
 				ClientName: "Test Client 1",
 				Owner:      "diode/system",
@@ -838,8 +889,10 @@ func TestGetClient(t *testing.T) {
 			testServer := httptest.NewServer(server.GetMux())
 			defer testServer.Close()
 
-			if test.lookupResult != (auth.ClientInfo{}) || test.lookupErr != nil {
-				mockClientManager.EXPECT().RetrieveClientByID(mock.Anything, test.clientID).Return(test.lookupResult, test.lookupErr)
+			if test.lookupResult != nil {
+				mockClientManager.EXPECT().RetrieveClientByID(mock.Anything, test.clientID).Return(*test.lookupResult, test.lookupErr)
+			} else if test.lookupErr != nil {
+				mockClientManager.EXPECT().RetrieveClientByID(mock.Anything, test.clientID).Return(auth.ClientInfo{}, test.lookupErr)
 			}
 
 			req, _ := http.NewRequest("GET", testServer.URL+"/clients/"+test.clientID, nil)

@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"testing"
 
@@ -209,7 +210,17 @@ func TestNewClient(t *testing.T) {
 
 			maxRetries := 3
 
-			client, err := netboxdiodeplugin.NewClient(logger, tt.baseURL, tt.diodeToNetBoxClientID, tt.diodeToNetBoxClientSecret, tt.diodeAuthTokenURL, tt.rateLimiterRPS, tt.rateLimiterBurst, maxRetries)
+			client, err := netboxdiodeplugin.NewClient(
+				netboxdiodeplugin.ClientOptions{
+					Logger:            logger,
+					BaseURL:           tt.baseURL,
+					ClientID:          tt.diodeToNetBoxClientID,
+					ClientSecret:      tt.diodeToNetBoxClientSecret,
+					TokenURL:          tt.diodeAuthTokenURL,
+					RateLimitRPS:      tt.rateLimiterRPS,
+					RateLimitBurstRPS: tt.rateLimiterBurst,
+					MaxRetries:        maxRetries,
+				})
 			if tt.shouldError {
 				require.Error(t, err)
 				return
@@ -351,7 +362,7 @@ func TestGenerateDiff(t *testing.T) {
 
 			expectedToken := "mocked-token"
 			authTokenURL := "/diode/auth/token"
-			mockOAuth2Server := newMockOAuth2Server(authTokenURL, tt.diodeToNetBoxClientID, tt.diodeToNetBoxClientSecret, expectedToken)
+			mockOAuth2Server := newMockOAuth2Server(authTokenURL, requireCredentials(tt.diodeToNetBoxClientID, tt.diodeToNetBoxClientSecret), expectedToken)
 			defer mockOAuth2Server.Close()
 
 			mockOAuth2ServerURL := mockOAuth2Server.URL + authTokenURL
@@ -381,7 +392,17 @@ func TestGenerateDiff(t *testing.T) {
 			defer ts.Close()
 
 			baseURL := fmt.Sprintf("%s/api/diode", ts.URL)
-			client, err := netboxdiodeplugin.NewClient(logger, baseURL, tt.diodeToNetBoxClientID, tt.diodeToNetBoxClientSecret, mockOAuth2ServerURL, tt.rateLimiterRPS, tt.rateLimiterBurst, tt.maxRetries)
+			client, err := netboxdiodeplugin.NewClient(
+				netboxdiodeplugin.ClientOptions{
+					Logger:            logger,
+					BaseURL:           baseURL,
+					ClientID:          tt.diodeToNetBoxClientID,
+					ClientSecret:      tt.diodeToNetBoxClientSecret,
+					TokenURL:          mockOAuth2ServerURL,
+					RateLimitRPS:      tt.rateLimiterRPS,
+					RateLimitBurstRPS: tt.rateLimiterBurst,
+					MaxRetries:        tt.maxRetries,
+				})
 			require.NoError(t, err)
 			resp, err := client.GenerateDiff(context.Background(), tt.generateDiffRequest)
 			if tt.shouldError {
@@ -473,7 +494,7 @@ func TestGenerateDiffRateLimiting(t *testing.T) {
 
 			expectedToken := "mocked-token"
 			authTokenURL := "/diode/auth/token"
-			mockOAuth2Server := newMockOAuth2Server(authTokenURL, tt.diodeToNetBoxClientID, tt.diodeToNetBoxClientSecret, expectedToken)
+			mockOAuth2Server := newMockOAuth2Server(authTokenURL, requireCredentials(tt.diodeToNetBoxClientID, tt.diodeToNetBoxClientSecret), expectedToken)
 			defer mockOAuth2Server.Close()
 
 			mockOAuth2ServerURL := mockOAuth2Server.URL + authTokenURL
@@ -504,7 +525,17 @@ func TestGenerateDiffRateLimiting(t *testing.T) {
 			defer ts.Close()
 
 			baseURL := fmt.Sprintf("%s/api/diode", ts.URL)
-			client, err := netboxdiodeplugin.NewClient(logger, baseURL, tt.diodeToNetBoxClientID, tt.diodeToNetBoxClientSecret, mockOAuth2ServerURL, tt.rateLimiterRPS, tt.rateLimiterBurst, tt.maxRetries)
+			client, err := netboxdiodeplugin.NewClient(
+				netboxdiodeplugin.ClientOptions{
+					Logger:            logger,
+					BaseURL:           baseURL,
+					ClientID:          tt.diodeToNetBoxClientID,
+					ClientSecret:      tt.diodeToNetBoxClientSecret,
+					TokenURL:          mockOAuth2ServerURL,
+					RateLimitRPS:      tt.rateLimiterRPS,
+					RateLimitBurstRPS: tt.rateLimiterBurst,
+					MaxRetries:        tt.maxRetries,
+				})
 			require.NoError(t, err)
 			resp, err := client.GenerateDiff(context.Background(), tt.generateDiffRequest)
 			_, _ = client.GenerateDiff(context.Background(), tt.generateDiffRequest)
@@ -517,6 +548,126 @@ func TestGenerateDiffRateLimiting(t *testing.T) {
 			assert.Equal(t, tt.response, resp)
 			assert.Equal(t, tt.mockStatusCode, http.StatusOK)
 			assert.Equal(t, tt.expectedCalls, actualCalls)
+		})
+	}
+}
+
+func TestAuthenticationParams(t *testing.T) {
+	testRequest := netboxdiodeplugin.GenerateDiffRequest{
+		ObjectType: "dcim.device",
+		Entity: &diodepb.Entity{
+			Entity: &diodepb.Entity_Device{
+				Device: &diodepb.Device{
+					Name: strPtr("test"),
+					Site: &diodepb.Site{
+						Name: "test-site",
+					},
+				},
+			},
+		},
+	}
+	mockServerResponse := `{"id": "00000000-0000-0000-0000-000000000001", "change_set": {"id": "00000000-0000-0000-0000-000000000001", "changes": [{"id": "00000000-0000-0000-0000-000000000002", "change_type": "create", "object_type": "dcim.device", "data": {"name": "test"}}]}}`
+
+	tests := []struct {
+		name                      string
+		baseURL                   string
+		diodeAuthTokenURL         string
+		diodeToNetBoxClientID     string
+		diodeToNetBoxClientSecret string
+		extraParams               map[string]string
+		requiredParams            map[string]string
+		shouldError               bool
+		expectedError             error
+	}{
+		{
+			name:                      "valid authentication params, no extra params",
+			baseURL:                   "http://",
+			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
+			diodeToNetBoxClientID:     "test_client",
+			diodeToNetBoxClientSecret: "test_secret",
+			requiredParams:            requireCredentials("test_client", "test_secret"),
+			shouldError:               false,
+		},
+		{
+			name:                      "valid authentication params, with extra params",
+			baseURL:                   "http://",
+			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
+			diodeToNetBoxClientID:     "test_client",
+			diodeToNetBoxClientSecret: "test_secret",
+			extraParams:               map[string]string{"test_param": "test_value"},
+			requiredParams: map[string]string{
+				"client_id":     "test_client",
+				"client_secret": "test_secret",
+				"test_param":    "test_value",
+			},
+			shouldError: false,
+		},
+		{
+			name:                      "valid authentication params, missing required params",
+			baseURL:                   "http://",
+			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
+			diodeToNetBoxClientID:     "test_client",
+			diodeToNetBoxClientSecret: "test_secret",
+			requiredParams: map[string]string{
+				"client_id":     "test_client",
+				"client_secret": "test_secret",
+				"test_param":    "test_value",
+			},
+			shouldError: true,
+		},
+	}
+
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cleanUpEnvVars()
+
+			expectedToken := "mocked-token"
+			authTokenURL := "/diode/auth/token"
+
+			mockOAuth2Server := newMockOAuth2Server(authTokenURL, tt.requiredParams, expectedToken)
+			defer mockOAuth2Server.Close()
+
+			mockOAuth2ServerURL := mockOAuth2Server.URL + authTokenURL
+
+			handler := func(w http.ResponseWriter, _ *http.Request) {
+				w.WriteHeader(http.StatusOK)
+				_, _ = w.Write([]byte(mockServerResponse))
+			}
+			mux := http.NewServeMux()
+			mux.HandleFunc("/api/diode/generate-diff/", handler)
+			ts := httptest.NewServer(mux)
+			defer ts.Close()
+
+			baseURL := fmt.Sprintf("%s/api/diode", ts.URL)
+
+			extraParams := url.Values{}
+			for k, v := range tt.extraParams {
+				extraParams.Set(k, v)
+			}
+			client, err := netboxdiodeplugin.NewClient(
+				netboxdiodeplugin.ClientOptions{
+					Logger:              logger,
+					BaseURL:             baseURL,
+					ClientID:            tt.diodeToNetBoxClientID,
+					ClientSecret:        tt.diodeToNetBoxClientSecret,
+					TokenURL:            mockOAuth2ServerURL,
+					TokenEndpointParams: extraParams,
+					RateLimitRPS:        1,
+					RateLimitBurstRPS:   1,
+					MaxRetries:          0,
+				})
+			require.NoError(t, err)
+			_, err = client.GenerateDiff(context.Background(), testRequest)
+			if tt.shouldError {
+				require.Error(t, err)
+				if tt.expectedError != nil {
+					assert.Equal(t, tt.expectedError, err)
+				}
+				return
+			}
+			require.NoError(t, err)
 		})
 	}
 }
@@ -702,7 +853,7 @@ func TestApplyChangeSet(t *testing.T) {
 
 			expectedToken := "mocked-token"
 			authTokenURL := "/diode/auth/token"
-			mockOAuth2Server := newMockOAuth2Server(authTokenURL, tt.diodeToNetBoxClientID, tt.diodeToNetBoxClientSecret, expectedToken)
+			mockOAuth2Server := newMockOAuth2Server(authTokenURL, requireCredentials(tt.diodeToNetBoxClientID, tt.diodeToNetBoxClientSecret), expectedToken)
 			defer mockOAuth2Server.Close()
 
 			mockOAuth2ServerURL := mockOAuth2Server.URL + authTokenURL
@@ -727,7 +878,17 @@ func TestApplyChangeSet(t *testing.T) {
 			defer ts.Close()
 
 			baseURL := fmt.Sprintf("%s/api/diode", ts.URL)
-			client, err := netboxdiodeplugin.NewClient(logger, baseURL, tt.diodeToNetBoxClientID, tt.diodeToNetBoxClientSecret, mockOAuth2ServerURL, tt.rateLimiterRPS, tt.rateLimiterBurst, tt.maxRetries)
+			client, err := netboxdiodeplugin.NewClient(
+				netboxdiodeplugin.ClientOptions{
+					Logger:            logger,
+					BaseURL:           baseURL,
+					ClientID:          tt.diodeToNetBoxClientID,
+					ClientSecret:      tt.diodeToNetBoxClientSecret,
+					TokenURL:          mockOAuth2ServerURL,
+					RateLimitRPS:      tt.rateLimiterRPS,
+					RateLimitBurstRPS: tt.rateLimiterBurst,
+					MaxRetries:        tt.maxRetries,
+				})
 			require.NoError(t, err)
 			resp, err := client.ApplyChangeSet(context.Background(), tt.changeSetRequest)
 			if tt.shouldError {
@@ -807,7 +968,7 @@ func TestApplyChangeSetRateLimiting(t *testing.T) {
 
 			expectedToken := "mocked-token"
 			authTokenURL := "/diode/auth/token"
-			mockOAuth2Server := newMockOAuth2Server(authTokenURL, tt.diodeToNetBoxClientID, tt.diodeToNetBoxClientSecret, expectedToken)
+			mockOAuth2Server := newMockOAuth2Server(authTokenURL, requireCredentials(tt.diodeToNetBoxClientID, tt.diodeToNetBoxClientSecret), expectedToken)
 			defer mockOAuth2Server.Close()
 
 			mockOAuth2ServerURL := mockOAuth2Server.URL + authTokenURL
@@ -834,7 +995,17 @@ func TestApplyChangeSetRateLimiting(t *testing.T) {
 
 			baseURL := fmt.Sprintf("%s/api/diode", ts.URL)
 
-			client, err := netboxdiodeplugin.NewClient(logger, baseURL, tt.diodeToNetBoxClientID, tt.diodeToNetBoxClientSecret, mockOAuth2ServerURL, tt.rateLimiterRPS, tt.rateLimiterBurst, tt.maxRetries)
+			client, err := netboxdiodeplugin.NewClient(
+				netboxdiodeplugin.ClientOptions{
+					Logger:            logger,
+					BaseURL:           baseURL,
+					ClientID:          tt.diodeToNetBoxClientID,
+					ClientSecret:      tt.diodeToNetBoxClientSecret,
+					TokenURL:          mockOAuth2ServerURL,
+					RateLimitRPS:      tt.rateLimiterRPS,
+					RateLimitBurstRPS: tt.rateLimiterBurst,
+					MaxRetries:        tt.maxRetries,
+				})
 			require.NoError(t, err)
 			resp, err := client.ApplyChangeSet(context.Background(), tt.changeSetRequest)
 			_, _ = client.ApplyChangeSet(context.Background(), tt.changeSetRequest)
@@ -864,7 +1035,14 @@ func strPtr(s string) *string {
 	return &s
 }
 
-func newMockOAuth2Server(authTokenURL, wantClientID, wantClientSecret, mockedToken string) *httptest.Server {
+func requireCredentials(clientID, clientSecret string) map[string]string {
+	return map[string]string{
+		"client_id":     clientID,
+		"client_secret": clientSecret,
+	}
+}
+
+func newMockOAuth2Server(authTokenURL string, requiredParams map[string]string, mockedToken string) *httptest.Server {
 	handler := http.NewServeMux()
 
 	handler.HandleFunc(authTokenURL, func(w http.ResponseWriter, r *http.Request) {
@@ -873,18 +1051,19 @@ func newMockOAuth2Server(authTokenURL, wantClientID, wantClientSecret, mockedTok
 			return
 		}
 
-		// Optional: Validate client credentials
-		if r.PostForm.Get("client_id") != wantClientID || r.PostForm.Get("client_secret") != wantClientSecret {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusUnauthorized)
-			if err := json.NewEncoder(w).Encode(map[string]string{
-				"error":             "unauthorized",
-				"error_description": "Authentication required",
-			}); err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+		for k, v := range requiredParams {
+			if r.PostForm.Get(k) != v {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusUnauthorized)
+				if err := json.NewEncoder(w).Encode(map[string]string{
+					"error":             "unauthorized",
+					"error_description": "Authentication required",
+				}); err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
 				return
 			}
-			return
 		}
 
 		// Simulate token response

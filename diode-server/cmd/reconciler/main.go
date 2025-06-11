@@ -111,9 +111,17 @@ func main() {
 
 	diodeToNetBoxMaxRetries := 3
 
-	nbClient, err := netboxdiodeplugin.NewClient(s.Logger(), cfg.NetBoxDiodePluginAPIBaseURL, cfg.DiodeToNetBoxClientID,
-		cfg.DiodeToNetBoxClientSecret, cfg.DiodeAuthTokenURL, cfg.DiodeToNetBoxRateLimiterRPS,
-		cfg.DiodeToNetBoxRateLimiterBurst, diodeToNetBoxMaxRetries)
+	nbClient, err := netboxdiodeplugin.NewClient(
+		netboxdiodeplugin.ClientOptions{
+			Logger:            s.Logger(),
+			BaseURL:           cfg.NetBoxDiodePluginAPIBaseURL,
+			ClientID:          cfg.DiodeToNetBoxClientID,
+			ClientSecret:      cfg.DiodeToNetBoxClientSecret,
+			TokenURL:          cfg.DiodeAuthTokenURL,
+			RateLimitRPS:      cfg.DiodeToNetBoxRateLimiterRPS,
+			RateLimitBurstRPS: cfg.DiodeToNetBoxRateLimiterBurst,
+			MaxRetries:        diodeToNetBoxMaxRetries,
+		})
 	if err != nil {
 		s.Logger().Error("failed to create netbox diode plugin client", "error", err)
 		os.Exit(1)
