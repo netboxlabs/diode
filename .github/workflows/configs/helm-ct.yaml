@@ -1,2 +1,2 @@
 validate-maintainers: false
-skip-helm-dependencies: true
+skip-helm-dependencies: false
