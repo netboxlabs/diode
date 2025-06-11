@@ -10,6 +10,13 @@ global:
       # -- wait for PostgreSQL
       waitForPostgres: true
 
+  # -- common annotations for all resources
+  commonAnnotations: {}
+
+  # -- common labels for all resources
+  commonLabels: {}
+
+
 diode:
   # -- environment name
   environment: development
@@ -58,6 +65,8 @@ diodeAuth:
       memory: 512Mi
   # -- extra environment variables to be set on containers' `env` section
   extraEnvs: []
+  # -- annotations to add to the auth deployment
+  annotations: {}
   config:
     # -- logging level
     loggingLevel: INFO
@@ -83,9 +92,15 @@ diodeAuthBootstrap:
     imagePullSecrets: []
     # -- pull policy
     pullPolicy: IfNotPresent
+  # -- annotations to add to the auth bootstrap deployment
+  annotations: {}
   job:
     # -- backoff limit
     backoffLimit: 20
+    # -- annotations to add to the auth bootstrap job
+    annotations:
+      "helm.sh/hook": post-install, post-upgrade
+      "helm.sh/hook-weight": "2"
 
 # Diode Ingester configuration
 diodeIngester:
@@ -122,6 +137,8 @@ diodeIngester:
     serviceName: diode.v1.IngesterService
   # -- extra environment variables to be set on containers' `env` section
   extraEnvs: []
+  # -- annotations to add to the ingester deployment
+  annotations: {}
   config:
     # -- logging level
     loggingLevel: INFO
@@ -171,6 +188,8 @@ diodeReconciler:
     serviceName: diode.v1.ReconcilerService
   # -- extra environment variables to be set on containers' `env` section
   extraEnvs: []
+  # -- annotations to add to the reconciler deployment
+  annotations: {}
   config:
     # -- netbox diode plugin api base url
     netboxDiodePluginApiBaseUrl: http://localhost:8000/netbox/api/plugins/diode

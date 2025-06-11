@@ -2,7 +2,7 @@
 
 A Helm chart for Diode
 
-![Version: 1.5.0](https://img.shields.io/badge/Version-1.5.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.2.0](https://img.shields.io/badge/AppVersion-1.2.0-informational?style=flat-square)
+![Version: 1.6.0](https://img.shields.io/badge/Version-1.6.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.2.0](https://img.shields.io/badge/AppVersion-1.2.0-informational?style=flat-square)
 
 ## Prerequisites
 
@@ -227,8 +227,9 @@ helm show values diode/diode
 | certManager.prometheus | object | `{"enabled":false}` | prometheus enabled |
 | certManager.webhook | object | `{"enabled":true}` | webhook enabled |
 | diode.environment | string | `"development"` | environment name |
+| diodeAuth.annotations | object | `{}` | annotations to add to the auth deployment |
 | diodeAuth.config.loggingLevel | string | `"INFO"` | logging level |
-| diodeAuth.config.sentryDsn | string | `""` | sentry DSN  |
+| diodeAuth.config.sentryDsn | string | `""` | sentry DSN |
 | diodeAuth.config.telemetryEnvironment | string | `"dev"` | telemetry environment |
 | diodeAuth.config.telemetryMetricsExporter | string | `"prometheus"` | telemetry metrics exporter |
 | diodeAuth.config.telemetryTracesExporter | string | `"none"` | telemetry traces exporter |
@@ -242,15 +243,18 @@ helm show values diode/diode
 | diodeAuth.replicaCount | int | `1` | replica count |
 | diodeAuth.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
 | diodeAuth.serviceAccount.create | bool | `true` | create service account |
+| diodeAuthBootstrap.annotations | object | `{}` | annotations to add to the auth bootstrap deployment |
 | diodeAuthBootstrap.enabled | bool | `true` | enabled |
 | diodeAuthBootstrap.image.imagePullSecrets | list | `[]` | secrets with credentials to pull images from a private registry |
 | diodeAuthBootstrap.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
 | diodeAuthBootstrap.image.repository | string | `"docker.io/netboxlabs/diode-auth"` | image repository |
 | diodeAuthBootstrap.image.tag | string | `"1.2.0"` | image tag |
+| diodeAuthBootstrap.job.annotations | object | `{"helm.sh/hook":"post-install, post-upgrade","helm.sh/hook-weight":"2"}` | annotations to add to the auth bootstrap job |
 | diodeAuthBootstrap.job.backoffLimit | int | `20` | backoff limit |
+| diodeIngester.annotations | object | `{}` | annotations to add to the ingester deployment |
 | diodeIngester.config.loggingLevel | string | `"INFO"` | logging level |
 | diodeIngester.config.redisStreamDb | int | `1` | redis stream db |
-| diodeIngester.config.sentryDsn | string | `""` | sentry DSN  |
+| diodeIngester.config.sentryDsn | string | `""` | sentry DSN |
 | diodeIngester.config.telemetryEnvironment | string | `"dev"` | telemetry environment |
 | diodeIngester.config.telemetryMetricsExporter | string | `"prometheus"` | telemetry metrics exporter |
 | diodeIngester.config.telemetryTracesExporter | string | `"none"` | telemetry traces exporter |
@@ -266,6 +270,7 @@ helm show values diode/diode
 | diodeIngester.replicaCount | int | `1` | replica count |
 | diodeIngester.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
 | diodeIngester.serviceAccount.create | bool | `true` | create service account |
+| diodeReconciler.annotations | object | `{}` | annotations to add to the reconciler deployment |
 | diodeReconciler.config.autoApplyChangesets | string | `"true"` | auto apply changesets |
 | diodeReconciler.config.diodeToNetBoxClientId | string | `"diode-to-netbox"` | diode to netbox client id |
 | diodeReconciler.config.diodeToNetboxRateLimiterBurst | int | `1` | diode to netbox rate limiter burst |
@@ -300,6 +305,8 @@ helm show values diode/diode
 | externalPostgresql.port | int | `5432` | port |
 | externalRedis.hostname | string | `"localhost"` | hostname |
 | externalRedis.port | int | `6379` | port |
+| global.commonAnnotations | object | `{}` | common annotations for all resources |
+| global.commonLabels | object | `{}` | common labels for all resources |
 | global.diode | object | `{"busybox":{"image":"busybox:latest","imagePullPolicy":"IfNotPresent"},"hydra":{"waitForPostgres":true}}` | diode global configuration |
 | global.diode.busybox | object | `{"image":"busybox:latest","imagePullPolicy":"IfNotPresent"}` | busybox image configuration |
 | global.diode.hydra | object | `{"waitForPostgres":true}` | hydra additional init containers configuration |

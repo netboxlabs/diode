@@ -9,6 +9,9 @@ metadata:
   labels:
     {{- include "diode.labels" . | nindent 4 }}
     app.kubernetes.io/component: {{ include "diode.ingress.name" . }}
+    {{- if .Values.global.commonLabels }}
+    {{- include "common.labels.standard" ( dict "customLabels" .Values.global.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
   annotations:
     nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
     nginx.ingress.kubernetes.io/rewrite-target: /$1
@@ -21,6 +24,9 @@ metadata:
     {{- else }}
     cert-manager.io/cluster-issuer: {{ $certIssuer.name }}
     {{- end }}
+    {{- end }}
+    {{- if .Values.global.commonAnnotations }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
     {{- end }}
 spec:
   ingressClassName: {{ $ingressNginx.ingressClass | default "nginx" }}

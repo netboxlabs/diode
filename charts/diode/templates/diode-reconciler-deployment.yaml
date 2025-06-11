@@ -8,6 +8,15 @@ metadata:
     {{- include "diode.labels" . | nindent 4 }}
     app: {{ include "diode.reconciler.servicename" . }}
     app.kubernetes.io/component: {{ include "diode.reconciler.servicename" . }}
+  {{- if or .Values.global.commonAnnotations .Values.diodeReconciler.annotations }}
+  annotations:
+    {{- if .Values.diodeReconciler.annotations }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.diodeReconciler.annotations "context" $ ) | nindent 4 }}
+    {{- end }}
+    {{- if .Values.global.commonAnnotations }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
+    {{- end }}
+  {{-  end }}
 spec:
   replicas: {{ .Values.diodeReconciler.replicaCount }}
   selector:
