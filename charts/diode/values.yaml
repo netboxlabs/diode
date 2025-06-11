@@ -92,8 +92,6 @@ diodeAuthBootstrap:
     imagePullSecrets: []
     # -- pull policy
     pullPolicy: IfNotPresent
-  # -- annotations to add to the auth bootstrap deployment
-  annotations: {}
   job:
     # -- backoff limit
     backoffLimit: 20

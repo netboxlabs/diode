@@ -54,11 +54,11 @@ jobs:
       - name: Run chart-testing (list-changed)
         id: list-changed
         run: |
-          changed=$(ct list-changed --target-branch ${{ github.event.repository.default_branch }})
+          changed=$(ct list-changed --target-branch release)
           if [[ -n "$changed" ]]; then
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Run chart-testing (lint)
         if: steps.list-changed.outputs.changed == 'true'
-        run: ct lint --config .github/workflows/configs/helm-ct.yaml --target-branch ${{ github.event.repository.default_branch }}
+        run: ct lint --config .github/workflows/configs/helm-ct.yaml --target-branch release

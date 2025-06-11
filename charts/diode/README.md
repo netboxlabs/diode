@@ -243,7 +243,6 @@ helm show values diode/diode
 | diodeAuth.replicaCount | int | `1` | replica count |
 | diodeAuth.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
 | diodeAuth.serviceAccount.create | bool | `true` | create service account |
-| diodeAuthBootstrap.annotations | object | `{}` | annotations to add to the auth bootstrap deployment |
 | diodeAuthBootstrap.enabled | bool | `true` | enabled |
 | diodeAuthBootstrap.image.imagePullSecrets | list | `[]` | secrets with credentials to pull images from a private registry |
 | diodeAuthBootstrap.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
