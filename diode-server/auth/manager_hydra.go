@@ -60,7 +60,6 @@ func (h *HydraClientManager) CreateClient(ctx context.Context, clientInfo Client
 		newClient.ClientName = &clientInfo.ClientName
 	}
 	if clientInfo.Audience != nil {
-		fmt.Printf("clientInfo.Audience: %+v\n", clientInfo.Audience)
 		newClient.Audience = clientInfo.Audience
 	}
 
