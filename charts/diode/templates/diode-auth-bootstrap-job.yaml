@@ -7,6 +7,8 @@ metadata:
   labels:
     {{- include "diode.labels" . | nindent 4 }}
     app.kubernetes.io/component: {{ include "diode.auth.bootstrapjobname" . }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
 spec:
   backoffLimit: {{ .Values.diodeAuthBootstrap.job.backoffLimit }}
   template:
