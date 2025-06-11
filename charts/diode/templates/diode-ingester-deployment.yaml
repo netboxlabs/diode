@@ -8,9 +8,15 @@ metadata:
     {{- include "diode.labels" . | nindent 4 }}
     app: {{ include "diode.ingester.servicename" . }}
     app.kubernetes.io/component: {{ include "diode.ingester.servicename" . }}
-  {{- if .Values.global.commonAnnotations }}
-  annotations: {{- include "common.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
-  {{- end }}
+  {{- if or .Values.global.commonAnnotations .Values.diodeIngester.annotations }}
+  annotations:
+    {{- if .Values.diodeIngester.annotations }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.diodeIngester.annotations "context" $ ) | nindent 4 }}
+    {{- end }}
+    {{- if .Values.global.commonAnnotations }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
+    {{- end }}
+  {{-  end }}
 spec:
   replicas: {{ .Values.diodeIngester.replicaCount }}
   selector:

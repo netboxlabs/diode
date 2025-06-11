@@ -8,9 +8,15 @@ metadata:
     {{- include "diode.labels" . | nindent 4 }}
     app: {{ include "diode.auth.servicename" . }}
     app.kubernetes.io/component: {{ include "diode.auth.servicename" . }}
-  {{- if .Values.global.commonAnnotations }}
-  annotations: {{- include "common.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
-  {{- end }}
+  {{- if or .Values.global.commonAnnotations .Values.diodeAuth.annotations }}
+  annotations:
+    {{- if .Values.diodeAuth.annotations }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.diodeAuth.annotations "context" $ ) | nindent 4 }}
+    {{- end }}
+    {{- if .Values.global.commonAnnotations }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.global.commonAnnotations "context" $ ) | nindent 4 }}
+    {{- end }}
+  {{-  end }}
 spec:
   replicas: {{ .Values.diodeAuth.replicaCount }}
   selector:
