@@ -134,7 +134,7 @@ func main() {
 		s.Logger().Error("failed to create ingestion processor metrics", "error", err)
 		os.Exit(1)
 	}
-	ingestionProcessor, err := reconciler.NewIngestionProcessor(ctx, s.Logger(), redisClient, redisStreamClient, reconciler.DefaultRedisStreamID, reconciler.DefaultRedisConsumerGroup, ops, ingestionMetrics)
+	ingestionProcessor, err := reconciler.NewIngestionProcessor(ctx, s.Logger(), cfg, redisClient, redisStreamClient, reconciler.DefaultRedisStreamID, reconciler.DefaultRedisConsumerGroup, ops, ingestionMetrics)
 	if err != nil {
 		s.Logger().Error("failed to instantiate ingestion processor", "error", err)
 		os.Exit(1)
