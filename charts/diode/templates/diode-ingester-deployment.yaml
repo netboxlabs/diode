@@ -27,7 +27,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config-ingester: {{ include (printf "%s/%s-ingester-configmap.yaml" $.Template.BasePath (include "diode.name" .)) . | sha256sum }}
+        checksum/config-ingester: {{ include (printf "%s/diode-ingester-configmap.yaml" $.Template.BasePath) . | sha256sum }}
       labels:
         {{- include "diode.selectorlabels" . | nindent 8 }}
         app: {{ include "diode.ingester.servicename" . }}
