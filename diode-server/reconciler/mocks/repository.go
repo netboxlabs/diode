@@ -25,9 +25,9 @@ func (_m *Repository) EXPECT() *Repository_Expecter {
 	return &Repository_Expecter{mock: &_m.Mock}
 }
 
-// CountIngestionLogsPerState provides a mock function with given fields: ctx
-func (_m *Repository) CountIngestionLogsPerState(ctx context.Context) (map[reconcilerpb.State]int32, error) {
-	ret := _m.Called(ctx)
+// CountIngestionLogsPerState provides a mock function with given fields: ctx, includeDuplicates
+func (_m *Repository) CountIngestionLogsPerState(ctx context.Context, includeDuplicates bool) (map[reconcilerpb.State]int32, error) {
+	ret := _m.Called(ctx, includeDuplicates)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CountIngestionLogsPerState")
@@ -35,19 +35,19 @@ func (_m *Repository) CountIngestionLogsPerState(ctx context.Context) (map[recon
 
 	var r0 map[reconcilerpb.State]int32
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) (map[reconcilerpb.State]int32, error)); ok {
-		return rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, bool) (map[reconcilerpb.State]int32, error)); ok {
+		return rf(ctx, includeDuplicates)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) map[reconcilerpb.State]int32); ok {
-		r0 = rf(ctx)
+	if rf, ok := ret.Get(0).(func(context.Context, bool) map[reconcilerpb.State]int32); ok {
+		r0 = rf(ctx, includeDuplicates)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(map[reconcilerpb.State]int32)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
+	if rf, ok := ret.Get(1).(func(context.Context, bool) error); ok {
+		r1 = rf(ctx, includeDuplicates)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -62,13 +62,14 @@ type Repository_CountIngestionLogsPerState_Call struct {
 
 // CountIngestionLogsPerState is a helper method to define mock.On call
 //   - ctx context.Context
-func (_e *Repository_Expecter) CountIngestionLogsPerState(ctx interface{}) *Repository_CountIngestionLogsPerState_Call {
-	return &Repository_CountIngestionLogsPerState_Call{Call: _e.mock.On("CountIngestionLogsPerState", ctx)}
+//   - includeDuplicates bool
+func (_e *Repository_Expecter) CountIngestionLogsPerState(ctx interface{}, includeDuplicates interface{}) *Repository_CountIngestionLogsPerState_Call {
+	return &Repository_CountIngestionLogsPerState_Call{Call: _e.mock.On("CountIngestionLogsPerState", ctx, includeDuplicates)}
 }
 
-func (_c *Repository_CountIngestionLogsPerState_Call) Run(run func(ctx context.Context)) *Repository_CountIngestionLogsPerState_Call {
+func (_c *Repository_CountIngestionLogsPerState_Call) Run(run func(ctx context.Context, includeDuplicates bool)) *Repository_CountIngestionLogsPerState_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
+		run(args[0].(context.Context), args[1].(bool))
 	})
 	return _c
 }
@@ -78,7 +79,7 @@ func (_c *Repository_CountIngestionLogsPerState_Call) Return(_a0 map[reconcilerp
 	return _c
 }
 
-func (_c *Repository_CountIngestionLogsPerState_Call) RunAndReturn(run func(context.Context) (map[reconcilerpb.State]int32, error)) *Repository_CountIngestionLogsPerState_Call {
+func (_c *Repository_CountIngestionLogsPerState_Call) RunAndReturn(run func(context.Context, bool) (map[reconcilerpb.State]int32, error)) *Repository_CountIngestionLogsPerState_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -143,9 +144,9 @@ func (_c *Repository_CreateChangeSet_Call) RunAndReturn(run func(context.Context
 	return _c
 }
 
-// CreateIngestionLog provides a mock function with given fields: ctx, ingestionLog, sourceMetadata
-func (_m *Repository) CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb.IngestionLog, sourceMetadata []byte) (*int32, error) {
-	ret := _m.Called(ctx, ingestionLog, sourceMetadata)
+// CreateIngestionLog provides a mock function with given fields: ctx, ingestionLog, sourceMetadata, entityHash
+func (_m *Repository) CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb.IngestionLog, sourceMetadata []byte, entityHash string) (*int32, error) {
+	ret := _m.Called(ctx, ingestionLog, sourceMetadata, entityHash)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateIngestionLog")
@@ -153,19 +154,19 @@ func (_m *Repository) CreateIngestionLog(ctx context.Context, ingestionLog *reco
 
 	var r0 *int32
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *reconcilerpb.IngestionLog, []byte) (*int32, error)); ok {
-		return rf(ctx, ingestionLog, sourceMetadata)
+	if rf, ok := ret.Get(0).(func(context.Context, *reconcilerpb.IngestionLog, []byte, string) (*int32, error)); ok {
+		return rf(ctx, ingestionLog, sourceMetadata, entityHash)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *reconcilerpb.IngestionLog, []byte) *int32); ok {
-		r0 = rf(ctx, ingestionLog, sourceMetadata)
+	if rf, ok := ret.Get(0).(func(context.Context, *reconcilerpb.IngestionLog, []byte, string) *int32); ok {
+		r0 = rf(ctx, ingestionLog, sourceMetadata, entityHash)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*int32)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *reconcilerpb.IngestionLog, []byte) error); ok {
-		r1 = rf(ctx, ingestionLog, sourceMetadata)
+	if rf, ok := ret.Get(1).(func(context.Context, *reconcilerpb.IngestionLog, []byte, string) error); ok {
+		r1 = rf(ctx, ingestionLog, sourceMetadata, entityHash)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -182,13 +183,14 @@ type Repository_CreateIngestionLog_Call struct {
 //   - ctx context.Context
 //   - ingestionLog *reconcilerpb.IngestionLog
 //   - sourceMetadata []byte
-func (_e *Repository_Expecter) CreateIngestionLog(ctx interface{}, ingestionLog interface{}, sourceMetadata interface{}) *Repository_CreateIngestionLog_Call {
-	return &Repository_CreateIngestionLog_Call{Call: _e.mock.On("CreateIngestionLog", ctx, ingestionLog, sourceMetadata)}
+//   - entityHash string
+func (_e *Repository_Expecter) CreateIngestionLog(ctx interface{}, ingestionLog interface{}, sourceMetadata interface{}, entityHash interface{}) *Repository_CreateIngestionLog_Call {
+	return &Repository_CreateIngestionLog_Call{Call: _e.mock.On("CreateIngestionLog", ctx, ingestionLog, sourceMetadata, entityHash)}
 }
 
-func (_c *Repository_CreateIngestionLog_Call) Run(run func(ctx context.Context, ingestionLog *reconcilerpb.IngestionLog, sourceMetadata []byte)) *Repository_CreateIngestionLog_Call {
+func (_c *Repository_CreateIngestionLog_Call) Run(run func(ctx context.Context, ingestionLog *reconcilerpb.IngestionLog, sourceMetadata []byte, entityHash string)) *Repository_CreateIngestionLog_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*reconcilerpb.IngestionLog), args[2].([]byte))
+		run(args[0].(context.Context), args[1].(*reconcilerpb.IngestionLog), args[2].([]byte), args[3].(string))
 	})
 	return _c
 }
@@ -198,7 +200,171 @@ func (_c *Repository_CreateIngestionLog_Call) Return(_a0 *int32, _a1 error) *Rep
 	return _c
 }
 
-func (_c *Repository_CreateIngestionLog_Call) RunAndReturn(run func(context.Context, *reconcilerpb.IngestionLog, []byte) (*int32, error)) *Repository_CreateIngestionLog_Call {
+func (_c *Repository_CreateIngestionLog_Call) RunAndReturn(run func(context.Context, *reconcilerpb.IngestionLog, []byte, string) (*int32, error)) *Repository_CreateIngestionLog_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// FindPriorIngestionLogByEntityHash provides a mock function with given fields: ctx, entityHash, currentBranch
+func (_m *Repository) FindPriorIngestionLogByEntityHash(ctx context.Context, entityHash string, currentBranch *string) (*int32, *reconcilerpb.IngestionLog, error) {
+	ret := _m.Called(ctx, entityHash, currentBranch)
+
+	if len(ret) == 0 {
+		panic("no return value specified for FindPriorIngestionLogByEntityHash")
+	}
+
+	var r0 *int32
+	var r1 *reconcilerpb.IngestionLog
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *string) (*int32, *reconcilerpb.IngestionLog, error)); ok {
+		return rf(ctx, entityHash, currentBranch)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, *string) *int32); ok {
+		r0 = rf(ctx, entityHash, currentBranch)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*int32)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, *string) *reconcilerpb.IngestionLog); ok {
+		r1 = rf(ctx, entityHash, currentBranch)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*reconcilerpb.IngestionLog)
+		}
+	}
+
+	if rf, ok := ret.Get(2).(func(context.Context, string, *string) error); ok {
+		r2 = rf(ctx, entityHash, currentBranch)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
+// Repository_FindPriorIngestionLogByEntityHash_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FindPriorIngestionLogByEntityHash'
+type Repository_FindPriorIngestionLogByEntityHash_Call struct {
+	*mock.Call
+}
+
+// FindPriorIngestionLogByEntityHash is a helper method to define mock.On call
+//   - ctx context.Context
+//   - entityHash string
+//   - currentBranch *string
+func (_e *Repository_Expecter) FindPriorIngestionLogByEntityHash(ctx interface{}, entityHash interface{}, currentBranch interface{}) *Repository_FindPriorIngestionLogByEntityHash_Call {
+	return &Repository_FindPriorIngestionLogByEntityHash_Call{Call: _e.mock.On("FindPriorIngestionLogByEntityHash", ctx, entityHash, currentBranch)}
+}
+
+func (_c *Repository_FindPriorIngestionLogByEntityHash_Call) Run(run func(ctx context.Context, entityHash string, currentBranch *string)) *Repository_FindPriorIngestionLogByEntityHash_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(*string))
+	})
+	return _c
+}
+
+func (_c *Repository_FindPriorIngestionLogByEntityHash_Call) Return(_a0 *int32, _a1 *reconcilerpb.IngestionLog, _a2 error) *Repository_FindPriorIngestionLogByEntityHash_Call {
+	_c.Call.Return(_a0, _a1, _a2)
+	return _c
+}
+
+func (_c *Repository_FindPriorIngestionLogByEntityHash_Call) RunAndReturn(run func(context.Context, string, *string) (*int32, *reconcilerpb.IngestionLog, error)) *Repository_FindPriorIngestionLogByEntityHash_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// MarkIngestionLogAsDuplicate provides a mock function with given fields: ctx, duplicateID, primaryID
+func (_m *Repository) MarkIngestionLogAsDuplicate(ctx context.Context, duplicateID int32, primaryID int32) error {
+	ret := _m.Called(ctx, duplicateID, primaryID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for MarkIngestionLogAsDuplicate")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, int32, int32) error); ok {
+		r0 = rf(ctx, duplicateID, primaryID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Repository_MarkIngestionLogAsDuplicate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'MarkIngestionLogAsDuplicate'
+type Repository_MarkIngestionLogAsDuplicate_Call struct {
+	*mock.Call
+}
+
+// MarkIngestionLogAsDuplicate is a helper method to define mock.On call
+//   - ctx context.Context
+//   - duplicateID int32
+//   - primaryID int32
+func (_e *Repository_Expecter) MarkIngestionLogAsDuplicate(ctx interface{}, duplicateID interface{}, primaryID interface{}) *Repository_MarkIngestionLogAsDuplicate_Call {
+	return &Repository_MarkIngestionLogAsDuplicate_Call{Call: _e.mock.On("MarkIngestionLogAsDuplicate", ctx, duplicateID, primaryID)}
+}
+
+func (_c *Repository_MarkIngestionLogAsDuplicate_Call) Run(run func(ctx context.Context, duplicateID int32, primaryID int32)) *Repository_MarkIngestionLogAsDuplicate_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(int32), args[2].(int32))
+	})
+	return _c
+}
+
+func (_c *Repository_MarkIngestionLogAsDuplicate_Call) Return(_a0 error) *Repository_MarkIngestionLogAsDuplicate_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Repository_MarkIngestionLogAsDuplicate_Call) RunAndReturn(run func(context.Context, int32, int32) error) *Repository_MarkIngestionLogAsDuplicate_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// MarkIngestionLogAsPrimary provides a mock function with given fields: ctx, duplicateID
+func (_m *Repository) MarkIngestionLogAsPrimary(ctx context.Context, duplicateID int32) error {
+	ret := _m.Called(ctx, duplicateID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for MarkIngestionLogAsPrimary")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, int32) error); ok {
+		r0 = rf(ctx, duplicateID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Repository_MarkIngestionLogAsPrimary_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'MarkIngestionLogAsPrimary'
+type Repository_MarkIngestionLogAsPrimary_Call struct {
+	*mock.Call
+}
+
+// MarkIngestionLogAsPrimary is a helper method to define mock.On call
+//   - ctx context.Context
+//   - duplicateID int32
+func (_e *Repository_Expecter) MarkIngestionLogAsPrimary(ctx interface{}, duplicateID interface{}) *Repository_MarkIngestionLogAsPrimary_Call {
+	return &Repository_MarkIngestionLogAsPrimary_Call{Call: _e.mock.On("MarkIngestionLogAsPrimary", ctx, duplicateID)}
+}
+
+func (_c *Repository_MarkIngestionLogAsPrimary_Call) Run(run func(ctx context.Context, duplicateID int32)) *Repository_MarkIngestionLogAsPrimary_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(int32))
+	})
+	return _c
+}
+
+func (_c *Repository_MarkIngestionLogAsPrimary_Call) Return(_a0 error) *Repository_MarkIngestionLogAsPrimary_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Repository_MarkIngestionLogAsPrimary_Call) RunAndReturn(run func(context.Context, int32) error) *Repository_MarkIngestionLogAsPrimary_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -387,6 +553,65 @@ func (_c *Repository_RetrieveIngestionLogByExternalID_Call) Return(_a0 *int32, _
 }
 
 func (_c *Repository_RetrieveIngestionLogByExternalID_Call) RunAndReturn(run func(context.Context, string) (*int32, *reconcilerpb.IngestionLog, error)) *Repository_RetrieveIngestionLogByExternalID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// RetrieveIngestionLogDuplicateOfID provides a mock function with given fields: ctx, id
+func (_m *Repository) RetrieveIngestionLogDuplicateOfID(ctx context.Context, id int32) (*int32, error) {
+	ret := _m.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for RetrieveIngestionLogDuplicateOfID")
+	}
+
+	var r0 *int32
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, int32) (*int32, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, int32) *int32); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*int32)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, int32) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Repository_RetrieveIngestionLogDuplicateOfID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RetrieveIngestionLogDuplicateOfID'
+type Repository_RetrieveIngestionLogDuplicateOfID_Call struct {
+	*mock.Call
+}
+
+// RetrieveIngestionLogDuplicateOfID is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id int32
+func (_e *Repository_Expecter) RetrieveIngestionLogDuplicateOfID(ctx interface{}, id interface{}) *Repository_RetrieveIngestionLogDuplicateOfID_Call {
+	return &Repository_RetrieveIngestionLogDuplicateOfID_Call{Call: _e.mock.On("RetrieveIngestionLogDuplicateOfID", ctx, id)}
+}
+
+func (_c *Repository_RetrieveIngestionLogDuplicateOfID_Call) Run(run func(ctx context.Context, id int32)) *Repository_RetrieveIngestionLogDuplicateOfID_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(int32))
+	})
+	return _c
+}
+
+func (_c *Repository_RetrieveIngestionLogDuplicateOfID_Call) Return(_a0 *int32, _a1 error) *Repository_RetrieveIngestionLogDuplicateOfID_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Repository_RetrieveIngestionLogDuplicateOfID_Call) RunAndReturn(run func(context.Context, int32) (*int32, error)) *Repository_RetrieveIngestionLogDuplicateOfID_Call {
 	_c.Call.Return(run)
 	return _c
 }

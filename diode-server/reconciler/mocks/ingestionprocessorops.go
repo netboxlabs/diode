@@ -9,6 +9,8 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
+	ops "github.com/netboxlabs/diode/diode-server/reconciler/ops"
+
 	reconcilerpb "github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 )
 
@@ -76,23 +78,23 @@ func (_c *IngestionProcessorOps_ApplyChangeSet_Call) RunAndReturn(run func(conte
 }
 
 // CreateIngestionLog provides a mock function with given fields: ctx, ingestionLog, sourceMetadata
-func (_m *IngestionProcessorOps) CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb.IngestionLog, sourceMetadata []byte) (*int32, error) {
+func (_m *IngestionProcessorOps) CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb.IngestionLog, sourceMetadata []byte) (*ops.CreateIngestionLogResult, error) {
 	ret := _m.Called(ctx, ingestionLog, sourceMetadata)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateIngestionLog")
 	}
 
-	var r0 *int32
+	var r0 *ops.CreateIngestionLogResult
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *reconcilerpb.IngestionLog, []byte) (*int32, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *reconcilerpb.IngestionLog, []byte) (*ops.CreateIngestionLogResult, error)); ok {
 		return rf(ctx, ingestionLog, sourceMetadata)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *reconcilerpb.IngestionLog, []byte) *int32); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *reconcilerpb.IngestionLog, []byte) *ops.CreateIngestionLogResult); ok {
 		r0 = rf(ctx, ingestionLog, sourceMetadata)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*int32)
+			r0 = ret.Get(0).(*ops.CreateIngestionLogResult)
 		}
 	}
 
@@ -125,12 +127,12 @@ func (_c *IngestionProcessorOps_CreateIngestionLog_Call) Run(run func(ctx contex
 	return _c
 }
 
-func (_c *IngestionProcessorOps_CreateIngestionLog_Call) Return(_a0 *int32, _a1 error) *IngestionProcessorOps_CreateIngestionLog_Call {
+func (_c *IngestionProcessorOps_CreateIngestionLog_Call) Return(_a0 *ops.CreateIngestionLogResult, _a1 error) *IngestionProcessorOps_CreateIngestionLog_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *IngestionProcessorOps_CreateIngestionLog_Call) RunAndReturn(run func(context.Context, *reconcilerpb.IngestionLog, []byte) (*int32, error)) *IngestionProcessorOps_CreateIngestionLog_Call {
+func (_c *IngestionProcessorOps_CreateIngestionLog_Call) RunAndReturn(run func(context.Context, *reconcilerpb.IngestionLog, []byte) (*ops.CreateIngestionLogResult, error)) *IngestionProcessorOps_CreateIngestionLog_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -201,6 +203,53 @@ func (_c *IngestionProcessorOps_GenerateChangeSet_Call) Return(_a0 *int32, _a1 *
 }
 
 func (_c *IngestionProcessorOps_GenerateChangeSet_Call) RunAndReturn(run func(context.Context, int32, *reconcilerpb.IngestionLog, string) (*int32, *changeset.ChangeSet, error)) *IngestionProcessorOps_GenerateChangeSet_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// MakePrimary provides a mock function with given fields: ctx, ingestionLogID
+func (_m *IngestionProcessorOps) MakePrimary(ctx context.Context, ingestionLogID int32) error {
+	ret := _m.Called(ctx, ingestionLogID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for MakePrimary")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, int32) error); ok {
+		r0 = rf(ctx, ingestionLogID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// IngestionProcessorOps_MakePrimary_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'MakePrimary'
+type IngestionProcessorOps_MakePrimary_Call struct {
+	*mock.Call
+}
+
+// MakePrimary is a helper method to define mock.On call
+//   - ctx context.Context
+//   - ingestionLogID int32
+func (_e *IngestionProcessorOps_Expecter) MakePrimary(ctx interface{}, ingestionLogID interface{}) *IngestionProcessorOps_MakePrimary_Call {
+	return &IngestionProcessorOps_MakePrimary_Call{Call: _e.mock.On("MakePrimary", ctx, ingestionLogID)}
+}
+
+func (_c *IngestionProcessorOps_MakePrimary_Call) Run(run func(ctx context.Context, ingestionLogID int32)) *IngestionProcessorOps_MakePrimary_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(int32))
+	})
+	return _c
+}
+
+func (_c *IngestionProcessorOps_MakePrimary_Call) Return(_a0 error) *IngestionProcessorOps_MakePrimary_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *IngestionProcessorOps_MakePrimary_Call) RunAndReturn(run func(context.Context, int32) error) *IngestionProcessorOps_MakePrimary_Call {
 	_c.Call.Return(run)
 	return _c
 }

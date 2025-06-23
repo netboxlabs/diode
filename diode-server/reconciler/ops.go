@@ -2,15 +2,19 @@ package reconciler
 
 import (
 	"context"
+	"database/sql"
 	"errors"
+	"fmt"
 	"log/slog"
 
+	"github.com/netboxlabs/diode/diode-server/entityhash"
 	diodeErrors "github.com/netboxlabs/diode/diode-server/errors"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
 	"github.com/netboxlabs/diode/diode-server/reconciler/applier"
 	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
 	"github.com/netboxlabs/diode/diode-server/reconciler/differ"
+	"github.com/netboxlabs/diode/diode-server/reconciler/ops"
 	"github.com/netboxlabs/diode/diode-server/sentry"
 )
 
@@ -31,8 +35,51 @@ func NewOps(repository Repository, nbClient netboxdiodeplugin.NetBoxAPI, logger 
 }
 
 // CreateIngestionLog creates a record for a newly received ingestion log
-func (o *Ops) CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb.IngestionLog, sourceMetadata []byte) (*int32, error) {
-	return o.repository.CreateIngestionLog(ctx, ingestionLog, sourceMetadata)
+func (o *Ops) CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb.IngestionLog, sourceMetadata []byte) (*ops.CreateIngestionLogResult, error) {
+	// TODO: this should be in a transaction.
+
+	fingerprinter := entityhash.NewEntityFingerprinter()
+	entityHash, err := fingerprinter.GenerateEntityHash(ingestionLog.Entity)
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate entity hash: %w", err)
+	}
+
+	existingID, existingLog, err := o.repository.FindPriorIngestionLogByEntityHash(ctx, entityHash, nil)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return nil, fmt.Errorf("failed to search for prior deviation: %w", err)
+	}
+
+	id, err := o.repository.CreateIngestionLog(ctx, ingestionLog, sourceMetadata, entityHash)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create ingestion log: %w", err)
+	}
+	if id == nil {
+		return nil, fmt.Errorf("failed to create ingestion log: no database id")
+	}
+
+	result := &ops.CreateIngestionLogResult{
+		Created: ops.IngestionLogRef{
+			ID:           *id,
+			IngestionLog: ingestionLog,
+		},
+	}
+
+	if existingID != nil {
+		if err := o.repository.MarkIngestionLogAsDuplicate(ctx, *id, *existingID); err != nil {
+			return nil, fmt.Errorf("failed to mark record as duplicate: %w", err)
+		}
+		// for clarity, duplicate logs are marked as IGNORED
+		if err := o.repository.UpdateIngestionLogStateWithError(ctx, *id, reconcilerpb.State_IGNORED, nil); err != nil {
+			return nil, fmt.Errorf("failed to update ingestion log state: %w", err)
+		}
+		result.Created.IngestionLog.IsDuplicate = true
+		result.DuplicateOf = &ops.IngestionLogRef{
+			ID:           *existingID,
+			IngestionLog: existingLog,
+		}
+	}
+
+	return result, nil
 }
 
 // GenerateChangeSet creates a change set based on current NetBox state with optional branch
@@ -81,7 +128,6 @@ func (o *Ops) GenerateChangeSet(ctx context.Context, ingestionLogID int32, inges
 	if len(changeSet.Changes) == 0 {
 		state = reconcilerpb.State_NO_CHANGES
 	}
-
 	ingestionLog.State = state
 
 	if err := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, state, nil); err != nil {
@@ -92,6 +138,11 @@ func (o *Ops) GenerateChangeSet(ctx context.Context, ingestionLogID int32, inges
 
 	o.logger.Debug("change set generated", "id", changeSetID, "externalID", changeSet.ID, "ingestionLogID", ingestionLogID)
 	return changeSetID, changeSet, nil
+}
+
+// MakePrimary makes an ingestion log a primary record
+func (o *Ops) MakePrimary(ctx context.Context, ingestionLogID int32) error {
+	return o.repository.MarkIngestionLogAsPrimary(ctx, ingestionLogID)
 }
 
 // ApplyChangeSet applies change set to NetBox and updates related states

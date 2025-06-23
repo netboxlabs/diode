@@ -3,6 +3,7 @@ package reconciler
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"io"
@@ -207,7 +208,9 @@ func TestHandleStreamMessage(t *testing.T) {
 			}
 			mockNbClient.On("ApplyChangeSet", mock.Anything, mock.Anything).Return(tt.changeSetResponse, tt.changeSetError)
 			if tt.entities[0].Entity != nil {
-				mockRepository.On("CreateIngestionLog", mock.Anything, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
+				mockRepository.On("CreateIngestionLog", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
+				// Mock FindPriorIngestionLogByEntityHash to return no duplicate found (sql.ErrNoRows)
+				mockRepository.On("FindPriorIngestionLogByEntityHash", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, sql.ErrNoRows)
 				mockRepository.On("CreateChangeSet", mock.Anything, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
 				mockRepository.On("UpdateIngestionLogStateWithError", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 			}

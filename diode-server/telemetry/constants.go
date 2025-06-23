@@ -17,4 +17,6 @@ const (
 	AttributeStream = "stream"
 	// AttributeState is the state of the request
 	AttributeState = "state"
+	// AttributeDuplicate is a boolean attribute that indicates if an ingestion log was a duplicate
+	AttributeDuplicate = "duplicate"
 )

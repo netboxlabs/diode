@@ -19,6 +19,7 @@ import (
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 	"github.com/netboxlabs/diode/diode-server/gen/netbox"
 	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
+	"github.com/netboxlabs/diode/diode-server/reconciler/ops"
 	"github.com/netboxlabs/diode/diode-server/sentry"
 	"github.com/netboxlabs/diode/diode-server/telemetry"
 )
@@ -76,8 +77,9 @@ type IngestionLogToProcess struct {
 
 // IngestionProcessorOps represents the basic operations that the ingestion processor performs
 type IngestionProcessorOps interface {
-	CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb.IngestionLog, sourceMetadata []byte) (*int32, error)
+	CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb.IngestionLog, sourceMetadata []byte) (*ops.CreateIngestionLogResult, error)
 	GenerateChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, branchID string) (*int32, *changeset.ChangeSet, error)
+	MakePrimary(ctx context.Context, ingestionLogID int32) error
 	ApplyChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, changeSetID int32, changeSet *changeset.ChangeSet) error
 }
 
@@ -303,6 +305,29 @@ func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChan
 					p.metrics.RecordChangeSetCreate(ctx, true, int64(len(changeSet.Changes)))
 				}
 
+				if msg.ingestionLog.IsDuplicate {
+					// Reprocessing a duplicate record.
+					// If there are changes or errors, make it a primary (non-duplicate) record.
+					makePrimary := false
+					switch msg.ingestionLog.State {
+					case reconcilerpb.State_OPEN:
+						makePrimary = true
+					case reconcilerpb.State_FAILED:
+						makePrimary = true
+					case reconcilerpb.State_ERRORED:
+						makePrimary = true
+					default:
+					}
+					if makePrimary {
+						err := p.ops.MakePrimary(ctx, msg.ingestionLogID)
+						if err != nil {
+							p.logger.Error("error making ingestion log primary", "error", err)
+							return
+						}
+						msg.ingestionLog.IsDuplicate = false
+					}
+				}
+
 				if changeSet != nil && len(changeSet.Changes) > 0 {
 					if applyChangeSetChan != nil {
 						applyChangeSetChan <- IngestionLogToProcess{
@@ -387,18 +412,46 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 			SourceTs:           v.GetTimestamp().AsTime().UnixNano(),
 		}
 
-		id, err := p.ops.CreateIngestionLog(ctx, ingestionLog, nil)
+		result, err := p.ops.CreateIngestionLog(ctx, ingestionLog, nil)
 		if err != nil {
-			errs = append(errs, fmt.Errorf("failed to create ingestion log: %v", err))
+			errs = append(errs, fmt.Errorf("failed to process ingestion log: %v", err))
 			p.metrics.RecordIngestionLogCreate(ctx, false)
 			continue
 		}
+		if result == nil {
+			errs = append(errs, fmt.Errorf("failed to create ingestion log, no result"))
+			p.metrics.RecordIngestionLogCreate(ctx, false)
+			continue
+		}
+		ingestionLog = result.Created.IngestionLog
+		id := result.Created.ID
+
+		p.logger.Debug("created new ingestion log", "id", id, "externalID", ingestionLog.GetId())
+
+		attrs := []attribute.KeyValue{
+			attribute.Bool(telemetry.AttributeDuplicate, result.DuplicateOf != nil),
+		}
+		ctx = telemetry.ContextWithMetricAttributes(ctx, attrs...)
 
 		p.metrics.RecordIngestionLogCreate(ctx, true)
-		p.logger.Debug("created ingestion log", "id", id, "externalID", ingestionLog.GetId())
+
+		if result.DuplicateOf != nil {
+			switch result.DuplicateOf.IngestionLog.State {
+			case reconcilerpb.State_IGNORED:
+				p.logger.Debug("skipping ingestion log because it is a duplicate of an ignored ingestion log", "id", id, "externalID", ingestionLog.GetId())
+				continue
+			case reconcilerpb.State_APPLIED:
+				// duplicate of previously applied record, we will process
+				// the duplicate itself and maybe upgrade it to a primary record
+			default:
+				// reprocess the existing record
+				id = result.DuplicateOf.ID
+				ingestionLog = result.DuplicateOf.IngestionLog
+			}
+		}
 
 		generateIngestionLogChan <- IngestionLogToProcess{
-			ingestionLogID: *id,
+			ingestionLogID: id,
 			ingestionLog:   ingestionLog,
 		}
 	}

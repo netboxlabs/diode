@@ -251,6 +251,7 @@ type IngestionLog struct {
 	ChangeSet          *ChangeSet      `protobuf:"bytes,12,opt,name=change_set,json=changeSet,proto3" json:"change_set,omitempty"`
 	ObjectType         string          `protobuf:"bytes,13,opt,name=object_type,json=objectType,proto3" json:"object_type,omitempty"`
 	SourceTs           int64           `protobuf:"varint,14,opt,name=source_ts,json=sourceTs,proto3" json:"source_ts,omitempty"`
+	IsDuplicate        bool            `protobuf:"varint,15,opt,name=is_duplicate,json=isDuplicate,proto3" json:"is_duplicate,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -384,21 +385,29 @@ func (x *IngestionLog) GetSourceTs() int64 {
 	return 0
 }
 
+func (x *IngestionLog) GetIsDuplicate() bool {
+	if x != nil {
+		return x.IsDuplicate
+	}
+	return false
+}
+
 // The request to retrieve ingestion logs
 type RetrieveIngestionLogsRequest struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
 	PageSize *int32                 `protobuf:"varint,1,opt,name=page_size,json=pageSize,proto3,oneof" json:"page_size,omitempty"` // Number of logs per page, default is 100
 	State    *State                 `protobuf:"varint,2,opt,name=state,proto3,enum=diode.v1.State,oneof" json:"state,omitempty"`   // Optional filter by state field
 	// Deprecated: Marked as deprecated in diode/v1/reconciler.proto.
-	DataType         string `protobuf:"bytes,3,opt,name=data_type,json=dataType,proto3" json:"data_type,omitempty"`                            // Optional filter by data type field
-	RequestId        string `protobuf:"bytes,4,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`                         // Optional filter by request ID
-	IngestionTsStart int64  `protobuf:"varint,5,opt,name=ingestion_ts_start,json=ingestionTsStart,proto3" json:"ingestion_ts_start,omitempty"` // Optional start of ingestion timestamp range
-	IngestionTsEnd   int64  `protobuf:"varint,6,opt,name=ingestion_ts_end,json=ingestionTsEnd,proto3" json:"ingestion_ts_end,omitempty"`       // Optional end of ingestion timestamp range
-	PageToken        string `protobuf:"bytes,7,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`                         // Token to fetch the next page of results
-	OnlyMetrics      bool   `protobuf:"varint,8,opt,name=only_metrics,json=onlyMetrics,proto3" json:"only_metrics,omitempty"`                  // Flag to return only the ingestion metrics
-	ObjectType       string `protobuf:"bytes,9,opt,name=object_type,json=objectType,proto3" json:"object_type,omitempty"`                      // Optional filter by object type
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	DataType          string `protobuf:"bytes,3,opt,name=data_type,json=dataType,proto3" json:"data_type,omitempty"`                              // Optional filter by data type field
+	RequestId         string `protobuf:"bytes,4,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`                           // Optional filter by request ID
+	IngestionTsStart  int64  `protobuf:"varint,5,opt,name=ingestion_ts_start,json=ingestionTsStart,proto3" json:"ingestion_ts_start,omitempty"`   // Optional start of ingestion timestamp range
+	IngestionTsEnd    int64  `protobuf:"varint,6,opt,name=ingestion_ts_end,json=ingestionTsEnd,proto3" json:"ingestion_ts_end,omitempty"`         // Optional end of ingestion timestamp range
+	PageToken         string `protobuf:"bytes,7,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`                           // Token to fetch the next page of results
+	OnlyMetrics       bool   `protobuf:"varint,8,opt,name=only_metrics,json=onlyMetrics,proto3" json:"only_metrics,omitempty"`                    // Flag to return only the ingestion metrics
+	ObjectType        string `protobuf:"bytes,9,opt,name=object_type,json=objectType,proto3" json:"object_type,omitempty"`                        // Optional filter by object type
+	IncludeDuplicates bool   `protobuf:"varint,10,opt,name=include_duplicates,json=includeDuplicates,proto3" json:"include_duplicates,omitempty"` // Optional include duplicate ingestion logs
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *RetrieveIngestionLogsRequest) Reset() {
@@ -493,6 +502,13 @@ func (x *RetrieveIngestionLogsRequest) GetObjectType() string {
 		return x.ObjectType
 	}
 	return ""
+}
+
+func (x *RetrieveIngestionLogsRequest) GetIncludeDuplicates() bool {
+	if x != nil {
+		return x.IncludeDuplicates
+	}
+	return false
 }
 
 // The response from the retrieve ingestion logs request
@@ -1092,7 +1108,7 @@ const file_diode_v1_reconciler_proto_rawDesc = "" +
 	"\x0edeviation_name\x18\x04 \x01(\tH\x01R\rdeviationName\x88\x01\x01B\f\n" +
 	"\n" +
 	"_branch_idB\x11\n" +
-	"\x0f_deviation_name\"\x8e\x04\n" +
+	"\x0f_deviation_name\"\xb1\x04\n" +
 	"\fIngestionLog\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1f\n" +
 	"\tdata_type\x18\x02 \x01(\tB\x02\x18\x01R\bdataType\x12%\n" +
@@ -1112,7 +1128,8 @@ const file_diode_v1_reconciler_proto_rawDesc = "" +
 	"change_set\x18\f \x01(\v2\x13.diode.v1.ChangeSetR\tchangeSet\x12\x1f\n" +
 	"\vobject_type\x18\r \x01(\tR\n" +
 	"objectType\x12\x1b\n" +
-	"\tsource_ts\x18\x0e \x01(\x03R\bsourceTs\"\xff\x02\n" +
+	"\tsource_ts\x18\x0e \x01(\x03R\bsourceTs\x12!\n" +
+	"\fis_duplicate\x18\x0f \x01(\bR\visDuplicate\"\xae\x03\n" +
 	"\x1cRetrieveIngestionLogsRequest\x12 \n" +
 	"\tpage_size\x18\x01 \x01(\x05H\x00R\bpageSize\x88\x01\x01\x12*\n" +
 	"\x05state\x18\x02 \x01(\x0e2\x0f.diode.v1.StateH\x01R\x05state\x88\x01\x01\x12\x1f\n" +
@@ -1125,7 +1142,9 @@ const file_diode_v1_reconciler_proto_rawDesc = "" +
 	"page_token\x18\a \x01(\tR\tpageToken\x12!\n" +
 	"\fonly_metrics\x18\b \x01(\bR\vonlyMetrics\x12\x1f\n" +
 	"\vobject_type\x18\t \x01(\tR\n" +
-	"objectTypeB\f\n" +
+	"objectType\x12-\n" +
+	"\x12include_duplicates\x18\n" +
+	" \x01(\bR\x11includeDuplicatesB\f\n" +
 	"\n" +
 	"_page_sizeB\b\n" +
 	"\x06_state\"\xa9\x01\n" +

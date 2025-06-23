@@ -51,6 +51,7 @@ message IngestionLog {
   ChangeSet change_set = 12;
   string object_type = 13;
   int64 source_ts = 14;
+  bool is_duplicate = 15;
 }
 
 // The request to retrieve ingestion logs
@@ -64,6 +65,7 @@ message RetrieveIngestionLogsRequest {
   string page_token = 7; // Token to fetch the next page of results
   bool only_metrics = 8; // Flag to return only the ingestion metrics
   string object_type = 9; // Optional filter by object type
+  bool include_duplicates = 10; // Optional include duplicate ingestion logs
 }
 
 // The response from the retrieve ingestion logs request

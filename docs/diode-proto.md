@@ -4751,6 +4751,7 @@ An ingestion log
 | change_set | [ChangeSet](#diode-v1-ChangeSet) |  |  |
 | object_type | [string](#string) |  |  |
 | source_ts | [int64](#int64) |  |  |
+| is_duplicate | [bool](#bool) |  |  |
 
 
 
@@ -4860,6 +4861,7 @@ The request to retrieve ingestion logs
 | page_token | [string](#string) |  | Token to fetch the next page of results |
 | only_metrics | [bool](#bool) |  | Flag to return only the ingestion metrics |
 | object_type | [string](#string) |  | Optional filter by object type |
+| include_duplicates | [bool](#bool) |  | Optional include duplicate ingestion logs |
 
 
 

@@ -29,8 +29,8 @@ func NewRepository(pool *pgxpool.Pool) *Repository {
 	}
 }
 
-// CreateIngestionLog creates a new ingestion log.
-func (r *Repository) CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb.IngestionLog, sourceMetadata []byte) (*int32, error) {
+// CreateIngestionLog creates a new ingestion log with entity hash and deduplication fields.
+func (r *Repository) CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb.IngestionLog, sourceMetadata []byte, entityHash string) (*int32, error) {
 	marshaler := protojson.MarshalOptions{
 		UseProtoNames: true,
 	}
@@ -38,6 +38,7 @@ func (r *Repository) CreateIngestionLog(ctx context.Context, ingestionLog *recon
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal entity: %w", err)
 	}
+
 	params := postgres.CreateIngestionLogParams{
 		ExternalID:         ingestionLog.Id,
 		ObjectType:         pgtype.Text{String: ingestionLog.ObjectType, Valid: true},
@@ -51,6 +52,7 @@ func (r *Repository) CreateIngestionLog(ctx context.Context, ingestionLog *recon
 		SdkVersion:         pgtype.Text{String: ingestionLog.SdkVersion, Valid: true},
 		Entity:             entityJSON,
 		SourceMetadata:     sourceMetadata,
+		EntityHash:         pgtype.Text{String: entityHash, Valid: true},
 	}
 
 	createdIngestionLog, err := r.queries.CreateIngestionLog(ctx, params)
@@ -70,6 +72,7 @@ func (r *Repository) RetrieveIngestionLogByExternalID(ctx context.Context, uuid 
 	if err != nil {
 		return nil, nil, err
 	}
+
 	return &ingestionLog.ID, log, nil
 }
 
@@ -91,8 +94,8 @@ func (r *Repository) UpdateIngestionLogStateWithError(ctx context.Context, id in
 }
 
 // CountIngestionLogsPerState counts ingestion logs per state.
-func (r *Repository) CountIngestionLogsPerState(ctx context.Context) (map[reconcilerpb.State]int32, error) {
-	counts, err := r.queries.CountIngestionLogsPerState(ctx)
+func (r *Repository) CountIngestionLogsPerState(ctx context.Context, includeDuplicates bool) (map[reconcilerpb.State]int32, error) {
+	counts, err := r.queries.CountIngestionLogsPerState(ctx, pgtype.Bool{Bool: includeDuplicates, Valid: true})
 	if err != nil {
 		return nil, err
 	}
@@ -112,6 +115,9 @@ func (r *Repository) RetrieveIngestionLogs(ctx context.Context, filter *reconcil
 	}
 	if filter.State != nil {
 		params.State = pgtype.Int4{Int32: int32(*filter.State), Valid: true}
+	}
+	if filter.IncludeDuplicates {
+		params.IncludeDuplicates = pgtype.Bool{Bool: true, Valid: true}
 	}
 
 	// backwards compatibility (dataType -> objectType)
@@ -433,4 +439,61 @@ func deviationToProto(dbDeviation postgres.VDeviation) (*reconcilerpb.Deviation,
 	}
 
 	return deviation, nil
+}
+
+// FindPriorIngestionLogByEntityHash finds a prior deviation with the same entity hash, considering branch context.
+func (r *Repository) FindPriorIngestionLogByEntityHash(ctx context.Context, entityHash string, currentBranch *string) (*int32, *reconcilerpb.IngestionLog, error) {
+	params := postgres.FindPriorIngestionLogByEntityHashParams{
+		EntityHash: pgtype.Text{String: entityHash, Valid: true},
+	}
+	if currentBranch != nil {
+		params.BranchID = pgtype.Text{String: *currentBranch, Valid: true}
+	}
+
+	dbLog, err := r.queries.FindPriorIngestionLogByEntityHash(ctx, params)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	log, err := dbLog.ToProto()
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to convert to proto: %w", err)
+	}
+
+	return &dbLog.ID, log, nil
+}
+
+// MarkIngestionLogAsDuplicate marks an ingestion log as a duplicate of another.
+func (r *Repository) MarkIngestionLogAsDuplicate(ctx context.Context, duplicateID int32, primaryID int32) error {
+	params := postgres.SetIngestionLogDuplicateOfIDParams{
+		ID:            duplicateID,
+		DuplicateOfID: pgtype.Int4{Int32: primaryID, Valid: true},
+	}
+	return r.queries.SetIngestionLogDuplicateOfID(ctx, params)
+}
+
+// MarkIngestionLogAsPrimary promotes a duplicate to a new primary log.
+func (r *Repository) MarkIngestionLogAsPrimary(ctx context.Context, duplicateID int32) error {
+	// set duplicate_of_id to NULL
+	params := postgres.SetIngestionLogDuplicateOfIDParams{
+		ID:            duplicateID,
+		DuplicateOfID: pgtype.Int4{},
+	}
+	return r.queries.SetIngestionLogDuplicateOfID(ctx, params)
+}
+
+// RetrieveIngestionLogDuplicateOfID retrieves the duplicate ID for an ingestion log.
+// duplicate_of_id is nil if the ingestion log is a primary log.
+// duplicate_of_id is the primary ID if the ingestion log is a duplicate.
+func (r *Repository) RetrieveIngestionLogDuplicateOfID(ctx context.Context, id int32) (*int32, error) {
+	primaryID, err := r.queries.RetrieveIngestionLogDuplicateOfID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if primaryID.Valid {
+		return &primaryID.Int32, nil
+	}
+
+	return nil, nil
 }
