@@ -15,6 +15,7 @@ import (
 	"github.com/MicahParks/keyfunc/v3"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/kelseyhightower/envconfig"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/netboxlabs/diode/diode-server/authutil"
 )
@@ -124,7 +125,7 @@ func NewServer(_ context.Context, logger *slog.Logger, tokenParser TokenParser, 
 		mux:     mux,
 		httpServer: &http.Server{
 			Addr:    fmt.Sprintf(":%d", cfg.HTTPPort),
-			Handler: mux,
+			Handler: otelhttp.NewHandler(mux, "auth-http-server"),
 		},
 		tokenParser:    tokenParser,
 		clientManager:  clientManager,
@@ -375,7 +376,8 @@ func (s *Server) token(w http.ResponseWriter, r *http.Request) {
 
 	// Use a custom HTTP client with a timeout
 	client := &http.Client{
-		Timeout: 10 * time.Second,
+		Transport: otelhttp.NewTransport(http.DefaultTransport),
+		Timeout:   10 * time.Second,
 	}
 
 	resp, err := client.Do(req)

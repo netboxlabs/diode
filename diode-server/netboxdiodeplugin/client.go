@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-retryablehttp"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
 	"golang.org/x/time/rate"
@@ -215,7 +216,7 @@ func NewClient(options ClientOptions) (*Client, error) {
 	}
 
 	httpClient := &http.Client{
-		Transport: oauthTransport,
+		Transport: otelhttp.NewTransport(oauthTransport),
 		Timeout:   timeout,
 	}
 
