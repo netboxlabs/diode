@@ -27,7 +27,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config-reconciler: {{ include (printf "%s/%s-reconciler-configmap.yaml" $.Template.BasePath (include "diode.name" .)) . | sha256sum }}
+        checksum/config-reconciler: {{ include (printf "%s/diode-reconciler-configmap.yaml" $.Template.BasePath) . | sha256sum }}
       labels:
         {{- include "diode.selectorlabels" . | nindent 8 }}
         app: {{ include "diode.reconciler.servicename" . }}

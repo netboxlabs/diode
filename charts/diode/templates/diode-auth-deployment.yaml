@@ -27,7 +27,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config-auth: {{ include (printf "%s/%s-auth-configmap.yaml" $.Template.BasePath (include "diode.name" .)) . | sha256sum }}
+        checksum/config-auth: {{ include (printf "%s/diode-auth-configmap.yaml" $.Template.BasePath) . | sha256sum }}
       labels:
         {{- include "diode.selectorlabels" . | nindent 8 }}
         app: {{ include "diode.auth.servicename" . }}
