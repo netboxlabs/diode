@@ -23,7 +23,7 @@ func MetricAttributesFromContext(ctx context.Context) []attribute.KeyValue {
 
 type metricAttributesKey struct{}
 
-// GatherOptions collects metric atributes from the context and appends them to the options and attributes given
+// GatherOptions collects metric attributes from the context and appends them to the options and attributes given
 func GatherOptions(ctx context.Context, attrs []attribute.KeyValue, options ...metric.AddOption) []metric.AddOption {
 	return append(options,
 		metric.WithAttributes(append(attrs, MetricAttributesFromContext(ctx)...)...))
