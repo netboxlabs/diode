@@ -13,7 +13,6 @@ import (
 	"github.com/pressly/goose/v3"
 	"github.com/redis/go-redis/v9"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/metric"
 	"google.golang.org/grpc"
 
 	"github.com/netboxlabs/diode/diode-server/authutil"
@@ -23,15 +22,14 @@ import (
 	"github.com/netboxlabs/diode/diode-server/reconciler"
 	"github.com/netboxlabs/diode/diode-server/server"
 	"github.com/netboxlabs/diode/diode-server/telemetry"
+	"github.com/netboxlabs/diode/diode-server/version"
 )
 
 const (
 	applicationName = "diode-reconciler" // used by sentry
 
 	// used by open telemetry metrics
-	telemetryServiceName   = "netboxlabs/diode/reconciler"
-	ingestionProcessorName = "netboxlabs/diode/reconciler/ingestion_processor"
-	metricStartup          = "netboxlabs/diode/reconciler/startup_count"
+	telemetryServiceName = "netboxlabs/diode/reconciler"
 )
 
 func main() {
@@ -60,14 +58,14 @@ func main() {
 		}
 	}()
 
-	appMeter := otel.GetMeterProvider().Meter(telemetryServiceName)
-	startupCounter, err := appMeter.Int64Counter(metricStartup,
-		metric.WithDescription("Number of times the reconciler service has started"))
+	meter := otel.GetMeterProvider().Meter(telemetryServiceName)
+	metricRecorder, err := reconciler.NewMetricRecorder(meter, cfg.Telemetry.Environment)
 	if err != nil {
-		s.Logger().Error("failed to create startup metric", "error", err)
+		s.Logger().Error("failed to create ingester metrics", "error", err)
 		os.Exit(1)
 	}
-	startupCounter.Add(ctx, 1)
+
+	metricRecorder.SetServiceInfo(ctx, fmt.Sprintf("%s.%s", version.GetBuildVersion(), version.GetBuildCommit()))
 
 	dbURL := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", cfg.PostgresHost, cfg.PostgresPort, cfg.PostgresUser, cfg.PostgresPassword, cfg.PostgresDBName)
 
@@ -128,13 +126,8 @@ func main() {
 	}
 
 	ops := reconciler.NewOps(repository, nbClient, s.Logger())
-	ingestionMeter := otel.GetMeterProvider().Meter(ingestionProcessorName)
-	ingestionMetrics, err := reconciler.NewOtelIngestionProcessorMetrics(ingestionMeter, ingestionProcessorName)
-	if err != nil {
-		s.Logger().Error("failed to create ingestion processor metrics", "error", err)
-		os.Exit(1)
-	}
-	ingestionProcessor, err := reconciler.NewIngestionProcessor(ctx, s.Logger(), cfg, redisClient, redisStreamClient, reconciler.DefaultRedisStreamID, reconciler.DefaultRedisConsumerGroup, ops, ingestionMetrics)
+
+	ingestionProcessor, err := reconciler.NewIngestionProcessor(ctx, s.Logger(), cfg, redisClient, redisStreamClient, reconciler.DefaultRedisStreamID, reconciler.DefaultRedisConsumerGroup, ops, metricRecorder)
 	if err != nil {
 		s.Logger().Error("failed to instantiate ingestion processor", "error", err)
 		os.Exit(1)
