@@ -179,8 +179,9 @@ func (c *Component) Ingest(ctx context.Context, in *diodepb.IngestRequest) (*dio
 		c.metrics.RecordIngestRequest(ctx, false)
 		c.logger.Error("failed to add element to the stream", "error", err, "streamID", streamID, "value", msg)
 	} else {
+		entityCount := int64(len(in.GetEntities()))
 		c.metrics.RecordIngestRequest(ctx, true)
-		c.metrics.RecordIngestEntities(ctx, int64(len(in.GetEntities())))
+		c.metrics.RecordIngestEntities(ctx, entityCount)
 	}
 
 	return &diodepb.IngestResponse{Errors: errs}, nil
