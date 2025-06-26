@@ -40,7 +40,7 @@ type Metrics interface {
 
 // MetricRecorder is a wrapper around the telemetry.MetricRecorder
 type MetricRecorder struct {
-	telemetry.MetricRecorder
+	mr telemetry.MetricRecorder
 }
 
 // NewMetricRecorder creates a new MetricRecorder
@@ -55,7 +55,7 @@ func NewMetricRecorder(meter metric.Meter, environment string) (*MetricRecorder,
 
 // SetServiceInfo sets the service information (called once at startup)
 func (r *MetricRecorder) SetServiceInfo(ctx context.Context, version string) {
-	r.SetServiceInfo(ctx, version)
+	r.mr.SetServiceInfo(ctx, version)
 }
 
 // RecordIngestRequest records an ingest request.
@@ -64,11 +64,11 @@ func (r *MetricRecorder) RecordIngestRequest(ctx context.Context, success bool) 
 		attribute.Bool("success", success),
 	}, telemetry.GetAttributesFromContext(ctx)...)
 
-	r.RecordCounter(ctx, "ingest.requests", 1, attrs...)
+	r.mr.RecordCounter(ctx, "ingest.requests", 1, attrs...)
 }
 
 // RecordIngestEntities records the number of entities ingested.
 func (r *MetricRecorder) RecordIngestEntities(ctx context.Context, count int64) {
 	attrs := telemetry.GetAttributesFromContext(ctx)
-	r.RecordCounter(ctx, "ingest.entities", count, attrs...)
+	r.mr.RecordCounter(ctx, "ingest.entities", count, attrs...)
 }

@@ -72,7 +72,7 @@ type Metrics interface {
 
 // MetricRecorder is a wrapper around the telemetry.MetricRecorder
 type MetricRecorder struct {
-	telemetry.MetricRecorder
+	mr telemetry.MetricRecorder
 }
 
 // NewMetricRecorder creates a new MetricRecorder
@@ -87,7 +87,7 @@ func NewMetricRecorder(meter metric.Meter, environment string) (*MetricRecorder,
 
 // SetServiceInfo sets the service information (called once at startup)
 func (r *MetricRecorder) SetServiceInfo(ctx context.Context, version string) {
-	r.MetricRecorder.SetServiceInfo(ctx, version)
+	r.mr.SetServiceInfo(ctx, version)
 }
 
 // RecordHandleMessage records the handling of a message
@@ -96,7 +96,7 @@ func (r *MetricRecorder) RecordHandleMessage(ctx context.Context, success bool) 
 		attribute.Bool("success", success),
 	}, telemetry.GetAttributesFromContext(ctx)...)
 
-	r.RecordCounter(ctx, "handle.message", 1, attrs...)
+	r.mr.RecordCounter(ctx, "handle.message", 1, attrs...)
 }
 
 // RecordIngestionLogCreate records the creation of an ingestion log
@@ -105,7 +105,7 @@ func (r *MetricRecorder) RecordIngestionLogCreate(ctx context.Context, success b
 		attribute.Bool("success", success),
 	}, telemetry.GetAttributesFromContext(ctx)...)
 
-	r.RecordCounter(ctx, "ingestionlog.create", 1, attrs...)
+	r.mr.RecordCounter(ctx, "ingestionlog.create", 1, attrs...)
 }
 
 // RecordChangeSetCreate records the creation of a change set
@@ -115,12 +115,12 @@ func (r *MetricRecorder) RecordChangeSetCreate(ctx context.Context, success bool
 	}, telemetry.GetAttributesFromContext(ctx)...)
 
 	// Record the change set creation
-	r.RecordCounter(ctx, "changeset.create", 1, attrs...)
+	r.mr.RecordCounter(ctx, "changeset.create", 1, attrs...)
 
 	// If successful, also record the number of changes created
 	if success {
 		changeAttrs := telemetry.GetAttributesFromContext(ctx)
-		r.RecordCounter(ctx, "change.create", changes, changeAttrs...)
+		r.mr.RecordCounter(ctx, "change.create", changes, changeAttrs...)
 	}
 }
 
@@ -131,11 +131,11 @@ func (r *MetricRecorder) RecordChangeSetApply(ctx context.Context, success bool,
 	}, telemetry.GetAttributesFromContext(ctx)...)
 
 	// Record the change set application
-	r.RecordCounter(ctx, "changeset.apply", 1, attrs...)
+	r.mr.RecordCounter(ctx, "changeset.apply", 1, attrs...)
 
 	// If successful, also record the number of changes applied
 	if success {
 		changeAttrs := telemetry.GetAttributesFromContext(ctx)
-		r.RecordCounter(ctx, "change.apply", changes, changeAttrs...)
+		r.mr.RecordCounter(ctx, "change.apply", changes, changeAttrs...)
 	}
 }
