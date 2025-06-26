@@ -59,7 +59,7 @@ func TestNewIngestionProcessor(t *testing.T) {
 			MaxRetries:        0,
 		})
 	require.NoError(t, err)
-	metrics := mocks.NewIngestionProcessorMetrics(t)
+	metrics := mocks.NewMetrics(t)
 
 	redisClient := redis.NewClient(&redis.Options{
 		Addr: s.Addr(),
@@ -119,11 +119,12 @@ func TestIngestionProcessorStart(t *testing.T) {
 			MaxRetries:        maxRetries,
 		})
 	require.NoError(t, err)
-	mockMetrics := new(mocks.IngestionProcessorMetrics)
+	mockMetrics := mocks.NewMetrics(t)
 	mockMetrics.On("RecordHandleMessage", mock.Anything, mock.Anything).Return()
 	mockMetrics.On("RecordIngestionLogCreate", mock.Anything, mock.Anything).Return()
 	mockMetrics.On("RecordChangeSetCreate", mock.Anything, mock.Anything, mock.Anything).Return()
-	mockMetrics.On("RecordChangeSetApply", mock.Anything, mock.Anything, mock.Anything).Return()
+	// RecordChangeSetApply might not be called if there are connection issues with the NetBox server
+	mockMetrics.On("RecordChangeSetApply", mock.Anything, mock.Anything, mock.Anything).Return().Maybe()
 
 	redisClient := redis.NewClient(&redis.Options{
 		Addr: s.Addr(),

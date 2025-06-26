@@ -116,6 +116,9 @@ func startTestComponent(ctx context.Context, t *testing.T, r *miniredis.Miniredi
 
 	meter := otel.GetMeterProvider().Meter("test.ingester")
 
+	metrics, err := ingester.NewMetricRecorder(meter, "test")
+	require.NoError(t, err)
+
 	redisStreamClient := redis.NewClient(&redis.Options{
 		Addr: r.Addr(),
 		DB:   1,
@@ -132,7 +135,7 @@ func startTestComponent(ctx context.Context, t *testing.T, r *miniredis.Miniredi
 		},
 	}
 
-	component, err := ingester.New(ctx, logger, cfg, redisStreamClient, meter, &ingester.DefaultStreamRouter{}, serverInterceptors...)
+	component, err := ingester.New(ctx, logger, cfg, redisStreamClient, metrics, &ingester.DefaultStreamRouter{}, serverInterceptors...)
 	require.NoError(t, err)
 
 	pb.RegisterIngesterServiceServer(s, component)
@@ -177,6 +180,9 @@ func TestNewComponent(t *testing.T) {
 
 	meter := otel.GetMeterProvider().Meter("test.ingester")
 
+	metrics, err := ingester.NewMetricRecorder(meter, "test")
+	require.NoError(t, err)
+
 	redisStreamClient := redis.NewClient(&redis.Options{
 		Addr: r.Addr(),
 		DB:   1,
@@ -195,7 +201,7 @@ func TestNewComponent(t *testing.T) {
 		},
 	}
 
-	component, err := ingester.New(ctx, logger, cfg, redisStreamClient, meter, &ingester.DefaultStreamRouter{}, serverInterceptors...)
+	component, err := ingester.New(ctx, logger, cfg, redisStreamClient, metrics, &ingester.DefaultStreamRouter{}, serverInterceptors...)
 
 	require.NoError(t, err)
 	require.NotNil(t, component)
