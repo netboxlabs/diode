@@ -2,6 +2,7 @@ package telemetry
 
 import (
 	"context"
+
 	"go.opentelemetry.io/otel/attribute"
 )
 

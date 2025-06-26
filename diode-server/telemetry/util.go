@@ -29,11 +29,18 @@ func GatherOptions(ctx context.Context, attrs []attribute.KeyValue, options ...m
 		metric.WithAttributes(append(attrs, MetricAttributesFromContext(ctx)...)...))
 }
 
-// GetAttributesFromContext extracts specific attributes from context if they exist
+// GetAttributesFromContext extracts attributes from context. If no keys are provided,
+// returns all attributes. If keys are provided, returns only attributes matching those keys.
 func GetAttributesFromContext(ctx context.Context, keys ...string) []attribute.KeyValue {
 	allAttrs := MetricAttributesFromContext(ctx)
-	var ctxAttrs []attribute.KeyValue
 
+	// If no keys specified, return all attributes
+	if len(keys) == 0 {
+		return allAttrs
+	}
+
+	// If keys specified, filter attributes
+	ctxAttrs := make([]attribute.KeyValue, 0)
 	keySet := make(map[string]bool)
 	for _, key := range keys {
 		keySet[key] = true
