@@ -510,9 +510,6 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 			mockRepository.On("UpdateIngestionLogStateWithError", ctx, ingestionLogID, tt.expectedStatus, mock.Anything).Return(nil)
 			mockRepository.On("CreateChangeSet", ctx, mock.Anything, ingestionLogID).Return(int32Ptr(1), nil)
 
-			// These metrics operations don't apply to this test scenario - they're called from handleStreamMessage
-			// mockMetrics.On("RecordHandleMessage", mock.Anything, mock.Anything).Return()
-			// mockMetrics.On("RecordIngestionLogCreate", mock.Anything, mock.Anything).Return()
 			mockMetrics.On("RecordChangeSetCreate", mock.Anything, mock.Anything, mock.Anything).Return()
 			if tt.autoApplyChangesets {
 				mockMetrics.On("RecordChangeSetApply", mock.Anything, mock.Anything, mock.Anything).Return()
@@ -545,6 +542,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 			}
 
 			mockRepository.AssertExpectations(t)
+			mockMetrics.AssertExpectations(t)
 			require.Equal(t, tt.expectedStatus, tt.ingestionLog.State)
 		})
 	}
