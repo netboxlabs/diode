@@ -40,17 +40,21 @@ type Metrics interface {
 
 // MetricRecorder is a wrapper around the telemetry.MetricRecorder
 type MetricRecorder struct {
-	mr telemetry.MetricRecorder
+	mr                   telemetry.MetricRecorder
+	contextAttributeKeys []string
 }
 
-// NewMetricRecorder creates a new MetricRecorder
-func NewMetricRecorder(meter metric.Meter, environment string) (*MetricRecorder, error) {
+// NewMetricRecorder creates a new MetricRecorder with optional context attribute keys
+func NewMetricRecorder(meter metric.Meter, environment string, contextAttributeKeys ...string) (*MetricRecorder, error) {
 	recorder, err := otel.NewMetricRecorder(meter, environment, "ingester", IngesterMetricDefinitions)
 	if err != nil {
 		return nil, err
 	}
 
-	return &MetricRecorder{recorder}, nil
+	return &MetricRecorder{
+		mr:                   recorder,
+		contextAttributeKeys: contextAttributeKeys,
+	}, nil
 }
 
 // SetServiceInfo sets the service information (called once at startup)
@@ -62,13 +66,13 @@ func (r *MetricRecorder) SetServiceInfo(ctx context.Context, version string) {
 func (r *MetricRecorder) RecordIngestRequest(ctx context.Context, success bool) {
 	attrs := append([]attribute.KeyValue{
 		attribute.Bool("success", success),
-	}, telemetry.GetAttributesFromContext(ctx)...)
+	}, telemetry.GetAttributesFromContext(ctx, r.contextAttributeKeys...)...)
 
 	r.mr.RecordCounter(ctx, "ingest.requests", 1, attrs...)
 }
 
 // RecordIngestEntities records the number of entities ingested.
 func (r *MetricRecorder) RecordIngestEntities(ctx context.Context, count int64) {
-	attrs := telemetry.GetAttributesFromContext(ctx)
+	attrs := telemetry.GetAttributesFromContext(ctx, r.contextAttributeKeys...)
 	r.mr.RecordCounter(ctx, "ingest.entities", count, attrs...)
 }
