@@ -123,6 +123,40 @@ func (_c *MetricRecorder_RecordHistogram_Call) RunAndReturn(run func(context.Con
 	return _c
 }
 
+// RecordServiceStartupAttempt provides a mock function with given fields: ctx, success
+func (_m *MetricRecorder) RecordServiceStartupAttempt(ctx context.Context, success bool) {
+	_m.Called(ctx, success)
+}
+
+// MetricRecorder_RecordServiceStartupAttempt_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RecordServiceStartupAttempt'
+type MetricRecorder_RecordServiceStartupAttempt_Call struct {
+	*mock.Call
+}
+
+// RecordServiceStartupAttempt is a helper method to define mock.On call
+//   - ctx context.Context
+//   - success bool
+func (_e *MetricRecorder_Expecter) RecordServiceStartupAttempt(ctx interface{}, success interface{}) *MetricRecorder_RecordServiceStartupAttempt_Call {
+	return &MetricRecorder_RecordServiceStartupAttempt_Call{Call: _e.mock.On("RecordServiceStartupAttempt", ctx, success)}
+}
+
+func (_c *MetricRecorder_RecordServiceStartupAttempt_Call) Run(run func(ctx context.Context, success bool)) *MetricRecorder_RecordServiceStartupAttempt_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(bool))
+	})
+	return _c
+}
+
+func (_c *MetricRecorder_RecordServiceStartupAttempt_Call) Return() *MetricRecorder_RecordServiceStartupAttempt_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *MetricRecorder_RecordServiceStartupAttempt_Call) RunAndReturn(run func(context.Context, bool)) *MetricRecorder_RecordServiceStartupAttempt_Call {
+	_c.Run(run)
+	return _c
+}
+
 // RecordUpDownCounter provides a mock function with given fields: ctx, name, value, attrs
 func (_m *MetricRecorder) RecordUpDownCounter(ctx context.Context, name string, value int64, attrs ...attribute.KeyValue) {
 	_va := make([]interface{}, len(attrs))

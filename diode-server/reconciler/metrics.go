@@ -56,10 +56,12 @@ var ReconcilerMetricDefinitions = map[string]otel.MetricDefinition{
 	},
 }
 
-// Metrics defines the interface for recording ingester-specific metrics
+// Metrics defines the interface for recording reconciler-specific metrics
 type Metrics interface {
 	// SetServiceInfo sets the service information (called once at startup)
 	SetServiceInfo(ctx context.Context, version string)
+	// RecordServiceStartupAttempt records a service startup attempt
+	RecordServiceStartupAttempt(ctx context.Context, success bool)
 	// RecordHandleMessage records the handling of a message
 	RecordHandleMessage(ctx context.Context, success bool)
 	// RecordIngestionLogCreate records the creation of an ingestion log
@@ -92,6 +94,11 @@ func NewMetricRecorder(meter metric.Meter, environment string, contextAttributeK
 // SetServiceInfo sets the service information (called once at startup)
 func (r *MetricRecorder) SetServiceInfo(ctx context.Context, version string) {
 	r.mr.SetServiceInfo(ctx, version)
+}
+
+// RecordServiceStartupAttempt records a service startup attempt
+func (r *MetricRecorder) RecordServiceStartupAttempt(ctx context.Context, success bool) {
+	r.mr.RecordServiceStartupAttempt(ctx, success)
 }
 
 // RecordHandleMessage records the handling of a message

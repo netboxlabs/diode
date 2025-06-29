@@ -287,6 +287,7 @@ func TestMetricRecorder_SetServiceInfo(t *testing.T) {
 func TestCoreServiceMetrics(t *testing.T) {
 	// Verify core metrics are properly defined
 	assert.Contains(t, CoreServiceMetrics, "service.info")
+	assert.Contains(t, CoreServiceMetrics, "service.startup_attempt")
 
 	serviceInfo := CoreServiceMetrics["service.info"]
 	assert.Equal(t, "service_info", serviceInfo.Name)
@@ -296,6 +297,13 @@ func TestCoreServiceMetrics(t *testing.T) {
 	assert.Contains(t, serviceInfo.Attributes, AttrServiceName)
 	assert.Contains(t, serviceInfo.Attributes, AttrServiceVersion)
 	assert.Contains(t, serviceInfo.Attributes, AttrDeploymentEnvironment)
+
+	startupAttempt := CoreServiceMetrics["service.startup_attempt"]
+	assert.Equal(t, "service_startup_attempts_total", startupAttempt.Name)
+	assert.Equal(t, Counter, startupAttempt.Type)
+	assert.Equal(t, Dimensionless, startupAttempt.Unit)
+	assert.NotEmpty(t, startupAttempt.Description)
+	assert.Contains(t, startupAttempt.Attributes, "success")
 }
 
 func TestConstants(t *testing.T) {
@@ -349,4 +357,36 @@ func TestMetricRecorder_createMetrics_Coverage(t *testing.T) {
 	assert.Contains(t, recorder.histograms, "histogram.metric")
 	assert.Contains(t, recorder.gauges, "gauge.metric")
 	assert.Contains(t, recorder.updowns, "updown.metric")
+}
+
+func TestMetricRecorder_RecordServiceStartupAttempt(t *testing.T) {
+	meter := noop.NewMeterProvider().Meter("test")
+	recorder, err := NewMetricRecorder(meter, "test", "test-service", map[string]MetricDefinition{})
+	require.NoError(t, err)
+
+	tests := []struct {
+		name    string
+		success bool
+	}{
+		{
+			name:    "successful startup attempt",
+			success: true,
+		},
+		{
+			name:    "failed startup attempt",
+			success: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+
+			// This should not panic and should record the counter
+			recorder.RecordServiceStartupAttempt(ctx, tt.success)
+
+			// Verify the counter exists (it's created as part of core metrics)
+			assert.Contains(t, recorder.counters, "service.startup_attempt")
+		})
+	}
 }

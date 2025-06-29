@@ -271,3 +271,33 @@ func TestMetricRecorder_WithAttributeFromContext(t *testing.T) {
 	// Call the mock with the combined attributes
 	mockRecorder.RecordCounter(ctx, "handle.message", 1, allAttrs...)
 }
+
+func TestMetricRecorder_RecordServiceStartupAttempt(t *testing.T) {
+	tests := []struct {
+		name    string
+		success bool
+	}{
+		{
+			name:    "successful startup attempt",
+			success: true,
+		},
+		{
+			name:    "failed startup attempt",
+			success: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+			meter := noop.NewMeterProvider().Meter("test")
+
+			recorder, err := reconciler.NewMetricRecorder(meter, "test")
+			require.NoError(t, err)
+			require.NotNil(t, recorder)
+
+			// Should not panic or error
+			recorder.RecordServiceStartupAttempt(ctx, tt.success)
+		})
+	}
+}

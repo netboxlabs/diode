@@ -72,6 +72,7 @@ func main() {
 	if cfg.MigrationEnabled {
 		if err := runDBMigrations(ctx, s.Logger(), dbURL); err != nil {
 			s.Logger().Error("failed to run db migrations", "error", err)
+			metricRecorder.RecordServiceStartupAttempt(ctx, false)
 			os.Exit(1)
 		}
 	}
@@ -84,6 +85,7 @@ func main() {
 
 	if _, err := redisClient.Ping(ctx).Result(); err != nil {
 		s.Logger().Error("failed to connect to redis", "redis", redisClient.String(), "error", err)
+		metricRecorder.RecordServiceStartupAttempt(ctx, false)
 		os.Exit(1)
 	}
 
@@ -95,12 +97,14 @@ func main() {
 
 	if _, err := redisStreamClient.Ping(ctx).Result(); err != nil {
 		s.Logger().Error("failed to connect to redis stream", "redisStream", redisStreamClient.String(), "error", err)
+		metricRecorder.RecordServiceStartupAttempt(ctx, false)
 		os.Exit(1)
 	}
 
 	dbPool, err := pgxpool.New(ctx, dbURL)
 	if err != nil {
 		s.Logger().Error("failed to connect to postgres database", "error", err)
+		metricRecorder.RecordServiceStartupAttempt(ctx, false)
 		os.Exit(1)
 	}
 	defer dbPool.Close()
@@ -122,6 +126,7 @@ func main() {
 		})
 	if err != nil {
 		s.Logger().Error("failed to create netbox diode plugin client", "error", err)
+		metricRecorder.RecordServiceStartupAttempt(ctx, false)
 		os.Exit(1)
 	}
 
@@ -130,11 +135,13 @@ func main() {
 	ingestionProcessor, err := reconciler.NewIngestionProcessor(ctx, s.Logger(), cfg, redisClient, redisStreamClient, reconciler.DefaultRedisStreamID, reconciler.DefaultRedisConsumerGroup, ops, metricRecorder)
 	if err != nil {
 		s.Logger().Error("failed to instantiate ingestion processor", "error", err)
+		metricRecorder.RecordServiceStartupAttempt(ctx, false)
 		os.Exit(1)
 	}
 
 	if err := s.RegisterComponent(ingestionProcessor); err != nil {
 		s.Logger().Error("failed to register ingestion processor", "error", err)
+		metricRecorder.RecordServiceStartupAttempt(ctx, false)
 		os.Exit(1)
 	}
 
@@ -142,15 +149,19 @@ func main() {
 	gRPCServer, err := reconciler.NewServer(ctx, s.Logger(), repository, serverInterceptors(authorizer, s.Logger())...)
 	if err != nil {
 		s.Logger().Error("failed to instantiate gRPC server", "error", err)
+		metricRecorder.RecordServiceStartupAttempt(ctx, false)
 		os.Exit(1)
 	}
 
 	if err := s.RegisterComponent(gRPCServer); err != nil {
 		s.Logger().Error("failed to register gRPC server", "error", err)
+		metricRecorder.RecordServiceStartupAttempt(ctx, false)
 		os.Exit(1)
 	}
 
 	telemetry.ServePrometheusMetricsIfNecessary(cfg.Telemetry, s.Logger())
+
+	metricRecorder.RecordServiceStartupAttempt(ctx, true)
 
 	if err := s.Run(); err != nil {
 		s.Logger().Error("server failure", "serverName", s.Name(), "error", err)

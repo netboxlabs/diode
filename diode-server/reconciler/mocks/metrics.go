@@ -159,6 +159,40 @@ func (_c *Metrics_RecordIngestionLogCreate_Call) RunAndReturn(run func(context.C
 	return _c
 }
 
+// RecordServiceStartupAttempt provides a mock function with given fields: ctx, success
+func (_m *Metrics) RecordServiceStartupAttempt(ctx context.Context, success bool) {
+	_m.Called(ctx, success)
+}
+
+// Metrics_RecordServiceStartupAttempt_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RecordServiceStartupAttempt'
+type Metrics_RecordServiceStartupAttempt_Call struct {
+	*mock.Call
+}
+
+// RecordServiceStartupAttempt is a helper method to define mock.On call
+//   - ctx context.Context
+//   - success bool
+func (_e *Metrics_Expecter) RecordServiceStartupAttempt(ctx interface{}, success interface{}) *Metrics_RecordServiceStartupAttempt_Call {
+	return &Metrics_RecordServiceStartupAttempt_Call{Call: _e.mock.On("RecordServiceStartupAttempt", ctx, success)}
+}
+
+func (_c *Metrics_RecordServiceStartupAttempt_Call) Run(run func(ctx context.Context, success bool)) *Metrics_RecordServiceStartupAttempt_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(bool))
+	})
+	return _c
+}
+
+func (_c *Metrics_RecordServiceStartupAttempt_Call) Return() *Metrics_RecordServiceStartupAttempt_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Metrics_RecordServiceStartupAttempt_Call) RunAndReturn(run func(context.Context, bool)) *Metrics_RecordServiceStartupAttempt_Call {
+	_c.Run(run)
+	return _c
+}
+
 // SetServiceInfo provides a mock function with given fields: ctx, version
 func (_m *Metrics) SetServiceInfo(ctx context.Context, version string) {
 	_m.Called(ctx, version)

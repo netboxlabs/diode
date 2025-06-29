@@ -166,6 +166,14 @@ func (m *MetricRecorder) SetServiceInfo(ctx context.Context, version string) {
 	)
 }
 
+// RecordServiceStartupAttempt increments the service startup attempt counter
+func (m *MetricRecorder) RecordServiceStartupAttempt(ctx context.Context, success bool) {
+	attrs := []attribute.KeyValue{
+		attribute.Bool("success", success),
+	}
+	m.RecordCounter(ctx, "service.startup_attempt", 1, attrs...)
+}
+
 // MetricDefinition represents a standardized metric definition
 type MetricDefinition struct {
 	Name        string
@@ -223,5 +231,12 @@ var CoreServiceMetrics = map[string]MetricDefinition{
 		Unit:        Dimensionless,
 		Description: "Service information including name, version, and environment",
 		Attributes:  []string{AttrServiceName, AttrServiceVersion, AttrDeploymentEnvironment},
+	},
+	"service.startup_attempt": {
+		Name:        "service_startup_attempts_total",
+		Type:        Counter,
+		Unit:        Dimensionless,
+		Description: "Number of service startup attempts",
+		Attributes:  []string{"success"},
 	},
 }

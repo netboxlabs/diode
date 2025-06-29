@@ -18,4 +18,6 @@ type MetricRecorder interface {
 	RecordUpDownCounter(ctx context.Context, name string, value int64, attrs ...attribute.KeyValue)
 	// SetServiceInfo sets the service information metric (called once at startup)
 	SetServiceInfo(ctx context.Context, version string)
+	// RecordServiceStartupAttempt increments the service startup attempt counter
+	RecordServiceStartupAttempt(ctx context.Context, success bool)
 }

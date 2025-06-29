@@ -69,6 +69,7 @@ func main() {
 
 	if _, err := redisStreamClient.Ping(ctx).Result(); err != nil {
 		s.Logger().Error("failed to connect to redis stream", "redisStream", redisStreamClient.String(), "error", err)
+		metricRecorder.RecordServiceStartupAttempt(ctx, false)
 		os.Exit(1)
 	}
 
@@ -77,18 +78,23 @@ func main() {
 	ingesterComponent, err := ingester.New(ctx, s.Logger(), cfg, redisStreamClient, metricRecorder, streamRouter, serverInterceptors(authorizer, s.Logger())...)
 	if err != nil {
 		s.Logger().Error("failed to instantiate ingester component", "error", err)
+		metricRecorder.RecordServiceStartupAttempt(ctx, false)
 		os.Exit(1)
 	}
 
 	if err := s.RegisterComponent(ingesterComponent); err != nil {
 		s.Logger().Error("failed to register ingester component", "error", err)
+		metricRecorder.RecordServiceStartupAttempt(ctx, false)
 		os.Exit(1)
 	}
 
 	telemetry.ServePrometheusMetricsIfNecessary(cfg.Telemetry, s.Logger())
 
+	metricRecorder.RecordServiceStartupAttempt(ctx, true)
+
 	if err := s.Run(); err != nil {
 		s.Logger().Error("server failure", "serverName", s.Name(), "error", err)
+		metricRecorder.RecordServiceStartupAttempt(ctx, false)
 		os.Exit(1)
 	}
 }
