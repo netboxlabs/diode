@@ -219,8 +219,8 @@ type Unit string
 const (
 	// Dimensionless represents a dimensionless unit (e.g., counts)
 	Dimensionless Unit = "1"
-	// Milliseconds represents time in milliseconds
-	Milliseconds Unit = "ms"
+	// Seconds represents time in seconds
+	Seconds Unit = "s"
 )
 
 // CoreServiceMetrics defines core metrics that every diode service should have

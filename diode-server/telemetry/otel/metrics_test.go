@@ -62,7 +62,7 @@ func TestNewMetricRecorder(t *testing.T) {
 				"test.histogram": {
 					Name:        "test_histogram",
 					Type:        Histogram,
-					Unit:        Milliseconds,
+					Unit:        Seconds,
 					Description: "Test histogram metric",
 					Attributes:  []string{"test"},
 				},
@@ -195,7 +195,7 @@ func TestMetricRecorder_RecordHistogram(t *testing.T) {
 		"test.histogram": {
 			Name:        "test_histogram",
 			Type:        Histogram,
-			Unit:        Milliseconds,
+			Unit:        Seconds,
 			Description: "Test histogram",
 		},
 	}
@@ -315,7 +315,7 @@ func TestConstants(t *testing.T) {
 
 	// Test units
 	assert.Equal(t, Unit("1"), Dimensionless)
-	assert.Equal(t, Unit("ms"), Milliseconds)
+	assert.Equal(t, Unit("s"), Seconds)
 }
 
 func TestMetricRecorder_createMetrics_Coverage(t *testing.T) {
@@ -332,7 +332,7 @@ func TestMetricRecorder_createMetrics_Coverage(t *testing.T) {
 		"histogram.metric": {
 			Name:        "histogram_metric",
 			Type:        Histogram,
-			Unit:        Milliseconds,
+			Unit:        Seconds,
 			Description: "Histogram metric",
 		},
 		"gauge.metric": {
