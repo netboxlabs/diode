@@ -1,3 +1,4 @@
+{{- if and .Values.ingressNginx .Values.ingressNginx.enabled -}}
 {{- $ingressNginx := index .Values.ingressNginx -}}
 {{- $certManager := index .Values.certManager -}}
 {{- $certIssuer := index .Values.certIssuer -}}
@@ -58,3 +59,4 @@ spec:
                 port:
                   number: {{ $path.servicePort }}
           {{- end }}
+{{- end }}
