@@ -46,6 +46,9 @@ spec:
               done;
               echo "OAuth2 server is up and running";
         {{- end }}
+        {{- if .Values.diodeAuthBootstrap.job.extraInitContainers }}
+        {{- include "common.tplvalues.render" ( dict "value" .Values.diodeAuthBootstrap.job.extraInitContainers "context" $ ) | nindent 8 }}
+        {{- end }}
       containers:
         - name: {{ include "diode.auth.bootstrapjobname" . }}
           image: "{{ .Values.diodeAuthBootstrap.image.repository }}:{{ .Values.diodeAuthBootstrap.image.tag }}"

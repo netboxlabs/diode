@@ -65,6 +65,8 @@ diodeAuth:
       memory: 512Mi
   # -- extra environment variables to be set on containers' `env` section
   extraEnvs: []
+  # -- additional containers to run before auth finishes initializing (may contain templating instructions)
+  extraInitContainers: ""
   # -- annotations to add to the auth deployment
   annotations: {}
   config:
@@ -99,6 +101,8 @@ diodeAuthBootstrap:
     annotations:
       "helm.sh/hook": post-install, post-upgrade
       "helm.sh/hook-weight": "2"
+    # -- additional initContainers to run during bootstrap (may contain templating instructions)
+    extraInitContainers: ""
 
 # Diode Ingester configuration
 diodeIngester:
@@ -135,6 +139,8 @@ diodeIngester:
     serviceName: diode.v1.IngesterService
   # -- extra environment variables to be set on containers' `env` section
   extraEnvs: []
+  # -- additional containers to run before the ingester finishes initializing (may contain templating instructions)
+  extraInitContainers: ""
   # -- annotations to add to the ingester deployment
   annotations: {}
   config:
@@ -186,6 +192,8 @@ diodeReconciler:
     serviceName: diode.v1.ReconcilerService
   # -- extra environment variables to be set on containers' `env` section
   extraEnvs: []
+  # -- additional containers to run before the reconciler finishes initializing (may contain templating instructions)
+  extraInitContainers: ""
   # -- annotations to add to the reconciler deployment
   annotations: {}
   config:

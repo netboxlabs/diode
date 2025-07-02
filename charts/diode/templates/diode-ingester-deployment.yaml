@@ -53,6 +53,9 @@ spec:
               done;
               echo "Redis server is up and running";
         {{- end }}
+        {{- if .Values.diodeAuth.extraInitContainers }}
+        {{- include "common.tplvalues.render" ( dict "value" .Values.diodeAuth.extraInitContainers "context" $ ) | nindent 8 }}
+        {{- end }}
       containers:
         - name: {{ include "diode.ingester.servicename" . }}
           image: "{{ .Values.diodeIngester.image.repository }}:{{ .Values.diodeIngester.image.tag }}"

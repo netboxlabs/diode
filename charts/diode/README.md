@@ -236,6 +236,7 @@ helm show values diode/diode
 | diodeAuth.containerPort | int | `8080` | port to listen on |
 | diodeAuth.enabled | bool | `true` | enabled |
 | diodeAuth.extraEnvs | list | `[]` | extra environment variables to be set on containers' `env` section |
+| diodeAuth.extraInitContainers | string | `""` | additional containers to run before auth finishes initializing (may contain templating instructions) |
 | diodeAuth.image.imagePullSecrets | list | `[]` | secrets with credentials to pull images from a private registry |
 | diodeAuth.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
 | diodeAuth.image.repository | string | `"docker.io/netboxlabs/diode-auth"` | image repository |
@@ -250,6 +251,7 @@ helm show values diode/diode
 | diodeAuthBootstrap.image.tag | string | `"1.2.0"` | image tag |
 | diodeAuthBootstrap.job.annotations | object | `{"helm.sh/hook":"post-install, post-upgrade","helm.sh/hook-weight":"2"}` | annotations to add to the auth bootstrap job |
 | diodeAuthBootstrap.job.backoffLimit | int | `20` | backoff limit |
+| diodeAuthBootstrap.job.extraInitContainers | string | `""` | additional initContainers to run during bootstrap (may contain templating instructions) |
 | diodeIngester.annotations | object | `{}` | annotations to add to the ingester deployment |
 | diodeIngester.config.loggingLevel | string | `"INFO"` | logging level |
 | diodeIngester.config.redisStreamDb | int | `1` | redis stream db |
@@ -261,6 +263,7 @@ helm show values diode/diode
 | diodeIngester.enabled | bool | `true` | enabled |
 | diodeIngester.existingSecret | string | `"diode-ingester-secret"` | existing secret name |
 | diodeIngester.extraEnvs | list | `[]` | extra environment variables to be set on containers' `env` section |
+| diodeIngester.extraInitContainers | string | `""` | additional containers to run before the ingester finishes initializing (may contain templating instructions) |
 | diodeIngester.grpc.serviceName | string | `"diode.v1.IngesterService"` | grpc service name |
 | diodeIngester.image.imagePullSecrets | list | `[]` | secrets with credentials to pull images from a private registry |
 | diodeIngester.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
@@ -292,6 +295,7 @@ helm show values diode/diode
 | diodeReconciler.enabled | bool | `true` | enabled |
 | diodeReconciler.existingSecret | string | `"diode-reconciler-secret"` | existing secret name |
 | diodeReconciler.extraEnvs | list | `[]` | extra environment variables to be set on containers' `env` section |
+| diodeReconciler.extraInitContainers | string | `""` | additional containers to run before the reconciler finishes initializing (may contain templating instructions) |
 | diodeReconciler.grpc.serviceName | string | `"diode.v1.ReconcilerService"` | grpc service name |
 | diodeReconciler.image.imagePullSecrets | list | `[]` | secrets with credentials to pull images from a private registry |
 | diodeReconciler.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
