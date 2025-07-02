@@ -63,9 +63,9 @@ diodeAuth:
     limits:
       cpu: 500m
       memory: 512Mi
-  # -- extra environment variables to be set on containers' `env` section
+  # -- (string or list) extra environment variables to be set on containers' `env` section
   extraEnvs: []
-  # -- additional containers to run before auth finishes initializing (may contain templating instructions)
+  # -- (string or list) additional containers to run before auth finishes initializing (may contain templating instructions)
   extraInitContainers: ""
   # -- annotations to add to the auth deployment
   annotations: {}
@@ -101,7 +101,7 @@ diodeAuthBootstrap:
     annotations:
       "helm.sh/hook": post-install, post-upgrade
       "helm.sh/hook-weight": "2"
-    # -- additional initContainers to run during bootstrap (may contain templating instructions)
+    # -- (string or list) additional initContainers to run during bootstrap (may contain templating instructions)
     extraInitContainers: ""
 
 # Diode Ingester configuration
@@ -137,9 +137,9 @@ diodeIngester:
   grpc:
     # -- grpc service name
     serviceName: diode.v1.IngesterService
-  # -- extra environment variables to be set on containers' `env` section
+  # -- (string or list) extra environment variables to be set on containers' `env` section
   extraEnvs: []
-  # -- additional containers to run before the ingester finishes initializing (may contain templating instructions)
+  # -- (string or list) additional containers to run before the ingester finishes initializing (may contain templating instructions)
   extraInitContainers: ""
   # -- annotations to add to the ingester deployment
   annotations: {}
@@ -190,9 +190,9 @@ diodeReconciler:
   grpc:
     # -- grpc service name
     serviceName: diode.v1.ReconcilerService
-  # -- extra environment variables to be set on containers' `env` section
+  # -- (string or list) extra environment variables to be set on containers' `env` section
   extraEnvs: []
-  # -- additional containers to run before the reconciler finishes initializing (may contain templating instructions)
+  # -- (string or list) additional containers to run before the reconciler finishes initializing (may contain templating instructions)
   extraInitContainers: ""
   # -- annotations to add to the reconciler deployment
   annotations: {}
@@ -369,7 +369,7 @@ hydra:
     # -- dev mode
     dev: true  # Hydra is not exposed to the public internet
   deployment:
-    # -- extra init containers
+    # -- (string or list) extra init containers
     extraInitContainers: |-
       {{ include "diode.hydra.extrainitcontainers" . }}
     # -- resources
@@ -386,7 +386,7 @@ hydra:
       "helm.sh/hook": post-install, post-upgrade
       "helm.sh/hook-weight": "1"
       "helm.sh/hook-delete-policy": hook-succeeded
-    # -- extra init containers
+    # -- (string or list) extra init containers
     extraInitContainers: |-
       {{ include "diode.hydra.extrainitcontainers" . }}
 

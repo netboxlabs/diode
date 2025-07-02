@@ -235,8 +235,8 @@ helm show values diode/diode
 | diodeAuth.config.telemetryTracesExporter | string | `"none"` | telemetry traces exporter |
 | diodeAuth.containerPort | int | `8080` | port to listen on |
 | diodeAuth.enabled | bool | `true` | enabled |
-| diodeAuth.extraEnvs | list | `[]` | extra environment variables to be set on containers' `env` section |
-| diodeAuth.extraInitContainers | string | `""` | additional containers to run before auth finishes initializing (may contain templating instructions) |
+| diodeAuth.extraEnvs | string or list | `[]` | extra environment variables to be set on containers' `env` section |
+| diodeAuth.extraInitContainers | string or list | `""` | additional containers to run before auth finishes initializing (may contain templating instructions) |
 | diodeAuth.image.imagePullSecrets | list | `[]` | secrets with credentials to pull images from a private registry |
 | diodeAuth.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
 | diodeAuth.image.repository | string | `"docker.io/netboxlabs/diode-auth"` | image repository |
@@ -251,7 +251,7 @@ helm show values diode/diode
 | diodeAuthBootstrap.image.tag | string | `"1.2.0"` | image tag |
 | diodeAuthBootstrap.job.annotations | object | `{"helm.sh/hook":"post-install, post-upgrade","helm.sh/hook-weight":"2"}` | annotations to add to the auth bootstrap job |
 | diodeAuthBootstrap.job.backoffLimit | int | `20` | backoff limit |
-| diodeAuthBootstrap.job.extraInitContainers | string | `""` | additional initContainers to run during bootstrap (may contain templating instructions) |
+| diodeAuthBootstrap.job.extraInitContainers | string or list | `""` | additional initContainers to run during bootstrap (may contain templating instructions) |
 | diodeIngester.annotations | object | `{}` | annotations to add to the ingester deployment |
 | diodeIngester.config.loggingLevel | string | `"INFO"` | logging level |
 | diodeIngester.config.redisStreamDb | int | `1` | redis stream db |
@@ -262,8 +262,8 @@ helm show values diode/diode
 | diodeIngester.containerPort | int | `8081` | port to listen on |
 | diodeIngester.enabled | bool | `true` | enabled |
 | diodeIngester.existingSecret | string | `"diode-ingester-secret"` | existing secret name |
-| diodeIngester.extraEnvs | list | `[]` | extra environment variables to be set on containers' `env` section |
-| diodeIngester.extraInitContainers | string | `""` | additional containers to run before the ingester finishes initializing (may contain templating instructions) |
+| diodeIngester.extraEnvs | string or list | `[]` | extra environment variables to be set on containers' `env` section |
+| diodeIngester.extraInitContainers | string or list | `""` | additional containers to run before the ingester finishes initializing (may contain templating instructions) |
 | diodeIngester.grpc.serviceName | string | `"diode.v1.IngesterService"` | grpc service name |
 | diodeIngester.image.imagePullSecrets | list | `[]` | secrets with credentials to pull images from a private registry |
 | diodeIngester.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
@@ -294,8 +294,8 @@ helm show values diode/diode
 | diodeReconciler.containerPort | int | `8081` | port to listen on |
 | diodeReconciler.enabled | bool | `true` | enabled |
 | diodeReconciler.existingSecret | string | `"diode-reconciler-secret"` | existing secret name |
-| diodeReconciler.extraEnvs | list | `[]` | extra environment variables to be set on containers' `env` section |
-| diodeReconciler.extraInitContainers | string | `""` | additional containers to run before the reconciler finishes initializing (may contain templating instructions) |
+| diodeReconciler.extraEnvs | string or list | `[]` | extra environment variables to be set on containers' `env` section |
+| diodeReconciler.extraInitContainers | string or list | `""` | additional containers to run before the reconciler finishes initializing (may contain templating instructions) |
 | diodeReconciler.grpc.serviceName | string | `"diode.v1.ReconcilerService"` | grpc service name |
 | diodeReconciler.image.imagePullSecrets | list | `[]` | secrets with credentials to pull images from a private registry |
 | diodeReconciler.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
@@ -315,7 +315,7 @@ helm show values diode/diode
 | global.diode.hydra | object | `{"waitForPostgres":true}` | hydra additional init containers configuration |
 | global.diode.hydra.waitForPostgres | bool | `true` | wait for PostgreSQL |
 | hydra | object | `{"deployment":{"extraInitContainers":"{{ include \"diode.hydra.extrainitcontainers\" . }}","resources":{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}},"enabled":true,"fullnameOverride":"diode-hydra","hydra":{"automigration":{"enabled":true},"config":{"oidc":{"subject_identifiers":{"supported_types":["public"]}},"strategies":{"access_token":"jwt","jwt":{"scope_claim":"both"}},"ttl":{"access_token":"1h"},"urls":{"self":{"issuer":"http://diode-hydra-public.{{ .Release.Namespace }}.svc.cluster.local:4444"}}},"dev":true,"ingress":{"admin":{"enabled":false},"public":{"enabled":false}},"service":{"admin":{"enabled":true,"port":4445,"type":"ClusterIP"},"public":{"enabled":true,"port":4444,"type":"ClusterIP"}}},"job":{"annotations":{"helm.sh/hook":"post-install, post-upgrade","helm.sh/hook-delete-policy":"hook-succeeded","helm.sh/hook-weight":"1"},"extraInitContainers":"{{ include \"diode.hydra.extrainitcontainers\" . }}"},"secret":{"enabled":false,"nameOverride":"diode-hydra-secret"}}` | ref: https://github.com/ory/k8s/blob/master/helm/charts/hydra/values.yaml |
-| hydra.deployment.extraInitContainers | string | `"{{ include \"diode.hydra.extrainitcontainers\" . }}"` | extra init containers |
+| hydra.deployment.extraInitContainers | string or list | `"{{ include \"diode.hydra.extrainitcontainers\" . }}"` | extra init containers |
 | hydra.deployment.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
 | hydra.enabled | bool | `true` | enabled |
 | hydra.fullnameOverride | string | `"diode-hydra"` | fullname override |
@@ -336,7 +336,7 @@ helm show values diode/diode
 | hydra.hydra.service.public.port | int | `4444` | public service port |
 | hydra.hydra.service.public.type | string | `"ClusterIP"` | public service type |
 | hydra.job.annotations | object | `{"helm.sh/hook":"post-install, post-upgrade","helm.sh/hook-delete-policy":"hook-succeeded","helm.sh/hook-weight":"1"}` | job annotations |
-| hydra.job.extraInitContainers | string | `"{{ include \"diode.hydra.extrainitcontainers\" . }}"` | extra init containers |
+| hydra.job.extraInitContainers | string or list | `"{{ include \"diode.hydra.extrainitcontainers\" . }}"` | extra init containers |
 | hydra.secret.enabled | bool | `false` | secret enabled |
 | hydra.secret.nameOverride | string | `"diode-hydra-secret"` | existing secret name |
 | ingressNginx | object | `{"annotations":{},"controller":{"allowSnippetAnnotations":true},"enabled":true,"extraHttpPaths":[],"grpcAnnotations":{"nginx.ingress.kubernetes.io/proxy-body-size":"25m","nginx.ingress.kubernetes.io/ssl-redirect":"true"},"hostname":"","httpAnnotations":{"nginx.ingress.kubernetes.io/ssl-redirect":"true"},"ingressClass":"nginx","pathPrefix":"/diode","tls":{}}` | ref: https://github.com/kubernetes/ingress-nginx/blob/main/charts/ingress-nginx/values.yaml |
