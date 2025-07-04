@@ -18,4 +18,4 @@ CREATE TRIGGER update_changes_updated_at
 DROP TRIGGER IF EXISTS update_changes_updated_at ON changes;
 
 -- Drop trigger from change_sets table
-DROP TRIGGER IF EXISTS update_change_sets_updated_at ON change_sets; 
+DROP TRIGGER IF EXISTS update_change_sets_updated_at ON change_sets;
