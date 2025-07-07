@@ -30,6 +30,7 @@ install-dev-tools:
 	@go install github.com/vektra/mockery/v2@latest
 	@go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
 	@go install github.com/mfridman/tparse@latest
+	@go install github.com/pressly/goose/v3/cmd/goose@v3.24.3
 
 .PHONY: deps
 deps:
@@ -136,3 +137,8 @@ gen-mocks:
 .PHONY: gen-dbstore
 gen-dbstore:
 	sqlc generate
+
+.PHONY: create-migration
+# Call using `make create-migration name=you_migration_name`
+create-migration:
+	GOOSE_MIGRATION_DIR=dbstore/postgres/migrations/ goose create $(name) sql
