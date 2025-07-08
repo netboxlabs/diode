@@ -16,8 +16,10 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/kelseyhightower/envconfig"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/netboxlabs/diode/diode-server/authutil"
+	"github.com/netboxlabs/diode/diode-server/telemetry"
 )
 
 const (
@@ -124,8 +126,14 @@ func NewServer(_ context.Context, logger *slog.Logger, tokenParser TokenParser, 
 		logger:  logger,
 		mux:     mux,
 		httpServer: &http.Server{
-			Addr:    fmt.Sprintf(":%d", cfg.HTTPPort),
-			Handler: otelhttp.NewHandler(mux, "auth-http-server"),
+			Addr: fmt.Sprintf(":%d", cfg.HTTPPort),
+			Handler: otelhttp.NewHandler(mux, "auth-http-server", otelhttp.WithMetricAttributesFn(
+				func(r *http.Request) []attribute.KeyValue {
+					return []attribute.KeyValue{
+						attribute.String("http.route", telemetry.ExtractPathFromPattern(r.Pattern)),
+					}
+				},
+			)),
 		},
 		tokenParser:    tokenParser,
 		clientManager:  clientManager,
