@@ -48,5 +48,5 @@ func (r *MetricRecorder) RecordServiceStartupAttempt(ctx context.Context, succes
 		attribute.Bool("success", success),
 	}, telemetry.GetAttributesFromContext(ctx, r.contextAttributeKeys...)...)
 
-	r.mr.RecordCounter(ctx, "service.startup.attempt", 1, attrs...)
+	r.mr.RecordCounter(ctx, "service.startup_attempt", 1, attrs...)
 }
