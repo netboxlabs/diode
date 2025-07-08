@@ -2,6 +2,7 @@ package telemetry
 
 import (
 	"context"
+	"strings"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
@@ -53,4 +54,15 @@ func GetAttributesFromContext(ctx context.Context, keys ...string) []attribute.K
 	}
 
 	return ctxAttrs
+}
+
+// ExtractPathFromPattern removes the HTTP method from a pattern like "GET /foo" -> "/foo"
+func ExtractPathFromPattern(pattern string) string {
+	// Split by space and take the second part (the path)
+	parts := strings.SplitN(pattern, " ", 2)
+	if len(parts) == 2 {
+		return strings.TrimSpace(parts[1])
+	}
+	// If no space found, return as-is (shouldn't happen with ServeMux patterns)
+	return pattern
 }

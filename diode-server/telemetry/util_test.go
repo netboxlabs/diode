@@ -217,3 +217,64 @@ func TestGetAttributesFromContext_EmptyContext(t *testing.T) {
 	attrs = GetAttributesFromContext(ctx, "service", "version")
 	assert.Equal(t, []attribute.KeyValue{}, attrs)
 }
+
+func TestExtractPathFromPattern(t *testing.T) {
+	tests := []struct {
+		name     string
+		pattern  string
+		expected string
+	}{
+		{
+			name:     "GET method with path",
+			pattern:  "GET /api/v1/users",
+			expected: "/api/v1/users",
+		},
+		{
+			name:     "POST method with path",
+			pattern:  "POST /api/v1/users",
+			expected: "/api/v1/users",
+		},
+		{
+			name:     "PUT method with path",
+			pattern:  "PUT /api/v1/users/123",
+			expected: "/api/v1/users/123",
+		},
+		{
+			name:     "DELETE method with path",
+			pattern:  "DELETE /api/v1/users/123",
+			expected: "/api/v1/users/123",
+		},
+		{
+			name:     "pattern with query parameters",
+			pattern:  "GET /api/v1/users?limit=10",
+			expected: "/api/v1/users?limit=10",
+		},
+		{
+			name:     "pattern with no space (edge case)",
+			pattern:  "/api/v1/users",
+			expected: "/api/v1/users",
+		},
+		{
+			name:     "empty pattern",
+			pattern:  "",
+			expected: "",
+		},
+		{
+			name:     "only method",
+			pattern:  "GET",
+			expected: "GET",
+		},
+		{
+			name:     "method with multiple spaces",
+			pattern:  "GET  /api/v1/users",
+			expected: "/api/v1/users",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := ExtractPathFromPattern(tt.pattern)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
