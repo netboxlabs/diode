@@ -13,7 +13,6 @@ import (
 	"github.com/pressly/goose/v3"
 	"github.com/redis/go-redis/v9"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/metric"
 	"google.golang.org/grpc"
 
 	"github.com/netboxlabs/diode/diode-server/authutil"
@@ -23,15 +22,14 @@ import (
 	"github.com/netboxlabs/diode/diode-server/reconciler"
 	"github.com/netboxlabs/diode/diode-server/server"
 	"github.com/netboxlabs/diode/diode-server/telemetry"
+	"github.com/netboxlabs/diode/diode-server/version"
 )
 
 const (
 	applicationName = "diode-reconciler" // used by sentry
 
 	// used by open telemetry metrics
-	telemetryServiceName   = "netboxlabs/diode/reconciler"
-	ingestionProcessorName = "netboxlabs/diode/reconciler/ingestion_processor"
-	metricStartup          = "netboxlabs/diode/reconciler/startup_count"
+	telemetryServiceName = "netboxlabs/diode/reconciler"
 )
 
 func main() {
@@ -60,20 +58,21 @@ func main() {
 		}
 	}()
 
-	appMeter := otel.GetMeterProvider().Meter(telemetryServiceName)
-	startupCounter, err := appMeter.Int64Counter(metricStartup,
-		metric.WithDescription("Number of times the reconciler service has started"))
+	meter := otel.GetMeterProvider().Meter(telemetryServiceName)
+	metricRecorder, err := reconciler.NewMetricRecorder(meter, cfg.Telemetry.Environment)
 	if err != nil {
-		s.Logger().Error("failed to create startup metric", "error", err)
+		s.Logger().Error("failed to create ingester metrics", "error", err)
 		os.Exit(1)
 	}
-	startupCounter.Add(ctx, 1)
+
+	metricRecorder.SetServiceInfo(ctx, fmt.Sprintf("%s.%s", version.GetBuildVersion(), version.GetBuildCommit()))
 
 	dbURL := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable", cfg.PostgresHost, cfg.PostgresPort, cfg.PostgresUser, cfg.PostgresPassword, cfg.PostgresDBName)
 
 	if cfg.MigrationEnabled {
 		if err := runDBMigrations(ctx, s.Logger(), dbURL); err != nil {
 			s.Logger().Error("failed to run db migrations", "error", err)
+			metricRecorder.RecordServiceStartupAttempt(ctx, false)
 			os.Exit(1)
 		}
 	}
@@ -86,6 +85,7 @@ func main() {
 
 	if _, err := redisClient.Ping(ctx).Result(); err != nil {
 		s.Logger().Error("failed to connect to redis", "redis", redisClient.String(), "error", err)
+		metricRecorder.RecordServiceStartupAttempt(ctx, false)
 		os.Exit(1)
 	}
 
@@ -97,12 +97,14 @@ func main() {
 
 	if _, err := redisStreamClient.Ping(ctx).Result(); err != nil {
 		s.Logger().Error("failed to connect to redis stream", "redisStream", redisStreamClient.String(), "error", err)
+		metricRecorder.RecordServiceStartupAttempt(ctx, false)
 		os.Exit(1)
 	}
 
 	dbPool, err := pgxpool.New(ctx, dbURL)
 	if err != nil {
 		s.Logger().Error("failed to connect to postgres database", "error", err)
+		metricRecorder.RecordServiceStartupAttempt(ctx, false)
 		os.Exit(1)
 	}
 	defer dbPool.Close()
@@ -124,24 +126,22 @@ func main() {
 		})
 	if err != nil {
 		s.Logger().Error("failed to create netbox diode plugin client", "error", err)
+		metricRecorder.RecordServiceStartupAttempt(ctx, false)
 		os.Exit(1)
 	}
 
 	ops := reconciler.NewOps(repository, nbClient, s.Logger())
-	ingestionMeter := otel.GetMeterProvider().Meter(ingestionProcessorName)
-	ingestionMetrics, err := reconciler.NewOtelIngestionProcessorMetrics(ingestionMeter, ingestionProcessorName)
-	if err != nil {
-		s.Logger().Error("failed to create ingestion processor metrics", "error", err)
-		os.Exit(1)
-	}
-	ingestionProcessor, err := reconciler.NewIngestionProcessor(ctx, s.Logger(), cfg, redisClient, redisStreamClient, reconciler.DefaultRedisStreamID, reconciler.DefaultRedisConsumerGroup, ops, ingestionMetrics)
+
+	ingestionProcessor, err := reconciler.NewIngestionProcessor(ctx, s.Logger(), cfg, redisClient, redisStreamClient, reconciler.DefaultRedisStreamID, reconciler.DefaultRedisConsumerGroup, ops, metricRecorder)
 	if err != nil {
 		s.Logger().Error("failed to instantiate ingestion processor", "error", err)
+		metricRecorder.RecordServiceStartupAttempt(ctx, false)
 		os.Exit(1)
 	}
 
 	if err := s.RegisterComponent(ingestionProcessor); err != nil {
 		s.Logger().Error("failed to register ingestion processor", "error", err)
+		metricRecorder.RecordServiceStartupAttempt(ctx, false)
 		os.Exit(1)
 	}
 
@@ -149,18 +149,23 @@ func main() {
 	gRPCServer, err := reconciler.NewServer(ctx, s.Logger(), repository, serverInterceptors(authorizer, s.Logger())...)
 	if err != nil {
 		s.Logger().Error("failed to instantiate gRPC server", "error", err)
+		metricRecorder.RecordServiceStartupAttempt(ctx, false)
 		os.Exit(1)
 	}
 
 	if err := s.RegisterComponent(gRPCServer); err != nil {
 		s.Logger().Error("failed to register gRPC server", "error", err)
+		metricRecorder.RecordServiceStartupAttempt(ctx, false)
 		os.Exit(1)
 	}
 
 	telemetry.ServePrometheusMetricsIfNecessary(cfg.Telemetry, s.Logger())
 
+	metricRecorder.RecordServiceStartupAttempt(ctx, true)
+
 	if err := s.Run(); err != nil {
 		s.Logger().Error("server failure", "serverName", s.Name(), "error", err)
+		metricRecorder.RecordServiceStartupAttempt(ctx, false)
 		os.Exit(1)
 	}
 }

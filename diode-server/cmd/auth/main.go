@@ -2,16 +2,17 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	"github.com/getsentry/sentry-go"
 	"github.com/kelseyhightower/envconfig"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/metric"
 
 	"github.com/netboxlabs/diode/diode-server/auth"
 	"github.com/netboxlabs/diode/diode-server/server"
 	"github.com/netboxlabs/diode/diode-server/telemetry"
+	"github.com/netboxlabs/diode/diode-server/version"
 )
 
 const (
@@ -19,7 +20,6 @@ const (
 
 	// used by open telemetry metrics
 	telemetryServiceName = "netboxlabs/diode/auth"
-	metricStartup        = "netboxlabs/diode/auth/startup_count"
 )
 
 func main() {
@@ -48,32 +48,37 @@ func main() {
 		}
 	}()
 
-	appMeter := otel.GetMeterProvider().Meter(telemetryServiceName)
-	startupCounter, err := appMeter.Int64Counter(metricStartup,
-		metric.WithDescription("Number of times the auth service has started"))
+	meter := otel.GetMeterProvider().Meter(telemetryServiceName)
+	metricRecorder, err := auth.NewMetricRecorder(meter, cfg.Telemetry.Environment)
 	if err != nil {
-		s.Logger().Error("failed to create startup metric", "error", err)
+		s.Logger().Error("failed to create auth metrics", "error", err)
 		os.Exit(1)
 	}
-	startupCounter.Add(ctx, 1)
+
+	metricRecorder.SetServiceInfo(ctx, fmt.Sprintf("%s.%s", version.GetBuildVersion(), version.GetBuildCommit()))
 
 	clientManager := auth.NewHydraClientManager(cfg.OAuth2.AdminServerURL, s.Logger())
 	tokenOwner := &auth.DefaultTokenOwner{}
 	httpServer, err := auth.NewServer(ctx, s.Logger(), auth.JWTParser{}, clientManager, tokenOwner)
 	if err != nil {
 		s.Logger().Error("failed to instantiate HTTP server", "error", err)
+		metricRecorder.RecordServiceStartupAttempt(ctx, false)
 		os.Exit(1)
 	}
 
 	if err := s.RegisterComponent(httpServer); err != nil {
 		s.Logger().Error("failed to register HTTP server", "error", err)
+		metricRecorder.RecordServiceStartupAttempt(ctx, false)
 		os.Exit(1)
 	}
 
 	telemetry.ServePrometheusMetricsIfNecessary(cfg.Telemetry, s.Logger())
 
+	metricRecorder.RecordServiceStartupAttempt(ctx, true)
+
 	if err := s.Run(); err != nil {
 		s.Logger().Error("server failure", "serverName", s.Name(), "error", err)
+		metricRecorder.RecordServiceStartupAttempt(ctx, false)
 		os.Exit(1)
 	}
 }

@@ -61,7 +61,7 @@ type IngestionProcessor struct {
 	redisStreamID      string
 	redisConsumerGroup string
 	ops                IngestionProcessorOps
-	metrics            IngestionProcessorMetrics
+	metrics            Metrics
 	cancel             context.CancelFunc
 	mx                 sync.Mutex
 }
@@ -81,16 +81,8 @@ type IngestionProcessorOps interface {
 	ApplyChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, changeSetID int32, changeSet *changeset.ChangeSet) error
 }
 
-// IngestionProcessorMetrics represents the metrics collecteingestion processor
-type IngestionProcessorMetrics interface {
-	RecordHandleMessage(ctx context.Context, success bool)
-	RecordIngestionLogCreate(ctx context.Context, success bool)
-	RecordChangeSetCreate(ctx context.Context, success bool, changes int64)
-	RecordChangeSetApply(ctx context.Context, success bool, changes int64)
-}
-
 // NewIngestionProcessor creates a new ingestion processor
-func NewIngestionProcessor(_ context.Context, logger *slog.Logger, cfg Config, redisClient, redisStreamClient RedisClient, redisStreamID string, redisConsumerGroup string, ops IngestionProcessorOps, metrics IngestionProcessorMetrics) (*IngestionProcessor, error) {
+func NewIngestionProcessor(_ context.Context, logger *slog.Logger, cfg Config, redisClient, redisStreamClient RedisClient, redisStreamID string, redisConsumerGroup string, ops IngestionProcessorOps, metrics Metrics) (*IngestionProcessor, error) {
 	hostname, err := os.Hostname()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get hostname: %v", err)
