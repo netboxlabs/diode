@@ -15,3 +15,7 @@ func TestVersion(t *testing.T) {
 	c := version.GetBuildCommit()
 	assert.Equal(t, "unknown", c)
 }
+
+func TestRelease(t *testing.T) {
+	assert.Equal(t, "v0.0.0-unknown", version.Release())
+}
