@@ -12,8 +12,6 @@ import (
 	"github.com/getsentry/sentry-go"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/oklog/run"
-
-	"github.com/netboxlabs/diode/diode-server/version"
 )
 
 // A Server is a diode Server
@@ -38,7 +36,7 @@ type Component interface {
 }
 
 // New returns a new Server
-func New(ctx context.Context, name string) *Server {
+func New(ctx context.Context, name, release string) *Server {
 	var cfg Config
 	envconfig.MustProcess("", &cfg)
 
@@ -55,7 +53,7 @@ func New(ctx context.Context, name string) *Server {
 			TracesSampleRate: cfg.SentryTracesSampleRate,
 			AttachStacktrace: cfg.SentryAttachStacktrace,
 			ServerName:       name,
-			Release:          fmt.Sprintf("v%s", version.GetBuildVersion()),
+			Release:          release,
 		}); err != nil {
 			logger.Error("failed to initialize sentry", "error", err)
 		}
@@ -65,7 +63,7 @@ func New(ctx context.Context, name string) *Server {
 		ctx:            ctx,
 		name:           name,
 		environment:    cfg.Environment,
-		release:        fmt.Sprintf("v%s-%s", version.GetBuildVersion(), version.GetBuildCommit()),
+		release:        release,
 		logger:         logger,
 		components:     make(map[string]Component),
 		componentGroup: run.Group{},

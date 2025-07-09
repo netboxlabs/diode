@@ -28,7 +28,7 @@ const (
 
 func main() {
 	ctx := context.Background()
-	s := server.New(ctx, applicationName)
+	s := server.New(ctx, applicationName, version.Release())
 
 	defer s.Recover(sentry.CurrentHub())
 
