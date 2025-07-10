@@ -40,7 +40,7 @@ We provide a `quickstart.sh` script to automate the setup process. The script wi
 
 3. Run the script with your NetBox server address:
    ```bash
-   ./quickstart.sh https://`<netbox-server>`
+   ./quickstart.sh https://<netbox-server>
    ```
    This should have created an `.env` file for your environment.
 
@@ -81,11 +81,11 @@ We provide a `quickstart.sh` script to automate the setup process. The script wi
    PLUGINS_CONFIG = {
        "netbox_diode_plugin": {
            # Diode gRPC target for communication with Diode server
-           "diode_target_override": "grpc://`<diode-server:port>`/diode",
+           "diode_target_override": "grpc://<diode-server:port>/diode",
            # NetBox username associated with changes applied via plugin
            "diode_username": "diode",
            # netbox-to-diode client secret from earlier step
-           "netbox_to_diode_client_secret": "`<netbox-to-diode-secret>`"
+           "netbox_to_diode_client_secret": "<netbox-to-diode-secret>"
        },
    }
    ```
@@ -104,7 +104,7 @@ We provide a `quickstart.sh` script to automate the setup process. The script wi
 6. **Generate Diode Client Credentials**
    > **Note**: These credentials will be used by the Orb agent to send discovery results to NetBox via Diode.
 
-   1. Go to your NetBox instance (https://`<netbox-server>`)
+   1. Go to your NetBox instance (https://<netbox-server>)
    2. In the left-hand pane, navigate to **Diode -> Client Credentials**
    3. Click on **+ Add a Credential**
    4. For Client Name, enter any name and click **Create**
@@ -122,8 +122,8 @@ We provide a `quickstart.sh` script to automate the setup process. The script wi
 1. **Export Client Credentials**
    ```bash
    # Export the client credentials you generated in NetBox
-   export DIODE_CLIENT_ID="`<your-client-id>`"
-   export DIODE_CLIENT_SECRET="`<your-client-secret>`"
+   export DIODE_CLIENT_ID="<your-client-id>"
+   export DIODE_CLIENT_SECRET="<your-client-secret>"
    ```
 
 2. **Create Agent Configuration File**
@@ -136,7 +136,7 @@ We provide a `quickstart.sh` script to automate the setup process. The script wi
        network_discovery:  # Enable network discovery backend
        common:
          diode:
-           target: grpc://`<diode-server:port>`/diode
+           target: grpc://<diode-server:port>/diode
            client_id: ${DIODE_CLIENT_ID}
            client_secret: ${DIODE_CLIENT_SECRET}
            agent_name: my_agent
