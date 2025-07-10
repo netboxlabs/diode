@@ -3,7 +3,7 @@ name = "netboxlabs-diode"
 version = "1.2.0"
 description = "Diode is a data ingestion service for NetBox that greatly simplifies and enhances the process of adding and updating data in NetBox"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 authors = [
     { name = "NetBox Labs", email = "support@netboxlabs.com" }
 ]
