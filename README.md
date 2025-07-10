@@ -32,6 +32,7 @@ For a quick step-by-step guide, see our [Getting Started Guide](./GET_STARTED.md
 ## Documentation
 
 - [Diode Protocol Documentation](https://github.com/netboxlabs/diode/blob/develop/docs/diode-proto.md)
+- [Metrics](https://github.com/netboxlabs/diode/blob/develop/docs/metrics.md)
 
 ## Related Projects
 
