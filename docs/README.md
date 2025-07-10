@@ -1,3 +1,1 @@
-# Diode documentation
-
-TBD
+../README.md
