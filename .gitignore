@@ -37,3 +37,4 @@ build/
 dist/
 .eggs/
 *.egg-info
+site/

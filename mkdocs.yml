@@ -1,0 +1,42 @@
+site_name: Diode - NetBox Data Ingestion Service
+theme:
+  name: material
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    - content.code.copy
+    - navigation.footer
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/lightbulb-outline
+        name: Switch to Dark Mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/lightbulb
+        name: Switch to Light Mode
+plugins:
+  - search:
+      lang: en
+markdown_extensions:
+    - admonition
+    - attr_list
+    - footnotes
+    - pymdownx.emoji:
+        emoji_index: !!python/name:material.extensions.emoji.twemoji
+        emoji_generator: !!python/name:material.extensions.emoji.to_svg
+    - pymdownx.superfences:
+        custom_fences:
+          - name: mermaid
+            class: mermaid
+            format: !!python/name:pymdownx.superfences.fence_code_format
+    - pymdownx.tabbed:
+        alternate_style: true
+nav:
+    - Introduction: 'index.md'
+    - Getting Started: 'getting-started.md'
+    - Protocol Reference: 'protocol/diode-proto.md'
+    - Monitoring: 'monitoring/metrics.md'
+    - License: 'license.md' 
