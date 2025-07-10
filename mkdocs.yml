@@ -37,6 +37,6 @@ markdown_extensions:
 nav:
     - Introduction: 'index.md'
     - Getting Started: 'getting-started.md'
-    - Protobuf Reference: 'protocol/diode-proto.md'
+    - Protobuf Reference: 'protobuf/diode-proto.md'
     - Observability: 'observability/metrics.md'
     - License: 'license.md' 
