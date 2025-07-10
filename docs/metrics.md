@@ -47,7 +47,7 @@ Diode's telemetry implementation supports multiple configuration methods and exp
 |----------|-------------|---------|----------|---------|
 | `TELEMETRY_SERVICE_NAME` | Service identifier | Auto-detected | No | `netboxlabs/diode/auth` |
 | `TELEMETRY_ENVIRONMENT` | Deployment environment | `dev` | No | `production` |
-| `TELEMETRY_METRICS_EXPORTER` | Metrics export type | `none` | No | `prometheus` |
+| `TELEMETRY_METRICS_EXPORTER` | Metrics export type | `none` | No | `prometheus`, `otlp`, `console` or `none` |
 | `TELEMETRY_METRICS_PORT` | Prometheus metrics port | `9090` | No | `9090` |
 
 ### OTLP Configuration
@@ -98,7 +98,7 @@ services:
 ## Troubleshooting
 
 ### Metrics Not Appearing
-1. Check `TELEMETRY_METRICS_EXPORTER=prometheus`
+1. Check `TELEMETRY_METRICS_EXPORTER` value. E.g. `TELEMETRY_METRICS_EXPORTER=prometheus`.
 2. Verify endpoint accessibility
 3. Check service logs for errors
 
