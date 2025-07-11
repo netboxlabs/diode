@@ -83,7 +83,7 @@ scenarios by name, tag or status.
 
 It should be available at the following path:
 
-<output_folder>/report.html
+`<output_folder>/report.html`
 
 ## Clean your environment
 
