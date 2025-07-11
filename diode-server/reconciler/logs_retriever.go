@@ -11,10 +11,10 @@ import (
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 )
 
-func retrieveIngestionMetrics(ctx context.Context, repository Repository, in *reconcilerpb.RetrieveIngestionLogsRequest) (*reconcilerpb.RetrieveIngestionLogsResponse, error) {
+func retrieveIngestionMetrics(ctx context.Context, repository Repository) (*reconcilerpb.RetrieveIngestionLogsResponse, error) {
 	var metrics reconcilerpb.IngestionMetrics
 
-	ingestionLogsPerState, err := repository.CountIngestionLogsPerState(ctx, in.IncludeDuplicates)
+	ingestionLogsPerState, err := repository.CountIngestionLogsPerState(ctx, false)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +41,7 @@ func retrieveIngestionMetrics(ctx context.Context, repository Repository, in *re
 }
 
 func retrieveIngestionLogs(ctx context.Context, logger *slog.Logger, repository Repository, in *reconcilerpb.RetrieveIngestionLogsRequest) (*reconcilerpb.RetrieveIngestionLogsResponse, error) {
-	ingestionLogsMetricsResponse, err := retrieveIngestionMetrics(ctx, repository, in)
+	ingestionLogsMetricsResponse, err := retrieveIngestionMetrics(ctx, repository)
 	if err != nil {
 		return nil, err
 	}

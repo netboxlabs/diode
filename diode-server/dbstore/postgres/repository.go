@@ -116,9 +116,6 @@ func (r *Repository) RetrieveIngestionLogs(ctx context.Context, filter *reconcil
 	if filter.State != nil {
 		params.State = pgtype.Int4{Int32: int32(*filter.State), Valid: true}
 	}
-	if filter.IncludeDuplicates {
-		params.IncludeDuplicates = pgtype.Bool{Bool: true, Valid: true}
-	}
 
 	// backwards compatibility (dataType -> objectType)
 	if filter.DataType != "" {

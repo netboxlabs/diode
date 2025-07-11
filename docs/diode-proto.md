@@ -4860,7 +4860,6 @@ The request to retrieve ingestion logs
 | page_token | [string](#string) |  | Token to fetch the next page of results |
 | only_metrics | [bool](#bool) |  | Flag to return only the ingestion metrics |
 | object_type | [string](#string) |  | Optional filter by object type |
-| include_duplicates | [bool](#bool) |  | Optional include duplicate ingestion logs |
 
 
 

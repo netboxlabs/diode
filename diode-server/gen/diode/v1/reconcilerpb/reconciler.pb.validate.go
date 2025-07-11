@@ -500,8 +500,6 @@ func (m *RetrieveIngestionLogsRequest) validate(all bool) error {
 
 	// no validation rules for ObjectType
 
-	// no validation rules for IncludeDuplicates
-
 	if m.PageSize != nil {
 		// no validation rules for PageSize
 	}
