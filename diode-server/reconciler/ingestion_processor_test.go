@@ -343,9 +343,9 @@ func TestIngestionProcessor_DuplicateHandling(t *testing.T) {
 		name                  string
 		existingLogState      reconcilerpb.State
 		stateAfterChangeset   reconcilerpb.State
+		makePrimary           bool
 		expectSkipProcessing  bool
 		expectReuseExistingID bool
-		expectMakePrimary     bool
 		changeSetHasChanges   bool
 	}{
 		{
@@ -383,7 +383,7 @@ func TestIngestionProcessor_DuplicateHandling(t *testing.T) {
 			stateAfterChangeset:   reconcilerpb.State_OPEN,
 			expectSkipProcessing:  false,
 			expectReuseExistingID: false,
-			expectMakePrimary:     true,
+			makePrimary:           true,
 			changeSetHasChanges:   true,
 		},
 		{
@@ -392,7 +392,7 @@ func TestIngestionProcessor_DuplicateHandling(t *testing.T) {
 			stateAfterChangeset:   reconcilerpb.State_NO_CHANGES,
 			expectSkipProcessing:  false,
 			expectReuseExistingID: false,
-			expectMakePrimary:     false,
+			makePrimary:           false,
 			changeSetHasChanges:   false,
 		},
 	}
@@ -445,11 +445,10 @@ func TestIngestionProcessor_DuplicateHandling(t *testing.T) {
 				Created: ops.IngestionLogRef{
 					ID: newLogID,
 					IngestionLog: &reconcilerpb.IngestionLog{
-						Id:          "new-log-id",
-						ObjectType:  "dcim.site",
-						State:       reconcilerpb.State_QUEUED,
-						Entity:      testEntity,
-						IsDuplicate: true,
+						Id:         "new-log-id",
+						ObjectType: "dcim.site",
+						State:      reconcilerpb.State_DUPLICATE,
+						Entity:     testEntity,
 					},
 				},
 				DuplicateOf: &ops.IngestionLogRef{
@@ -484,16 +483,20 @@ func TestIngestionProcessor_DuplicateHandling(t *testing.T) {
 
 				mockOps.On("GenerateChangeSet", mock.Anything, changeSetLogID, ingestionLogForChangeset, "").Run(func(_ mock.Arguments) {
 					ingestionLogForChangeset.State = tt.stateAfterChangeset
+					if tt.makePrimary {
+						ingestionLogForChangeset.State = reconcilerpb.State_OPEN
+					}
 				}).Return(int32Ptr(1), mockChangeSet, nil)
-
-				if tt.expectMakePrimary {
-					mockOps.On("MakePrimary", mock.Anything, newLogID).Return(nil)
-				}
 
 				mockMetrics.On("RecordChangeSetCreate", mock.Anything, mock.Anything, mock.Anything).Return()
 
 				if tt.stateAfterChangeset == reconcilerpb.State_OPEN {
 					mockOps.On("ApplyChangeSet", mock.Anything, changeSetLogID, ingestionLogForChangeset, int32(1), mockChangeSet).Return(nil)
+					mockMetrics.On("RecordChangeSetApply", mock.Anything, mock.Anything, mock.Anything).Return()
+				}
+
+				if tt.makePrimary {
+					mockOps.On("ApplyChangeSet", mock.Anything, newLogID, ingestionLogForChangeset, int32(1), mockChangeSet).Return(nil)
 					mockMetrics.On("RecordChangeSetApply", mock.Anything, mock.Anything, mock.Anything).Return()
 				}
 			}

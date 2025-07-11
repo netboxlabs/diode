@@ -207,53 +207,6 @@ func (_c *IngestionProcessorOps_GenerateChangeSet_Call) RunAndReturn(run func(co
 	return _c
 }
 
-// MakePrimary provides a mock function with given fields: ctx, ingestionLogID
-func (_m *IngestionProcessorOps) MakePrimary(ctx context.Context, ingestionLogID int32) error {
-	ret := _m.Called(ctx, ingestionLogID)
-
-	if len(ret) == 0 {
-		panic("no return value specified for MakePrimary")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, int32) error); ok {
-		r0 = rf(ctx, ingestionLogID)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// IngestionProcessorOps_MakePrimary_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'MakePrimary'
-type IngestionProcessorOps_MakePrimary_Call struct {
-	*mock.Call
-}
-
-// MakePrimary is a helper method to define mock.On call
-//   - ctx context.Context
-//   - ingestionLogID int32
-func (_e *IngestionProcessorOps_Expecter) MakePrimary(ctx interface{}, ingestionLogID interface{}) *IngestionProcessorOps_MakePrimary_Call {
-	return &IngestionProcessorOps_MakePrimary_Call{Call: _e.mock.On("MakePrimary", ctx, ingestionLogID)}
-}
-
-func (_c *IngestionProcessorOps_MakePrimary_Call) Run(run func(ctx context.Context, ingestionLogID int32)) *IngestionProcessorOps_MakePrimary_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(int32))
-	})
-	return _c
-}
-
-func (_c *IngestionProcessorOps_MakePrimary_Call) Return(_a0 error) *IngestionProcessorOps_MakePrimary_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *IngestionProcessorOps_MakePrimary_Call) RunAndReturn(run func(context.Context, int32) error) *IngestionProcessorOps_MakePrimary_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // NewIngestionProcessorOps creates a new instance of IngestionProcessorOps. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewIngestionProcessorOps(t interface {

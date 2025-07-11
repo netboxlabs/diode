@@ -4751,7 +4751,6 @@ An ingestion log
 | change_set | [ChangeSet](#diode-v1-ChangeSet) |  |  |
 | object_type | [string](#string) |  |  |
 | source_ts | [int64](#int64) |  |  |
-| is_duplicate | [bool](#bool) |  |  |
 
 
 
@@ -4902,6 +4901,7 @@ The response from the retrieve ingestion logs request
 | NO_CHANGES | 5 |  |
 | IGNORED | 6 |  |
 | ERRORED | 7 |  |
+| DUPLICATE | 8 |  |
 
 
  

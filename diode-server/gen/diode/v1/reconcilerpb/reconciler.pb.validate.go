@@ -387,8 +387,6 @@ func (m *IngestionLog) validate(all bool) error {
 
 	// no validation rules for SourceTs
 
-	// no validation rules for IsDuplicate
-
 	if len(errors) > 0 {
 		return IngestionLogMultiError(errors)
 	}

@@ -34,6 +34,7 @@ const (
 	State_NO_CHANGES        State = 5
 	State_IGNORED           State = 6
 	State_ERRORED           State = 7
+	State_DUPLICATE         State = 8
 )
 
 // Enum value maps for State.
@@ -47,6 +48,7 @@ var (
 		5: "NO_CHANGES",
 		6: "IGNORED",
 		7: "ERRORED",
+		8: "DUPLICATE",
 	}
 	State_value = map[string]int32{
 		"STATE_UNSPECIFIED": 0,
@@ -57,6 +59,7 @@ var (
 		"NO_CHANGES":        5,
 		"IGNORED":           6,
 		"ERRORED":           7,
+		"DUPLICATE":         8,
 	}
 )
 
@@ -251,7 +254,6 @@ type IngestionLog struct {
 	ChangeSet          *ChangeSet      `protobuf:"bytes,12,opt,name=change_set,json=changeSet,proto3" json:"change_set,omitempty"`
 	ObjectType         string          `protobuf:"bytes,13,opt,name=object_type,json=objectType,proto3" json:"object_type,omitempty"`
 	SourceTs           int64           `protobuf:"varint,14,opt,name=source_ts,json=sourceTs,proto3" json:"source_ts,omitempty"`
-	IsDuplicate        bool            `protobuf:"varint,15,opt,name=is_duplicate,json=isDuplicate,proto3" json:"is_duplicate,omitempty"`
 	unknownFields      protoimpl.UnknownFields
 	sizeCache          protoimpl.SizeCache
 }
@@ -383,13 +385,6 @@ func (x *IngestionLog) GetSourceTs() int64 {
 		return x.SourceTs
 	}
 	return 0
-}
-
-func (x *IngestionLog) GetIsDuplicate() bool {
-	if x != nil {
-		return x.IsDuplicate
-	}
-	return false
 }
 
 // The request to retrieve ingestion logs
@@ -1108,7 +1103,7 @@ const file_diode_v1_reconciler_proto_rawDesc = "" +
 	"\x0edeviation_name\x18\x04 \x01(\tH\x01R\rdeviationName\x88\x01\x01B\f\n" +
 	"\n" +
 	"_branch_idB\x11\n" +
-	"\x0f_deviation_name\"\xb1\x04\n" +
+	"\x0f_deviation_name\"\x8e\x04\n" +
 	"\fIngestionLog\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1f\n" +
 	"\tdata_type\x18\x02 \x01(\tB\x02\x18\x01R\bdataType\x12%\n" +
@@ -1128,8 +1123,7 @@ const file_diode_v1_reconciler_proto_rawDesc = "" +
 	"change_set\x18\f \x01(\v2\x13.diode.v1.ChangeSetR\tchangeSet\x12\x1f\n" +
 	"\vobject_type\x18\r \x01(\tR\n" +
 	"objectType\x12\x1b\n" +
-	"\tsource_ts\x18\x0e \x01(\x03R\bsourceTs\x12!\n" +
-	"\fis_duplicate\x18\x0f \x01(\bR\visDuplicate\"\xae\x03\n" +
+	"\tsource_ts\x18\x0e \x01(\x03R\bsourceTs\"\xae\x03\n" +
 	"\x1cRetrieveIngestionLogsRequest\x12 \n" +
 	"\tpage_size\x18\x01 \x01(\x05H\x00R\bpageSize\x88\x01\x01\x12*\n" +
 	"\x05state\x18\x02 \x01(\x0e2\x0f.diode.v1.StateH\x01R\x05state\x88\x01\x01\x12\x1f\n" +
@@ -1202,7 +1196,7 @@ const file_diode_v1_reconciler_proto_rawDesc = "" +
 	"\x1cRetrieveDeviationByIDRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"R\n" +
 	"\x1dRetrieveDeviationByIDResponse\x121\n" +
-	"\tdeviation\x18\x01 \x01(\v2\x13.diode.v1.DeviationR\tdeviation*w\n" +
+	"\tdeviation\x18\x01 \x01(\v2\x13.diode.v1.DeviationR\tdeviation*\x86\x01\n" +
 	"\x05State\x12\x15\n" +
 	"\x11STATE_UNSPECIFIED\x10\x00\x12\n" +
 	"\n" +
@@ -1214,7 +1208,8 @@ const file_diode_v1_reconciler_proto_rawDesc = "" +
 	"\n" +
 	"NO_CHANGES\x10\x05\x12\v\n" +
 	"\aIGNORED\x10\x06\x12\v\n" +
-	"\aERRORED\x10\a2\xcd\x02\n" +
+	"\aERRORED\x10\a\x12\r\n" +
+	"\tDUPLICATE\x10\b2\xcd\x02\n" +
 	"\x11ReconcilerService\x12m\n" +
 	"\x15RetrieveIngestionLogs\x12&.diode.v1.RetrieveIngestionLogsRequest\x1a'.diode.v1.RetrieveIngestionLogsResponse\"\x03\x88\x02\x01\x12_\n" +
 	"\x12RetrieveDeviations\x12#.diode.v1.RetrieveDeviationsRequest\x1a$.diode.v1.RetrieveDeviationsResponse\x12h\n" +

@@ -68,11 +68,10 @@ func (o *Ops) CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb
 		if err := o.repository.MarkIngestionLogAsDuplicate(ctx, *id, *existingID); err != nil {
 			return nil, fmt.Errorf("failed to mark record as duplicate: %w", err)
 		}
-		// for clarity, duplicate logs are marked as IGNORED
-		if err := o.repository.UpdateIngestionLogStateWithError(ctx, *id, reconcilerpb.State_IGNORED, nil); err != nil {
+		if err := o.repository.UpdateIngestionLogStateWithError(ctx, *id, reconcilerpb.State_DUPLICATE, nil); err != nil {
 			return nil, fmt.Errorf("failed to update ingestion log state: %w", err)
 		}
-		result.Created.IngestionLog.IsDuplicate = true
+		result.Created.IngestionLog.State = reconcilerpb.State_DUPLICATE
 		result.DuplicateOf = &ops.IngestionLogRef{
 			ID:           *existingID,
 			IngestionLog: existingLog,
@@ -91,6 +90,8 @@ func (o *Ops) GenerateChangeSet(ctx context.Context, ingestionLogID int32, inges
 		State:      int(ingestionLog.GetState()),
 	}
 
+	isDuplicate := ingestionLog.State == reconcilerpb.State_DUPLICATE
+
 	changeSet, err := differ.Diff(ctx, ingestEntity, branchID, o.nbClient)
 	if err != nil {
 		tags := map[string]string{
@@ -108,6 +109,11 @@ func (o *Ops) GenerateChangeSet(ctx context.Context, ingestionLogID int32, inges
 		if err2 := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, reconcilerpb.State_FAILED, changeSetErr); err2 != nil {
 			err = errors.Join(err, err2)
 		}
+		if isDuplicate {
+			if err2 := o.repository.MarkIngestionLogAsPrimary(ctx, ingestionLogID); err != nil {
+				err = errors.Join(err, err2)
+			}
+		}
 
 		cs := differ.FailedDiffChangeSet(ingestEntity, branchID)
 		id, err1 := o.repository.CreateChangeSet(ctx, *cs, ingestionLogID)
@@ -124,25 +130,25 @@ func (o *Ops) GenerateChangeSet(ctx context.Context, ingestionLogID int32, inges
 		return nil, nil, err
 	}
 
-	state := reconcilerpb.State_OPEN
-	if len(changeSet.Changes) == 0 {
-		state = reconcilerpb.State_NO_CHANGES
-	}
-	ingestionLog.State = state
-
-	if err := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, state, nil); err != nil {
-		o.logger.Warn("failed to update ingestion log state (error ignored)", "ingestionLogID", ingestionLogID, "error", err)
-		// TODO(ltucker): This should be in a transaction.  Can leave an inconsistent state marked on the ingestion log.
-		// return nil, err
+	if len(changeSet.Changes) > 0 {
+		ingestionLog.State = reconcilerpb.State_OPEN
+		if err := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, reconcilerpb.State_OPEN, nil); err != nil {
+			o.logger.Error("failed to update ingestion log state (error ignored)", "ingestionLogID", ingestionLogID, "error", err)
+		}
+		if isDuplicate {
+			if err := o.repository.MarkIngestionLogAsPrimary(ctx, ingestionLogID); err != nil {
+				o.logger.Error("failed to mark ingestion log as primary (error ignored)", "ingestionLogID", ingestionLogID, "error", err)
+			}
+		}
+	} else if !isDuplicate {
+		ingestionLog.State = reconcilerpb.State_NO_CHANGES
+		if err := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, reconcilerpb.State_NO_CHANGES, nil); err != nil {
+			o.logger.Error("failed to update ingestion log state (error ignored)", "ingestionLogID", ingestionLogID, "error", err)
+		}
 	}
 
 	o.logger.Debug("change set generated", "id", changeSetID, "externalID", changeSet.ID, "ingestionLogID", ingestionLogID)
 	return changeSetID, changeSet, nil
-}
-
-// MakePrimary makes an ingestion log a primary record
-func (o *Ops) MakePrimary(ctx context.Context, ingestionLogID int32) error {
-	return o.repository.MarkIngestionLogAsPrimary(ctx, ingestionLogID)
 }
 
 // ApplyChangeSet applies change set to NetBox and updates related states

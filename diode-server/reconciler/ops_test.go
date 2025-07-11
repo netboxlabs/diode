@@ -351,7 +351,7 @@ func TestOpsCreateIngestionLog(t *testing.T) {
 				mockRepository.EXPECT().MarkIngestionLogAsDuplicate(mock.Anything, *tt.mockCreateIngestionLog.id, *tt.mockFindPriorIngestionLogID).
 					Return(tt.mockMarkAsDuplicateError)
 				if tt.mockMarkAsDuplicateError == nil {
-					mockRepository.EXPECT().UpdateIngestionLogStateWithError(mock.Anything, *tt.mockCreateIngestionLog.id, pb.State_IGNORED, nil).
+					mockRepository.EXPECT().UpdateIngestionLogStateWithError(mock.Anything, *tt.mockCreateIngestionLog.id, pb.State_DUPLICATE, nil).
 						Return(nil)
 				}
 			}
@@ -378,58 +378,6 @@ func TestOpsCreateIngestionLog(t *testing.T) {
 				require.Equal(t, tt.mockFindPriorIngestionLog, result.DuplicateOf.IngestionLog)
 			} else {
 				require.Nil(t, result.DuplicateOf)
-			}
-		})
-	}
-}
-
-func TestOpsMakePrimary(t *testing.T) {
-	ctx := context.Background()
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
-
-	tests := []struct {
-		name string
-
-		ingestionLogID int32
-
-		mockPromoteToPrimaryError error
-
-		expectedError string
-	}{
-		{
-			name:           "successful promotion",
-			ingestionLogID: 1234,
-
-			mockPromoteToPrimaryError: nil,
-
-			expectedError: "",
-		},
-		{
-			name:           "promotion fails",
-			ingestionLogID: 1234,
-
-			mockPromoteToPrimaryError: fmt.Errorf("database error during promotion"),
-
-			expectedError: "database error during promotion",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mockRepository := mocks.NewRepository(t)
-			mockNetBoxClient := pluginmocks.NewNetBoxAPI(t)
-			opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger)
-
-			mockRepository.EXPECT().MarkIngestionLogAsPrimary(ctx, tt.ingestionLogID).
-				Return(tt.mockPromoteToPrimaryError)
-
-			err := opsInstance.MakePrimary(ctx, tt.ingestionLogID)
-
-			if tt.expectedError != "" {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), tt.expectedError)
-			} else {
-				require.NoError(t, err)
 			}
 		})
 	}

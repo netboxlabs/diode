@@ -79,7 +79,6 @@ type IngestionLogToProcess struct {
 type IngestionProcessorOps interface {
 	CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb.IngestionLog, sourceMetadata []byte) (*ops.CreateIngestionLogResult, error)
 	GenerateChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, branchID string) (*int32, *changeset.ChangeSet, error)
-	MakePrimary(ctx context.Context, ingestionLogID int32) error
 	ApplyChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, changeSetID int32, changeSet *changeset.ChangeSet) error
 }
 
@@ -305,30 +304,7 @@ func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChan
 					p.metrics.RecordChangeSetCreate(ctx, true, int64(len(changeSet.Changes)))
 				}
 
-				if msg.ingestionLog.IsDuplicate {
-					// Reprocessing a duplicate record.
-					// If there are changes or errors, make it a primary (non-duplicate) record.
-					makePrimary := false
-					switch msg.ingestionLog.State {
-					case reconcilerpb.State_OPEN:
-						makePrimary = true
-					case reconcilerpb.State_FAILED:
-						makePrimary = true
-					case reconcilerpb.State_ERRORED:
-						makePrimary = true
-					default:
-					}
-					if makePrimary {
-						err := p.ops.MakePrimary(ctx, msg.ingestionLogID)
-						if err != nil {
-							p.logger.Error("error making ingestion log primary", "error", err)
-							return
-						}
-						msg.ingestionLog.IsDuplicate = false
-					}
-				}
-
-				if changeSet != nil && len(changeSet.Changes) > 0 {
+				if changeSet != nil && len(changeSet.Changes) > 0 && msg.ingestionLog.State != reconcilerpb.State_DUPLICATE {
 					if applyChangeSetChan != nil {
 						applyChangeSetChan <- IngestionLogToProcess{
 							ingestionLogID: msg.ingestionLogID,
