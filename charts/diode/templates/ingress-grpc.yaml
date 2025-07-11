@@ -1,3 +1,4 @@
+{{- if and .Values.ingressNginx .Values.ingressNginx.enabled -}}
 {{- $ingressNginx := index .Values.ingressNginx -}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -43,3 +44,4 @@ spec:
                 name: {{ include "diode.reconciler.servicename" . }}
                 port:
                   number: {{ .Values.diodeReconciler.containerPort }}
+{{- end }}
