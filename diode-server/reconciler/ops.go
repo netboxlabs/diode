@@ -51,10 +51,7 @@ func (o *Ops) CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb
 
 	id, err := o.repository.CreateIngestionLog(ctx, ingestionLog, sourceMetadata, entityHash)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create ingestion log: %w", err)
-	}
-	if id == nil {
-		return nil, fmt.Errorf("failed to create ingestion log: no database id")
+		return nil, err
 	}
 
 	result := &ops.CreateIngestionLogResult{

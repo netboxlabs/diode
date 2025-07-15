@@ -290,20 +290,7 @@ func TestOpsCreateIngestionLog(t *testing.T) {
 				error: fmt.Errorf("database error"),
 			},
 
-			expectedError:       "failed to create ingestion log: database error",
-			expectedDuplicateOf: false,
-		},
-		{
-			name:           "create ingestion log returns nil id",
-			ingestionLog:   testIngestionLog,
-			sourceMetadata: testSourceMetadata,
-
-			mockCreateIngestionLog: &mockCreateIngestionLog{
-				id:    nil,
-				error: nil,
-			},
-
-			expectedError:       "failed to create ingestion log: no database id",
+			expectedError:       "database error",
 			expectedDuplicateOf: false,
 		},
 		{
