@@ -68,7 +68,7 @@ jobs:
           JF_URL: https://netboxlabs.jfrog.io
           JF_PROJECT: obs
         with:
-          oidc-provider-name: platform-setup-jfrog-cli
+          oidc-provider-name: github-ci
 
       - name: Login to JFrog Artifactory
         uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 #v3
