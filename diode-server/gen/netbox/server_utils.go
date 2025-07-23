@@ -1,5 +1,5 @@
 // Generated code. DO NOT EDIT.
-// Timestamp: 2025-04-10 14:44:19Z
+// Timestamp: 2025-07-23 01:46:44Z
 package netbox
 
 import (
@@ -184,6 +184,16 @@ const (
     WirelessLANGroupObjectTypeName = "Wireless LAN Group"
     WirelessLinkObjectType = "wireless.wirelesslink"
     WirelessLinkObjectTypeName = "Wireless Link"
+    CustomFieldObjectType = "extras.customfield"
+    CustomFieldObjectTypeName = "Custom Field"
+    CustomFieldChoiceSetObjectType = "extras.customfieldchoiceset"
+    CustomFieldChoiceSetObjectTypeName = "Custom Field Choice Set"
+    JournalEntryObjectType = "extras.journalentry"
+    JournalEntryObjectTypeName = "Journal Entry"
+    ModuleTypeProfileObjectType = "dcim.moduletypeprofile"
+    ModuleTypeProfileObjectTypeName = "Module Type Profile"
+    CustomLinkObjectType = "extras.customlink"
+    CustomLinkObjectTypeName = "Custom Link"
 )
 
 func GetObjectType(entity *pb.Entity) (string, error) {
@@ -364,6 +374,16 @@ func GetObjectType(entity *pb.Entity) (string, error) {
         return WirelessLANGroupObjectType, nil
     case *pb.Entity_WirelessLink:
         return WirelessLinkObjectType, nil
+    case *pb.Entity_CustomField:
+        return CustomFieldObjectType, nil
+    case *pb.Entity_CustomFieldChoiceSet:
+        return CustomFieldChoiceSetObjectType, nil
+    case *pb.Entity_JournalEntry:
+        return JournalEntryObjectType, nil
+    case *pb.Entity_ModuleTypeProfile:
+        return ModuleTypeProfileObjectType, nil
+    case *pb.Entity_CustomLink:
+        return CustomLinkObjectType, nil
     default:
         return "", fmt.Errorf("unknown entity type: %v", entity.GetEntity())
     }
@@ -547,6 +567,16 @@ func GetObjectTypeName(objectType string) (string, error) {
         return WirelessLANGroupObjectTypeName, nil
     case WirelessLinkObjectType:
         return WirelessLinkObjectTypeName, nil
+    case CustomFieldObjectType:
+        return CustomFieldObjectTypeName, nil
+    case CustomFieldChoiceSetObjectType:
+        return CustomFieldChoiceSetObjectTypeName, nil
+    case JournalEntryObjectType:
+        return JournalEntryObjectTypeName, nil
+    case ModuleTypeProfileObjectType:
+        return ModuleTypeProfileObjectTypeName, nil
+    case CustomLinkObjectType:
+        return CustomLinkObjectTypeName, nil
     default:
         return "", fmt.Errorf("unknown object type: %v", objectType)
     }
@@ -580,6 +610,12 @@ func GetPrimaryValue(entity *pb.Entity) (string, error) {
         return fmt.Sprintf("%v", e.ContactGroup.Name), nil
     case *pb.Entity_ContactRole:
         return fmt.Sprintf("%v", e.ContactRole.Name), nil
+    case *pb.Entity_CustomField:
+        return fmt.Sprintf("%v", e.CustomField.Name), nil
+    case *pb.Entity_CustomFieldChoiceSet:
+        return fmt.Sprintf("%v", e.CustomFieldChoiceSet.Name), nil
+    case *pb.Entity_CustomLink:
+        return fmt.Sprintf("%v", e.CustomLink.Name), nil
     case *pb.Entity_Device:
         return fmt.Sprintf("%v", e.Device.Name), nil
     case *pb.Entity_DeviceBay:
@@ -622,6 +658,8 @@ func GetPrimaryValue(entity *pb.Entity) (string, error) {
         return fmt.Sprintf("%v", e.ModuleBay.Name), nil
     case *pb.Entity_ModuleType:
         return fmt.Sprintf("%v", e.ModuleType.Model), nil
+    case *pb.Entity_ModuleTypeProfile:
+        return fmt.Sprintf("%v", e.ModuleTypeProfile.Name), nil
     case *pb.Entity_Platform:
         return fmt.Sprintf("%v", e.Platform.Name), nil
     case *pb.Entity_PowerFeed:

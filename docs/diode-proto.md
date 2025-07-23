@@ -41,8 +41,11 @@
     - [ContactGroup.CustomFieldsEntry](#diode-v1-ContactGroup-CustomFieldsEntry)
     - [ContactRole](#diode-v1-ContactRole)
     - [ContactRole.CustomFieldsEntry](#diode-v1-ContactRole-CustomFieldsEntry)
+    - [CustomField](#diode-v1-CustomField)
+    - [CustomFieldChoiceSet](#diode-v1-CustomFieldChoiceSet)
     - [CustomFieldObjectReference](#diode-v1-CustomFieldObjectReference)
     - [CustomFieldValue](#diode-v1-CustomFieldValue)
+    - [CustomLink](#diode-v1-CustomLink)
     - [Device](#diode-v1-Device)
     - [Device.CustomFieldsEntry](#diode-v1-Device-CustomFieldsEntry)
     - [DeviceBay](#diode-v1-DeviceBay)
@@ -80,6 +83,8 @@
     - [InventoryItem.CustomFieldsEntry](#diode-v1-InventoryItem-CustomFieldsEntry)
     - [InventoryItemRole](#diode-v1-InventoryItemRole)
     - [InventoryItemRole.CustomFieldsEntry](#diode-v1-InventoryItemRole-CustomFieldsEntry)
+    - [JournalEntry](#diode-v1-JournalEntry)
+    - [JournalEntry.CustomFieldsEntry](#diode-v1-JournalEntry-CustomFieldsEntry)
     - [L2VPN](#diode-v1-L2VPN)
     - [L2VPN.CustomFieldsEntry](#diode-v1-L2VPN-CustomFieldsEntry)
     - [L2VPNTermination](#diode-v1-L2VPNTermination)
@@ -96,6 +101,8 @@
     - [ModuleBay.CustomFieldsEntry](#diode-v1-ModuleBay-CustomFieldsEntry)
     - [ModuleType](#diode-v1-ModuleType)
     - [ModuleType.CustomFieldsEntry](#diode-v1-ModuleType-CustomFieldsEntry)
+    - [ModuleTypeProfile](#diode-v1-ModuleTypeProfile)
+    - [ModuleTypeProfile.CustomFieldsEntry](#diode-v1-ModuleTypeProfile-CustomFieldsEntry)
     - [Platform](#diode-v1-Platform)
     - [Platform.CustomFieldsEntry](#diode-v1-Platform-CustomFieldsEntry)
     - [PowerFeed](#diode-v1-PowerFeed)
@@ -793,7 +800,7 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| group | [ContactGroup](#diode-v1-ContactGroup) | optional |  |
+| group | [ContactGroup](#diode-v1-ContactGroup) | optional | **Deprecated.**  |
 | name | [string](#string) |  |  |
 | title | [string](#string) | optional |  |
 | phone | [string](#string) | optional |  |
@@ -804,6 +811,7 @@
 | comments | [string](#string) | optional |  |
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [Contact.CustomFieldsEntry](#diode-v1-Contact-CustomFieldsEntry) | repeated |  |
+| groups | [ContactGroup](#diode-v1-ContactGroup) | repeated |  |
 
 
 
@@ -922,6 +930,11 @@
 | object_wireless_lan | [WirelessLAN](#diode-v1-WirelessLAN) |  |  |
 | object_wireless_lan_group | [WirelessLANGroup](#diode-v1-WirelessLANGroup) |  |  |
 | object_wireless_link | [WirelessLink](#diode-v1-WirelessLink) |  |  |
+| object_custom_field | [CustomField](#diode-v1-CustomField) |  |  |
+| object_custom_field_choice_set | [CustomFieldChoiceSet](#diode-v1-CustomFieldChoiceSet) |  |  |
+| object_journal_entry | [JournalEntry](#diode-v1-JournalEntry) |  |  |
+| object_module_type_profile | [ModuleTypeProfile](#diode-v1-ModuleTypeProfile) |  |  |
+| object_custom_link | [CustomLink](#diode-v1-CustomLink) |  |  |
 | contact | [Contact](#diode-v1-Contact) |  |  |
 | role | [ContactRole](#diode-v1-ContactRole) | optional |  |
 | priority | [string](#string) | optional |  |
@@ -963,6 +976,7 @@
 | description | [string](#string) | optional |  |
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [ContactGroup.CustomFieldsEntry](#diode-v1-ContactGroup-CustomFieldsEntry) | repeated |  |
+| comments | [string](#string) | optional |  |
 
 
 
@@ -1014,6 +1028,61 @@
 | ----- | ---- | ----- | ----------- |
 | key | [string](#string) |  |  |
 | value | [CustomFieldValue](#diode-v1-CustomFieldValue) |  |  |
+
+
+
+
+
+
+<a name="diode-v1-CustomField"></a>
+
+### CustomField
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| type | [string](#string) |  |  |
+| related_object_type | [string](#string) | optional |  |
+| name | [string](#string) |  |  |
+| label | [string](#string) | optional |  |
+| group_name | [string](#string) | optional |  |
+| description | [string](#string) | optional |  |
+| required | [bool](#bool) | optional |  |
+| unique | [bool](#bool) | optional |  |
+| search_weight | [int64](#int64) | optional |  |
+| filter_logic | [string](#string) | optional |  |
+| ui_visible | [string](#string) | optional |  |
+| ui_editable | [string](#string) | optional |  |
+| is_cloneable | [bool](#bool) | optional |  |
+| default | [string](#string) | optional |  |
+| related_object_filter | [string](#string) | optional |  |
+| weight | [int64](#int64) | optional |  |
+| validation_minimum | [int64](#int64) | optional |  |
+| validation_maximum | [int64](#int64) | optional |  |
+| validation_regex | [string](#string) | optional |  |
+| choice_set | [CustomFieldChoiceSet](#diode-v1-CustomFieldChoiceSet) | optional |  |
+| comments | [string](#string) | optional |  |
+| object_types | [string](#string) | repeated |  |
+
+
+
+
+
+
+<a name="diode-v1-CustomFieldChoiceSet"></a>
+
+### CustomFieldChoiceSet
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [string](#string) |  |  |
+| description | [string](#string) | optional |  |
+| base_choices | [string](#string) | optional |  |
+| order_alphabetically | [bool](#bool) | optional |  |
+| extra_choices | [string](#string) | repeated |  |
 
 
 
@@ -1116,6 +1185,11 @@
 | wireless_lan | [WirelessLAN](#diode-v1-WirelessLAN) |  |  |
 | wireless_lan_group | [WirelessLANGroup](#diode-v1-WirelessLANGroup) |  |  |
 | wireless_link | [WirelessLink](#diode-v1-WirelessLink) |  |  |
+| custom_field | [CustomField](#diode-v1-CustomField) |  |  |
+| custom_field_choice_set | [CustomFieldChoiceSet](#diode-v1-CustomFieldChoiceSet) |  |  |
+| journal_entry | [JournalEntry](#diode-v1-JournalEntry) |  |  |
+| module_type_profile | [ModuleTypeProfile](#diode-v1-ModuleTypeProfile) |  |  |
+| custom_link | [CustomLink](#diode-v1-CustomLink) |  |  |
 
 
 
@@ -1143,6 +1217,29 @@
 | json | [string](#string) |  |  |
 | selection | [string](#string) |  |  |
 | object | [CustomFieldObjectReference](#diode-v1-CustomFieldObjectReference) |  |  |
+
+
+
+
+
+
+<a name="diode-v1-CustomLink"></a>
+
+### CustomLink
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [string](#string) |  |  |
+| enabled | [bool](#bool) | optional |  |
+| link_text | [string](#string) |  |  |
+| link_url | [string](#string) |  |  |
+| weight | [int64](#int64) | optional |  |
+| group_name | [string](#string) | optional |  |
+| button_class | [string](#string) | optional |  |
+| new_window | [bool](#bool) | optional |  |
+| object_types | [string](#string) | repeated |  |
 
 
 
@@ -1258,6 +1355,8 @@
 | description | [string](#string) | optional |  |
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [DeviceRole.CustomFieldsEntry](#diode-v1-DeviceRole-CustomFieldsEntry) | repeated |  |
+| parent | [DeviceRole](#diode-v1-DeviceRole) | optional |  |
+| comments | [string](#string) | optional |  |
 
 
 
@@ -1423,6 +1522,11 @@
 | wireless_lan | [WirelessLAN](#diode-v1-WirelessLAN) |  |  |
 | wireless_lan_group | [WirelessLANGroup](#diode-v1-WirelessLANGroup) |  |  |
 | wireless_link | [WirelessLink](#diode-v1-WirelessLink) |  |  |
+| custom_field | [CustomField](#diode-v1-CustomField) |  |  |
+| custom_field_choice_set | [CustomFieldChoiceSet](#diode-v1-CustomFieldChoiceSet) |  |  |
+| journal_entry | [JournalEntry](#diode-v1-JournalEntry) |  |  |
+| module_type_profile | [ModuleTypeProfile](#diode-v1-ModuleTypeProfile) |  |  |
+| custom_link | [CustomLink](#diode-v1-CustomLink) |  |  |
 
 
 
@@ -1565,6 +1669,11 @@
 | interface_wireless_lan | [WirelessLAN](#diode-v1-WirelessLAN) |  |  |
 | interface_wireless_lan_group | [WirelessLANGroup](#diode-v1-WirelessLANGroup) |  |  |
 | interface_wireless_link | [WirelessLink](#diode-v1-WirelessLink) |  |  |
+| interface_custom_field | [CustomField](#diode-v1-CustomField) |  |  |
+| interface_custom_field_choice_set | [CustomFieldChoiceSet](#diode-v1-CustomFieldChoiceSet) |  |  |
+| interface_journal_entry | [JournalEntry](#diode-v1-JournalEntry) |  |  |
+| interface_module_type_profile | [ModuleTypeProfile](#diode-v1-ModuleTypeProfile) |  |  |
+| interface_custom_link | [CustomLink](#diode-v1-CustomLink) |  |  |
 | priority | [int64](#int64) |  |  |
 
 
@@ -1710,6 +1819,11 @@
 | object_wireless_lan | [WirelessLAN](#diode-v1-WirelessLAN) |  |  |
 | object_wireless_lan_group | [WirelessLANGroup](#diode-v1-WirelessLANGroup) |  |  |
 | object_wireless_link | [WirelessLink](#diode-v1-WirelessLink) |  |  |
+| object_custom_field | [CustomField](#diode-v1-CustomField) |  |  |
+| object_custom_field_choice_set | [CustomFieldChoiceSet](#diode-v1-CustomFieldChoiceSet) |  |  |
+| object_journal_entry | [JournalEntry](#diode-v1-JournalEntry) |  |  |
+| object_module_type_profile | [ModuleTypeProfile](#diode-v1-ModuleTypeProfile) |  |  |
+| object_custom_link | [CustomLink](#diode-v1-CustomLink) |  |  |
 
 
 
@@ -1858,6 +1972,7 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | mark_utilized | [bool](#bool) | optional |  |
 | custom_fields | [IPRange.CustomFieldsEntry](#diode-v1-IPRange-CustomFieldsEntry) | repeated |  |
+| mark_populated | [bool](#bool) | optional |  |
 
 
 
@@ -2181,6 +2296,133 @@
 
 
 
+<a name="diode-v1-JournalEntry"></a>
+
+### JournalEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| assigned_object_asn | [ASN](#diode-v1-ASN) |  |  |
+| assigned_object_asn_range | [ASNRange](#diode-v1-ASNRange) |  |  |
+| assigned_object_aggregate | [Aggregate](#diode-v1-Aggregate) |  |  |
+| assigned_object_cable | [Cable](#diode-v1-Cable) |  |  |
+| assigned_object_cable_path | [CablePath](#diode-v1-CablePath) |  |  |
+| assigned_object_cable_termination | [CableTermination](#diode-v1-CableTermination) |  |  |
+| assigned_object_circuit | [Circuit](#diode-v1-Circuit) |  |  |
+| assigned_object_circuit_group | [CircuitGroup](#diode-v1-CircuitGroup) |  |  |
+| assigned_object_circuit_group_assignment | [CircuitGroupAssignment](#diode-v1-CircuitGroupAssignment) |  |  |
+| assigned_object_circuit_termination | [CircuitTermination](#diode-v1-CircuitTermination) |  |  |
+| assigned_object_circuit_type | [CircuitType](#diode-v1-CircuitType) |  |  |
+| assigned_object_cluster | [Cluster](#diode-v1-Cluster) |  |  |
+| assigned_object_cluster_group | [ClusterGroup](#diode-v1-ClusterGroup) |  |  |
+| assigned_object_cluster_type | [ClusterType](#diode-v1-ClusterType) |  |  |
+| assigned_object_console_port | [ConsolePort](#diode-v1-ConsolePort) |  |  |
+| assigned_object_console_server_port | [ConsoleServerPort](#diode-v1-ConsoleServerPort) |  |  |
+| assigned_object_contact | [Contact](#diode-v1-Contact) |  |  |
+| assigned_object_contact_assignment | [ContactAssignment](#diode-v1-ContactAssignment) |  |  |
+| assigned_object_contact_group | [ContactGroup](#diode-v1-ContactGroup) |  |  |
+| assigned_object_contact_role | [ContactRole](#diode-v1-ContactRole) |  |  |
+| assigned_object_custom_field | [CustomField](#diode-v1-CustomField) |  |  |
+| assigned_object_custom_field_choice_set | [CustomFieldChoiceSet](#diode-v1-CustomFieldChoiceSet) |  |  |
+| assigned_object_device | [Device](#diode-v1-Device) |  |  |
+| assigned_object_device_bay | [DeviceBay](#diode-v1-DeviceBay) |  |  |
+| assigned_object_device_role | [DeviceRole](#diode-v1-DeviceRole) |  |  |
+| assigned_object_device_type | [DeviceType](#diode-v1-DeviceType) |  |  |
+| assigned_object_fhrp_group | [FHRPGroup](#diode-v1-FHRPGroup) |  |  |
+| assigned_object_fhrp_group_assignment | [FHRPGroupAssignment](#diode-v1-FHRPGroupAssignment) |  |  |
+| assigned_object_front_port | [FrontPort](#diode-v1-FrontPort) |  |  |
+| assigned_object_ike_policy | [IKEPolicy](#diode-v1-IKEPolicy) |  |  |
+| assigned_object_ike_proposal | [IKEProposal](#diode-v1-IKEProposal) |  |  |
+| assigned_object_ip_address | [IPAddress](#diode-v1-IPAddress) |  |  |
+| assigned_object_ip_range | [IPRange](#diode-v1-IPRange) |  |  |
+| assigned_object_ip_sec_policy | [IPSecPolicy](#diode-v1-IPSecPolicy) |  |  |
+| assigned_object_ip_sec_profile | [IPSecProfile](#diode-v1-IPSecProfile) |  |  |
+| assigned_object_ip_sec_proposal | [IPSecProposal](#diode-v1-IPSecProposal) |  |  |
+| assigned_object_interface | [Interface](#diode-v1-Interface) |  |  |
+| assigned_object_inventory_item | [InventoryItem](#diode-v1-InventoryItem) |  |  |
+| assigned_object_inventory_item_role | [InventoryItemRole](#diode-v1-InventoryItemRole) |  |  |
+| assigned_object_journal_entry | [JournalEntry](#diode-v1-JournalEntry) |  |  |
+| assigned_object_l2vpn | [L2VPN](#diode-v1-L2VPN) |  |  |
+| assigned_object_l2vpn_termination | [L2VPNTermination](#diode-v1-L2VPNTermination) |  |  |
+| assigned_object_location | [Location](#diode-v1-Location) |  |  |
+| assigned_object_mac_address | [MACAddress](#diode-v1-MACAddress) |  |  |
+| assigned_object_manufacturer | [Manufacturer](#diode-v1-Manufacturer) |  |  |
+| assigned_object_module | [Module](#diode-v1-Module) |  |  |
+| assigned_object_module_bay | [ModuleBay](#diode-v1-ModuleBay) |  |  |
+| assigned_object_module_type | [ModuleType](#diode-v1-ModuleType) |  |  |
+| assigned_object_module_type_profile | [ModuleTypeProfile](#diode-v1-ModuleTypeProfile) |  |  |
+| assigned_object_platform | [Platform](#diode-v1-Platform) |  |  |
+| assigned_object_power_feed | [PowerFeed](#diode-v1-PowerFeed) |  |  |
+| assigned_object_power_outlet | [PowerOutlet](#diode-v1-PowerOutlet) |  |  |
+| assigned_object_power_panel | [PowerPanel](#diode-v1-PowerPanel) |  |  |
+| assigned_object_power_port | [PowerPort](#diode-v1-PowerPort) |  |  |
+| assigned_object_prefix | [Prefix](#diode-v1-Prefix) |  |  |
+| assigned_object_provider | [Provider](#diode-v1-Provider) |  |  |
+| assigned_object_provider_account | [ProviderAccount](#diode-v1-ProviderAccount) |  |  |
+| assigned_object_provider_network | [ProviderNetwork](#diode-v1-ProviderNetwork) |  |  |
+| assigned_object_rir | [RIR](#diode-v1-RIR) |  |  |
+| assigned_object_rack | [Rack](#diode-v1-Rack) |  |  |
+| assigned_object_rack_reservation | [RackReservation](#diode-v1-RackReservation) |  |  |
+| assigned_object_rack_role | [RackRole](#diode-v1-RackRole) |  |  |
+| assigned_object_rack_type | [RackType](#diode-v1-RackType) |  |  |
+| assigned_object_rear_port | [RearPort](#diode-v1-RearPort) |  |  |
+| assigned_object_region | [Region](#diode-v1-Region) |  |  |
+| assigned_object_role | [Role](#diode-v1-Role) |  |  |
+| assigned_object_route_target | [RouteTarget](#diode-v1-RouteTarget) |  |  |
+| assigned_object_service | [Service](#diode-v1-Service) |  |  |
+| assigned_object_site | [Site](#diode-v1-Site) |  |  |
+| assigned_object_site_group | [SiteGroup](#diode-v1-SiteGroup) |  |  |
+| assigned_object_tag | [Tag](#diode-v1-Tag) |  |  |
+| assigned_object_tenant | [Tenant](#diode-v1-Tenant) |  |  |
+| assigned_object_tenant_group | [TenantGroup](#diode-v1-TenantGroup) |  |  |
+| assigned_object_tunnel | [Tunnel](#diode-v1-Tunnel) |  |  |
+| assigned_object_tunnel_group | [TunnelGroup](#diode-v1-TunnelGroup) |  |  |
+| assigned_object_tunnel_termination | [TunnelTermination](#diode-v1-TunnelTermination) |  |  |
+| assigned_object_vlan | [VLAN](#diode-v1-VLAN) |  |  |
+| assigned_object_vlan_group | [VLANGroup](#diode-v1-VLANGroup) |  |  |
+| assigned_object_vlan_translation_policy | [VLANTranslationPolicy](#diode-v1-VLANTranslationPolicy) |  |  |
+| assigned_object_vlan_translation_rule | [VLANTranslationRule](#diode-v1-VLANTranslationRule) |  |  |
+| assigned_object_vm_interface | [VMInterface](#diode-v1-VMInterface) |  |  |
+| assigned_object_vrf | [VRF](#diode-v1-VRF) |  |  |
+| assigned_object_virtual_chassis | [VirtualChassis](#diode-v1-VirtualChassis) |  |  |
+| assigned_object_virtual_circuit | [VirtualCircuit](#diode-v1-VirtualCircuit) |  |  |
+| assigned_object_virtual_circuit_termination | [VirtualCircuitTermination](#diode-v1-VirtualCircuitTermination) |  |  |
+| assigned_object_virtual_circuit_type | [VirtualCircuitType](#diode-v1-VirtualCircuitType) |  |  |
+| assigned_object_virtual_device_context | [VirtualDeviceContext](#diode-v1-VirtualDeviceContext) |  |  |
+| assigned_object_virtual_disk | [VirtualDisk](#diode-v1-VirtualDisk) |  |  |
+| assigned_object_virtual_machine | [VirtualMachine](#diode-v1-VirtualMachine) |  |  |
+| assigned_object_wireless_lan | [WirelessLAN](#diode-v1-WirelessLAN) |  |  |
+| assigned_object_wireless_lan_group | [WirelessLANGroup](#diode-v1-WirelessLANGroup) |  |  |
+| assigned_object_wireless_link | [WirelessLink](#diode-v1-WirelessLink) |  |  |
+| assigned_object_custom_link | [CustomLink](#diode-v1-CustomLink) |  |  |
+| kind | [string](#string) | optional |  |
+| comments | [string](#string) |  |  |
+| tags | [Tag](#diode-v1-Tag) | repeated |  |
+| custom_fields | [JournalEntry.CustomFieldsEntry](#diode-v1-JournalEntry-CustomFieldsEntry) | repeated |  |
+
+
+
+
+
+
+<a name="diode-v1-JournalEntry-CustomFieldsEntry"></a>
+
+### JournalEntry.CustomFieldsEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  |  |
+| value | [CustomFieldValue](#diode-v1-CustomFieldValue) |  |  |
+
+
+
+
+
+
 <a name="diode-v1-L2VPN"></a>
 
 ### L2VPN
@@ -2200,6 +2442,7 @@
 | custom_fields | [L2VPN.CustomFieldsEntry](#diode-v1-L2VPN-CustomFieldsEntry) | repeated |  |
 | import_targets | [RouteTarget](#diode-v1-RouteTarget) | repeated |  |
 | export_targets | [RouteTarget](#diode-v1-RouteTarget) | repeated |  |
+| status | [string](#string) | optional |  |
 
 
 
@@ -2234,6 +2477,96 @@
 | assigned_object_interface | [Interface](#diode-v1-Interface) |  |  |
 | assigned_object_vlan | [VLAN](#diode-v1-VLAN) |  |  |
 | assigned_object_vm_interface | [VMInterface](#diode-v1-VMInterface) |  |  |
+| assigned_object_asn | [ASN](#diode-v1-ASN) |  |  |
+| assigned_object_asn_range | [ASNRange](#diode-v1-ASNRange) |  |  |
+| assigned_object_aggregate | [Aggregate](#diode-v1-Aggregate) |  |  |
+| assigned_object_cable | [Cable](#diode-v1-Cable) |  |  |
+| assigned_object_cable_path | [CablePath](#diode-v1-CablePath) |  |  |
+| assigned_object_cable_termination | [CableTermination](#diode-v1-CableTermination) |  |  |
+| assigned_object_circuit | [Circuit](#diode-v1-Circuit) |  |  |
+| assigned_object_circuit_group | [CircuitGroup](#diode-v1-CircuitGroup) |  |  |
+| assigned_object_circuit_group_assignment | [CircuitGroupAssignment](#diode-v1-CircuitGroupAssignment) |  |  |
+| assigned_object_circuit_termination | [CircuitTermination](#diode-v1-CircuitTermination) |  |  |
+| assigned_object_circuit_type | [CircuitType](#diode-v1-CircuitType) |  |  |
+| assigned_object_cluster | [Cluster](#diode-v1-Cluster) |  |  |
+| assigned_object_cluster_group | [ClusterGroup](#diode-v1-ClusterGroup) |  |  |
+| assigned_object_cluster_type | [ClusterType](#diode-v1-ClusterType) |  |  |
+| assigned_object_console_port | [ConsolePort](#diode-v1-ConsolePort) |  |  |
+| assigned_object_console_server_port | [ConsoleServerPort](#diode-v1-ConsoleServerPort) |  |  |
+| assigned_object_contact | [Contact](#diode-v1-Contact) |  |  |
+| assigned_object_contact_assignment | [ContactAssignment](#diode-v1-ContactAssignment) |  |  |
+| assigned_object_contact_group | [ContactGroup](#diode-v1-ContactGroup) |  |  |
+| assigned_object_contact_role | [ContactRole](#diode-v1-ContactRole) |  |  |
+| assigned_object_custom_field | [CustomField](#diode-v1-CustomField) |  |  |
+| assigned_object_custom_field_choice_set | [CustomFieldChoiceSet](#diode-v1-CustomFieldChoiceSet) |  |  |
+| assigned_object_device | [Device](#diode-v1-Device) |  |  |
+| assigned_object_device_bay | [DeviceBay](#diode-v1-DeviceBay) |  |  |
+| assigned_object_device_role | [DeviceRole](#diode-v1-DeviceRole) |  |  |
+| assigned_object_device_type | [DeviceType](#diode-v1-DeviceType) |  |  |
+| assigned_object_fhrp_group | [FHRPGroup](#diode-v1-FHRPGroup) |  |  |
+| assigned_object_fhrp_group_assignment | [FHRPGroupAssignment](#diode-v1-FHRPGroupAssignment) |  |  |
+| assigned_object_front_port | [FrontPort](#diode-v1-FrontPort) |  |  |
+| assigned_object_ike_policy | [IKEPolicy](#diode-v1-IKEPolicy) |  |  |
+| assigned_object_ike_proposal | [IKEProposal](#diode-v1-IKEProposal) |  |  |
+| assigned_object_ip_address | [IPAddress](#diode-v1-IPAddress) |  |  |
+| assigned_object_ip_range | [IPRange](#diode-v1-IPRange) |  |  |
+| assigned_object_ip_sec_policy | [IPSecPolicy](#diode-v1-IPSecPolicy) |  |  |
+| assigned_object_ip_sec_profile | [IPSecProfile](#diode-v1-IPSecProfile) |  |  |
+| assigned_object_ip_sec_proposal | [IPSecProposal](#diode-v1-IPSecProposal) |  |  |
+| assigned_object_inventory_item | [InventoryItem](#diode-v1-InventoryItem) |  |  |
+| assigned_object_inventory_item_role | [InventoryItemRole](#diode-v1-InventoryItemRole) |  |  |
+| assigned_object_journal_entry | [JournalEntry](#diode-v1-JournalEntry) |  |  |
+| assigned_object_l2vpn | [L2VPN](#diode-v1-L2VPN) |  |  |
+| assigned_object_l2vpn_termination | [L2VPNTermination](#diode-v1-L2VPNTermination) |  |  |
+| assigned_object_location | [Location](#diode-v1-Location) |  |  |
+| assigned_object_mac_address | [MACAddress](#diode-v1-MACAddress) |  |  |
+| assigned_object_manufacturer | [Manufacturer](#diode-v1-Manufacturer) |  |  |
+| assigned_object_module | [Module](#diode-v1-Module) |  |  |
+| assigned_object_module_bay | [ModuleBay](#diode-v1-ModuleBay) |  |  |
+| assigned_object_module_type | [ModuleType](#diode-v1-ModuleType) |  |  |
+| assigned_object_module_type_profile | [ModuleTypeProfile](#diode-v1-ModuleTypeProfile) |  |  |
+| assigned_object_platform | [Platform](#diode-v1-Platform) |  |  |
+| assigned_object_power_feed | [PowerFeed](#diode-v1-PowerFeed) |  |  |
+| assigned_object_power_outlet | [PowerOutlet](#diode-v1-PowerOutlet) |  |  |
+| assigned_object_power_panel | [PowerPanel](#diode-v1-PowerPanel) |  |  |
+| assigned_object_power_port | [PowerPort](#diode-v1-PowerPort) |  |  |
+| assigned_object_prefix | [Prefix](#diode-v1-Prefix) |  |  |
+| assigned_object_provider | [Provider](#diode-v1-Provider) |  |  |
+| assigned_object_provider_account | [ProviderAccount](#diode-v1-ProviderAccount) |  |  |
+| assigned_object_provider_network | [ProviderNetwork](#diode-v1-ProviderNetwork) |  |  |
+| assigned_object_rir | [RIR](#diode-v1-RIR) |  |  |
+| assigned_object_rack | [Rack](#diode-v1-Rack) |  |  |
+| assigned_object_rack_reservation | [RackReservation](#diode-v1-RackReservation) |  |  |
+| assigned_object_rack_role | [RackRole](#diode-v1-RackRole) |  |  |
+| assigned_object_rack_type | [RackType](#diode-v1-RackType) |  |  |
+| assigned_object_rear_port | [RearPort](#diode-v1-RearPort) |  |  |
+| assigned_object_region | [Region](#diode-v1-Region) |  |  |
+| assigned_object_role | [Role](#diode-v1-Role) |  |  |
+| assigned_object_route_target | [RouteTarget](#diode-v1-RouteTarget) |  |  |
+| assigned_object_service | [Service](#diode-v1-Service) |  |  |
+| assigned_object_site | [Site](#diode-v1-Site) |  |  |
+| assigned_object_site_group | [SiteGroup](#diode-v1-SiteGroup) |  |  |
+| assigned_object_tag | [Tag](#diode-v1-Tag) |  |  |
+| assigned_object_tenant | [Tenant](#diode-v1-Tenant) |  |  |
+| assigned_object_tenant_group | [TenantGroup](#diode-v1-TenantGroup) |  |  |
+| assigned_object_tunnel | [Tunnel](#diode-v1-Tunnel) |  |  |
+| assigned_object_tunnel_group | [TunnelGroup](#diode-v1-TunnelGroup) |  |  |
+| assigned_object_tunnel_termination | [TunnelTermination](#diode-v1-TunnelTermination) |  |  |
+| assigned_object_vlan_group | [VLANGroup](#diode-v1-VLANGroup) |  |  |
+| assigned_object_vlan_translation_policy | [VLANTranslationPolicy](#diode-v1-VLANTranslationPolicy) |  |  |
+| assigned_object_vlan_translation_rule | [VLANTranslationRule](#diode-v1-VLANTranslationRule) |  |  |
+| assigned_object_vrf | [VRF](#diode-v1-VRF) |  |  |
+| assigned_object_virtual_chassis | [VirtualChassis](#diode-v1-VirtualChassis) |  |  |
+| assigned_object_virtual_circuit | [VirtualCircuit](#diode-v1-VirtualCircuit) |  |  |
+| assigned_object_virtual_circuit_termination | [VirtualCircuitTermination](#diode-v1-VirtualCircuitTermination) |  |  |
+| assigned_object_virtual_circuit_type | [VirtualCircuitType](#diode-v1-VirtualCircuitType) |  |  |
+| assigned_object_virtual_device_context | [VirtualDeviceContext](#diode-v1-VirtualDeviceContext) |  |  |
+| assigned_object_virtual_disk | [VirtualDisk](#diode-v1-VirtualDisk) |  |  |
+| assigned_object_virtual_machine | [VirtualMachine](#diode-v1-VirtualMachine) |  |  |
+| assigned_object_wireless_lan | [WirelessLAN](#diode-v1-WirelessLAN) |  |  |
+| assigned_object_wireless_lan_group | [WirelessLANGroup](#diode-v1-WirelessLANGroup) |  |  |
+| assigned_object_wireless_link | [WirelessLink](#diode-v1-WirelessLink) |  |  |
+| assigned_object_custom_link | [CustomLink](#diode-v1-CustomLink) |  |  |
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [L2VPNTermination.CustomFieldsEntry](#diode-v1-L2VPNTermination-CustomFieldsEntry) | repeated |  |
 
@@ -2276,6 +2609,7 @@
 | description | [string](#string) | optional |  |
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [Location.CustomFieldsEntry](#diode-v1-Location-CustomFieldsEntry) | repeated |  |
+| comments | [string](#string) | optional |  |
 
 
 
@@ -2467,6 +2801,8 @@
 | comments | [string](#string) | optional |  |
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [ModuleType.CustomFieldsEntry](#diode-v1-ModuleType-CustomFieldsEntry) | repeated |  |
+| profile | [ModuleTypeProfile](#diode-v1-ModuleTypeProfile) | optional |  |
+| attributes | [string](#string) | optional |  |
 
 
 
@@ -2476,6 +2812,42 @@
 <a name="diode-v1-ModuleType-CustomFieldsEntry"></a>
 
 ### ModuleType.CustomFieldsEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  |  |
+| value | [CustomFieldValue](#diode-v1-CustomFieldValue) |  |  |
+
+
+
+
+
+
+<a name="diode-v1-ModuleTypeProfile"></a>
+
+### ModuleTypeProfile
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [string](#string) |  |  |
+| description | [string](#string) | optional |  |
+| schema | [string](#string) | optional |  |
+| comments | [string](#string) | optional |  |
+| tags | [Tag](#diode-v1-Tag) | repeated |  |
+| custom_fields | [ModuleTypeProfile.CustomFieldsEntry](#diode-v1-ModuleTypeProfile-CustomFieldsEntry) | repeated |  |
+
+
+
+
+
+
+<a name="diode-v1-ModuleTypeProfile-CustomFieldsEntry"></a>
+
+### ModuleTypeProfile.CustomFieldsEntry
 
 
 
@@ -2591,6 +2963,7 @@
 | mark_connected | [bool](#bool) | optional |  |
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [PowerOutlet.CustomFieldsEntry](#diode-v1-PowerOutlet-CustomFieldsEntry) | repeated |  |
+| status | [string](#string) | optional |  |
 
 
 
@@ -2920,6 +3293,7 @@
 | comments | [string](#string) | optional |  |
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [Rack.CustomFieldsEntry](#diode-v1-Rack-CustomFieldsEntry) | repeated |  |
+| outer_height | [int64](#int64) | optional |  |
 
 
 
@@ -3042,6 +3416,7 @@
 | comments | [string](#string) | optional |  |
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [RackType.CustomFieldsEntry](#diode-v1-RackType-CustomFieldsEntry) | repeated |  |
+| outer_height | [int64](#int64) | optional |  |
 
 
 
@@ -3119,6 +3494,7 @@
 | description | [string](#string) | optional |  |
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [Region.CustomFieldsEntry](#diode-v1-Region-CustomFieldsEntry) | repeated |  |
+| comments | [string](#string) | optional |  |
 
 
 
@@ -3221,8 +3597,8 @@
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| device | [Device](#diode-v1-Device) | optional |  |
-| virtual_machine | [VirtualMachine](#diode-v1-VirtualMachine) | optional |  |
+| device | [Device](#diode-v1-Device) | optional | **Deprecated.**  |
+| virtual_machine | [VirtualMachine](#diode-v1-VirtualMachine) | optional | **Deprecated.**  |
 | name | [string](#string) |  |  |
 | protocol | [string](#string) | optional |  |
 | ports | [int64](#int64) | repeated |  |
@@ -3231,6 +3607,9 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [Service.CustomFieldsEntry](#diode-v1-Service-CustomFieldsEntry) | repeated |  |
 | ipaddresses | [IPAddress](#diode-v1-IPAddress) | repeated |  |
+| parent_object_device | [Device](#diode-v1-Device) |  |  |
+| parent_object_fhrp_group | [FHRPGroup](#diode-v1-FHRPGroup) |  |  |
+| parent_object_virtual_machine | [VirtualMachine](#diode-v1-VirtualMachine) |  |  |
 
 
 
@@ -3314,6 +3693,7 @@
 | description | [string](#string) | optional |  |
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [SiteGroup.CustomFieldsEntry](#diode-v1-SiteGroup-CustomFieldsEntry) | repeated |  |
+| comments | [string](#string) | optional |  |
 
 
 
@@ -3347,6 +3727,9 @@
 | name | [string](#string) |  |  |
 | slug | [string](#string) |  |  |
 | color | [string](#string) | optional |  |
+| description | [string](#string) | optional |  |
+| weight | [int64](#int64) | optional |  |
+| object_types | [string](#string) | repeated |  |
 
 
 
@@ -3404,6 +3787,7 @@
 | description | [string](#string) | optional |  |
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [TenantGroup.CustomFieldsEntry](#diode-v1-TenantGroup-CustomFieldsEntry) | repeated |  |
+| comments | [string](#string) | optional |  |
 
 
 
@@ -3600,6 +3984,11 @@
 | termination_wireless_lan | [WirelessLAN](#diode-v1-WirelessLAN) |  |  |
 | termination_wireless_lan_group | [WirelessLANGroup](#diode-v1-WirelessLANGroup) |  |  |
 | termination_wireless_link | [WirelessLink](#diode-v1-WirelessLink) |  |  |
+| termination_custom_field | [CustomField](#diode-v1-CustomField) |  |  |
+| termination_custom_field_choice_set | [CustomFieldChoiceSet](#diode-v1-CustomFieldChoiceSet) |  |  |
+| termination_journal_entry | [JournalEntry](#diode-v1-JournalEntry) |  |  |
+| termination_module_type_profile | [ModuleTypeProfile](#diode-v1-ModuleTypeProfile) |  |  |
+| termination_custom_link | [CustomLink](#diode-v1-CustomLink) |  |  |
 | outside_ip | [IPAddress](#diode-v1-IPAddress) | optional |  |
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [TunnelTermination.CustomFieldsEntry](#diode-v1-TunnelTermination-CustomFieldsEntry) | repeated |  |
@@ -3689,6 +4078,7 @@
 | description | [string](#string) | optional |  |
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [VLANGroup.CustomFieldsEntry](#diode-v1-VLANGroup-CustomFieldsEntry) | repeated |  |
+| tenant | [Tenant](#diode-v1-Tenant) | optional |  |
 
 
 
@@ -4165,6 +4555,7 @@
 | description | [string](#string) | optional |  |
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [WirelessLANGroup.CustomFieldsEntry](#diode-v1-WirelessLANGroup-CustomFieldsEntry) | repeated |  |
+| comments | [string](#string) | optional |  |
 
 
 
