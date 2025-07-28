@@ -21,7 +21,7 @@ import (
 	"github.com/netboxlabs/diode/diode-server/reconciler/mocks"
 )
 
-func TestProOpsGenerateChangeSet(t *testing.T) {
+func TestOpsGenerateChangeSet(t *testing.T) {
 	type mockGenerateDiff struct {
 		changeSet []netboxdiodeplugin.Change
 		branchID  string
@@ -84,7 +84,7 @@ func TestProOpsGenerateChangeSet(t *testing.T) {
 			createChangeSets: []mockCreateChangeSet{
 				{
 					ingestionLogDBID: 1234,
-					deviationName:    strPtr("Site test-site-1 discovered"),
+					deviationName:    strPtr("Site test-site-1 reported"),
 					id:               1235,
 				},
 			},
@@ -122,7 +122,7 @@ func TestProOpsGenerateChangeSet(t *testing.T) {
 			createChangeSets: []mockCreateChangeSet{
 				{
 					ingestionLogDBID: 1234,
-					deviationName:    strPtr("Site test-site-1 discovered"),
+					deviationName:    strPtr("Site test-site-1 reported"),
 					id:               1235,
 				},
 			},
@@ -157,6 +157,7 @@ func TestProOpsGenerateChangeSet(t *testing.T) {
 			for _, m := range tt.createChangeSets {
 				mockRepository.EXPECT().CreateChangeSet(ctx, mock.MatchedBy(func(c changeset.ChangeSet) bool {
 					if !strPtrEq(c.DeviationName, m.deviationName) {
+						t.Logf("deviation name mismatch: %v != %v", *c.DeviationName, *m.deviationName)
 						return false
 					}
 					if tt.branchID != "" && !strPtrEq(c.BranchID, &tt.branchID) {
