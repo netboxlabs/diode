@@ -25,9 +25,9 @@ func (_m *Repository) EXPECT() *Repository_Expecter {
 	return &Repository_Expecter{mock: &_m.Mock}
 }
 
-// CountIngestionLogsPerState provides a mock function with given fields: ctx, includeDuplicates
-func (_m *Repository) CountIngestionLogsPerState(ctx context.Context, includeDuplicates bool) (map[reconcilerpb.State]int32, error) {
-	ret := _m.Called(ctx, includeDuplicates)
+// CountIngestionLogsPerState provides a mock function with given fields: ctx
+func (_m *Repository) CountIngestionLogsPerState(ctx context.Context) (map[reconcilerpb.State]int32, error) {
+	ret := _m.Called(ctx)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CountIngestionLogsPerState")
@@ -35,19 +35,19 @@ func (_m *Repository) CountIngestionLogsPerState(ctx context.Context, includeDup
 
 	var r0 map[reconcilerpb.State]int32
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, bool) (map[reconcilerpb.State]int32, error)); ok {
-		return rf(ctx, includeDuplicates)
+	if rf, ok := ret.Get(0).(func(context.Context) (map[reconcilerpb.State]int32, error)); ok {
+		return rf(ctx)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, bool) map[reconcilerpb.State]int32); ok {
-		r0 = rf(ctx, includeDuplicates)
+	if rf, ok := ret.Get(0).(func(context.Context) map[reconcilerpb.State]int32); ok {
+		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(map[reconcilerpb.State]int32)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, bool) error); ok {
-		r1 = rf(ctx, includeDuplicates)
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -62,14 +62,13 @@ type Repository_CountIngestionLogsPerState_Call struct {
 
 // CountIngestionLogsPerState is a helper method to define mock.On call
 //   - ctx context.Context
-//   - includeDuplicates bool
-func (_e *Repository_Expecter) CountIngestionLogsPerState(ctx interface{}, includeDuplicates interface{}) *Repository_CountIngestionLogsPerState_Call {
-	return &Repository_CountIngestionLogsPerState_Call{Call: _e.mock.On("CountIngestionLogsPerState", ctx, includeDuplicates)}
+func (_e *Repository_Expecter) CountIngestionLogsPerState(ctx interface{}) *Repository_CountIngestionLogsPerState_Call {
+	return &Repository_CountIngestionLogsPerState_Call{Call: _e.mock.On("CountIngestionLogsPerState", ctx)}
 }
 
-func (_c *Repository_CountIngestionLogsPerState_Call) Run(run func(ctx context.Context, includeDuplicates bool)) *Repository_CountIngestionLogsPerState_Call {
+func (_c *Repository_CountIngestionLogsPerState_Call) Run(run func(ctx context.Context)) *Repository_CountIngestionLogsPerState_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(bool))
+		run(args[0].(context.Context))
 	})
 	return _c
 }
@@ -79,7 +78,7 @@ func (_c *Repository_CountIngestionLogsPerState_Call) Return(_a0 map[reconcilerp
 	return _c
 }
 
-func (_c *Repository_CountIngestionLogsPerState_Call) RunAndReturn(run func(context.Context, bool) (map[reconcilerpb.State]int32, error)) *Repository_CountIngestionLogsPerState_Call {
+func (_c *Repository_CountIngestionLogsPerState_Call) RunAndReturn(run func(context.Context) (map[reconcilerpb.State]int32, error)) *Repository_CountIngestionLogsPerState_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -274,65 +273,17 @@ func (_c *Repository_FindPriorIngestionLogByEntityHash_Call) RunAndReturn(run fu
 	return _c
 }
 
-// MarkIngestionLogAsDuplicate provides a mock function with given fields: ctx, duplicateID, primaryID
-func (_m *Repository) MarkIngestionLogAsDuplicate(ctx context.Context, duplicateID int32, primaryID int32) error {
-	ret := _m.Called(ctx, duplicateID, primaryID)
+// IncrementDuplicateCount provides a mock function with given fields: ctx, id
+func (_m *Repository) IncrementDuplicateCount(ctx context.Context, id int32) error {
+	ret := _m.Called(ctx, id)
 
 	if len(ret) == 0 {
-		panic("no return value specified for MarkIngestionLogAsDuplicate")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, int32, int32) error); ok {
-		r0 = rf(ctx, duplicateID, primaryID)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// Repository_MarkIngestionLogAsDuplicate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'MarkIngestionLogAsDuplicate'
-type Repository_MarkIngestionLogAsDuplicate_Call struct {
-	*mock.Call
-}
-
-// MarkIngestionLogAsDuplicate is a helper method to define mock.On call
-//   - ctx context.Context
-//   - duplicateID int32
-//   - primaryID int32
-func (_e *Repository_Expecter) MarkIngestionLogAsDuplicate(ctx interface{}, duplicateID interface{}, primaryID interface{}) *Repository_MarkIngestionLogAsDuplicate_Call {
-	return &Repository_MarkIngestionLogAsDuplicate_Call{Call: _e.mock.On("MarkIngestionLogAsDuplicate", ctx, duplicateID, primaryID)}
-}
-
-func (_c *Repository_MarkIngestionLogAsDuplicate_Call) Run(run func(ctx context.Context, duplicateID int32, primaryID int32)) *Repository_MarkIngestionLogAsDuplicate_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(int32), args[2].(int32))
-	})
-	return _c
-}
-
-func (_c *Repository_MarkIngestionLogAsDuplicate_Call) Return(_a0 error) *Repository_MarkIngestionLogAsDuplicate_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Repository_MarkIngestionLogAsDuplicate_Call) RunAndReturn(run func(context.Context, int32, int32) error) *Repository_MarkIngestionLogAsDuplicate_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// MarkIngestionLogAsPrimary provides a mock function with given fields: ctx, duplicateID
-func (_m *Repository) MarkIngestionLogAsPrimary(ctx context.Context, duplicateID int32) error {
-	ret := _m.Called(ctx, duplicateID)
-
-	if len(ret) == 0 {
-		panic("no return value specified for MarkIngestionLogAsPrimary")
+		panic("no return value specified for IncrementDuplicateCount")
 	}
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, int32) error); ok {
-		r0 = rf(ctx, duplicateID)
+		r0 = rf(ctx, id)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -340,31 +291,31 @@ func (_m *Repository) MarkIngestionLogAsPrimary(ctx context.Context, duplicateID
 	return r0
 }
 
-// Repository_MarkIngestionLogAsPrimary_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'MarkIngestionLogAsPrimary'
-type Repository_MarkIngestionLogAsPrimary_Call struct {
+// Repository_IncrementDuplicateCount_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'IncrementDuplicateCount'
+type Repository_IncrementDuplicateCount_Call struct {
 	*mock.Call
 }
 
-// MarkIngestionLogAsPrimary is a helper method to define mock.On call
+// IncrementDuplicateCount is a helper method to define mock.On call
 //   - ctx context.Context
-//   - duplicateID int32
-func (_e *Repository_Expecter) MarkIngestionLogAsPrimary(ctx interface{}, duplicateID interface{}) *Repository_MarkIngestionLogAsPrimary_Call {
-	return &Repository_MarkIngestionLogAsPrimary_Call{Call: _e.mock.On("MarkIngestionLogAsPrimary", ctx, duplicateID)}
+//   - id int32
+func (_e *Repository_Expecter) IncrementDuplicateCount(ctx interface{}, id interface{}) *Repository_IncrementDuplicateCount_Call {
+	return &Repository_IncrementDuplicateCount_Call{Call: _e.mock.On("IncrementDuplicateCount", ctx, id)}
 }
 
-func (_c *Repository_MarkIngestionLogAsPrimary_Call) Run(run func(ctx context.Context, duplicateID int32)) *Repository_MarkIngestionLogAsPrimary_Call {
+func (_c *Repository_IncrementDuplicateCount_Call) Run(run func(ctx context.Context, id int32)) *Repository_IncrementDuplicateCount_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(int32))
 	})
 	return _c
 }
 
-func (_c *Repository_MarkIngestionLogAsPrimary_Call) Return(_a0 error) *Repository_MarkIngestionLogAsPrimary_Call {
+func (_c *Repository_IncrementDuplicateCount_Call) Return(_a0 error) *Repository_IncrementDuplicateCount_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *Repository_MarkIngestionLogAsPrimary_Call) RunAndReturn(run func(context.Context, int32) error) *Repository_MarkIngestionLogAsPrimary_Call {
+func (_c *Repository_IncrementDuplicateCount_Call) RunAndReturn(run func(context.Context, int32) error) *Repository_IncrementDuplicateCount_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -557,65 +508,6 @@ func (_c *Repository_RetrieveIngestionLogByExternalID_Call) RunAndReturn(run fun
 	return _c
 }
 
-// RetrieveIngestionLogDuplicateOfID provides a mock function with given fields: ctx, id
-func (_m *Repository) RetrieveIngestionLogDuplicateOfID(ctx context.Context, id int32) (*int32, error) {
-	ret := _m.Called(ctx, id)
-
-	if len(ret) == 0 {
-		panic("no return value specified for RetrieveIngestionLogDuplicateOfID")
-	}
-
-	var r0 *int32
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int32) (*int32, error)); ok {
-		return rf(ctx, id)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, int32) *int32); ok {
-		r0 = rf(ctx, id)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*int32)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, int32) error); ok {
-		r1 = rf(ctx, id)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// Repository_RetrieveIngestionLogDuplicateOfID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RetrieveIngestionLogDuplicateOfID'
-type Repository_RetrieveIngestionLogDuplicateOfID_Call struct {
-	*mock.Call
-}
-
-// RetrieveIngestionLogDuplicateOfID is a helper method to define mock.On call
-//   - ctx context.Context
-//   - id int32
-func (_e *Repository_Expecter) RetrieveIngestionLogDuplicateOfID(ctx interface{}, id interface{}) *Repository_RetrieveIngestionLogDuplicateOfID_Call {
-	return &Repository_RetrieveIngestionLogDuplicateOfID_Call{Call: _e.mock.On("RetrieveIngestionLogDuplicateOfID", ctx, id)}
-}
-
-func (_c *Repository_RetrieveIngestionLogDuplicateOfID_Call) Run(run func(ctx context.Context, id int32)) *Repository_RetrieveIngestionLogDuplicateOfID_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(int32))
-	})
-	return _c
-}
-
-func (_c *Repository_RetrieveIngestionLogDuplicateOfID_Call) Return(_a0 *int32, _a1 error) *Repository_RetrieveIngestionLogDuplicateOfID_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *Repository_RetrieveIngestionLogDuplicateOfID_Call) RunAndReturn(run func(context.Context, int32) (*int32, error)) *Repository_RetrieveIngestionLogDuplicateOfID_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // RetrieveIngestionLogs provides a mock function with given fields: ctx, filter, limit, offset
 func (_m *Repository) RetrieveIngestionLogs(ctx context.Context, filter *reconcilerpb.RetrieveIngestionLogsRequest, limit int32, offset int32) ([]*reconcilerpb.IngestionLog, error) {
 	ret := _m.Called(ctx, filter, limit, offset)
@@ -673,6 +565,54 @@ func (_c *Repository_RetrieveIngestionLogs_Call) Return(_a0 []*reconcilerpb.Inge
 }
 
 func (_c *Repository_RetrieveIngestionLogs_Call) RunAndReturn(run func(context.Context, *reconcilerpb.RetrieveIngestionLogsRequest, int32, int32) ([]*reconcilerpb.IngestionLog, error)) *Repository_RetrieveIngestionLogs_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// TruncateChangeSets provides a mock function with given fields: ctx, ingestionLogID, limit
+func (_m *Repository) TruncateChangeSets(ctx context.Context, ingestionLogID int32, limit int32) error {
+	ret := _m.Called(ctx, ingestionLogID, limit)
+
+	if len(ret) == 0 {
+		panic("no return value specified for TruncateChangeSets")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, int32, int32) error); ok {
+		r0 = rf(ctx, ingestionLogID, limit)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Repository_TruncateChangeSets_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TruncateChangeSets'
+type Repository_TruncateChangeSets_Call struct {
+	*mock.Call
+}
+
+// TruncateChangeSets is a helper method to define mock.On call
+//   - ctx context.Context
+//   - ingestionLogID int32
+//   - limit int32
+func (_e *Repository_Expecter) TruncateChangeSets(ctx interface{}, ingestionLogID interface{}, limit interface{}) *Repository_TruncateChangeSets_Call {
+	return &Repository_TruncateChangeSets_Call{Call: _e.mock.On("TruncateChangeSets", ctx, ingestionLogID, limit)}
+}
+
+func (_c *Repository_TruncateChangeSets_Call) Run(run func(ctx context.Context, ingestionLogID int32, limit int32)) *Repository_TruncateChangeSets_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(int32), args[2].(int32))
+	})
+	return _c
+}
+
+func (_c *Repository_TruncateChangeSets_Call) Return(_a0 error) *Repository_TruncateChangeSets_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Repository_TruncateChangeSets_Call) RunAndReturn(run func(context.Context, int32, int32) error) *Repository_TruncateChangeSets_Call {
 	_c.Call.Return(run)
 	return _c
 }

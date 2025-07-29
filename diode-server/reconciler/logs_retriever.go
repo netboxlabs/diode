@@ -14,7 +14,7 @@ import (
 func retrieveIngestionMetrics(ctx context.Context, repository Repository) (*reconcilerpb.RetrieveIngestionLogsResponse, error) {
 	var metrics reconcilerpb.IngestionMetrics
 
-	ingestionLogsPerState, err := repository.CountIngestionLogsPerState(ctx, false)
+	ingestionLogsPerState, err := repository.CountIngestionLogsPerState(ctx)
 	if err != nil {
 		return nil, err
 	}

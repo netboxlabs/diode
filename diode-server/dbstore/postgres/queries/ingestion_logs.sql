@@ -14,7 +14,6 @@ RETURNING *;
 -- name: CountIngestionLogsPerState :many
 SELECT state, COUNT(*) AS count
 FROM ingestion_logs
-WHERE (duplicate_of_id IS NULL OR sqlc.narg('include_duplicates')::boolean = true)
 GROUP BY state;
 
 -- name: RetrieveIngestionLogs :many
@@ -24,7 +23,6 @@ WHERE (state = sqlc.narg('state') OR sqlc.narg('state') IS NULL)
   AND (object_type = sqlc.narg('object_type') OR sqlc.narg('object_type') IS NULL)
   AND (ingestion_ts >= sqlc.narg('ingestion_ts_start') OR sqlc.narg('ingestion_ts_start') IS NULL)
   AND (ingestion_ts <= sqlc.narg('ingestion_ts_end') OR sqlc.narg('ingestion_ts_end') IS NULL)
-  AND (duplicate_of_id IS NULL OR sqlc.narg('include_duplicates')::boolean = true)
 ORDER BY id DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
@@ -42,7 +40,6 @@ WHERE (v_deviations.state = sqlc.narg('state') OR sqlc.narg('state') IS NULL)
        sqlc.narg('ingestion_ts_start') IS NULL)
   AND (v_deviations.ingestion_ts <= sqlc.narg('ingestion_ts_end') OR
        sqlc.narg('ingestion_ts_end') IS NULL)
-  AND (v_deviations.duplicate_of_id IS NULL OR sqlc.narg('include_duplicates')::boolean = true)
 ORDER BY v_deviations.id DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
@@ -58,7 +55,6 @@ SELECT il.*
 FROM ingestion_logs il
 LEFT JOIN latest_change_sets lcs ON il.id = lcs.ingestion_log_id
 WHERE il.entity_hash = sqlc.arg('entity_hash')
-  AND il.duplicate_of_id IS NULL
   AND (
     (sqlc.narg('branch_id')::text IS NOT NULL AND lcs.branch_id = sqlc.narg('branch_id')::text)
     OR
@@ -67,13 +63,8 @@ WHERE il.entity_hash = sqlc.arg('entity_hash')
 ORDER BY il.created_at DESC
 LIMIT 1;
 
--- name: SetIngestionLogDuplicateOfID :exec
+-- name: IncrementDuplicateCount :exec
 UPDATE ingestion_logs
-SET duplicate_of_id = $2
+SET duplicate_count = duplicate_count + 1,
+    last_seen = CURRENT_TIMESTAMP
 WHERE id = $1;
-
--- name: RetrieveIngestionLogDuplicateOfID :one
-SELECT duplicate_of_id
-FROM ingestion_logs
-WHERE id = $1;
-

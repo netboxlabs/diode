@@ -12,7 +12,7 @@ import (
 )
 
 const retrieveDeviationByID = `-- name: RetrieveDeviationByID :one
-SELECT v_deviations.id, v_deviations.external_id, v_deviations.object_type, v_deviations.state, v_deviations.request_id, v_deviations.ingestion_ts, v_deviations.source_ts, v_deviations.producer_app_name, v_deviations.producer_app_version, v_deviations.sdk_name, v_deviations.sdk_version, v_deviations.entity, v_deviations.error, v_deviations.source_metadata, v_deviations.created_at, v_deviations.updated_at, v_deviations.change_set, v_deviations.changes, v_deviations.duplicate_of_id, v_deviations.last_seen, v_deviations.duplicate_count
+SELECT v_deviations.id, v_deviations.external_id, v_deviations.object_type, v_deviations.state, v_deviations.request_id, v_deviations.ingestion_ts, v_deviations.source_ts, v_deviations.producer_app_name, v_deviations.producer_app_version, v_deviations.sdk_name, v_deviations.sdk_version, v_deviations.entity, v_deviations.error, v_deviations.source_metadata, v_deviations.created_at, v_deviations.updated_at, v_deviations.change_set, v_deviations.changes
 FROM v_deviations
 WHERE v_deviations.external_id = $1
 `
@@ -39,15 +39,12 @@ func (q *Queries) RetrieveDeviationByID(ctx context.Context, externalID string) 
 		&i.UpdatedAt,
 		&i.ChangeSet,
 		&i.Changes,
-		&i.DuplicateOfID,
-		&i.LastSeen,
-		&i.DuplicateCount,
 	)
 	return i, err
 }
 
 const retrieveDeviations = `-- name: RetrieveDeviations :many
-SELECT v_deviations.id, v_deviations.external_id, v_deviations.object_type, v_deviations.state, v_deviations.request_id, v_deviations.ingestion_ts, v_deviations.source_ts, v_deviations.producer_app_name, v_deviations.producer_app_version, v_deviations.sdk_name, v_deviations.sdk_version, v_deviations.entity, v_deviations.error, v_deviations.source_metadata, v_deviations.created_at, v_deviations.updated_at, v_deviations.change_set, v_deviations.changes, v_deviations.duplicate_of_id, v_deviations.last_seen, v_deviations.duplicate_count
+SELECT v_deviations.id, v_deviations.external_id, v_deviations.object_type, v_deviations.state, v_deviations.request_id, v_deviations.ingestion_ts, v_deviations.source_ts, v_deviations.producer_app_name, v_deviations.producer_app_version, v_deviations.sdk_name, v_deviations.sdk_version, v_deviations.entity, v_deviations.error, v_deviations.source_metadata, v_deviations.created_at, v_deviations.updated_at, v_deviations.change_set, v_deviations.changes
 FROM v_deviations
 WHERE (v_deviations.state = ANY ($1::int[]) OR $1 IS NULL)
   AND (v_deviations.object_type = ANY ($2::text[]) OR
@@ -108,9 +105,6 @@ func (q *Queries) RetrieveDeviations(ctx context.Context, arg RetrieveDeviations
 			&i.UpdatedAt,
 			&i.ChangeSet,
 			&i.Changes,
-			&i.DuplicateOfID,
-			&i.LastSeen,
-			&i.DuplicateCount,
 		); err != nil {
 			return nil, err
 		}

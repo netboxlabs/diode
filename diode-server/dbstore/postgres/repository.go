@@ -94,8 +94,8 @@ func (r *Repository) UpdateIngestionLogStateWithError(ctx context.Context, id in
 }
 
 // CountIngestionLogsPerState counts ingestion logs per state.
-func (r *Repository) CountIngestionLogsPerState(ctx context.Context, includeDuplicates bool) (map[reconcilerpb.State]int32, error) {
-	counts, err := r.queries.CountIngestionLogsPerState(ctx, pgtype.Bool{Bool: includeDuplicates, Valid: true})
+func (r *Repository) CountIngestionLogsPerState(ctx context.Context) (map[reconcilerpb.State]int32, error) {
+	counts, err := r.queries.CountIngestionLogsPerState(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -460,37 +460,15 @@ func (r *Repository) FindPriorIngestionLogByEntityHash(ctx context.Context, enti
 	return &dbLog.ID, log, nil
 }
 
-// MarkIngestionLogAsDuplicate marks an ingestion log as a duplicate of another.
-func (r *Repository) MarkIngestionLogAsDuplicate(ctx context.Context, duplicateID int32, primaryID int32) error {
-	params := postgres.SetIngestionLogDuplicateOfIDParams{
-		ID:            duplicateID,
-		DuplicateOfID: pgtype.Int4{Int32: primaryID, Valid: true},
-	}
-	return r.queries.SetIngestionLogDuplicateOfID(ctx, params)
+// IncrementDuplicateCount increments the duplicate count for an ingestion log
+func (r *Repository) IncrementDuplicateCount(ctx context.Context, id int32) error {
+	return r.queries.IncrementDuplicateCount(ctx, id)
 }
 
-// MarkIngestionLogAsPrimary promotes a duplicate to a new primary log.
-func (r *Repository) MarkIngestionLogAsPrimary(ctx context.Context, duplicateID int32) error {
-	// set duplicate_of_id to NULL
-	params := postgres.SetIngestionLogDuplicateOfIDParams{
-		ID:            duplicateID,
-		DuplicateOfID: pgtype.Int4{},
-	}
-	return r.queries.SetIngestionLogDuplicateOfID(ctx, params)
-}
-
-// RetrieveIngestionLogDuplicateOfID retrieves the duplicate ID for an ingestion log.
-// duplicate_of_id is nil if the ingestion log is a primary log.
-// duplicate_of_id is the primary ID if the ingestion log is a duplicate.
-func (r *Repository) RetrieveIngestionLogDuplicateOfID(ctx context.Context, id int32) (*int32, error) {
-	primaryID, err := r.queries.RetrieveIngestionLogDuplicateOfID(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-
-	if primaryID.Valid {
-		return &primaryID.Int32, nil
-	}
-
-	return nil, nil
+// TruncateChangeSets truncates change sets for an ingestion log to the given limit (keeps latest n)
+func (r *Repository) TruncateChangeSets(ctx context.Context, ingestionLogID int32, limit int32) error {
+	return r.queries.TruncateChangeSets(ctx, postgres.TruncateChangeSetsParams{
+		IngestionLogID: ingestionLogID,
+		Limit:          limit,
+	})
 }

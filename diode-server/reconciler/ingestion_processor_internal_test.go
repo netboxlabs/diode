@@ -39,6 +39,7 @@ func TestHandleStreamMessage(t *testing.T) {
 		changeSetResponse *netboxdiodeplugin.ChangeSetResult
 		changeSetError    error
 		reconcilerError   bool
+		expectTruncate    bool
 		expectedError     bool
 	}{
 		{
@@ -55,6 +56,7 @@ func TestHandleStreamMessage(t *testing.T) {
 			},
 			changeSetResponse: &netboxdiodeplugin.ChangeSetResult{},
 			reconcilerError:   false,
+			expectTruncate:    true,
 			expectedError:     false,
 		},
 		{
@@ -115,6 +117,7 @@ func TestHandleStreamMessage(t *testing.T) {
 			changeSetResponse: &netboxdiodeplugin.ChangeSetResult{
 				ID: "cs123",
 			},
+			expectTruncate:  true,
 			reconcilerError: false,
 			expectedError:   false,
 		},
@@ -137,6 +140,7 @@ func TestHandleStreamMessage(t *testing.T) {
 			changeSetResponse: &netboxdiodeplugin.ChangeSetResult{
 				ID: "cs123",
 			},
+			expectTruncate:  true,
 			changeSetError:  errors.New("apply error"),
 			reconcilerError: false,
 			expectedError:   false,
@@ -162,7 +166,7 @@ func TestHandleStreamMessage(t *testing.T) {
 					ReconcilerRateLimiterRPS:   20,
 					ReconcilerRateLimiterBurst: 1,
 				},
-				ops:     NewOps(mockRepository, mockNbClient, logger),
+				ops:     NewOps(mockRepository, mockNbClient, logger, nil),
 				metrics: mockMetrics,
 			}
 
@@ -214,6 +218,10 @@ func TestHandleStreamMessage(t *testing.T) {
 				mockRepository.On("CreateChangeSet", mock.Anything, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
 				mockRepository.On("UpdateIngestionLogStateWithError", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 			}
+			if tt.expectTruncate {
+				mockRepository.On("TruncateChangeSets", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+			}
+
 			mockRedisStreamClient.On("XAck", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(redis.NewIntCmd(ctx))
 			mockRedisStreamClient.On("XDel", mock.Anything, mock.Anything, mock.Anything).Return(redis.NewIntCmd(ctx))
 			mockMetrics.On("RecordHandleMessage", mock.Anything, mock.Anything).Return()
@@ -372,6 +380,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 		autoApplyChangesets        bool
 		expectedStatus             reconcilerpb.State
 		expectedError              bool
+		expectTruncate             bool
 	}{
 		{
 			name: "generate and apply change set",
@@ -412,6 +421,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 			autoApplyChangesets: true,
 			expectedStatus:      reconcilerpb.State_APPLIED,
 			expectedError:       false,
+			expectTruncate:      true,
 		},
 		{
 			name: "generate change set only",
@@ -449,6 +459,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 			autoApplyChangesets: false,
 			expectedStatus:      reconcilerpb.State_OPEN,
 			expectedError:       false,
+			expectTruncate:      true,
 		},
 		{
 			name: "generate change set without changes",
@@ -479,6 +490,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 			autoApplyChangesets: false,
 			expectedStatus:      reconcilerpb.State_NO_CHANGES,
 			expectedError:       false,
+			expectTruncate:      true,
 		},
 	}
 
@@ -499,7 +511,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 					ReconcilerRateLimiterRPS:   20,
 					ReconcilerRateLimiterBurst: 1,
 				},
-				ops:     NewOps(mockRepository, mockNbClient, logger),
+				ops:     NewOps(mockRepository, mockNbClient, logger, nil),
 				metrics: mockMetrics,
 			}
 
@@ -512,7 +524,9 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 			}
 			mockRepository.On("UpdateIngestionLogStateWithError", ctx, ingestionLogID, tt.expectedStatus, mock.Anything).Return(nil)
 			mockRepository.On("CreateChangeSet", ctx, mock.Anything, ingestionLogID).Return(int32Ptr(1), nil)
-
+			if tt.expectTruncate {
+				mockRepository.On("TruncateChangeSets", ctx, ingestionLogID, mock.Anything).Return(nil)
+			}
 			mockMetrics.On("RecordChangeSetCreate", mock.Anything, mock.Anything, mock.Anything).Return()
 			if tt.autoApplyChangesets {
 				mockMetrics.On("RecordChangeSetApply", mock.Anything, mock.Anything, mock.Anything).Return()

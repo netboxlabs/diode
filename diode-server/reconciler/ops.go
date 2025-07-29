@@ -18,19 +18,38 @@ import (
 	"github.com/netboxlabs/diode/diode-server/sentry"
 )
 
+// Limits is an interface that provides limits for the reconciler operations to enforce
+type Limits interface {
+	MaxChangeSetsPerIngestionLog() int32
+}
+
+// DefaultLimits is the default implementation of the Limits interface
+type DefaultLimits struct{}
+
+// MaxChangeSetsPerIngestionLog returns retention limit for change sets per ingestion log
+func (l *DefaultLimits) MaxChangeSetsPerIngestionLog() int32 {
+	return 5
+}
+
 // Ops high level operations performed during ingestion processing
 type Ops struct {
 	repository Repository
 	nbClient   netboxdiodeplugin.NetBoxAPI
 	logger     *slog.Logger
+	limits     Limits
 }
 
 // NewOps creates a new Ops
-func NewOps(repository Repository, nbClient netboxdiodeplugin.NetBoxAPI, logger *slog.Logger) *Ops {
+func NewOps(repository Repository, nbClient netboxdiodeplugin.NetBoxAPI, logger *slog.Logger, limits Limits) *Ops {
+	if limits == nil {
+		limits = &DefaultLimits{}
+	}
+
 	return &Ops{
 		repository: repository,
 		nbClient:   nbClient,
 		logger:     logger,
+		limits:     limits,
 	}
 }
 
@@ -49,30 +68,28 @@ func (o *Ops) CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb
 		return nil, fmt.Errorf("failed to search for prior deviation: %w", err)
 	}
 
-	id, err := o.repository.CreateIngestionLog(ctx, ingestionLog, sourceMetadata, entityHash)
-	if err != nil {
-		return nil, err
+	if existingID == nil {
+		id, err := o.repository.CreateIngestionLog(ctx, ingestionLog, sourceMetadata, entityHash)
+		if err != nil {
+			return nil, err
+		}
+
+		result := &ops.CreateIngestionLogResult{
+			ID:           *id,
+			IngestionLog: ingestionLog,
+		}
+		return result, nil
+	}
+
+	// It was a duplicate, increment the duplicate count and return the prior ingestion log
+	if err := o.repository.IncrementDuplicateCount(ctx, *existingID); err != nil {
+		return nil, fmt.Errorf("failed to mark record as duplicate: %w", err)
 	}
 
 	result := &ops.CreateIngestionLogResult{
-		Created: ops.IngestionLogRef{
-			ID:           *id,
-			IngestionLog: ingestionLog,
-		},
-	}
-
-	if existingID != nil {
-		if err := o.repository.MarkIngestionLogAsDuplicate(ctx, *id, *existingID); err != nil {
-			return nil, fmt.Errorf("failed to mark record as duplicate: %w", err)
-		}
-		if err := o.repository.UpdateIngestionLogStateWithError(ctx, *id, reconcilerpb.State_DUPLICATE, nil); err != nil {
-			return nil, fmt.Errorf("failed to update ingestion log state: %w", err)
-		}
-		result.Created.IngestionLog.State = reconcilerpb.State_DUPLICATE
-		result.DuplicateOf = &ops.IngestionLogRef{
-			ID:           *existingID,
-			IngestionLog: existingLog,
-		}
+		ID:           *existingID,
+		IngestionLog: existingLog,
+		WasDuplicate: true,
 	}
 
 	return result, nil
@@ -86,8 +103,6 @@ func (o *Ops) GenerateChangeSet(ctx context.Context, ingestionLogID int32, inges
 		Entity:     ingestionLog.GetEntity(),
 		State:      int(ingestionLog.GetState()),
 	}
-
-	isDuplicate := ingestionLog.State == reconcilerpb.State_DUPLICATE
 
 	changeSet, err := differ.Diff(ctx, ingestEntity, branchID, o.nbClient)
 	if err != nil {
@@ -106,11 +121,6 @@ func (o *Ops) GenerateChangeSet(ctx context.Context, ingestionLogID int32, inges
 		if err2 := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, reconcilerpb.State_FAILED, changeSetErr); err2 != nil {
 			err = errors.Join(err, err2)
 		}
-		if isDuplicate {
-			if err2 := o.repository.MarkIngestionLogAsPrimary(ctx, ingestionLogID); err != nil {
-				err = errors.Join(err, err2)
-			}
-		}
 
 		cs := differ.FailedDiffChangeSet(ingestEntity, branchID)
 		id, err1 := o.repository.CreateChangeSet(ctx, *cs, ingestionLogID)
@@ -122,26 +132,34 @@ func (o *Ops) GenerateChangeSet(ctx context.Context, ingestionLogID int32, inges
 		return id, cs, err
 	}
 
+	// if the change set has no changes and the ingestion log is already in the no changes or applied state,
+	// we don't record another changeset in the database, we just bump the updated at time.
+	if len(changeSet.Changes) == 0 && (ingestionLog.State == reconcilerpb.State_NO_CHANGES || ingestionLog.State == reconcilerpb.State_APPLIED) {
+		if err := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, ingestionLog.State, nil); err != nil {
+			o.logger.Error("failed to update ingestion log state (error ignored)", "ingestionLogID", ingestionLogID, "error", err)
+		}
+		return nil, changeSet, nil
+	}
+
 	changeSetID, err := o.repository.CreateChangeSet(ctx, *changeSet, ingestionLogID)
 	if err != nil {
 		return nil, nil, err
 	}
 
+	maxChangeSets := o.limits.MaxChangeSetsPerIngestionLog()
+	if maxChangeSets > 0 {
+		if err := o.repository.TruncateChangeSets(ctx, ingestionLogID, maxChangeSets); err != nil {
+			o.logger.Error("failed to truncate change sets (error ignored)", "ingestionLogID", ingestionLogID, "error", err)
+		}
+	}
+
 	if len(changeSet.Changes) > 0 {
 		ingestionLog.State = reconcilerpb.State_OPEN
-		if err := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, reconcilerpb.State_OPEN, nil); err != nil {
-			o.logger.Error("failed to update ingestion log state (error ignored)", "ingestionLogID", ingestionLogID, "error", err)
-		}
-		if isDuplicate {
-			if err := o.repository.MarkIngestionLogAsPrimary(ctx, ingestionLogID); err != nil {
-				o.logger.Error("failed to mark ingestion log as primary (error ignored)", "ingestionLogID", ingestionLogID, "error", err)
-			}
-		}
-	} else if !isDuplicate {
+	} else {
 		ingestionLog.State = reconcilerpb.State_NO_CHANGES
-		if err := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, reconcilerpb.State_NO_CHANGES, nil); err != nil {
-			o.logger.Error("failed to update ingestion log state (error ignored)", "ingestionLogID", ingestionLogID, "error", err)
-		}
+	}
+	if err := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, ingestionLog.State, nil); err != nil {
+		o.logger.Error("failed to update ingestion log state (error ignored)", "ingestionLogID", ingestionLogID, "error", err)
 	}
 
 	o.logger.Debug("change set generated", "id", changeSetID, "externalID", changeSet.ID, "ingestionLogID", ingestionLogID)

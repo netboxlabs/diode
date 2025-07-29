@@ -56,7 +56,6 @@ type IngestionLog struct {
 	CreatedAt          pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
 	EntityHash         pgtype.Text        `json:"entity_hash"`
-	DuplicateOfID      pgtype.Int4        `json:"duplicate_of_id"`
 	LastSeen           pgtype.Timestamptz `json:"last_seen"`
 	DuplicateCount     int32              `json:"duplicate_count"`
 }
@@ -80,7 +79,4 @@ type VDeviation struct {
 	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
 	ChangeSet          *ChangeSet         `json:"change_set"`
 	Changes            []byte             `json:"changes"`
-	DuplicateOfID      pgtype.Int4        `json:"duplicate_of_id"`
-	LastSeen           pgtype.Timestamptz `json:"last_seen"`
-	DuplicateCount     int32              `json:"duplicate_count"`
 }

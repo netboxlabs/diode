@@ -13,13 +13,12 @@ type Repository interface {
 	UpdateIngestionLogStateWithError(ctx context.Context, id int32, state reconcilerpb.State, err error) error
 	RetrieveIngestionLogByExternalID(ctx context.Context, uuid string) (*int32, *reconcilerpb.IngestionLog, error)
 	RetrieveIngestionLogs(ctx context.Context, filter *reconcilerpb.RetrieveIngestionLogsRequest, limit int32, offset int32) ([]*reconcilerpb.IngestionLog, error)
-	CountIngestionLogsPerState(ctx context.Context, includeDuplicates bool) (map[reconcilerpb.State]int32, error)
+	CountIngestionLogsPerState(ctx context.Context) (map[reconcilerpb.State]int32, error)
 	CreateChangeSet(ctx context.Context, changeSet changeset.ChangeSet, ingestionLogID int32) (*int32, error)
 	RetrieveDeviations(ctx context.Context, filter *reconcilerpb.RetrieveDeviationsRequest, limit int32, offset int32) ([]*reconcilerpb.Deviation, error)
 	RetrieveDeviationByID(ctx context.Context, externalID string) (*reconcilerpb.Deviation, error)
 
 	FindPriorIngestionLogByEntityHash(ctx context.Context, entityHash string, currentBranch *string) (*int32, *reconcilerpb.IngestionLog, error)
-	MarkIngestionLogAsDuplicate(ctx context.Context, duplicateID int32, primaryID int32) error
-	MarkIngestionLogAsPrimary(ctx context.Context, duplicateID int32) error
-	RetrieveIngestionLogDuplicateOfID(ctx context.Context, id int32) (*int32, error)
+	IncrementDuplicateCount(ctx context.Context, id int32) error
+	TruncateChangeSets(ctx context.Context, ingestionLogID int32, limit int32) error
 }

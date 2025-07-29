@@ -304,7 +304,7 @@ func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChan
 					p.metrics.RecordChangeSetCreate(ctx, true, int64(len(changeSet.Changes)))
 				}
 
-				if changeSet != nil && len(changeSet.Changes) > 0 && msg.ingestionLog.State != reconcilerpb.State_DUPLICATE {
+				if changeSet != nil && len(changeSet.Changes) > 0 {
 					if applyChangeSetChan != nil {
 						applyChangeSetChan <- IngestionLogToProcess{
 							ingestionLogID: msg.ingestionLogID,
@@ -394,38 +394,28 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 			p.metrics.RecordIngestionLogCreate(ctx, false)
 			continue
 		}
-		if result == nil {
-			errs = append(errs, fmt.Errorf("failed to create ingestion log, no result"))
-			p.metrics.RecordIngestionLogCreate(ctx, false)
-			continue
-		}
-		ingestionLog = result.Created.IngestionLog
-		id := result.Created.ID
+		ingestionLog = result.IngestionLog
+		id := result.ID
 
-		p.logger.Debug("created new ingestion log", "id", id, "externalID", ingestionLog.GetId())
+		if !result.WasDuplicate {
+			p.logger.Debug("created new ingestion log", "id", id, "externalID", ingestionLog.GetId())
+		} else {
+			p.logger.Debug("ingested duplicate ingestion log", "id", id, "externalID", ingestionLog.GetId())
+		}
 
 		attrs := []attribute.KeyValue{
-			attribute.Bool(telemetry.AttributeDuplicate, result.DuplicateOf != nil),
+			attribute.Bool(telemetry.AttributeDuplicate, result.WasDuplicate),
 		}
 		ctx = telemetry.ContextWithMetricAttributes(ctx, attrs...)
 
 		p.metrics.RecordIngestionLogCreate(ctx, true)
 
-		if result.DuplicateOf != nil {
-			switch result.DuplicateOf.IngestionLog.State {
-			case reconcilerpb.State_IGNORED:
-				p.logger.Debug("skipping ingestion log because it is a duplicate of an ignored ingestion log", "id", id, "externalID", ingestionLog.GetId())
-				continue
-			case reconcilerpb.State_APPLIED:
-				// duplicate of previously applied record, we will process
-				// the duplicate itself and maybe upgrade it to a primary record
-			default:
-				// reprocess the existing record
-				id = result.DuplicateOf.ID
-				ingestionLog = result.DuplicateOf.IngestionLog
-			}
+		if result.WasDuplicate && result.IngestionLog.State == reconcilerpb.State_IGNORED {
+			p.logger.Debug("skipping ingestion log because it is a duplicate of an ignored ingestion log", "id", id, "externalID", ingestionLog.GetId())
+			continue
 		}
 
+		// otherwise, even if it was a duplicate, reprocess to see if it has been updated
 		generateIngestionLogChan <- IngestionLogToProcess{
 			ingestionLogID: id,
 			ingestionLog:   ingestionLog,

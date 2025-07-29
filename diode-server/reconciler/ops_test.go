@@ -139,7 +139,7 @@ func TestOpsGenerateChangeSet(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepository := mocks.NewRepository(t)
 			mockNetBoxClient := pluginmocks.NewNetBoxAPI(t)
-			ops := reconciler.NewOps(mockRepository, mockNetBoxClient, logger)
+			ops := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil)
 
 			for _, m := range tt.generateDiff {
 				if m.err == nil {
@@ -245,10 +245,9 @@ func TestOpsCreateIngestionLog(t *testing.T) {
 		mockFindPriorIngestionLogID    *int32
 		mockFindPriorIngestionLog      *pb.IngestionLog
 		mockFindPriorIngestionLogError error
-		mockMarkAsDuplicateError       error
 
-		expectedError       string
-		expectedDuplicateOf bool
+		expectedError      string
+		expectWasDuplicate bool
 	}{
 		{
 			name:           "no duplicate found - successful creation",
@@ -261,25 +260,20 @@ func TestOpsCreateIngestionLog(t *testing.T) {
 			},
 			mockFindPriorIngestionLogError: sql.ErrNoRows,
 
-			expectedError:       "",
-			expectedDuplicateOf: false,
+			expectedError:      "",
+			expectWasDuplicate: false,
 		},
 		{
-			name:           "duplicate found and marked successfully",
+			name:           "duplicate found",
 			ingestionLog:   testIngestionLog,
 			sourceMetadata: testSourceMetadata,
 
-			mockCreateIngestionLog: &mockCreateIngestionLog{
-				id:    int32Ptr(1234),
-				error: nil,
-			},
 			mockFindPriorIngestionLogID:    int32Ptr(5678),
 			mockFindPriorIngestionLog:      testIngestionLog,
 			mockFindPriorIngestionLogError: nil,
-			mockMarkAsDuplicateError:       nil,
 
-			expectedError:       "",
-			expectedDuplicateOf: true,
+			expectedError:      "",
+			expectWasDuplicate: true,
 		},
 		{
 			name:           "create ingestion log fails",
@@ -290,8 +284,8 @@ func TestOpsCreateIngestionLog(t *testing.T) {
 				error: fmt.Errorf("database error"),
 			},
 
-			expectedError:       "database error",
-			expectedDuplicateOf: false,
+			expectedError:      "database error",
+			expectWasDuplicate: false,
 		},
 		{
 			name:           "duplicate search fails with non-NoRows error",
@@ -302,29 +296,13 @@ func TestOpsCreateIngestionLog(t *testing.T) {
 
 			expectedError: "failed to search for prior deviation: database connection error",
 		},
-		{
-			name:           "mark as duplicate fails",
-			ingestionLog:   testIngestionLog,
-			sourceMetadata: testSourceMetadata,
-
-			mockCreateIngestionLog: &mockCreateIngestionLog{
-				id:    int32Ptr(1234),
-				error: nil,
-			},
-			mockFindPriorIngestionLogID: int32Ptr(5678),
-			mockFindPriorIngestionLog:   testIngestionLog,
-			mockMarkAsDuplicateError:    fmt.Errorf("marking failed"),
-
-			expectedError:       "failed to mark record as duplicate: marking failed",
-			expectedDuplicateOf: false,
-		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepository := mocks.NewRepository(t)
 			mockNetBoxClient := pluginmocks.NewNetBoxAPI(t)
-			opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger)
+			opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil)
 
 			mockRepository.EXPECT().FindPriorIngestionLogByEntityHash(mock.Anything, mock.AnythingOfType("string"), (*string)(nil)).
 				Return(tt.mockFindPriorIngestionLogID, tt.mockFindPriorIngestionLog, tt.mockFindPriorIngestionLogError)
@@ -334,13 +312,9 @@ func TestOpsCreateIngestionLog(t *testing.T) {
 				mockRepository.EXPECT().CreateIngestionLog(mock.Anything, tt.ingestionLog, tt.sourceMetadata, mock.AnythingOfType("string")).
 					Return(tt.mockCreateIngestionLog.id, tt.mockCreateIngestionLog.error)
 			}
-			if tt.mockFindPriorIngestionLogError == nil && tt.mockFindPriorIngestionLogID != nil {
-				mockRepository.EXPECT().MarkIngestionLogAsDuplicate(mock.Anything, *tt.mockCreateIngestionLog.id, *tt.mockFindPriorIngestionLogID).
-					Return(tt.mockMarkAsDuplicateError)
-				if tt.mockMarkAsDuplicateError == nil {
-					mockRepository.EXPECT().UpdateIngestionLogStateWithError(mock.Anything, *tt.mockCreateIngestionLog.id, pb.State_DUPLICATE, nil).
-						Return(nil)
-				}
+
+			if tt.expectWasDuplicate {
+				mockRepository.EXPECT().IncrementDuplicateCount(mock.Anything, *tt.mockFindPriorIngestionLogID).Return(nil)
 			}
 
 			result, err := opsInstance.CreateIngestionLog(ctx, tt.ingestionLog, tt.sourceMetadata)
@@ -353,19 +327,12 @@ func TestOpsCreateIngestionLog(t *testing.T) {
 
 			require.NoError(t, err)
 			require.NotNil(t, result)
-			require.NotNil(t, result.Created)
+			require.NotNil(t, result.IngestionLog)
 			if tt.mockCreateIngestionLog != nil {
-				require.Equal(t, *tt.mockCreateIngestionLog.id, result.Created.ID)
+				require.Equal(t, *tt.mockCreateIngestionLog.id, result.ID)
 			}
-			require.Equal(t, tt.ingestionLog, result.Created.IngestionLog)
-
-			if tt.expectedDuplicateOf {
-				require.NotNil(t, result.DuplicateOf)
-				require.Equal(t, *tt.mockFindPriorIngestionLogID, result.DuplicateOf.ID)
-				require.Equal(t, tt.mockFindPriorIngestionLog, result.DuplicateOf.IngestionLog)
-			} else {
-				require.Nil(t, result.DuplicateOf)
-			}
+			require.Equal(t, tt.ingestionLog, result.IngestionLog)
+			require.Equal(t, tt.expectWasDuplicate, result.WasDuplicate)
 		})
 	}
 }

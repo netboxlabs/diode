@@ -15,7 +15,6 @@ import (
 const countIngestionLogsPerState = `-- name: CountIngestionLogsPerState :many
 SELECT state, COUNT(*) AS count
 FROM ingestion_logs
-WHERE (duplicate_of_id IS NULL OR $1::boolean = true)
 GROUP BY state
 `
 
@@ -24,8 +23,8 @@ type CountIngestionLogsPerStateRow struct {
 	Count int64       `json:"count"`
 }
 
-func (q *Queries) CountIngestionLogsPerState(ctx context.Context, includeDuplicates pgtype.Bool) ([]CountIngestionLogsPerStateRow, error) {
-	rows, err := q.db.Query(ctx, countIngestionLogsPerState, includeDuplicates)
+func (q *Queries) CountIngestionLogsPerState(ctx context.Context) ([]CountIngestionLogsPerStateRow, error) {
+	rows, err := q.db.Query(ctx, countIngestionLogsPerState)
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +47,7 @@ const createIngestionLog = `-- name: CreateIngestionLog :one
 INSERT INTO ingestion_logs (external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name,
                             producer_app_version, sdk_name, sdk_version, entity, source_metadata, entity_hash)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-RETURNING id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, duplicate_of_id, last_seen, duplicate_count
+RETURNING id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count
 `
 
 type CreateIngestionLogParams struct {
@@ -102,7 +101,6 @@ func (q *Queries) CreateIngestionLog(ctx context.Context, arg CreateIngestionLog
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.EntityHash,
-		&i.DuplicateOfID,
 		&i.LastSeen,
 		&i.DuplicateCount,
 	)
@@ -117,11 +115,10 @@ WITH latest_change_sets AS (
     FROM change_sets
     ORDER BY ingestion_log_id, id DESC
 )
-SELECT il.id, il.external_id, il.object_type, il.state, il.request_id, il.ingestion_ts, il.source_ts, il.producer_app_name, il.producer_app_version, il.sdk_name, il.sdk_version, il.entity, il.error, il.source_metadata, il.created_at, il.updated_at, il.entity_hash, il.duplicate_of_id, il.last_seen, il.duplicate_count
+SELECT il.id, il.external_id, il.object_type, il.state, il.request_id, il.ingestion_ts, il.source_ts, il.producer_app_name, il.producer_app_version, il.sdk_name, il.sdk_version, il.entity, il.error, il.source_metadata, il.created_at, il.updated_at, il.entity_hash, il.last_seen, il.duplicate_count
 FROM ingestion_logs il
 LEFT JOIN latest_change_sets lcs ON il.id = lcs.ingestion_log_id
 WHERE il.entity_hash = $1
-  AND il.duplicate_of_id IS NULL
   AND (
     ($2::text IS NOT NULL AND lcs.branch_id = $2::text)
     OR
@@ -157,15 +154,26 @@ func (q *Queries) FindPriorIngestionLogByEntityHash(ctx context.Context, arg Fin
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.EntityHash,
-		&i.DuplicateOfID,
 		&i.LastSeen,
 		&i.DuplicateCount,
 	)
 	return i, err
 }
 
+const incrementDuplicateCount = `-- name: IncrementDuplicateCount :exec
+UPDATE ingestion_logs
+SET duplicate_count = duplicate_count + 1,
+    last_seen = CURRENT_TIMESTAMP
+WHERE id = $1
+`
+
+func (q *Queries) IncrementDuplicateCount(ctx context.Context, id int32) error {
+	_, err := q.db.Exec(ctx, incrementDuplicateCount, id)
+	return err
+}
+
 const retrieveIngestionLogByExternalID = `-- name: RetrieveIngestionLogByExternalID :one
-SELECT id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, duplicate_of_id, last_seen, duplicate_count
+SELECT id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count
 FROM ingestion_logs
 WHERE external_id = $1
 `
@@ -191,46 +199,30 @@ func (q *Queries) RetrieveIngestionLogByExternalID(ctx context.Context, external
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.EntityHash,
-		&i.DuplicateOfID,
 		&i.LastSeen,
 		&i.DuplicateCount,
 	)
 	return i, err
 }
 
-const retrieveIngestionLogDuplicateOfID = `-- name: RetrieveIngestionLogDuplicateOfID :one
-SELECT duplicate_of_id
-FROM ingestion_logs
-WHERE id = $1
-`
-
-func (q *Queries) RetrieveIngestionLogDuplicateOfID(ctx context.Context, id int32) (pgtype.Int4, error) {
-	row := q.db.QueryRow(ctx, retrieveIngestionLogDuplicateOfID, id)
-	var duplicate_of_id pgtype.Int4
-	err := row.Scan(&duplicate_of_id)
-	return duplicate_of_id, err
-}
-
 const retrieveIngestionLogs = `-- name: RetrieveIngestionLogs :many
-SELECT id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, duplicate_of_id, last_seen, duplicate_count
+SELECT id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count
 FROM ingestion_logs
 WHERE (state = $1 OR $1 IS NULL)
   AND (object_type = $2 OR $2 IS NULL)
   AND (ingestion_ts >= $3 OR $3 IS NULL)
   AND (ingestion_ts <= $4 OR $4 IS NULL)
-  AND (duplicate_of_id IS NULL OR $5::boolean = true)
 ORDER BY id DESC
-LIMIT $7 OFFSET $6
+LIMIT $6 OFFSET $5
 `
 
 type RetrieveIngestionLogsParams struct {
-	State             pgtype.Int4 `json:"state"`
-	ObjectType        pgtype.Text `json:"object_type"`
-	IngestionTsStart  pgtype.Int8 `json:"ingestion_ts_start"`
-	IngestionTsEnd    pgtype.Int8 `json:"ingestion_ts_end"`
-	IncludeDuplicates pgtype.Bool `json:"include_duplicates"`
-	Offset            int32       `json:"offset"`
-	Limit             int32       `json:"limit"`
+	State            pgtype.Int4 `json:"state"`
+	ObjectType       pgtype.Text `json:"object_type"`
+	IngestionTsStart pgtype.Int8 `json:"ingestion_ts_start"`
+	IngestionTsEnd   pgtype.Int8 `json:"ingestion_ts_end"`
+	Offset           int32       `json:"offset"`
+	Limit            int32       `json:"limit"`
 }
 
 func (q *Queries) RetrieveIngestionLogs(ctx context.Context, arg RetrieveIngestionLogsParams) ([]IngestionLog, error) {
@@ -239,7 +231,6 @@ func (q *Queries) RetrieveIngestionLogs(ctx context.Context, arg RetrieveIngesti
 		arg.ObjectType,
 		arg.IngestionTsStart,
 		arg.IngestionTsEnd,
-		arg.IncludeDuplicates,
 		arg.Offset,
 		arg.Limit,
 	)
@@ -268,7 +259,6 @@ func (q *Queries) RetrieveIngestionLogs(ctx context.Context, arg RetrieveIngesti
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.EntityHash,
-			&i.DuplicateOfID,
 			&i.LastSeen,
 			&i.DuplicateCount,
 		); err != nil {
@@ -283,7 +273,7 @@ func (q *Queries) RetrieveIngestionLogs(ctx context.Context, arg RetrieveIngesti
 }
 
 const retrieveIngestionLogsWithChangeSets = `-- name: RetrieveIngestionLogsWithChangeSets :many
-SELECT v_deviations.id, v_deviations.external_id, v_deviations.object_type, v_deviations.state, v_deviations.request_id, v_deviations.ingestion_ts, v_deviations.source_ts, v_deviations.producer_app_name, v_deviations.producer_app_version, v_deviations.sdk_name, v_deviations.sdk_version, v_deviations.entity, v_deviations.error, v_deviations.source_metadata, v_deviations.created_at, v_deviations.updated_at, v_deviations.change_set, v_deviations.changes, v_deviations.duplicate_of_id, v_deviations.last_seen, v_deviations.duplicate_count
+SELECT v_deviations.id, v_deviations.external_id, v_deviations.object_type, v_deviations.state, v_deviations.request_id, v_deviations.ingestion_ts, v_deviations.source_ts, v_deviations.producer_app_name, v_deviations.producer_app_version, v_deviations.sdk_name, v_deviations.sdk_version, v_deviations.entity, v_deviations.error, v_deviations.source_metadata, v_deviations.created_at, v_deviations.updated_at, v_deviations.change_set, v_deviations.changes
 FROM v_deviations
 WHERE (v_deviations.state = $1 OR $1 IS NULL)
   AND (v_deviations.object_type = $2 OR $2 IS NULL)
@@ -291,19 +281,17 @@ WHERE (v_deviations.state = $1 OR $1 IS NULL)
        $3 IS NULL)
   AND (v_deviations.ingestion_ts <= $4 OR
        $4 IS NULL)
-  AND (v_deviations.duplicate_of_id IS NULL OR $5::boolean = true)
 ORDER BY v_deviations.id DESC
-LIMIT $7 OFFSET $6
+LIMIT $6 OFFSET $5
 `
 
 type RetrieveIngestionLogsWithChangeSetsParams struct {
-	State             pgtype.Int4 `json:"state"`
-	ObjectType        pgtype.Text `json:"object_type"`
-	IngestionTsStart  pgtype.Int8 `json:"ingestion_ts_start"`
-	IngestionTsEnd    pgtype.Int8 `json:"ingestion_ts_end"`
-	IncludeDuplicates pgtype.Bool `json:"include_duplicates"`
-	Offset            int32       `json:"offset"`
-	Limit             int32       `json:"limit"`
+	State            pgtype.Int4 `json:"state"`
+	ObjectType       pgtype.Text `json:"object_type"`
+	IngestionTsStart pgtype.Int8 `json:"ingestion_ts_start"`
+	IngestionTsEnd   pgtype.Int8 `json:"ingestion_ts_end"`
+	Offset           int32       `json:"offset"`
+	Limit            int32       `json:"limit"`
 }
 
 func (q *Queries) RetrieveIngestionLogsWithChangeSets(ctx context.Context, arg RetrieveIngestionLogsWithChangeSetsParams) ([]VDeviation, error) {
@@ -312,7 +300,6 @@ func (q *Queries) RetrieveIngestionLogsWithChangeSets(ctx context.Context, arg R
 		arg.ObjectType,
 		arg.IngestionTsStart,
 		arg.IngestionTsEnd,
-		arg.IncludeDuplicates,
 		arg.Offset,
 		arg.Limit,
 	)
@@ -342,9 +329,6 @@ func (q *Queries) RetrieveIngestionLogsWithChangeSets(ctx context.Context, arg R
 			&i.UpdatedAt,
 			&i.ChangeSet,
 			&i.Changes,
-			&i.DuplicateOfID,
-			&i.LastSeen,
-			&i.DuplicateCount,
 		); err != nil {
 			return nil, err
 		}
@@ -356,28 +340,12 @@ func (q *Queries) RetrieveIngestionLogsWithChangeSets(ctx context.Context, arg R
 	return items, nil
 }
 
-const setIngestionLogDuplicateOfID = `-- name: SetIngestionLogDuplicateOfID :exec
-UPDATE ingestion_logs
-SET duplicate_of_id = $2
-WHERE id = $1
-`
-
-type SetIngestionLogDuplicateOfIDParams struct {
-	ID            int32       `json:"id"`
-	DuplicateOfID pgtype.Int4 `json:"duplicate_of_id"`
-}
-
-func (q *Queries) SetIngestionLogDuplicateOfID(ctx context.Context, arg SetIngestionLogDuplicateOfIDParams) error {
-	_, err := q.db.Exec(ctx, setIngestionLogDuplicateOfID, arg.ID, arg.DuplicateOfID)
-	return err
-}
-
 const updateIngestionLogStateWithError = `-- name: UpdateIngestionLogStateWithError :exec
 UPDATE ingestion_logs
 SET state = $2,
     error = $3
 WHERE id = $1
-RETURNING id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, duplicate_of_id, last_seen, duplicate_count
+RETURNING id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count
 `
 
 type UpdateIngestionLogStateWithErrorParams struct {

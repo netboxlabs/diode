@@ -692,7 +692,7 @@ func TestRetrieveLogs(t *testing.T) {
 				retrieveErr = errors.New("failed to retrieve ingestion logs")
 			}
 
-			mockRepository.On("CountIngestionLogsPerState", ctx, false).Return(tt.ingestionLogsPerState, nil)
+			mockRepository.On("CountIngestionLogsPerState", ctx).Return(tt.ingestionLogsPerState, nil)
 
 			if !tt.hasError {
 				mockRepository.On("RetrieveIngestionLogs", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(tt.ingestionLogs, retrieveErr)
@@ -786,7 +786,7 @@ func TestRetrieveIngestionLogsMetricsOnly(t *testing.T) {
 				countErr = errors.New(tt.errorMsg)
 			}
 
-			mockRepository.On("CountIngestionLogsPerState", ctx, false).Return(ingestionLogStateMetricsMap, countErr)
+			mockRepository.On("CountIngestionLogsPerState", ctx).Return(ingestionLogStateMetricsMap, countErr)
 
 			in := reconcilerpb.RetrieveIngestionLogsRequest{OnlyMetrics: true}
 
