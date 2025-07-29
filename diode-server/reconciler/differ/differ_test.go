@@ -81,7 +81,7 @@ func TestGenDeviationName(t *testing.T) {
 						After:              json.RawMessage(`{"name": "Site A"}`),
 					},
 				},
-				DeviationName: strPtr("Site Site A created"),
+				DeviationName: strPtr("Site Site A discovered"),
 			},
 			wantErr: false,
 		},
@@ -254,7 +254,7 @@ func TestGenDeviationName(t *testing.T) {
 				},
 				// this is still a create because the ref id is set
 				// and the object was created in the same change set
-				DeviationName: strPtr("Site Site A created"),
+				DeviationName: strPtr("Site Site A discovered"),
 			},
 			wantErr: false,
 		},
