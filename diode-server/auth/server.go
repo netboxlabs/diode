@@ -99,7 +99,7 @@ type TokenOwnershipProvider interface {
 // DefaultTokenOwner is a default implementation of TokenOwnershipProvider
 type DefaultTokenOwner struct{}
 
-// HeaderCheck is a no-operation in the OSS implementation
+// HeaderCheck is a no-operation implementation
 func (p *DefaultTokenOwner) HeaderCheck(_ http.Header, _ jwt.MapClaims) error {
 	return nil
 }
