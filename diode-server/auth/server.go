@@ -91,7 +91,7 @@ func statusFromError(err error) int {
 
 // TokenOwnershipProvider determines the owner of a token
 type TokenOwnershipProvider interface {
-	// HeaderCheck returns an error if the NetBox ID in the JWT claims conflicts with the HTTP headers.
+	// HeaderCheck returns an error if something in the HTTP headers is a mismatch with the JWT claims.
 	HeaderCheck(headers http.Header, claims jwt.MapClaims) error
 	TokenOwnerID(ctx context.Context, token string) (string, error)
 }
