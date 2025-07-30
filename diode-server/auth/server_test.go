@@ -49,7 +49,8 @@ func TestNewServer(t *testing.T) {
 	defer teardownEnv()
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
-	server, err := auth.NewServer(ctx, logger, InvalidParser{}, nil, nil)
+	defaultOwnership := &auth.DefaultTokenOwner{}
+	server, err := auth.NewServer(ctx, logger, InvalidParser{}, nil, defaultOwnership)
 	require.NoError(t, err)
 	require.NotNil(t, server)
 
@@ -96,7 +97,8 @@ func TestIntrospectForInvalidTokens(t *testing.T) {
 	}()
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
-	server, err := auth.NewServer(ctx, logger, InvalidParser{}, nil, nil)
+	defaultOwnership := &auth.DefaultTokenOwner{}
+	server, err := auth.NewServer(ctx, logger, InvalidParser{}, nil, defaultOwnership)
 	require.NoError(t, err)
 	require.NotNil(t, server)
 
@@ -238,7 +240,8 @@ func TestIntrospectForValidTokens(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			ctx := context.Background()
 
-			server, err := auth.NewServer(ctx, logger, test.tokenParser, nil, nil)
+			defaultOwnership := &auth.DefaultTokenOwner{}
+			server, err := auth.NewServer(ctx, logger, test.tokenParser, nil, defaultOwnership)
 			require.NoError(t, err)
 			require.NotNil(t, server)
 
