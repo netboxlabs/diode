@@ -12,7 +12,6 @@ INSERT INTO changes (external_id, change_set_id, change_type, object_type, objec
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 RETURNING *;
 
-
 -- name: TruncateChangeSets :exec
 DELETE FROM change_sets cs1
 WHERE cs1.ingestion_log_id = $1

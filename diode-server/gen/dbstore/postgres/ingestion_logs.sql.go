@@ -108,21 +108,14 @@ func (q *Queries) CreateIngestionLog(ctx context.Context, arg CreateIngestionLog
 }
 
 const findPriorIngestionLogByEntityHash = `-- name: FindPriorIngestionLogByEntityHash :one
-WITH latest_change_sets AS (
-    SELECT DISTINCT ON (ingestion_log_id) 
-        ingestion_log_id, 
-        branch_id
-    FROM change_sets
-    ORDER BY ingestion_log_id, id DESC
-)
 SELECT il.id, il.external_id, il.object_type, il.state, il.request_id, il.ingestion_ts, il.source_ts, il.producer_app_name, il.producer_app_version, il.sdk_name, il.sdk_version, il.entity, il.error, il.source_metadata, il.created_at, il.updated_at, il.entity_hash, il.last_seen, il.duplicate_count
 FROM ingestion_logs il
-LEFT JOIN latest_change_sets lcs ON il.id = lcs.ingestion_log_id
+LEFT JOIN (SELECT MAX(change_sets.id) AS id, ingestion_log_id, branch_id FROM change_sets GROUP BY ingestion_log_id, branch_id) latest_change_set ON il.id = latest_change_set.ingestion_log_id
 WHERE il.entity_hash = $1
   AND (
-    ($2::text IS NOT NULL AND lcs.branch_id = $2::text)
+    ($2::text IS NOT NULL AND latest_change_set.branch_id = $2::text)
     OR
-    ($2::text IS NULL AND lcs.branch_id IS NULL)
+    ($2::text IS NULL AND latest_change_set.branch_id IS NULL)
   )
 ORDER BY il.created_at DESC
 LIMIT 1

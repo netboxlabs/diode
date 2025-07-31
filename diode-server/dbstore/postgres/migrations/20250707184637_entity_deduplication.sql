@@ -9,7 +9,6 @@ CREATE INDEX idx_ingestion_logs_entity_hash ON ingestion_logs(entity_hash);
 
 -- +goose Down
 
-
 DROP INDEX IF EXISTS idx_ingestion_logs_entity_hash;
 
 ALTER TABLE ingestion_logs
