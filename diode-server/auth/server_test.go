@@ -48,6 +48,7 @@ type ownerInvalid struct{}
 func (o ownerInvalid) TokenOwnerID(_ context.Context, _ string) (string, error) {
 	return auth.DefaultTokenOwnerID, nil
 }
+
 func (o ownerInvalid) ValidateTokenOwnership(_ auth.TokenOwnershipValidationData, _ jwt.MapClaims) error {
 	return errors.New("invalid token owner")
 }
