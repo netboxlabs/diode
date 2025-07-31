@@ -4,7 +4,8 @@ package mocks
 
 import (
 	context "context"
-	http "net/http"
+
+	auth "github.com/netboxlabs/diode/diode-server/auth"
 
 	jwt "github.com/golang-jwt/jwt/v5"
 
@@ -22,53 +23,6 @@ type TokenOwnershipProvider_Expecter struct {
 
 func (_m *TokenOwnershipProvider) EXPECT() *TokenOwnershipProvider_Expecter {
 	return &TokenOwnershipProvider_Expecter{mock: &_m.Mock}
-}
-
-// HeaderCheck provides a mock function with given fields: headers, claims
-func (_m *TokenOwnershipProvider) HeaderCheck(headers http.Header, claims jwt.MapClaims) error {
-	ret := _m.Called(headers, claims)
-
-	if len(ret) == 0 {
-		panic("no return value specified for HeaderCheck")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(http.Header, jwt.MapClaims) error); ok {
-		r0 = rf(headers, claims)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// TokenOwnershipProvider_HeaderCheck_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'HeaderCheck'
-type TokenOwnershipProvider_HeaderCheck_Call struct {
-	*mock.Call
-}
-
-// HeaderCheck is a helper method to define mock.On call
-//   - headers http.Header
-//   - claims jwt.MapClaims
-func (_e *TokenOwnershipProvider_Expecter) HeaderCheck(headers interface{}, claims interface{}) *TokenOwnershipProvider_HeaderCheck_Call {
-	return &TokenOwnershipProvider_HeaderCheck_Call{Call: _e.mock.On("HeaderCheck", headers, claims)}
-}
-
-func (_c *TokenOwnershipProvider_HeaderCheck_Call) Run(run func(headers http.Header, claims jwt.MapClaims)) *TokenOwnershipProvider_HeaderCheck_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(http.Header), args[1].(jwt.MapClaims))
-	})
-	return _c
-}
-
-func (_c *TokenOwnershipProvider_HeaderCheck_Call) Return(_a0 error) *TokenOwnershipProvider_HeaderCheck_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *TokenOwnershipProvider_HeaderCheck_Call) RunAndReturn(run func(http.Header, jwt.MapClaims) error) *TokenOwnershipProvider_HeaderCheck_Call {
-	_c.Call.Return(run)
-	return _c
 }
 
 // TokenOwnerID provides a mock function with given fields: ctx, token
@@ -124,6 +78,53 @@ func (_c *TokenOwnershipProvider_TokenOwnerID_Call) Return(_a0 string, _a1 error
 }
 
 func (_c *TokenOwnershipProvider_TokenOwnerID_Call) RunAndReturn(run func(context.Context, string) (string, error)) *TokenOwnershipProvider_TokenOwnerID_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ValidateTokenOwnership provides a mock function with given fields: data, claims
+func (_m *TokenOwnershipProvider) ValidateTokenOwnership(data auth.TokenOwnershipValidationData, claims jwt.MapClaims) error {
+	ret := _m.Called(data, claims)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ValidateTokenOwnership")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(auth.TokenOwnershipValidationData, jwt.MapClaims) error); ok {
+		r0 = rf(data, claims)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// TokenOwnershipProvider_ValidateTokenOwnership_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ValidateTokenOwnership'
+type TokenOwnershipProvider_ValidateTokenOwnership_Call struct {
+	*mock.Call
+}
+
+// ValidateTokenOwnership is a helper method to define mock.On call
+//   - data auth.TokenOwnershipValidationData
+//   - claims jwt.MapClaims
+func (_e *TokenOwnershipProvider_Expecter) ValidateTokenOwnership(data interface{}, claims interface{}) *TokenOwnershipProvider_ValidateTokenOwnership_Call {
+	return &TokenOwnershipProvider_ValidateTokenOwnership_Call{Call: _e.mock.On("ValidateTokenOwnership", data, claims)}
+}
+
+func (_c *TokenOwnershipProvider_ValidateTokenOwnership_Call) Run(run func(data auth.TokenOwnershipValidationData, claims jwt.MapClaims)) *TokenOwnershipProvider_ValidateTokenOwnership_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(auth.TokenOwnershipValidationData), args[1].(jwt.MapClaims))
+	})
+	return _c
+}
+
+func (_c *TokenOwnershipProvider_ValidateTokenOwnership_Call) Return(_a0 error) *TokenOwnershipProvider_ValidateTokenOwnership_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *TokenOwnershipProvider_ValidateTokenOwnership_Call) RunAndReturn(run func(auth.TokenOwnershipValidationData, jwt.MapClaims) error) *TokenOwnershipProvider_ValidateTokenOwnership_Call {
 	_c.Call.Return(run)
 	return _c
 }

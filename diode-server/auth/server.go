@@ -89,24 +89,28 @@ func statusFromError(err error) int {
 	return http.StatusInternalServerError
 }
 
+// TokenOwnershipValidationData contains data for validating token ownership
+type TokenOwnershipValidationData struct {
+	Headers http.Header
+}
+
 // TokenOwnershipProvider determines the owner of a token
 type TokenOwnershipProvider interface {
-	// HeaderCheck returns an error if something in the HTTP headers is a mismatch with the JWT claims.
-	HeaderCheck(headers http.Header, claims jwt.MapClaims) error
 	TokenOwnerID(ctx context.Context, token string) (string, error)
+	ValidateTokenOwnership(data TokenOwnershipValidationData, claims jwt.MapClaims) error
 }
 
 // DefaultTokenOwner is a default implementation of TokenOwnershipProvider
 type DefaultTokenOwner struct{}
 
-// HeaderCheck is a no-operation implementation
-func (p *DefaultTokenOwner) HeaderCheck(_ http.Header, _ jwt.MapClaims) error {
-	return nil
-}
-
 // TokenOwnerID returns the owner of a token
 func (p *DefaultTokenOwner) TokenOwnerID(_ context.Context, _ string) (string, error) {
 	return DefaultTokenOwnerID, nil
+}
+
+// ValidateTokenOwnership validates the ownership of a token
+func (p *DefaultTokenOwner) ValidateTokenOwnership(_ TokenOwnershipValidationData, _ jwt.MapClaims) error {
+	return nil
 }
 
 // ClientInfoDecorator attaches additional information to a client info
@@ -216,9 +220,9 @@ func (s *Server) introspect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = s.tokenOwnership.HeaderCheck(r.Header, claims)
+	err = s.tokenOwnership.ValidateTokenOwnership(TokenOwnershipValidationData{Headers: r.Header}, claims)
 	if err != nil {
-		s.logger.Error("failed to validate token ownership with HTTP headers", "error", err)
+		s.logger.Error("failed to validate token ownership", "error", err)
 		w.WriteHeader(http.StatusForbidden)
 		return
 	}
