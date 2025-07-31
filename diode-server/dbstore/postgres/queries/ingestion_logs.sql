@@ -44,14 +44,21 @@ ORDER BY v_deviations.id DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: FindPriorIngestionLogByEntityHash :one
+WITH latest_change_sets AS (
+    SELECT DISTINCT ON (ingestion_log_id) 
+        ingestion_log_id, 
+        branch_id
+    FROM change_sets
+    ORDER BY ingestion_log_id, id DESC
+)
 SELECT il.*
 FROM ingestion_logs il
-LEFT JOIN (SELECT MAX(change_sets.id) AS id, ingestion_log_id, branch_id FROM change_sets GROUP BY ingestion_log_id, branch_id) latest_change_set ON il.id = latest_change_set.ingestion_log_id
+LEFT JOIN latest_change_sets lcs ON il.id = lcs.ingestion_log_id
 WHERE il.entity_hash = sqlc.arg('entity_hash')
   AND (
-    (sqlc.narg('branch_id')::text IS NOT NULL AND latest_change_set.branch_id = sqlc.narg('branch_id')::text)
+    (sqlc.narg('branch_id')::text IS NOT NULL AND lcs.branch_id = sqlc.narg('branch_id')::text)
     OR
-    (sqlc.narg('branch_id')::text IS NULL AND latest_change_set.branch_id IS NULL)
+    (sqlc.narg('branch_id')::text IS NULL AND lcs.branch_id IS NULL)
   )
 ORDER BY il.created_at DESC
 LIMIT 1;
