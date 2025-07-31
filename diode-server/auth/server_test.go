@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net"
@@ -42,6 +43,16 @@ func (p MockTokenParser) Parse(token string, _ jwt.Keyfunc) (*jwt.Token, error) 
 	return nil, fmt.Errorf("token not found")
 }
 
+type ownerInvalid struct{}
+
+func (o ownerInvalid) TokenOwnerID(_ context.Context, _ string) (string, error) {
+	return auth.DefaultTokenOwnerID, nil
+}
+
+func (o ownerInvalid) ValidateTokenOwnership(_ auth.TokenOwnershipValidationData, _ jwt.MapClaims) error {
+	return errors.New("invalid token owner")
+}
+
 func TestNewServer(t *testing.T) {
 	ctx := context.Background()
 
@@ -49,7 +60,8 @@ func TestNewServer(t *testing.T) {
 	defer teardownEnv()
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
-	server, err := auth.NewServer(ctx, logger, InvalidParser{}, nil, nil)
+	defaultOwnership := &auth.DefaultTokenOwner{}
+	server, err := auth.NewServer(ctx, logger, InvalidParser{}, nil, defaultOwnership)
 	require.NoError(t, err)
 	require.NotNil(t, server)
 
@@ -96,7 +108,8 @@ func TestIntrospectForInvalidTokens(t *testing.T) {
 	}()
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
-	server, err := auth.NewServer(ctx, logger, InvalidParser{}, nil, nil)
+	defaultOwnership := &auth.DefaultTokenOwner{}
+	server, err := auth.NewServer(ctx, logger, InvalidParser{}, nil, defaultOwnership)
 	require.NoError(t, err)
 	require.NotNil(t, server)
 
@@ -138,6 +151,7 @@ func TestIntrospectForValidTokens(t *testing.T) {
 		name             string
 		token            string
 		tokenParser      auth.TokenParser
+		invalidOwner     bool
 		expectedStatus   int
 		expectedAudience []string
 		expectedSubject  string
@@ -201,6 +215,35 @@ func TestIntrospectForValidTokens(t *testing.T) {
 			expectedClientID: "client123",
 			expectedUsername: "testuser",
 		},
+		{
+			name:  "Valid Token with invalid owner",
+			token: testToken,
+			tokenParser: &MockTokenParser{
+				tokenMap: map[string]jwt.Token{
+					testToken: {
+						Claims: jwt.MapClaims{
+							"iss":       "https://auth.example.com",
+							"sub":       "user123",
+							"aud":       "api",
+							"exp":       time.Now().Add(time.Hour).Unix(),
+							"iat":       time.Now().Unix(),
+							"client_id": "client123",
+							"scope":     "read write",
+							"username":  "testuser",
+						},
+						Valid: true,
+					},
+				},
+			},
+			invalidOwner:     true,
+			expectedStatus:   http.StatusForbidden,
+			expectedAudience: []string{"api"},
+			expectedSubject:  "user123",
+			expectedScope:    "read write",
+			expectedIssuer:   "https://auth.example.com",
+			expectedClientID: "client123",
+			expectedUsername: "testuser",
+		},
 	}
 
 	// Setup a test server to mock the OAuth2 server
@@ -238,7 +281,11 @@ func TestIntrospectForValidTokens(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			ctx := context.Background()
 
-			server, err := auth.NewServer(ctx, logger, test.tokenParser, nil, nil)
+			var ownerProvider auth.TokenOwnershipProvider = &auth.DefaultTokenOwner{}
+			if test.invalidOwner {
+				ownerProvider = ownerInvalid{}
+			}
+			server, err := auth.NewServer(ctx, logger, test.tokenParser, nil, ownerProvider)
 			require.NoError(t, err)
 			require.NotNil(t, server)
 
@@ -252,7 +299,10 @@ func TestIntrospectForValidTokens(t *testing.T) {
 			resp, err := makeIntrospectRequest(testServer.URL, test.token)
 
 			require.NoError(t, err)
-			require.Equal(t, http.StatusOK, resp.StatusCode)
+			require.Equal(t, test.expectedStatus, resp.StatusCode)
+			if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
+				return
+			}
 
 			defer func() {
 				_ = resp.Body.Close()
