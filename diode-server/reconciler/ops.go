@@ -141,6 +141,16 @@ func (o *Ops) GenerateChangeSet(ctx context.Context, ingestionLogID int32, inges
 		return nil, changeSet, nil
 	}
 
+	// TODO: At this point if the prior ingestion log is in the applied state, and we have
+	// a new set of changes, we could "clone" the ingestion log to open a new "deviation"
+	// and leave the prior one as applied. This would be more historically accurate /
+	// less surprising.  For now we just re-open the previously applied change set.
+	//
+	// If we did create a new one, we would need to communicate that back to the rest
+	// of the pipeline and also this operation's name would be a bit of misnomer.
+	// Possibly some refactoring/renaming of the operations (which are meant to
+	// keep rpc and pipeline behavior in sync) would be warranted.
+
 	changeSetID, err := o.repository.CreateChangeSet(ctx, *changeSet, ingestionLogID)
 	if err != nil {
 		return nil, nil, err
