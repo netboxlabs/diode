@@ -29,8 +29,8 @@ func NewRepository(pool *pgxpool.Pool) *Repository {
 	}
 }
 
-// CreateIngestionLog creates a new ingestion log.
-func (r *Repository) CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb.IngestionLog, sourceMetadata []byte) (*int32, error) {
+// CreateIngestionLog creates a new ingestion log with entity hash and deduplication fields.
+func (r *Repository) CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb.IngestionLog, sourceMetadata []byte, entityHash string) (*int32, error) {
 	marshaler := protojson.MarshalOptions{
 		UseProtoNames: true,
 	}
@@ -38,6 +38,7 @@ func (r *Repository) CreateIngestionLog(ctx context.Context, ingestionLog *recon
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal entity: %w", err)
 	}
+
 	params := postgres.CreateIngestionLogParams{
 		ExternalID:         ingestionLog.Id,
 		ObjectType:         pgtype.Text{String: ingestionLog.ObjectType, Valid: true},
@@ -51,6 +52,7 @@ func (r *Repository) CreateIngestionLog(ctx context.Context, ingestionLog *recon
 		SdkVersion:         pgtype.Text{String: ingestionLog.SdkVersion, Valid: true},
 		Entity:             entityJSON,
 		SourceMetadata:     sourceMetadata,
+		EntityHash:         pgtype.Text{String: entityHash, Valid: true},
 	}
 
 	createdIngestionLog, err := r.queries.CreateIngestionLog(ctx, params)
@@ -70,6 +72,7 @@ func (r *Repository) RetrieveIngestionLogByExternalID(ctx context.Context, uuid 
 	if err != nil {
 		return nil, nil, err
 	}
+
 	return &ingestionLog.ID, log, nil
 }
 
@@ -433,4 +436,39 @@ func deviationToProto(dbDeviation postgres.VDeviation) (*reconcilerpb.Deviation,
 	}
 
 	return deviation, nil
+}
+
+// FindPriorIngestionLogByEntityHash finds a prior deviation with the same entity hash, considering branch context.
+func (r *Repository) FindPriorIngestionLogByEntityHash(ctx context.Context, entityHash string, currentBranch *string) (*int32, *reconcilerpb.IngestionLog, error) {
+	params := postgres.FindPriorIngestionLogByEntityHashParams{
+		EntityHash: pgtype.Text{String: entityHash, Valid: true},
+	}
+	if currentBranch != nil {
+		params.BranchID = pgtype.Text{String: *currentBranch, Valid: true}
+	}
+
+	dbLog, err := r.queries.FindPriorIngestionLogByEntityHash(ctx, params)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	log, err := dbLog.ToProto()
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to convert to proto: %w", err)
+	}
+
+	return &dbLog.ID, log, nil
+}
+
+// IncrementDuplicateCount increments the duplicate count for an ingestion log
+func (r *Repository) IncrementDuplicateCount(ctx context.Context, id int32) error {
+	return r.queries.IncrementDuplicateCount(ctx, id)
+}
+
+// TruncateChangeSets truncates change sets for an ingestion log to the given limit (keeps latest n)
+func (r *Repository) TruncateChangeSets(ctx context.Context, ingestionLogID int32, limit int32) error {
+	return r.queries.TruncateChangeSets(ctx, postgres.TruncateChangeSetsParams{
+		IngestionLogID: ingestionLogID,
+		Limit:          limit,
+	})
 }

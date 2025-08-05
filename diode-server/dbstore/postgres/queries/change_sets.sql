@@ -11,3 +11,14 @@ INSERT INTO changes (external_id, change_set_id, change_type, object_type, objec
                      sequence_number)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 RETURNING *;
+
+-- name: TruncateChangeSets :exec
+DELETE FROM change_sets cs1
+WHERE cs1.ingestion_log_id = $1
+  AND cs1.id NOT IN (
+    SELECT cs2.id
+    FROM change_sets cs2
+    WHERE cs2.ingestion_log_id = $1
+    ORDER BY cs2.id DESC
+    LIMIT $2
+  );

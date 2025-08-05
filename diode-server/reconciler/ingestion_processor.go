@@ -19,6 +19,7 @@ import (
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 	"github.com/netboxlabs/diode/diode-server/gen/netbox"
 	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
+	"github.com/netboxlabs/diode/diode-server/reconciler/ops"
 	"github.com/netboxlabs/diode/diode-server/sentry"
 	"github.com/netboxlabs/diode/diode-server/telemetry"
 )
@@ -76,7 +77,7 @@ type IngestionLogToProcess struct {
 
 // IngestionProcessorOps represents the basic operations that the ingestion processor performs
 type IngestionProcessorOps interface {
-	CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb.IngestionLog, sourceMetadata []byte) (*int32, error)
+	CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb.IngestionLog, sourceMetadata []byte) (*ops.CreateIngestionLogResult, error)
 	GenerateChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, branchID string) (*int32, *changeset.ChangeSet, error)
 	ApplyChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, changeSetID int32, changeSet *changeset.ChangeSet) error
 }
@@ -387,18 +388,36 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 			SourceTs:           v.GetTimestamp().AsTime().UnixNano(),
 		}
 
-		id, err := p.ops.CreateIngestionLog(ctx, ingestionLog, nil)
+		result, err := p.ops.CreateIngestionLog(ctx, ingestionLog, nil)
 		if err != nil {
-			errs = append(errs, fmt.Errorf("failed to create ingestion log: %v", err))
+			errs = append(errs, fmt.Errorf("failed to process ingestion log: %v", err))
 			p.metrics.RecordIngestionLogCreate(ctx, false)
 			continue
 		}
+		ingestionLog = result.IngestionLog
+		id := result.ID
+
+		if !result.WasDuplicate {
+			p.logger.Debug("created new ingestion log", "id", id, "externalID", ingestionLog.GetId())
+		} else {
+			p.logger.Debug("ingested duplicate ingestion log", "id", id, "externalID", ingestionLog.GetId())
+		}
+
+		attrs := []attribute.KeyValue{
+			attribute.Bool(telemetry.AttributeDuplicate, result.WasDuplicate),
+		}
+		ctx = telemetry.ContextWithMetricAttributes(ctx, attrs...)
 
 		p.metrics.RecordIngestionLogCreate(ctx, true)
-		p.logger.Debug("created ingestion log", "id", id, "externalID", ingestionLog.GetId())
 
+		if result.WasDuplicate && result.IngestionLog.State == reconcilerpb.State_IGNORED {
+			p.logger.Debug("skipping ingestion log because it is a duplicate of an ignored ingestion log", "id", id, "externalID", ingestionLog.GetId())
+			continue
+		}
+
+		// otherwise, even if it was a duplicate, reprocess to see if it has been updated
 		generateIngestionLogChan <- IngestionLogToProcess{
-			ingestionLogID: *id,
+			ingestionLogID: id,
 			ingestionLog:   ingestionLog,
 		}
 	}

@@ -130,7 +130,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	ops := reconciler.NewOps(repository, nbClient, s.Logger())
+	ops := reconciler.NewOps(repository, nbClient, s.Logger(), nil)
 
 	ingestionProcessor, err := reconciler.NewIngestionProcessor(ctx, s.Logger(), cfg, redisClient, redisStreamClient, reconciler.DefaultRedisStreamID, reconciler.DefaultRedisConsumerGroup, ops, metricRecorder)
 	if err != nil {

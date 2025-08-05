@@ -2,6 +2,7 @@ package reconciler_test
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -138,7 +139,7 @@ func TestOpsGenerateChangeSet(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepository := mocks.NewRepository(t)
 			mockNetBoxClient := pluginmocks.NewNetBoxAPI(t)
-			ops := reconciler.NewOps(mockRepository, mockNetBoxClient, logger)
+			ops := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil)
 
 			for _, m := range tt.generateDiff {
 				if m.err == nil {
@@ -203,4 +204,135 @@ func strPtrEq(a *string, b *string) bool {
 
 func strPtr(s string) *string {
 	return &s
+}
+
+func TestOpsCreateIngestionLog(t *testing.T) {
+	ctx := context.Background()
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+
+	testEntity := &diodepb.Entity{
+		Entity: &diodepb.Entity_Site{
+			Site: &diodepb.Site{
+				Name: "test-site-1",
+			},
+		},
+	}
+
+	testIngestionLog := &pb.IngestionLog{
+		Id:         "8a8ae517-85b9-466e-890c-aadb0771cc9e",
+		ObjectType: netbox.SiteObjectType,
+		State:      pb.State_QUEUED,
+		RequestId:  "1abf059c-496f-4037-83c2-0e9b1d021e85",
+		Entity:     testEntity,
+	}
+
+	testSourceMetadata := []byte(`{"source": "test"}`)
+
+	type mockCreateIngestionLog struct {
+		id    *int32
+		error error
+	}
+
+	tests := []struct {
+		name string
+
+		ingestionLog   *pb.IngestionLog
+		sourceMetadata []byte
+
+		// Mock expectations
+		mockCreateIngestionLog *mockCreateIngestionLog
+
+		mockFindPriorIngestionLogID    *int32
+		mockFindPriorIngestionLog      *pb.IngestionLog
+		mockFindPriorIngestionLogError error
+
+		expectedError      string
+		expectWasDuplicate bool
+	}{
+		{
+			name:           "no duplicate found - successful creation",
+			ingestionLog:   testIngestionLog,
+			sourceMetadata: testSourceMetadata,
+
+			mockCreateIngestionLog: &mockCreateIngestionLog{
+				id:    int32Ptr(1234),
+				error: nil,
+			},
+			mockFindPriorIngestionLogError: sql.ErrNoRows,
+
+			expectedError:      "",
+			expectWasDuplicate: false,
+		},
+		{
+			name:           "duplicate found",
+			ingestionLog:   testIngestionLog,
+			sourceMetadata: testSourceMetadata,
+
+			mockFindPriorIngestionLogID:    int32Ptr(5678),
+			mockFindPriorIngestionLog:      testIngestionLog,
+			mockFindPriorIngestionLogError: nil,
+
+			expectedError:      "",
+			expectWasDuplicate: true,
+		},
+		{
+			name:           "create ingestion log fails",
+			ingestionLog:   testIngestionLog,
+			sourceMetadata: testSourceMetadata,
+
+			mockCreateIngestionLog: &mockCreateIngestionLog{
+				error: fmt.Errorf("database error"),
+			},
+
+			expectedError:      "database error",
+			expectWasDuplicate: false,
+		},
+		{
+			name:           "duplicate search fails with non-NoRows error",
+			ingestionLog:   testIngestionLog,
+			sourceMetadata: testSourceMetadata,
+
+			mockFindPriorIngestionLogError: fmt.Errorf("database connection error"),
+
+			expectedError: "failed to search for prior deviation: database connection error",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockRepository := mocks.NewRepository(t)
+			mockNetBoxClient := pluginmocks.NewNetBoxAPI(t)
+			opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil)
+
+			mockRepository.EXPECT().FindPriorIngestionLogByEntityHash(mock.Anything, mock.AnythingOfType("string"), (*string)(nil)).
+				Return(tt.mockFindPriorIngestionLogID, tt.mockFindPriorIngestionLog, tt.mockFindPriorIngestionLogError)
+
+			// Mock CreateIngestionLog
+			if tt.mockCreateIngestionLog != nil {
+				mockRepository.EXPECT().CreateIngestionLog(mock.Anything, tt.ingestionLog, tt.sourceMetadata, mock.AnythingOfType("string")).
+					Return(tt.mockCreateIngestionLog.id, tt.mockCreateIngestionLog.error)
+			}
+
+			if tt.expectWasDuplicate {
+				mockRepository.EXPECT().IncrementDuplicateCount(mock.Anything, *tt.mockFindPriorIngestionLogID).Return(nil)
+			}
+
+			result, err := opsInstance.CreateIngestionLog(ctx, tt.ingestionLog, tt.sourceMetadata)
+
+			if tt.expectedError != "" {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), tt.expectedError)
+				return
+			}
+
+			require.NoError(t, err)
+			require.NotNil(t, result)
+			require.NotNil(t, result.IngestionLog)
+			if tt.mockCreateIngestionLog != nil {
+				require.Equal(t, *tt.mockCreateIngestionLog.id, result.ID)
+			}
+			require.Equal(t, tt.ingestionLog, result.IngestionLog)
+			require.Equal(t, tt.expectWasDuplicate, result.WasDuplicate)
+		})
+	}
 }
