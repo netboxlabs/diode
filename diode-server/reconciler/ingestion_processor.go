@@ -156,6 +156,9 @@ func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, redisSt
 			Count:    100,
 		}).Result()
 		if err != nil || len(streams) == 0 {
+			p.logger.WarnContext(ctx, "Failed to read from Redis stream.",
+				"error", err,
+			)
 			select {
 			case <-ctx.Done():
 				p.logger.Debug("ingestion processor exiting consumer loop on request")
