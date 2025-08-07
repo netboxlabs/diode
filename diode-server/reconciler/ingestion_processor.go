@@ -142,27 +142,6 @@ func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, redisSt
 		return err
 	}
 
-	go func() {
-		ticker := time.NewTicker(5 * time.Second)
-		for {
-			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-			select {
-			case <-ctx.Done():
-				cancel()
-				return
-			case <-ticker.C:
-				err := p.redisStreamClient.Ping(ctx).Err()
-				if err != nil {
-					p.logger.ErrorContext(ctx, "Failed to ping Redis stream client.",
-						"error", err,
-					)
-				}
-				cancel()
-			}
-			p.logger.WarnContext(ctx, "Redis stream client ping")
-		}
-	}()
-
 	b := backoff.New(10*time.Second, time.Second)
 	for {
 		select {
@@ -178,9 +157,6 @@ func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, redisSt
 			Count:    100,
 		}).Result()
 		if err != nil || len(streams) == 0 {
-			p.logger.WarnContext(ctx, "Failed to read from Redis stream.",
-				"error", err,
-			)
 			if strings.Contains(err.Error(), "NOGROUP") {
 				err := p.redisStreamClient.XGroupCreateMkStream(ctx, redisStreamID, redisConsumerGroup, "$").Err()
 				if err != nil && err.Error() != RedisConsumerGroupExistsErrMsg {
@@ -195,7 +171,6 @@ func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, redisSt
 				continue
 			}
 		}
-		p.logger.WarnContext(ctx, "Read from Redis stream.")
 		for _, msg := range streams[0].Messages {
 			_, err := p.handleStreamMessage(ctx, msg)
 			if err != nil {
