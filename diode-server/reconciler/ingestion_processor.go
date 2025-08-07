@@ -141,6 +141,26 @@ func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, redisSt
 		return err
 	}
 
+	go func() {
+		ticker := time.NewTicker(5 * time.Second)
+		for {
+			ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+			select {
+			case <-ctx.Done():
+				cancel()
+				return
+			case <-ticker.C:
+				err := p.redisStreamClient.Ping(ctx).Err()
+				if err != nil {
+					p.logger.ErrorContext(ctx, "Failed to ping Redis stream client.",
+						"error", err,
+					)
+				}
+				cancel()
+			}
+		}
+	}()
+
 	b := backoff.New(10*time.Second, time.Second)
 	for {
 		select {
