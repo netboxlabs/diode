@@ -167,6 +167,7 @@ func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, redisSt
 				continue
 			}
 		}
+		p.logger.WarnContext(ctx, "Read from Redis stream.")
 		for _, msg := range streams[0].Messages {
 			_, err := p.handleStreamMessage(ctx, msg)
 			if err != nil {
