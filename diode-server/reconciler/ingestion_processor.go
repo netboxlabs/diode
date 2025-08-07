@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -158,6 +159,7 @@ func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, redisSt
 				}
 				cancel()
 			}
+			p.logger.WarnContext(ctx, "Redis stream client ping")
 		}
 	}()
 
@@ -179,6 +181,12 @@ func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, redisSt
 			p.logger.WarnContext(ctx, "Failed to read from Redis stream.",
 				"error", err,
 			)
+			if strings.Contains(err.Error(), "NOGROUP") {
+				err := p.redisStreamClient.XGroupCreateMkStream(ctx, redisStreamID, redisConsumerGroup, "$").Err()
+				if err != nil && err.Error() != RedisConsumerGroupExistsErrMsg {
+					p.logger.Debug("Failed to recreate Redis consumer group.")
+				}
+			}
 			select {
 			case <-ctx.Done():
 				p.logger.Debug("ingestion processor exiting consumer loop on request")
