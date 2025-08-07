@@ -171,6 +171,8 @@ func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, redisSt
 				continue
 			}
 		}
+		b.Reset()
+
 		for _, msg := range streams[0].Messages {
 			_, err := p.handleStreamMessage(ctx, msg)
 			if err != nil {
