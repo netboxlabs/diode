@@ -7,8 +7,11 @@ import (
 	"log/slog"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
+	"time"
 
+	"github.com/cloudflare/backoff"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"go.opentelemetry.io/otel/attribute"
@@ -140,6 +143,7 @@ func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, redisSt
 		return err
 	}
 
+	b := backoff.New(10*time.Second, time.Second)
 	for {
 		select {
 		case <-ctx.Done():
@@ -154,8 +158,22 @@ func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, redisSt
 			Count:    100,
 		}).Result()
 		if err != nil || len(streams) == 0 {
-			continue
+			if strings.Contains(err.Error(), "NOGROUP") {
+				err := p.redisStreamClient.XGroupCreateMkStream(ctx, redisStreamID, redisConsumerGroup, "$").Err()
+				if err != nil && err.Error() != RedisConsumerGroupExistsErrMsg {
+					p.logger.Debug("Failed to recreate Redis consumer group.")
+				}
+			}
+			select {
+			case <-ctx.Done():
+				p.logger.Debug("ingestion processor exiting consumer loop on request")
+				return nil
+			case <-time.After(b.Duration()):
+				continue
+			}
 		}
+		b.Reset()
+
 		for _, msg := range streams[0].Messages {
 			_, err := p.handleStreamMessage(ctx, msg)
 			if err != nil {
