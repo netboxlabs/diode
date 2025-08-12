@@ -10,13 +10,13 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/redis/go-redis/v9"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/metric"
 	"google.golang.org/grpc"
 
 	"github.com/netboxlabs/diode/diode-server/authutil"
 	"github.com/netboxlabs/diode/diode-server/ingester"
 	"github.com/netboxlabs/diode/diode-server/server"
 	"github.com/netboxlabs/diode/diode-server/telemetry"
+	"github.com/netboxlabs/diode/diode-server/version"
 )
 
 const (
@@ -24,12 +24,11 @@ const (
 
 	// used by open telemetry metrics
 	telemetryServiceName = "netboxlabs/diode/ingester"
-	metricStartup        = "netboxlabs/diode/ingester/startup_count"
 )
 
 func main() {
 	ctx := context.Background()
-	s := server.New(ctx, applicationName)
+	s := server.New(ctx, applicationName, version.Release())
 
 	defer s.Recover(sentry.CurrentHub())
 
@@ -54,13 +53,13 @@ func main() {
 	}()
 
 	meter := otel.GetMeterProvider().Meter(telemetryServiceName)
-	startupCounter, err := meter.Int64Counter(metricStartup,
-		metric.WithDescription("Number of times the ingester service has started"))
+	metricRecorder, err := ingester.NewMetricRecorder(meter, cfg.Telemetry.Environment)
 	if err != nil {
-		s.Logger().Error("failed to create startup metric", "error", err)
+		s.Logger().Error("failed to create ingester metrics", "error", err)
 		os.Exit(1)
 	}
-	startupCounter.Add(ctx, 1)
+
+	metricRecorder.SetServiceInfo(ctx, fmt.Sprintf("%s.%s", version.GetBuildVersion(), version.GetBuildCommit()))
 
 	redisStreamClient := redis.NewClient(&redis.Options{
 		Addr:     fmt.Sprintf("%s:%s", cfg.RedisHost, cfg.RedisPort),
@@ -70,26 +69,32 @@ func main() {
 
 	if _, err := redisStreamClient.Ping(ctx).Result(); err != nil {
 		s.Logger().Error("failed to connect to redis stream", "redisStream", redisStreamClient.String(), "error", err)
+		metricRecorder.RecordServiceStartupAttempt(ctx, false)
 		os.Exit(1)
 	}
 
 	streamRouter := &ingester.DefaultStreamRouter{}
 	authorizer := authutil.NewContextAuthorizer(s.Logger())
-	ingesterComponent, err := ingester.New(ctx, s.Logger(), cfg, redisStreamClient, meter, streamRouter, serverInterceptors(authorizer, s.Logger())...)
+	ingesterComponent, err := ingester.New(ctx, s.Logger(), cfg, redisStreamClient, metricRecorder, streamRouter, serverInterceptors(authorizer, s.Logger())...)
 	if err != nil {
 		s.Logger().Error("failed to instantiate ingester component", "error", err)
+		metricRecorder.RecordServiceStartupAttempt(ctx, false)
 		os.Exit(1)
 	}
 
 	if err := s.RegisterComponent(ingesterComponent); err != nil {
 		s.Logger().Error("failed to register ingester component", "error", err)
+		metricRecorder.RecordServiceStartupAttempt(ctx, false)
 		os.Exit(1)
 	}
 
 	telemetry.ServePrometheusMetricsIfNecessary(cfg.Telemetry, s.Logger())
 
+	metricRecorder.RecordServiceStartupAttempt(ctx, true)
+
 	if err := s.Run(); err != nil {
 		s.Logger().Error("server failure", "serverName", s.Name(), "error", err)
+		metricRecorder.RecordServiceStartupAttempt(ctx, false)
 		os.Exit(1)
 	}
 }

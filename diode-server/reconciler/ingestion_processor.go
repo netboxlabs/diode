@@ -7,10 +7,12 @@ import (
 	"log/slog"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
+	"time"
 
+	"github.com/cloudflare/backoff"
 	"github.com/google/uuid"
-	"github.com/kelseyhightower/envconfig"
 	"github.com/redis/go-redis/v9"
 	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/time/rate"
@@ -20,6 +22,7 @@ import (
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 	"github.com/netboxlabs/diode/diode-server/gen/netbox"
 	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
+	"github.com/netboxlabs/diode/diode-server/reconciler/ops"
 	"github.com/netboxlabs/diode/diode-server/sentry"
 	"github.com/netboxlabs/diode/diode-server/telemetry"
 )
@@ -62,7 +65,7 @@ type IngestionProcessor struct {
 	redisStreamID      string
 	redisConsumerGroup string
 	ops                IngestionProcessorOps
-	metrics            IngestionProcessorMetrics
+	metrics            Metrics
 	cancel             context.CancelFunc
 	mx                 sync.Mutex
 }
@@ -77,24 +80,13 @@ type IngestionLogToProcess struct {
 
 // IngestionProcessorOps represents the basic operations that the ingestion processor performs
 type IngestionProcessorOps interface {
-	CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb.IngestionLog, sourceMetadata []byte) (*int32, error)
+	CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb.IngestionLog, sourceMetadata []byte) (*ops.CreateIngestionLogResult, error)
 	GenerateChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, branchID string) (*int32, *changeset.ChangeSet, error)
 	ApplyChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, changeSetID int32, changeSet *changeset.ChangeSet) error
 }
 
-// IngestionProcessorMetrics represents the metrics collecteingestion processor
-type IngestionProcessorMetrics interface {
-	RecordHandleMessage(ctx context.Context, success bool)
-	RecordIngestionLogCreate(ctx context.Context, success bool)
-	RecordChangeSetCreate(ctx context.Context, success bool, changes int64)
-	RecordChangeSetApply(ctx context.Context, success bool, changes int64)
-}
-
 // NewIngestionProcessor creates a new ingestion processor
-func NewIngestionProcessor(_ context.Context, logger *slog.Logger, redisClient, redisStreamClient RedisClient, redisStreamID string, redisConsumerGroup string, ops IngestionProcessorOps, metrics IngestionProcessorMetrics) (*IngestionProcessor, error) {
-	var cfg Config
-	envconfig.MustProcess("", &cfg)
-
+func NewIngestionProcessor(_ context.Context, logger *slog.Logger, cfg Config, redisClient, redisStreamClient RedisClient, redisStreamID string, redisConsumerGroup string, ops IngestionProcessorOps, metrics Metrics) (*IngestionProcessor, error) {
 	hostname, err := os.Hostname()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get hostname: %v", err)
@@ -151,6 +143,7 @@ func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, redisSt
 		return err
 	}
 
+	b := backoff.New(10*time.Second, time.Second)
 	for {
 		select {
 		case <-ctx.Done():
@@ -165,8 +158,22 @@ func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, redisSt
 			Count:    100,
 		}).Result()
 		if err != nil || len(streams) == 0 {
-			continue
+			if strings.Contains(err.Error(), "NOGROUP") {
+				err := p.redisStreamClient.XGroupCreateMkStream(ctx, redisStreamID, redisConsumerGroup, "$").Err()
+				if err != nil && err.Error() != RedisConsumerGroupExistsErrMsg {
+					p.logger.Debug("Failed to recreate Redis consumer group.")
+				}
+			}
+			select {
+			case <-ctx.Done():
+				p.logger.Debug("ingestion processor exiting consumer loop on request")
+				return nil
+			case <-time.After(b.Duration()):
+				continue
+			}
 		}
+		b.Reset()
+
 		for _, msg := range streams[0].Messages {
 			_, err := p.handleStreamMessage(ctx, msg)
 			if err != nil {
@@ -399,18 +406,36 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 			SourceTs:           v.GetTimestamp().AsTime().UnixNano(),
 		}
 
-		id, err := p.ops.CreateIngestionLog(ctx, ingestionLog, nil)
+		result, err := p.ops.CreateIngestionLog(ctx, ingestionLog, nil)
 		if err != nil {
-			errs = append(errs, fmt.Errorf("failed to create ingestion log: %v", err))
+			errs = append(errs, fmt.Errorf("failed to process ingestion log: %v", err))
 			p.metrics.RecordIngestionLogCreate(ctx, false)
 			continue
 		}
+		ingestionLog = result.IngestionLog
+		id := result.ID
+
+		if !result.WasDuplicate {
+			p.logger.Debug("created new ingestion log", "id", id, "externalID", ingestionLog.GetId())
+		} else {
+			p.logger.Debug("ingested duplicate ingestion log", "id", id, "externalID", ingestionLog.GetId())
+		}
+
+		attrs := []attribute.KeyValue{
+			attribute.Bool(telemetry.AttributeDuplicate, result.WasDuplicate),
+		}
+		ctx = telemetry.ContextWithMetricAttributes(ctx, attrs...)
 
 		p.metrics.RecordIngestionLogCreate(ctx, true)
-		p.logger.Debug("created ingestion log", "id", id, "externalID", ingestionLog.GetId())
 
+		if result.WasDuplicate && result.IngestionLog.State == reconcilerpb.State_IGNORED {
+			p.logger.Debug("skipping ingestion log because it is a duplicate of an ignored ingestion log", "id", id, "externalID", ingestionLog.GetId())
+			continue
+		}
+
+		// otherwise, even if it was a duplicate, reprocess to see if it has been updated
 		generateIngestionLogChan <- IngestionLogToProcess{
-			ingestionLogID: *id,
+			ingestionLogID: id,
 			ingestionLog:   ingestionLog,
 		}
 	}

@@ -20,8 +20,8 @@ import (
 // Setup initializes OpenTelemetry with the provided configuration
 // Returns a shutdown function to clean up resources that should be called
 // when the application is shutting down.
-// The OLTP exporters can be further configured using the environment variables
-// specified in the OLTP documentation.
+// The OTLP exporters can be further configured using the environment variables
+// specified in the OTLP documentation.
 func Setup(ctx context.Context, cfg Config) (shutdown func(context.Context) error, err error) {
 	res, err := resource.New(ctx,
 		resource.WithAttributes(
@@ -41,7 +41,7 @@ func Setup(ctx context.Context, cfg Config) (shutdown func(context.Context) erro
 		if err != nil {
 			return nil, fmt.Errorf("failed to create console trace exporter: %w", err)
 		}
-	case "oltp":
+	case "otlp":
 		traceExporter, err = otlptracegrpc.New(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create trace exporter: %w", err)
@@ -61,7 +61,7 @@ func Setup(ctx context.Context, cfg Config) (shutdown func(context.Context) erro
 			return nil, fmt.Errorf("failed to create console metric exporter: %w", err)
 		}
 		metricReader = sdkmetric.NewPeriodicReader(metricExporter)
-	case "oltp":
+	case "otlp":
 		metricExporter, err := otlpmetricgrpc.New(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create metric exporter: %w", err)

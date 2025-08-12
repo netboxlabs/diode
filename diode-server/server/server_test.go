@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/netboxlabs/diode/diode-server/server"
+	"github.com/netboxlabs/diode/diode-server/version"
 )
 
 func TestNewServer(t *testing.T) {
@@ -89,7 +90,7 @@ func TestNewServer(t *testing.T) {
 			err = os.Setenv("SENTRY_DSN", tt.sentryDSN)
 			require.NoError(t, err)
 
-			s := server.New(ctx, tt.serverName)
+			s := server.New(ctx, tt.serverName, version.Release())
 
 			assert.Equal(t, tt.serverName, s.Name())
 			require.NotNil(t, s.Logger())
@@ -126,7 +127,7 @@ func TestRegisterComponent(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			ctx := context.Background()
-			s := server.New(ctx, "diode-test-server")
+			s := server.New(ctx, "diode-test-server", version.Release())
 
 			var err error
 			for i := 0; i < tt.registrationsNum; i++ {
@@ -162,7 +163,7 @@ func TestRun(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
 			ctx := context.Background()
-			s := server.New(ctx, "diode-test-server")
+			s := server.New(ctx, "diode-test-server", version.Release())
 
 			require.NoError(t, s.RegisterComponent(tt.component))
 			err := s.Run()

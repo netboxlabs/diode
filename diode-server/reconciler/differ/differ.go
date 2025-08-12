@@ -63,43 +63,65 @@ func Diff(ctx context.Context, entity IngestEntity, branchID string, netboxAPI n
 	return cs, nil
 }
 
-func genDeviationName(objects []changeset.Change, objectType string) *string {
-	if len(objects) == 0 {
-		typeName, err := netbox.GetObjectTypeName(objectType)
-		if err != nil {
-			deviationName := fmt.Sprintf("Unknown %s discovered", objectType)
-			return &deviationName
+// FindPrimaryChange attempts to find the earliest change that refers to the primary object.
+func FindPrimaryChange(changes []changeset.Change, objectType string) *changeset.Change {
+	// The main complexity is that there is no identifier that binds the entities to the
+	// changes that are about them.  Additionally, a change may create an entity, then a later
+	// change may update it (this should still be considered a discovery/create).
+
+	firstRefID := make(map[string]*changeset.Change)
+	for _, change := range changes {
+		if change.ObjectType == objectType && change.RefID != nil {
+			if _, ok := firstRefID[*change.RefID]; !ok {
+				firstRefID[*change.RefID] = &change
+			}
 		}
+	}
+
+	for i := len(changes) - 1; i >= 0; i-- {
+		change := &changes[i]
+		if change.ObjectType == objectType {
+			// if the object was created in a previous change in the change set
+			if change.RefID != nil {
+				// return the change that created it.
+				return firstRefID[*change.RefID]
+			}
+			// update to a specific existing object
+			return change
+		}
+	}
+	return nil
+}
+
+func genDeviationName(changes []changeset.Change, objectType string) *string {
+	typeName, err := netbox.GetObjectTypeName(objectType)
+	if err != nil {
+		typeName = objectType
+	}
+
+	primaryChange := FindPrimaryChange(changes, objectType)
+	if primaryChange == nil {
 		deviationName := fmt.Sprintf("%s unchanged", typeName)
 		return &deviationName
 	}
 
-	primaryObject := objects[len(objects)-1]
-	objectTypeName, err := netbox.GetObjectTypeName(primaryObject.ObjectType)
-	if err != nil {
-		objectTypeName = "<unrecognized type " + primaryObject.ObjectType + ">"
+	deviationName := typeName
+	if primaryChange.ObjectPrimaryValue != "" {
+		deviationName += " " + primaryChange.ObjectPrimaryValue
 	}
 
-	deviationName := fmt.Sprintf("%s %s", objectTypeName, primaryObject.ObjectPrimaryValue)
-
-	switch primaryObject.ChangeType {
+	switch primaryChange.ChangeType {
 	case changeset.ChangeTypeUpdate:
-		if primaryObject.RefID != nil {
-			// this is an update of a new object created
-			// earlier in the change set (ref id)
-			deviationName += " created"
-		} else {
-			deviationName += " modified"
-		}
+		deviationName += " modified"
 	case changeset.ChangeTypeCreate:
-		deviationName += " created"
+		deviationName += " discovered"
 	case changeset.ChangeTypeNoop:
-		// TODO: this means some subbordinate object was modified,
+		// TODO: this means some subbordinate or related object was modified,
 		// but the primary object itself was not modified.
 		// for now we consider this a modification of the primary object.
 		deviationName += " modified"
 	default:
-		deviationName += " (unrecognized change type " + primaryObject.ChangeType + ")"
+		deviationName += " (unrecognized change type " + primaryChange.ChangeType + ")"
 	}
 
 	return &deviationName
@@ -109,18 +131,18 @@ func deviationNameForDiffFailure(entity IngestEntity) string {
 	objectType := entity.ObjectType
 	objectTypeName, err := netbox.GetObjectTypeName(objectType)
 	if err != nil {
-		return fmt.Sprintf("Unknown %s discovered", objectType)
+		return fmt.Sprintf("Unresolved %s reported", objectType)
 	}
 
 	if e, ok := entity.Entity.(*diodepb.Entity); ok {
 		primaryValue, err := netbox.GetPrimaryValue(e)
 		if err != nil {
-			return fmt.Sprintf("Unknown %s discovered", objectType)
+			return fmt.Sprintf("Unresolved %s reported", objectType)
 		}
-		return fmt.Sprintf("%s %s discovered", objectTypeName, primaryValue)
+		return fmt.Sprintf("%s %s reported", objectTypeName, primaryValue)
 	}
 
-	return fmt.Sprintf("Unknown %s discovered", objectType)
+	return fmt.Sprintf("Unresolved %s reported", objectType)
 }
 
 // FailedDiffChangeSet generates a placeholder change set for a failed diff

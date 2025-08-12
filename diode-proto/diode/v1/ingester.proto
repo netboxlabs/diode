@@ -1,8 +1,8 @@
 syntax = "proto3";
 
 // Generated Code. DO NOT EDIT.
-// Source: NetBox Community v4.2.3
-// Timestamp: 2025-04-10 14:44:18Z
+// Source: NetBox v4.3.4
+// Timestamp: 2025-07-23 01:46:42Z
 
 package diode.v1;
 
@@ -107,6 +107,11 @@ message Entity {
     WirelessLAN wireless_lan = 87;
     WirelessLANGroup wireless_lan_group = 88;
     WirelessLink wireless_link = 89;
+    CustomField custom_field = 90;
+    CustomFieldChoiceSet custom_field_choice_set = 91;
+    JournalEntry journal_entry = 92;
+    ModuleTypeProfile module_type_profile = 93;
+    CustomLink custom_link = 94;
   }
 }
 
@@ -490,7 +495,7 @@ message ConsoleServerPort {
 }
 
 message Contact {
-  optional ContactGroup group = 1;
+  optional ContactGroup group = 1 [deprecated = true];
   string name = 2;
   optional string title = 3;
   optional string phone = 4;
@@ -501,6 +506,7 @@ message Contact {
   optional string comments = 9;
   repeated Tag tags = 10;
   map<string, CustomFieldValue> custom_fields = 11;
+  repeated ContactGroup groups = 12;
 }
 
 message ContactAssignment {
@@ -593,6 +599,11 @@ message ContactAssignment {
     WirelessLAN object_wireless_lan = 86;
     WirelessLANGroup object_wireless_lan_group = 87;
     WirelessLink object_wireless_link = 88;
+    CustomField object_custom_field = 94;
+    CustomFieldChoiceSet object_custom_field_choice_set = 95;
+    JournalEntry object_journal_entry = 96;
+    ModuleTypeProfile object_module_type_profile = 97;
+    CustomLink object_custom_link = 98;
   }
   Contact contact = 89;
   optional ContactRole role = 90;
@@ -615,6 +626,7 @@ message ContactGroup {
   optional string description = 4;
   repeated Tag tags = 5;
   map<string, CustomFieldValue> custom_fields = 6;
+  optional string comments = 7;
 }
 
 message ContactRole {
@@ -715,6 +727,11 @@ message CustomFieldObjectReference {
     WirelessLAN wireless_lan = 86;
     WirelessLANGroup wireless_lan_group = 87;
     WirelessLink wireless_link = 88;
+    CustomField custom_field = 89;
+    CustomFieldChoiceSet custom_field_choice_set = 90;
+    JournalEntry journal_entry = 91;
+    ModuleTypeProfile module_type_profile = 92;
+    CustomLink custom_link = 93;
   }
 }
 
@@ -812,6 +829,8 @@ message DeviceRole {
   optional string description = 5;
   repeated Tag tags = 6;
   map<string, CustomFieldValue> custom_fields = 7;
+  optional DeviceRole parent = 8;
+  optional string comments = 9;
 }
 
 message DeviceType {
@@ -976,6 +995,11 @@ message FHRPGroupAssignment {
     WirelessLAN interface_wireless_lan = 87;
     WirelessLANGroup interface_wireless_lan_group = 88;
     WirelessLink interface_wireless_link = 89;
+    CustomField interface_custom_field = 91;
+    CustomFieldChoiceSet interface_custom_field_choice_set = 92;
+    JournalEntry interface_journal_entry = 93;
+    ModuleTypeProfile interface_module_type_profile = 94;
+    CustomLink interface_custom_link = 95;
   }
   int64 priority = 90;
 }
@@ -1001,6 +1025,9 @@ message FrontPort {
       "cs",
       "f",
       "fc",
+      "fc-apc",
+      "fc-pc",
+      "fc-upc",
       "gg45",
       "lc",
       "lc-apc",
@@ -1143,6 +1170,11 @@ message GenericObject {
     WirelessLAN object_wireless_lan = 86;
     WirelessLANGroup object_wireless_lan_group = 87;
     WirelessLink object_wireless_link = 88;
+    CustomField object_custom_field = 89;
+    CustomFieldChoiceSet object_custom_field_choice_set = 90;
+    JournalEntry object_journal_entry = 91;
+    ModuleTypeProfile object_module_type_profile = 92;
+    CustomLink object_custom_link = 93;
   }
 }
 
@@ -1290,6 +1322,7 @@ message IPRange {
   repeated Tag tags = 9;
   optional bool mark_utilized = 10;
   map<string, CustomFieldValue> custom_fields = 11;
+  optional bool mark_populated = 12;
 }
 
 message IPSecPolicy {
@@ -1385,6 +1418,7 @@ message Interface {
     in: [
       "1000base-kx",
       "1000base-lx",
+      "1000base-sx",
       "1000base-t",
       "1000base-tx",
       "1000base-x-gbic",
@@ -1497,6 +1531,7 @@ message Interface {
       "juniper-vcp",
       "lag",
       "lte",
+      "moca",
       "ng-pon2",
       "other",
       "other-wireless",
@@ -1839,6 +1874,7 @@ message L2VPN {
       "evpn-vpws",
       "mpls-evpn",
       "pbb-evpn",
+      "spb",
       "vpls",
       "vpws",
       "vxlan",
@@ -1852,6 +1888,13 @@ message L2VPN {
   map<string, CustomFieldValue> custom_fields = 9;
   repeated RouteTarget import_targets = 10;
   repeated RouteTarget export_targets = 11;
+  optional string status = 12 [(validate.rules).string = {
+    in: [
+      "active",
+      "decommissioning",
+      "planned"
+    ]
+  }];
 }
 
 message L2VPNTermination {
@@ -1860,6 +1903,96 @@ message L2VPNTermination {
     Interface assigned_object_interface = 2;
     VLAN assigned_object_vlan = 3;
     VMInterface assigned_object_vm_interface = 4;
+    ASN assigned_object_asn = 7;
+    ASNRange assigned_object_asn_range = 8;
+    Aggregate assigned_object_aggregate = 9;
+    Cable assigned_object_cable = 10;
+    CablePath assigned_object_cable_path = 11;
+    CableTermination assigned_object_cable_termination = 12;
+    Circuit assigned_object_circuit = 13;
+    CircuitGroup assigned_object_circuit_group = 14;
+    CircuitGroupAssignment assigned_object_circuit_group_assignment = 15;
+    CircuitTermination assigned_object_circuit_termination = 16;
+    CircuitType assigned_object_circuit_type = 17;
+    Cluster assigned_object_cluster = 18;
+    ClusterGroup assigned_object_cluster_group = 19;
+    ClusterType assigned_object_cluster_type = 20;
+    ConsolePort assigned_object_console_port = 21;
+    ConsoleServerPort assigned_object_console_server_port = 22;
+    Contact assigned_object_contact = 23;
+    ContactAssignment assigned_object_contact_assignment = 24;
+    ContactGroup assigned_object_contact_group = 25;
+    ContactRole assigned_object_contact_role = 26;
+    CustomField assigned_object_custom_field = 27;
+    CustomFieldChoiceSet assigned_object_custom_field_choice_set = 28;
+    Device assigned_object_device = 29;
+    DeviceBay assigned_object_device_bay = 30;
+    DeviceRole assigned_object_device_role = 31;
+    DeviceType assigned_object_device_type = 32;
+    FHRPGroup assigned_object_fhrp_group = 33;
+    FHRPGroupAssignment assigned_object_fhrp_group_assignment = 34;
+    FrontPort assigned_object_front_port = 35;
+    IKEPolicy assigned_object_ike_policy = 36;
+    IKEProposal assigned_object_ike_proposal = 37;
+    IPAddress assigned_object_ip_address = 38;
+    IPRange assigned_object_ip_range = 39;
+    IPSecPolicy assigned_object_ip_sec_policy = 40;
+    IPSecProfile assigned_object_ip_sec_profile = 41;
+    IPSecProposal assigned_object_ip_sec_proposal = 42;
+    InventoryItem assigned_object_inventory_item = 43;
+    InventoryItemRole assigned_object_inventory_item_role = 44;
+    JournalEntry assigned_object_journal_entry = 45;
+    L2VPN assigned_object_l2vpn = 46;
+    L2VPNTermination assigned_object_l2vpn_termination = 47;
+    Location assigned_object_location = 48;
+    MACAddress assigned_object_mac_address = 49;
+    Manufacturer assigned_object_manufacturer = 50;
+    Module assigned_object_module = 51;
+    ModuleBay assigned_object_module_bay = 52;
+    ModuleType assigned_object_module_type = 53;
+    ModuleTypeProfile assigned_object_module_type_profile = 54;
+    Platform assigned_object_platform = 55;
+    PowerFeed assigned_object_power_feed = 56;
+    PowerOutlet assigned_object_power_outlet = 57;
+    PowerPanel assigned_object_power_panel = 58;
+    PowerPort assigned_object_power_port = 59;
+    Prefix assigned_object_prefix = 60;
+    Provider assigned_object_provider = 61;
+    ProviderAccount assigned_object_provider_account = 62;
+    ProviderNetwork assigned_object_provider_network = 63;
+    RIR assigned_object_rir = 64;
+    Rack assigned_object_rack = 65;
+    RackReservation assigned_object_rack_reservation = 66;
+    RackRole assigned_object_rack_role = 67;
+    RackType assigned_object_rack_type = 68;
+    RearPort assigned_object_rear_port = 69;
+    Region assigned_object_region = 70;
+    Role assigned_object_role = 71;
+    RouteTarget assigned_object_route_target = 72;
+    Service assigned_object_service = 73;
+    Site assigned_object_site = 74;
+    SiteGroup assigned_object_site_group = 75;
+    Tag assigned_object_tag = 76;
+    Tenant assigned_object_tenant = 77;
+    TenantGroup assigned_object_tenant_group = 78;
+    Tunnel assigned_object_tunnel = 79;
+    TunnelGroup assigned_object_tunnel_group = 80;
+    TunnelTermination assigned_object_tunnel_termination = 81;
+    VLANGroup assigned_object_vlan_group = 82;
+    VLANTranslationPolicy assigned_object_vlan_translation_policy = 83;
+    VLANTranslationRule assigned_object_vlan_translation_rule = 84;
+    VRF assigned_object_vrf = 85;
+    VirtualChassis assigned_object_virtual_chassis = 86;
+    VirtualCircuit assigned_object_virtual_circuit = 87;
+    VirtualCircuitTermination assigned_object_virtual_circuit_termination = 88;
+    VirtualCircuitType assigned_object_virtual_circuit_type = 89;
+    VirtualDeviceContext assigned_object_virtual_device_context = 90;
+    VirtualDisk assigned_object_virtual_disk = 91;
+    VirtualMachine assigned_object_virtual_machine = 92;
+    WirelessLAN assigned_object_wireless_lan = 93;
+    WirelessLANGroup assigned_object_wireless_lan_group = 94;
+    WirelessLink assigned_object_wireless_link = 95;
+    CustomLink assigned_object_custom_link = 96;
   }
   repeated Tag tags = 5;
   map<string, CustomFieldValue> custom_fields = 6;
@@ -1884,6 +2017,7 @@ message Location {
   optional string description = 8;
   repeated Tag tags = 9;
   map<string, CustomFieldValue> custom_fields = 10;
+  optional string comments = 11;
 }
 
 message MACAddress {
@@ -1967,6 +2101,8 @@ message ModuleType {
   optional string comments = 8;
   repeated Tag tags = 9;
   map<string, CustomFieldValue> custom_fields = 10;
+  optional ModuleTypeProfile profile = 11;
+  optional string attributes = 12;
 }
 
 message Platform {
@@ -2139,6 +2275,13 @@ message PowerOutlet {
   optional bool mark_connected = 10;
   repeated Tag tags = 11;
   map<string, CustomFieldValue> custom_fields = 12;
+  optional string status = 13 [(validate.rules).string = {
+    in: [
+      "disabled",
+      "enabled",
+      "faulty"
+    ]
+  }];
 }
 
 message PowerPanel {
@@ -2410,6 +2553,7 @@ message Rack {
   optional string comments = 25;
   repeated Tag tags = 26;
   map<string, CustomFieldValue> custom_fields = 27;
+  optional int64 outer_height = 28;
 }
 
 message RackReservation {
@@ -2480,6 +2624,7 @@ message RackType {
   optional string comments = 17;
   repeated Tag tags = 18;
   map<string, CustomFieldValue> custom_fields = 19;
+  optional int64 outer_height = 20;
 }
 
 message RearPort {
@@ -2503,6 +2648,9 @@ message RearPort {
       "cs",
       "f",
       "fc",
+      "fc-apc",
+      "fc-pc",
+      "fc-upc",
       "gg45",
       "lc",
       "lc-apc",
@@ -2561,6 +2709,7 @@ message Region {
   optional string description = 4;
   repeated Tag tags = 5;
   map<string, CustomFieldValue> custom_fields = 6;
+  optional string comments = 7;
 }
 
 message Role {
@@ -2582,8 +2731,8 @@ message RouteTarget {
 }
 
 message Service {
-  optional Device device = 1;
-  optional VirtualMachine virtual_machine = 2;
+  optional Device device = 1 [deprecated = true];
+  optional VirtualMachine virtual_machine = 2 [deprecated = true];
   string name = 3;
   optional string protocol = 4 [(validate.rules).string = {
     in: [
@@ -2598,6 +2747,11 @@ message Service {
   repeated Tag tags = 8;
   map<string, CustomFieldValue> custom_fields = 9;
   repeated IPAddress ipaddresses = 10;
+  oneof parent_object {
+    Device parent_object_device = 11;
+    FHRPGroup parent_object_fhrp_group = 12;
+    VirtualMachine parent_object_virtual_machine = 13;
+  }
 }
 
 message Site {
@@ -2635,12 +2789,105 @@ message SiteGroup {
   optional string description = 4;
   repeated Tag tags = 5;
   map<string, CustomFieldValue> custom_fields = 6;
+  optional string comments = 7;
 }
 
 message Tag {
   string name = 1;
   string slug = 2;
   optional string color = 3;
+  optional string description = 4;
+  optional int64 weight = 5;
+  repeated string object_types = 6 [(validate.rules).repeated.items.string = {
+    in: [
+      "circuits.circuit",
+      "circuits.circuitgroup",
+      "circuits.circuitgroupassignment",
+      "circuits.circuittermination",
+      "circuits.circuittype",
+      "circuits.provider",
+      "circuits.provideraccount",
+      "circuits.providernetwork",
+      "circuits.virtualcircuit",
+      "circuits.virtualcircuittermination",
+      "circuits.virtualcircuittype",
+      "dcim.cable",
+      "dcim.consoleport",
+      "dcim.consoleserverport",
+      "dcim.device",
+      "dcim.devicebay",
+      "dcim.devicerole",
+      "dcim.devicetype",
+      "dcim.frontport",
+      "dcim.interface",
+      "dcim.inventoryitem",
+      "dcim.inventoryitemrole",
+      "dcim.location",
+      "dcim.macaddress",
+      "dcim.manufacturer",
+      "dcim.module",
+      "dcim.modulebay",
+      "dcim.moduletype",
+      "dcim.moduletypeprofile",
+      "dcim.platform",
+      "dcim.powerfeed",
+      "dcim.poweroutlet",
+      "dcim.powerpanel",
+      "dcim.powerport",
+      "dcim.rack",
+      "dcim.rackreservation",
+      "dcim.rackrole",
+      "dcim.racktype",
+      "dcim.rearport",
+      "dcim.region",
+      "dcim.site",
+      "dcim.sitegroup",
+      "dcim.virtualchassis",
+      "dcim.virtualdevicecontext",
+      "extras.journalentry",
+      "ipam.aggregate",
+      "ipam.asn",
+      "ipam.asnrange",
+      "ipam.fhrpgroup",
+      "ipam.ipaddress",
+      "ipam.iprange",
+      "ipam.prefix",
+      "ipam.rir",
+      "ipam.role",
+      "ipam.routetarget",
+      "ipam.service",
+      "ipam.vlan",
+      "ipam.vlangroup",
+      "ipam.vlantranslationpolicy",
+      "ipam.vlantranslationrule",
+      "ipam.vrf",
+      "tenancy.contact",
+      "tenancy.contactassignment",
+      "tenancy.contactgroup",
+      "tenancy.contactrole",
+      "tenancy.tenant",
+      "tenancy.tenantgroup",
+      "virtualization.cluster",
+      "virtualization.clustergroup",
+      "virtualization.clustertype",
+      "virtualization.virtualdisk",
+      "virtualization.virtualmachine",
+      "virtualization.vminterface",
+      "vpn.ikepolicy",
+      "vpn.ikeproposal",
+      "vpn.ipsecpolicy",
+      "vpn.ipsecprofile",
+      "vpn.ipsecproposal",
+      "vpn.l2vpn",
+      "vpn.l2vpntermination",
+      "vpn.tunnel",
+      "vpn.tunnelgroup",
+      "vpn.tunneltermination",
+      "wireless.wirelesslan",
+      "wireless.wirelesslangroup",
+      "wireless.wirelesslink"
+    ]
+  }];
 }
 
 message Tenant {
@@ -2660,6 +2907,7 @@ message TenantGroup {
   optional string description = 4;
   repeated Tag tags = 5;
   map<string, CustomFieldValue> custom_fields = 6;
+  optional string comments = 7;
 }
 
 message Tunnel {
@@ -2799,6 +3047,11 @@ message TunnelTermination {
     WirelessLAN termination_wireless_lan = 88;
     WirelessLANGroup termination_wireless_lan_group = 89;
     WirelessLink termination_wireless_link = 90;
+    CustomField termination_custom_field = 94;
+    CustomFieldChoiceSet termination_custom_field_choice_set = 95;
+    JournalEntry termination_journal_entry = 96;
+    ModuleTypeProfile termination_module_type_profile = 97;
+    CustomLink termination_custom_link = 98;
   }
   optional IPAddress outside_ip = 91;
   repeated Tag tags = 92;
@@ -2848,6 +3101,7 @@ message VLANGroup {
   optional string description = 11;
   repeated Tag tags = 12;
   map<string, CustomFieldValue> custom_fields = 13;
+  optional Tenant tenant = 14;
 }
 
 message VLANTranslationPolicy {
@@ -2994,6 +3248,7 @@ message VirtualMachine {
       "decommissioning",
       "failed",
       "offline",
+      "paused",
       "planned",
       "staged"
     ]
@@ -3064,6 +3319,7 @@ message WirelessLANGroup {
   optional string description = 4;
   repeated Tag tags = 5;
   map<string, CustomFieldValue> custom_fields = 6;
+  optional string comments = 7;
 }
 
 message WirelessLink {
@@ -3107,4 +3363,497 @@ message WirelessLink {
   optional string comments = 12;
   repeated Tag tags = 13;
   map<string, CustomFieldValue> custom_fields = 14;
+}
+
+message CustomField {
+  string type = 1 [(validate.rules).string = {
+    in: [
+      "boolean",
+      "date",
+      "datetime",
+      "decimal",
+      "integer",
+      "json",
+      "longtext",
+      "multiobject",
+      "multiselect",
+      "object",
+      "select",
+      "text",
+      "url"
+    ]
+  }];
+  optional string related_object_type = 2 [(validate.rules).string = {
+    in: [
+      "circuits.circuit",
+      "circuits.circuitgroup",
+      "circuits.circuitgroupassignment",
+      "circuits.circuittermination",
+      "circuits.circuittype",
+      "circuits.provider",
+      "circuits.provideraccount",
+      "circuits.providernetwork",
+      "circuits.virtualcircuit",
+      "circuits.virtualcircuittermination",
+      "circuits.virtualcircuittype",
+      "dcim.cable",
+      "dcim.cablepath",
+      "dcim.cabletermination",
+      "dcim.consoleport",
+      "dcim.consoleserverport",
+      "dcim.device",
+      "dcim.devicebay",
+      "dcim.devicerole",
+      "dcim.devicetype",
+      "dcim.frontport",
+      "dcim.interface",
+      "dcim.inventoryitem",
+      "dcim.inventoryitemrole",
+      "dcim.location",
+      "dcim.macaddress",
+      "dcim.manufacturer",
+      "dcim.module",
+      "dcim.modulebay",
+      "dcim.moduletype",
+      "dcim.moduletypeprofile",
+      "dcim.platform",
+      "dcim.powerfeed",
+      "dcim.poweroutlet",
+      "dcim.powerpanel",
+      "dcim.powerport",
+      "dcim.rack",
+      "dcim.rackreservation",
+      "dcim.rackrole",
+      "dcim.racktype",
+      "dcim.rearport",
+      "dcim.region",
+      "dcim.site",
+      "dcim.sitegroup",
+      "dcim.virtualchassis",
+      "dcim.virtualdevicecontext",
+      "extras.customfield",
+      "extras.customfieldchoiceset",
+      "extras.customlink",
+      "extras.journalentry",
+      "extras.tag",
+      "ipam.aggregate",
+      "ipam.asn",
+      "ipam.asnrange",
+      "ipam.fhrpgroup",
+      "ipam.fhrpgroupassignment",
+      "ipam.ipaddress",
+      "ipam.iprange",
+      "ipam.prefix",
+      "ipam.rir",
+      "ipam.role",
+      "ipam.routetarget",
+      "ipam.service",
+      "ipam.vlan",
+      "ipam.vlangroup",
+      "ipam.vlantranslationpolicy",
+      "ipam.vlantranslationrule",
+      "ipam.vrf",
+      "tenancy.contact",
+      "tenancy.contactassignment",
+      "tenancy.contactgroup",
+      "tenancy.contactrole",
+      "tenancy.tenant",
+      "tenancy.tenantgroup",
+      "virtualization.cluster",
+      "virtualization.clustergroup",
+      "virtualization.clustertype",
+      "virtualization.virtualdisk",
+      "virtualization.virtualmachine",
+      "virtualization.vminterface",
+      "vpn.ikepolicy",
+      "vpn.ikeproposal",
+      "vpn.ipsecpolicy",
+      "vpn.ipsecprofile",
+      "vpn.ipsecproposal",
+      "vpn.l2vpn",
+      "vpn.l2vpntermination",
+      "vpn.tunnel",
+      "vpn.tunnelgroup",
+      "vpn.tunneltermination",
+      "wireless.wirelesslan",
+      "wireless.wirelesslangroup",
+      "wireless.wirelesslink"
+    ]
+  }];
+  string name = 3;
+  optional string label = 4;
+  optional string group_name = 5;
+  optional string description = 6;
+  optional bool required = 7;
+  optional bool unique = 8;
+  optional int64 search_weight = 9;
+  optional string filter_logic = 10 [(validate.rules).string = {
+    in: [
+      "disabled",
+      "exact",
+      "loose"
+    ]
+  }];
+  optional string ui_visible = 11 [(validate.rules).string = {
+    in: [
+      "always",
+      "hidden",
+      "if-set"
+    ]
+  }];
+  optional string ui_editable = 12 [(validate.rules).string = {
+    in: [
+      "hidden",
+      "no",
+      "yes"
+    ]
+  }];
+  optional bool is_cloneable = 13;
+  optional string default = 14;
+  optional string related_object_filter = 15;
+  optional int64 weight = 16;
+  optional int64 validation_minimum = 17;
+  optional int64 validation_maximum = 18;
+  optional string validation_regex = 19;
+  optional CustomFieldChoiceSet choice_set = 20;
+  optional string comments = 21;
+  repeated string object_types = 22 [(validate.rules).repeated.items.string = {
+    in: [
+      "circuits.circuit",
+      "circuits.circuitgroup",
+      "circuits.circuitgroupassignment",
+      "circuits.circuittermination",
+      "circuits.circuittype",
+      "circuits.provider",
+      "circuits.provideraccount",
+      "circuits.providernetwork",
+      "circuits.virtualcircuit",
+      "circuits.virtualcircuittermination",
+      "circuits.virtualcircuittype",
+      "dcim.cable",
+      "dcim.consoleport",
+      "dcim.consoleserverport",
+      "dcim.device",
+      "dcim.devicebay",
+      "dcim.devicerole",
+      "dcim.devicetype",
+      "dcim.frontport",
+      "dcim.interface",
+      "dcim.inventoryitem",
+      "dcim.inventoryitemrole",
+      "dcim.location",
+      "dcim.macaddress",
+      "dcim.manufacturer",
+      "dcim.module",
+      "dcim.modulebay",
+      "dcim.moduletype",
+      "dcim.moduletypeprofile",
+      "dcim.platform",
+      "dcim.powerfeed",
+      "dcim.poweroutlet",
+      "dcim.powerpanel",
+      "dcim.powerport",
+      "dcim.rack",
+      "dcim.rackreservation",
+      "dcim.rackrole",
+      "dcim.racktype",
+      "dcim.rearport",
+      "dcim.region",
+      "dcim.site",
+      "dcim.sitegroup",
+      "dcim.virtualchassis",
+      "dcim.virtualdevicecontext",
+      "extras.journalentry",
+      "ipam.aggregate",
+      "ipam.asn",
+      "ipam.asnrange",
+      "ipam.fhrpgroup",
+      "ipam.ipaddress",
+      "ipam.iprange",
+      "ipam.prefix",
+      "ipam.rir",
+      "ipam.role",
+      "ipam.routetarget",
+      "ipam.service",
+      "ipam.vlan",
+      "ipam.vlangroup",
+      "ipam.vlantranslationpolicy",
+      "ipam.vlantranslationrule",
+      "ipam.vrf",
+      "tenancy.contact",
+      "tenancy.contactassignment",
+      "tenancy.contactgroup",
+      "tenancy.contactrole",
+      "tenancy.tenant",
+      "tenancy.tenantgroup",
+      "virtualization.cluster",
+      "virtualization.clustergroup",
+      "virtualization.clustertype",
+      "virtualization.virtualdisk",
+      "virtualization.virtualmachine",
+      "virtualization.vminterface",
+      "vpn.ikepolicy",
+      "vpn.ikeproposal",
+      "vpn.ipsecpolicy",
+      "vpn.ipsecprofile",
+      "vpn.ipsecproposal",
+      "vpn.l2vpn",
+      "vpn.l2vpntermination",
+      "vpn.tunnel",
+      "vpn.tunnelgroup",
+      "vpn.tunneltermination",
+      "wireless.wirelesslan",
+      "wireless.wirelesslangroup",
+      "wireless.wirelesslink"
+    ]
+  }];
+}
+
+message CustomFieldChoiceSet {
+  string name = 1;
+  optional string description = 2;
+  optional string base_choices = 3 [(validate.rules).string = {
+    in: [
+      "IATA",
+      "ISO_3166",
+      "UN_LOCODE"
+    ]
+  }];
+  optional bool order_alphabetically = 4;
+  repeated string extra_choices = 5;
+}
+
+message JournalEntry {
+  oneof assigned_object {
+    ASN assigned_object_asn = 1;
+    ASNRange assigned_object_asn_range = 2;
+    Aggregate assigned_object_aggregate = 3;
+    Cable assigned_object_cable = 4;
+    CablePath assigned_object_cable_path = 5;
+    CableTermination assigned_object_cable_termination = 6;
+    Circuit assigned_object_circuit = 7;
+    CircuitGroup assigned_object_circuit_group = 8;
+    CircuitGroupAssignment assigned_object_circuit_group_assignment = 9;
+    CircuitTermination assigned_object_circuit_termination = 10;
+    CircuitType assigned_object_circuit_type = 11;
+    Cluster assigned_object_cluster = 12;
+    ClusterGroup assigned_object_cluster_group = 13;
+    ClusterType assigned_object_cluster_type = 14;
+    ConsolePort assigned_object_console_port = 15;
+    ConsoleServerPort assigned_object_console_server_port = 16;
+    Contact assigned_object_contact = 17;
+    ContactAssignment assigned_object_contact_assignment = 18;
+    ContactGroup assigned_object_contact_group = 19;
+    ContactRole assigned_object_contact_role = 20;
+    CustomField assigned_object_custom_field = 21;
+    CustomFieldChoiceSet assigned_object_custom_field_choice_set = 22;
+    Device assigned_object_device = 23;
+    DeviceBay assigned_object_device_bay = 24;
+    DeviceRole assigned_object_device_role = 25;
+    DeviceType assigned_object_device_type = 26;
+    FHRPGroup assigned_object_fhrp_group = 27;
+    FHRPGroupAssignment assigned_object_fhrp_group_assignment = 28;
+    FrontPort assigned_object_front_port = 29;
+    IKEPolicy assigned_object_ike_policy = 30;
+    IKEProposal assigned_object_ike_proposal = 31;
+    IPAddress assigned_object_ip_address = 32;
+    IPRange assigned_object_ip_range = 33;
+    IPSecPolicy assigned_object_ip_sec_policy = 34;
+    IPSecProfile assigned_object_ip_sec_profile = 35;
+    IPSecProposal assigned_object_ip_sec_proposal = 36;
+    Interface assigned_object_interface = 37;
+    InventoryItem assigned_object_inventory_item = 38;
+    InventoryItemRole assigned_object_inventory_item_role = 39;
+    JournalEntry assigned_object_journal_entry = 40;
+    L2VPN assigned_object_l2vpn = 41;
+    L2VPNTermination assigned_object_l2vpn_termination = 42;
+    Location assigned_object_location = 43;
+    MACAddress assigned_object_mac_address = 44;
+    Manufacturer assigned_object_manufacturer = 45;
+    Module assigned_object_module = 46;
+    ModuleBay assigned_object_module_bay = 47;
+    ModuleType assigned_object_module_type = 48;
+    ModuleTypeProfile assigned_object_module_type_profile = 49;
+    Platform assigned_object_platform = 50;
+    PowerFeed assigned_object_power_feed = 51;
+    PowerOutlet assigned_object_power_outlet = 52;
+    PowerPanel assigned_object_power_panel = 53;
+    PowerPort assigned_object_power_port = 54;
+    Prefix assigned_object_prefix = 55;
+    Provider assigned_object_provider = 56;
+    ProviderAccount assigned_object_provider_account = 57;
+    ProviderNetwork assigned_object_provider_network = 58;
+    RIR assigned_object_rir = 59;
+    Rack assigned_object_rack = 60;
+    RackReservation assigned_object_rack_reservation = 61;
+    RackRole assigned_object_rack_role = 62;
+    RackType assigned_object_rack_type = 63;
+    RearPort assigned_object_rear_port = 64;
+    Region assigned_object_region = 65;
+    Role assigned_object_role = 66;
+    RouteTarget assigned_object_route_target = 67;
+    Service assigned_object_service = 68;
+    Site assigned_object_site = 69;
+    SiteGroup assigned_object_site_group = 70;
+    Tag assigned_object_tag = 71;
+    Tenant assigned_object_tenant = 72;
+    TenantGroup assigned_object_tenant_group = 73;
+    Tunnel assigned_object_tunnel = 74;
+    TunnelGroup assigned_object_tunnel_group = 75;
+    TunnelTermination assigned_object_tunnel_termination = 76;
+    VLAN assigned_object_vlan = 77;
+    VLANGroup assigned_object_vlan_group = 78;
+    VLANTranslationPolicy assigned_object_vlan_translation_policy = 79;
+    VLANTranslationRule assigned_object_vlan_translation_rule = 80;
+    VMInterface assigned_object_vm_interface = 81;
+    VRF assigned_object_vrf = 82;
+    VirtualChassis assigned_object_virtual_chassis = 83;
+    VirtualCircuit assigned_object_virtual_circuit = 84;
+    VirtualCircuitTermination assigned_object_virtual_circuit_termination = 85;
+    VirtualCircuitType assigned_object_virtual_circuit_type = 86;
+    VirtualDeviceContext assigned_object_virtual_device_context = 87;
+    VirtualDisk assigned_object_virtual_disk = 88;
+    VirtualMachine assigned_object_virtual_machine = 89;
+    WirelessLAN assigned_object_wireless_lan = 90;
+    WirelessLANGroup assigned_object_wireless_lan_group = 91;
+    WirelessLink assigned_object_wireless_link = 92;
+    CustomLink assigned_object_custom_link = 97;
+  }
+  optional string kind = 93 [(validate.rules).string = {
+    in: [
+      "danger",
+      "info",
+      "success",
+      "warning"
+    ]
+  }];
+  string comments = 94;
+  repeated Tag tags = 95;
+  map<string, CustomFieldValue> custom_fields = 96;
+}
+
+message ModuleTypeProfile {
+  string name = 1;
+  optional string description = 2;
+  optional string schema = 3;
+  optional string comments = 4;
+  repeated Tag tags = 5;
+  map<string, CustomFieldValue> custom_fields = 6;
+}
+
+message CustomLink {
+  string name = 1;
+  optional bool enabled = 2;
+  string link_text = 3;
+  string link_url = 4;
+  optional int64 weight = 5;
+  optional string group_name = 6;
+  optional string button_class = 7 [(validate.rules).string = {
+    in: [
+      "black",
+      "blue",
+      "cyan",
+      "default",
+      "ghost-dark",
+      "gray",
+      "green",
+      "indigo",
+      "orange",
+      "pink",
+      "purple",
+      "red",
+      "teal",
+      "white",
+      "yellow"
+    ]
+  }];
+  optional bool new_window = 8;
+  repeated string object_types = 9 [(validate.rules).repeated.items.string = {
+    in: [
+      "circuits.circuit",
+      "circuits.circuitgroup",
+      "circuits.circuittermination",
+      "circuits.circuittype",
+      "circuits.provider",
+      "circuits.provideraccount",
+      "circuits.providernetwork",
+      "circuits.virtualcircuit",
+      "circuits.virtualcircuittermination",
+      "circuits.virtualcircuittype",
+      "dcim.cable",
+      "dcim.consoleport",
+      "dcim.consoleserverport",
+      "dcim.device",
+      "dcim.devicebay",
+      "dcim.devicerole",
+      "dcim.devicetype",
+      "dcim.frontport",
+      "dcim.interface",
+      "dcim.inventoryitem",
+      "dcim.inventoryitemrole",
+      "dcim.location",
+      "dcim.macaddress",
+      "dcim.manufacturer",
+      "dcim.module",
+      "dcim.modulebay",
+      "dcim.moduletype",
+      "dcim.moduletypeprofile",
+      "dcim.platform",
+      "dcim.powerfeed",
+      "dcim.poweroutlet",
+      "dcim.powerpanel",
+      "dcim.powerport",
+      "dcim.rack",
+      "dcim.rackreservation",
+      "dcim.rackrole",
+      "dcim.racktype",
+      "dcim.rearport",
+      "dcim.region",
+      "dcim.site",
+      "dcim.sitegroup",
+      "dcim.virtualchassis",
+      "dcim.virtualdevicecontext",
+      "extras.journalentry",
+      "ipam.aggregate",
+      "ipam.asn",
+      "ipam.asnrange",
+      "ipam.fhrpgroup",
+      "ipam.ipaddress",
+      "ipam.iprange",
+      "ipam.prefix",
+      "ipam.rir",
+      "ipam.role",
+      "ipam.routetarget",
+      "ipam.service",
+      "ipam.vlan",
+      "ipam.vlangroup",
+      "ipam.vlantranslationpolicy",
+      "ipam.vlantranslationrule",
+      "ipam.vrf",
+      "tenancy.contact",
+      "tenancy.contactgroup",
+      "tenancy.contactrole",
+      "tenancy.tenant",
+      "tenancy.tenantgroup",
+      "virtualization.cluster",
+      "virtualization.clustergroup",
+      "virtualization.clustertype",
+      "virtualization.virtualdisk",
+      "virtualization.virtualmachine",
+      "virtualization.vminterface",
+      "vpn.ikepolicy",
+      "vpn.ikeproposal",
+      "vpn.ipsecpolicy",
+      "vpn.ipsecprofile",
+      "vpn.ipsecproposal",
+      "vpn.l2vpn",
+      "vpn.l2vpntermination",
+      "vpn.tunnel",
+      "vpn.tunnelgroup",
+      "vpn.tunneltermination",
+      "wireless.wirelesslan",
+      "wireless.wirelesslangroup",
+      "wireless.wirelesslink"
+    ]
+  }];
 }

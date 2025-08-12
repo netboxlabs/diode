@@ -27,7 +27,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config-ingester: {{ include (printf "%s/%s-ingester-configmap.yaml" $.Template.BasePath (include "diode.name" .)) . | sha256sum }}
+        checksum/config-ingester: {{ include (printf "%s/diode-ingester-configmap.yaml" $.Template.BasePath) . | sha256sum }}
       labels:
         {{- include "diode.selectorlabels" . | nindent 8 }}
         app: {{ include "diode.ingester.servicename" . }}
@@ -52,6 +52,9 @@ spec:
                 sleep 3;
               done;
               echo "Redis server is up and running";
+        {{- end }}
+        {{- if .Values.diodeAuth.extraInitContainers }}
+        {{- include "common.tplvalues.render" ( dict "value" .Values.diodeAuth.extraInitContainers "context" $ ) | nindent 8 }}
         {{- end }}
       containers:
         - name: {{ include "diode.ingester.servicename" . }}

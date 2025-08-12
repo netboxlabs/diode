@@ -3,6 +3,7 @@ package reconciler
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"io"
@@ -38,6 +39,7 @@ func TestHandleStreamMessage(t *testing.T) {
 		changeSetResponse *netboxdiodeplugin.ChangeSetResult
 		changeSetError    error
 		reconcilerError   bool
+		expectTruncate    bool
 		expectedError     bool
 	}{
 		{
@@ -54,6 +56,7 @@ func TestHandleStreamMessage(t *testing.T) {
 			},
 			changeSetResponse: &netboxdiodeplugin.ChangeSetResult{},
 			reconcilerError:   false,
+			expectTruncate:    true,
 			expectedError:     false,
 		},
 		{
@@ -114,6 +117,7 @@ func TestHandleStreamMessage(t *testing.T) {
 			changeSetResponse: &netboxdiodeplugin.ChangeSetResult{
 				ID: "cs123",
 			},
+			expectTruncate:  true,
 			reconcilerError: false,
 			expectedError:   false,
 		},
@@ -136,6 +140,7 @@ func TestHandleStreamMessage(t *testing.T) {
 			changeSetResponse: &netboxdiodeplugin.ChangeSetResult{
 				ID: "cs123",
 			},
+			expectTruncate:  true,
 			changeSetError:  errors.New("apply error"),
 			reconcilerError: false,
 			expectedError:   false,
@@ -149,7 +154,7 @@ func TestHandleStreamMessage(t *testing.T) {
 			mockRedisStreamClient := new(mr.RedisClient)
 			mockNbClient := new(mnp.NetBoxAPI)
 			mockRepository := new(mr.Repository)
-			mockMetrics := new(mr.IngestionProcessorMetrics)
+			mockMetrics := mr.NewMetrics(t)
 			logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
 
 			p := &IngestionProcessor{
@@ -161,7 +166,7 @@ func TestHandleStreamMessage(t *testing.T) {
 					ReconcilerRateLimiterRPS:   20,
 					ReconcilerRateLimiterBurst: 1,
 				},
-				ops:     NewOps(mockRepository, mockNbClient, logger),
+				ops:     NewOps(mockRepository, mockNbClient, logger, nil),
 				metrics: mockMetrics,
 			}
 
@@ -207,16 +212,28 @@ func TestHandleStreamMessage(t *testing.T) {
 			}
 			mockNbClient.On("ApplyChangeSet", mock.Anything, mock.Anything).Return(tt.changeSetResponse, tt.changeSetError)
 			if tt.entities[0].Entity != nil {
-				mockRepository.On("CreateIngestionLog", mock.Anything, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
+				mockRepository.On("CreateIngestionLog", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
+				// Mock FindPriorIngestionLogByEntityHash to return no duplicate found (sql.ErrNoRows)
+				mockRepository.On("FindPriorIngestionLogByEntityHash", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, sql.ErrNoRows)
 				mockRepository.On("CreateChangeSet", mock.Anything, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
 				mockRepository.On("UpdateIngestionLogStateWithError", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 			}
+			if tt.expectTruncate {
+				mockRepository.On("TruncateChangeSets", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+			}
+
 			mockRedisStreamClient.On("XAck", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(redis.NewIntCmd(ctx))
 			mockRedisStreamClient.On("XDel", mock.Anything, mock.Anything, mock.Anything).Return(redis.NewIntCmd(ctx))
 			mockMetrics.On("RecordHandleMessage", mock.Anything, mock.Anything).Return()
-			mockMetrics.On("RecordIngestionLogCreate", mock.Anything, mock.Anything).Return()
-			mockMetrics.On("RecordChangeSetCreate", mock.Anything, mock.Anything, mock.Anything).Return()
-			mockMetrics.On("RecordChangeSetApply", mock.Anything, mock.Anything, mock.Anything).Return()
+
+			// Only expect these metrics calls if we have valid entities that will be processed
+			if tt.entities[0].Entity != nil {
+				mockMetrics.On("RecordIngestionLogCreate", mock.Anything, mock.Anything).Return()
+				mockMetrics.On("RecordChangeSetCreate", mock.Anything, mock.Anything, mock.Anything).Return()
+				if !tt.reconcilerError {
+					mockMetrics.On("RecordChangeSetApply", mock.Anything, mock.Anything, mock.Anything).Return()
+				}
+			}
 
 			allDone, err := p.handleStreamMessage(ctx, request)
 			if tt.expectedError {
@@ -285,11 +302,11 @@ func TestConsumeIngestionStream(t *testing.T) {
 				mockRedisClient.On("XReadGroup", mock.Anything, mock.Anything).Return(cmdSlice)
 			}
 			mockRedisClient.On("XGroupCreateMkStream", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(status)
-			mockMetrics := new(mr.IngestionProcessorMetrics)
-			mockMetrics.On("RecordHandleMessage", mock.Anything, mock.Anything).Return()
-			mockMetrics.On("RecordIngestionLogCreate", mock.Anything, mock.Anything).Return()
-			mockMetrics.On("RecordChangeSetCreate", mock.Anything, mock.Anything, mock.Anything).Return()
-			mockMetrics.On("RecordChangeSetApply", mock.Anything, mock.Anything, mock.Anything).Return()
+			mockMetrics := mr.NewMetrics(t)
+			if !tt.groupError {
+				// Only expect metrics if we're actually processing messages (no group error)
+				mockMetrics.On("RecordHandleMessage", mock.Anything, mock.Anything).Return()
+			}
 
 			p := &IngestionProcessor{
 				redisStreamClient: mockRedisClient,
@@ -363,6 +380,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 		autoApplyChangesets        bool
 		expectedStatus             reconcilerpb.State
 		expectedError              bool
+		expectTruncate             bool
 	}{
 		{
 			name: "generate and apply change set",
@@ -403,6 +421,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 			autoApplyChangesets: true,
 			expectedStatus:      reconcilerpb.State_APPLIED,
 			expectedError:       false,
+			expectTruncate:      true,
 		},
 		{
 			name: "generate change set only",
@@ -440,6 +459,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 			autoApplyChangesets: false,
 			expectedStatus:      reconcilerpb.State_OPEN,
 			expectedError:       false,
+			expectTruncate:      true,
 		},
 		{
 			name: "generate change set without changes",
@@ -470,6 +490,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 			autoApplyChangesets: false,
 			expectedStatus:      reconcilerpb.State_NO_CHANGES,
 			expectedError:       false,
+			expectTruncate:      true,
 		},
 	}
 
@@ -479,7 +500,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 			mockRedisClient := new(mr.RedisClient)
 			mockNbClient := new(mnp.NetBoxAPI)
 			mockRepository := new(mr.Repository)
-			mockMetrics := new(mr.IngestionProcessorMetrics)
+			mockMetrics := mr.NewMetrics(t)
 			logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
 
 			p := &IngestionProcessor{
@@ -490,7 +511,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 					ReconcilerRateLimiterRPS:   20,
 					ReconcilerRateLimiterBurst: 1,
 				},
-				ops:     NewOps(mockRepository, mockNbClient, logger),
+				ops:     NewOps(mockRepository, mockNbClient, logger, nil),
 				metrics: mockMetrics,
 			}
 
@@ -503,10 +524,13 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 			}
 			mockRepository.On("UpdateIngestionLogStateWithError", ctx, ingestionLogID, tt.expectedStatus, mock.Anything).Return(nil)
 			mockRepository.On("CreateChangeSet", ctx, mock.Anything, ingestionLogID).Return(int32Ptr(1), nil)
-			mockMetrics.On("RecordHandleMessage", mock.Anything, mock.Anything).Return()
-			mockMetrics.On("RecordIngestionLogCreate", mock.Anything, mock.Anything).Return()
+			if tt.expectTruncate {
+				mockRepository.On("TruncateChangeSets", ctx, ingestionLogID, mock.Anything).Return(nil)
+			}
 			mockMetrics.On("RecordChangeSetCreate", mock.Anything, mock.Anything, mock.Anything).Return()
-			mockMetrics.On("RecordChangeSetApply", mock.Anything, mock.Anything, mock.Anything).Return()
+			if tt.autoApplyChangesets {
+				mockMetrics.On("RecordChangeSetApply", mock.Anything, mock.Anything, mock.Anything).Return()
+			}
 
 			bufCapacity := 1
 
@@ -535,6 +559,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 			}
 
 			mockRepository.AssertExpectations(t)
+			mockMetrics.AssertExpectations(t)
 			require.Equal(t, tt.expectedStatus, tt.ingestionLog.State)
 		})
 	}

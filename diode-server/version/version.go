@@ -2,6 +2,7 @@ package version
 
 import (
 	_ "embed"
+	"fmt"
 	"strings"
 )
 
@@ -23,4 +24,9 @@ func GetBuildVersion() string {
 // GetBuildCommit returns the build commit of the diode-server
 func GetBuildCommit() string {
 	return strings.TrimSpace(buildCommit)
+}
+
+// Release returns the release information
+func Release() string {
+	return fmt.Sprintf("v%s-%s", GetBuildVersion(), GetBuildCommit())
 }

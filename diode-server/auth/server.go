@@ -15,8 +15,11 @@ import (
 	"github.com/MicahParks/keyfunc/v3"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/kelseyhightower/envconfig"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/netboxlabs/diode/diode-server/authutil"
+	"github.com/netboxlabs/diode/diode-server/telemetry"
 )
 
 const (
@@ -86,9 +89,15 @@ func statusFromError(err error) int {
 	return http.StatusInternalServerError
 }
 
+// TokenOwnershipValidationData contains data for validating token ownership
+type TokenOwnershipValidationData struct {
+	Headers http.Header
+}
+
 // TokenOwnershipProvider determines the owner of a token
 type TokenOwnershipProvider interface {
 	TokenOwnerID(ctx context.Context, token string) (string, error)
+	ValidateTokenOwnership(data TokenOwnershipValidationData, claims jwt.MapClaims) error
 }
 
 // DefaultTokenOwner is a default implementation of TokenOwnershipProvider
@@ -97,6 +106,11 @@ type DefaultTokenOwner struct{}
 // TokenOwnerID returns the owner of a token
 func (p *DefaultTokenOwner) TokenOwnerID(_ context.Context, _ string) (string, error) {
 	return DefaultTokenOwnerID, nil
+}
+
+// ValidateTokenOwnership validates the ownership of a token
+func (p *DefaultTokenOwner) ValidateTokenOwnership(_ TokenOwnershipValidationData, _ jwt.MapClaims) error {
+	return nil
 }
 
 // ClientInfoDecorator attaches additional information to a client info
@@ -123,8 +137,14 @@ func NewServer(_ context.Context, logger *slog.Logger, tokenParser TokenParser, 
 		logger:  logger,
 		mux:     mux,
 		httpServer: &http.Server{
-			Addr:    fmt.Sprintf(":%d", cfg.HTTPPort),
-			Handler: mux,
+			Addr: fmt.Sprintf(":%d", cfg.HTTPPort),
+			Handler: otelhttp.NewHandler(mux, "auth-http-server", otelhttp.WithMetricAttributesFn(
+				func(r *http.Request) []attribute.KeyValue {
+					return []attribute.KeyValue{
+						attribute.String("http.route", telemetry.ExtractPathFromPattern(r.Pattern)),
+					}
+				},
+			)),
 		},
 		tokenParser:    tokenParser,
 		clientManager:  clientManager,
@@ -197,6 +217,13 @@ func (s *Server) introspect(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		s.logger.Error("failed to validate token", "error", err)
 		w.WriteHeader(statusFromError(err))
+		return
+	}
+
+	err = s.tokenOwnership.ValidateTokenOwnership(TokenOwnershipValidationData{Headers: r.Header}, claims)
+	if err != nil {
+		s.logger.Error("failed to validate token ownership", "error", err)
+		w.WriteHeader(http.StatusForbidden)
 		return
 	}
 
@@ -375,7 +402,8 @@ func (s *Server) token(w http.ResponseWriter, r *http.Request) {
 
 	// Use a custom HTTP client with a timeout
 	client := &http.Client{
-		Timeout: 10 * time.Second,
+		Transport: otelhttp.NewTransport(http.DefaultTransport),
+		Timeout:   10 * time.Second,
 	}
 
 	resp, err := client.Do(req)

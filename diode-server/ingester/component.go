@@ -11,7 +11,6 @@ import (
 	"github.com/redis/go-redis/v9"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/metric"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/protobuf/proto"
@@ -33,7 +32,7 @@ type Component struct {
 	grpcListener      net.Listener
 	grpcServer        *grpc.Server
 	redisStreamClient *redis.Client
-	metrics           *Metrics
+	metrics           Metrics
 	streamRouter      StreamRouter
 }
 
@@ -52,7 +51,7 @@ func (s *DefaultStreamRouter) GetIngestStreamID(_ context.Context, _ *diodepb.In
 }
 
 // New creates a new ingester component
-func New(ctx context.Context, logger *slog.Logger, cfg Config, redisStreamClient *redis.Client, meter metric.Meter, streamRouter StreamRouter, serverInterceptors ...grpc.UnaryServerInterceptor) (*Component, error) {
+func New(ctx context.Context, logger *slog.Logger, cfg Config, redisStreamClient *redis.Client, metrics Metrics, streamRouter StreamRouter, serverInterceptors ...grpc.UnaryServerInterceptor) (*Component, error) {
 	grpcListener, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.GRPCPort))
 	if err != nil {
 		return nil, fmt.Errorf("failed to listen on port %d: %v", cfg.GRPCPort, err)
@@ -67,11 +66,6 @@ func New(ctx context.Context, logger *slog.Logger, cfg Config, redisStreamClient
 		grpc.ChainUnaryInterceptor(serverInterceptors...),
 		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 	)
-
-	metrics, err := NewMetrics(meter)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create ingester metrics: %v", err)
-	}
 
 	component := &Component{
 		ctx:               ctx,
@@ -179,8 +173,9 @@ func (c *Component) Ingest(ctx context.Context, in *diodepb.IngestRequest) (*dio
 		c.metrics.RecordIngestRequest(ctx, false)
 		c.logger.Error("failed to add element to the stream", "error", err, "streamID", streamID, "value", msg)
 	} else {
+		entityCount := int64(len(in.GetEntities()))
 		c.metrics.RecordIngestRequest(ctx, true)
-		c.metrics.RecordIngestEntities(ctx, int64(len(in.GetEntities())))
+		c.metrics.RecordIngestEntities(ctx, entityCount)
 	}
 
 	return &diodepb.IngestResponse{Errors: errs}, nil
