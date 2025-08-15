@@ -23,7 +23,8 @@ const (
 )
 
 func main() {
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	s := server.New(ctx, applicationName, version.Release())
 
 	defer s.Recover(sentry.CurrentHub())
