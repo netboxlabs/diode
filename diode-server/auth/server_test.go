@@ -54,7 +54,8 @@ func (o ownerInvalid) ValidateTokenOwnership(_ auth.TokenOwnershipValidationData
 }
 
 func TestNewServer(t *testing.T) {
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	setupEnv()
 	defer teardownEnv()
@@ -76,7 +77,8 @@ func TestNewServer(t *testing.T) {
 }
 
 func TestIntrospectForInvalidTokens(t *testing.T) {
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	setupEnv()
 	defer teardownEnv()
@@ -279,7 +281,8 @@ func TestIntrospectForValidTokens(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			ctx := context.Background()
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
 
 			var ownerProvider auth.TokenOwnershipProvider = &auth.DefaultTokenOwner{}
 			if test.invalidOwner {
@@ -424,7 +427,8 @@ func TestCreateClient(t *testing.T) {
 		},
 	}
 
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	setupEnv()
 	defer teardownEnv()
 
@@ -614,7 +618,8 @@ func TestListClients(t *testing.T) {
 		},
 	}
 
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	setupEnv()
 	defer teardownEnv()
 
@@ -769,7 +774,8 @@ func TestDeleteClient(t *testing.T) {
 		},
 	}
 
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	setupEnv()
 	defer teardownEnv()
 
@@ -905,7 +911,8 @@ func TestGetClient(t *testing.T) {
 		},
 	}
 
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	setupEnv()
 	defer teardownEnv()
 

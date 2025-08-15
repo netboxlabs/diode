@@ -119,14 +119,14 @@ type ClientInfoDecorator interface {
 }
 
 // NewServer creates a new auth server
-func NewServer(_ context.Context, logger *slog.Logger, tokenParser TokenParser, clientManager ClientManager, tokenOwnership TokenOwnershipProvider) (*Server, error) {
+func NewServer(ctx context.Context, logger *slog.Logger, tokenParser TokenParser, clientManager ClientManager, tokenOwnership TokenOwnershipProvider) (*Server, error) {
 	var cfg Config
 	envconfig.MustProcess("", &cfg)
 
 	mux := http.NewServeMux()
 
 	jwkSetURL := cfg.OAuth2.PublicServerURL + "/.well-known/jwks.json"
-	k, err := keyfunc.NewDefault([]string{jwkSetURL})
+	k, err := keyfunc.NewDefaultCtx(ctx, []string{jwkSetURL})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create keyfunc: %w", err)
 	}

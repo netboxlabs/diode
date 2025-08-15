@@ -19,14 +19,15 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/require"
-	testcontainers "github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
 
 	"github.com/netboxlabs/diode/diode-server/auth"
 )
 
 func TestServerHydraIntegration(t *testing.T) {
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	creq := testcontainers.ContainerRequest{
 		Image:        "oryd/hydra:v2.3.0",
