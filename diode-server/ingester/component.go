@@ -12,7 +12,9 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
@@ -166,17 +168,19 @@ func (c *Component) Ingest(ctx context.Context, in *diodepb.IngestRequest) (*dio
 	}
 	ctx = telemetry.ContextWithMetricAttributes(ctx, attrs...)
 
-	if err := c.redisStreamClient.XAdd(ctx, &redis.XAddArgs{
+	err = c.redisStreamClient.XAdd(ctx, &redis.XAddArgs{
 		Stream: streamID,
 		Values: msg,
-	}).Err(); err != nil {
+	}).Err()
+	if err != nil {
 		c.metrics.RecordIngestRequest(ctx, false)
 		c.logger.Error("failed to add element to the stream", "error", err, "streamID", streamID, "value", msg)
-	} else {
-		entityCount := int64(len(in.GetEntities()))
-		c.metrics.RecordIngestRequest(ctx, true)
-		c.metrics.RecordIngestEntities(ctx, entityCount)
+		return nil, status.Error(codes.Internal, "")
 	}
+
+	entityCount := int64(len(in.GetEntities()))
+	c.metrics.RecordIngestRequest(ctx, true)
+	c.metrics.RecordIngestEntities(ctx, entityCount)
 
 	return &diodepb.IngestResponse{Errors: errs}, nil
 }
