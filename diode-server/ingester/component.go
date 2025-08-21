@@ -168,18 +168,19 @@ func (c *Component) Ingest(ctx context.Context, in *diodepb.IngestRequest) (*dio
 	}
 	ctx = telemetry.ContextWithMetricAttributes(ctx, attrs...)
 
-	if err := c.redisStreamClient.XAdd(ctx, &redis.XAddArgs{
+	err = c.redisStreamClient.XAdd(ctx, &redis.XAddArgs{
 		Stream: streamID,
 		Values: msg,
-	}).Err(); err != nil {
+	}).Err()
+	if err != nil {
 		c.metrics.RecordIngestRequest(ctx, false)
 		c.logger.Error("failed to add element to the stream", "error", err, "streamID", streamID, "value", msg)
 		return nil, status.Error(codes.Internal, "")
-	} else {
-		entityCount := int64(len(in.GetEntities()))
-		c.metrics.RecordIngestRequest(ctx, true)
-		c.metrics.RecordIngestEntities(ctx, entityCount)
 	}
+
+	entityCount := int64(len(in.GetEntities()))
+	c.metrics.RecordIngestRequest(ctx, true)
+	c.metrics.RecordIngestEntities(ctx, entityCount)
 
 	return &diodepb.IngestResponse{Errors: errs}, nil
 }
