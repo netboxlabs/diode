@@ -2,7 +2,7 @@
 
 A Helm chart for Diode
 
-![Version: 1.6.2](https://img.shields.io/badge/Version-1.6.2-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.5.0](https://img.shields.io/badge/AppVersion-1.5.0-informational?style=flat-square)
+![Version: 1.7.0](https://img.shields.io/badge/Version-1.7.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.5.0](https://img.shields.io/badge/AppVersion-1.5.0-informational?style=flat-square)
 
 ## Prerequisites
 
@@ -339,9 +339,10 @@ helm show values diode/diode
 | hydra.job.extraInitContainers | string or list | `"{{ include \"diode.hydra.extrainitcontainers\" . }}"` | extra init containers |
 | hydra.secret.enabled | bool | `false` | secret enabled |
 | hydra.secret.nameOverride | string | `"diode-hydra-secret"` | existing secret name |
-| ingressNginx | object | `{"annotations":{},"controller":{"allowSnippetAnnotations":true},"enabled":true,"extraHttpPaths":[],"grpcAnnotations":{"nginx.ingress.kubernetes.io/proxy-body-size":"25m","nginx.ingress.kubernetes.io/ssl-redirect":"true"},"hostname":"","httpAnnotations":{"nginx.ingress.kubernetes.io/ssl-redirect":"true"},"ingressClass":"nginx","pathPrefix":"/diode","tls":{}}` | ref: https://github.com/kubernetes/ingress-nginx/blob/main/charts/ingress-nginx/values.yaml |
-| ingressNginx.controller | object | `{"allowSnippetAnnotations":true}` | ingress annotations |
+| ingressNginx | object | `{"annotations":{},"controller":{"allowSnippetAnnotations":true,"enabled":true},"enabled":true,"extraHttpPaths":[],"grpcAnnotations":{"nginx.ingress.kubernetes.io/proxy-body-size":"25m","nginx.ingress.kubernetes.io/ssl-redirect":"true"},"hostname":"","httpAnnotations":{"nginx.ingress.kubernetes.io/ssl-redirect":"true"},"ingressClass":"nginx","pathPrefix":"/diode","tls":{}}` | ref: https://github.com/kubernetes/ingress-nginx/blob/main/charts/ingress-nginx/values.yaml |
+| ingressNginx.controller | object | `{"allowSnippetAnnotations":true,"enabled":true}` | ingress annotations |
 | ingressNginx.controller.allowSnippetAnnotations | bool | `true` | allow snippet annotations |
+| ingressNginx.controller.enabled | bool | `true` | deploy an ingress-nginx controller chart in addition to `Ingress` resources |
 | ingressNginx.enabled | bool | `true` | ingress-nginx enabled |
 | ingressNginx.extraHttpPaths | list | `[]` | ingress extra http paths |
 | ingressNginx.grpcAnnotations | object | `{"nginx.ingress.kubernetes.io/proxy-body-size":"25m","nginx.ingress.kubernetes.io/ssl-redirect":"true"}` | ingress grpc annotations |

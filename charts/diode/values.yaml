@@ -401,6 +401,8 @@ ingressNginx:
   ingressClass: nginx
   # -- ingress annotations
   controller:
+    # -- deploy an ingress-nginx controller chart in addition to `Ingress` resources
+    enabled: true
     # -- allow snippet annotations
     allowSnippetAnnotations: true
   annotations: {}
