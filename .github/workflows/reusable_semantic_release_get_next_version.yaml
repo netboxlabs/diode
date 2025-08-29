@@ -95,7 +95,7 @@ jobs:
               ]
             }
       - name: setup semantic-release
-        run: npm i
+        run: npm install --legacy-peer-deps
       - name: release dry-run
         env:
           SLACK_WEBHOOK: ${{ secrets.SLACK_OBSERVABILITY_RELEASE_WEBHOOK }}
