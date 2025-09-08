@@ -39,7 +39,7 @@ spec:
         {{- toYaml .Values.diodeReconciler.image.imagePullSecrets | nindent 8 }}
       {{- end }}
       initContainers:
-        {{- if .Values.redis.enabled }}
+        {{- if .Values.global.diode.reconciler.waitForRedis }}
         - name: wait-for-redis
           image: {{ include "diode.busybox.image" . }}
           imagePullPolicy: {{ include "diode.busybox.imagepullpolicy" . }}
@@ -53,7 +53,7 @@ spec:
               done;
               echo "Redis server is up and running";
         {{- end }}
-        {{- if .Values.postgresql.enabled }}
+        {{- if .Values.global.diode.reconciler.waitForPostgres }}
         - name: wait-for-postgres
           image: {{ include "diode.busybox.image" . }}
           imagePullPolicy: {{ include "diode.busybox.imagepullpolicy" . }}

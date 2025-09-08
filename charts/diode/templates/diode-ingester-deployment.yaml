@@ -39,7 +39,7 @@ spec:
         {{- toYaml .Values.diodeIngester.image.imagePullSecrets | nindent 8 }}
       {{- end }}
       initContainers:
-        {{- if .Values.redis.enabled }}
+        {{- if .Values.global.diode.ingester.waitForRedis | default true }}
         - name: wait-for-redis
           image: {{ include "diode.busybox.image" . }}
           imagePullPolicy: {{ include "diode.busybox.imagepullpolicy" . }}
