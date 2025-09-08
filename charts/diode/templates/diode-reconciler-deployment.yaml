@@ -67,8 +67,8 @@ spec:
               done;
               echo "PostgreSQL server is up and running";
         {{- end }}
-        {{- if .Values.diodeAuth.extraInitContainers }}
-        {{- include "common.tplvalues.render" ( dict "value" .Values.diodeAuth.extraInitContainers "context" $ ) | nindent 8 }}
+        {{- if .Values.diodeReconciler.extraInitContainers }}
+        {{- include "common.tplvalues.render" ( dict "value" .Values.diodeReconciler.extraInitContainers "context" $ ) | nindent 8 }}
         {{- end }}
       containers:
         - name: {{ include "diode.reconciler.servicename" . }}
