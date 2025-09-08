@@ -7,8 +7,16 @@ global:
       imagePullPolicy: IfNotPresent
     # -- hydra additional init containers configuration
     hydra:
-      # -- wait for PostgreSQL
+      # -- wait for PostgreSQL to be reachable
       waitForPostgres: true
+    ingester:
+      # -- wait for Redis to be reachable
+      waitForRedis: true
+    reconciler:
+      # -- wait for PostgreSQL to be reachable
+      waitForPostgres: true
+      # -- wait for Redis to be reachable
+      waitForRedis: true
 
   # -- common annotations for all resources
   commonAnnotations: {}
