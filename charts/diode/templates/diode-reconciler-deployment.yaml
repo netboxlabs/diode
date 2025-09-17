@@ -84,9 +84,15 @@ spec:
           resources:
             {{- toYaml .| nindent 12 }}
           {{- end }}
-          {{- if .Values.diodeReconciler.extraEnvs }}
-          env: {{- include "common.tplvalues.render" (dict "value" .Values.diodeReconciler.extraEnvs "context" $) | nindent 12 }}
-          {{- end }}
+          env:
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "diode.postgresql.secretname" . }}
+                  key: {{ include "diode.postgresql.secretkey" . }}
+            {{- if .Values.diodeReconciler.extraEnvs }}
+            {{- include "common.tplvalues.render" (dict "value" .Values.diodeReconciler.extraEnvs "context" $) | nindent 12 }}
+            {{- end }}
           envFrom:
             - configMapRef:
                 name: {{ include "diode.reconciler.configmap" . }}

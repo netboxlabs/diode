@@ -2,7 +2,7 @@
 
 A Helm chart for Diode
 
-![Version: 1.8.0](https://img.shields.io/badge/Version-1.8.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.5.0](https://img.shields.io/badge/AppVersion-1.5.0-informational?style=flat-square)
+![Version: 1.9.0](https://img.shields.io/badge/Version-1.9.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.5.0](https://img.shields.io/badge/AppVersion-1.5.0-informational?style=flat-square)
 
 ## Prerequisites
 
@@ -304,8 +304,13 @@ helm show values diode/diode
 | diodeReconciler.replicaCount | int | `1` | replica count |
 | diodeReconciler.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
 | diodeReconciler.serviceAccount.create | bool | `true` | create service account |
+| externalPostgresql.database | string | `"diode"` | database name |
+| externalPostgresql.existingSecretKey | string | `"postgresql-password"` | key of password in existing postgresql secret |
+| externalPostgresql.existingSecretName | string | `""` | existing postgresql secret |
 | externalPostgresql.hostname | string | `"localhost"` | hostname |
+| externalPostgresql.password | string | `""` | password |
 | externalPostgresql.port | int | `5432` | port |
+| externalPostgresql.username | string | `"diode"` | username |
 | externalRedis.hostname | string | `"localhost"` | hostname |
 | externalRedis.port | int | `6379` | port |
 | global.commonAnnotations | object | `{}` | common annotations for all resources |

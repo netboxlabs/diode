@@ -24,7 +24,6 @@ global:
   # -- common labels for all resources
   commonLabels: {}
 
-
 diode:
   # -- environment name
   environment: development
@@ -35,6 +34,16 @@ externalPostgresql:
   hostname: localhost
   # -- port
   port: 5432
+  # -- database name
+  database: diode
+  # -- username
+  username: diode
+  # -- password
+  password: ""
+  # -- existing postgresql secret
+  existingSecretName: ""
+  # -- key of password in existing postgresql secret
+  existingSecretKey: postgresql-password
 
 # External Redis configuration (optional)
 externalRedis:

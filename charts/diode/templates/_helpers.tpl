@@ -292,6 +292,58 @@ Create the port of the Redis database
 {{- end }}
 
 {{/*
+Create the database name for PostgreSQL
+*/}}
+{{- define "diode.postgresql.database" -}}
+{{- if .Values.postgresql.enabled -}}
+{{- printf "diode" }}
+{{- else if and .Values.externalPostgresql (hasKey .Values.externalPostgresql "database") -}}
+{{- .Values.externalPostgresql.database }}
+{{- else -}}
+{{- fail "externalPostgresql.database must be defined when postgresql.enabled is false" }}
+{{- end }}
+{{- end }}
+
+{{/*
+Create the username for PostgreSQL
+*/}}
+{{- define "diode.postgresql.username" -}}
+{{- if .Values.postgresql.enabled -}}
+{{- printf "diode" }}
+{{- else if and .Values.externalPostgresql (hasKey .Values.externalPostgresql "username") -}}
+{{- .Values.externalPostgresql.username }}
+{{- else -}}
+{{- fail "externalPostgresql.username must be defined when postgresql.enabled is false" }}
+{{- end }}
+{{- end }}
+
+{{/*
+Create the secret name for PostgreSQL credentials
+*/}}
+{{- define "diode.postgresql.secretname" -}}
+{{- if .Values.postgresql.enabled -}}
+{{- printf "diode-postgresql-secret" }}
+{{- else if and .Values.externalPostgresql (hasKey .Values.externalPostgresql "existingSecretName") (not (empty .Values.externalPostgresql.existingSecretName)) -}}
+{{- .Values.externalPostgresql.existingSecretName }}
+{{- else -}}
+{{- printf "diode-external-postgresql-secret" }}
+{{- end }}
+{{- end }}
+
+{{/*
+Create the secret key for PostgreSQL password
+*/}}
+{{- define "diode.postgresql.secretkey" -}}
+{{- if .Values.postgresql.enabled -}}
+{{- printf "postgres-password" }}
+{{- else if and .Values.externalPostgresql (hasKey .Values.externalPostgresql "existingSecretKey") (not (empty .Values.externalPostgresql.existingSecretKey)) -}}
+{{- .Values.externalPostgresql.existingSecretKey }}
+{{- else -}}
+{{- printf "postgresql-password" }}
+{{- end }}
+{{- end }}
+
+{{/*
 Create the hostname of the public Hydra service
 */}}
 {{- define "diode.hydra.public.hostname" -}}
