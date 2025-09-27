@@ -344,6 +344,19 @@ Create the secret key for PostgreSQL password
 {{- end }}
 
 {{/*
+Create the SSL option for PostgreSQL
+*/}}
+{{- define "diode.postgresql.sslMode" -}}
+{{- if .Values.postgresql.sslMode -}}
+{{- printf "postgres-password" }}
+{{- else if and .Values.externalPostgresql (hasKey .Values.externalPostgresql "sslMode") (not (empty .Values.externalPostgresql.sslMode)) -}}
+{{- .Values.externalPostgresql.sslMode }}
+{{- else -}}
+{{- printf "disable" }}
+{{- end }}
+{{- end }}
+
+{{/*
 Create the hostname of the public Hydra service
 */}}
 {{- define "diode.hydra.public.hostname" -}}

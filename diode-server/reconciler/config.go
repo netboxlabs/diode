@@ -21,6 +21,7 @@ type Config struct {
 	PostgresDBName                string `envconfig:"POSTGRES_DB_NAME"`
 	PostgresUser                  string `envconfig:"POSTGRES_USER"`
 	PostgresPassword              string `envconfig:"POSTGRES_PASSWORD"`
+	PostgresSSLMode               string `envconfig:"POSTGRES_SSL_MODE" default:"disable"`
 
 	NetBoxDiodePluginAPIBaseURL    string `envconfig:"NETBOX_DIODE_PLUGIN_API_BASE_URL" required:"true"`
 	NetBoxDiodePluginSkipTLSVerify bool   `envconfig:"NETBOX_DIODE_PLUGIN_SKIP_TLS_VERIFY" default:"false"`
