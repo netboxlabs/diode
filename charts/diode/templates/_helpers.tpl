@@ -348,7 +348,7 @@ Create the SSL option for PostgreSQL
 */}}
 {{- define "diode.postgresql.sslMode" -}}
 {{- if .Values.postgresql.sslMode -}}
-{{- printf "postgres-password" }}
+{{- printf "disable" }}
 {{- else if and .Values.externalPostgresql (hasKey .Values.externalPostgresql "sslMode") (not (empty .Values.externalPostgresql.sslMode)) -}}
 {{- .Values.externalPostgresql.sslMode }}
 {{- else -}}
