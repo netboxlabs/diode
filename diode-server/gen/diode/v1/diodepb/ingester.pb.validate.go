@@ -30411,7 +30411,7 @@ func (m *Interface) validate(all bool) error {
 	if _, ok := _Interface_Type_InLookup[m.GetType()]; !ok {
 		err := InterfaceValidationError{
 			field:  "Type",
-			reason: "value must be in list [1000base-kx 1000base-lx 1000base-sx 1000base-t 1000base-tx 1000base-x-gbic 1000base-x-sfp 100base-fx 100base-lfx 100base-t1 100base-tx 100base-x-sfp 100gbase-kp4 100gbase-kr2 100gbase-kr4 100gbase-x-cfp 100gbase-x-cfp2 100gbase-x-cfp4 100gbase-x-cpak 100gbase-x-cxp 100gbase-x-dsfp 100gbase-x-qsfp28 100gbase-x-qsfpdd 100gbase-x-sfpdd 10g-epon 10gbase-cx4 10gbase-kr 10gbase-kx4 10gbase-t 10gbase-x-sfpp 10gbase-x-x2 10gbase-x-xenpak 10gbase-x-xfp 128gfc-qsfp28 16gfc-sfpp 1gfc-sfp 2.5gbase-kx 2.5gbase-t 200gbase-x-cfp2 200gbase-x-qsfp56 200gbase-x-qsfpdd 25g-pon 25gbase-kr 25gbase-x-sfp28 2gfc-sfp 32gfc-sfp28 32gfc-sfpp 400gbase-x-cdfp 400gbase-x-cfp2 400gbase-x-cfp8 400gbase-x-osfp 400gbase-x-osfp-rhs 400gbase-x-qsfp112 400gbase-x-qsfpdd 40gbase-kr4 40gbase-x-qsfpp 4g 4gfc-sfp 50g-pon 50gbase-kr 50gbase-x-sfp28 50gbase-x-sfp56 5g 5gbase-kr 5gbase-t 64gfc-qsfpp 64gfc-sfpdd 64gfc-sfpp 800gbase-x-osfp 800gbase-x-qsfpdd 8gfc-sfpp bpon bridge cdma cisco-flexstack cisco-flexstack-plus cisco-stackwise cisco-stackwise-160 cisco-stackwise-1t cisco-stackwise-320 cisco-stackwise-480 cisco-stackwise-80 cisco-stackwise-plus docsis e1 e3 epon extreme-summitstack extreme-summitstack-128 extreme-summitstack-256 extreme-summitstack-512 gpon gsm ieee802.11a ieee802.11ac ieee802.11ad ieee802.11ax ieee802.11ay ieee802.11be ieee802.11g ieee802.11n ieee802.15.1 ieee802.15.4 infiniband-ddr infiniband-edr infiniband-fdr infiniband-fdr10 infiniband-hdr infiniband-ndr infiniband-qdr infiniband-sdr infiniband-xdr juniper-vcp lag lte moca ng-pon2 other other-wireless sonet-oc12 sonet-oc192 sonet-oc1920 sonet-oc3 sonet-oc3840 sonet-oc48 sonet-oc768 t1 t3 virtual xdsl xg-pon xgs-pon]",
+			reason: "value must be in list [1000base-bx10-d 1000base-bx10-u 1000base-cwdm 1000base-cx 1000base-dwdm 1000base-ex 1000base-kx 1000base-lsx 1000base-lx 1000base-lx10 1000base-sx 1000base-t 1000base-tx 1000base-x-gbic 1000base-x-sfp 1000base-zx 100base-fx 100base-lfx 100base-t1 100base-tx 100base-x-sfp 100gbase-cr1 100gbase-cr10 100gbase-cr2 100gbase-cr4 100gbase-cwdm4 100gbase-dr 100gbase-er4 100gbase-fr1 100gbase-kp4 100gbase-kr2 100gbase-kr4 100gbase-lr1 100gbase-lr4 100gbase-sr1 100gbase-sr1.2 100gbase-sr10 100gbase-sr2 100gbase-sr4 100gbase-x-cfp 100gbase-x-cfp2 100gbase-x-cfp4 100gbase-x-cpak 100gbase-x-cxp 100gbase-x-dsfp 100gbase-x-qsfp28 100gbase-x-qsfpdd 100gbase-x-sfpdd 100gbase-zr 10g-epon 10gbase-br-d 10gbase-br-u 10gbase-cx4 10gbase-er 10gbase-kr 10gbase-kx4 10gbase-lr 10gbase-lrm 10gbase-lx4 10gbase-sr 10gbase-t 10gbase-x-sfpp 10gbase-x-x2 10gbase-x-xenpak 10gbase-x-xfp 10gbase-zr 128gfc-qsfp28 16gfc-sfpp 1gfc-sfp 2.5gbase-kx 2.5gbase-t 200gbase-cr2 200gbase-cr4 200gbase-dr4 200gbase-er4 200gbase-fr4 200gbase-lr4 200gbase-sr2 200gbase-sr4 200gbase-vr2 200gbase-x-cfp2 200gbase-x-qsfp56 200gbase-x-qsfpdd 25g-pon 25gbase-cr 25gbase-er 25gbase-kr 25gbase-lr 25gbase-sr 25gbase-t 25gbase-x-sfp28 2gfc-sfp 32gfc-sfp28 32gfc-sfpp 400gbase-cr4 400gbase-dr4 400gbase-er8 400gbase-fr4 400gbase-fr8 400gbase-lr4 400gbase-lr8 400gbase-sr16 400gbase-sr4 400gbase-sr4_2 400gbase-sr8 400gbase-vr4 400gbase-x-cdfp 400gbase-x-cfp2 400gbase-x-cfp8 400gbase-x-osfp 400gbase-x-osfp-rhs 400gbase-x-qsfp112 400gbase-x-qsfpdd 400gbase-zr 40gbase-cr4 40gbase-er4 40gbase-fr4 40gbase-kr4 40gbase-lr4 40gbase-sr4 40gbase-x-qsfpp 4g 4gfc-sfp 50g-pon 50gbase-cr 50gbase-er 50gbase-fr 50gbase-kr 50gbase-lr 50gbase-sr 50gbase-x-sfp28 50gbase-x-sfp56 5g 5gbase-kr 5gbase-t 64gfc-qsfpp 64gfc-sfpdd 64gfc-sfpp 800gbase-cr8 800gbase-dr8 800gbase-sr8 800gbase-vr8 800gbase-x-osfp 800gbase-x-qsfpdd 8gfc-sfpp bpon bridge cdma cisco-flexstack cisco-flexstack-plus cisco-stackwise cisco-stackwise-160 cisco-stackwise-1t cisco-stackwise-320 cisco-stackwise-480 cisco-stackwise-80 cisco-stackwise-plus docsis e1 e3 epon extreme-summitstack extreme-summitstack-128 extreme-summitstack-256 extreme-summitstack-512 gpon gsm ieee802.11a ieee802.11ac ieee802.11ad ieee802.11ax ieee802.11ay ieee802.11be ieee802.11g ieee802.11n ieee802.15.1 ieee802.15.4 infiniband-ddr infiniband-edr infiniband-fdr infiniband-fdr10 infiniband-hdr infiniband-ndr infiniband-qdr infiniband-sdr infiniband-xdr juniper-vcp lag lte moca ng-pon2 other other-wireless sonet-oc12 sonet-oc192 sonet-oc1920 sonet-oc3 sonet-oc3840 sonet-oc48 sonet-oc768 t1 t3 virtual xdsl xg-pon xgs-pon]",
 		}
 		if !all {
 			return err
@@ -31110,21 +31110,45 @@ var _ interface {
 } = InterfaceValidationError{}
 
 var _Interface_Type_InLookup = map[string]struct{}{
+	"1000base-bx10-d":         {},
+	"1000base-bx10-u":         {},
+	"1000base-cwdm":           {},
+	"1000base-cx":             {},
+	"1000base-dwdm":           {},
+	"1000base-ex":             {},
 	"1000base-kx":             {},
+	"1000base-lsx":            {},
 	"1000base-lx":             {},
+	"1000base-lx10":           {},
 	"1000base-sx":             {},
 	"1000base-t":              {},
 	"1000base-tx":             {},
 	"1000base-x-gbic":         {},
 	"1000base-x-sfp":          {},
+	"1000base-zx":             {},
 	"100base-fx":              {},
 	"100base-lfx":             {},
 	"100base-t1":              {},
 	"100base-tx":              {},
 	"100base-x-sfp":           {},
+	"100gbase-cr1":            {},
+	"100gbase-cr10":           {},
+	"100gbase-cr2":            {},
+	"100gbase-cr4":            {},
+	"100gbase-cwdm4":          {},
+	"100gbase-dr":             {},
+	"100gbase-er4":            {},
+	"100gbase-fr1":            {},
 	"100gbase-kp4":            {},
 	"100gbase-kr2":            {},
 	"100gbase-kr4":            {},
+	"100gbase-lr1":            {},
+	"100gbase-lr4":            {},
+	"100gbase-sr1":            {},
+	"100gbase-sr1.2":          {},
+	"100gbase-sr10":           {},
+	"100gbase-sr2":            {},
+	"100gbase-sr4":            {},
 	"100gbase-x-cfp":          {},
 	"100gbase-x-cfp2":         {},
 	"100gbase-x-cfp4":         {},
@@ -31134,29 +31158,64 @@ var _Interface_Type_InLookup = map[string]struct{}{
 	"100gbase-x-qsfp28":       {},
 	"100gbase-x-qsfpdd":       {},
 	"100gbase-x-sfpdd":        {},
+	"100gbase-zr":             {},
 	"10g-epon":                {},
+	"10gbase-br-d":            {},
+	"10gbase-br-u":            {},
 	"10gbase-cx4":             {},
+	"10gbase-er":              {},
 	"10gbase-kr":              {},
 	"10gbase-kx4":             {},
+	"10gbase-lr":              {},
+	"10gbase-lrm":             {},
+	"10gbase-lx4":             {},
+	"10gbase-sr":              {},
 	"10gbase-t":               {},
 	"10gbase-x-sfpp":          {},
 	"10gbase-x-x2":            {},
 	"10gbase-x-xenpak":        {},
 	"10gbase-x-xfp":           {},
+	"10gbase-zr":              {},
 	"128gfc-qsfp28":           {},
 	"16gfc-sfpp":              {},
 	"1gfc-sfp":                {},
 	"2.5gbase-kx":             {},
 	"2.5gbase-t":              {},
+	"200gbase-cr2":            {},
+	"200gbase-cr4":            {},
+	"200gbase-dr4":            {},
+	"200gbase-er4":            {},
+	"200gbase-fr4":            {},
+	"200gbase-lr4":            {},
+	"200gbase-sr2":            {},
+	"200gbase-sr4":            {},
+	"200gbase-vr2":            {},
 	"200gbase-x-cfp2":         {},
 	"200gbase-x-qsfp56":       {},
 	"200gbase-x-qsfpdd":       {},
 	"25g-pon":                 {},
+	"25gbase-cr":              {},
+	"25gbase-er":              {},
 	"25gbase-kr":              {},
+	"25gbase-lr":              {},
+	"25gbase-sr":              {},
+	"25gbase-t":               {},
 	"25gbase-x-sfp28":         {},
 	"2gfc-sfp":                {},
 	"32gfc-sfp28":             {},
 	"32gfc-sfpp":              {},
+	"400gbase-cr4":            {},
+	"400gbase-dr4":            {},
+	"400gbase-er8":            {},
+	"400gbase-fr4":            {},
+	"400gbase-fr8":            {},
+	"400gbase-lr4":            {},
+	"400gbase-lr8":            {},
+	"400gbase-sr16":           {},
+	"400gbase-sr4":            {},
+	"400gbase-sr4_2":          {},
+	"400gbase-sr8":            {},
+	"400gbase-vr4":            {},
 	"400gbase-x-cdfp":         {},
 	"400gbase-x-cfp2":         {},
 	"400gbase-x-cfp8":         {},
@@ -31164,12 +31223,23 @@ var _Interface_Type_InLookup = map[string]struct{}{
 	"400gbase-x-osfp-rhs":     {},
 	"400gbase-x-qsfp112":      {},
 	"400gbase-x-qsfpdd":       {},
+	"400gbase-zr":             {},
+	"40gbase-cr4":             {},
+	"40gbase-er4":             {},
+	"40gbase-fr4":             {},
 	"40gbase-kr4":             {},
+	"40gbase-lr4":             {},
+	"40gbase-sr4":             {},
 	"40gbase-x-qsfpp":         {},
 	"4g":                      {},
 	"4gfc-sfp":                {},
 	"50g-pon":                 {},
+	"50gbase-cr":              {},
+	"50gbase-er":              {},
+	"50gbase-fr":              {},
 	"50gbase-kr":              {},
+	"50gbase-lr":              {},
+	"50gbase-sr":              {},
 	"50gbase-x-sfp28":         {},
 	"50gbase-x-sfp56":         {},
 	"5g":                      {},
@@ -31178,6 +31248,10 @@ var _Interface_Type_InLookup = map[string]struct{}{
 	"64gfc-qsfpp":             {},
 	"64gfc-sfpdd":             {},
 	"64gfc-sfpp":              {},
+	"800gbase-cr8":            {},
+	"800gbase-dr8":            {},
+	"800gbase-sr8":            {},
+	"800gbase-vr8":            {},
 	"800gbase-x-osfp":         {},
 	"800gbase-x-qsfpdd":       {},
 	"8gfc-sfpp":               {},
@@ -38518,6 +38592,43 @@ func (m *Platform) validate(all bool) error {
 		// no validation rules for Description
 	}
 
+	if m.Parent != nil {
+
+		if all {
+			switch v := interface{}(m.GetParent()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, PlatformValidationError{
+						field:  "Parent",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, PlatformValidationError{
+						field:  "Parent",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetParent()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return PlatformValidationError{
+					field:  "Parent",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if m.Comments != nil {
+		// no validation rules for Comments
+	}
+
 	if len(errors) > 0 {
 		return PlatformMultiError(errors)
 	}
@@ -39152,7 +39263,7 @@ func (m *PowerOutlet) validate(all bool) error {
 		if _, ok := _PowerOutlet_Type_InLookup[m.GetType()]; !ok {
 			err := PowerOutletValidationError{
 				field:  "Type",
-				reason: "value must be in list [CS6360C CS6364C CS8164C CS8264C CS8364C CS8464C dc-terminal eaton-c39 hardwired hdot-cx iec-60309-2p-e-4h iec-60309-2p-e-6h iec-60309-2p-e-9h iec-60309-3p-e-4h iec-60309-3p-e-6h iec-60309-3p-e-9h iec-60309-3p-n-e-4h iec-60309-3p-n-e-6h iec-60309-3p-n-e-9h iec-60309-p-n-e-4h iec-60309-p-n-e-6h iec-60309-p-n-e-9h iec-60320-c13 iec-60320-c15 iec-60320-c19 iec-60320-c21 iec-60320-c5 iec-60320-c7 iec-60906-1 ita-e ita-f ita-g ita-h ita-i ita-j ita-k ita-l ita-m ita-multistandard ita-n ita-o molex-micro-fit-1x2 molex-micro-fit-2x2 molex-micro-fit-2x4 nbr-14136-10a nbr-14136-20a nema-1-15r nema-10-30r nema-10-50r nema-14-20r nema-14-30r nema-14-50r nema-14-60r nema-15-15r nema-15-20r nema-15-30r nema-15-50r nema-15-60r nema-5-15r nema-5-20r nema-5-30r nema-5-50r nema-6-15r nema-6-20r nema-6-30r nema-6-50r nema-l1-15r nema-l10-30r nema-l14-20r nema-l14-30r nema-l14-50r nema-l14-60r nema-l15-20r nema-l15-30r nema-l15-50r nema-l15-60r nema-l21-20r nema-l21-30r nema-l22-20r nema-l22-30r nema-l5-15r nema-l5-20r nema-l5-30r nema-l5-50r nema-l6-15r nema-l6-20r nema-l6-30r nema-l6-50r neutrik-powercon-20a neutrik-powercon-32a neutrik-powercon-true1 neutrik-powercon-true1-top other saf-d-grid ubiquiti-smartpower usb-a usb-c usb-micro-b]",
+				reason: "value must be in list [CS6360C CS6364C CS8164C CS8264C CS8364C CS8464C dc-terminal eaton-c39 hardwired hdot-cx iec-60309-2p-e-4h iec-60309-2p-e-6h iec-60309-2p-e-9h iec-60309-3p-e-4h iec-60309-3p-e-6h iec-60309-3p-e-9h iec-60309-3p-n-e-4h iec-60309-3p-n-e-6h iec-60309-3p-n-e-9h iec-60309-p-n-e-4h iec-60309-p-n-e-6h iec-60309-p-n-e-9h iec-60320-c13 iec-60320-c15 iec-60320-c17 iec-60320-c19 iec-60320-c21 iec-60320-c5 iec-60320-c7 iec-60906-1 ita-e ita-f ita-g ita-h ita-i ita-j ita-k ita-l ita-m ita-multistandard ita-n ita-o molex-micro-fit-1x2 molex-micro-fit-2x2 molex-micro-fit-2x4 nbr-14136-10a nbr-14136-20a nema-1-15r nema-10-30r nema-10-50r nema-14-20r nema-14-30r nema-14-50r nema-14-60r nema-15-15r nema-15-20r nema-15-30r nema-15-50r nema-15-60r nema-5-15r nema-5-20r nema-5-30r nema-5-50r nema-6-15r nema-6-20r nema-6-30r nema-6-50r nema-l1-15r nema-l10-30r nema-l14-20r nema-l14-30r nema-l14-50r nema-l14-60r nema-l15-20r nema-l15-30r nema-l15-50r nema-l15-60r nema-l21-20r nema-l21-30r nema-l22-20r nema-l22-30r nema-l5-15r nema-l5-20r nema-l5-30r nema-l5-50r nema-l6-15r nema-l6-20r nema-l6-30r nema-l6-50r neutrik-powercon-20a neutrik-powercon-32a neutrik-powercon-true1 neutrik-powercon-true1-top other saf-d-grid ubiquiti-smartpower usb-a usb-c usb-micro-b]",
 			}
 			if !all {
 				return err
@@ -39339,6 +39450,7 @@ var _PowerOutlet_Type_InLookup = map[string]struct{}{
 	"iec-60309-p-n-e-9h":         {},
 	"iec-60320-c13":              {},
 	"iec-60320-c15":              {},
+	"iec-60320-c17":              {},
 	"iec-60320-c19":              {},
 	"iec-60320-c21":              {},
 	"iec-60320-c5":               {},
@@ -39853,7 +39965,7 @@ func (m *PowerPort) validate(all bool) error {
 		if _, ok := _PowerPort_Type_InLookup[m.GetType()]; !ok {
 			err := PowerPortValidationError{
 				field:  "Type",
-				reason: "value must be in list [cs6361c cs6365c cs8165c cs8265c cs8365c cs8465c dc-terminal hardwired iec-60309-2p-e-4h iec-60309-2p-e-6h iec-60309-2p-e-9h iec-60309-3p-e-4h iec-60309-3p-e-6h iec-60309-3p-e-9h iec-60309-3p-n-e-4h iec-60309-3p-n-e-6h iec-60309-3p-n-e-9h iec-60309-p-n-e-4h iec-60309-p-n-e-6h iec-60309-p-n-e-9h iec-60320-c14 iec-60320-c16 iec-60320-c20 iec-60320-c22 iec-60320-c6 iec-60320-c8 iec-60906-1 ita-c ita-e ita-ef ita-f ita-g ita-h ita-i ita-j ita-k ita-l ita-m ita-n ita-o molex-micro-fit-1x2 molex-micro-fit-2x2 molex-micro-fit-2x4 nbr-14136-10a nbr-14136-20a nema-1-15p nema-10-30p nema-10-50p nema-14-20p nema-14-30p nema-14-50p nema-14-60p nema-15-15p nema-15-20p nema-15-30p nema-15-50p nema-15-60p nema-5-15p nema-5-20p nema-5-30p nema-5-50p nema-6-15p nema-6-20p nema-6-30p nema-6-50p nema-l1-15p nema-l10-30p nema-l14-20p nema-l14-30p nema-l14-50p nema-l14-60p nema-l15-20p nema-l15-30p nema-l15-50p nema-l15-60p nema-l21-20p nema-l21-30p nema-l22-20p nema-l22-30p nema-l5-15p nema-l5-20p nema-l5-30p nema-l5-50p nema-l6-15p nema-l6-20p nema-l6-30p nema-l6-50p neutrik-powercon-20 neutrik-powercon-32 neutrik-powercon-true1 neutrik-powercon-true1-top other saf-d-grid ubiquiti-smartpower usb-3-b usb-3-micro-b usb-a usb-b usb-c usb-micro-a usb-micro-ab usb-micro-b usb-mini-a usb-mini-b]",
+				reason: "value must be in list [cs6361c cs6365c cs8165c cs8265c cs8365c cs8465c dc-terminal hardwired iec-60309-2p-e-4h iec-60309-2p-e-6h iec-60309-2p-e-9h iec-60309-3p-e-4h iec-60309-3p-e-6h iec-60309-3p-e-9h iec-60309-3p-n-e-4h iec-60309-3p-n-e-6h iec-60309-3p-n-e-9h iec-60309-p-n-e-4h iec-60309-p-n-e-6h iec-60309-p-n-e-9h iec-60320-c14 iec-60320-c16 iec-60320-c18 iec-60320-c20 iec-60320-c22 iec-60320-c6 iec-60320-c8 iec-60906-1 ita-c ita-e ita-ef ita-f ita-g ita-h ita-i ita-j ita-k ita-l ita-m ita-n ita-o molex-micro-fit-1x2 molex-micro-fit-2x2 molex-micro-fit-2x4 nbr-14136-10a nbr-14136-20a nema-1-15p nema-10-30p nema-10-50p nema-14-20p nema-14-30p nema-14-50p nema-14-60p nema-15-15p nema-15-20p nema-15-30p nema-15-50p nema-15-60p nema-5-15p nema-5-20p nema-5-30p nema-5-50p nema-6-15p nema-6-20p nema-6-30p nema-6-50p nema-l1-15p nema-l10-30p nema-l14-20p nema-l14-30p nema-l14-50p nema-l14-60p nema-l15-20p nema-l15-30p nema-l15-50p nema-l15-60p nema-l21-20p nema-l21-30p nema-l22-20p nema-l22-30p nema-l5-15p nema-l5-20p nema-l5-30p nema-l5-50p nema-l6-15p nema-l6-20p nema-l6-30p nema-l6-50p neutrik-powercon-20 neutrik-powercon-32 neutrik-powercon-true1 neutrik-powercon-true1-top other saf-d-grid ubiquiti-smartpower usb-3-b usb-3-micro-b usb-a usb-b usb-c usb-micro-a usb-micro-ab usb-micro-b usb-mini-a usb-mini-b]",
 			}
 			if !all {
 				return err
@@ -39979,6 +40091,7 @@ var _PowerPort_Type_InLookup = map[string]struct{}{
 	"iec-60309-p-n-e-9h":         {},
 	"iec-60320-c14":              {},
 	"iec-60320-c16":              {},
+	"iec-60320-c18":              {},
 	"iec-60320-c20":              {},
 	"iec-60320-c22":              {},
 	"iec-60320-c6":               {},
@@ -42176,6 +42289,21 @@ func (m *RackReservation) validate(all bool) error {
 		// no validation rules for Comments
 	}
 
+	if m.Status != nil {
+
+		if _, ok := _RackReservation_Status_InLookup[m.GetStatus()]; !ok {
+			err := RackReservationValidationError{
+				field:  "Status",
+				reason: "value must be in list [active pending stale]",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+	}
+
 	if len(errors) > 0 {
 		return RackReservationMultiError(errors)
 	}
@@ -42253,6 +42381,12 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = RackReservationValidationError{}
+
+var _RackReservation_Status_InLookup = map[string]struct{}{
+	"active":  {},
+	"pending": {},
+	"stale":   {},
+}
 
 // Validate checks the field values on RackRole with the rules defined in the
 // proto definition for this message. If any rules are violated, the first
