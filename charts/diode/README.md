@@ -322,6 +322,7 @@ helm show values diode/diode
 | global.diode.ingester.waitForRedis | bool | `true` | wait for Redis to be reachable |
 | global.diode.reconciler.waitForPostgres | bool | `true` | wait for PostgreSQL to be reachable |
 | global.diode.reconciler.waitForRedis | bool | `true` | wait for Redis to be reachable |
+| global.security.allowInsecureImages | bool | `true` |  |
 | hydra | object | `{"deployment":{"extraInitContainers":"{{ include \"diode.hydra.extrainitcontainers\" . }}","resources":{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}},"enabled":true,"fullnameOverride":"diode-hydra","hydra":{"automigration":{"enabled":true},"config":{"oidc":{"subject_identifiers":{"supported_types":["public"]}},"strategies":{"access_token":"jwt","jwt":{"scope_claim":"both"}},"ttl":{"access_token":"1h"},"urls":{"self":{"issuer":"http://diode-hydra-public.{{ .Release.Namespace }}.svc.cluster.local:4444"}}},"dev":true,"ingress":{"admin":{"enabled":false},"public":{"enabled":false}},"service":{"admin":{"enabled":true,"port":4445,"type":"ClusterIP"},"public":{"enabled":true,"port":4444,"type":"ClusterIP"}}},"job":{"annotations":{"helm.sh/hook":"post-install, post-upgrade","helm.sh/hook-delete-policy":"hook-succeeded","helm.sh/hook-weight":"1"},"extraInitContainers":"{{ include \"diode.hydra.extrainitcontainers\" . }}"},"secret":{"enabled":false,"nameOverride":"diode-hydra-secret"}}` | ref: https://github.com/ory/k8s/blob/master/helm/charts/hydra/values.yaml |
 | hydra.deployment.extraInitContainers | string or list | `"{{ include \"diode.hydra.extrainitcontainers\" . }}"` | extra init containers |
 | hydra.deployment.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
@@ -359,37 +360,37 @@ helm show values diode/diode
 | ingressNginx.ingressClass | string | `"nginx"` | ingress class |
 | ingressNginx.pathPrefix | string | `"/diode"` | ingress path prefix |
 | ingressNginx.tls | object | `{}` | ingress tls |
-| postgresql | object | `{"auth":{"existingSecret":"diode-postgresql-secret","secretKeys":{"adminPasswordKey":"postgres-password"}},"enabled":true,"fullnameOverride":"diode-postgresql","metrics":{"repository":"bitnami/postgres-exporter"},"primary":{"extraVolumeMounts":[{"mountPath":"/docker-entrypoint-initdb.d/init_diode_databases.sh","name":"custom-init-scripts","subPath":"init_diode_databases.sh"}],"initdb":{"scriptsConfigMap":"diode-postgresql-initdb-scripts-configmap"},"livenessProbe":{"enabled":true,"failureThreshold":6,"initialDelaySeconds":30,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":5},"persistence":{"enabled":true,"size":"10Gi"},"readinessProbe":{"enabled":true,"failureThreshold":6,"initialDelaySeconds":5,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":5}},"repository":"bitnamilegacy/postgresql","volumePermissions":{"repository":"bitnamilegacy/postgresql"}}` | ref: https://github.com/bitnami/charts/tree/main/bitnami/postgresql |
+| postgresql | object | `{"auth":{"existingSecret":"diode-postgresql-secret","secretKeys":{"adminPasswordKey":"postgres-password"}},"enabled":true,"fullnameOverride":"diode-postgresql","image":{"repository":"bitnamilegacy/postgresql"},"metrics":{"image":{"repository":"bitnamilegacy/postgres-exporter"}},"primary":{"extraVolumeMounts":[{"mountPath":"/docker-entrypoint-initdb.d/init_diode_databases.sh","name":"custom-init-scripts","subPath":"init_diode_databases.sh"}],"initdb":{"scriptsConfigMap":"diode-postgresql-initdb-scripts-configmap"},"livenessProbe":{"enabled":true,"failureThreshold":6,"initialDelaySeconds":30,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":5},"persistence":{"enabled":true,"size":"10Gi"},"readinessProbe":{"enabled":true,"failureThreshold":6,"initialDelaySeconds":5,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":5}},"volumePermissions":{"image":{"repository":"bitnamilegacy/postgresql"}}}` | ref: https://github.com/bitnami/charts/tree/main/bitnami/postgresql |
 | postgresql.auth.existingSecret | string | `"diode-postgresql-secret"` | existing secret name |
 | postgresql.auth.secretKeys | object | `{"adminPasswordKey":"postgres-password"}` | existing secret password key |
 | postgresql.enabled | bool | `true` | enabled |
 | postgresql.fullnameOverride | string | `"diode-postgresql"` | fullname override |
-| postgresql.metrics.repository | string | `"bitnami/postgres-exporter"` | image repository |
+| postgresql.image.repository | string | `"bitnamilegacy/postgresql"` | image repository |
+| postgresql.metrics.image.repository | string | `"bitnamilegacy/postgres-exporter"` | image repository |
 | postgresql.primary.extraVolumeMounts | list | `[{"mountPath":"/docker-entrypoint-initdb.d/init_diode_databases.sh","name":"custom-init-scripts","subPath":"init_diode_databases.sh"}]` | extra volume mounts |
 | postgresql.primary.initdb.scriptsConfigMap | string | `"diode-postgresql-initdb-scripts-configmap"` | scripts config map |
 | postgresql.primary.livenessProbe | object | `{"enabled":true,"failureThreshold":6,"initialDelaySeconds":30,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":5}` | liveness probe |
 | postgresql.primary.persistence.enabled | bool | `true` | persistence enabled |
 | postgresql.primary.persistence.size | string | `"10Gi"` | persistence size |
 | postgresql.primary.readinessProbe | object | `{"enabled":true,"failureThreshold":6,"initialDelaySeconds":5,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":5}` | readiness probe |
-| postgresql.repository | string | `"bitnamilegacy/postgresql"` | image repository |
-| postgresql.volumePermissions.repository | string | `"bitnamilegacy/postgresql"` | image repository |
-| redis | object | `{"auth":{"enabled":true,"existingSecret":"diode-redis-secret","existingSecretPasswordKey":"redis-password"},"containerPorts":{"redis":6379},"enabled":true,"fullnameOverride":"diode-redis","kubectl":{"repository":"bitnamilegacy/kubectl"},"metrics":{"repository":"bitnamilegacy/redis-exporter"},"persistence":{"enabled":true,"size":"1Gi"},"replica":{"replicaCount":1},"repository":"bitnamilegacy/redis","sentinel":{"repository":"bitnamilegacy/redis-sentinel"},"service":{"port":6379},"sysctl":{"repository":"bitnamilegacy/os-shell"},"volumePermissions":{"repository":"bitnamilegacy/os-shell"}}` | ref: https://github.com/bitnami/charts/tree/main/bitnami/redis |
+| postgresql.volumePermissions.image.repository | string | `"bitnamilegacy/postgresql"` | image repository |
+| redis | object | `{"auth":{"enabled":true,"existingSecret":"diode-redis-secret","existingSecretPasswordKey":"redis-password"},"containerPorts":{"redis":6379},"enabled":true,"fullnameOverride":"diode-redis","image":{"repository":"bitnamilegacy/redis"},"kubectl":{"image":{"repository":"bitnamilegacy/kubectl"}},"metrics":{"image":{"repository":"bitnamilegacy/redis-exporter"}},"persistence":{"enabled":true,"size":"1Gi"},"replica":{"replicaCount":1},"sentinel":{"image":{"repository":"bitnamilegacy/redis-sentinel"}},"service":{"port":6379},"sysctl":{"image":{"repository":"bitnamilegacy/os-shell"}},"volumePermissions":{"image":{"repository":"bitnamilegacy/os-shell"}}}` | ref: https://github.com/bitnami/charts/tree/main/bitnami/redis |
 | redis.auth.enabled | bool | `true` | auth enabled |
 | redis.auth.existingSecret | string | `"diode-redis-secret"` | existing secret name |
 | redis.auth.existingSecretPasswordKey | string | `"redis-password"` | existing secret password key |
 | redis.containerPorts | object | `{"redis":6379}` | container ports |
 | redis.enabled | bool | `true` | enabled |
 | redis.fullnameOverride | string | `"diode-redis"` | fullname override |
-| redis.kubectl.repository | string | `"bitnamilegacy/kubectl"` | image repository |
-| redis.metrics.repository | string | `"bitnamilegacy/redis-exporter"` | image repository |
+| redis.image.repository | string | `"bitnamilegacy/redis"` | image repository |
+| redis.kubectl.image.repository | string | `"bitnamilegacy/kubectl"` | image repository |
+| redis.metrics.image.repository | string | `"bitnamilegacy/redis-exporter"` | image repository |
 | redis.persistence.enabled | bool | `true` | persistence enabled |
 | redis.persistence.size | string | `"1Gi"` | persistence size |
 | redis.replica.replicaCount | int | `1` | replica count |
-| redis.repository | string | `"bitnamilegacy/redis"` | image repository |
-| redis.sentinel.repository | string | `"bitnamilegacy/redis-sentinel"` | image repository |
+| redis.sentinel.image.repository | string | `"bitnamilegacy/redis-sentinel"` | image repository |
 | redis.service.port | int | `6379` | service port |
-| redis.sysctl.repository | string | `"bitnamilegacy/os-shell"` | image repository |
-| redis.volumePermissions.repository | string | `"bitnamilegacy/os-shell"` | image repository |
+| redis.sysctl.image.repository | string | `"bitnamilegacy/os-shell"` | image repository |
+| redis.volumePermissions.image.repository | string | `"bitnamilegacy/os-shell"` | image repository |
 
 ## License
 
