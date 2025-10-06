@@ -49,7 +49,7 @@ externalPostgresql:
   # -- existing postgresql secret
   existingSecretName: ""
   # -- key of password in existing postgresql secret
-  existingSecretKey: postgresql-password
+  existingSecretKey: ""
 
 # External Redis configuration (optional)
 externalRedis:

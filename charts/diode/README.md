@@ -305,13 +305,13 @@ helm show values diode/diode
 | diodeReconciler.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
 | diodeReconciler.serviceAccount.create | bool | `true` | create service account |
 | externalPostgresql.database | string | `"diode"` | database name |
-| externalPostgresql.existingSecretKey | string | `"postgresql-password"` | key of password in existing postgresql secret |
+| externalPostgresql.existingSecretKey | string | `""` | key of password in existing postgresql secret |
 | externalPostgresql.existingSecretName | string | `""` | existing postgresql secret |
 | externalPostgresql.hostname | string | `"localhost"` | hostname |
 | externalPostgresql.password | string | `""` | password |
 | externalPostgresql.port | int | `5432` | port |
+| externalPostgresql.sslMode | string | `""` | ssl mode |
 | externalPostgresql.username | string | `"diode"` | username |
-| externalPostgresql.sslMode | string | `"disable"` | postgres ssl connection mode |
 | externalRedis.hostname | string | `"localhost"` | hostname |
 | externalRedis.port | int | `6379` | port |
 | global.commonAnnotations | object | `{}` | common annotations for all resources |
