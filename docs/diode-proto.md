@@ -1058,8 +1058,8 @@
 | default | [string](#string) | optional |  |
 | related_object_filter | [string](#string) | optional |  |
 | weight | [int64](#int64) | optional |  |
-| validation_minimum | [int64](#int64) | optional |  |
-| validation_maximum | [int64](#int64) | optional |  |
+| validation_minimum | [double](#double) | optional |  |
+| validation_maximum | [double](#double) | optional |  |
 | validation_regex | [string](#string) | optional |  |
 | choice_set | [CustomFieldChoiceSet](#diode-v1-CustomFieldChoiceSet) | optional |  |
 | comments | [string](#string) | optional |  |
@@ -2875,6 +2875,8 @@
 | description | [string](#string) | optional |  |
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [Platform.CustomFieldsEntry](#diode-v1-Platform-CustomFieldsEntry) | repeated |  |
+| parent | [Platform](#diode-v1-Platform) | optional |  |
+| comments | [string](#string) | optional |  |
 
 
 
@@ -3331,6 +3333,7 @@
 | comments | [string](#string) | optional |  |
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [RackReservation.CustomFieldsEntry](#diode-v1-RackReservation-CustomFieldsEntry) | repeated |  |
+| status | [string](#string) | optional |  |
 
 
 

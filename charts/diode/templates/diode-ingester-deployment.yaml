@@ -39,7 +39,7 @@ spec:
         {{- toYaml .Values.diodeIngester.image.imagePullSecrets | nindent 8 }}
       {{- end }}
       initContainers:
-        {{- if .Values.redis.enabled }}
+        {{- if .Values.global.diode.ingester.waitForRedis }}
         - name: wait-for-redis
           image: {{ include "diode.busybox.image" . }}
           imagePullPolicy: {{ include "diode.busybox.imagepullpolicy" . }}
@@ -53,8 +53,8 @@ spec:
               done;
               echo "Redis server is up and running";
         {{- end }}
-        {{- if .Values.diodeAuth.extraInitContainers }}
-        {{- include "common.tplvalues.render" ( dict "value" .Values.diodeAuth.extraInitContainers "context" $ ) | nindent 8 }}
+        {{- if .Values.diodeIngester.extraInitContainers }}
+        {{- include "common.tplvalues.render" ( dict "value" .Values.diodeIngester.extraInitContainers "context" $ ) | nindent 8 }}
         {{- end }}
       containers:
         - name: {{ include "diode.ingester.servicename" . }}
