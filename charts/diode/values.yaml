@@ -295,8 +295,6 @@ redis:
       # -- image repository
       repository: bitnamilegacy/redis-sentinel
   volumePermissions:
-    # -- image repository
-    repository: bitnamilegacy/os-shell
     image:
       # -- image repository
       repository: bitnamilegacy/os-shell
