@@ -258,6 +258,8 @@ redis:
   enabled: true
   # -- fullname override
   fullnameOverride: diode-redis
+  # -- image repository
+  repository: bitnamilegacy/redis
   auth:
     # -- auth enabled
     enabled: true
@@ -279,6 +281,21 @@ redis:
     enabled: true
     # -- persistence size
     size: 1Gi
+  metrics:
+    # -- image repository
+    repository: bitnami/redis-exporter
+  sentinel:
+    # -- image repository
+    repository: bitnamilegacy/redis-sentinel
+  volumePermissions:
+    # -- image repository
+    repository: bitnamilegacy/os-shell
+  kubectl:
+    # -- image repository
+    repository: bitnamilegacy/kubectl
+  sysctl:
+    # -- image repository
+    repository: bitnamilegacy/os-shell
 
 # PostgreSQL configuration (optional)
 # -- ref: https://github.com/bitnami/charts/tree/main/bitnami/postgresql
@@ -287,6 +304,8 @@ postgresql:
   enabled: true
   # -- fullname override
   fullnameOverride: diode-postgresql
+  # -- image repository
+  repository: bitnamilegacy/postgresql
   auth:
     # -- existing secret name
     existingSecret: diode-postgresql-secret
@@ -323,6 +342,12 @@ postgresql:
       timeoutSeconds: 5
       successThreshold: 1
       failureThreshold: 6
+  metrics:
+    # -- image repository
+    repository: bitnami/postgres-exporter
+  volumePermissions:
+    # -- image repository
+    repository: bitnamilegacy/postgresql
 
 # Hydra configuration
 # -- ref: https://github.com/ory/k8s/blob/master/helm/charts/hydra/values.yaml

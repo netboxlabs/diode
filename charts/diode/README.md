@@ -2,7 +2,7 @@
 
 A Helm chart for Diode
 
-![Version: 1.8.0](https://img.shields.io/badge/Version-1.8.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.5.0](https://img.shields.io/badge/AppVersion-1.5.0-informational?style=flat-square)
+![Version: 1.8.1](https://img.shields.io/badge/Version-1.8.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.5.0](https://img.shields.io/badge/AppVersion-1.5.0-informational?style=flat-square)
 
 ## Prerequisites
 
@@ -359,28 +359,37 @@ helm show values diode/diode
 | ingressNginx.ingressClass | string | `"nginx"` | ingress class |
 | ingressNginx.pathPrefix | string | `"/diode"` | ingress path prefix |
 | ingressNginx.tls | object | `{}` | ingress tls |
-| postgresql | object | `{"auth":{"existingSecret":"diode-postgresql-secret","secretKeys":{"adminPasswordKey":"postgres-password"}},"enabled":true,"fullnameOverride":"diode-postgresql","primary":{"extraVolumeMounts":[{"mountPath":"/docker-entrypoint-initdb.d/init_diode_databases.sh","name":"custom-init-scripts","subPath":"init_diode_databases.sh"}],"initdb":{"scriptsConfigMap":"diode-postgresql-initdb-scripts-configmap"},"livenessProbe":{"enabled":true,"failureThreshold":6,"initialDelaySeconds":30,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":5},"persistence":{"enabled":true,"size":"10Gi"},"readinessProbe":{"enabled":true,"failureThreshold":6,"initialDelaySeconds":5,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":5}}}` | ref: https://github.com/bitnami/charts/tree/main/bitnami/postgresql |
+| postgresql | object | `{"auth":{"existingSecret":"diode-postgresql-secret","secretKeys":{"adminPasswordKey":"postgres-password"}},"enabled":true,"fullnameOverride":"diode-postgresql","metrics":{"repository":"bitnami/postgres-exporter"},"primary":{"extraVolumeMounts":[{"mountPath":"/docker-entrypoint-initdb.d/init_diode_databases.sh","name":"custom-init-scripts","subPath":"init_diode_databases.sh"}],"initdb":{"scriptsConfigMap":"diode-postgresql-initdb-scripts-configmap"},"livenessProbe":{"enabled":true,"failureThreshold":6,"initialDelaySeconds":30,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":5},"persistence":{"enabled":true,"size":"10Gi"},"readinessProbe":{"enabled":true,"failureThreshold":6,"initialDelaySeconds":5,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":5}},"repository":"bitnamilegacy/postgresql","volumePermissions":{"repository":"bitnamilegacy/postgresql"}}` | ref: https://github.com/bitnami/charts/tree/main/bitnami/postgresql |
 | postgresql.auth.existingSecret | string | `"diode-postgresql-secret"` | existing secret name |
 | postgresql.auth.secretKeys | object | `{"adminPasswordKey":"postgres-password"}` | existing secret password key |
 | postgresql.enabled | bool | `true` | enabled |
 | postgresql.fullnameOverride | string | `"diode-postgresql"` | fullname override |
+| postgresql.metrics.repository | string | `"bitnami/postgres-exporter"` | image repository |
 | postgresql.primary.extraVolumeMounts | list | `[{"mountPath":"/docker-entrypoint-initdb.d/init_diode_databases.sh","name":"custom-init-scripts","subPath":"init_diode_databases.sh"}]` | extra volume mounts |
 | postgresql.primary.initdb.scriptsConfigMap | string | `"diode-postgresql-initdb-scripts-configmap"` | scripts config map |
 | postgresql.primary.livenessProbe | object | `{"enabled":true,"failureThreshold":6,"initialDelaySeconds":30,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":5}` | liveness probe |
 | postgresql.primary.persistence.enabled | bool | `true` | persistence enabled |
 | postgresql.primary.persistence.size | string | `"10Gi"` | persistence size |
 | postgresql.primary.readinessProbe | object | `{"enabled":true,"failureThreshold":6,"initialDelaySeconds":5,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":5}` | readiness probe |
-| redis | object | `{"auth":{"enabled":true,"existingSecret":"diode-redis-secret","existingSecretPasswordKey":"redis-password"},"containerPorts":{"redis":6379},"enabled":true,"fullnameOverride":"diode-redis","persistence":{"enabled":true,"size":"1Gi"},"replica":{"replicaCount":1},"service":{"port":6379}}` | ref: https://github.com/bitnami/charts/tree/main/bitnami/redis |
+| postgresql.repository | string | `"bitnamilegacy/postgresql"` | image repository |
+| postgresql.volumePermissions.repository | string | `"bitnamilegacy/postgresql"` | image repository |
+| redis | object | `{"auth":{"enabled":true,"existingSecret":"diode-redis-secret","existingSecretPasswordKey":"redis-password"},"containerPorts":{"redis":6379},"enabled":true,"fullnameOverride":"diode-redis","kubectl":{"repository":"bitnamilegacy/kubectl"},"metrics":{"repository":"bitnami/redis-exporter"},"persistence":{"enabled":true,"size":"1Gi"},"replica":{"replicaCount":1},"repository":"bitnamilegacy/redis","sentinel":{"repository":"bitnamilegacy/redis-sentinel"},"service":{"port":6379},"sysctl":{"repository":"bitnamilegacy/os-shell"},"volumePermissions":{"repository":"bitnamilegacy/os-shell"}}` | ref: https://github.com/bitnami/charts/tree/main/bitnami/redis |
 | redis.auth.enabled | bool | `true` | auth enabled |
 | redis.auth.existingSecret | string | `"diode-redis-secret"` | existing secret name |
 | redis.auth.existingSecretPasswordKey | string | `"redis-password"` | existing secret password key |
 | redis.containerPorts | object | `{"redis":6379}` | container ports |
 | redis.enabled | bool | `true` | enabled |
 | redis.fullnameOverride | string | `"diode-redis"` | fullname override |
+| redis.kubectl.repository | string | `"bitnamilegacy/kubectl"` | image repository |
+| redis.metrics.repository | string | `"bitnami/redis-exporter"` | image repository |
 | redis.persistence.enabled | bool | `true` | persistence enabled |
 | redis.persistence.size | string | `"1Gi"` | persistence size |
 | redis.replica.replicaCount | int | `1` | replica count |
+| redis.repository | string | `"bitnamilegacy/redis"` | image repository |
+| redis.sentinel.repository | string | `"bitnamilegacy/redis-sentinel"` | image repository |
 | redis.service.port | int | `6379` | service port |
+| redis.sysctl.repository | string | `"bitnamilegacy/os-shell"` | image repository |
+| redis.volumePermissions.repository | string | `"bitnamilegacy/os-shell"` | image repository |
 
 ## License
 
