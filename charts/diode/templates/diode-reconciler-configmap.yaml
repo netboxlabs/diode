@@ -29,6 +29,7 @@ data:
   POSTGRES_PORT: {{ include "diode.postgresql.port" . | quote }}
   POSTGRES_DB_NAME: {{ include "diode.postgresql.database" . | quote }}
   POSTGRES_USER: {{ include "diode.postgresql.username" . | quote }}
+  POSTGRES_SSL_MODE: {{ include "diode.postgresql.sslMode" . | quote }}
   NETBOX_DIODE_PLUGIN_API_BASE_URL: {{ $config.netboxDiodePluginApiBaseUrl | quote }}
   NETBOX_DIODE_PLUGIN_SKIP_TLS_VERIFY: {{ $config.netboxDiodePluginSkipTlsVerify | quote }}
   DIODE_AUTH_TOKEN_URL: {{ printf "%s/token" (include "diode.auth.url" .) | quote }}
