@@ -373,7 +373,7 @@ helm show values diode/diode
 | postgresql.primary.readinessProbe | object | `{"enabled":true,"failureThreshold":6,"initialDelaySeconds":5,"periodSeconds":10,"successThreshold":1,"timeoutSeconds":5}` | readiness probe |
 | postgresql.repository | string | `"bitnamilegacy/postgresql"` | image repository |
 | postgresql.volumePermissions.repository | string | `"bitnamilegacy/postgresql"` | image repository |
-| redis | object | `{"auth":{"enabled":true,"existingSecret":"diode-redis-secret","existingSecretPasswordKey":"redis-password"},"containerPorts":{"redis":6379},"enabled":true,"fullnameOverride":"diode-redis","kubectl":{"repository":"bitnamilegacy/kubectl"},"metrics":{"repository":"bitnami/redis-exporter"},"persistence":{"enabled":true,"size":"1Gi"},"replica":{"replicaCount":1},"repository":"bitnamilegacy/redis","sentinel":{"repository":"bitnamilegacy/redis-sentinel"},"service":{"port":6379},"sysctl":{"repository":"bitnamilegacy/os-shell"},"volumePermissions":{"repository":"bitnamilegacy/os-shell"}}` | ref: https://github.com/bitnami/charts/tree/main/bitnami/redis |
+| redis | object | `{"auth":{"enabled":true,"existingSecret":"diode-redis-secret","existingSecretPasswordKey":"redis-password"},"containerPorts":{"redis":6379},"enabled":true,"fullnameOverride":"diode-redis","kubectl":{"repository":"bitnamilegacy/kubectl"},"metrics":{"repository":"bitnamilegacy/redis-exporter"},"persistence":{"enabled":true,"size":"1Gi"},"replica":{"replicaCount":1},"repository":"bitnamilegacy/redis","sentinel":{"repository":"bitnamilegacy/redis-sentinel"},"service":{"port":6379},"sysctl":{"repository":"bitnamilegacy/os-shell"},"volumePermissions":{"repository":"bitnamilegacy/os-shell"}}` | ref: https://github.com/bitnami/charts/tree/main/bitnami/redis |
 | redis.auth.enabled | bool | `true` | auth enabled |
 | redis.auth.existingSecret | string | `"diode-redis-secret"` | existing secret name |
 | redis.auth.existingSecretPasswordKey | string | `"redis-password"` | existing secret password key |
@@ -381,7 +381,7 @@ helm show values diode/diode
 | redis.enabled | bool | `true` | enabled |
 | redis.fullnameOverride | string | `"diode-redis"` | fullname override |
 | redis.kubectl.repository | string | `"bitnamilegacy/kubectl"` | image repository |
-| redis.metrics.repository | string | `"bitnami/redis-exporter"` | image repository |
+| redis.metrics.repository | string | `"bitnamilegacy/redis-exporter"` | image repository |
 | redis.persistence.enabled | bool | `true` | persistence enabled |
 | redis.persistence.size | string | `"1Gi"` | persistence size |
 | redis.replica.replicaCount | int | `1` | replica count |
