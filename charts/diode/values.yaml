@@ -44,6 +44,8 @@ externalPostgresql:
   username: diode
   # -- password
   password: ""
+  # -- ssl mode
+  sslMode: ""
   # -- existing postgresql secret
   existingSecretName: ""
   # -- key of password in existing postgresql secret

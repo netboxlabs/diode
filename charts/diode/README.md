@@ -311,6 +311,7 @@ helm show values diode/diode
 | externalPostgresql.password | string | `""` | password |
 | externalPostgresql.port | int | `5432` | port |
 | externalPostgresql.username | string | `"diode"` | username |
+| externalPostgresql.sslMode | string | `"disable"` | postgres ssl connection mode |
 | externalRedis.hostname | string | `"localhost"` | hostname |
 | externalRedis.port | int | `6379` | port |
 | global.commonAnnotations | object | `{}` | common annotations for all resources |
