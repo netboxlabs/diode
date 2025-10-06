@@ -283,7 +283,7 @@ redis:
     size: 1Gi
   metrics:
     # -- image repository
-    repository: bitnami/redis-exporter
+    repository: bitnamilegacy/redis-exporter
   sentinel:
     # -- image repository
     repository: bitnamilegacy/redis-sentinel
