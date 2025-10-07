@@ -30,6 +30,9 @@ jobs:
     defaults:
       run:
         working-directory: ${{ inputs.app_dir }}
+    env:
+      APP_NAME: ${{ inputs.app_name }}
+      APP_DIR: ${{ inputs.app_dir }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -38,11 +41,11 @@ jobs:
       - name: Write package.json
         uses: DamianReeves/write-file-action@6929a9a6d1807689191dcc8bbe62b54d70a32b42 # v1.3
         with:
-          path: ${{ inputs.app_dir }}/package.json
+          path: ${{ env.APP_DIR }}/package.json
           write-mode: overwrite
           contents: |
             {
-              "name": "${{ inputs.app_name }}",
+              "name": "${{ env.APP_NAME }}",
               "version": "1.0.0",
               "devDependencies": {
                 "semantic-release-export-data": "^1.0.1",
@@ -56,14 +59,14 @@ jobs:
       - name: Write .releaserc.json
         uses: DamianReeves/write-file-action@6929a9a6d1807689191dcc8bbe62b54d70a32b42 # v1.3
         with:
-          path: ${{ inputs.app_dir }}/.releaserc.json
+          path: ${{ env.APP_DIR }}/.releaserc.json
           write-mode: overwrite
           contents: |
             {
               "branches": "release",
               "repositoryUrl": "https://github.com/netboxlabs/diode",
               "debug": "true",
-              "tagFormat": "${{ inputs.app_name }}/v${version}",
+              "tagFormat": "${{ env.APP_NAME }}/v${version}",
               "plugins": [
                 ["semantic-release-export-data"],
                 ["@semantic-release/commit-analyzer", {
@@ -105,12 +108,28 @@ jobs:
         id: short-sha
         run: echo "short-sha=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
       - name: Set release version
+        if: steps.get-next-version.outputs.new-release-published != ''
         id: release-version
         env:
+          SHORT_SHA: ${{ steps.short-sha.outputs.short-sha }}
           NEXT_RELEASE_VERSION: ${{ steps.get-next-version.outputs.new-release-version }}
-          APP_NAME: ${{ inputs.app_name }}
         run: |
           echo "release-version=`echo $NEXT_RELEASE_VERSION | sed 's/${APP_NAME}-v//g'`" >> $GITHUB_OUTPUT
+          
+          # store version in file for this app
+          mkdir -p versions
+          echo "$NEXT_RELEASE_VERSION" > "versions/${{ env.APP_NAME}}_${{ env.SHORT_SHA }}.txt"
+
+      - name: Upload version artifact
+        if: steps.get-next-version.outputs.new-release-published != ''
+        uses: actions/upload-artifact@v4
+        env:
+          SHORT_SHA: ${{ steps.short-sha.outputs.short-sha }}
+        with:
+          name: version-${{ env.APP_NAME }}_${{ env.SHORT_SHA }}
+          path: ${{ env.APP_DIR }}/versions/${{ env.APP_NAME }}_${{ env.SHORT_SHA }}.txt
+          retention-days: 1
+
     outputs:
       new-release-published: ${{ steps.get-next-version.outputs.new-release-published }}
       new-release-version: ${{ steps.release-version.outputs.release-version }}
