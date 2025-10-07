@@ -24,6 +24,10 @@ global:
   # -- common labels for all resources
   commonLabels: {}
 
+  security:
+    # bitnami vs bitnamilegacy images, see https://github.com/bitnami/charts/issues/30850
+    allowInsecureImages: true
+
 diode:
   # -- environment name
   environment: development
@@ -45,7 +49,7 @@ externalPostgresql:
   # -- existing postgresql secret
   existingSecretName: ""
   # -- key of password in existing postgresql secret
-  existingSecretKey: postgresql-password
+  existingSecretKey: ""
 
 # External Redis configuration (optional)
 externalRedis:
@@ -260,6 +264,9 @@ redis:
   enabled: true
   # -- fullname override
   fullnameOverride: diode-redis
+  image:
+    # -- image repository
+    repository: bitnamilegacy/redis
   auth:
     # -- auth enabled
     enabled: true
@@ -281,6 +288,26 @@ redis:
     enabled: true
     # -- persistence size
     size: 1Gi
+  metrics:
+    image:
+      # -- image repository
+      repository: bitnamilegacy/redis-exporter
+  sentinel:
+    image:
+      # -- image repository
+      repository: bitnamilegacy/redis-sentinel
+  volumePermissions:
+    image:
+      # -- image repository
+      repository: bitnamilegacy/os-shell
+  kubectl:
+    image:
+      # -- image repository
+      repository: bitnamilegacy/kubectl
+  sysctl:
+    image:
+      # -- image repository
+      repository: bitnamilegacy/os-shell
 
 # PostgreSQL configuration (optional)
 # -- ref: https://github.com/bitnami/charts/tree/main/bitnami/postgresql
@@ -289,6 +316,9 @@ postgresql:
   enabled: true
   # -- fullname override
   fullnameOverride: diode-postgresql
+  image:
+    # -- image repository
+    repository: bitnamilegacy/postgresql
   auth:
     # -- existing secret name
     existingSecret: diode-postgresql-secret
@@ -325,6 +355,14 @@ postgresql:
       timeoutSeconds: 5
       successThreshold: 1
       failureThreshold: 6
+  metrics:
+    image:
+      # -- image repository
+      repository: bitnamilegacy/postgres-exporter
+  volumePermissions:
+    image:
+      # -- image repository
+      repository: bitnamilegacy/postgresql
 
 # Hydra configuration
 # -- ref: https://github.com/ory/k8s/blob/master/helm/charts/hydra/values.yaml

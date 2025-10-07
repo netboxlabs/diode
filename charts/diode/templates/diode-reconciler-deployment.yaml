@@ -85,11 +85,13 @@ spec:
             {{- toYaml .| nindent 12 }}
           {{- end }}
           env:
+            {{- if not .Values.diodeReconciler.existingSecret }}
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ include "diode.postgresql.secretname" . }}
                   key: {{ include "diode.postgresql.secretkey" . }}
+            {{- end }}
             {{- if .Values.diodeReconciler.extraEnvs }}
             {{- include "common.tplvalues.render" (dict "value" .Values.diodeReconciler.extraEnvs "context" $) | nindent 12 }}
             {{- end }}
