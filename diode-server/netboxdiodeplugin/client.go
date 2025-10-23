@@ -452,7 +452,12 @@ func (c *Client) GetDefaultBranch(ctx context.Context) (*Branch, error) {
 		return nil, fmt.Errorf("failed to read response body %w", err)
 	}
 
-	c.logger.Debug("get default branch", "statusCode", resp.StatusCode, "response", string(respBytes))
+	// Log response body only for successful responses to avoid noise from 404s (endpoint not available on older plugin versions)
+	if resp.StatusCode < http.StatusBadRequest {
+		c.logger.Debug("get default branch", "statusCode", resp.StatusCode, "response", string(respBytes))
+	} else {
+		c.logger.Debug("get default branch", "statusCode", resp.StatusCode)
+	}
 
 	if resp.StatusCode >= http.StatusBadRequest {
 		return nil, fmt.Errorf("get default branch failed with status %d: %s", resp.StatusCode, string(respBytes))
