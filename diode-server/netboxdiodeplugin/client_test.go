@@ -1022,6 +1022,268 @@ func TestApplyChangeSetRateLimiting(t *testing.T) {
 	}
 }
 
+func TestGetDefaultBranch(t *testing.T) {
+	tests := []struct {
+		name                      string
+		baseURL                   string
+		diodeAuthTokenURL         string
+		diodeToNetBoxClientID     string
+		diodeToNetBoxClientSecret string
+		mockServerResponse        string
+		mockStatusCode            int
+		rateLimiterRPS            int
+		rateLimiterBurst          int
+		maxRetries                int
+		expectedBranch            *netboxdiodeplugin.Branch
+		shouldError               bool
+		expectedErrorString       string
+	}{
+		{
+			name:                      "successful branch retrieval",
+			baseURL:                   "http://",
+			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
+			diodeToNetBoxClientID:     "test",
+			diodeToNetBoxClientSecret: "test",
+			mockServerResponse:        `{"branch": {"id": "abc123", "name": "dev-branch"}}`,
+			mockStatusCode:            http.StatusOK,
+			rateLimiterRPS:            1,
+			rateLimiterBurst:          1,
+			maxRetries:                3,
+			expectedBranch: &netboxdiodeplugin.Branch{
+				ID:   "abc123",
+				Name: "dev-branch",
+			},
+			shouldError: false,
+		},
+		{
+			name:                      "no default branch (null)",
+			baseURL:                   "http://",
+			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
+			diodeToNetBoxClientID:     "test",
+			diodeToNetBoxClientSecret: "test",
+			mockServerResponse:        `{"branch": null}`,
+			mockStatusCode:            http.StatusOK,
+			rateLimiterRPS:            1,
+			rateLimiterBurst:          1,
+			maxRetries:                3,
+			expectedBranch:            nil,
+			shouldError:               false,
+		},
+		{
+			name:                      "HTTP 500 error",
+			baseURL:                   "http://",
+			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
+			diodeToNetBoxClientID:     "test",
+			diodeToNetBoxClientSecret: "test",
+			mockServerResponse:        `{"error": "Internal server error"}`,
+			mockStatusCode:            http.StatusInternalServerError,
+			rateLimiterRPS:            1,
+			rateLimiterBurst:          1,
+			maxRetries:                3,
+			expectedBranch:            nil,
+			shouldError:               true,
+			expectedErrorString:       "get default branch failed with status 500",
+		},
+		{
+			name:                      "HTTP 404 error",
+			baseURL:                   "http://",
+			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
+			diodeToNetBoxClientID:     "test",
+			diodeToNetBoxClientSecret: "test",
+			mockServerResponse:        `{"error": "Not found"}`,
+			mockStatusCode:            http.StatusNotFound,
+			rateLimiterRPS:            1,
+			rateLimiterBurst:          1,
+			maxRetries:                3,
+			expectedBranch:            nil,
+			shouldError:               true,
+			expectedErrorString:       "get default branch failed with status 404",
+		},
+		{
+			name:                      "invalid JSON response",
+			baseURL:                   "http://",
+			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
+			diodeToNetBoxClientID:     "test",
+			diodeToNetBoxClientSecret: "test",
+			mockServerResponse:        `{invalid json}`,
+			mockStatusCode:            http.StatusOK,
+			rateLimiterRPS:            1,
+			rateLimiterBurst:          1,
+			maxRetries:                3,
+			expectedBranch:            nil,
+			shouldError:               true,
+			expectedErrorString:       "failed to unmarshal response body",
+		},
+		{
+			name:                      "HTML error response",
+			baseURL:                   "http://",
+			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
+			diodeToNetBoxClientID:     "test",
+			diodeToNetBoxClientSecret: "test",
+			mockServerResponse:        `<html><body><h1>500 Internal Server Error</h1></body></html>`,
+			mockStatusCode:            http.StatusOK,
+			rateLimiterRPS:            1,
+			rateLimiterBurst:          1,
+			maxRetries:                3,
+			expectedBranch:            nil,
+			shouldError:               true,
+			expectedErrorString:       "failed to unmarshal response body",
+		},
+	}
+
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cleanUpEnvVars()
+
+			expectedToken := "mocked-token"
+			authTokenURL := "/diode/auth/token"
+			mockOAuth2Server := newMockOAuth2Server(authTokenURL, requireCredentials(tt.diodeToNetBoxClientID, tt.diodeToNetBoxClientSecret), expectedToken)
+			defer mockOAuth2Server.Close()
+
+			mockOAuth2ServerURL := mockOAuth2Server.URL + authTokenURL
+
+			handler := func(w http.ResponseWriter, r *http.Request) {
+				assert.Equal(t, http.MethodGet, r.Method)
+				assert.Equal(t, "/api/diode/default-branch/", r.URL.Path)
+				assert.Equal(t, fmt.Sprintf("Bearer %s", expectedToken), r.Header.Get("Authorization"))
+				assert.Equal(t, fmt.Sprintf("%s/%s", netboxdiodeplugin.SDKName, netboxdiodeplugin.SDKVersion), r.Header.Get("User-Agent"))
+
+				w.WriteHeader(tt.mockStatusCode)
+				_, _ = w.Write([]byte(tt.mockServerResponse))
+			}
+			mux := http.NewServeMux()
+			mux.HandleFunc("/api/diode/default-branch/", handler)
+			ts := httptest.NewServer(mux)
+			defer ts.Close()
+
+			baseURL := fmt.Sprintf("%s/api/diode", ts.URL)
+			client, err := netboxdiodeplugin.NewClient(
+				netboxdiodeplugin.ClientOptions{
+					Logger:            logger,
+					BaseURL:           baseURL,
+					ClientID:          tt.diodeToNetBoxClientID,
+					ClientSecret:      tt.diodeToNetBoxClientSecret,
+					TokenURL:          mockOAuth2ServerURL,
+					RateLimitRPS:      tt.rateLimiterRPS,
+					RateLimitBurstRPS: tt.rateLimiterBurst,
+					MaxRetries:        tt.maxRetries,
+				})
+			require.NoError(t, err)
+
+			branch, err := client.GetDefaultBranch(context.Background())
+
+			if tt.shouldError {
+				require.Error(t, err)
+				if tt.expectedErrorString != "" {
+					assert.Contains(t, err.Error(), tt.expectedErrorString)
+				}
+				assert.Nil(t, branch)
+				return
+			}
+
+			require.NoError(t, err)
+			assert.Equal(t, tt.expectedBranch, branch)
+		})
+	}
+}
+
+func TestGetDefaultBranchRateLimiting(t *testing.T) {
+	tests := []struct {
+		name                      string
+		baseURL                   string
+		diodeToNetBoxClientID     string
+		diodeToNetBoxClientSecret string
+		expectedCalls             int
+		mockServerResponse        string
+		mockStatusCode            int
+		rateLimiterRPS            int
+		rateLimiterBurst          int
+		maxRetries                int
+		expectedBranch            *netboxdiodeplugin.Branch
+		shouldError               bool
+	}{
+		{
+			name:                      "rate limited requests",
+			diodeToNetBoxClientID:     "test",
+			diodeToNetBoxClientSecret: "test",
+			expectedCalls:             2,
+			mockServerResponse:        `{"branch": {"id": "abc123", "name": "dev-branch"}}`,
+			mockStatusCode:            http.StatusOK,
+			rateLimiterRPS:            1,
+			rateLimiterBurst:          1,
+			maxRetries:                3,
+			expectedBranch: &netboxdiodeplugin.Branch{
+				ID:   "abc123",
+				Name: "dev-branch",
+			},
+			shouldError: false,
+		},
+	}
+
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cleanUpEnvVars()
+			actualCalls := 0
+
+			expectedToken := "mocked-token"
+			authTokenURL := "/diode/auth/token"
+			mockOAuth2Server := newMockOAuth2Server(authTokenURL, requireCredentials(tt.diodeToNetBoxClientID, tt.diodeToNetBoxClientSecret), expectedToken)
+			defer mockOAuth2Server.Close()
+
+			mockOAuth2ServerURL := mockOAuth2Server.URL + authTokenURL
+
+			handler := func(w http.ResponseWriter, r *http.Request) {
+				actualCalls++
+				assert.Equal(t, http.MethodGet, r.Method)
+				assert.Equal(t, "/api/diode/default-branch/", r.URL.Path)
+				assert.Equal(t, fmt.Sprintf("Bearer %s", expectedToken), r.Header.Get("Authorization"))
+				assert.Equal(t, fmt.Sprintf("%s/%s", netboxdiodeplugin.SDKName, netboxdiodeplugin.SDKVersion), r.Header.Get("User-Agent"))
+
+				w.WriteHeader(tt.mockStatusCode)
+				_, _ = w.Write([]byte(tt.mockServerResponse))
+			}
+			mux := http.NewServeMux()
+			mux.HandleFunc("/api/diode/default-branch/", handler)
+			ts := httptest.NewServer(mux)
+			defer ts.Close()
+
+			baseURL := fmt.Sprintf("%s/api/diode", ts.URL)
+
+			client, err := netboxdiodeplugin.NewClient(
+				netboxdiodeplugin.ClientOptions{
+					Logger:            logger,
+					BaseURL:           baseURL,
+					ClientID:          tt.diodeToNetBoxClientID,
+					ClientSecret:      tt.diodeToNetBoxClientSecret,
+					TokenURL:          mockOAuth2ServerURL,
+					RateLimitRPS:      tt.rateLimiterRPS,
+					RateLimitBurstRPS: tt.rateLimiterBurst,
+					MaxRetries:        tt.maxRetries,
+				})
+			require.NoError(t, err)
+
+			// Make two calls to test rate limiting
+			branch, err := client.GetDefaultBranch(context.Background())
+			_, _ = client.GetDefaultBranch(context.Background())
+
+			if tt.shouldError {
+				require.Error(t, err)
+				assert.Nil(t, branch)
+				return
+			}
+
+			require.NoError(t, err)
+			assert.Equal(t, tt.expectedBranch, branch)
+			assert.Equal(t, tt.mockStatusCode, http.StatusOK)
+			assert.Equal(t, tt.expectedCalls, actualCalls)
+		})
+	}
+}
+
 func cleanUpEnvVars() {
 	_ = os.Unsetenv(netboxdiodeplugin.TimeoutSecondsEnvVarName)
 	_ = os.Unsetenv(netboxdiodeplugin.TLSSkipVerifyEnvVarName)
