@@ -339,3 +339,116 @@ func TestOpsCreateIngestionLog(t *testing.T) {
 		})
 	}
 }
+
+func TestOpsGetDefaultBranch404Caching(t *testing.T) {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+	ctx := context.Background()
+
+	tests := []struct {
+		name                string
+		firstCallError      error
+		secondCallError     error
+		expectedFirstCall   bool
+		expectedSecondCall  bool
+		expectBranchNil     bool
+		expectErrorOnSecond bool
+	}{
+		{
+			name:                "404 error is cached - prevents repeated calls",
+			firstCallError:      netboxdiodeplugin.ErrDefaultBranchNotFound,
+			secondCallError:     nil, // Should not be called
+			expectedFirstCall:   true,
+			expectedSecondCall:  false, // Should use cache
+			expectBranchNil:     true,
+			expectErrorOnSecond: false,
+		},
+		{
+			name:                "non-404 error is not cached - retries on second call",
+			firstCallError:      fmt.Errorf("get default branch failed with status 500: Internal Server Error"),
+			secondCallError:     fmt.Errorf("get default branch failed with status 500: Internal Server Error"),
+			expectedFirstCall:   true,
+			expectedSecondCall:  true, // Should retry
+			expectBranchNil:     true,
+			expectErrorOnSecond: false, // Error is logged as warning, operation continues
+		},
+		{
+			name:                "successful response is cached",
+			firstCallError:      nil,
+			secondCallError:     nil,
+			expectedFirstCall:   true,
+			expectedSecondCall:  false, // Should use cache
+			expectBranchNil:     false,
+			expectErrorOnSecond: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockRepository := mocks.NewRepository(t)
+			mockNetBoxClient := pluginmocks.NewNetBoxAPI(t)
+			opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil)
+
+			var firstBranch *netboxdiodeplugin.Branch
+			if tt.firstCallError == nil {
+				firstBranch = &netboxdiodeplugin.Branch{
+					ID:   "test-branch-id",
+					Name: "test-branch",
+				}
+			}
+
+			// Mock repository methods for CreateIngestionLog
+			mockRepository.EXPECT().FindPriorIngestionLogByEntityHash(mock.Anything, mock.AnythingOfType("string"), mock.Anything).
+				Return(nil, nil, sql.ErrNoRows).Maybe()
+			mockRepository.EXPECT().CreateIngestionLog(mock.Anything, mock.Anything, mock.Anything, mock.AnythingOfType("string")).
+				Return(func() *int32 { id := int32(1); return &id }(), nil).Maybe()
+
+			// Mock first call
+			firstCall := mockNetBoxClient.EXPECT().GetDefaultBranch(mock.Anything).Return(firstBranch, tt.firstCallError).Once()
+
+			// Mock second call only if expected
+			if tt.expectedSecondCall {
+				mockNetBoxClient.EXPECT().GetDefaultBranch(mock.Anything).Return(firstBranch, tt.secondCallError).Once().NotBefore(firstCall)
+			}
+
+			// First call - should always hit the API
+			branch1, err1 := opsInstance.CreateIngestionLog(ctx, &pb.IngestionLog{
+				Id:         "test-log-1",
+				ObjectType: "dcim.site",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Site{
+						Site: &diodepb.Site{Name: "test-site-1"},
+					},
+				},
+			}, nil)
+
+			// Second call - behavior depends on caching
+			branch2, err2 := opsInstance.CreateIngestionLog(ctx, &pb.IngestionLog{
+				Id:         "test-log-2",
+				ObjectType: "dcim.site",
+				Entity: &diodepb.Entity{
+					Entity: &diodepb.Entity_Site{
+						Site: &diodepb.Site{Name: "test-site-2"},
+					},
+				},
+			}, nil)
+
+			// Verify results - all calls should succeed (errors are gracefully handled)
+			require.NoError(t, err1)
+			require.NoError(t, err2)
+			require.NotNil(t, branch1)
+			require.NotNil(t, branch2)
+
+			// Verify branch caching worked correctly
+			if tt.expectBranchNil {
+				require.Empty(t, branch1.BranchID)
+				require.Empty(t, branch2.BranchID)
+			} else {
+				require.Equal(t, "test-branch-id", branch1.BranchID)
+				require.Equal(t, "test-branch-id", branch2.BranchID)
+			}
+
+			// Mock assertions verify the expected number of calls were made
+			mockNetBoxClient.AssertExpectations(t)
+		})
+	}
+}

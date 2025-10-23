@@ -77,6 +77,13 @@ func (o *Ops) getCachedDefaultBranch(ctx context.Context) (*netboxdiodeplugin.Br
 	o.logger.Debug("cache miss - fetching default branch from NetBox plugin")
 	branch, err := o.nbClient.GetDefaultBranch(ctx)
 	if err != nil {
+		// Cache nil result for 404s (endpoint doesn't exist on older plugin versions)
+		// This prevents hammering the NetBox plugin with requests that will always fail
+		if errors.Is(err, netboxdiodeplugin.ErrDefaultBranchNotFound) {
+			o.logger.Debug("default-branch endpoint not found (older plugin version), caching nil result", "ttl", "5m")
+			o.branchCache.Add(cacheKey, nil)
+			return nil, nil // Return nil branch without error (gracefully handle missing endpoint)
+		}
 		return nil, err
 	}
 

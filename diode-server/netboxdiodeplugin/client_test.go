@@ -1085,7 +1085,7 @@ func TestGetDefaultBranch(t *testing.T) {
 			expectedErrorString:       "get default branch failed with status 500",
 		},
 		{
-			name:                      "HTTP 404 error",
+			name:                      "HTTP 404 error returns sentinel error",
 			baseURL:                   "http://",
 			diodeAuthTokenURL:         "http://diode-auth:8000/diode/auth/token",
 			diodeToNetBoxClientID:     "test",
@@ -1097,7 +1097,7 @@ func TestGetDefaultBranch(t *testing.T) {
 			maxRetries:                3,
 			expectedBranch:            nil,
 			shouldError:               true,
-			expectedErrorString:       "get default branch failed with status 404",
+			expectedErrorString:       "default branch not found",
 		},
 		{
 			name:                      "invalid JSON response",
@@ -1178,6 +1178,10 @@ func TestGetDefaultBranch(t *testing.T) {
 				require.Error(t, err)
 				if tt.expectedErrorString != "" {
 					assert.Contains(t, err.Error(), tt.expectedErrorString)
+				}
+				// For 404 errors, verify it's the sentinel error
+				if tt.mockStatusCode == http.StatusNotFound {
+					assert.ErrorIs(t, err, netboxdiodeplugin.ErrDefaultBranchNotFound)
 				}
 				assert.Nil(t, branch)
 				return

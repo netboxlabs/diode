@@ -56,6 +56,9 @@ const (
 // ErrInvalidTimeout is an error for invalid timeout value
 var ErrInvalidTimeout = errors.New("invalid timeout value")
 
+// ErrDefaultBranchNotFound is returned when the default branch is not found (e.g. no endpoint available in older plugin versions)
+var ErrDefaultBranchNotFound = errors.New("default branch not found")
+
 // ChangeSetResult represents a change set result
 type ChangeSetResult struct {
 	ID        string          `json:"id"`
@@ -460,6 +463,10 @@ func (c *Client) GetDefaultBranch(ctx context.Context) (*Branch, error) {
 	}
 
 	if resp.StatusCode >= http.StatusBadRequest {
+		// Return sentinel error for 404 to allow callers to cache and handle gracefully
+		if resp.StatusCode == http.StatusNotFound {
+			return nil, ErrDefaultBranchNotFound
+		}
 		return nil, fmt.Errorf("get default branch failed with status %d: %s", resp.StatusCode, string(respBytes))
 	}
 
