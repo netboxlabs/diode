@@ -76,6 +76,7 @@ type IngestionLogToProcess struct {
 	ingestionLog   *reconcilerpb.IngestionLog
 	changeSetID    int32
 	changeSet      *changeset.ChangeSet
+	branchID       string // the branch ID for this ingestion log (empty string means main branch)
 }
 
 // IngestionProcessorOps represents the basic operations that the ingestion processor performs
@@ -314,7 +315,7 @@ func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChan
 					return
 				}
 
-				id, changeSet, err := p.ops.GenerateChangeSet(ctx, msg.ingestionLogID, msg.ingestionLog, "")
+				id, changeSet, err := p.ops.GenerateChangeSet(ctx, msg.ingestionLogID, msg.ingestionLog, msg.branchID)
 				if err != nil {
 					p.logger.Error("error generating changeset", "error", err)
 					p.metrics.RecordChangeSetCreate(ctx, false, 0)
@@ -329,6 +330,7 @@ func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChan
 							ingestionLog:   msg.ingestionLog,
 							changeSetID:    *id,
 							changeSet:      changeSet,
+							branchID:       msg.branchID,
 						}
 					}
 				}
@@ -437,6 +439,7 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 		generateIngestionLogChan <- IngestionLogToProcess{
 			ingestionLogID: id,
 			ingestionLog:   ingestionLog,
+			branchID:       result.BranchID,
 		}
 	}
 

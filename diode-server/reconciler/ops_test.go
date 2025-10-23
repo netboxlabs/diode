@@ -304,6 +304,9 @@ func TestOpsCreateIngestionLog(t *testing.T) {
 			mockNetBoxClient := pluginmocks.NewNetBoxAPI(t)
 			opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil)
 
+			// Mock GetDefaultBranch to return nil (no default branch)
+			mockNetBoxClient.EXPECT().GetDefaultBranch(mock.Anything).Return((*netboxdiodeplugin.Branch)(nil), nil)
+
 			mockRepository.EXPECT().FindPriorIngestionLogByEntityHash(mock.Anything, mock.AnythingOfType("string"), (*string)(nil)).
 				Return(tt.mockFindPriorIngestionLogID, tt.mockFindPriorIngestionLog, tt.mockFindPriorIngestionLogError)
 
