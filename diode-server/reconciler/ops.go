@@ -21,6 +21,11 @@ import (
 	"github.com/netboxlabs/diode/diode-server/sentry"
 )
 
+const (
+	// DefaultBranchCacheTTL is the default TTL for caching the default branch
+	DefaultBranchCacheTTL = 60 * time.Second
+)
+
 // Limits is an interface that provides limits for the reconciler operations to enforce
 type Limits interface {
 	MaxChangeSetsPerIngestionLog() int32
@@ -51,8 +56,8 @@ func NewOps(repository Repository, nbClient netboxdiodeplugin.NetBoxAPI, logger 
 		limits = &DefaultLimits{}
 	}
 
-	// Create LRU cache with size 1 (we only cache one default branch) and 5-minute TTL
-	branchCache := expirable.NewLRU[string, *netboxdiodeplugin.Branch](1, nil, 5*time.Minute)
+	// Create LRU cache with size 1 (we only cache one default branch)
+	branchCache := expirable.NewLRU[string, *netboxdiodeplugin.Branch](1, nil, DefaultBranchCacheTTL)
 
 	return &Ops{
 		repository:  repository,
@@ -63,13 +68,13 @@ func NewOps(repository Repository, nbClient netboxdiodeplugin.NetBoxAPI, logger 
 	}
 }
 
-// getCachedDefaultBranch fetches the default branch with a 5-minute cache using LRU
-func (o *Ops) getCachedDefaultBranch(ctx context.Context) (*netboxdiodeplugin.Branch, error) {
+// DefaultBranch fetches the default branch from the NetBox plugin with caching
+func (o *Ops) DefaultBranch(ctx context.Context) (*netboxdiodeplugin.Branch, error) {
 	const cacheKey = "default_branch"
 
 	// Check cache first
 	if cachedBranch, ok := o.branchCache.Get(cacheKey); ok {
-		o.logger.Debug("using cached default branch")
+		o.logger.Debug("using cached default branch", "branch", cachedBranch)
 		return cachedBranch, nil
 	}
 
@@ -89,9 +94,16 @@ func (o *Ops) getCachedDefaultBranch(ctx context.Context) (*netboxdiodeplugin.Br
 
 	// Store in cache (automatically expires after 5 minutes)
 	o.branchCache.Add(cacheKey, branch)
-	o.logger.Debug("fetched and cached default branch", "branch", branch, "ttl", "5m")
+	o.logger.Debug("fetched and cached default branch", "branch", branch)
 
 	return branch, nil
+}
+
+// RefreshDefaultBranch forces a refresh of the default branch cache from NetBox
+func (o *Ops) RefreshDefaultBranch(ctx context.Context) (*netboxdiodeplugin.Branch, error) {
+	const cacheKey = "default_branch"
+	o.branchCache.Remove(cacheKey)
+	return o.DefaultBranch(ctx)
 }
 
 // CreateIngestionLog creates a record for a newly received ingestion log
@@ -107,7 +119,7 @@ func (o *Ops) CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb
 	// Fetch default branch from NetBox plugin (cached for 5 minutes) to ensure we search for prior ingestion logs in the correct branch context
 	var defaultBranchID *string
 	var branchIDForResult string
-	if branch, err := o.getCachedDefaultBranch(ctx); err != nil {
+	if branch, err := o.DefaultBranch(ctx); err != nil {
 		o.logger.Warn("failed to fetch default branch from NetBox plugin", "error", err)
 		// Continue with nil branch (main branch) if we can't fetch default branch
 	} else if branch != nil {

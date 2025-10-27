@@ -9,6 +9,8 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
+	netboxdiodeplugin "github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
+
 	ops "github.com/netboxlabs/diode/diode-server/reconciler/ops"
 
 	reconcilerpb "github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
@@ -137,6 +139,64 @@ func (_c *IngestionProcessorOps_CreateIngestionLog_Call) RunAndReturn(run func(c
 	return _c
 }
 
+// DefaultBranch provides a mock function with given fields: ctx
+func (_m *IngestionProcessorOps) DefaultBranch(ctx context.Context) (*netboxdiodeplugin.Branch, error) {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DefaultBranch")
+	}
+
+	var r0 *netboxdiodeplugin.Branch
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) (*netboxdiodeplugin.Branch, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) *netboxdiodeplugin.Branch); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*netboxdiodeplugin.Branch)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// IngestionProcessorOps_DefaultBranch_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DefaultBranch'
+type IngestionProcessorOps_DefaultBranch_Call struct {
+	*mock.Call
+}
+
+// DefaultBranch is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *IngestionProcessorOps_Expecter) DefaultBranch(ctx interface{}) *IngestionProcessorOps_DefaultBranch_Call {
+	return &IngestionProcessorOps_DefaultBranch_Call{Call: _e.mock.On("DefaultBranch", ctx)}
+}
+
+func (_c *IngestionProcessorOps_DefaultBranch_Call) Run(run func(ctx context.Context)) *IngestionProcessorOps_DefaultBranch_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *IngestionProcessorOps_DefaultBranch_Call) Return(_a0 *netboxdiodeplugin.Branch, _a1 error) *IngestionProcessorOps_DefaultBranch_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *IngestionProcessorOps_DefaultBranch_Call) RunAndReturn(run func(context.Context) (*netboxdiodeplugin.Branch, error)) *IngestionProcessorOps_DefaultBranch_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GenerateChangeSet provides a mock function with given fields: ctx, ingestionLogID, ingestionLog, branchID
 func (_m *IngestionProcessorOps) GenerateChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, branchID string) (*int32, *changeset.ChangeSet, error) {
 	ret := _m.Called(ctx, ingestionLogID, ingestionLog, branchID)
@@ -203,6 +263,64 @@ func (_c *IngestionProcessorOps_GenerateChangeSet_Call) Return(_a0 *int32, _a1 *
 }
 
 func (_c *IngestionProcessorOps_GenerateChangeSet_Call) RunAndReturn(run func(context.Context, int32, *reconcilerpb.IngestionLog, string) (*int32, *changeset.ChangeSet, error)) *IngestionProcessorOps_GenerateChangeSet_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// RefreshDefaultBranch provides a mock function with given fields: ctx
+func (_m *IngestionProcessorOps) RefreshDefaultBranch(ctx context.Context) (*netboxdiodeplugin.Branch, error) {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for RefreshDefaultBranch")
+	}
+
+	var r0 *netboxdiodeplugin.Branch
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) (*netboxdiodeplugin.Branch, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) *netboxdiodeplugin.Branch); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*netboxdiodeplugin.Branch)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// IngestionProcessorOps_RefreshDefaultBranch_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RefreshDefaultBranch'
+type IngestionProcessorOps_RefreshDefaultBranch_Call struct {
+	*mock.Call
+}
+
+// RefreshDefaultBranch is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *IngestionProcessorOps_Expecter) RefreshDefaultBranch(ctx interface{}) *IngestionProcessorOps_RefreshDefaultBranch_Call {
+	return &IngestionProcessorOps_RefreshDefaultBranch_Call{Call: _e.mock.On("RefreshDefaultBranch", ctx)}
+}
+
+func (_c *IngestionProcessorOps_RefreshDefaultBranch_Call) Run(run func(ctx context.Context)) *IngestionProcessorOps_RefreshDefaultBranch_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *IngestionProcessorOps_RefreshDefaultBranch_Call) Return(_a0 *netboxdiodeplugin.Branch, _a1 error) *IngestionProcessorOps_RefreshDefaultBranch_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *IngestionProcessorOps_RefreshDefaultBranch_Call) RunAndReturn(run func(context.Context) (*netboxdiodeplugin.Branch, error)) *IngestionProcessorOps_RefreshDefaultBranch_Call {
 	_c.Call.Return(run)
 	return _c
 }

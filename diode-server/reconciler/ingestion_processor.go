@@ -21,6 +21,7 @@ import (
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 	"github.com/netboxlabs/diode/diode-server/gen/netbox"
+	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
 	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
 	"github.com/netboxlabs/diode/diode-server/reconciler/ops"
 	"github.com/netboxlabs/diode/diode-server/sentry"
@@ -84,6 +85,8 @@ type IngestionProcessorOps interface {
 	CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb.IngestionLog, sourceMetadata []byte) (*ops.CreateIngestionLogResult, error)
 	GenerateChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, branchID string) (*int32, *changeset.ChangeSet, error)
 	ApplyChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, changeSetID int32, changeSet *changeset.ChangeSet) error
+	DefaultBranch(ctx context.Context) (*netboxdiodeplugin.Branch, error)
+	RefreshDefaultBranch(ctx context.Context) (*netboxdiodeplugin.Branch, error)
 }
 
 // NewIngestionProcessor creates a new ingestion processor
@@ -380,6 +383,9 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 	defer close(generateIngestionLogChan)
 
 	errs := make([]error, 0)
+
+	// Ensure the current default branch is retrieved
+	_, _ = p.ops.RefreshDefaultBranch(ctx)
 
 	for i, v := range ingestReq.GetEntities() {
 		if v.GetEntity() == nil {

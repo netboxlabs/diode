@@ -466,6 +466,7 @@ func TestIngestionProcessor_DuplicateHandling(t *testing.T) {
 				WasDuplicate: true,
 			}
 
+			mockOps.On("RefreshDefaultBranch", mock.Anything).Return((*netboxdiodeplugin.Branch)(nil), nil)
 			mockOps.On("CreateIngestionLog", mock.Anything, mock.Anything, mock.Anything).Return(duplicateResult, nil)
 
 			if !tt.expectSkipProcessing {

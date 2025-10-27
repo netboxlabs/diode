@@ -340,7 +340,116 @@ func TestOpsCreateIngestionLog(t *testing.T) {
 	}
 }
 
-func TestOpsGetDefaultBranch404Caching(t *testing.T) {
+func TestOpsRefreshDefaultBranch(t *testing.T) {
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+	ctx := context.Background()
+
+	tests := []struct {
+		name              string
+		initialBranch     *netboxdiodeplugin.Branch
+		initialError      error
+		refreshedBranch   *netboxdiodeplugin.Branch
+		refreshedError    error
+		expectInitialCall bool
+		expectRefreshCall bool
+		expectCachedAfter bool
+	}{
+		{
+			name: "refresh invalidates cache and fetches new data",
+			initialBranch: &netboxdiodeplugin.Branch{
+				ID:   "initial-branch",
+				Name: "Initial Branch",
+			},
+			initialError: nil,
+			refreshedBranch: &netboxdiodeplugin.Branch{
+				ID:   "refreshed-branch",
+				Name: "Refreshed Branch",
+			},
+			refreshedError:    nil,
+			expectInitialCall: true,
+			expectRefreshCall: true,
+			expectCachedAfter: true,
+		},
+		{
+			name:          "refresh clears 404 cached nil and retries",
+			initialBranch: nil,
+			initialError:  netboxdiodeplugin.ErrDefaultBranchNotFound,
+			refreshedBranch: &netboxdiodeplugin.Branch{
+				ID:   "new-branch",
+				Name: "New Branch",
+			},
+			refreshedError:    nil,
+			expectInitialCall: true,
+			expectRefreshCall: true,
+			expectCachedAfter: true,
+		},
+		{
+			name: "refresh handles errors gracefully",
+			initialBranch: &netboxdiodeplugin.Branch{
+				ID:   "initial-branch",
+				Name: "Initial Branch",
+			},
+			initialError:      nil,
+			refreshedBranch:   nil,
+			refreshedError:    fmt.Errorf("temporary network error"),
+			expectInitialCall: true,
+			expectRefreshCall: true,
+			expectCachedAfter: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockRepository := mocks.NewRepository(t)
+			mockNetBoxClient := pluginmocks.NewNetBoxAPI(t)
+			opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil)
+
+			// Initial call - populate cache
+			if tt.expectInitialCall {
+				mockNetBoxClient.EXPECT().GetDefaultBranch(ctx).Return(tt.initialBranch, tt.initialError).Once()
+			}
+
+			// Call DefaultBranch to populate cache
+			initialBranch, initialErr := opsInstance.DefaultBranch(ctx)
+			if tt.initialError == netboxdiodeplugin.ErrDefaultBranchNotFound {
+				require.NoError(t, initialErr)
+				require.Nil(t, initialBranch)
+			} else if tt.initialError != nil {
+				require.Error(t, initialErr)
+			} else {
+				require.NoError(t, initialErr)
+				require.Equal(t, tt.initialBranch, initialBranch)
+			}
+
+			// Refresh call - should invalidate cache and fetch new data
+			if tt.expectRefreshCall {
+				mockNetBoxClient.EXPECT().GetDefaultBranch(ctx).Return(tt.refreshedBranch, tt.refreshedError).Once()
+			}
+
+			refreshedBranch, refreshErr := opsInstance.RefreshDefaultBranch(ctx)
+			if tt.refreshedError != nil && tt.refreshedError != netboxdiodeplugin.ErrDefaultBranchNotFound {
+				require.Error(t, refreshErr)
+			} else {
+				require.NoError(t, refreshErr)
+				if tt.refreshedBranch != nil {
+					require.Equal(t, tt.refreshedBranch, refreshedBranch)
+				}
+			}
+
+			// Verify cache after refresh - should use cached value on next call
+			if tt.expectCachedAfter && tt.refreshedError == nil {
+				// This call should NOT hit the API (using cache)
+				cachedBranch, cachedErr := opsInstance.DefaultBranch(ctx)
+				require.NoError(t, cachedErr)
+				require.Equal(t, refreshedBranch, cachedBranch)
+			}
+
+			mockNetBoxClient.AssertExpectations(t)
+		})
+	}
+}
+
+func TestOpsDefaultBranch404Caching(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
 	ctx := context.Background()
 
