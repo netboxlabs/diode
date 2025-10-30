@@ -56,6 +56,9 @@ const (
 // ErrInvalidTimeout is an error for invalid timeout value
 var ErrInvalidTimeout = errors.New("invalid timeout value")
 
+// ErrDefaultBranchNotFound is returned when the default branch is not found (e.g. no endpoint available in older plugin versions)
+var ErrDefaultBranchNotFound = errors.New("default branch not found")
+
 // ChangeSetResult represents a change set result
 type ChangeSetResult struct {
 	ID        string          `json:"id"`
@@ -263,6 +266,9 @@ type NetBoxAPI interface {
 
 	// ApplyChangeSet applies a change set
 	ApplyChangeSet(context.Context, ApplyChangeSetRequest) (*ChangeSetResult, error)
+
+	// GetDefaultBranch gets the default branch from NetBox plugin settings
+	GetDefaultBranch(context.Context) (*Branch, error)
 }
 
 // GenerateDiffRequest represents a generate diff request
@@ -411,4 +417,63 @@ func (c *Client) ApplyChangeSet(ctx context.Context, payload ApplyChangeSetReque
 	}
 
 	return &changeSetResult, nil
+}
+
+// GetDefaultBranchResponse represents the response from the default-branch endpoint
+type GetDefaultBranchResponse struct {
+	Branch *Branch `json:"branch"`
+}
+
+// GetDefaultBranch gets the default branch from NetBox plugin settings
+func (c *Client) GetDefaultBranch(ctx context.Context) (*Branch, error) {
+	endpointURL, err := url.Parse(fmt.Sprintf("%s/default-branch/", c.baseURL.String()))
+	if err != nil {
+		return nil, err
+	}
+
+	if err := c.limiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpointURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			c.logger.Warn("failed to close response body", "error", closeErr)
+		}
+	}()
+
+	respBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body %w", err)
+	}
+
+	// Log response body only for successful responses to avoid noise from 404s (endpoint not available on older plugin versions)
+	if resp.StatusCode < http.StatusBadRequest {
+		c.logger.Debug("get default branch", "statusCode", resp.StatusCode, "response", string(respBytes))
+	} else {
+		c.logger.Debug("get default branch", "statusCode", resp.StatusCode)
+	}
+
+	if resp.StatusCode >= http.StatusBadRequest {
+		// Return sentinel error for 404 to allow callers to cache and handle gracefully
+		if resp.StatusCode == http.StatusNotFound {
+			return nil, ErrDefaultBranchNotFound
+		}
+		return nil, fmt.Errorf("get default branch failed with status %d: %s", resp.StatusCode, string(respBytes))
+	}
+
+	var defaultBranchResponse GetDefaultBranchResponse
+	if err = json.Unmarshal(respBytes, &defaultBranchResponse); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response body %w", err)
+	}
+
+	return defaultBranchResponse.Branch, nil
 }
