@@ -21,6 +21,7 @@ import (
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 	"github.com/netboxlabs/diode/diode-server/gen/netbox"
+	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
 	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
 	"github.com/netboxlabs/diode/diode-server/reconciler/ops"
 	"github.com/netboxlabs/diode/diode-server/sentry"
@@ -76,6 +77,7 @@ type IngestionLogToProcess struct {
 	ingestionLog   *reconcilerpb.IngestionLog
 	changeSetID    int32
 	changeSet      *changeset.ChangeSet
+	branchID       string // the branch ID for this ingestion log (empty string means main branch)
 }
 
 // IngestionProcessorOps represents the basic operations that the ingestion processor performs
@@ -83,6 +85,8 @@ type IngestionProcessorOps interface {
 	CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb.IngestionLog, sourceMetadata []byte) (*ops.CreateIngestionLogResult, error)
 	GenerateChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, branchID string) (*int32, *changeset.ChangeSet, error)
 	ApplyChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, changeSetID int32, changeSet *changeset.ChangeSet) error
+	DefaultBranch(ctx context.Context) (*netboxdiodeplugin.Branch, error)
+	RefreshDefaultBranch(ctx context.Context) (*netboxdiodeplugin.Branch, error)
 }
 
 // NewIngestionProcessor creates a new ingestion processor
@@ -314,7 +318,7 @@ func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChan
 					return
 				}
 
-				id, changeSet, err := p.ops.GenerateChangeSet(ctx, msg.ingestionLogID, msg.ingestionLog, "")
+				id, changeSet, err := p.ops.GenerateChangeSet(ctx, msg.ingestionLogID, msg.ingestionLog, msg.branchID)
 				if err != nil {
 					p.logger.Error("error generating changeset", "error", err)
 					p.metrics.RecordChangeSetCreate(ctx, false, 0)
@@ -329,6 +333,7 @@ func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChan
 							ingestionLog:   msg.ingestionLog,
 							changeSetID:    *id,
 							changeSet:      changeSet,
+							branchID:       msg.branchID,
 						}
 					}
 				}
@@ -378,6 +383,9 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 	defer close(generateIngestionLogChan)
 
 	errs := make([]error, 0)
+
+	// Ensure the current default branch is retrieved
+	_, _ = p.ops.RefreshDefaultBranch(ctx)
 
 	for i, v := range ingestReq.GetEntities() {
 		if v.GetEntity() == nil {
@@ -437,6 +445,7 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 		generateIngestionLogChan <- IngestionLogToProcess{
 			ingestionLogID: id,
 			ingestionLog:   ingestionLog,
+			branchID:       result.BranchID,
 		}
 	}
 

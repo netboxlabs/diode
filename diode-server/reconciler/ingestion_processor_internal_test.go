@@ -194,6 +194,9 @@ func TestHandleStreamMessage(t *testing.T) {
 					},
 				}
 			}
+			// Mock GetDefaultBranch to return nil (no default branch)
+			mockNbClient.On("GetDefaultBranch", mock.Anything).Return((*netboxdiodeplugin.Branch)(nil), nil)
+
 			if tt.reconcilerError {
 				mockNbClient.On("GenerateDiff", mock.Anything, mock.Anything).Return(nil, errors.New("prepare error"))
 			} else {

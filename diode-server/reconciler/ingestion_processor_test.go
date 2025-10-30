@@ -282,6 +282,9 @@ func TestIngestionProcessorStart(t *testing.T) {
 	mockRepository.On("CreateChangeSet", mock.Anything, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
 	mockRepository.On("TruncateChangeSets", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
+	// Mock GetDefaultBranch to return nil (no default branch)
+	mockNetBoxClient.On("GetDefaultBranch", mock.Anything).Return((*netboxdiodeplugin.Branch)(nil), nil)
+
 	mockNetBoxClient.On("GenerateDiff", mock.Anything, mock.Anything).Return(&netboxdiodeplugin.ChangeSetResult{
 		ChangeSet: &netboxdiodeplugin.ChangeSet{
 			ID: "test-changeset-id",
@@ -463,6 +466,7 @@ func TestIngestionProcessor_DuplicateHandling(t *testing.T) {
 				WasDuplicate: true,
 			}
 
+			mockOps.On("RefreshDefaultBranch", mock.Anything).Return((*netboxdiodeplugin.Branch)(nil), nil)
 			mockOps.On("CreateIngestionLog", mock.Anything, mock.Anything, mock.Anything).Return(duplicateResult, nil)
 
 			if !tt.expectSkipProcessing {

@@ -6,6 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"time"
+
+	"github.com/hashicorp/golang-lru/v2/expirable"
 
 	"github.com/netboxlabs/diode/diode-server/entityhash"
 	diodeErrors "github.com/netboxlabs/diode/diode-server/errors"
@@ -16,6 +19,11 @@ import (
 	"github.com/netboxlabs/diode/diode-server/reconciler/differ"
 	"github.com/netboxlabs/diode/diode-server/reconciler/ops"
 	"github.com/netboxlabs/diode/diode-server/sentry"
+)
+
+const (
+	// DefaultBranchCacheTTL is the default TTL for caching the default branch
+	DefaultBranchCacheTTL = 60 * time.Second
 )
 
 // Limits is an interface that provides limits for the reconciler operations to enforce
@@ -37,6 +45,9 @@ type Ops struct {
 	nbClient   netboxdiodeplugin.NetBoxAPI
 	logger     *slog.Logger
 	limits     Limits
+
+	// Cache for default branch (5 minute TTL, size 1 since we only cache one value)
+	branchCache *expirable.LRU[string, *netboxdiodeplugin.Branch]
 }
 
 // NewOps creates a new Ops
@@ -45,12 +56,54 @@ func NewOps(repository Repository, nbClient netboxdiodeplugin.NetBoxAPI, logger 
 		limits = &DefaultLimits{}
 	}
 
+	// Create LRU cache with size 1 (we only cache one default branch)
+	branchCache := expirable.NewLRU[string, *netboxdiodeplugin.Branch](1, nil, DefaultBranchCacheTTL)
+
 	return &Ops{
-		repository: repository,
-		nbClient:   nbClient,
-		logger:     logger,
-		limits:     limits,
+		repository:  repository,
+		nbClient:    nbClient,
+		logger:      logger,
+		limits:      limits,
+		branchCache: branchCache,
 	}
+}
+
+// DefaultBranch fetches the default branch from the NetBox plugin with caching
+func (o *Ops) DefaultBranch(ctx context.Context) (*netboxdiodeplugin.Branch, error) {
+	const cacheKey = "default_branch"
+
+	// Check cache first
+	if cachedBranch, ok := o.branchCache.Get(cacheKey); ok {
+		o.logger.Debug("using cached default branch", "branch", cachedBranch)
+		return cachedBranch, nil
+	}
+
+	// Cache miss - fetch from NetBox plugin
+	o.logger.Debug("cache miss - fetching default branch from NetBox plugin")
+	branch, err := o.nbClient.GetDefaultBranch(ctx)
+	if err != nil {
+		// Cache nil result for 404s (endpoint doesn't exist on older plugin versions)
+		// This prevents hammering the NetBox plugin with requests that will always fail
+		if errors.Is(err, netboxdiodeplugin.ErrDefaultBranchNotFound) {
+			o.logger.Debug("default-branch endpoint not found (older plugin version), caching nil result", "ttl", "5m")
+			o.branchCache.Add(cacheKey, nil)
+			return nil, nil // Return nil branch without error (gracefully handle missing endpoint)
+		}
+		return nil, err
+	}
+
+	// Store in cache (automatically expires after 5 minutes)
+	o.branchCache.Add(cacheKey, branch)
+	o.logger.Debug("fetched and cached default branch", "branch", branch)
+
+	return branch, nil
+}
+
+// RefreshDefaultBranch forces a refresh of the default branch cache from NetBox
+func (o *Ops) RefreshDefaultBranch(ctx context.Context) (*netboxdiodeplugin.Branch, error) {
+	const cacheKey = "default_branch"
+	o.branchCache.Remove(cacheKey)
+	return o.DefaultBranch(ctx)
 }
 
 // CreateIngestionLog creates a record for a newly received ingestion log
@@ -63,7 +116,20 @@ func (o *Ops) CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb
 		return nil, fmt.Errorf("failed to generate entity hash: %w", err)
 	}
 
-	existingID, existingLog, err := o.repository.FindPriorIngestionLogByEntityHash(ctx, entityHash, nil)
+	// Fetch default branch from NetBox plugin (cached for 5 minutes) to ensure we search for prior ingestion logs in the correct branch context
+	var defaultBranchID *string
+	var branchIDForResult string
+	if branch, err := o.DefaultBranch(ctx); err != nil {
+		o.logger.Warn("failed to fetch default branch from NetBox plugin", "error", err)
+		// Continue with nil branch (main branch) if we can't fetch default branch
+	} else if branch != nil {
+		branchID := fmt.Sprintf("%s (%s)", branch.Name, branch.ID)
+		defaultBranchID = &branchID
+		branchIDForResult = branch.ID // Store the schema_id for GenerateChangeSet
+		o.logger.Debug("using default branch for ingestion log deduplication", "branch", branch.Name, "branchID", branch.ID)
+	}
+
+	existingID, existingLog, err := o.repository.FindPriorIngestionLogByEntityHash(ctx, entityHash, defaultBranchID)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("failed to search for prior deviation: %w", err)
 	}
@@ -77,6 +143,7 @@ func (o *Ops) CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb
 		result := &ops.CreateIngestionLogResult{
 			ID:           *id,
 			IngestionLog: ingestionLog,
+			BranchID:     branchIDForResult,
 		}
 		return result, nil
 	}
@@ -90,6 +157,7 @@ func (o *Ops) CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb
 		ID:           *existingID,
 		IngestionLog: existingLog,
 		WasDuplicate: true,
+		BranchID:     branchIDForResult,
 	}
 
 	return result, nil
