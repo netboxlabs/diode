@@ -17,6 +17,7 @@ env:
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   SEMANTIC_RELEASE_PACKAGE: ${{ github.repository }}
   GO_VERSION: '1.24'
+  JF_REPOSITORY: obs-builds
 
 permissions:
   contents: write
@@ -119,6 +120,7 @@ jobs:
           echo $BUILD_VERSION > ./diode-server/version/BUILD_VERSION.txt
 
       - name: Build image and push
+        id: docker-build
         uses: docker/build-push-action@48aba3b46d1b1fec4febb7c5d0c644b249a11355 # v6
         with:
           context: diode-server
@@ -128,13 +130,19 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           tags: |
-            netboxlabs/diode-${{ matrix.app }}:latest
-            netboxlabs/diode-${{ matrix.app }}:${{ env.BUILD_VERSION }}
-            netboxlabs.jfrog.io/obs-builds/diode-${{ matrix.app }}:latest
-            netboxlabs.jfrog.io/obs-builds/diode-${{ matrix.app }}:${{ env.BUILD_VERSION }}
+            netboxlabs/${{ env.APP_NAME }}:latest
+            netboxlabs/${{ env.APP_NAME }}:${{ env.BUILD_VERSION }}
+            netboxlabs.jfrog.io/${{ env.JF_REPOSITORY }}/${{ env.APP_NAME }}:latest
+            netboxlabs.jfrog.io/${{ env.JF_REPOSITORY }}/${{ env.APP_NAME }}:${{ env.BUILD_VERSION }}
           build-args: |
             GO_VERSION=${{ env.GO_VERSION }}
             SVC=${{ matrix.app }}
+
+      - name: Create and publish JFrog build
+        run: |
+          echo '${{ steps.docker-build.outputs.metadata }}' > build-metadata
+          jf rt build-docker-create ${{ env.JF_REPOSITORY }} --image-file build-metadata --build-name ${{ env.APP_NAME }} --build-number ${{ env.BUILD_VERSION }}
+          jf rt build-publish ${{ env.APP_NAME }} ${{ env.BUILD_VERSION }}
 
   semantic-release:
     name: Semantic release - ${{ matrix.app }}
