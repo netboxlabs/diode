@@ -1,6 +1,7 @@
 .PHONY: gen-diode-sdk-go
 gen-diode-sdk-go:
 	@cd diode-proto/ && buf format -w && buf generate --template buf.gen.sdk.go.yaml
+	@gofmt -w ../diode-sdk-go/diode
 
 .PHONY: gen-diode-sdk-python
 gen-diode-sdk-python:
@@ -12,6 +13,7 @@ gen-diode-sdk-python:
 .PHONY: gen-diode-server-go
 gen-diode-server-go:
 	@cd diode-proto/ && buf format -w && buf generate --template buf.gen.server.go.yaml
+	@gofmt -w diode-server/gen
 
 .PHONY: detect-breaking-changes
 detect-breaking-changes:
