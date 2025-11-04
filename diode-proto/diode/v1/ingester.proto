@@ -2,10 +2,11 @@ syntax = "proto3";
 
 // Generated Code. DO NOT EDIT.
 // Source: NetBox v4.4.2
-// Timestamp: 2025-10-02 12:39:08Z
+// Timestamp: 2025-11-04 12:25:49Z
 
 package diode.v1;
 
+import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 import "validate/validate.proto";
 
@@ -113,6 +114,7 @@ message Entity {
     ModuleTypeProfile module_type_profile = 93;
     CustomLink custom_link = 94;
   }
+  google.protobuf.Struct metadata = 95;
 }
 
 // The request to ingest the data
@@ -140,6 +142,7 @@ message IngestRequest {
     max_len: 255
   }];
   string sdk_version = 7 [(validate.rules).string = {pattern: "^(\\d)+\\.(\\d)+\\.(\\d)+$"}];
+  google.protobuf.Struct metadata = 8;
 }
 
 // The response from the ingest request

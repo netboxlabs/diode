@@ -1527,6 +1527,7 @@
 | journal_entry | [JournalEntry](#diode-v1-JournalEntry) |  |  |
 | module_type_profile | [ModuleTypeProfile](#diode-v1-ModuleTypeProfile) |  |  |
 | custom_link | [CustomLink](#diode-v1-CustomLink) |  |  |
+| metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
 
 
 
@@ -2124,6 +2125,7 @@
 | producer_app_version | [string](#string) |  |  |
 | sdk_name | [string](#string) |  |  |
 | sdk_version | [string](#string) |  |  |
+| metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
 
 
 
