@@ -2,7 +2,7 @@
 
 A Helm chart for Diode
 
-![Version: 1.8.1](https://img.shields.io/badge/Version-1.8.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.5.0](https://img.shields.io/badge/AppVersion-1.5.0-informational?style=flat-square)
+![Version: 1.9.0](https://img.shields.io/badge/Version-1.9.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.5.0](https://img.shields.io/badge/AppVersion-1.5.0-informational?style=flat-square)
 
 ## Prerequisites
 
@@ -314,6 +314,11 @@ helm show values diode/diode
 | externalPostgresql.username | string | `"diode"` | username |
 | externalRedis.hostname | string | `"localhost"` | hostname |
 | externalRedis.port | int | `6379` | port |
+| externalRedis.tls.caPath | string | `""` | path to CA certificate to verify server |
+| externalRedis.tls.clientCertPath | string | `""` | path to client certificate for mutual TLS |
+| externalRedis.tls.clientKeyPath | string | `""` | path to client private key for mutual TLS |
+| externalRedis.tls.enabled | bool | `false` | enable TLS |
+| externalRedis.tls.skipVerify | bool | `false` | skip TLS verify |
 | global.commonAnnotations | object | `{}` | common annotations for all resources |
 | global.commonLabels | object | `{}` | common labels for all resources |
 | global.diode | object | `{"busybox":{"image":"busybox:latest","imagePullPolicy":"IfNotPresent"},"hydra":{"waitForPostgres":true},"ingester":{"waitForRedis":true},"reconciler":{"waitForPostgres":true,"waitForRedis":true}}` | diode global configuration |
