@@ -77,10 +77,18 @@ func main() {
 		}
 	}
 
+	tlsConfig, err := cfg.RedisTLS.ToTLSConfig()
+	if err != nil {
+		s.Logger().Error("failed to create TLS config for Redis", "error", err)
+		metricRecorder.RecordServiceStartupAttempt(ctx, false)
+		os.Exit(1)
+	}
+
 	redisClient := redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:%s", cfg.RedisHost, cfg.RedisPort),
-		Password: cfg.RedisPassword,
-		DB:       cfg.RedisDB,
+		Addr:      fmt.Sprintf("%s:%s", cfg.RedisHost, cfg.RedisPort),
+		Password:  cfg.RedisPassword,
+		DB:        cfg.RedisDB,
+		TLSConfig: tlsConfig,
 	})
 
 	if _, err := redisClient.Ping(ctx).Result(); err != nil {
@@ -90,9 +98,10 @@ func main() {
 	}
 
 	redisStreamClient := redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:%s", cfg.RedisHost, cfg.RedisPort),
-		Password: cfg.RedisPassword,
-		DB:       cfg.RedisStreamDB,
+		Addr:      fmt.Sprintf("%s:%s", cfg.RedisHost, cfg.RedisPort),
+		Password:  cfg.RedisPassword,
+		DB:        cfg.RedisStreamDB,
+		TLSConfig: tlsConfig,
 	})
 
 	if _, err := redisStreamClient.Ping(ctx).Result(); err != nil {
@@ -146,7 +155,7 @@ func main() {
 	}
 
 	authorizer := authutil.NewContextAuthorizer(s.Logger())
-	gRPCServer, err := reconciler.NewServer(ctx, s.Logger(), repository, serverInterceptors(authorizer, s.Logger())...)
+	gRPCServer, err := reconciler.NewServer(ctx, s.Logger(), repository, tlsConfig, serverInterceptors(authorizer, s.Logger())...)
 	if err != nil {
 		s.Logger().Error("failed to instantiate gRPC server", "error", err)
 		metricRecorder.RecordServiceStartupAttempt(ctx, false)

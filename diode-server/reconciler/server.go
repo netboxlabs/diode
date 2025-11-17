@@ -2,6 +2,7 @@ package reconciler
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"log/slog"
 	"net"
@@ -28,14 +29,15 @@ type Server struct {
 }
 
 // NewServer creates a new reconciler server
-func NewServer(ctx context.Context, logger *slog.Logger, repository Repository, serverInterceptors ...grpc.UnaryServerInterceptor) (*Server, error) {
+func NewServer(ctx context.Context, logger *slog.Logger, repository Repository, tlsConfig *tls.Config, serverInterceptors ...grpc.UnaryServerInterceptor) (*Server, error) {
 	var cfg Config
 	envconfig.MustProcess("", &cfg)
 
 	redisClient := redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:%s", cfg.RedisHost, cfg.RedisPort),
-		Password: cfg.RedisPassword,
-		DB:       cfg.RedisDB,
+		Addr:      fmt.Sprintf("%s:%s", cfg.RedisHost, cfg.RedisPort),
+		Password:  cfg.RedisPassword,
+		DB:        cfg.RedisDB,
+		TLSConfig: tlsConfig,
 	})
 
 	if _, err := redisClient.Ping(ctx).Result(); err != nil {

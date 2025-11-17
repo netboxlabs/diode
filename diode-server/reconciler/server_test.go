@@ -36,7 +36,7 @@ func TestNewServer(t *testing.T) {
 			return handler(ctx, req)
 		},
 	}
-	server, err := reconciler.NewServer(ctx, logger, mockRepository, serverInterceptors...)
+	server, err := reconciler.NewServer(ctx, logger, mockRepository, nil, serverInterceptors...)
 	require.NoError(t, err)
 	require.NotNil(t, server)
 
