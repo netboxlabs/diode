@@ -140,7 +140,9 @@ jobs:
 
       - name: Create and publish JFrog build
         run: |
-          echo '${{ steps.docker-build.outputs.metadata }}' > build-metadata
+          DIGEST="${{ steps.docker-build.outputs.digest }}"
+          IMAGE_TAG="netboxlabs.jfrog.io/${{ env.JF_REPOSITORY }}/${{ env.APP_NAME }}:${{ env.BUILD_VERSION }}@${DIGEST}"
+          echo "${IMAGE_TAG}" > build-metadata
           jf rt build-docker-create ${{ env.JF_REPOSITORY }} --image-file build-metadata --build-name ${{ env.APP_NAME }} --build-number ${{ env.BUILD_VERSION }}
           jf rt build-publish ${{ env.APP_NAME }} ${{ env.BUILD_VERSION }}
 
