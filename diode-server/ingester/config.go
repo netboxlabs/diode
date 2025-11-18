@@ -1,6 +1,9 @@
 package ingester
 
-import "github.com/netboxlabs/diode/diode-server/telemetry"
+import (
+	"github.com/netboxlabs/diode/diode-server/telemetry"
+	"github.com/netboxlabs/diode/diode-server/tls"
+)
 
 // Config is the configuration for the ingester service
 type Config struct {
@@ -10,5 +13,6 @@ type Config struct {
 	RedisPassword string `envconfig:"REDIS_PASSWORD" required:"true"`
 	RedisStreamDB int    `envconfig:"REDIS_STREAM_DB" default:"1"`
 
+	RedisTLS  tls.Config       `envconfig:"REDIS_TLS"`
 	Telemetry telemetry.Config `envconfig:"TELEMETRY"`
 }

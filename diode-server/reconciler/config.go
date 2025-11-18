@@ -1,6 +1,9 @@
 package reconciler
 
-import "github.com/netboxlabs/diode/diode-server/telemetry"
+import (
+	"github.com/netboxlabs/diode/diode-server/telemetry"
+	"github.com/netboxlabs/diode/diode-server/tls"
+)
 
 // Config is the configuration for the reconciler service
 type Config struct {
@@ -29,5 +32,6 @@ type Config struct {
 	DiodeToNetBoxClientID          string `envconfig:"DIODE_TO_NETBOX_CLIENT_ID" required:"true"`
 	DiodeToNetBoxClientSecret      string `envconfig:"DIODE_TO_NETBOX_CLIENT_SECRET" required:"true"`
 
+	RedisTLS  tls.Config       `envconfig:"REDIS_TLS"`
 	Telemetry telemetry.Config `envconfig:"TELEMETRY"`
 }
