@@ -84,7 +84,7 @@ func startReconcilerServer(ctx context.Context, t *testing.T) *reconciler.Server
 			return handler(ctx, req)
 		},
 	}
-	server, err := reconciler.NewServer(ctx, logger, mockRepository, nil, serverInterceptors...)
+	server, err := reconciler.NewServer(ctx, logger, mockRepository, serverInterceptors...)
 	require.NoError(t, err)
 
 	errChan := make(chan error, 1)
