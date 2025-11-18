@@ -32,7 +32,7 @@ func NewServer(ctx context.Context, logger *slog.Logger, repository Repository, 
 	var cfg Config
 	envconfig.MustProcess("", &cfg)
 
-	redisTlsConfig, err := cfg.RedisTLS.ToTLSConfig()
+	redisTLSConfig, err := cfg.RedisTLS.ToTLSConfig()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create TLS config for Redis: %v", err)
 	}
@@ -41,7 +41,7 @@ func NewServer(ctx context.Context, logger *slog.Logger, repository Repository, 
 		Addr:      fmt.Sprintf("%s:%s", cfg.RedisHost, cfg.RedisPort),
 		Password:  cfg.RedisPassword,
 		DB:        cfg.RedisDB,
-		TLSConfig: redisTlsConfig,
+		TLSConfig: redisTLSConfig,
 	})
 
 	if _, err := redisClient.Ping(ctx).Result(); err != nil {
