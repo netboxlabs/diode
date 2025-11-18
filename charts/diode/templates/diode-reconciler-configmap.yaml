@@ -19,6 +19,13 @@ data:
   REDIS_PORT: {{ include "diode.redis.port" . | quote }}
   REDIS_DB: {{ $config.redisDb | default "0" | quote }}
   REDIS_STREAM_DB: {{ $config.redisStreamDb | default "1" | quote }}
+  {{- if and .Values.externalRedis.tls .Values.externalRedis.tls.enabled }}
+  REDIS_TLS_ENABLED: "true"
+  REDIS_TLS_SKIP_VERIFY: {{ .Values.externalRedis.tls.skipVerify | default false | quote }}
+  REDIS_TLS_CA_PATH: {{ .Values.externalRedis.tls.caPath | default "" | quote }}
+  REDIS_TLS_CLIENT_KEY_PATH: {{ .Values.externalRedis.tls.clientKeyPath | default "" | quote }}
+  REDIS_TLS_CLIENT_CERT_PATH: {{ .Values.externalRedis.tls.clientCertPath | default "" | quote }}
+  {{- end }}
   MIGRATION_ENABLED: {{ $config.migrationEnabled | default "true" | quote }}
   AUTO_APPLY_CHANGESETS: {{ $config.autoApplyChangesets | default "true" | quote }}
   RECONCILER_RATE_LIMITER_RPS: {{ $config.reconcilerRateLimiterRps | default "20" | quote }}

@@ -17,6 +17,13 @@ data:
   SENTRY_DSN: {{ $config.sentryDsn | quote }}
   REDIS_HOST: {{ include "diode.redis.hostname" . | quote }}
   REDIS_PORT: {{ include "diode.redis.port" . | quote }}
+  {{- if and .Values.externalRedis.tls .Values.externalRedis.tls.enabled }}
+  REDIS_TLS_ENABLED: "true"
+  REDIS_TLS_SKIP_VERIFY: {{ .Values.externalRedis.tls.skipVerify | default false | quote }}
+  REDIS_TLS_CA_PATH: {{ .Values.externalRedis.tls.caPath | default "" | quote }}
+  REDIS_TLS_CLIENT_KEY_PATH: {{ .Values.externalRedis.tls.clientKeyPath | default "" | quote }}
+  REDIS_TLS_CLIENT_CERT_PATH: {{ .Values.externalRedis.tls.clientCertPath | default "" | quote }}
+  {{- end }}
   REDIS_STREAM_DB: {{ $config.redisStreamDb | default "1" | quote }}
   TELEMETRY_METRICS_EXPORTER: {{ $config.telemetryMetricsExporter | quote }}
   TELEMETRY_TRACES_EXPORTER: {{ $config.telemetryTracesExporter | default "none" | quote }}

@@ -57,6 +57,17 @@ externalRedis:
   hostname: localhost
   # -- port
   port: 6379
+  tls:
+    # -- enable TLS
+    enabled: false
+    # -- skip TLS verify
+    skipVerify: false
+    # -- path to CA certificate to verify server
+    caPath: ""
+    # -- path to client private key for mutual TLS
+    clientKeyPath: ""
+    # -- path to client certificate for mutual TLS
+    clientCertPath: ""
 
 # Diode Auth configuration
 diodeAuth:

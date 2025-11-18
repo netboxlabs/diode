@@ -61,10 +61,18 @@ func main() {
 
 	metricRecorder.SetServiceInfo(ctx, fmt.Sprintf("%s.%s", version.GetBuildVersion(), version.GetBuildCommit()))
 
+	redisTLSConfig, err := cfg.RedisTLS.ToTLSConfig()
+	if err != nil {
+		s.Logger().Error("failed to create TLS config for Redis", "error", err)
+		metricRecorder.RecordServiceStartupAttempt(ctx, false)
+		os.Exit(1)
+	}
+
 	redisStreamClient := redis.NewClient(&redis.Options{
-		Addr:     fmt.Sprintf("%s:%s", cfg.RedisHost, cfg.RedisPort),
-		Password: cfg.RedisPassword,
-		DB:       cfg.RedisStreamDB,
+		Addr:      fmt.Sprintf("%s:%s", cfg.RedisHost, cfg.RedisPort),
+		Password:  cfg.RedisPassword,
+		DB:        cfg.RedisStreamDB,
+		TLSConfig: redisTLSConfig,
 	})
 
 	if _, err := redisStreamClient.Ping(ctx).Result(); err != nil {
