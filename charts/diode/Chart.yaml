@@ -2,7 +2,7 @@ apiVersion: v2
 name: diode
 description: A Helm chart for Diode
 type: application
-version: "1.9.0"
+version: "1.9.1"
 appVersion: "1.5.0"
 home: https://github.com/netboxlabs/diode
 sources:
