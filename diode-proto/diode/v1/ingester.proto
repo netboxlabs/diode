@@ -2,14 +2,22 @@ syntax = "proto3";
 
 // Generated Code. DO NOT EDIT.
 // Source: NetBox v4.4.2
-// Timestamp: 2025-10-02 12:39:08Z
+// Timestamp: 2025-11-14 18:10:21Z
 
 package diode.v1;
 
+import "google/protobuf/descriptor.proto";
+import "google/protobuf/struct.proto";
 import "google/protobuf/timestamp.proto";
 import "validate/validate.proto";
 
 option go_package = "github.com/netboxlabs/diode-sdk-go/diode/v1/diodepb";
+
+// Custom field option to indicate if a field is supported by NetBox
+
+extend google.protobuf.FieldOptions {
+  bool netbox_supported = 50001;
+}
 
 // An ingest entity wrapper
 
@@ -140,6 +148,7 @@ message IngestRequest {
     max_len: 255
   }];
   string sdk_version = 7 [(validate.rules).string = {pattern: "^(\\d)+\\.(\\d)+\\.(\\d)+$"}];
+  google.protobuf.Struct metadata = 8;
 }
 
 // The response from the ingest request
@@ -163,6 +172,7 @@ message ASN {
   optional string comments = 5;
   repeated Tag tags = 6;
   map<string, CustomFieldValue> custom_fields = 7;
+  google.protobuf.Struct metadata = 8 [(netbox_supported) = false];
 }
 
 message ASNRange {
@@ -175,6 +185,7 @@ message ASNRange {
   optional string description = 7;
   repeated Tag tags = 8;
   map<string, CustomFieldValue> custom_fields = 9;
+  google.protobuf.Struct metadata = 10 [(netbox_supported) = false];
 }
 
 message Aggregate {
@@ -186,6 +197,7 @@ message Aggregate {
   optional string comments = 6;
   repeated Tag tags = 7;
   map<string, CustomFieldValue> custom_fields = 8;
+  google.protobuf.Struct metadata = 9 [(netbox_supported) = false];
 }
 
 message Cable {
@@ -244,12 +256,14 @@ message Cable {
   optional string comments = 11;
   repeated Tag tags = 12;
   map<string, CustomFieldValue> custom_fields = 13;
+  google.protobuf.Struct metadata = 14 [(netbox_supported) = false];
 }
 
 message CablePath {
   optional bool is_active = 1;
   optional bool is_complete = 2;
   optional bool is_split = 3;
+  google.protobuf.Struct metadata = 4 [(netbox_supported) = false];
 }
 
 message CableTermination {
@@ -271,6 +285,7 @@ message CableTermination {
     PowerPort termination_power_port = 10;
     RearPort termination_rear_port = 11;
   }
+  google.protobuf.Struct metadata = 12 [(netbox_supported) = false];
 }
 
 message Circuit {
@@ -306,6 +321,7 @@ message Circuit {
   repeated Tag tags = 14;
   repeated CircuitGroupAssignment assignments = 15;
   map<string, CustomFieldValue> custom_fields = 16;
+  google.protobuf.Struct metadata = 17 [(netbox_supported) = false];
 }
 
 message CircuitGroup {
@@ -315,6 +331,7 @@ message CircuitGroup {
   optional Tenant tenant = 4;
   repeated Tag tags = 5;
   map<string, CustomFieldValue> custom_fields = 6;
+  google.protobuf.Struct metadata = 7 [(netbox_supported) = false];
 }
 
 message CircuitGroupAssignment {
@@ -332,6 +349,7 @@ message CircuitGroupAssignment {
     ]
   }];
   repeated Tag tags = 5;
+  google.protobuf.Struct metadata = 6 [(netbox_supported) = false];
 }
 
 message CircuitTermination {
@@ -357,6 +375,7 @@ message CircuitTermination {
   optional bool mark_connected = 13;
   repeated Tag tags = 14;
   map<string, CustomFieldValue> custom_fields = 15;
+  google.protobuf.Struct metadata = 16 [(netbox_supported) = false];
 }
 
 message CircuitType {
@@ -366,6 +385,7 @@ message CircuitType {
   optional string description = 4;
   repeated Tag tags = 5;
   map<string, CustomFieldValue> custom_fields = 6;
+  google.protobuf.Struct metadata = 7 [(netbox_supported) = false];
 }
 
 message Cluster {
@@ -392,6 +412,7 @@ message Cluster {
   optional string comments = 11;
   repeated Tag tags = 12;
   map<string, CustomFieldValue> custom_fields = 13;
+  google.protobuf.Struct metadata = 14 [(netbox_supported) = false];
 }
 
 message ClusterGroup {
@@ -400,6 +421,7 @@ message ClusterGroup {
   optional string description = 3;
   repeated Tag tags = 4;
   map<string, CustomFieldValue> custom_fields = 5;
+  google.protobuf.Struct metadata = 6 [(netbox_supported) = false];
 }
 
 message ClusterType {
@@ -408,6 +430,7 @@ message ClusterType {
   optional string description = 3;
   repeated Tag tags = 4;
   map<string, CustomFieldValue> custom_fields = 5;
+  google.protobuf.Struct metadata = 6 [(netbox_supported) = false];
 }
 
 message ConsolePort {
@@ -450,6 +473,7 @@ message ConsolePort {
   optional bool mark_connected = 8;
   repeated Tag tags = 9;
   map<string, CustomFieldValue> custom_fields = 10;
+  google.protobuf.Struct metadata = 11 [(netbox_supported) = false];
 }
 
 message ConsoleServerPort {
@@ -492,6 +516,7 @@ message ConsoleServerPort {
   optional bool mark_connected = 8;
   repeated Tag tags = 9;
   map<string, CustomFieldValue> custom_fields = 10;
+  google.protobuf.Struct metadata = 11 [(netbox_supported) = false];
 }
 
 message Contact {
@@ -507,6 +532,7 @@ message Contact {
   repeated Tag tags = 10;
   map<string, CustomFieldValue> custom_fields = 11;
   repeated ContactGroup groups = 12;
+  google.protobuf.Struct metadata = 13 [(netbox_supported) = false];
 }
 
 message ContactAssignment {
@@ -617,6 +643,7 @@ message ContactAssignment {
   }];
   repeated Tag tags = 92;
   map<string, CustomFieldValue> custom_fields = 93;
+  google.protobuf.Struct metadata = 99 [(netbox_supported) = false];
 }
 
 message ContactGroup {
@@ -627,6 +654,7 @@ message ContactGroup {
   repeated Tag tags = 5;
   map<string, CustomFieldValue> custom_fields = 6;
   optional string comments = 7;
+  google.protobuf.Struct metadata = 8 [(netbox_supported) = false];
 }
 
 message ContactRole {
@@ -635,6 +663,7 @@ message ContactRole {
   optional string description = 3;
   repeated Tag tags = 4;
   map<string, CustomFieldValue> custom_fields = 5;
+  google.protobuf.Struct metadata = 6 [(netbox_supported) = false];
 }
 
 message CustomFieldObjectReference {
@@ -809,6 +838,7 @@ message Device {
   optional string comments = 25;
   repeated Tag tags = 26;
   map<string, CustomFieldValue> custom_fields = 27;
+  google.protobuf.Struct metadata = 28 [(netbox_supported) = false];
 }
 
 message DeviceBay {
@@ -819,6 +849,7 @@ message DeviceBay {
   optional Device installed_device = 5;
   repeated Tag tags = 6;
   map<string, CustomFieldValue> custom_fields = 7;
+  google.protobuf.Struct metadata = 8 [(netbox_supported) = false];
 }
 
 message DeviceRole {
@@ -831,6 +862,7 @@ message DeviceRole {
   map<string, CustomFieldValue> custom_fields = 7;
   optional DeviceRole parent = 8;
   optional string comments = 9;
+  google.protobuf.Struct metadata = 10 [(netbox_supported) = false];
 }
 
 message DeviceType {
@@ -875,6 +907,7 @@ message DeviceType {
   optional string comments = 14;
   repeated Tag tags = 15;
   map<string, CustomFieldValue> custom_fields = 16;
+  google.protobuf.Struct metadata = 17 [(netbox_supported) = false];
 }
 
 message FHRPGroup {
@@ -902,6 +935,7 @@ message FHRPGroup {
   optional string comments = 7;
   repeated Tag tags = 8;
   map<string, CustomFieldValue> custom_fields = 9;
+  google.protobuf.Struct metadata = 10 [(netbox_supported) = false];
 }
 
 message FHRPGroupAssignment {
@@ -1002,6 +1036,7 @@ message FHRPGroupAssignment {
     CustomLink interface_custom_link = 95;
   }
   int64 priority = 90;
+  google.protobuf.Struct metadata = 96 [(netbox_supported) = false];
 }
 
 message FrontPort {
@@ -1078,6 +1113,7 @@ message FrontPort {
   optional bool mark_connected = 10;
   repeated Tag tags = 11;
   map<string, CustomFieldValue> custom_fields = 12;
+  google.protobuf.Struct metadata = 13 [(netbox_supported) = false];
 }
 
 message GenericObject {
@@ -1198,6 +1234,7 @@ message IKEPolicy {
   repeated Tag tags = 7;
   map<string, CustomFieldValue> custom_fields = 8;
   repeated IKEProposal proposals = 9;
+  google.protobuf.Struct metadata = 10 [(netbox_supported) = false];
 }
 
 message IKEProposal {
@@ -1264,6 +1301,7 @@ message IKEProposal {
   optional string comments = 8;
   repeated Tag tags = 9;
   map<string, CustomFieldValue> custom_fields = 10;
+  google.protobuf.Struct metadata = 11 [(netbox_supported) = false];
 }
 
 message IPAddress {
@@ -1302,6 +1340,7 @@ message IPAddress {
   optional string comments = 12;
   repeated Tag tags = 13;
   map<string, CustomFieldValue> custom_fields = 14;
+  google.protobuf.Struct metadata = 15 [(netbox_supported) = false];
 }
 
 message IPRange {
@@ -1323,6 +1362,7 @@ message IPRange {
   optional bool mark_utilized = 10;
   map<string, CustomFieldValue> custom_fields = 11;
   optional bool mark_populated = 12;
+  google.protobuf.Struct metadata = 13 [(netbox_supported) = false];
 }
 
 message IPSecPolicy {
@@ -1360,6 +1400,7 @@ message IPSecPolicy {
   repeated Tag tags = 5;
   map<string, CustomFieldValue> custom_fields = 6;
   repeated IPSecProposal proposals = 7;
+  google.protobuf.Struct metadata = 8 [(netbox_supported) = false];
 }
 
 message IPSecProfile {
@@ -1376,6 +1417,7 @@ message IPSecProfile {
   optional string comments = 6;
   repeated Tag tags = 7;
   map<string, CustomFieldValue> custom_fields = 8;
+  google.protobuf.Struct metadata = 9 [(netbox_supported) = false];
 }
 
 message IPSecProposal {
@@ -1407,6 +1449,7 @@ message IPSecProposal {
   optional string comments = 7;
   repeated Tag tags = 8;
   map<string, CustomFieldValue> custom_fields = 9;
+  google.protobuf.Struct metadata = 10 [(netbox_supported) = false];
 }
 
 message Interface {
@@ -1887,6 +1930,7 @@ message Interface {
   repeated VirtualDeviceContext vdcs = 32;
   repeated VLAN tagged_vlans = 33;
   repeated WirelessLAN wireless_lans = 34;
+  google.protobuf.Struct metadata = 35 [(netbox_supported) = false];
 }
 
 message InventoryItem {
@@ -1922,6 +1966,7 @@ message InventoryItem {
   }
   repeated Tag tags = 20;
   map<string, CustomFieldValue> custom_fields = 21;
+  google.protobuf.Struct metadata = 22 [(netbox_supported) = false];
 }
 
 message InventoryItemRole {
@@ -1931,6 +1976,7 @@ message InventoryItemRole {
   optional string description = 4;
   repeated Tag tags = 5;
   map<string, CustomFieldValue> custom_fields = 6;
+  google.protobuf.Struct metadata = 7 [(netbox_supported) = false];
 }
 
 message L2VPN {
@@ -1969,6 +2015,7 @@ message L2VPN {
       "planned"
     ]
   }];
+  google.protobuf.Struct metadata = 13 [(netbox_supported) = false];
 }
 
 message L2VPNTermination {
@@ -2070,6 +2117,7 @@ message L2VPNTermination {
   }
   repeated Tag tags = 5;
   map<string, CustomFieldValue> custom_fields = 6;
+  google.protobuf.Struct metadata = 97 [(netbox_supported) = false];
 }
 
 message Location {
@@ -2092,6 +2140,7 @@ message Location {
   repeated Tag tags = 9;
   map<string, CustomFieldValue> custom_fields = 10;
   optional string comments = 11;
+  google.protobuf.Struct metadata = 12 [(netbox_supported) = false];
 }
 
 message MACAddress {
@@ -2104,6 +2153,7 @@ message MACAddress {
   optional string comments = 5;
   repeated Tag tags = 6;
   map<string, CustomFieldValue> custom_fields = 7;
+  google.protobuf.Struct metadata = 8 [(netbox_supported) = false];
 }
 
 message Manufacturer {
@@ -2112,6 +2162,7 @@ message Manufacturer {
   optional string description = 3;
   repeated Tag tags = 4;
   map<string, CustomFieldValue> custom_fields = 5;
+  google.protobuf.Struct metadata = 6 [(netbox_supported) = false];
 }
 
 message Module {
@@ -2134,6 +2185,7 @@ message Module {
   optional string comments = 8;
   repeated Tag tags = 9;
   map<string, CustomFieldValue> custom_fields = 10;
+  google.protobuf.Struct metadata = 11 [(netbox_supported) = false];
 }
 
 message ModuleBay {
@@ -2146,6 +2198,7 @@ message ModuleBay {
   optional string description = 7;
   repeated Tag tags = 8;
   map<string, CustomFieldValue> custom_fields = 9;
+  google.protobuf.Struct metadata = 10 [(netbox_supported) = false];
 }
 
 message ModuleType {
@@ -2177,6 +2230,7 @@ message ModuleType {
   map<string, CustomFieldValue> custom_fields = 10;
   optional ModuleTypeProfile profile = 11;
   optional string attributes = 12;
+  google.protobuf.Struct metadata = 13 [(netbox_supported) = false];
 }
 
 message Platform {
@@ -2188,6 +2242,7 @@ message Platform {
   map<string, CustomFieldValue> custom_fields = 6;
   optional Platform parent = 7;
   optional string comments = 8;
+  google.protobuf.Struct metadata = 9 [(netbox_supported) = false];
 }
 
 message PowerFeed {
@@ -2229,6 +2284,7 @@ message PowerFeed {
   optional string comments = 14;
   repeated Tag tags = 15;
   map<string, CustomFieldValue> custom_fields = 16;
+  google.protobuf.Struct metadata = 17 [(netbox_supported) = false];
 }
 
 message PowerOutlet {
@@ -2359,6 +2415,7 @@ message PowerOutlet {
       "faulty"
     ]
   }];
+  google.protobuf.Struct metadata = 14 [(netbox_supported) = false];
 }
 
 message PowerPanel {
@@ -2369,6 +2426,7 @@ message PowerPanel {
   optional string comments = 5;
   repeated Tag tags = 6;
   map<string, CustomFieldValue> custom_fields = 7;
+  google.protobuf.Struct metadata = 8 [(netbox_supported) = false];
 }
 
 message PowerPort {
@@ -2491,6 +2549,7 @@ message PowerPort {
   optional bool mark_connected = 9;
   repeated Tag tags = 10;
   map<string, CustomFieldValue> custom_fields = 11;
+  google.protobuf.Struct metadata = 12 [(netbox_supported) = false];
 }
 
 message Prefix {
@@ -2519,6 +2578,7 @@ message Prefix {
   optional string comments = 14;
   repeated Tag tags = 15;
   map<string, CustomFieldValue> custom_fields = 16;
+  google.protobuf.Struct metadata = 17 [(netbox_supported) = false];
 }
 
 message Provider {
@@ -2530,6 +2590,7 @@ message Provider {
   map<string, CustomFieldValue> custom_fields = 6;
   repeated ProviderAccount accounts = 7;
   repeated ASN asns = 8;
+  google.protobuf.Struct metadata = 9 [(netbox_supported) = false];
 }
 
 message ProviderAccount {
@@ -2540,6 +2601,7 @@ message ProviderAccount {
   optional string comments = 5;
   repeated Tag tags = 6;
   map<string, CustomFieldValue> custom_fields = 7;
+  google.protobuf.Struct metadata = 8 [(netbox_supported) = false];
 }
 
 message ProviderNetwork {
@@ -2550,6 +2612,7 @@ message ProviderNetwork {
   optional string comments = 5;
   repeated Tag tags = 6;
   map<string, CustomFieldValue> custom_fields = 7;
+  google.protobuf.Struct metadata = 8 [(netbox_supported) = false];
 }
 
 message RIR {
@@ -2559,6 +2622,7 @@ message RIR {
   optional string description = 4;
   repeated Tag tags = 5;
   map<string, CustomFieldValue> custom_fields = 6;
+  google.protobuf.Struct metadata = 7 [(netbox_supported) = false];
 }
 
 message Rack {
@@ -2632,6 +2696,7 @@ message Rack {
   repeated Tag tags = 26;
   map<string, CustomFieldValue> custom_fields = 27;
   optional int64 outer_height = 28;
+  google.protobuf.Struct metadata = 29 [(netbox_supported) = false];
 }
 
 message RackReservation {
@@ -2649,6 +2714,7 @@ message RackReservation {
       "stale"
     ]
   }];
+  google.protobuf.Struct metadata = 9 [(netbox_supported) = false];
 }
 
 message RackRole {
@@ -2658,6 +2724,7 @@ message RackRole {
   optional string description = 4;
   repeated Tag tags = 5;
   map<string, CustomFieldValue> custom_fields = 6;
+  google.protobuf.Struct metadata = 7 [(netbox_supported) = false];
 }
 
 message RackType {
@@ -2710,6 +2777,7 @@ message RackType {
   repeated Tag tags = 18;
   map<string, CustomFieldValue> custom_fields = 19;
   optional int64 outer_height = 20;
+  google.protobuf.Struct metadata = 21 [(netbox_supported) = false];
 }
 
 message RearPort {
@@ -2785,6 +2853,7 @@ message RearPort {
   optional bool mark_connected = 9;
   repeated Tag tags = 10;
   map<string, CustomFieldValue> custom_fields = 11;
+  google.protobuf.Struct metadata = 12 [(netbox_supported) = false];
 }
 
 message Region {
@@ -2795,6 +2864,7 @@ message Region {
   repeated Tag tags = 5;
   map<string, CustomFieldValue> custom_fields = 6;
   optional string comments = 7;
+  google.protobuf.Struct metadata = 8 [(netbox_supported) = false];
 }
 
 message Role {
@@ -2804,6 +2874,7 @@ message Role {
   optional string description = 4;
   repeated Tag tags = 5;
   map<string, CustomFieldValue> custom_fields = 6;
+  google.protobuf.Struct metadata = 7 [(netbox_supported) = false];
 }
 
 message RouteTarget {
@@ -2813,6 +2884,7 @@ message RouteTarget {
   optional string comments = 4;
   repeated Tag tags = 5;
   map<string, CustomFieldValue> custom_fields = 6;
+  google.protobuf.Struct metadata = 7 [(netbox_supported) = false];
 }
 
 message Service {
@@ -2837,6 +2909,7 @@ message Service {
     FHRPGroup parent_object_fhrp_group = 12;
     VirtualMachine parent_object_virtual_machine = 13;
   }
+  google.protobuf.Struct metadata = 14 [(netbox_supported) = false];
 }
 
 message Site {
@@ -2865,6 +2938,7 @@ message Site {
   repeated Tag tags = 15;
   map<string, CustomFieldValue> custom_fields = 16;
   repeated ASN asns = 17;
+  google.protobuf.Struct metadata = 18 [(netbox_supported) = false];
 }
 
 message SiteGroup {
@@ -2875,6 +2949,7 @@ message SiteGroup {
   repeated Tag tags = 5;
   map<string, CustomFieldValue> custom_fields = 6;
   optional string comments = 7;
+  google.protobuf.Struct metadata = 8 [(netbox_supported) = false];
 }
 
 message Tag {
@@ -2973,6 +3048,7 @@ message Tag {
       "wireless.wirelesslink"
     ]
   }];
+  google.protobuf.Struct metadata = 7 [(netbox_supported) = false];
 }
 
 message Tenant {
@@ -2983,6 +3059,7 @@ message Tenant {
   optional string comments = 5;
   repeated Tag tags = 6;
   map<string, CustomFieldValue> custom_fields = 7;
+  google.protobuf.Struct metadata = 8 [(netbox_supported) = false];
 }
 
 message TenantGroup {
@@ -2993,6 +3070,7 @@ message TenantGroup {
   repeated Tag tags = 5;
   map<string, CustomFieldValue> custom_fields = 6;
   optional string comments = 7;
+  google.protobuf.Struct metadata = 8 [(netbox_supported) = false];
 }
 
 message Tunnel {
@@ -3024,6 +3102,7 @@ message Tunnel {
   optional string comments = 9;
   repeated Tag tags = 10;
   map<string, CustomFieldValue> custom_fields = 11;
+  google.protobuf.Struct metadata = 12 [(netbox_supported) = false];
 }
 
 message TunnelGroup {
@@ -3032,6 +3111,7 @@ message TunnelGroup {
   optional string description = 3;
   repeated Tag tags = 4;
   map<string, CustomFieldValue> custom_fields = 5;
+  google.protobuf.Struct metadata = 6 [(netbox_supported) = false];
 }
 
 message TunnelTermination {
@@ -3141,6 +3221,7 @@ message TunnelTermination {
   optional IPAddress outside_ip = 91;
   repeated Tag tags = 92;
   map<string, CustomFieldValue> custom_fields = 93;
+  google.protobuf.Struct metadata = 99 [(netbox_supported) = false];
 }
 
 message VLAN {
@@ -3168,6 +3249,7 @@ message VLAN {
   optional string comments = 11;
   repeated Tag tags = 12;
   map<string, CustomFieldValue> custom_fields = 13;
+  google.protobuf.Struct metadata = 14 [(netbox_supported) = false];
 }
 
 message VLANGroup {
@@ -3187,11 +3269,13 @@ message VLANGroup {
   repeated Tag tags = 12;
   map<string, CustomFieldValue> custom_fields = 13;
   optional Tenant tenant = 14;
+  google.protobuf.Struct metadata = 15 [(netbox_supported) = false];
 }
 
 message VLANTranslationPolicy {
   string name = 1;
   optional string description = 2;
+  google.protobuf.Struct metadata = 3 [(netbox_supported) = false];
 }
 
 message VLANTranslationRule {
@@ -3199,6 +3283,7 @@ message VLANTranslationRule {
   int64 local_vid = 2;
   int64 remote_vid = 3;
   optional string description = 4;
+  google.protobuf.Struct metadata = 5 [(netbox_supported) = false];
 }
 
 message VMInterface {
@@ -3225,6 +3310,7 @@ message VMInterface {
   repeated Tag tags = 14;
   map<string, CustomFieldValue> custom_fields = 15;
   repeated VLAN tagged_vlans = 16;
+  google.protobuf.Struct metadata = 17 [(netbox_supported) = false];
 }
 
 message VRF {
@@ -3238,6 +3324,7 @@ message VRF {
   map<string, CustomFieldValue> custom_fields = 8;
   repeated RouteTarget import_targets = 9;
   repeated RouteTarget export_targets = 10;
+  google.protobuf.Struct metadata = 11 [(netbox_supported) = false];
 }
 
 message VirtualChassis {
@@ -3248,6 +3335,7 @@ message VirtualChassis {
   optional string comments = 5;
   repeated Tag tags = 6;
   map<string, CustomFieldValue> custom_fields = 7;
+  google.protobuf.Struct metadata = 8 [(netbox_supported) = false];
 }
 
 message VirtualCircuit {
@@ -3270,6 +3358,7 @@ message VirtualCircuit {
   optional string comments = 8;
   repeated Tag tags = 9;
   map<string, CustomFieldValue> custom_fields = 10;
+  google.protobuf.Struct metadata = 11 [(netbox_supported) = false];
 }
 
 message VirtualCircuitTermination {
@@ -3285,6 +3374,7 @@ message VirtualCircuitTermination {
   optional string description = 4;
   repeated Tag tags = 5;
   map<string, CustomFieldValue> custom_fields = 6;
+  google.protobuf.Struct metadata = 7 [(netbox_supported) = false];
 }
 
 message VirtualCircuitType {
@@ -3294,6 +3384,7 @@ message VirtualCircuitType {
   optional string description = 4;
   repeated Tag tags = 5;
   map<string, CustomFieldValue> custom_fields = 6;
+  google.protobuf.Struct metadata = 7 [(netbox_supported) = false];
 }
 
 message VirtualDeviceContext {
@@ -3314,6 +3405,7 @@ message VirtualDeviceContext {
   optional string comments = 9;
   repeated Tag tags = 10;
   map<string, CustomFieldValue> custom_fields = 11;
+  google.protobuf.Struct metadata = 12 [(netbox_supported) = false];
 }
 
 message VirtualDisk {
@@ -3323,6 +3415,7 @@ message VirtualDisk {
   int64 size = 4;
   repeated Tag tags = 5;
   map<string, CustomFieldValue> custom_fields = 6;
+  google.protobuf.Struct metadata = 7 [(netbox_supported) = false];
 }
 
 message VirtualMachine {
@@ -3354,6 +3447,7 @@ message VirtualMachine {
   optional string comments = 16;
   repeated Tag tags = 17;
   map<string, CustomFieldValue> custom_fields = 18;
+  google.protobuf.Struct metadata = 19 [(netbox_supported) = false];
 }
 
 message WirelessLAN {
@@ -3395,6 +3489,7 @@ message WirelessLAN {
   optional string comments = 14;
   repeated Tag tags = 15;
   map<string, CustomFieldValue> custom_fields = 16;
+  google.protobuf.Struct metadata = 17 [(netbox_supported) = false];
 }
 
 message WirelessLANGroup {
@@ -3405,6 +3500,7 @@ message WirelessLANGroup {
   repeated Tag tags = 5;
   map<string, CustomFieldValue> custom_fields = 6;
   optional string comments = 7;
+  google.protobuf.Struct metadata = 8 [(netbox_supported) = false];
 }
 
 message WirelessLink {
@@ -3448,6 +3544,7 @@ message WirelessLink {
   optional string comments = 12;
   repeated Tag tags = 13;
   map<string, CustomFieldValue> custom_fields = 14;
+  google.protobuf.Struct metadata = 15 [(netbox_supported) = false];
 }
 
 message CustomField {
@@ -3692,6 +3789,7 @@ message CustomField {
       "wireless.wirelesslink"
     ]
   }];
+  google.protobuf.Struct metadata = 23 [(netbox_supported) = false];
 }
 
 message CustomFieldChoiceSet {
@@ -3706,6 +3804,7 @@ message CustomFieldChoiceSet {
   }];
   optional bool order_alphabetically = 4;
   repeated string extra_choices = 5;
+  google.protobuf.Struct metadata = 6 [(netbox_supported) = false];
 }
 
 message JournalEntry {
@@ -3815,6 +3914,7 @@ message JournalEntry {
   string comments = 94;
   repeated Tag tags = 95;
   map<string, CustomFieldValue> custom_fields = 96;
+  google.protobuf.Struct metadata = 98 [(netbox_supported) = false];
 }
 
 message ModuleTypeProfile {
@@ -3824,6 +3924,7 @@ message ModuleTypeProfile {
   optional string comments = 4;
   repeated Tag tags = 5;
   map<string, CustomFieldValue> custom_fields = 6;
+  google.protobuf.Struct metadata = 7 [(netbox_supported) = false];
 }
 
 message CustomLink {
@@ -3941,4 +4042,5 @@ message CustomLink {
       "wireless.wirelesslink"
     ]
   }];
+  google.protobuf.Struct metadata = 10 [(netbox_supported) = false];
 }
