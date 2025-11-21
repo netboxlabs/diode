@@ -57,6 +57,8 @@ externalRedis:
   hostname: localhost
   # -- port
   port: 6379
+  # -- username (optional, Redis 6+)
+  username: ""
   tls:
     # -- enable TLS
     enabled: false
