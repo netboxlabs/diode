@@ -68,12 +68,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	redisStreamClient := redis.NewClient(&redis.Options{
+	redisOptions := redis.Options{
 		Addr:      fmt.Sprintf("%s:%s", cfg.RedisHost, cfg.RedisPort),
 		Password:  cfg.RedisPassword,
 		DB:        cfg.RedisStreamDB,
 		TLSConfig: redisTLSConfig,
-	})
+	}
+	if cfg.RedisUsername != "" {
+		redisOptions.Username = cfg.RedisUsername
+	}
+	redisStreamClient := redis.NewClient(&redisOptions)
 
 	if _, err := redisStreamClient.Ping(ctx).Result(); err != nil {
 		s.Logger().Error("failed to connect to redis stream", "redisStream", redisStreamClient.String(), "error", err)

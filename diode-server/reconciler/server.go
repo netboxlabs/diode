@@ -37,12 +37,16 @@ func NewServer(ctx context.Context, logger *slog.Logger, repository Repository, 
 		return nil, fmt.Errorf("failed to create TLS config for Redis: %v", err)
 	}
 
-	redisClient := redis.NewClient(&redis.Options{
+	redisOptions := redis.Options{
 		Addr:      fmt.Sprintf("%s:%s", cfg.RedisHost, cfg.RedisPort),
 		Password:  cfg.RedisPassword,
 		DB:        cfg.RedisDB,
 		TLSConfig: redisTLSConfig,
-	})
+	}
+	if cfg.RedisUsername != "" {
+		redisOptions.Username = cfg.RedisUsername
+	}
+	redisClient := redis.NewClient(&redisOptions)
 
 	if _, err := redisClient.Ping(ctx).Result(); err != nil {
 		return nil, fmt.Errorf("failed connection to %s: %v", redisClient.String(), err)
