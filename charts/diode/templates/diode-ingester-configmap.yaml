@@ -17,6 +17,7 @@ data:
   SENTRY_DSN: {{ $config.sentryDsn | quote }}
   REDIS_HOST: {{ include "diode.redis.hostname" . | quote }}
   REDIS_PORT: {{ include "diode.redis.port" . | quote }}
+  REDIS_USERNAME: {{ include "diode.redis.username" . | quote }}
   {{- if and .Values.externalRedis.tls .Values.externalRedis.tls.enabled }}
   REDIS_TLS_ENABLED: "true"
   REDIS_TLS_SKIP_VERIFY: {{ .Values.externalRedis.tls.skipVerify | default false | quote }}
