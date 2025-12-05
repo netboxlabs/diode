@@ -58,10 +58,16 @@ spec:
             - name: HYDRA_ADMIN_URL
               value: {{ include "diode.hydra.admin.url" . }}
           volumeMounts:
+            {{- if .Values.diodeAuthBootstrap.job.extraVolumeMounts }}
+            {{- include "common.tplvalues.render" (dict "value" .Values.diodeAuthBootstrap.job.extraVolumeMounts "context" $) | nindent 12 }}
+            {{- end }}
             - name: oauth2-secret
               mountPath: /etc/config/oauth2/client
               readOnly: true
       volumes:
+        {{- if .Values.diodeAuthBootstrap.job.extraVolumes }}
+        {{- include "common.tplvalues.render" (dict "value" .Values.diodeAuthBootstrap.job.extraVolumes "context" $) | nindent 8 }}
+        {{- end }}
         - name: oauth2-secret
           secret:
             secretName: {{ include "diode.auth.oauth2.secret" . }}

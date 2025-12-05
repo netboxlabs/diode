@@ -103,6 +103,10 @@ diodeAuth:
   extraEnvs: []
   # -- (string or list) additional containers to run before auth finishes initializing (may contain templating instructions)
   extraInitContainers: ""
+  # -- (string or list) additional volumes to define for the container (may contain templating instructions)
+  extraVolumes: []
+  # -- (string or list) additional volumes to mount in the container (may contain templating instructions)
+  extraVolumeMounts: []
   # -- annotations to add to the auth deployment
   annotations: {}
   config:
@@ -139,6 +143,10 @@ diodeAuthBootstrap:
       "helm.sh/hook-weight": "2"
     # -- (string or list) additional initContainers to run during bootstrap (may contain templating instructions)
     extraInitContainers: ""
+    # -- (string or list) additional volumes to define for the container (may contain templating instructions)
+    extraVolumes: []
+    # -- (string or list) additional volumes to mount in the container (may contain templating instructions)
+    extraVolumeMounts: []
 
 # Diode Ingester configuration
 diodeIngester:
@@ -177,6 +185,10 @@ diodeIngester:
   extraEnvs: []
   # -- (string or list) additional containers to run before the ingester finishes initializing (may contain templating instructions)
   extraInitContainers: ""
+  # -- (string or list) additional volumes to define for the container (may contain templating instructions)
+  extraVolumes: []
+  # -- (string or list) additional volumes to mount in the container (may contain templating instructions)
+  extraVolumeMounts: []
   # -- annotations to add to the ingester deployment
   annotations: {}
   config:
@@ -230,6 +242,11 @@ diodeReconciler:
   extraEnvs: []
   # -- (string or list) additional containers to run before the reconciler finishes initializing (may contain templating instructions)
   extraInitContainers: ""
+  # -- (string or list) additional volumes to define for the container (may contain templating instructions)
+  extraVolumes: []
+  # -- (string or list) additional volumes to mount in the container (may contain templating instructions)
+  extraVolumeMounts: []
+  # -- annotations to add to the auth deployment
   # -- annotations to add to the reconciler deployment
   annotations: {}
   config:

@@ -78,5 +78,10 @@ spec:
                 name: {{ include "diode.ingester.configmap" . }}
             - secretRef:
                 name: {{ include "diode.ingester.secret" . }}
-
+          {{- if .Values.diodeIngester.extraVolumeMounts }}
+          volumeMounts: {{- include "common.tplvalues.render" (dict "value" .Values.diodeIngester.extraVolumeMounts "context" $) | nindent 12 }}
+          {{- end }}
+      {{- if .Values.diodeIngester.extraVolumes }}
+      volumes: {{- include "common.tplvalues.render" (dict "value" .Values.diodeIngester.extraVolumes "context" $) | nindent 8 }}
+      {{- end }}
 {{- end }} 
