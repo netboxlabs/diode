@@ -2,7 +2,7 @@
 
 A Helm chart for Diode
 
-![Version: 1.10.0](https://img.shields.io/badge/Version-1.10.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.5.0](https://img.shields.io/badge/AppVersion-1.5.0-informational?style=flat-square)
+![Version: 1.11.0](https://img.shields.io/badge/Version-1.11.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.5.0](https://img.shields.io/badge/AppVersion-1.5.0-informational?style=flat-square)
 
 ## Prerequisites
 
@@ -237,10 +237,12 @@ helm show values diode/diode
 | diodeAuth.enabled | bool | `true` | enabled |
 | diodeAuth.extraEnvs | string or list | `[]` | extra environment variables to be set on containers' `env` section |
 | diodeAuth.extraInitContainers | string or list | `""` | additional containers to run before auth finishes initializing (may contain templating instructions) |
+| diodeAuth.extraVolumeMounts | string or list | `[]` | additional volumes to mount in the container (may contain templating instructions) |
+| diodeAuth.extraVolumes | string or list | `[]` | additional volumes to define for the container (may contain templating instructions) |
 | diodeAuth.image.imagePullSecrets | list | `[]` | secrets with credentials to pull images from a private registry |
 | diodeAuth.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
 | diodeAuth.image.repository | string | `"docker.io/netboxlabs/diode-auth"` | image repository |
-| diodeAuth.image.tag | string | `"1.10.0"` | image tag |
+| diodeAuth.image.tag | string | `"1.11.0"` | image tag |
 | diodeAuth.replicaCount | int | `1` | replica count |
 | diodeAuth.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
 | diodeAuth.serviceAccount.create | bool | `true` | create service account |
@@ -248,10 +250,12 @@ helm show values diode/diode
 | diodeAuthBootstrap.image.imagePullSecrets | list | `[]` | secrets with credentials to pull images from a private registry |
 | diodeAuthBootstrap.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
 | diodeAuthBootstrap.image.repository | string | `"docker.io/netboxlabs/diode-auth"` | image repository |
-| diodeAuthBootstrap.image.tag | string | `"1.10.0"` | image tag |
+| diodeAuthBootstrap.image.tag | string | `"1.11.0"` | image tag |
 | diodeAuthBootstrap.job.annotations | object | `{"helm.sh/hook":"post-install, post-upgrade","helm.sh/hook-weight":"2"}` | annotations to add to the auth bootstrap job |
 | diodeAuthBootstrap.job.backoffLimit | int | `20` | backoff limit |
 | diodeAuthBootstrap.job.extraInitContainers | string or list | `""` | additional initContainers to run during bootstrap (may contain templating instructions) |
+| diodeAuthBootstrap.job.extraVolumeMounts | string or list | `[]` | additional volumes to mount in the container (may contain templating instructions) |
+| diodeAuthBootstrap.job.extraVolumes | string or list | `[]` | additional volumes to define for the container (may contain templating instructions) |
 | diodeIngester.annotations | object | `{}` | annotations to add to the ingester deployment |
 | diodeIngester.config.loggingLevel | string | `"INFO"` | logging level |
 | diodeIngester.config.redisStreamDb | int | `1` | redis stream db |
@@ -264,11 +268,13 @@ helm show values diode/diode
 | diodeIngester.existingSecret | string | `"diode-ingester-secret"` | existing secret name |
 | diodeIngester.extraEnvs | string or list | `[]` | extra environment variables to be set on containers' `env` section |
 | diodeIngester.extraInitContainers | string or list | `""` | additional containers to run before the ingester finishes initializing (may contain templating instructions) |
+| diodeIngester.extraVolumeMounts | string or list | `[]` | additional volumes to mount in the container (may contain templating instructions) |
+| diodeIngester.extraVolumes | string or list | `[]` | additional volumes to define for the container (may contain templating instructions) |
 | diodeIngester.grpc.serviceName | string | `"diode.v1.IngesterService"` | grpc service name |
 | diodeIngester.image.imagePullSecrets | list | `[]` | secrets with credentials to pull images from a private registry |
 | diodeIngester.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
 | diodeIngester.image.repository | string | `"docker.io/netboxlabs/diode-ingester"` | image repository |
-| diodeIngester.image.tag | string | `"1.11.0"` | image tag |
+| diodeIngester.image.tag | string | `"1.12.0"` | image tag |
 | diodeIngester.replicaCount | int | `1` | replica count |
 | diodeIngester.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
 | diodeIngester.serviceAccount.create | bool | `true` | create service account |
@@ -296,11 +302,13 @@ helm show values diode/diode
 | diodeReconciler.existingSecret | string | `"diode-reconciler-secret"` | existing secret name |
 | diodeReconciler.extraEnvs | string or list | `[]` | extra environment variables to be set on containers' `env` section |
 | diodeReconciler.extraInitContainers | string or list | `""` | additional containers to run before the reconciler finishes initializing (may contain templating instructions) |
+| diodeReconciler.extraVolumeMounts | string or list | `[]` | additional volumes to mount in the container (may contain templating instructions) |
+| diodeReconciler.extraVolumes | string or list | `[]` | additional volumes to define for the container (may contain templating instructions) |
 | diodeReconciler.grpc.serviceName | string | `"diode.v1.ReconcilerService"` | grpc service name |
 | diodeReconciler.image.imagePullSecrets | list | `[]` | secrets with credentials to pull images from a private registry |
 | diodeReconciler.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
 | diodeReconciler.image.repository | string | `"docker.io/netboxlabs/diode-reconciler"` | image repository |
-| diodeReconciler.image.tag | string | `"1.11.0"` | image tag |
+| diodeReconciler.image.tag | string | `"1.12.0"` | image tag |
 | diodeReconciler.replicaCount | int | `1` | replica count |
 | diodeReconciler.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
 | diodeReconciler.serviceAccount.create | bool | `true` | create service account |

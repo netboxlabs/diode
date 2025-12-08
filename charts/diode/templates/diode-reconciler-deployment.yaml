@@ -103,10 +103,16 @@ spec:
             - secretRef:
                 name: {{ include "diode.auth.oauth2.secret" . }}
           volumeMounts:
+            {{- if .Values.diodeReconciler.extraVolumeMounts }}
+            {{- include "common.tplvalues.render" (dict "value" .Values.diodeReconciler.extraVolumeMounts "context" $) | nindent 12 }}
+            {{- end }}
             - name: oauth2-secret
               mountPath: /etc/config/oauth2/client
               readOnly: true
       volumes:
+        {{- if .Values.diodeReconciler.extraVolumes }}
+        {{- include "common.tplvalues.render" (dict "value" .Values.diodeReconciler.extraVolumes "context" $) | nindent 8 }}
+        {{- end }}
         - name: oauth2-secret
           secret:
             secretName: {{ include "diode.auth.oauth2.secret" . }}

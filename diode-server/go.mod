@@ -1,6 +1,6 @@
 module github.com/netboxlabs/diode/diode-server
 
-go 1.24.3
+go 1.25.4
 
 require (
 	github.com/MicahParks/keyfunc/v3 v3.3.11
