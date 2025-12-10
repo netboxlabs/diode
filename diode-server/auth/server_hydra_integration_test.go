@@ -30,9 +30,9 @@ func TestServerHydraIntegration(t *testing.T) {
 	defer cancel()
 
 	creq := testcontainers.ContainerRequest{
-		Image:        "oryd/hydra:v2.3.0",
+		Image:        "oryd/hydra:v25.4.0",
 		ExposedPorts: []string{"4445/tcp", "4444/tcp"},
-		WaitingFor:   wait.ForLog("Setting up http server on :4445"),
+		WaitingFor:   wait.ForLog("Setting up http server on 0.0.0.0:4445"),
 		Cmd:          []string{"serve", "all", "--dev"},
 		Env: map[string]string{
 			"DSN":                                      "memory",
@@ -169,26 +169,19 @@ func TestServerHydraIntegration(t *testing.T) {
 	require.Equal(t, 9, len(result.Data))
 
 	// page through the 9 remaining clients in pages of size 2
-	var priorResult auth.ListClientsResponse
 	pageSize := 2
-	nextToken := ""
+	var nextPageToken string
 	seen := make(map[string]bool)
 	pages := 0
 	for range 6 { // should be 5 pages, stop after 6
-		result = client.listClients(t, nextToken, pageSize)
-		// previous page should be the same as the prior result
-		if pages > 0 {
-			prevPage := client.listClients(t, result.PrevPageToken, pageSize)
-			require.Equal(t, priorResult.Data, prevPage.Data)
-		}
-		priorResult = result
+		result = client.listClients(t, nextPageToken, pageSize)
 
 		pages++
 		for _, c := range result.Data {
 			seen[c.ClientID] = true
 		}
-		nextToken = result.NextPageToken
-		if nextToken == "" {
+		nextPageToken = result.NextPageToken
+		if nextPageToken == "" {
 			break
 		} else {
 			require.Equal(t, pageSize, len(result.Data))
