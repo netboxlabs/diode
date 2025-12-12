@@ -10,12 +10,12 @@ dependencies:
   version: 16.6.3
 - name: hydra
   repository: https://k8s.ory.sh/helm/charts
-  version: 0.53.0
+  version: 0.60.0
 - name: ingress-nginx
   repository: https://kubernetes.github.io/ingress-nginx
   version: 4.12.1
 - name: cert-manager
   repository: https://charts.jetstack.io
   version: v1.12.0
-digest: sha256:2856fe78498db6124a167e5716405777af9b72b2995b0e0cb3a92e23fca8996e
-generated: "2025-08-25T12:49:19.940917-04:00"
+digest: sha256:dd4c00db9ec4b73f3301cf1e280f728e67c98c3068bce92a0ebb4012f097a032
+generated: "2025-12-10T21:25:59.501367+01:00"
