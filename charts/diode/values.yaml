@@ -79,7 +79,7 @@ diodeAuth:
     # -- image repository
     repository: docker.io/netboxlabs/diode-auth
     # -- image tag
-    tag: 1.11.0
+    tag: 1.11.1
     # -- secrets with credentials to pull images from a private registry
     imagePullSecrets: []
     # -- pull policy
@@ -129,7 +129,7 @@ diodeAuthBootstrap:
     # -- image repository
     repository: docker.io/netboxlabs/diode-auth
     # -- image tag
-    tag: 1.11.0
+    tag: 1.11.1
     # -- secrets with credentials to pull images from a private registry
     imagePullSecrets: []
     # -- pull policy
@@ -156,7 +156,7 @@ diodeIngester:
     # -- image repository
     repository: docker.io/netboxlabs/diode-ingester
     # -- image tag
-    tag: 1.12.0
+    tag: 1.12.1
     # -- secrets with credentials to pull images from a private registry
     imagePullSecrets: []
     # -- pull policy
@@ -213,7 +213,7 @@ diodeReconciler:
     # -- image repository
     repository: docker.io/netboxlabs/diode-reconciler
     # -- image tag
-    tag: 1.12.0
+    tag: 1.12.1
     # -- secrets with credentials to pull images from a private registry
     imagePullSecrets: []
     # -- pull policy
