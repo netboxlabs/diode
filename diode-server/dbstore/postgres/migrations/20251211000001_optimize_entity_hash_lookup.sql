@@ -5,9 +5,9 @@ CREATE INDEX idx_ingestion_logs_entity_hash_created_at
 ON ingestion_logs(entity_hash, created_at DESC);
 
 -- Composite index to speed up latest change_set lookup per ingestion_log
-CREATE INDEX idx_change_sets_ingestion_log_id_id 
-ON change_sets(ingestion_log_id, id DESC);
-
+CREATE INDEX idx_change_sets_ingestion_log_id_id
+ON change_sets (ingestion_log_id, id DESC)
+INCLUDE (branch_id);
 -- +goose Down
 
 DROP INDEX IF EXISTS idx_change_sets_ingestion_log_id_id;
