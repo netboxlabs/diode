@@ -72,9 +72,9 @@ type ClientResponse struct {
 
 // ListClientsResponse response to list clients
 type ListClientsResponse struct {
-	Data          []ClientResponse `json:"data"`
-	NextPageToken string           `json:"next_page_token,omitempty"`
-	PrevPageToken string           `json:"prev_page_token,omitempty"`
+	Data           []ClientResponse `json:"data"`
+	FirstPageToken string           `json:"first_page_token,omitempty"`
+	NextPageToken  string           `json:"next_page_token,omitempty"`
 }
 
 // ClientErrorResponse error response to client requests
@@ -570,9 +570,9 @@ func (s *Server) listClients(w http.ResponseWriter, r *http.Request) {
 	}
 
 	out := ListClientsResponse{
-		Data:          make([]ClientResponse, 0, len(clients.Clients)),
-		NextPageToken: clients.NextPageToken,
-		PrevPageToken: clients.PrevPageToken,
+		Data:           make([]ClientResponse, 0, len(clients.Clients)),
+		FirstPageToken: clients.FirstPageToken,
+		NextPageToken:  clients.NextPageToken,
 	}
 	for _, client := range clients.Clients {
 		out.Data = append(out.Data, ClientResponse{
