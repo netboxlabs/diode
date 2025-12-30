@@ -229,7 +229,7 @@
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | asn | [int64](#int64) |  |  |
-| rir | [RIR](#diode-v1-RIR) | optional |  |
+| rir | [RIR](#diode-v1-RIR) |  |  |
 | tenant | [Tenant](#diode-v1-Tenant) | optional |  |
 | description | [string](#string) | optional |  |
 | comments | [string](#string) | optional |  |
