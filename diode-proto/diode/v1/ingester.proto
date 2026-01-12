@@ -1,8 +1,8 @@
 syntax = "proto3";
 
 // Generated Code. DO NOT EDIT.
-// Source: NetBox v4.4.2
-// Timestamp: 2025-11-14 18:10:21Z
+// Source: NetBox v4.5.0
+// Timestamp: 2026-01-12 17:44:12Z
 
 package diode.v1;
 
@@ -32,7 +32,7 @@ message Entity {
     Aggregate aggregate = 4;
     Cable cable = 5;
     CablePath cable_path = 6;
-    CableTermination cable_termination = 7;
+    CableTermination cable_termination = 7 [deprecated = true];
     Circuit circuit = 8;
     CircuitGroup circuit_group = 9;
     CircuitGroupAssignment circuit_group_assignment = 10;
@@ -120,6 +120,8 @@ message Entity {
     JournalEntry journal_entry = 92;
     ModuleTypeProfile module_type_profile = 93;
     CustomLink custom_link = 94;
+    Owner owner = 95;
+    OwnerGroup owner_group = 96;
   }
 }
 
@@ -173,6 +175,8 @@ message ASN {
   repeated Tag tags = 6;
   map<string, CustomFieldValue> custom_fields = 7;
   google.protobuf.Struct metadata = 8 [(netbox_supported) = false];
+  optional Owner owner = 9;
+  repeated Site sites = 10;
 }
 
 message ASNRange {
@@ -186,6 +190,8 @@ message ASNRange {
   repeated Tag tags = 8;
   map<string, CustomFieldValue> custom_fields = 9;
   google.protobuf.Struct metadata = 10 [(netbox_supported) = false];
+  optional Owner owner = 11;
+  optional string comments = 12;
 }
 
 message Aggregate {
@@ -198,6 +204,7 @@ message Aggregate {
   repeated Tag tags = 7;
   map<string, CustomFieldValue> custom_fields = 8;
   google.protobuf.Struct metadata = 9 [(netbox_supported) = false];
+  optional Owner owner = 10;
 }
 
 message Cable {
@@ -215,6 +222,9 @@ message Cable {
       "coaxial",
       "dac-active",
       "dac-passive",
+      "lmr-100",
+      "lmr-200",
+      "lmr-400",
       "mmf",
       "mmf-om1",
       "mmf-om2",
@@ -223,6 +233,12 @@ message Cable {
       "mmf-om5",
       "mrj21-trunk",
       "power",
+      "rg-11",
+      "rg-213",
+      "rg-59",
+      "rg-6",
+      "rg-62",
+      "rg-8",
       "smf",
       "smf-os1",
       "smf-os2",
@@ -257,6 +273,35 @@ message Cable {
   repeated Tag tags = 12;
   map<string, CustomFieldValue> custom_fields = 13;
   google.protobuf.Struct metadata = 14 [(netbox_supported) = false];
+  optional string profile = 15 [(validate.rules).string = {
+    in: [
+      "breakout-1c4p-4c1p",
+      "breakout-1c6p-6c1p",
+      "breakout-2c4p-8c1p-shuffle",
+      "single-1c12p",
+      "single-1c16p",
+      "single-1c1p",
+      "single-1c2p",
+      "single-1c4p",
+      "single-1c6p",
+      "single-1c8p",
+      "trunk-2c12p",
+      "trunk-2c1p",
+      "trunk-2c2p",
+      "trunk-2c4p",
+      "trunk-2c4p-shuffle",
+      "trunk-2c6p",
+      "trunk-2c8p",
+      "trunk-4c1p",
+      "trunk-4c2p",
+      "trunk-4c4p",
+      "trunk-4c4p-shuffle",
+      "trunk-4c6p",
+      "trunk-4c8p",
+      "trunk-8c4p"
+    ]
+  }];
+  optional Owner owner = 16;
 }
 
 message CablePath {
@@ -322,6 +367,7 @@ message Circuit {
   repeated CircuitGroupAssignment assignments = 15;
   map<string, CustomFieldValue> custom_fields = 16;
   google.protobuf.Struct metadata = 17 [(netbox_supported) = false];
+  optional Owner owner = 18;
 }
 
 message CircuitGroup {
@@ -332,6 +378,8 @@ message CircuitGroup {
   repeated Tag tags = 5;
   map<string, CustomFieldValue> custom_fields = 6;
   google.protobuf.Struct metadata = 7 [(netbox_supported) = false];
+  optional Owner owner = 8;
+  optional string comments = 9;
 }
 
 message CircuitGroupAssignment {
@@ -386,6 +434,8 @@ message CircuitType {
   repeated Tag tags = 5;
   map<string, CustomFieldValue> custom_fields = 6;
   google.protobuf.Struct metadata = 7 [(netbox_supported) = false];
+  optional Owner owner = 8;
+  optional string comments = 9;
 }
 
 message Cluster {
@@ -413,6 +463,7 @@ message Cluster {
   repeated Tag tags = 12;
   map<string, CustomFieldValue> custom_fields = 13;
   google.protobuf.Struct metadata = 14 [(netbox_supported) = false];
+  optional Owner owner = 15;
 }
 
 message ClusterGroup {
@@ -422,6 +473,8 @@ message ClusterGroup {
   repeated Tag tags = 4;
   map<string, CustomFieldValue> custom_fields = 5;
   google.protobuf.Struct metadata = 6 [(netbox_supported) = false];
+  optional Owner owner = 7;
+  optional string comments = 8;
 }
 
 message ClusterType {
@@ -431,6 +484,8 @@ message ClusterType {
   repeated Tag tags = 4;
   map<string, CustomFieldValue> custom_fields = 5;
   google.protobuf.Struct metadata = 6 [(netbox_supported) = false];
+  optional Owner owner = 7;
+  optional string comments = 8;
 }
 
 message ConsolePort {
@@ -474,6 +529,7 @@ message ConsolePort {
   repeated Tag tags = 9;
   map<string, CustomFieldValue> custom_fields = 10;
   google.protobuf.Struct metadata = 11 [(netbox_supported) = false];
+  optional Owner owner = 12;
 }
 
 message ConsoleServerPort {
@@ -517,6 +573,7 @@ message ConsoleServerPort {
   repeated Tag tags = 9;
   map<string, CustomFieldValue> custom_fields = 10;
   google.protobuf.Struct metadata = 11 [(netbox_supported) = false];
+  optional Owner owner = 12;
 }
 
 message Contact {
@@ -533,6 +590,7 @@ message Contact {
   map<string, CustomFieldValue> custom_fields = 11;
   repeated ContactGroup groups = 12;
   google.protobuf.Struct metadata = 13 [(netbox_supported) = false];
+  optional Owner owner = 14;
 }
 
 message ContactAssignment {
@@ -630,6 +688,8 @@ message ContactAssignment {
     JournalEntry object_journal_entry = 96;
     ModuleTypeProfile object_module_type_profile = 97;
     CustomLink object_custom_link = 98;
+    Owner object_owner = 100;
+    OwnerGroup object_owner_group = 101;
   }
   Contact contact = 89;
   optional ContactRole role = 90;
@@ -655,6 +715,7 @@ message ContactGroup {
   map<string, CustomFieldValue> custom_fields = 6;
   optional string comments = 7;
   google.protobuf.Struct metadata = 8 [(netbox_supported) = false];
+  optional Owner owner = 9;
 }
 
 message ContactRole {
@@ -664,6 +725,8 @@ message ContactRole {
   repeated Tag tags = 4;
   map<string, CustomFieldValue> custom_fields = 5;
   google.protobuf.Struct metadata = 6 [(netbox_supported) = false];
+  optional Owner owner = 7;
+  optional string comments = 8;
 }
 
 message CustomFieldObjectReference {
@@ -673,7 +736,7 @@ message CustomFieldObjectReference {
     Aggregate aggregate = 3;
     Cable cable = 4;
     CablePath cable_path = 5;
-    CableTermination cable_termination = 6;
+    CableTermination cable_termination = 6 [deprecated = true];
     Circuit circuit = 7;
     CircuitGroup circuit_group = 8;
     CircuitGroupAssignment circuit_group_assignment = 9;
@@ -761,6 +824,8 @@ message CustomFieldObjectReference {
     JournalEntry journal_entry = 91;
     ModuleTypeProfile module_type_profile = 92;
     CustomLink custom_link = 93;
+    Owner owner = 94;
+    OwnerGroup owner_group = 95;
   }
 }
 
@@ -839,6 +904,7 @@ message Device {
   repeated Tag tags = 26;
   map<string, CustomFieldValue> custom_fields = 27;
   google.protobuf.Struct metadata = 28 [(netbox_supported) = false];
+  optional Owner owner = 29;
 }
 
 message DeviceBay {
@@ -850,6 +916,7 @@ message DeviceBay {
   repeated Tag tags = 6;
   map<string, CustomFieldValue> custom_fields = 7;
   google.protobuf.Struct metadata = 8 [(netbox_supported) = false];
+  optional Owner owner = 9;
 }
 
 message DeviceRole {
@@ -863,6 +930,7 @@ message DeviceRole {
   optional DeviceRole parent = 8;
   optional string comments = 9;
   google.protobuf.Struct metadata = 10 [(netbox_supported) = false];
+  optional Owner owner = 11;
 }
 
 message DeviceType {
@@ -908,6 +976,7 @@ message DeviceType {
   repeated Tag tags = 15;
   map<string, CustomFieldValue> custom_fields = 16;
   google.protobuf.Struct metadata = 17 [(netbox_supported) = false];
+  optional Owner owner = 18;
 }
 
 message FHRPGroup {
@@ -936,6 +1005,7 @@ message FHRPGroup {
   repeated Tag tags = 8;
   map<string, CustomFieldValue> custom_fields = 9;
   google.protobuf.Struct metadata = 10 [(netbox_supported) = false];
+  optional Owner owner = 11;
 }
 
 message FHRPGroupAssignment {
@@ -1034,6 +1104,8 @@ message FHRPGroupAssignment {
     JournalEntry interface_journal_entry = 93;
     ModuleTypeProfile interface_module_type_profile = 94;
     CustomLink interface_custom_link = 95;
+    Owner interface_owner = 97;
+    OwnerGroup interface_owner_group = 98;
   }
   int64 priority = 90;
   google.protobuf.Struct metadata = 96 [(netbox_supported) = false];
@@ -1107,13 +1179,15 @@ message FrontPort {
     ]
   }];
   optional string color = 6;
-  RearPort rear_port = 7;
-  optional int64 rear_port_position = 8;
+  RearPort rear_port = 7 [deprecated = true];
+  optional int64 rear_port_position = 8 [deprecated = true];
   optional string description = 9;
   optional bool mark_connected = 10;
   repeated Tag tags = 11;
   map<string, CustomFieldValue> custom_fields = 12;
   google.protobuf.Struct metadata = 13 [(netbox_supported) = false];
+  optional int64 positions = 14;
+  optional Owner owner = 15;
 }
 
 message GenericObject {
@@ -1211,6 +1285,8 @@ message GenericObject {
     JournalEntry object_journal_entry = 91;
     ModuleTypeProfile object_module_type_profile = 92;
     CustomLink object_custom_link = 93;
+    Owner object_owner = 94;
+    OwnerGroup object_owner_group = 95;
   }
 }
 
@@ -1235,6 +1311,7 @@ message IKEPolicy {
   map<string, CustomFieldValue> custom_fields = 8;
   repeated IKEProposal proposals = 9;
   google.protobuf.Struct metadata = 10 [(netbox_supported) = false];
+  optional Owner owner = 11;
 }
 
 message IKEProposal {
@@ -1302,6 +1379,7 @@ message IKEProposal {
   repeated Tag tags = 9;
   map<string, CustomFieldValue> custom_fields = 10;
   google.protobuf.Struct metadata = 11 [(netbox_supported) = false];
+  optional Owner owner = 12;
 }
 
 message IPAddress {
@@ -1341,6 +1419,7 @@ message IPAddress {
   repeated Tag tags = 13;
   map<string, CustomFieldValue> custom_fields = 14;
   google.protobuf.Struct metadata = 15 [(netbox_supported) = false];
+  optional Owner owner = 16;
 }
 
 message IPRange {
@@ -1363,6 +1442,7 @@ message IPRange {
   map<string, CustomFieldValue> custom_fields = 11;
   optional bool mark_populated = 12;
   google.protobuf.Struct metadata = 13 [(netbox_supported) = false];
+  optional Owner owner = 14;
 }
 
 message IPSecPolicy {
@@ -1401,6 +1481,7 @@ message IPSecPolicy {
   map<string, CustomFieldValue> custom_fields = 6;
   repeated IPSecProposal proposals = 7;
   google.protobuf.Struct metadata = 8 [(netbox_supported) = false];
+  optional Owner owner = 9;
 }
 
 message IPSecProfile {
@@ -1418,6 +1499,7 @@ message IPSecProfile {
   repeated Tag tags = 7;
   map<string, CustomFieldValue> custom_fields = 8;
   google.protobuf.Struct metadata = 9 [(netbox_supported) = false];
+  optional Owner owner = 10;
 }
 
 message IPSecProposal {
@@ -1450,6 +1532,7 @@ message IPSecProposal {
   repeated Tag tags = 8;
   map<string, CustomFieldValue> custom_fields = 9;
   google.protobuf.Struct metadata = 10 [(netbox_supported) = false];
+  optional Owner owner = 11;
 }
 
 message Interface {
@@ -1931,6 +2014,7 @@ message Interface {
   repeated VLAN tagged_vlans = 33;
   repeated WirelessLAN wireless_lans = 34;
   google.protobuf.Struct metadata = 35 [(netbox_supported) = false];
+  optional Owner owner = 36;
 }
 
 message InventoryItem {
@@ -1967,6 +2051,7 @@ message InventoryItem {
   repeated Tag tags = 20;
   map<string, CustomFieldValue> custom_fields = 21;
   google.protobuf.Struct metadata = 22 [(netbox_supported) = false];
+  optional Owner owner = 23;
 }
 
 message InventoryItemRole {
@@ -1977,6 +2062,8 @@ message InventoryItemRole {
   repeated Tag tags = 5;
   map<string, CustomFieldValue> custom_fields = 6;
   google.protobuf.Struct metadata = 7 [(netbox_supported) = false];
+  optional Owner owner = 8;
+  optional string comments = 9;
 }
 
 message L2VPN {
@@ -2016,6 +2103,7 @@ message L2VPN {
     ]
   }];
   google.protobuf.Struct metadata = 13 [(netbox_supported) = false];
+  optional Owner owner = 14;
 }
 
 message L2VPNTermination {
@@ -2114,6 +2202,8 @@ message L2VPNTermination {
     WirelessLANGroup assigned_object_wireless_lan_group = 94;
     WirelessLink assigned_object_wireless_link = 95;
     CustomLink assigned_object_custom_link = 96;
+    Owner assigned_object_owner = 98;
+    OwnerGroup assigned_object_owner_group = 99;
   }
   repeated Tag tags = 5;
   map<string, CustomFieldValue> custom_fields = 6;
@@ -2141,6 +2231,7 @@ message Location {
   map<string, CustomFieldValue> custom_fields = 10;
   optional string comments = 11;
   google.protobuf.Struct metadata = 12 [(netbox_supported) = false];
+  optional Owner owner = 13;
 }
 
 message MACAddress {
@@ -2154,6 +2245,7 @@ message MACAddress {
   repeated Tag tags = 6;
   map<string, CustomFieldValue> custom_fields = 7;
   google.protobuf.Struct metadata = 8 [(netbox_supported) = false];
+  optional Owner owner = 9;
 }
 
 message Manufacturer {
@@ -2163,6 +2255,8 @@ message Manufacturer {
   repeated Tag tags = 4;
   map<string, CustomFieldValue> custom_fields = 5;
   google.protobuf.Struct metadata = 6 [(netbox_supported) = false];
+  optional Owner owner = 7;
+  optional string comments = 8;
 }
 
 message Module {
@@ -2186,6 +2280,7 @@ message Module {
   repeated Tag tags = 9;
   map<string, CustomFieldValue> custom_fields = 10;
   google.protobuf.Struct metadata = 11 [(netbox_supported) = false];
+  optional Owner owner = 12;
 }
 
 message ModuleBay {
@@ -2199,6 +2294,7 @@ message ModuleBay {
   repeated Tag tags = 8;
   map<string, CustomFieldValue> custom_fields = 9;
   google.protobuf.Struct metadata = 10 [(netbox_supported) = false];
+  optional Owner owner = 11;
 }
 
 message ModuleType {
@@ -2231,6 +2327,7 @@ message ModuleType {
   optional ModuleTypeProfile profile = 11;
   optional string attributes = 12;
   google.protobuf.Struct metadata = 13 [(netbox_supported) = false];
+  optional Owner owner = 14;
 }
 
 message Platform {
@@ -2243,6 +2340,7 @@ message Platform {
   optional Platform parent = 7;
   optional string comments = 8;
   google.protobuf.Struct metadata = 9 [(netbox_supported) = false];
+  optional Owner owner = 10;
 }
 
 message PowerFeed {
@@ -2285,6 +2383,7 @@ message PowerFeed {
   repeated Tag tags = 15;
   map<string, CustomFieldValue> custom_fields = 16;
   google.protobuf.Struct metadata = 17 [(netbox_supported) = false];
+  optional Owner owner = 18;
 }
 
 message PowerOutlet {
@@ -2338,6 +2437,7 @@ message PowerOutlet {
       "ita-o",
       "molex-micro-fit-1x2",
       "molex-micro-fit-2x2",
+      "molex-micro-fit-2x3",
       "molex-micro-fit-2x4",
       "nbr-14136-10a",
       "nbr-14136-20a",
@@ -2416,6 +2516,7 @@ message PowerOutlet {
     ]
   }];
   google.protobuf.Struct metadata = 14 [(netbox_supported) = false];
+  optional Owner owner = 15;
 }
 
 message PowerPanel {
@@ -2427,6 +2528,7 @@ message PowerPanel {
   repeated Tag tags = 6;
   map<string, CustomFieldValue> custom_fields = 7;
   google.protobuf.Struct metadata = 8 [(netbox_supported) = false];
+  optional Owner owner = 9;
 }
 
 message PowerPort {
@@ -2479,6 +2581,7 @@ message PowerPort {
       "ita-o",
       "molex-micro-fit-1x2",
       "molex-micro-fit-2x2",
+      "molex-micro-fit-2x3",
       "molex-micro-fit-2x4",
       "nbr-14136-10a",
       "nbr-14136-20a",
@@ -2550,6 +2653,7 @@ message PowerPort {
   repeated Tag tags = 10;
   map<string, CustomFieldValue> custom_fields = 11;
   google.protobuf.Struct metadata = 12 [(netbox_supported) = false];
+  optional Owner owner = 13;
 }
 
 message Prefix {
@@ -2579,6 +2683,7 @@ message Prefix {
   repeated Tag tags = 15;
   map<string, CustomFieldValue> custom_fields = 16;
   google.protobuf.Struct metadata = 17 [(netbox_supported) = false];
+  optional Owner owner = 18;
 }
 
 message Provider {
@@ -2591,6 +2696,7 @@ message Provider {
   repeated ProviderAccount accounts = 7;
   repeated ASN asns = 8;
   google.protobuf.Struct metadata = 9 [(netbox_supported) = false];
+  optional Owner owner = 10;
 }
 
 message ProviderAccount {
@@ -2602,6 +2708,7 @@ message ProviderAccount {
   repeated Tag tags = 6;
   map<string, CustomFieldValue> custom_fields = 7;
   google.protobuf.Struct metadata = 8 [(netbox_supported) = false];
+  optional Owner owner = 9;
 }
 
 message ProviderNetwork {
@@ -2613,6 +2720,7 @@ message ProviderNetwork {
   repeated Tag tags = 6;
   map<string, CustomFieldValue> custom_fields = 7;
   google.protobuf.Struct metadata = 8 [(netbox_supported) = false];
+  optional Owner owner = 9;
 }
 
 message RIR {
@@ -2623,6 +2731,8 @@ message RIR {
   repeated Tag tags = 5;
   map<string, CustomFieldValue> custom_fields = 6;
   google.protobuf.Struct metadata = 7 [(netbox_supported) = false];
+  optional Owner owner = 8;
+  optional string comments = 9;
 }
 
 message Rack {
@@ -2697,6 +2807,7 @@ message Rack {
   map<string, CustomFieldValue> custom_fields = 27;
   optional int64 outer_height = 28;
   google.protobuf.Struct metadata = 29 [(netbox_supported) = false];
+  optional Owner owner = 30;
 }
 
 message RackReservation {
@@ -2715,6 +2826,7 @@ message RackReservation {
     ]
   }];
   google.protobuf.Struct metadata = 9 [(netbox_supported) = false];
+  optional Owner owner = 10;
 }
 
 message RackRole {
@@ -2725,6 +2837,8 @@ message RackRole {
   repeated Tag tags = 5;
   map<string, CustomFieldValue> custom_fields = 6;
   google.protobuf.Struct metadata = 7 [(netbox_supported) = false];
+  optional Owner owner = 8;
+  optional string comments = 9;
 }
 
 message RackType {
@@ -2778,6 +2892,7 @@ message RackType {
   map<string, CustomFieldValue> custom_fields = 19;
   optional int64 outer_height = 20;
   google.protobuf.Struct metadata = 21 [(netbox_supported) = false];
+  optional Owner owner = 22;
 }
 
 message RearPort {
@@ -2854,6 +2969,7 @@ message RearPort {
   repeated Tag tags = 10;
   map<string, CustomFieldValue> custom_fields = 11;
   google.protobuf.Struct metadata = 12 [(netbox_supported) = false];
+  optional Owner owner = 13;
 }
 
 message Region {
@@ -2865,6 +2981,7 @@ message Region {
   map<string, CustomFieldValue> custom_fields = 6;
   optional string comments = 7;
   google.protobuf.Struct metadata = 8 [(netbox_supported) = false];
+  optional Owner owner = 9;
 }
 
 message Role {
@@ -2875,6 +2992,8 @@ message Role {
   repeated Tag tags = 5;
   map<string, CustomFieldValue> custom_fields = 6;
   google.protobuf.Struct metadata = 7 [(netbox_supported) = false];
+  optional Owner owner = 8;
+  optional string comments = 9;
 }
 
 message RouteTarget {
@@ -2885,6 +3004,7 @@ message RouteTarget {
   repeated Tag tags = 5;
   map<string, CustomFieldValue> custom_fields = 6;
   google.protobuf.Struct metadata = 7 [(netbox_supported) = false];
+  optional Owner owner = 8;
 }
 
 message Service {
@@ -2910,6 +3030,7 @@ message Service {
     VirtualMachine parent_object_virtual_machine = 13;
   }
   google.protobuf.Struct metadata = 14 [(netbox_supported) = false];
+  optional Owner owner = 15;
 }
 
 message Site {
@@ -2939,6 +3060,7 @@ message Site {
   map<string, CustomFieldValue> custom_fields = 16;
   repeated ASN asns = 17;
   google.protobuf.Struct metadata = 18 [(netbox_supported) = false];
+  optional Owner owner = 19;
 }
 
 message SiteGroup {
@@ -2950,6 +3072,7 @@ message SiteGroup {
   map<string, CustomFieldValue> custom_fields = 6;
   optional string comments = 7;
   google.protobuf.Struct metadata = 8 [(netbox_supported) = false];
+  optional Owner owner = 9;
 }
 
 message Tag {
@@ -3060,6 +3183,7 @@ message Tenant {
   repeated Tag tags = 6;
   map<string, CustomFieldValue> custom_fields = 7;
   google.protobuf.Struct metadata = 8 [(netbox_supported) = false];
+  optional Owner owner = 9;
 }
 
 message TenantGroup {
@@ -3071,6 +3195,7 @@ message TenantGroup {
   map<string, CustomFieldValue> custom_fields = 6;
   optional string comments = 7;
   google.protobuf.Struct metadata = 8 [(netbox_supported) = false];
+  optional Owner owner = 9;
 }
 
 message Tunnel {
@@ -3103,6 +3228,7 @@ message Tunnel {
   repeated Tag tags = 10;
   map<string, CustomFieldValue> custom_fields = 11;
   google.protobuf.Struct metadata = 12 [(netbox_supported) = false];
+  optional Owner owner = 13;
 }
 
 message TunnelGroup {
@@ -3112,6 +3238,8 @@ message TunnelGroup {
   repeated Tag tags = 4;
   map<string, CustomFieldValue> custom_fields = 5;
   google.protobuf.Struct metadata = 6 [(netbox_supported) = false];
+  optional Owner owner = 7;
+  optional string comments = 8;
 }
 
 message TunnelTermination {
@@ -3217,6 +3345,8 @@ message TunnelTermination {
     JournalEntry termination_journal_entry = 96;
     ModuleTypeProfile termination_module_type_profile = 97;
     CustomLink termination_custom_link = 98;
+    Owner termination_owner = 100;
+    OwnerGroup termination_owner_group = 101;
   }
   optional IPAddress outside_ip = 91;
   repeated Tag tags = 92;
@@ -3250,6 +3380,7 @@ message VLAN {
   repeated Tag tags = 12;
   map<string, CustomFieldValue> custom_fields = 13;
   google.protobuf.Struct metadata = 14 [(netbox_supported) = false];
+  optional Owner owner = 15;
 }
 
 message VLANGroup {
@@ -3270,12 +3401,16 @@ message VLANGroup {
   map<string, CustomFieldValue> custom_fields = 13;
   optional Tenant tenant = 14;
   google.protobuf.Struct metadata = 15 [(netbox_supported) = false];
+  optional Owner owner = 16;
+  optional string comments = 17;
 }
 
 message VLANTranslationPolicy {
   string name = 1;
   optional string description = 2;
   google.protobuf.Struct metadata = 3 [(netbox_supported) = false];
+  optional Owner owner = 4;
+  optional string comments = 5;
 }
 
 message VLANTranslationRule {
@@ -3311,6 +3446,7 @@ message VMInterface {
   map<string, CustomFieldValue> custom_fields = 15;
   repeated VLAN tagged_vlans = 16;
   google.protobuf.Struct metadata = 17 [(netbox_supported) = false];
+  optional Owner owner = 18;
 }
 
 message VRF {
@@ -3325,6 +3461,7 @@ message VRF {
   repeated RouteTarget import_targets = 9;
   repeated RouteTarget export_targets = 10;
   google.protobuf.Struct metadata = 11 [(netbox_supported) = false];
+  optional Owner owner = 12;
 }
 
 message VirtualChassis {
@@ -3336,6 +3473,7 @@ message VirtualChassis {
   repeated Tag tags = 6;
   map<string, CustomFieldValue> custom_fields = 7;
   google.protobuf.Struct metadata = 8 [(netbox_supported) = false];
+  optional Owner owner = 9;
 }
 
 message VirtualCircuit {
@@ -3359,6 +3497,7 @@ message VirtualCircuit {
   repeated Tag tags = 9;
   map<string, CustomFieldValue> custom_fields = 10;
   google.protobuf.Struct metadata = 11 [(netbox_supported) = false];
+  optional Owner owner = 12;
 }
 
 message VirtualCircuitTermination {
@@ -3385,6 +3524,8 @@ message VirtualCircuitType {
   repeated Tag tags = 5;
   map<string, CustomFieldValue> custom_fields = 6;
   google.protobuf.Struct metadata = 7 [(netbox_supported) = false];
+  optional Owner owner = 8;
+  optional string comments = 9;
 }
 
 message VirtualDeviceContext {
@@ -3406,6 +3547,7 @@ message VirtualDeviceContext {
   repeated Tag tags = 10;
   map<string, CustomFieldValue> custom_fields = 11;
   google.protobuf.Struct metadata = 12 [(netbox_supported) = false];
+  optional Owner owner = 13;
 }
 
 message VirtualDisk {
@@ -3416,6 +3558,7 @@ message VirtualDisk {
   repeated Tag tags = 5;
   map<string, CustomFieldValue> custom_fields = 6;
   google.protobuf.Struct metadata = 7 [(netbox_supported) = false];
+  optional Owner owner = 8;
 }
 
 message VirtualMachine {
@@ -3448,6 +3591,14 @@ message VirtualMachine {
   repeated Tag tags = 17;
   map<string, CustomFieldValue> custom_fields = 18;
   google.protobuf.Struct metadata = 19 [(netbox_supported) = false];
+  optional string start_on_boot = 20 [(validate.rules).string = {
+    in: [
+      "laststate",
+      "off",
+      "on"
+    ]
+  }];
+  optional Owner owner = 21;
 }
 
 message WirelessLAN {
@@ -3490,6 +3641,7 @@ message WirelessLAN {
   repeated Tag tags = 15;
   map<string, CustomFieldValue> custom_fields = 16;
   google.protobuf.Struct metadata = 17 [(netbox_supported) = false];
+  optional Owner owner = 18;
 }
 
 message WirelessLANGroup {
@@ -3501,6 +3653,7 @@ message WirelessLANGroup {
   map<string, CustomFieldValue> custom_fields = 6;
   optional string comments = 7;
   google.protobuf.Struct metadata = 8 [(netbox_supported) = false];
+  optional Owner owner = 9;
 }
 
 message WirelessLink {
@@ -3545,6 +3698,7 @@ message WirelessLink {
   repeated Tag tags = 13;
   map<string, CustomFieldValue> custom_fields = 14;
   google.protobuf.Struct metadata = 15 [(netbox_supported) = false];
+  optional Owner owner = 16;
 }
 
 message CustomField {
@@ -3641,6 +3795,8 @@ message CustomField {
       "tenancy.contactrole",
       "tenancy.tenant",
       "tenancy.tenantgroup",
+      "users.owner",
+      "users.ownergroup",
       "virtualization.cluster",
       "virtualization.clustergroup",
       "virtualization.clustertype",
@@ -3790,6 +3946,7 @@ message CustomField {
     ]
   }];
   google.protobuf.Struct metadata = 23 [(netbox_supported) = false];
+  optional Owner owner = 24;
 }
 
 message CustomFieldChoiceSet {
@@ -3805,6 +3962,7 @@ message CustomFieldChoiceSet {
   optional bool order_alphabetically = 4;
   repeated string extra_choices = 5;
   google.protobuf.Struct metadata = 6 [(netbox_supported) = false];
+  optional Owner owner = 7;
 }
 
 message JournalEntry {
@@ -3902,6 +4060,8 @@ message JournalEntry {
     WirelessLANGroup assigned_object_wireless_lan_group = 91;
     WirelessLink assigned_object_wireless_link = 92;
     CustomLink assigned_object_custom_link = 97;
+    Owner assigned_object_owner = 99;
+    OwnerGroup assigned_object_owner_group = 100;
   }
   optional string kind = 93 [(validate.rules).string = {
     in: [
@@ -3925,6 +4085,7 @@ message ModuleTypeProfile {
   repeated Tag tags = 5;
   map<string, CustomFieldValue> custom_fields = 6;
   google.protobuf.Struct metadata = 7 [(netbox_supported) = false];
+  optional Owner owner = 8;
 }
 
 message CustomLink {
@@ -4021,6 +4182,8 @@ message CustomLink {
       "tenancy.contactrole",
       "tenancy.tenant",
       "tenancy.tenantgroup",
+      "users.owner",
+      "users.ownergroup",
       "virtualization.cluster",
       "virtualization.clustergroup",
       "virtualization.clustertype",
@@ -4043,4 +4206,18 @@ message CustomLink {
     ]
   }];
   google.protobuf.Struct metadata = 10 [(netbox_supported) = false];
+  optional Owner owner = 11;
+}
+
+message Owner {
+  string name = 1;
+  OwnerGroup group = 2;
+  optional string description = 3;
+  google.protobuf.Struct metadata = 4 [(netbox_supported) = false];
+}
+
+message OwnerGroup {
+  string name = 1;
+  optional string description = 2;
+  google.protobuf.Struct metadata = 3 [(netbox_supported) = false];
 }
