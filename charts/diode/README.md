@@ -2,7 +2,7 @@
 
 A Helm chart for Diode
 
-![Version: 1.11.0](https://img.shields.io/badge/Version-1.11.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.5.0](https://img.shields.io/badge/AppVersion-1.5.0-informational?style=flat-square)
+![Version: 1.13.0](https://img.shields.io/badge/Version-1.13.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.5.0](https://img.shields.io/badge/AppVersion-1.5.0-informational?style=flat-square)
 
 ## Prerequisites
 
@@ -207,7 +207,7 @@ helm show values diode/diode
 | https://charts.bitnami.com/bitnami | postgresql | 16.6.3 |
 | https://charts.bitnami.com/bitnami | redis | 20.11.5 |
 | https://charts.jetstack.io | cert-manager | v1.12.0 |
-| https://k8s.ory.sh/helm/charts | hydra | 0.53.0 |
+| https://k8s.ory.sh/helm/charts | hydra | 0.60.0 |
 | https://kubernetes.github.io/ingress-nginx | ingress-nginx | 4.12.1 |
 
 ## Values
@@ -242,7 +242,7 @@ helm show values diode/diode
 | diodeAuth.image.imagePullSecrets | list | `[]` | secrets with credentials to pull images from a private registry |
 | diodeAuth.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
 | diodeAuth.image.repository | string | `"docker.io/netboxlabs/diode-auth"` | image repository |
-| diodeAuth.image.tag | string | `"1.11.0"` | image tag |
+| diodeAuth.image.tag | string | `"1.12.0"` | image tag |
 | diodeAuth.replicaCount | int | `1` | replica count |
 | diodeAuth.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
 | diodeAuth.serviceAccount.create | bool | `true` | create service account |
@@ -250,7 +250,7 @@ helm show values diode/diode
 | diodeAuthBootstrap.image.imagePullSecrets | list | `[]` | secrets with credentials to pull images from a private registry |
 | diodeAuthBootstrap.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
 | diodeAuthBootstrap.image.repository | string | `"docker.io/netboxlabs/diode-auth"` | image repository |
-| diodeAuthBootstrap.image.tag | string | `"1.11.0"` | image tag |
+| diodeAuthBootstrap.image.tag | string | `"1.12.0"` | image tag |
 | diodeAuthBootstrap.job.annotations | object | `{"helm.sh/hook":"post-install, post-upgrade","helm.sh/hook-weight":"2"}` | annotations to add to the auth bootstrap job |
 | diodeAuthBootstrap.job.backoffLimit | int | `20` | backoff limit |
 | diodeAuthBootstrap.job.extraInitContainers | string or list | `""` | additional initContainers to run during bootstrap (may contain templating instructions) |
@@ -274,7 +274,7 @@ helm show values diode/diode
 | diodeIngester.image.imagePullSecrets | list | `[]` | secrets with credentials to pull images from a private registry |
 | diodeIngester.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
 | diodeIngester.image.repository | string | `"docker.io/netboxlabs/diode-ingester"` | image repository |
-| diodeIngester.image.tag | string | `"1.12.0"` | image tag |
+| diodeIngester.image.tag | string | `"1.13.0"` | image tag |
 | diodeIngester.replicaCount | int | `1` | replica count |
 | diodeIngester.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
 | diodeIngester.serviceAccount.create | bool | `true` | create service account |
@@ -308,7 +308,7 @@ helm show values diode/diode
 | diodeReconciler.image.imagePullSecrets | list | `[]` | secrets with credentials to pull images from a private registry |
 | diodeReconciler.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
 | diodeReconciler.image.repository | string | `"docker.io/netboxlabs/diode-reconciler"` | image repository |
-| diodeReconciler.image.tag | string | `"1.12.0"` | image tag |
+| diodeReconciler.image.tag | string | `"1.13.0"` | image tag |
 | diodeReconciler.replicaCount | int | `1` | replica count |
 | diodeReconciler.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
 | diodeReconciler.serviceAccount.create | bool | `true` | create service account |
