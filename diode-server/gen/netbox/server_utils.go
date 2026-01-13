@@ -1,5 +1,5 @@
 // Generated code. DO NOT EDIT.
-// Timestamp: 2025-11-14 18:10:23Z
+// Timestamp: 2026-01-12 17:44:14Z
 package netbox
 
 import (
@@ -196,6 +196,10 @@ const (
 	ModuleTypeProfileObjectTypeName         = "Module Type Profile"
 	CustomLinkObjectType                    = "extras.customlink"
 	CustomLinkObjectTypeName                = "Custom Link"
+	OwnerObjectType                         = "users.owner"
+	OwnerObjectTypeName                     = "Owner"
+	OwnerGroupObjectType                    = "users.ownergroup"
+	OwnerGroupObjectTypeName                = "Owner Group"
 )
 
 // entityTypeMap provides O(1) lookup vs O(n) linear switch evaluation
@@ -293,6 +297,8 @@ var entityTypeMap = map[reflect.Type]string{
 	reflect.TypeOf((*pb.Entity_JournalEntry)(nil)):              JournalEntryObjectType,
 	reflect.TypeOf((*pb.Entity_ModuleTypeProfile)(nil)):         ModuleTypeProfileObjectType,
 	reflect.TypeOf((*pb.Entity_CustomLink)(nil)):                CustomLinkObjectType,
+	reflect.TypeOf((*pb.Entity_Owner)(nil)):                     OwnerObjectType,
+	reflect.TypeOf((*pb.Entity_OwnerGroup)(nil)):                OwnerGroupObjectType,
 }
 
 func GetObjectType(entity *pb.Entity) (string, error) {
@@ -491,6 +497,10 @@ func GetObjectTypeName(objectType string) (string, error) {
 		return ModuleTypeProfileObjectTypeName, nil
 	case CustomLinkObjectType:
 		return CustomLinkObjectTypeName, nil
+	case OwnerObjectType:
+		return OwnerObjectTypeName, nil
+	case OwnerGroupObjectType:
+		return OwnerGroupObjectTypeName, nil
 	default:
 		return "", fmt.Errorf("unknown object type: %v", objectType)
 	}
@@ -574,6 +584,10 @@ func GetPrimaryValue(entity *pb.Entity) (string, error) {
 		return fmt.Sprintf("%v", e.ModuleType.Model), nil
 	case *pb.Entity_ModuleTypeProfile:
 		return fmt.Sprintf("%v", e.ModuleTypeProfile.Name), nil
+	case *pb.Entity_Owner:
+		return fmt.Sprintf("%v", e.Owner.Name), nil
+	case *pb.Entity_OwnerGroup:
+		return fmt.Sprintf("%v", e.OwnerGroup.Name), nil
 	case *pb.Entity_Platform:
 		return fmt.Sprintf("%v", e.Platform.Name), nil
 	case *pb.Entity_PowerFeed:

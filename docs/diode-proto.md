@@ -103,6 +103,8 @@
     - [ModuleType.CustomFieldsEntry](#diode-v1-ModuleType-CustomFieldsEntry)
     - [ModuleTypeProfile](#diode-v1-ModuleTypeProfile)
     - [ModuleTypeProfile.CustomFieldsEntry](#diode-v1-ModuleTypeProfile-CustomFieldsEntry)
+    - [Owner](#diode-v1-Owner)
+    - [OwnerGroup](#diode-v1-OwnerGroup)
     - [Platform](#diode-v1-Platform)
     - [Platform.CustomFieldsEntry](#diode-v1-Platform-CustomFieldsEntry)
     - [PowerFeed](#diode-v1-PowerFeed)
@@ -236,6 +238,8 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [ASN.CustomFieldsEntry](#diode-v1-ASN-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
+| sites | [Site](#diode-v1-Site) | repeated |  |
 
 
 
@@ -276,6 +280,8 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [ASNRange.CustomFieldsEntry](#diode-v1-ASNRange-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
+| comments | [string](#string) | optional |  |
 
 
 
@@ -315,6 +321,7 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [Aggregate.CustomFieldsEntry](#diode-v1-Aggregate-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -359,6 +366,8 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [Cable.CustomFieldsEntry](#diode-v1-Cable-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| profile | [string](#string) | optional |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -450,6 +459,7 @@
 | assignments | [CircuitGroupAssignment](#diode-v1-CircuitGroupAssignment) | repeated |  |
 | custom_fields | [Circuit.CustomFieldsEntry](#diode-v1-Circuit-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -487,6 +497,8 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [CircuitGroup.CustomFieldsEntry](#diode-v1-CircuitGroup-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
+| comments | [string](#string) | optional |  |
 
 
 
@@ -590,6 +602,8 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [CircuitType.CustomFieldsEntry](#diode-v1-CircuitType-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
+| comments | [string](#string) | optional |  |
 
 
 
@@ -634,6 +648,7 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [Cluster.CustomFieldsEntry](#diode-v1-Cluster-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -670,6 +685,8 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [ClusterGroup.CustomFieldsEntry](#diode-v1-ClusterGroup-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
+| comments | [string](#string) | optional |  |
 
 
 
@@ -706,6 +723,8 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [ClusterType.CustomFieldsEntry](#diode-v1-ClusterType-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
+| comments | [string](#string) | optional |  |
 
 
 
@@ -747,6 +766,7 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [ConsolePort.CustomFieldsEntry](#diode-v1-ConsolePort-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -788,6 +808,7 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [ConsoleServerPort.CustomFieldsEntry](#diode-v1-ConsoleServerPort-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -831,6 +852,7 @@
 | custom_fields | [Contact.CustomFieldsEntry](#diode-v1-Contact-CustomFieldsEntry) | repeated |  |
 | groups | [ContactGroup](#diode-v1-ContactGroup) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -954,6 +976,8 @@
 | object_journal_entry | [JournalEntry](#diode-v1-JournalEntry) |  |  |
 | object_module_type_profile | [ModuleTypeProfile](#diode-v1-ModuleTypeProfile) |  |  |
 | object_custom_link | [CustomLink](#diode-v1-CustomLink) |  |  |
+| object_owner | [Owner](#diode-v1-Owner) |  |  |
+| object_owner_group | [OwnerGroup](#diode-v1-OwnerGroup) |  |  |
 | contact | [Contact](#diode-v1-Contact) |  |  |
 | role | [ContactRole](#diode-v1-ContactRole) | optional |  |
 | priority | [string](#string) | optional |  |
@@ -998,6 +1022,7 @@
 | custom_fields | [ContactGroup.CustomFieldsEntry](#diode-v1-ContactGroup-CustomFieldsEntry) | repeated |  |
 | comments | [string](#string) | optional |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -1034,6 +1059,8 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [ContactRole.CustomFieldsEntry](#diode-v1-ContactRole-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
+| comments | [string](#string) | optional |  |
 
 
 
@@ -1087,6 +1114,7 @@
 | comments | [string](#string) | optional |  |
 | object_types | [string](#string) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -1107,6 +1135,7 @@
 | order_alphabetically | [bool](#bool) | optional |  |
 | extra_choices | [string](#string) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -1126,7 +1155,7 @@
 | aggregate | [Aggregate](#diode-v1-Aggregate) |  |  |
 | cable | [Cable](#diode-v1-Cable) |  |  |
 | cable_path | [CablePath](#diode-v1-CablePath) |  |  |
-| cable_termination | [CableTermination](#diode-v1-CableTermination) |  |  |
+| cable_termination | [CableTermination](#diode-v1-CableTermination) |  | **Deprecated.**  |
 | circuit | [Circuit](#diode-v1-Circuit) |  |  |
 | circuit_group | [CircuitGroup](#diode-v1-CircuitGroup) |  |  |
 | circuit_group_assignment | [CircuitGroupAssignment](#diode-v1-CircuitGroupAssignment) |  |  |
@@ -1214,6 +1243,8 @@
 | journal_entry | [JournalEntry](#diode-v1-JournalEntry) |  |  |
 | module_type_profile | [ModuleTypeProfile](#diode-v1-ModuleTypeProfile) |  |  |
 | custom_link | [CustomLink](#diode-v1-CustomLink) |  |  |
+| owner | [Owner](#diode-v1-Owner) |  |  |
+| owner_group | [OwnerGroup](#diode-v1-OwnerGroup) |  |  |
 
 
 
@@ -1265,6 +1296,7 @@
 | new_window | [bool](#bool) | optional |  |
 | object_types | [string](#string) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -1307,6 +1339,7 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [Device.CustomFieldsEntry](#diode-v1-Device-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -1345,6 +1378,7 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [DeviceBay.CustomFieldsEntry](#diode-v1-DeviceBay-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -1385,6 +1419,7 @@
 | parent | [DeviceRole](#diode-v1-DeviceRole) | optional |  |
 | comments | [string](#string) | optional |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -1432,6 +1467,7 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [DeviceType.CustomFieldsEntry](#diode-v1-DeviceType-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -1468,7 +1504,7 @@
 | aggregate | [Aggregate](#diode-v1-Aggregate) |  |  |
 | cable | [Cable](#diode-v1-Cable) |  |  |
 | cable_path | [CablePath](#diode-v1-CablePath) |  |  |
-| cable_termination | [CableTermination](#diode-v1-CableTermination) |  |  |
+| cable_termination | [CableTermination](#diode-v1-CableTermination) |  | **Deprecated.**  |
 | circuit | [Circuit](#diode-v1-Circuit) |  |  |
 | circuit_group | [CircuitGroup](#diode-v1-CircuitGroup) |  |  |
 | circuit_group_assignment | [CircuitGroupAssignment](#diode-v1-CircuitGroupAssignment) |  |  |
@@ -1556,6 +1592,8 @@
 | journal_entry | [JournalEntry](#diode-v1-JournalEntry) |  |  |
 | module_type_profile | [ModuleTypeProfile](#diode-v1-ModuleTypeProfile) |  |  |
 | custom_link | [CustomLink](#diode-v1-CustomLink) |  |  |
+| owner | [Owner](#diode-v1-Owner) |  |  |
+| owner_group | [OwnerGroup](#diode-v1-OwnerGroup) |  |  |
 
 
 
@@ -1580,6 +1618,7 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [FHRPGroup.CustomFieldsEntry](#diode-v1-FHRPGroup-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -1704,6 +1743,8 @@
 | interface_journal_entry | [JournalEntry](#diode-v1-JournalEntry) |  |  |
 | interface_module_type_profile | [ModuleTypeProfile](#diode-v1-ModuleTypeProfile) |  |  |
 | interface_custom_link | [CustomLink](#diode-v1-CustomLink) |  |  |
+| interface_owner | [Owner](#diode-v1-Owner) |  |  |
+| interface_owner_group | [OwnerGroup](#diode-v1-OwnerGroup) |  |  |
 | priority | [int64](#int64) |  |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
 
@@ -1726,13 +1767,15 @@
 | label | [string](#string) | optional |  |
 | type | [string](#string) |  |  |
 | color | [string](#string) | optional |  |
-| rear_port | [RearPort](#diode-v1-RearPort) |  |  |
-| rear_port_position | [int64](#int64) | optional |  |
+| rear_port | [RearPort](#diode-v1-RearPort) |  | **Deprecated.**  |
+| rear_port_position | [int64](#int64) | optional | **Deprecated.**  |
 | description | [string](#string) | optional |  |
 | mark_connected | [bool](#bool) | optional |  |
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [FrontPort.CustomFieldsEntry](#diode-v1-FrontPort-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| positions | [int64](#int64) | optional |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -1856,6 +1899,8 @@
 | object_journal_entry | [JournalEntry](#diode-v1-JournalEntry) |  |  |
 | object_module_type_profile | [ModuleTypeProfile](#diode-v1-ModuleTypeProfile) |  |  |
 | object_custom_link | [CustomLink](#diode-v1-CustomLink) |  |  |
+| object_owner | [Owner](#diode-v1-Owner) |  |  |
+| object_owner_group | [OwnerGroup](#diode-v1-OwnerGroup) |  |  |
 
 
 
@@ -1880,6 +1925,7 @@
 | custom_fields | [IKEPolicy.CustomFieldsEntry](#diode-v1-IKEPolicy-CustomFieldsEntry) | repeated |  |
 | proposals | [IKEProposal](#diode-v1-IKEProposal) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -1921,6 +1967,7 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [IKEProposal.CustomFieldsEntry](#diode-v1-IKEProposal-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -1966,6 +2013,7 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [IPAddress.CustomFieldsEntry](#diode-v1-IPAddress-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -2009,6 +2057,7 @@
 | custom_fields | [IPRange.CustomFieldsEntry](#diode-v1-IPRange-CustomFieldsEntry) | repeated |  |
 | mark_populated | [bool](#bool) | optional |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -2047,6 +2096,7 @@
 | custom_fields | [IPSecPolicy.CustomFieldsEntry](#diode-v1-IPSecPolicy-CustomFieldsEntry) | repeated |  |
 | proposals | [IPSecProposal](#diode-v1-IPSecProposal) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -2086,6 +2136,7 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [IPSecProfile.CustomFieldsEntry](#diode-v1-IPSecProfile-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -2126,6 +2177,7 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [IPSecProposal.CustomFieldsEntry](#diode-v1-IPSecProposal-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -2228,6 +2280,7 @@
 | tagged_vlans | [VLAN](#diode-v1-VLAN) | repeated |  |
 | wireless_lans | [WirelessLAN](#diode-v1-WirelessLAN) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -2280,6 +2333,7 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [InventoryItem.CustomFieldsEntry](#diode-v1-InventoryItem-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -2317,6 +2371,8 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [InventoryItemRole.CustomFieldsEntry](#diode-v1-InventoryItemRole-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
+| comments | [string](#string) | optional |  |
 
 
 
@@ -2440,6 +2496,8 @@
 | assigned_object_wireless_lan_group | [WirelessLANGroup](#diode-v1-WirelessLANGroup) |  |  |
 | assigned_object_wireless_link | [WirelessLink](#diode-v1-WirelessLink) |  |  |
 | assigned_object_custom_link | [CustomLink](#diode-v1-CustomLink) |  |  |
+| assigned_object_owner | [Owner](#diode-v1-Owner) |  |  |
+| assigned_object_owner_group | [OwnerGroup](#diode-v1-OwnerGroup) |  |  |
 | kind | [string](#string) | optional |  |
 | comments | [string](#string) |  |  |
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
@@ -2488,6 +2546,7 @@
 | export_targets | [RouteTarget](#diode-v1-RouteTarget) | repeated |  |
 | status | [string](#string) | optional |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -2612,6 +2671,8 @@
 | assigned_object_wireless_lan_group | [WirelessLANGroup](#diode-v1-WirelessLANGroup) |  |  |
 | assigned_object_wireless_link | [WirelessLink](#diode-v1-WirelessLink) |  |  |
 | assigned_object_custom_link | [CustomLink](#diode-v1-CustomLink) |  |  |
+| assigned_object_owner | [Owner](#diode-v1-Owner) |  |  |
+| assigned_object_owner_group | [OwnerGroup](#diode-v1-OwnerGroup) |  |  |
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [L2VPNTermination.CustomFieldsEntry](#diode-v1-L2VPNTermination-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
@@ -2657,6 +2718,7 @@
 | custom_fields | [Location.CustomFieldsEntry](#diode-v1-Location-CustomFieldsEntry) | repeated |  |
 | comments | [string](#string) | optional |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -2695,6 +2757,7 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [MACAddress.CustomFieldsEntry](#diode-v1-MACAddress-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -2731,6 +2794,8 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [Manufacturer.CustomFieldsEntry](#diode-v1-Manufacturer-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
+| comments | [string](#string) | optional |  |
 
 
 
@@ -2772,6 +2837,7 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [Module.CustomFieldsEntry](#diode-v1-Module-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -2812,6 +2878,7 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [ModuleBay.CustomFieldsEntry](#diode-v1-ModuleBay-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -2855,6 +2922,7 @@
 | profile | [ModuleTypeProfile](#diode-v1-ModuleTypeProfile) | optional |  |
 | attributes | [string](#string) | optional |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -2892,6 +2960,7 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [ModuleTypeProfile.CustomFieldsEntry](#diode-v1-ModuleTypeProfile-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -2908,6 +2977,41 @@
 | ----- | ---- | ----- | ----------- |
 | key | [string](#string) |  |  |
 | value | [CustomFieldValue](#diode-v1-CustomFieldValue) |  |  |
+
+
+
+
+
+
+<a name="diode-v1-Owner"></a>
+
+### Owner
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [string](#string) |  |  |
+| group | [OwnerGroup](#diode-v1-OwnerGroup) |  |  |
+| description | [string](#string) | optional |  |
+| metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+
+
+
+
+
+
+<a name="diode-v1-OwnerGroup"></a>
+
+### OwnerGroup
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [string](#string) |  |  |
+| description | [string](#string) | optional |  |
+| metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
 
 
 
@@ -2931,6 +3035,7 @@
 | parent | [Platform](#diode-v1-Platform) | optional |  |
 | comments | [string](#string) | optional |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -2978,6 +3083,7 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [PowerFeed.CustomFieldsEntry](#diode-v1-PowerFeed-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -3022,6 +3128,7 @@
 | custom_fields | [PowerOutlet.CustomFieldsEntry](#diode-v1-PowerOutlet-CustomFieldsEntry) | repeated |  |
 | status | [string](#string) | optional |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -3060,6 +3167,7 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [PowerPanel.CustomFieldsEntry](#diode-v1-PowerPanel-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -3102,6 +3210,7 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [PowerPort.CustomFieldsEntry](#diode-v1-PowerPort-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -3149,6 +3258,7 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [Prefix.CustomFieldsEntry](#diode-v1-Prefix-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -3188,6 +3298,7 @@
 | accounts | [ProviderAccount](#diode-v1-ProviderAccount) | repeated |  |
 | asns | [ASN](#diode-v1-ASN) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -3226,6 +3337,7 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [ProviderAccount.CustomFieldsEntry](#diode-v1-ProviderAccount-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -3264,6 +3376,7 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [ProviderNetwork.CustomFieldsEntry](#diode-v1-ProviderNetwork-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -3301,6 +3414,8 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [RIR.CustomFieldsEntry](#diode-v1-RIR-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
+| comments | [string](#string) | optional |  |
 
 
 
@@ -3360,6 +3475,7 @@
 | custom_fields | [Rack.CustomFieldsEntry](#diode-v1-Rack-CustomFieldsEntry) | repeated |  |
 | outer_height | [int64](#int64) | optional |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -3399,6 +3515,7 @@
 | custom_fields | [RackReservation.CustomFieldsEntry](#diode-v1-RackReservation-CustomFieldsEntry) | repeated |  |
 | status | [string](#string) | optional |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -3436,6 +3553,8 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [RackRole.CustomFieldsEntry](#diode-v1-RackRole-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
+| comments | [string](#string) | optional |  |
 
 
 
@@ -3487,6 +3606,7 @@
 | custom_fields | [RackType.CustomFieldsEntry](#diode-v1-RackType-CustomFieldsEntry) | repeated |  |
 | outer_height | [int64](#int64) | optional |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -3529,6 +3649,7 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [RearPort.CustomFieldsEntry](#diode-v1-RearPort-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -3567,6 +3688,7 @@
 | custom_fields | [Region.CustomFieldsEntry](#diode-v1-Region-CustomFieldsEntry) | repeated |  |
 | comments | [string](#string) | optional |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -3604,6 +3726,8 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [Role.CustomFieldsEntry](#diode-v1-Role-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
+| comments | [string](#string) | optional |  |
 
 
 
@@ -3641,6 +3765,7 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [RouteTarget.CustomFieldsEntry](#diode-v1-RouteTarget-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -3685,6 +3810,7 @@
 | parent_object_fhrp_group | [FHRPGroup](#diode-v1-FHRPGroup) |  |  |
 | parent_object_virtual_machine | [VirtualMachine](#diode-v1-VirtualMachine) |  |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -3733,6 +3859,7 @@
 | custom_fields | [Site.CustomFieldsEntry](#diode-v1-Site-CustomFieldsEntry) | repeated |  |
 | asns | [ASN](#diode-v1-ASN) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -3771,6 +3898,7 @@
 | custom_fields | [SiteGroup.CustomFieldsEntry](#diode-v1-SiteGroup-CustomFieldsEntry) | repeated |  |
 | comments | [string](#string) | optional |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -3830,6 +3958,7 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [Tenant.CustomFieldsEntry](#diode-v1-Tenant-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -3868,6 +3997,7 @@
 | custom_fields | [TenantGroup.CustomFieldsEntry](#diode-v1-TenantGroup-CustomFieldsEntry) | repeated |  |
 | comments | [string](#string) | optional |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -3910,6 +4040,7 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [Tunnel.CustomFieldsEntry](#diode-v1-Tunnel-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -3946,6 +4077,8 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [TunnelGroup.CustomFieldsEntry](#diode-v1-TunnelGroup-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
+| comments | [string](#string) | optional |  |
 
 
 
@@ -4071,6 +4204,8 @@
 | termination_journal_entry | [JournalEntry](#diode-v1-JournalEntry) |  |  |
 | termination_module_type_profile | [ModuleTypeProfile](#diode-v1-ModuleTypeProfile) |  |  |
 | termination_custom_link | [CustomLink](#diode-v1-CustomLink) |  |  |
+| termination_owner | [Owner](#diode-v1-Owner) |  |  |
+| termination_owner_group | [OwnerGroup](#diode-v1-OwnerGroup) |  |  |
 | outside_ip | [IPAddress](#diode-v1-IPAddress) | optional |  |
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [TunnelTermination.CustomFieldsEntry](#diode-v1-TunnelTermination-CustomFieldsEntry) | repeated |  |
@@ -4119,6 +4254,7 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [VLAN.CustomFieldsEntry](#diode-v1-VLAN-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -4164,6 +4300,8 @@
 | custom_fields | [VLANGroup.CustomFieldsEntry](#diode-v1-VLANGroup-CustomFieldsEntry) | repeated |  |
 | tenant | [Tenant](#diode-v1-Tenant) | optional |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
+| comments | [string](#string) | optional |  |
 
 
 
@@ -4197,6 +4335,8 @@
 | name | [string](#string) |  |  |
 | description | [string](#string) | optional |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
+| comments | [string](#string) | optional |  |
 
 
 
@@ -4247,6 +4387,7 @@
 | custom_fields | [VMInterface.CustomFieldsEntry](#diode-v1-VMInterface-CustomFieldsEntry) | repeated |  |
 | tagged_vlans | [VLAN](#diode-v1-VLAN) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -4288,6 +4429,7 @@
 | import_targets | [RouteTarget](#diode-v1-RouteTarget) | repeated |  |
 | export_targets | [RouteTarget](#diode-v1-RouteTarget) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -4326,6 +4468,7 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [VirtualChassis.CustomFieldsEntry](#diode-v1-VirtualChassis-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -4367,6 +4510,7 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [VirtualCircuit.CustomFieldsEntry](#diode-v1-VirtualCircuit-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -4441,6 +4585,8 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [VirtualCircuitType.CustomFieldsEntry](#diode-v1-VirtualCircuitType-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
+| comments | [string](#string) | optional |  |
 
 
 
@@ -4483,6 +4629,7 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [VirtualDeviceContext.CustomFieldsEntry](#diode-v1-VirtualDeviceContext-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -4520,6 +4667,7 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [VirtualDisk.CustomFieldsEntry](#diode-v1-VirtualDisk-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -4569,6 +4717,8 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [VirtualMachine.CustomFieldsEntry](#diode-v1-VirtualMachine-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| start_on_boot | [string](#string) | optional |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -4616,6 +4766,7 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [WirelessLAN.CustomFieldsEntry](#diode-v1-WirelessLAN-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -4654,6 +4805,7 @@
 | custom_fields | [WirelessLANGroup.CustomFieldsEntry](#diode-v1-WirelessLANGroup-CustomFieldsEntry) | repeated |  |
 | comments | [string](#string) | optional |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
@@ -4699,6 +4851,7 @@
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [WirelessLink.CustomFieldsEntry](#diode-v1-WirelessLink-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
 
 
 
