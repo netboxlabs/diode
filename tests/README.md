@@ -60,10 +60,6 @@ pytest -m "not slow" tests/
 
 ### Run Specific Test Files
 
-```bash
-# Run health check tests
-pytest tests/test_health_check.py
-
 # Run device ingestion tests
 pytest tests/ingestion/test_device_ingestion.py
 ```
