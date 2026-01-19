@@ -4,8 +4,10 @@ This module provides shared fixtures and configuration for pytest-based tests.
 """
 import sys
 import logging
+import os
 from pathlib import Path
 import pytest
+import requests
 
 # Add project root and tests directory to Python path
 project_root = Path(__file__).resolve().parent.parent
@@ -62,3 +64,98 @@ def log_test_name(request):
     logger.info(f"Starting test: {test_name}")
     yield
     logger.info(f"Completed test: {test_name}")
+
+
+@pytest.fixture(scope="session")
+def diode_client_credentials(test_config):
+    """Create Diode client credentials dynamically via Diode API.
+
+    This is a session-scoped fixture that creates client credentials once
+    for all tests in the session. Credentials are created by authenticating
+    with admin credentials and calling the Diode API.
+
+    Required environment variables:
+        - DIODE_ADMIN_CLIENT_ID: Admin client ID with permission to create clients
+        - DIODE_ADMIN_CLIENT_SECRET: Admin client secret
+
+    The fixture will skip all tests if admin credentials are not configured.
+
+    Returns:
+        dict: Contains 'client_id' and 'client_secret' keys
+
+    Raises:
+        pytest.skip: If admin credentials are not configured
+        pytest.fail: If credential creation fails
+    """
+    # Get admin credentials for creating new clients
+    admin_client_id = os.getenv("DIODE_ADMIN_CLIENT_ID")
+    admin_client_secret = os.getenv("DIODE_ADMIN_CLIENT_SECRET")
+
+    if not admin_client_id or not admin_client_secret:
+        pytest.fail(
+            "Diode admin credentials not configured. "
+            "Please set DIODE_ADMIN_CLIENT_ID and DIODE_ADMIN_CLIENT_SECRET "
+            "environment variables to run integration tests. "
+            "See tests/.env.example for configuration details."
+        )
+
+    # Get the Diode API base URL (convert gRPC target to HTTP)
+    diode_target = test_config["diode_target"]
+    # Extract base URL from gRPC target (e.g., grpc://localhost:8080/diode -> http://localhost:8080)
+    base_url = diode_target.replace("grpc://", "http://").rsplit("/", 1)[0]
+
+    logger.info("Authenticating with Diode server to create test credentials...")
+
+    # Authenticate to get a token
+    try:
+        auth_response = requests.post(
+            f"{base_url}/auth/token",
+            data={
+                "grant_type": "client_credentials",
+                "client_id": admin_client_id,
+                "client_secret": admin_client_secret,
+                "scope": "diode:read diode:write"
+            },
+            timeout=10
+        )
+    except requests.RequestException as e:
+        pytest.fail(f"Failed to connect to Diode server at {base_url}: {e}")
+
+    if auth_response.status_code != 200:
+        pytest.fail(
+            f"Failed to authenticate with Diode server: {auth_response.status_code} - {auth_response.text}"
+        )
+
+    token = auth_response.json()["access_token"]
+    logger.info("Successfully authenticated with Diode server")
+
+    # Create new client credentials
+    try:
+        create_response = requests.post(
+            f"{base_url}/clients",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "client_name": f"pytest-session-{os.getpid()}",
+                "scope": "diode:ingest"
+            },
+            timeout=10
+        )
+    except requests.RequestException as e:
+        pytest.fail(f"Failed to create client credentials: {e}")
+
+    if create_response.status_code != 201:
+        pytest.fail(
+            f"Failed to create client credentials: {create_response.status_code} - {create_response.text}"
+        )
+
+    credentials = create_response.json()
+    logger.info(f"Created test credentials: {credentials['client_id']}")
+
+    yield credentials
+
+    # TODO: Optional cleanup - delete the created credentials after all tests
+    # This would require implementing a delete endpoint call
+    logger.info(f"Test session complete. Credentials {credentials['client_id']} may need manual cleanup.")

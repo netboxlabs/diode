@@ -12,17 +12,27 @@ class DiodeAPIClient:
         self,
         target: str = "grpc://localhost:8080/diode",
         name: str = "diode-test-client",
-        client_id: Optional[str] = None,
-        client_secret: Optional[str] = None,
+        client_id: str = None,
+        client_secret: str = None,
     ):
         """Initialize the Diode gRPC client.
 
         Args:
             target: gRPC target URL (e.g., "grpc://localhost:8080/diode")
             name: Client name
-            client_id: Client ID for authentication (optional)
-            client_secret: Client secret for authentication (optional)
+            client_id: Client ID for authentication (required)
+            client_secret: Client secret for authentication (required)
+
+        Raises:
+            ValueError: If client_id or client_secret is not provided
         """
+        if not client_id or not client_secret:
+            raise ValueError(
+                "client_id and client_secret are required. "
+                "Please set DIODE_ADMIN_CLIENT_ID and DIODE_ADMIN_CLIENT_SECRET "
+                "environment variables, or ensure the test fixtures generate credentials."
+            )
+
         self.target = target
         self.name = name
         self.client_id = client_id
@@ -32,16 +42,12 @@ class DiodeAPIClient:
     def _get_client(self) -> DiodeClient:
         """Get or create a Diode client instance."""
         if self._client is None:
-            # Use provided credentials or fall back to hardcoded test credentials
-            client_id = self.client_id or "test-client-cre-63125734380a4cbf"
-            client_secret = self.client_secret or "LTZ9si6rpRXcpEB5ZSrz6jZ4xtUsuMFE+EQt3r+IWog="
-
             self._client = DiodeClient(
                 target=self.target,
                 app_name=self.name,
                 app_version="1.0.0",
-                client_id=client_id,
-                client_secret=client_secret
+                client_id=self.client_id,
+                client_secret=self.client_secret
             )
         return self._client
 

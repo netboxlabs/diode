@@ -4,9 +4,18 @@ from helpers.api_helper import DiodeAPIClient
 
 
 @pytest.fixture(scope="module")
-def diode_client(test_config):
-    """Create a Diode API client for testing."""
-    client = DiodeAPIClient(base_url=test_config["diode_server_url"])
+def diode_client(test_config, diode_client_credentials):
+    """Create a Diode API client for testing.
+
+    This fixture uses the session-scoped diode_client_credentials fixture
+    from conftest.py to obtain valid client credentials.
+    """
+    client = DiodeAPIClient(
+        target=test_config["diode_target"],
+        name="diode-health-check-client",
+        client_id=diode_client_credentials["client_id"],
+        client_secret=diode_client_credentials["client_secret"]
+    )
     yield client
     client.close()
 

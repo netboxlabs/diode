@@ -4,18 +4,32 @@ from helpers.api_helper import DiodeAPIClient, NetBoxAPIClient
 
 
 @pytest.fixture(scope="module")
-def diode_client(test_config):
-    """Create a Diode API client for testing."""
-    client = DiodeAPIClient(base_url=test_config["diode_server_url"])
+def diode_client(test_config, diode_client_credentials):
+    """Create a Diode API client for testing.
+
+    This fixture uses the session-scoped diode_client_credentials fixture
+    from conftest.py to obtain valid client credentials.
+    """
+    client = DiodeAPIClient(
+        target=test_config["diode_target"],
+        name="diode-ingestion-client",
+        client_id=diode_client_credentials["client_id"],
+        client_secret=diode_client_credentials["client_secret"]
+    )
     yield client
     client.close()
 
 
 @pytest.fixture(scope="module")
 def netbox_client(test_config):
-    """Create a NetBox API client for testing."""
-    # Note: Add proper token handling when needed
-    client = NetBoxAPIClient(base_url=test_config["netbox_url"])
+    """Create a NetBox API client for testing.
+
+    Uses the NetBox API token from environment variables or test config.
+    """
+    client = NetBoxAPIClient(
+        base_url=test_config["netbox_url"],
+        token=test_config["netbox_token"]
+    )
     yield client
     client.close()
 
