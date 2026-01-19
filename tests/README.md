@@ -1,92 +1,141 @@
-# Tests
+# Diode Pytest Tests
 
-This directory contains integrations tests that can be run against the Diode Plugin
+This directory contains pytest-based integration and unit tests for the Diode project.
 
-Here's what you'll need to do in order to run these tests:
+## Directory Structure
 
-- Start docker containers stack (diode and NetBox)
-- Check the users and their tokens
-- Configure the test settings
-- Run behave
-
-## Start the Docker container for Netbox with Diode Plugin
-
-To run the tests, you must have the diode plugin directory, and execute the following commands in the **diode-server**
-folder.
-
-```bash
-pip install netboxlabs-diode-netbox-plugin
+```
+tests/
+├── conftest.py                     # Pytest configuration and shared fixtures
+├── requirements.txt                # Test dependencies
+├── helpers/                        # Test helper modules
+│   ├── __init__.py
+│   ├── api_helper.py              # API client helpers
+│   └── utils.py                   # Utility functions
+├── ingestion/                      # Ingestion-specific tests
+│   ├── __init__.py
+│   └── test_device_ingestion.py
+├── test_health_check.py           # Health check tests
+└── test_ingestion.py              # General ingestion tests
 ```
 
-After that, you can start the docker container by running the following command:
+## Setup
+
+### Install Test Dependencies
 
 ```bash
-make docker-compose-up
-
-make docker-compose-netbox-up
+cd /home/amanda/netboxlabs/diode/tests
+pip install -r requirements.txt
 ```
 
-## Users and tokens
+### Prerequisites
 
-The command above will create all users necessary to run the tests.
+- Diode server running on `http://localhost:8000` (or configure in conftest.py)
+- NetBox running on `http://localhost:8000` (for integration tests)
 
-Using the Admin user, you can access the Netbox at http://0.0.0.0:8000/netbox/.
+## Running Tests
 
-- username: admin
-- password: admin
+### Run All Tests
 
-To check the tokens of the users, navigate to the "Admin" menu and select "API Token". This will display a list of all
-the tokens associated with the users.
+```bash
+cd /home/amanda/netboxlabs/diode
+pytest tests/
+```
 
-Please, pay attention to the token for user "INGESTION", it will be used in the next section.
+### Run Specific Test Categories
 
-## Test settings
+```bash
+# Run only unit tests
+pytest -m unit tests/
 
-Create the test config file from the template: `cp config.ini.tpl config.ini`.
+# Run only integration tests
+pytest -m integration tests/
 
-Then fill in the correct values:
+# Run only e2e tests
+pytest -m e2e tests/
 
-- **user_token**:
-    - Mandatory!
-    - string
-    - **ADMIN** token created in the previous step
+# Exclude slow tests
+pytest -m "not slow" tests/
+```
 
-- **api_root_path**:
-    - Mandatory!
-    - string
-    - netbox API URL, e.g. http://0.0.0.0:8000/netbox/api
+### Run Specific Test Files
 
-- **api_key**:
-    - Mandatory!
-    - string
-    - **INGESTION** user token created in the previous step
+```bash
+# Run health check tests
+pytest tests/test_health_check.py
 
-## Run behave using parallel process
+# Run device ingestion tests
+pytest tests/ingestion/test_device_ingestion.py
+```
 
-You can use [behavex](https://github.com/hrcorval/behavex) to run the scenarios using multiprocess by simply run:
+### Run with Coverage
 
-Examples:
+```bash
+pytest --cov=diode-server --cov-report=html tests/
+```
 
-> behavex -t @\<TAG\> --parallel-processes=2 --parallel-schema=feature
+Coverage reports will be generated in `htmlcov/` directory.
 
-> behavex -t @\<TAG\> --parallel-processes=2 --parallel-schema=feature
+### Run Tests in Parallel
 
-Running smoke tests:
+```bash
+pytest -n auto tests/
+```
 
-> behavex -t=@smoke --parallel-processes=2 --parallel-scheme=feature
+## Test Markers
 
-## Test execution reports
+The following markers are available:
 
-[behavex](https://github.com/hrcorval/behavex) provides a friendly HTML test execution report that contains information
-related to test scenarios, execution status, execution evidence and metrics. A filters bar is also provided to filter
-scenarios by name, tag or status.
+- `@pytest.mark.unit` - Unit tests (no external dependencies)
+- `@pytest.mark.integration` - Integration tests (require external services)
+- `@pytest.mark.e2e` - End-to-end tests
+- `@pytest.mark.slow` - Slow running tests
 
-It should be available at the following path:
+## Writing Tests
 
-`<output_folder>/report.html`
+### Example Test
 
-## Clean your environment
+```python
+import pytest
+from helpers.api_helper import DiodeAPIClient
 
-After running the tests, clean up your environment by running the command:
 
-> behavex -t=@cleanup --parallel-processes=2 --parallel-scheme=feature
+@pytest.mark.integration
+def test_example(test_config):
+    """Example test using fixtures."""
+    client = DiodeAPIClient(base_url=test_config["diode_server_url"])
+    response = client.health_check()
+    assert response.status_code == 200
+```
+
+### Using Fixtures
+
+Common fixtures are available from `conftest.py`:
+
+- `test_config` - Test configuration dictionary
+- `test_logger` - Logger instance for tests
+
+## Configuration
+
+Test configuration can be modified in `conftest.py`:
+
+```python
+@pytest.fixture(scope="session")
+def test_config():
+    return {
+        "diode_server_url": "http://localhost:8081",
+        "netbox_url": "http://localhost:8000",
+        "timeout": 30,
+    }
+```
+
+## CI/CD Integration
+
+Add to your CI/CD pipeline:
+
+```yaml
+- name: Run tests
+  run: |
+    pip install -r tests/requirements.txt
+    pytest tests/ -v --cov=diode-server --cov-report=xml
+```
