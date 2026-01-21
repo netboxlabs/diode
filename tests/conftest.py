@@ -45,8 +45,8 @@ def test_config():
     import os
     return {
         "diode_target": os.getenv("DIODE_TARGET", "grpc://localhost:8080/diode"),
-        "netbox_url": os.getenv("NETBOX_URL", "http://localhost:8000"),
-        "netbox_token": os.getenv("NETBOX_API_TOKEN", "0123456789abcdef0123456789abcdef01234567"),
+        "netbox_url": os.getenv("NETBOX_URL", "http://localhost:8000/netbox/"),
+        "netbox_token": os.getenv("NETBOX_API_TOKEN"),
         "timeout": 30,
     }
 

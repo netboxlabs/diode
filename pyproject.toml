@@ -42,9 +42,6 @@ addopts = [
     "-v",
     "--strict-markers",
     "--tb=short",
-    "--cov=diode-server",
-    "--cov-report=html",
-    "--cov-report=term-missing",
 ]
 markers = [
     "unit: Unit tests (no external dependencies)",

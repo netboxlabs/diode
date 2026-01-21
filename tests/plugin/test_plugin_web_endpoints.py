@@ -61,13 +61,13 @@ def test_add_credential_flow(netbox_web_client):
         f"Expected redirect after creating credential, got {response.status_code}"
 
     # Check redirect location
-    assert "client_credential_secret" in response.headers.get("Location", ""), \
+    assert "credentials/secret" in response.headers.get("Location", ""), \
         "Should redirect to secret page after creation"
 
     # Step 2: Follow redirect to secret page
     secret_url = response.headers["Location"]
     secret_response = netbox_web_client.session.get(
-        f"{netbox_web_client.base_url}{secret_url}"
+        f"{netbox_web_client.base_url.rstrip('netbox/')}{secret_url}"
     )
 
     assert secret_response.status_code == 200, \

@@ -118,7 +118,7 @@ class NetBoxPluginWebClient:
 
     def __init__(
         self,
-        base_url: str = "http://localhost:8000",
+        base_url: str = "http://localhost:8000/netbox/",
         username: str = "admin",
         password: str = "admin"
     ):
@@ -191,7 +191,7 @@ class NetBoxPluginWebClient:
         """Make authenticated GET request to plugin endpoint.
 
         Args:
-            path: Path to endpoint (e.g., "/plugins/netbox-diode-plugin/settings/")
+            path: Path to endpoint (e.g., "/plugins/diode/settings/")
             **kwargs: Additional arguments to pass to requests.get()
 
         Returns:
@@ -246,7 +246,7 @@ class NetBoxPluginWebClient:
         Returns:
             Response object with settings page HTML
         """
-        return self.get("/plugins/netbox-diode-plugin/settings/")
+        return self.get("/plugins/diode/settings/")
 
     def get_credentials_list(self) -> requests.Response:
         """Get client credentials list page.
@@ -254,7 +254,7 @@ class NetBoxPluginWebClient:
         Returns:
             Response object with credentials list page HTML
         """
-        return self.get("/plugins/netbox-diode-plugin/credentials/")
+        return self.get("/plugins/diode/credentials/")
 
     def add_credential(self, client_name: str) -> requests.Response:
         """Add a new client credential.
@@ -266,7 +266,7 @@ class NetBoxPluginWebClient:
             Response object (should redirect to secret page)
         """
         return self.post(
-            "/plugins/netbox-diode-plugin/credentials/add/",
+            "/plugins/diode/credentials/add/",
             data={"client_name": client_name},
             allow_redirects=False
         )
@@ -282,7 +282,7 @@ class NetBoxPluginWebClient:
             Response object (should redirect to credentials list)
         """
         return self.post(
-            f"/plugins/netbox-diode-plugin/credentials/delete/{client_credential_id}/",
+            f"/plugins/diode/credentials/delete/{client_credential_id}/",
             data={"confirm": confirm},
             allow_redirects=False
         )
