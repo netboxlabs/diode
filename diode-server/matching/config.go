@@ -111,7 +111,14 @@ func (c *Config) mergeEntityRule(existing *EntityMatchingRule, override *EntityM
 		existing.MinConfidence = override.MinConfidence
 	}
 
-	existing.RequireAllPrimary = override.RequireAllPrimary
+	// Only override RequireAllPrimary if explicitly set to true in override.
+	// Since YAML unmarshalling defaults omitted booleans to false, we cannot
+	// distinguish between "not set" and "explicitly set to false". To avoid
+	// accidentally clearing RequireAllPrimary when the override only intends
+	// to change other fields, we only apply it when true.
+	if override.RequireAllPrimary {
+		existing.RequireAllPrimary = true
+	}
 
 	// Override field rules if provided
 	if len(override.PrimaryRules) > 0 {
