@@ -73,8 +73,21 @@ type EntityMatchingRule struct {
 	SecondaryRules     []FieldMatchRule `json:"secondary_rules" yaml:"secondary_rules"`                               // Secondary matching criteria (lower confidence)
 	FallbackRules      []FieldMatchRule `json:"fallback_rules" yaml:"fallback_rules"`                                 // Fallback matching criteria (lowest confidence)
 	MinConfidence      MatchConfidence  `json:"min_confidence" yaml:"min_confidence"`                                 // Minimum confidence threshold for this entity type
-	RequireAllPrimary  bool             `json:"require_all_primary" yaml:"require_all_primary"`                       // If true, all primary rules must match
+	RequireAllPrimary  *bool            `json:"require_all_primary,omitempty" yaml:"require_all_primary,omitempty"`   // If true, all primary rules must match; nil means use global default
 	EdgePropertyFields []string         `json:"edge_property_fields,omitempty" yaml:"edge_property_fields,omitempty"` // Fields to store as edge properties instead of node properties
+}
+
+// GetRequireAllPrimary returns the RequireAllPrimary value, with a fallback default
+func (r *EntityMatchingRule) GetRequireAllPrimary(defaultValue bool) bool {
+	if r.RequireAllPrimary == nil {
+		return defaultValue
+	}
+	return *r.RequireAllPrimary
+}
+
+// SetRequireAllPrimary sets the RequireAllPrimary value
+func (r *EntityMatchingRule) SetRequireAllPrimary(value bool) {
+	r.RequireAllPrimary = &value
 }
 
 // EntityMatchingConfig contains all matching rules and global configuration

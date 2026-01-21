@@ -66,14 +66,15 @@ func (c *Config) GetFinalRules() map[string]*EntityMatchingRule {
 		result[entityType] = &newRule
 	}
 
-	// Step 2: Apply global settings
+	// Step 2: Apply global settings (only when not explicitly set)
 	for _, rule := range result {
 		if rule.MinConfidence == 0 {
 			rule.MinConfidence = MatchConfidence(c.GlobalSettings.DefaultMinConfidence)
 		}
 
-		if !rule.RequireAllPrimary {
-			rule.RequireAllPrimary = c.GlobalSettings.DefaultRequireAllPrimary
+		// Only apply global default if RequireAllPrimary was not explicitly set (nil)
+		if rule.RequireAllPrimary == nil {
+			rule.SetRequireAllPrimary(c.GlobalSettings.DefaultRequireAllPrimary)
 		}
 	}
 
@@ -111,13 +112,9 @@ func (c *Config) mergeEntityRule(existing *EntityMatchingRule, override *EntityM
 		existing.MinConfidence = override.MinConfidence
 	}
 
-	// Only override RequireAllPrimary if explicitly set to true in override.
-	// Since YAML unmarshalling defaults omitted booleans to false, we cannot
-	// distinguish between "not set" and "explicitly set to false". To avoid
-	// accidentally clearing RequireAllPrimary when the override only intends
-	// to change other fields, we only apply it when true.
-	if override.RequireAllPrimary {
-		existing.RequireAllPrimary = true
+	// Override RequireAllPrimary only if explicitly set in override (not nil)
+	if override.RequireAllPrimary != nil {
+		existing.RequireAllPrimary = override.RequireAllPrimary
 	}
 
 	// Override field rules if provided
