@@ -68,6 +68,8 @@ func (c *Config) GetFinalRules() map[string]*EntityMatchingRule {
 
 	// Step 2: Apply global settings (only when not explicitly set)
 	for _, rule := range result {
+		// MinConfidence == 0 is treated as "use global default".
+		// To accept very low confidence matches, use a small positive value (e.g., 0.1).
 		if rule.MinConfidence == 0 {
 			rule.MinConfidence = MatchConfidence(c.GlobalSettings.DefaultMinConfidence)
 		}
@@ -107,7 +109,8 @@ func (c *Config) ApplyOverrides(_ map[string]*EntityMatchingRule) map[string]*En
 
 // mergeEntityRule merges override settings into an existing entity rule
 func (c *Config) mergeEntityRule(existing *EntityMatchingRule, override *EntityMatchingRule) {
-	// Override top-level settings
+	// Override MinConfidence only if explicitly set (> 0).
+	// MinConfidence == 0 is treated as "not set" / use existing value.
 	if override.MinConfidence > 0 {
 		existing.MinConfidence = override.MinConfidence
 	}
