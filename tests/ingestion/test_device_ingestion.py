@@ -24,7 +24,7 @@ def diode_client(test_config, diode_client_credentials):
 @pytest.mark.integration
 def test_ingest_device_minimal(diode_client):
     """Test ingesting a device with minimal required fields."""
-    device = Site(name="Test4"
+    device = Site(name="Test5"
     )
 
     entities = [Entity(site=device)]

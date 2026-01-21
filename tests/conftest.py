@@ -57,6 +57,56 @@ def test_logger():
     return logging.getLogger("test")
 
 
+@pytest.fixture(scope="session")
+def netbox_credentials():
+    """Provide NetBox web authentication credentials.
+
+    Returns:
+        dict: Contains 'username' and 'password' keys for NetBox login
+
+    Note:
+        Override these values using environment variables:
+        - NETBOX_USERNAME (default: "admin")
+        - NETBOX_PASSWORD (default: "admin")
+    """
+    return {
+        "username": os.getenv("NETBOX_USERNAME", "admin"),
+        "password": os.getenv("NETBOX_PASSWORD", "admin"),
+    }
+
+
+@pytest.fixture(scope="function")
+def netbox_web_client(test_config, netbox_credentials):
+    """Create authenticated NetBox web client for plugin endpoints.
+
+    This fixture creates a client that can interact with NetBox plugin
+    web views (not REST API). It handles Django session authentication
+    and CSRF tokens automatically.
+
+    Returns:
+        NetBoxPluginWebClient: Authenticated client ready to use
+
+    Example:
+        def test_get_settings(netbox_web_client):
+            response = netbox_web_client.get_settings()
+            assert response.status_code == 200
+    """
+    from helpers.api_helper import NetBoxPluginWebClient
+
+    client = NetBoxPluginWebClient(
+        base_url=test_config["netbox_url"],
+        username=netbox_credentials["username"],
+        password=netbox_credentials["password"]
+    )
+
+    # Perform login
+    if not client.login():
+        pytest.fail(f"Failed to login to NetBox at {test_config['netbox_url']}")
+
+    yield client
+    client.close()
+
+
 @pytest.fixture(scope="function", autouse=True)
 def log_test_name(request):
     """Log the name of each test as it runs."""
@@ -102,7 +152,7 @@ def diode_client_credentials(test_config):
     # Get the Diode API base URL (convert gRPC target to HTTP)
     diode_target = test_config["diode_target"]
     # Extract base URL from gRPC target (e.g., grpc://localhost:8080/diode -> http://localhost:8080)
-    base_url = diode_target.replace("grpc://", "http://").rsplit("/", 1)[0]
+    base_url = diode_target.replace("grpc://", "http://")
 
     logger.info("Authenticating with Diode server to create test credentials...")
 
@@ -114,7 +164,7 @@ def diode_client_credentials(test_config):
                 "grant_type": "client_credentials",
                 "client_id": admin_client_id,
                 "client_secret": admin_client_secret,
-                "scope": "diode:read diode:write"
+                "scope": "diode:ingest"
             },
             timeout=10
         )

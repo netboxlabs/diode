@@ -107,3 +107,186 @@ class NetBoxAPIClient:
     def close(self):
         """Close the session."""
         self.session.close()
+
+
+class NetBoxPluginWebClient:
+    """Client for interacting with NetBox plugin web endpoints (not API).
+
+    This client handles Django session authentication and CSRF tokens
+    required for accessing plugin web views.
+    """
+
+    def __init__(
+        self,
+        base_url: str = "http://localhost:8000",
+        username: str = "admin",
+        password: str = "admin"
+    ):
+        """Initialize the NetBox plugin web client.
+
+        Args:
+            base_url: Base URL for NetBox
+            username: Username for authentication
+            password: Password for authentication
+        """
+        self.base_url = base_url.rstrip("/")
+        self.username = username
+        self.password = password
+        self.session = requests.Session()
+        self._authenticated = False
+
+    def _get_csrf_token(self) -> str:
+        """Get CSRF token from login page.
+
+        Returns:
+            CSRF token string
+        """
+        response = self.session.get(f"{self.base_url}/login/")
+        response.raise_for_status()
+
+        # Extract CSRF token from cookies
+        csrf_token = self.session.cookies.get("csrftoken")
+        if not csrf_token:
+            raise ValueError("Could not retrieve CSRF token from login page")
+
+        return csrf_token
+
+    def login(self) -> bool:
+        """Authenticate with NetBox using username and password.
+
+        Returns:
+            True if login successful, False otherwise
+
+        Raises:
+            requests.HTTPError: If login request fails
+        """
+        if self._authenticated:
+            return True
+
+        # Get CSRF token
+        csrf_token = self._get_csrf_token()
+
+        # Perform login
+        login_data = {
+            "username": self.username,
+            "password": self.password,
+            "csrfmiddlewaretoken": csrf_token,
+        }
+
+        response = self.session.post(
+            f"{self.base_url}/login/",
+            data=login_data,
+            headers={"Referer": f"{self.base_url}/login/"},
+            allow_redirects=False
+        )
+
+        # Check if login was successful (redirect on success)
+        if response.status_code in [302, 303]:
+            self._authenticated = True
+            return True
+
+        return False
+
+    def get(self, path: str, **kwargs) -> requests.Response:
+        """Make authenticated GET request to plugin endpoint.
+
+        Args:
+            path: Path to endpoint (e.g., "/plugins/netbox-diode-plugin/settings/")
+            **kwargs: Additional arguments to pass to requests.get()
+
+        Returns:
+            Response object
+
+        Raises:
+            ValueError: If not authenticated
+        """
+        if not self._authenticated:
+            if not self.login():
+                raise ValueError("Failed to authenticate with NetBox")
+
+        url = f"{self.base_url}{path}"
+        return self.session.get(url, **kwargs)
+
+    def post(self, path: str, data: Optional[dict] = None, **kwargs) -> requests.Response:
+        """Make authenticated POST request to plugin endpoint.
+
+        Args:
+            path: Path to endpoint
+            data: POST data
+            **kwargs: Additional arguments to pass to requests.post()
+
+        Returns:
+            Response object
+
+        Raises:
+            ValueError: If not authenticated
+        """
+        if not self._authenticated:
+            if not self.login():
+                raise ValueError("Failed to authenticate with NetBox")
+
+        # Get fresh CSRF token from cookies
+        csrf_token = self.session.cookies.get("csrftoken")
+        if not csrf_token:
+            raise ValueError("No CSRF token available")
+
+        # Prepare data with CSRF token
+        post_data = data.copy() if data else {}
+        post_data["csrfmiddlewaretoken"] = csrf_token
+
+        url = f"{self.base_url}{path}"
+        headers = kwargs.pop("headers", {})
+        headers["Referer"] = url
+
+        return self.session.post(url, data=post_data, headers=headers, **kwargs)
+
+    def get_settings(self) -> requests.Response:
+        """Get Diode plugin settings page.
+
+        Returns:
+            Response object with settings page HTML
+        """
+        return self.get("/plugins/netbox-diode-plugin/settings/")
+
+    def get_credentials_list(self) -> requests.Response:
+        """Get client credentials list page.
+
+        Returns:
+            Response object with credentials list page HTML
+        """
+        return self.get("/plugins/netbox-diode-plugin/credentials/")
+
+    def add_credential(self, client_name: str) -> requests.Response:
+        """Add a new client credential.
+
+        Args:
+            client_name: Name for the new client
+
+        Returns:
+            Response object (should redirect to secret page)
+        """
+        return self.post(
+            "/plugins/netbox-diode-plugin/credentials/add/",
+            data={"client_name": client_name},
+            allow_redirects=False
+        )
+
+    def delete_credential(self, client_credential_id: str, confirm: bool = True) -> requests.Response:
+        """Delete a client credential.
+
+        Args:
+            client_credential_id: ID of the credential to delete
+            confirm: Whether to confirm deletion
+
+        Returns:
+            Response object (should redirect to credentials list)
+        """
+        return self.post(
+            f"/plugins/netbox-diode-plugin/credentials/delete/{client_credential_id}/",
+            data={"confirm": confirm},
+            allow_redirects=False
+        )
+
+    def close(self):
+        """Close the session."""
+        self.session.close()
