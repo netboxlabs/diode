@@ -106,9 +106,9 @@ FROM graph_nodes
 WHERE node_type = $1
   AND (
     -- Support matching by single JSON field (only if json_field is provided)
-    (sqlc.narg('json_field') IS NOT NULL AND data->>sqlc.narg('json_field') = sqlc.narg('field_value'))
+    (sqlc.narg('json_field')::text IS NOT NULL AND data->>sqlc.narg('json_field')::text = sqlc.narg('field_value')::text)
     -- Support matching by nested JSON field (only if nested_field is provided)
-    OR (sqlc.narg('nested_field') IS NOT NULL AND data#>>sqlc.narg('nested_path') = sqlc.narg('nested_value'))
+    OR (sqlc.narg('nested_field')::text IS NOT NULL AND data#>>sqlc.narg('nested_path')::text[] = sqlc.narg('nested_value')::text)
   )
 ORDER BY duplicate_count DESC, updated_at DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
@@ -119,13 +119,13 @@ FROM graph_nodes
 WHERE node_type = $1
   AND (
     -- Primary field match (required)
-    data->>sqlc.arg('primary_field') = sqlc.arg('primary_value')
+    data->>sqlc.arg('primary_field')::text = sqlc.arg('primary_value')::text
     -- Secondary field match (optional)
-    AND (sqlc.narg('secondary_field') IS NULL
-         OR data->>sqlc.narg('secondary_field') = sqlc.narg('secondary_value'))
+    AND (sqlc.narg('secondary_field')::text IS NULL
+         OR data->>sqlc.narg('secondary_field')::text = sqlc.narg('secondary_value')::text)
     -- Tertiary field match (optional)
-    AND (sqlc.narg('tertiary_field') IS NULL
-         OR data->>sqlc.narg('tertiary_field') = sqlc.narg('tertiary_value'))
+    AND (sqlc.narg('tertiary_field')::text IS NULL
+         OR data->>sqlc.narg('tertiary_field')::text = sqlc.narg('tertiary_value')::text)
   )
 ORDER BY duplicate_count DESC, updated_at DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
@@ -137,19 +137,19 @@ FROM graph_nodes
 WHERE node_type = $1
   AND (
     -- Exact match (highest priority)
-    data->>sqlc.arg('field_name') = sqlc.arg('search_value')
+    data->>sqlc.arg('field_name')::text = sqlc.arg('search_value')::text
     -- Prefix match (second priority)
-    OR data->>sqlc.arg('field_name') ILIKE sqlc.arg('search_value') || '%'
+    OR data->>sqlc.arg('field_name')::text ILIKE sqlc.arg('search_value')::text || '%'
     -- Contains match (third priority)
-    OR data->>sqlc.arg('field_name') ILIKE '%' || sqlc.arg('search_value') || '%'
+    OR data->>sqlc.arg('field_name')::text ILIKE '%' || sqlc.arg('search_value')::text || '%'
     -- Suffix match (fourth priority)
-    OR data->>sqlc.arg('field_name') ILIKE '%' || sqlc.arg('search_value')
+    OR data->>sqlc.arg('field_name')::text ILIKE '%' || sqlc.arg('search_value')::text
   )
 ORDER BY
   CASE
-    WHEN data->>sqlc.arg('field_name') = sqlc.arg('search_value') THEN 1
-    WHEN data->>sqlc.arg('field_name') ILIKE sqlc.arg('search_value') || '%' THEN 2
-    WHEN data->>sqlc.arg('field_name') ILIKE '%' || sqlc.arg('search_value') || '%' THEN 3
+    WHEN data->>sqlc.arg('field_name')::text = sqlc.arg('search_value')::text THEN 1
+    WHEN data->>sqlc.arg('field_name')::text ILIKE sqlc.arg('search_value')::text || '%' THEN 2
+    WHEN data->>sqlc.arg('field_name')::text ILIKE '%' || sqlc.arg('search_value')::text || '%' THEN 3
     ELSE 4
   END,
   duplicate_count DESC,
@@ -162,12 +162,12 @@ FROM graph_nodes
 WHERE node_type = $1
   AND (
     -- Support JSONB containment queries
-    (sqlc.narg('contains_filter') IS NULL OR data @> sqlc.narg('contains_filter')::jsonb)
+    (sqlc.narg('contains_filter')::jsonb IS NULL OR data @> sqlc.narg('contains_filter')::jsonb)
     -- Support JSONB path existence
-    AND (sqlc.narg('path_exists') IS NULL OR data ? sqlc.narg('path_exists'))
+    AND (sqlc.narg('path_exists')::text IS NULL OR data ? sqlc.narg('path_exists')::text)
     -- Support regex matching on text fields
-    AND (sqlc.narg('regex_field') IS NULL OR sqlc.narg('regex_pattern') IS NULL
-         OR data->>sqlc.narg('regex_field') ~ sqlc.narg('regex_pattern'))
+    AND (sqlc.narg('regex_field')::text IS NULL OR sqlc.narg('regex_pattern')::text IS NULL
+         OR data->>sqlc.narg('regex_field')::text ~ sqlc.narg('regex_pattern')::text)
   )
 ORDER BY duplicate_count DESC, updated_at DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');

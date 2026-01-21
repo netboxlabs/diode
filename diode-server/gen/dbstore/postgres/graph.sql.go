@@ -73,12 +73,12 @@ FROM graph_nodes
 WHERE node_type = $1
   AND (
     -- Support JSONB containment queries
-    ($2 IS NULL OR data @> $2::jsonb)
+    ($2::jsonb IS NULL OR data @> $2::jsonb)
     -- Support JSONB path existence
-    AND ($3 IS NULL OR data ? $3)
+    AND ($3::text IS NULL OR data ? $3::text)
     -- Support regex matching on text fields
-    AND ($4 IS NULL OR $5 IS NULL
-         OR data->>$4 ~ $5)
+    AND ($4::text IS NULL OR $5::text IS NULL
+         OR data->>$4::text ~ $5::text)
   )
 ORDER BY duplicate_count DESC, updated_at DESC
 LIMIT $7 OFFSET $6
@@ -86,10 +86,10 @@ LIMIT $7 OFFSET $6
 
 type FindNodesByComplexMatchParams struct {
 	NodeType       string      `json:"node_type"`
-	ContainsFilter interface{} `json:"contains_filter"`
-	PathExists     interface{} `json:"path_exists"`
-	RegexField     interface{} `json:"regex_field"`
-	RegexPattern   interface{} `json:"regex_pattern"`
+	ContainsFilter []byte      `json:"contains_filter"`
+	PathExists     pgtype.Text `json:"path_exists"`
+	RegexField     pgtype.Text `json:"regex_field"`
+	RegexPattern   pgtype.Text `json:"regex_pattern"`
 	Offset         int32       `json:"offset"`
 	Limit          int32       `json:"limit"`
 }
@@ -138,9 +138,9 @@ FROM graph_nodes
 WHERE node_type = $1
   AND (
     -- Support matching by single JSON field (only if json_field is provided)
-    ($2 IS NOT NULL AND data->>$2 = $3)
+    ($2::text IS NOT NULL AND data->>$2::text = $3::text)
     -- Support matching by nested JSON field (only if nested_field is provided)
-    OR ($4 IS NOT NULL AND data#>>$5 = $6)
+    OR ($4::text IS NOT NULL AND data#>>$5::text[] = $6::text)
   )
 ORDER BY duplicate_count DESC, updated_at DESC
 LIMIT $8 OFFSET $7
@@ -148,11 +148,11 @@ LIMIT $8 OFFSET $7
 
 type FindNodesByFieldMatchParams struct {
 	NodeType    string      `json:"node_type"`
-	JsonField   interface{} `json:"json_field"`
-	FieldValue  []byte      `json:"field_value"`
-	NestedField interface{} `json:"nested_field"`
-	NestedPath  []byte      `json:"nested_path"`
-	NestedValue []byte      `json:"nested_value"`
+	JsonField   pgtype.Text `json:"json_field"`
+	FieldValue  pgtype.Text `json:"field_value"`
+	NestedField pgtype.Text `json:"nested_field"`
+	NestedPath  []string    `json:"nested_path"`
+	NestedValue pgtype.Text `json:"nested_value"`
 	Offset      int32       `json:"offset"`
 	Limit       int32       `json:"limit"`
 }
@@ -202,19 +202,19 @@ FROM graph_nodes
 WHERE node_type = $1
   AND (
     -- Exact match (highest priority)
-    data->>$2 = $3
+    data->>$2::text = $3::text
     -- Prefix match (second priority)
-    OR data->>$2 ILIKE $3 || '%'
+    OR data->>$2::text ILIKE $3::text || '%'
     -- Contains match (third priority)
-    OR data->>$2 ILIKE '%' || $3 || '%'
+    OR data->>$2::text ILIKE '%' || $3::text || '%'
     -- Suffix match (fourth priority)
-    OR data->>$2 ILIKE '%' || $3
+    OR data->>$2::text ILIKE '%' || $3::text
   )
 ORDER BY
   CASE
-    WHEN data->>$2 = $3 THEN 1
-    WHEN data->>$2 ILIKE $3 || '%' THEN 2
-    WHEN data->>$2 ILIKE '%' || $3 || '%' THEN 3
+    WHEN data->>$2::text = $3::text THEN 1
+    WHEN data->>$2::text ILIKE $3::text || '%' THEN 2
+    WHEN data->>$2::text ILIKE '%' || $3::text || '%' THEN 3
     ELSE 4
   END,
   duplicate_count DESC,
@@ -224,8 +224,8 @@ LIMIT $5 OFFSET $4
 
 type FindNodesByFieldPatternParams struct {
 	NodeType    string `json:"node_type"`
-	FieldName   []byte `json:"field_name"`
-	SearchValue []byte `json:"search_value"`
+	FieldName   string `json:"field_name"`
+	SearchValue string `json:"search_value"`
 	Offset      int32  `json:"offset"`
 	Limit       int32  `json:"limit"`
 }
@@ -272,13 +272,13 @@ FROM graph_nodes
 WHERE node_type = $1
   AND (
     -- Primary field match (required)
-    data->>$2 = $3
+    data->>$2::text = $3::text
     -- Secondary field match (optional)
-    AND ($4 IS NULL
-         OR data->>$4 = $5)
+    AND ($4::text IS NULL
+         OR data->>$4::text = $5::text)
     -- Tertiary field match (optional)
-    AND ($6 IS NULL
-         OR data->>$6 = $7)
+    AND ($6::text IS NULL
+         OR data->>$6::text = $7::text)
   )
 ORDER BY duplicate_count DESC, updated_at DESC
 LIMIT $9 OFFSET $8
@@ -286,12 +286,12 @@ LIMIT $9 OFFSET $8
 
 type FindNodesByMultiFieldMatchParams struct {
 	NodeType       string      `json:"node_type"`
-	PrimaryField   []byte      `json:"primary_field"`
-	PrimaryValue   []byte      `json:"primary_value"`
-	SecondaryField interface{} `json:"secondary_field"`
-	SecondaryValue []byte      `json:"secondary_value"`
-	TertiaryField  interface{} `json:"tertiary_field"`
-	TertiaryValue  []byte      `json:"tertiary_value"`
+	PrimaryField   string      `json:"primary_field"`
+	PrimaryValue   string      `json:"primary_value"`
+	SecondaryField pgtype.Text `json:"secondary_field"`
+	SecondaryValue pgtype.Text `json:"secondary_value"`
+	TertiaryField  pgtype.Text `json:"tertiary_field"`
+	TertiaryValue  pgtype.Text `json:"tertiary_value"`
 	Offset         int32       `json:"offset"`
 	Limit          int32       `json:"limit"`
 }
