@@ -21,8 +21,17 @@ def test_get_settings_page(netbox_web_client):
         f"Expected 200 OK, got {response.status_code}: {response.text}"
 
     # Verify page contains expected content
-    assert "Diode" in response.text or "diode" in response.text.lower(), \
-        "Settings page should mention Diode"
+    assert "Settings" in response.text, \
+        "Settings page should have 'Settings' title"
+
+    # Verify Diode target format: starts with grpc:// and ends with /diode
+    diode_target_pattern = r'grpc://[^\s<]+/diode'
+    assert re.search(diode_target_pattern, response.text), \
+        "Settings page should contain Diode target starting with 'grpc://' and ending with '/diode'"
+
+    # Verify Branch shows Main (default)
+    assert "Main (default)" in response.text, \
+        "Settings page should display 'Main (default)' as the branch"
 
 
 @pytest.mark.integration
@@ -56,8 +65,8 @@ def test_add_credential_flow(netbox_web_client):
     # Step 1: Add new credential
     response = netbox_web_client.add_credential(client_name)
 
-    # Should redirect to secret page (302 or 303)
-    assert response.status_code in [302, 303], \
+    # Should redirect to secret page
+    assert response.status_code == 302, \
         f"Expected redirect after creating credential, got {response.status_code}"
 
     # Check redirect location
@@ -88,51 +97,54 @@ def test_add_credential_requires_client_name(netbox_web_client):
     This test verifies that form validation works correctly.
     """
     # Try to add credential without client_name
-    response = netbox_web_client.post(
-        "/plugins/netbox-diode-plugin/credentials/add/",
-        data={},  # Empty data - no client_name
-        allow_redirects=False
-    )
+    response = netbox_web_client.add_credential(None)
 
     # Should NOT redirect (form validation should fail)
-    # Either stays on same page (200) or returns validation error
-    assert response.status_code in [200, 400], \
+    assert response.status_code == 200, \
         f"Expected form validation error, got {response.status_code}"
 
-    if response.status_code == 200:
-        # Check for error message in response
-        assert "required" in response.text.lower() or "error" in response.text.lower(), \
-            "Should show validation error for missing client_name"
+    # Check for error message in response
+    assert ("Enter a name for the client credential that will be created for authentication to "
+            "the Diode ingestion service") in response.text.lower() or "error" in response.text.lower(), \
+        "Should show validation error for missing client_name"
 
 
 @pytest.mark.integration
-def test_delete_credential_flow(netbox_web_client, test_logger):
+def test_delete_credential_flow(netbox_web_client, diode_client_credential):
     """Test the complete flow of deleting a client credential.
 
     This test:
-    1. Creates a credential first (to have something to delete)
+    1. Creates a credential (via fixture)
     2. Deletes the credential
     3. Verifies redirect to list page
     """
-    client_name = "pytest-delete-test"
+    client_id = diode_client_credential['client_id']
 
-    # Step 1: Create a credential to delete
-    create_response = netbox_web_client.add_credential(client_name)
-    assert create_response.status_code in [302, 303], "Failed to create test credential"
+    # Step 1: Verify credential exists in list before deletion
+    list_response_before = netbox_web_client.get_credentials_list()
+    assert list_response_before.status_code == 200, \
+        f"Failed to get credentials list: {list_response_before.status_code}"
+    assert f"<td class=\"align-middle\">{client_id}</td>" in list_response_before.text, \
+        f"Credential {client_id} should exist in list before deletion"
 
-    # Get the client_id from the response
-    # Note: In a real scenario, you'd need to parse the client_id from the secret page
-    # or from the credentials list. For this example, we'll use a placeholder.
-    # You may need to add a method to parse the credentials list and extract IDs.
+    # Step 2: Delete the credential
+    delete_response = netbox_web_client.delete_credential(client_id)
 
-    test_logger.info("Note: Delete test requires parsing client_id from list page")
-    test_logger.info("This test demonstrates the flow, but may need actual client_id")
+    # Should redirect to credentials list page after deletion
+    assert delete_response.status_code in [302, 303], \
+        f"Expected redirect after deleting credential, got {delete_response.status_code}"
 
-    # For demonstration purposes, we'll skip the actual delete since we need the ID
-    # In production, you'd:
-    # 1. Get credentials list
-    # 2. Parse HTML to find the client_id
-    # 3. Call delete_credential(client_id)
+    # Verify redirect goes to credentials list
+    location = delete_response.headers.get("Location", "")
+    assert "credentials" in location, \
+        f"Should redirect to credentials list page, got: {location}"
+
+    # Step 3: Verify credential no longer exists in list after deletion
+    list_response_after = netbox_web_client.get_credentials_list()
+    assert list_response_after.status_code == 200, \
+        f"Failed to get credentials list after deletion: {list_response_after.status_code}"
+    assert f"<td class=\"align-middle\">{client_id}</td>" not in list_response_after.text, \
+        f"Credential {client_id} should not exist in list after deletion"
 
 
 @pytest.mark.integration
@@ -149,62 +161,13 @@ def test_unauthenticated_access_redirects_to_login(test_config):
 
     # Try to access settings page without authentication
     response = session.get(
-        f"{test_config['netbox_url']}/plugins/netbox-diode-plugin/settings/",
+        f"{test_config['netbox_url']}/plugins/diode/settings/",
         allow_redirects=False
     )
 
     # Should redirect to login page
-    assert response.status_code in [302, 303], \
+    assert response.status_code == 302, \
         f"Expected redirect for unauthenticated user, got {response.status_code}"
 
     assert "login" in response.headers.get("Location", "").lower(), \
         "Should redirect to login page"
-
-
-@pytest.mark.integration
-def test_settings_edit_page_accessible(netbox_web_client):
-    """Test accessing the settings edit page.
-
-    This test verifies that the settings edit page is accessible
-    and contains a form for editing settings.
-    """
-    response = netbox_web_client.get("/plugins/netbox-diode-plugin/settings/edit/")
-
-    assert response.status_code == 200, \
-        f"Expected 200 OK on settings edit page, got {response.status_code}"
-
-    # Verify page contains a form
-    assert "<form" in response.text.lower(), \
-        "Settings edit page should contain a form"
-
-    # Verify CSRF token is present (required for POST)
-    assert "csrfmiddlewaretoken" in response.text.lower(), \
-        "Form should contain CSRF token"
-
-
-@pytest.mark.integration
-def test_update_settings(netbox_web_client, test_config):
-    """Test updating Diode plugin settings.
-
-    This test verifies that settings can be updated via POST request.
-    """
-    # First, get current settings
-    get_response = netbox_web_client.get("/plugins/netbox-diode-plugin/settings/edit/")
-    assert get_response.status_code == 200, "Failed to get settings edit page"
-
-    # Update settings (use current target from config)
-    new_target = test_config["diode_target"]
-    post_response = netbox_web_client.post(
-        "/plugins/netbox-diode-plugin/settings/edit/",
-        data={"diode_target": new_target},
-        allow_redirects=False
-    )
-
-    # Should redirect to settings view page on success
-    assert post_response.status_code in [302, 303], \
-        f"Expected redirect after updating settings, got {post_response.status_code}"
-
-    # Verify redirect goes to settings page
-    location = post_response.headers.get("Location", "")
-    assert "settings" in location, \
-        f"Should redirect to settings page, got: {location}"

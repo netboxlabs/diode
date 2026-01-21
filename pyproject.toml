@@ -15,15 +15,13 @@ dependencies = []
 
 [project.optional-dependencies]
 dev = ["mkdocs", "mkdocs-material"]
-test = ["pytest", "pytest-cov", "coverage"]
+test = ["pytest"]
 
 [project.urls]
 "Homepage" = "https://netboxlabs.com/"
 "Repository" = "https://github.com/netboxlabs/diode"
 "Issues" = "https://github.com/netboxlabs/diode/issues"
 "Documentation" = "https://github.com/netboxlabs/diode/docs"
-
-[project.scripts]
 
 [tool.setuptools]
 packages = []
@@ -35,9 +33,6 @@ build-backend = "setuptools.build_meta"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-python_files = ["test_*.py"]
-python_classes = ["Test*"]
-python_functions = ["test_*"]
 addopts = [
     "-v",
     "--strict-markers",
@@ -48,24 +43,4 @@ markers = [
     "integration: Integration tests (require external services)",
     "e2e: End-to-end tests",
     "slow: Slow running tests",
-]
-
-[tool.coverage.run]
-source = ["diode-server"]
-omit = [
-    "*/tests/*",
-    "*/test_*.py",
-    "*/__pycache__/*",
-    "*/venv/*",
-    "*/.venv/*",
-]
-
-[tool.coverage.report]
-exclude_lines = [
-    "pragma: no cover",
-    "def __repr__",
-    "raise AssertionError",
-    "raise NotImplementedError",
-    "if __name__ == .__main__.:",
-    "if TYPE_CHECKING:",
 ] 

@@ -5,9 +5,9 @@ This module provides shared fixtures and configuration for pytest-based tests.
 import sys
 import logging
 import os
+import uuid
 from pathlib import Path
 import pytest
-import requests
 
 # Add project root and tests directory to Python path
 project_root = Path(__file__).resolve().parent.parent
@@ -116,96 +116,118 @@ def log_test_name(request):
     logger.info(f"Completed test: {test_name}")
 
 
-@pytest.fixture(scope="session")
-def diode_client_credentials(test_config):
-    """Create Diode client credentials dynamically via Diode API.
+@pytest.fixture(scope="function")
+def diode_client_credential(netbox_web_client):
+    """Create a test client credential and return its details.
 
-    This is a session-scoped fixture that creates client credentials once
-    for all tests in the session. Credentials are created by authenticating
-    with admin credentials and calling the Diode API.
-
-    Required environment variables:
-        - DIODE_ADMIN_CLIENT_ID: Admin client ID with permission to create clients
-        - DIODE_ADMIN_CLIENT_SECRET: Admin client secret
-
-    The fixture will skip all tests if admin credentials are not configured.
+    This fixture creates a new client credential via the NetBox web interface,
+    follows the redirect to the secret page, and extracts the client_id and
+    client_secret from the response.
 
     Returns:
-        dict: Contains 'client_id' and 'client_secret' keys
+        dict: Contains 'client_id', 'client_secret', and 'client_name' keys
 
-    Raises:
-        pytest.skip: If admin credentials are not configured
-        pytest.fail: If credential creation fails
+    Example:
+        def test_something(diode_client_credential):
+            client_id = diode_client_credential['client_id']
+            client_secret = diode_client_credential['client_secret']
     """
-    # Get admin credentials for creating new clients
-    admin_client_id = os.getenv("DIODE_ADMIN_CLIENT_ID")
-    admin_client_secret = os.getenv("DIODE_ADMIN_CLIENT_SECRET")
+    import re
 
-    if not admin_client_id or not admin_client_secret:
-        pytest.fail(
-            "Diode admin credentials not configured. "
-            "Please set DIODE_ADMIN_CLIENT_ID and DIODE_ADMIN_CLIENT_SECRET "
-            "environment variables to run integration tests. "
-            "See tests/.env.example for configuration details."
-        )
+    client_name = f"pytest-test-{uuid.uuid4()}"
 
-    # Get the Diode API base URL (convert gRPC target to HTTP)
-    diode_target = test_config["diode_target"]
-    # Extract base URL from gRPC target (e.g., grpc://localhost:8080/diode -> http://localhost:8080)
-    base_url = diode_target.replace("grpc://", "http://")
+    # Create credential
+    response = netbox_web_client.add_credential(client_name)
 
-    logger.info("Authenticating with Diode server to create test credentials...")
+    assert response.status_code == 302, pytest.fail(f"Failed to create test credential: {response.status_code}")
 
-    # Authenticate to get a token
-    try:
-        auth_response = requests.post(
-            f"{base_url}/auth/token",
-            data={
-                "grant_type": "client_credentials",
-                "client_id": admin_client_id,
-                "client_secret": admin_client_secret,
-                "scope": "diode:ingest"
-            },
-            timeout=10
-        )
-    except requests.RequestException as e:
-        pytest.fail(f"Failed to connect to Diode server at {base_url}: {e}")
+    # Follow redirect to secret page
+    secret_url = response.headers["Location"]
+    secret_response = netbox_web_client.session.get(
+        f"{netbox_web_client.base_url.rstrip('netbox/')}{secret_url}"
+    )
 
-    if auth_response.status_code != 200:
-        pytest.fail(
-            f"Failed to authenticate with Diode server: {auth_response.status_code} - {auth_response.text}"
-        )
+    assert secret_response.status_code == 200, pytest.fail(f"Failed to get secret page: {secret_response.status_code}")
 
-    token = auth_response.json()["access_token"]
-    logger.info("Successfully authenticated with Diode server")
+    # Extract client_id and client_secret from HTML input fields
+    # Find the input tag with data-clipboard="client-id" or "client-secret"
+    client_id_input = re.search(r'<input[^>]*data-clipboard=["\']client-id["\'][^>]*>', secret_response.text)
+    client_secret_input = re.search(r'<input[^>]*data-clipboard=["\']client-secret["\'][^>]*>', secret_response.text)
 
-    # Create new client credentials
-    try:
-        create_response = requests.post(
-            f"{base_url}/clients",
-            headers={
-                "Authorization": f"Bearer {token}",
-                "Content-Type": "application/json"
-            },
-            json={
-                "client_name": f"pytest-session-{os.getpid()}",
-                "scope": "diode:ingest"
-            },
-            timeout=10
-        )
-    except requests.RequestException as e:
-        pytest.fail(f"Failed to create client credentials: {e}")
+    if not client_id_input or not client_secret_input:
+        pytest.fail("Failed to find client_id or client_secret input fields in secret page")
 
-    if create_response.status_code != 201:
-        pytest.fail(
-            f"Failed to create client credentials: {create_response.status_code} - {create_response.text}"
-        )
+    # Extract value attribute from the input tags
+    client_id_match = re.search(r'value=["\']([^"\']+)["\']', client_id_input.group(0))
+    client_secret_match = re.search(r'value=["\']([^"\']+)["\']', client_secret_input.group(0))
 
-    credentials = create_response.json()
-    logger.info(f"Created test credentials: {credentials['client_id']}")
+    if not client_id_match or not client_secret_match:
+        pytest.fail("Failed to extract value from client_id or client_secret input fields")
 
-    yield credentials
+    credential = {
+        "client_name": client_name,
+        "client_id": client_id_match.group(1),
+        "client_secret": client_secret_match.group(1),
+    }
 
-    # TODO: Optional cleanup - delete the created credentials after all tests
-    # This would require implementing a delete endpoint call
-    logger.info(f"Test session complete. Credentials {credentials['client_id']} may need manual cleanup.")
+    logger.info(f"Created test credential: {credential['client_id']}")
+
+    yield credential
+
+    # Cleanup happens automatically when fixture scope ends
+
+
+@pytest.fixture(scope="function")
+def diode_client(test_config, diode_client_credential):
+    """Create a Diode API client with dynamically created credentials.
+
+    This fixture uses the diode_client_credential fixture
+    from conftest.py to obtain valid client credentials.
+
+    Returns:
+        DiodeAPIClient: Configured Diode API client ready to use
+
+    Example:
+        def test_ingest(diode_client):
+            response = diode_client.ingest_entities(entities)
+            assert not response.errors
+    """
+    from helpers.api_helper import DiodeAPIClient
+
+    client = DiodeAPIClient(
+        target=test_config["diode_target"],
+        name="diode-test-client",
+        client_id=diode_client_credential["client_id"],
+        client_secret=diode_client_credential["client_secret"]
+    )
+    yield client
+    client.close()
+
+
+@pytest.fixture(scope="function")
+def netbox_api_client(netbox_web_client):
+    """Create a NetBox API client using web client's authenticated session.
+
+    This fixture reuses the authenticated session from netbox_web_client,
+    avoiding the need for a separate API token.
+
+    Returns:
+        NetBoxAPIClient: Configured NetBox API client ready to use
+
+    Example:
+        def test_get_sites(netbox_api_client):
+            response = netbox_api_client.get_sites()
+            assert response.status_code == 200
+    """
+    from helpers.api_helper import NetBoxAPIClient
+
+    # Create client and replace its session with the authenticated web client session
+    client = NetBoxAPIClient(
+        base_url=netbox_web_client.base_url,
+        token=None
+    )
+    # Use the web client's authenticated session instead of creating a new one
+    client.session = netbox_web_client.session
+
+    yield client
+    # Don't close the session since it belongs to netbox_web_client

@@ -104,6 +104,33 @@ class NetBoxAPIClient:
         params = {"name": device_name}
         return self.session.get(url, params=params)
 
+    def get_sites(self, name: Optional[str] = None) -> requests.Response:
+        """Get sites from NetBox.
+
+        Args:
+            name: Optional site name to filter by
+
+        Returns:
+            Response object containing site data
+        """
+        url = f"{self.base_url}/api/dcim/sites/"
+        params = {"name": name} if name else {}
+        return self.session.get(url, params=params)
+
+    def apply_deviation(self, deviation_id: str, branch: str = "main") -> requests.Response:
+        """Apply a deviation to a branch.
+
+        Args:
+            deviation_id: ID of the deviation to apply
+            branch: Target branch name (default: "main")
+
+        Returns:
+            Response object
+        """
+        url = f"{self.base_url}/api/plugins/assurance/deviations/{deviation_id}/apply/"
+        data = {"branch": branch}
+        return self.session.post(url, json=data)
+
     def close(self):
         """Close the session."""
         self.session.close()
