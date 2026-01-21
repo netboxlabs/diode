@@ -137,10 +137,10 @@ SELECT id, external_id, node_type, data, duplicate_count, matching_schema_versio
 FROM graph_nodes
 WHERE node_type = $1
   AND (
-    -- Support matching by single JSON field
-    ($2 IS NULL OR data->>$2 = $3)
-    -- Support matching by nested JSON field
-    OR ($4 IS NULL OR data#>>$5 = $6)
+    -- Support matching by single JSON field (only if json_field is provided)
+    ($2 IS NOT NULL AND data->>$2 = $3)
+    -- Support matching by nested JSON field (only if nested_field is provided)
+    OR ($4 IS NOT NULL AND data#>>$5 = $6)
   )
 ORDER BY duplicate_count DESC, updated_at DESC
 LIMIT $8 OFFSET $7

@@ -105,10 +105,10 @@ SELECT id, external_id, node_type, data, duplicate_count, matching_schema_versio
 FROM graph_nodes
 WHERE node_type = $1
   AND (
-    -- Support matching by single JSON field
-    (sqlc.narg('json_field') IS NULL OR data->>sqlc.narg('json_field') = sqlc.narg('field_value'))
-    -- Support matching by nested JSON field
-    OR (sqlc.narg('nested_field') IS NULL OR data#>>sqlc.narg('nested_path') = sqlc.narg('nested_value'))
+    -- Support matching by single JSON field (only if json_field is provided)
+    (sqlc.narg('json_field') IS NOT NULL AND data->>sqlc.narg('json_field') = sqlc.narg('field_value'))
+    -- Support matching by nested JSON field (only if nested_field is provided)
+    OR (sqlc.narg('nested_field') IS NOT NULL AND data#>>sqlc.narg('nested_path') = sqlc.narg('nested_value'))
   )
 ORDER BY duplicate_count DESC, updated_at DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
