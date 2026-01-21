@@ -15,7 +15,7 @@ dependencies = []
 
 [project.optional-dependencies]
 dev = ["mkdocs", "mkdocs-material"]
-test = ["pytest"]
+test = ["pytest", "pytest-cov", "coverage"]
 
 [project.urls]
 "Homepage" = "https://netboxlabs.com/"
@@ -23,24 +23,12 @@ test = ["pytest"]
 "Issues" = "https://github.com/netboxlabs/diode/issues"
 "Documentation" = "https://github.com/netboxlabs/diode/docs"
 
+[project.scripts]
+
 [tool.setuptools]
 packages = []
 license-files = ["LICENSE.md"]
 
 [build-system]
 requires = ["setuptools>=43.0.0", "wheel"]
-build-backend = "setuptools.build_meta"
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-addopts = [
-    "-v",
-    "--strict-markers",
-    "--tb=short",
-]
-markers = [
-    "unit: Unit tests (no external dependencies)",
-    "integration: Integration tests (require external services)",
-    "e2e: End-to-end tests",
-    "slow: Slow running tests",
-] 
+build-backend = "setuptools.build_meta" 
