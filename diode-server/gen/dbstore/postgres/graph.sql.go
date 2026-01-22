@@ -139,18 +139,17 @@ WHERE node_type = $1
   AND (
     -- Support matching by single JSON field (only if json_field is provided)
     ($2::text IS NOT NULL AND data->>$2::text = $3::text)
-    -- Support matching by nested JSON field (only if nested_field is provided)
-    OR ($4::text IS NOT NULL AND data#>>$5::text[] = $6::text)
+    -- Support matching by nested JSON path (only if nested_path is provided)
+    OR ($4::text[] IS NOT NULL AND data#>>$4::text[] = $5::text)
   )
 ORDER BY duplicate_count DESC, updated_at DESC
-LIMIT $8 OFFSET $7
+LIMIT $7 OFFSET $6
 `
 
 type FindNodesByFieldMatchParams struct {
 	NodeType    string      `json:"node_type"`
 	JsonField   pgtype.Text `json:"json_field"`
 	FieldValue  pgtype.Text `json:"field_value"`
-	NestedField pgtype.Text `json:"nested_field"`
 	NestedPath  []string    `json:"nested_path"`
 	NestedValue pgtype.Text `json:"nested_value"`
 	Offset      int32       `json:"offset"`
@@ -163,7 +162,6 @@ func (q *Queries) FindNodesByFieldMatch(ctx context.Context, arg FindNodesByFiel
 		arg.NodeType,
 		arg.JsonField,
 		arg.FieldValue,
-		arg.NestedField,
 		arg.NestedPath,
 		arg.NestedValue,
 		arg.Offset,

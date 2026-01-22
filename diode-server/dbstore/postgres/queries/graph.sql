@@ -107,8 +107,8 @@ WHERE node_type = $1
   AND (
     -- Support matching by single JSON field (only if json_field is provided)
     (sqlc.narg('json_field')::text IS NOT NULL AND data->>sqlc.narg('json_field')::text = sqlc.narg('field_value')::text)
-    -- Support matching by nested JSON field (only if nested_field is provided)
-    OR (sqlc.narg('nested_field')::text IS NOT NULL AND data#>>sqlc.narg('nested_path')::text[] = sqlc.narg('nested_value')::text)
+    -- Support matching by nested JSON path (only if nested_path is provided)
+    OR (sqlc.narg('nested_path')::text[] IS NOT NULL AND data#>>sqlc.narg('nested_path')::text[] = sqlc.narg('nested_value')::text)
   )
 ORDER BY duplicate_count DESC, updated_at DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
