@@ -138,6 +138,10 @@ gen-mocks:
 gen-dbstore:
 	sqlc generate
 
+.PHONY: gen-entity-mappings
+gen-entity-mappings:
+	go run ./cmd/protograph -proto=../diode-proto/diode/v1/ingester.proto -output=gen/protograph/entity_mappings.go -package=protograph
+
 .PHONY: create-migration
 # Call using `make create-migration name=you_migration_name`
 create-migration:
