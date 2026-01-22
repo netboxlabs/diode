@@ -134,30 +134,15 @@ WHERE node_type = $1
 ORDER BY duplicate_count DESC, updated_at DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
--- name: FindNodesByFieldPattern :many
--- Database-agnostic fuzzy matching using LIKE patterns and JSONB operations
+-- name: FindNodesByExactFieldMatch :many
+-- Uses GIN index (idx_graph_nodes_data_gin) for fast exact field matching.
+-- Callers pass match_filter as JSONB, e.g., '{"name": "exact_value"}' or '{"name": "x", "serial": "y"}'.
+-- Fuzzy/pattern matching should be done in the application layer (matching package).
 SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at
 FROM graph_nodes
 WHERE node_type = $1
-  AND (
-    -- Exact match (highest priority)
-    data->>sqlc.arg('field_name')::text = sqlc.arg('search_value')::text
-    -- Prefix match (second priority)
-    OR data->>sqlc.arg('field_name')::text ILIKE sqlc.arg('search_value')::text || '%'
-    -- Contains match (third priority)
-    OR data->>sqlc.arg('field_name')::text ILIKE '%' || sqlc.arg('search_value')::text || '%'
-    -- Suffix match (fourth priority)
-    OR data->>sqlc.arg('field_name')::text ILIKE '%' || sqlc.arg('search_value')::text
-  )
-ORDER BY
-  CASE
-    WHEN data->>sqlc.arg('field_name')::text = sqlc.arg('search_value')::text THEN 1
-    WHEN data->>sqlc.arg('field_name')::text ILIKE sqlc.arg('search_value')::text || '%' THEN 2
-    WHEN data->>sqlc.arg('field_name')::text ILIKE '%' || sqlc.arg('search_value')::text || '%' THEN 3
-    ELSE 4
-  END,
-  duplicate_count DESC,
-  updated_at DESC
+  AND data @> sqlc.arg('match_filter')::jsonb
+ORDER BY duplicate_count DESC, updated_at DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: FindNodesByComplexMatch :many

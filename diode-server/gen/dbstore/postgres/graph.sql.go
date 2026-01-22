@@ -133,6 +133,59 @@ func (q *Queries) FindNodesByComplexMatch(ctx context.Context, arg FindNodesByCo
 	return items, nil
 }
 
+const findNodesByExactFieldMatch = `-- name: FindNodesByExactFieldMatch :many
+SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at
+FROM graph_nodes
+WHERE node_type = $1
+  AND data @> $2::jsonb
+ORDER BY duplicate_count DESC, updated_at DESC
+LIMIT $4 OFFSET $3
+`
+
+type FindNodesByExactFieldMatchParams struct {
+	NodeType    string `json:"node_type"`
+	MatchFilter []byte `json:"match_filter"`
+	Offset      int32  `json:"offset"`
+	Limit       int32  `json:"limit"`
+}
+
+// Uses GIN index (idx_graph_nodes_data_gin) for fast exact field matching.
+// Callers pass match_filter as JSONB, e.g., '{"name": "exact_value"}' or '{"name": "x", "serial": "y"}'.
+// Fuzzy/pattern matching should be done in the application layer (matching package).
+func (q *Queries) FindNodesByExactFieldMatch(ctx context.Context, arg FindNodesByExactFieldMatchParams) ([]GraphNode, error) {
+	rows, err := q.db.Query(ctx, findNodesByExactFieldMatch,
+		arg.NodeType,
+		arg.MatchFilter,
+		arg.Offset,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GraphNode
+	for rows.Next() {
+		var i GraphNode
+		if err := rows.Scan(
+			&i.ID,
+			&i.ExternalID,
+			&i.NodeType,
+			&i.Data,
+			&i.DuplicateCount,
+			&i.MatchingSchemaVersion,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const findNodesByFieldMatch = `-- name: FindNodesByFieldMatch :many
 
 SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at
@@ -166,76 +219,6 @@ func (q *Queries) FindNodesByFieldMatch(ctx context.Context, arg FindNodesByFiel
 		arg.FieldValue,
 		arg.NestedPath,
 		arg.NestedValue,
-		arg.Offset,
-		arg.Limit,
-	)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []GraphNode
-	for rows.Next() {
-		var i GraphNode
-		if err := rows.Scan(
-			&i.ID,
-			&i.ExternalID,
-			&i.NodeType,
-			&i.Data,
-			&i.DuplicateCount,
-			&i.MatchingSchemaVersion,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const findNodesByFieldPattern = `-- name: FindNodesByFieldPattern :many
-SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at
-FROM graph_nodes
-WHERE node_type = $1
-  AND (
-    -- Exact match (highest priority)
-    data->>$2::text = $3::text
-    -- Prefix match (second priority)
-    OR data->>$2::text ILIKE $3::text || '%'
-    -- Contains match (third priority)
-    OR data->>$2::text ILIKE '%' || $3::text || '%'
-    -- Suffix match (fourth priority)
-    OR data->>$2::text ILIKE '%' || $3::text
-  )
-ORDER BY
-  CASE
-    WHEN data->>$2::text = $3::text THEN 1
-    WHEN data->>$2::text ILIKE $3::text || '%' THEN 2
-    WHEN data->>$2::text ILIKE '%' || $3::text || '%' THEN 3
-    ELSE 4
-  END,
-  duplicate_count DESC,
-  updated_at DESC
-LIMIT $5 OFFSET $4
-`
-
-type FindNodesByFieldPatternParams struct {
-	NodeType    string `json:"node_type"`
-	FieldName   string `json:"field_name"`
-	SearchValue string `json:"search_value"`
-	Offset      int32  `json:"offset"`
-	Limit       int32  `json:"limit"`
-}
-
-// Database-agnostic fuzzy matching using LIKE patterns and JSONB operations
-func (q *Queries) FindNodesByFieldPattern(ctx context.Context, arg FindNodesByFieldPatternParams) ([]GraphNode, error) {
-	rows, err := q.db.Query(ctx, findNodesByFieldPattern,
-		arg.NodeType,
-		arg.FieldName,
-		arg.SearchValue,
 		arg.Offset,
 		arg.Limit,
 	)
