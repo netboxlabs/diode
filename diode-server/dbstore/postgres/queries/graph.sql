@@ -66,8 +66,10 @@ ORDER BY duplicate_count DESC, updated_at DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: SearchGraphNodes :many
--- Note: search_term is required and must be non-empty to prevent full table scans
--- Use GetGraphNodesByType for listing nodes without a search filter
+-- search_term is REQUIRED (non-null, non-empty string) to prevent full table scans.
+-- Empty string returns no results. Use GetGraphNodesByType for listing without filter.
+-- node_type is optional - pass NULL to search across all types.
+-- Note: Very long search_term values may cause slow scans on large datasets.
 SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at
 FROM graph_nodes
 WHERE (node_type = sqlc.narg('node_type')::text OR sqlc.narg('node_type')::text IS NULL)
@@ -177,10 +179,14 @@ LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 -- Snapshot management queries
 
 -- name: InsertSnapshot :one
--- Atomically inserts a snapshot with the next sequence number to prevent race conditions
+-- Atomically inserts a snapshot with next sequence number using advisory lock to prevent races.
+-- pg_advisory_xact_lock serializes concurrent inserts for the same node_id within the transaction.
+WITH lock AS (
+    SELECT pg_advisory_xact_lock($1)
+)
 INSERT INTO graph_node_snapshots (node_id, snapshot_data, sequence_number)
 SELECT $1, $2, COALESCE(MAX(sequence_number), 0) + 1
-FROM graph_node_snapshots
+FROM graph_node_snapshots, lock
 WHERE node_id = $1
 RETURNING id, node_id, snapshot_data, sequence_number, created_at;
 

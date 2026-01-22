@@ -719,9 +719,12 @@ func (q *Queries) GetSnapshotsByNode(ctx context.Context, arg GetSnapshotsByNode
 
 const insertSnapshot = `-- name: InsertSnapshot :one
 
+WITH lock AS (
+    SELECT pg_advisory_xact_lock($1)
+)
 INSERT INTO graph_node_snapshots (node_id, snapshot_data, sequence_number)
 SELECT $1, $2, COALESCE(MAX(sequence_number), 0) + 1
-FROM graph_node_snapshots
+FROM graph_node_snapshots, lock
 WHERE node_id = $1
 RETURNING id, node_id, snapshot_data, sequence_number, created_at
 `
@@ -732,7 +735,8 @@ type InsertSnapshotParams struct {
 }
 
 // Snapshot management queries
-// Atomically inserts a snapshot with the next sequence number to prevent race conditions
+// Atomically inserts a snapshot with next sequence number using advisory lock to prevent races.
+// pg_advisory_xact_lock serializes concurrent inserts for the same node_id within the transaction.
 func (q *Queries) InsertSnapshot(ctx context.Context, arg InsertSnapshotParams) (GraphNodeSnapshot, error) {
 	row := q.db.QueryRow(ctx, insertSnapshot, arg.NodeID, arg.SnapshotData)
 	var i GraphNodeSnapshot
@@ -766,8 +770,10 @@ type SearchGraphNodesParams struct {
 	Limit      int32       `json:"limit"`
 }
 
-// Note: search_term is required and must be non-empty to prevent full table scans
-// Use GetGraphNodesByType for listing nodes without a search filter
+// search_term is REQUIRED (non-null, non-empty string) to prevent full table scans.
+// Empty string returns no results. Use GetGraphNodesByType for listing without filter.
+// node_type is optional - pass NULL to search across all types.
+// Note: Very long search_term values may cause slow scans on large datasets.
 func (q *Queries) SearchGraphNodes(ctx context.Context, arg SearchGraphNodesParams) ([]GraphNode, error) {
 	rows, err := q.db.Query(ctx, searchGraphNodes,
 		arg.NodeType,
