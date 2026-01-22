@@ -8,8 +8,8 @@ CREATE TABLE IF NOT EXISTS graph_nodes (
     data JSONB NOT NULL,
     duplicate_count INTEGER DEFAULT 1 NOT NULL,
     matching_schema_version INTEGER DEFAULT 1 NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
 
     CONSTRAINT unique_entity UNIQUE (node_type, external_id)
 );
@@ -19,8 +19,8 @@ CREATE TABLE IF NOT EXISTS graph_node_snapshots (
     id BIGSERIAL PRIMARY KEY,
     node_id BIGINT NOT NULL REFERENCES graph_nodes(id) ON DELETE CASCADE,
     snapshot_data JSONB NOT NULL,
-    sequence_number INTEGER NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    sequence_number INTEGER NOT NULL CHECK (sequence_number > 0),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
 
     CONSTRAINT unique_node_sequence UNIQUE (node_id, sequence_number)
 );
@@ -33,10 +33,10 @@ CREATE TABLE IF NOT EXISTS graph_edges (
     edge_type TEXT NOT NULL,
     edge_subtype TEXT,
     properties JSONB DEFAULT '{}',
-    confidence_score REAL DEFAULT 1.0 NOT NULL,
+    confidence_score REAL DEFAULT 1.0 NOT NULL CHECK (confidence_score >= 0.0 AND confidence_score <= 1.0),
     match_reason TEXT,
     matching_fields JSONB DEFAULT '[]',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
 
     CONSTRAINT unique_edge UNIQUE (source_node_id, target_node_id, edge_type)
 );
