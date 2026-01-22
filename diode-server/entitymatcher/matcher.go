@@ -704,9 +704,7 @@ func (m *Matcher) scoreFieldRules(entityData, candidateData map[string]interface
 // compareFieldValues compares two field values based on the match rule
 func (m *Matcher) compareFieldValues(entityValue, candidateValue interface{}, rule matching.FieldMatchRule) (bool, matching.MatchConfidence) {
 	if entityValue == nil || candidateValue == nil {
-		if rule.MatchType == matching.MatchExists {
-			return (entityValue != nil) == (candidateValue != nil), rule.Confidence
-		}
+		// MatchExists requires both values to be present; if either is nil, no match
 		return false, matching.ConfidenceNone
 	}
 
