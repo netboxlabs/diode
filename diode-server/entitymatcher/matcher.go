@@ -12,6 +12,7 @@ import (
 	"sync"
 
 	"github.com/jackc/pgx/v5/pgtype"
+
 	"github.com/netboxlabs/diode/diode-server/gen/dbstore/postgres"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/gen/protograph"
