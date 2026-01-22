@@ -66,13 +66,15 @@ ORDER BY duplicate_count DESC, updated_at DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: SearchGraphNodes :many
+-- Note: search_term is required and must be non-empty to prevent full table scans
+-- Use GetGraphNodesByType for listing nodes without a search filter
 SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at
 FROM graph_nodes
-WHERE (node_type = sqlc.narg('node_type') OR sqlc.narg('node_type') IS NULL)
+WHERE (node_type = sqlc.narg('node_type')::text OR sqlc.narg('node_type')::text IS NULL)
+  AND LENGTH(sqlc.arg('search_term')::text) > 0
   AND (
-    external_id ILIKE '%' || sqlc.narg('search_term') || '%'
-    OR data::text ILIKE '%' || sqlc.narg('search_term') || '%'
-    OR sqlc.narg('search_term') IS NULL
+    external_id ILIKE '%' || sqlc.arg('search_term')::text || '%'
+    OR data::text ILIKE '%' || sqlc.arg('search_term')::text || '%'
   )
 ORDER BY duplicate_count DESC, updated_at DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
@@ -175,8 +177,11 @@ LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 -- Snapshot management queries
 
 -- name: InsertSnapshot :one
+-- Atomically inserts a snapshot with the next sequence number to prevent race conditions
 INSERT INTO graph_node_snapshots (node_id, snapshot_data, sequence_number)
-VALUES ($1, $2, $3)
+SELECT $1, $2, COALESCE(MAX(sequence_number), 0) + 1
+FROM graph_node_snapshots
+WHERE node_id = $1
 RETURNING id, node_id, snapshot_data, sequence_number, created_at;
 
 -- name: GetLatestSnapshot :one
@@ -193,12 +198,9 @@ WHERE node_id = $1
 ORDER BY sequence_number DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
--- name: GetNextSequenceNumber :one
-SELECT COALESCE(MAX(sequence_number), 0) + 1 as next_sequence
-FROM graph_node_snapshots
-WHERE node_id = $1;
-
 -- name: CleanupOldSnapshots :exec
+-- Deletes old snapshots keeping only the most recent $2 snapshots for a node.
+-- WARNING: If $2 is 0, all snapshots for the node will be deleted.
 DELETE FROM graph_node_snapshots outer_snap
 WHERE outer_snap.node_id = $1
   AND outer_snap.id NOT IN (

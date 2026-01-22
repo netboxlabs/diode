@@ -28,6 +28,8 @@ type CleanupOldSnapshotsParams struct {
 	Limit  int32 `json:"limit"`
 }
 
+// Deletes old snapshots keeping only the most recent $2 snapshots for a node.
+// WARNING: If $2 is 0, all snapshots for the node will be deleted.
 func (q *Queries) CleanupOldSnapshots(ctx context.Context, arg CleanupOldSnapshotsParams) error {
 	_, err := q.db.Exec(ctx, cleanupOldSnapshots, arg.NodeID, arg.Limit)
 	return err
@@ -575,19 +577,6 @@ func (q *Queries) GetLatestSnapshot(ctx context.Context, nodeID int64) (GraphNod
 	return i, err
 }
 
-const getNextSequenceNumber = `-- name: GetNextSequenceNumber :one
-SELECT COALESCE(MAX(sequence_number), 0) + 1 as next_sequence
-FROM graph_node_snapshots
-WHERE node_id = $1
-`
-
-func (q *Queries) GetNextSequenceNumber(ctx context.Context, nodeID int64) (int32, error) {
-	row := q.db.QueryRow(ctx, getNextSequenceNumber, nodeID)
-	var next_sequence int32
-	err := row.Scan(&next_sequence)
-	return next_sequence, err
-}
-
 const getNodeWithLatestSnapshot = `-- name: GetNodeWithLatestSnapshot :one
 SELECT
     n.id, n.external_id, n.node_type, n.data as matching_data, n.duplicate_count, n.matching_schema_version, n.created_at, n.updated_at,
@@ -731,19 +720,21 @@ func (q *Queries) GetSnapshotsByNode(ctx context.Context, arg GetSnapshotsByNode
 const insertSnapshot = `-- name: InsertSnapshot :one
 
 INSERT INTO graph_node_snapshots (node_id, snapshot_data, sequence_number)
-VALUES ($1, $2, $3)
+SELECT $1, $2, COALESCE(MAX(sequence_number), 0) + 1
+FROM graph_node_snapshots
+WHERE node_id = $1
 RETURNING id, node_id, snapshot_data, sequence_number, created_at
 `
 
 type InsertSnapshotParams struct {
-	NodeID         int64  `json:"node_id"`
-	SnapshotData   []byte `json:"snapshot_data"`
-	SequenceNumber int32  `json:"sequence_number"`
+	NodeID       int64  `json:"node_id"`
+	SnapshotData []byte `json:"snapshot_data"`
 }
 
 // Snapshot management queries
+// Atomically inserts a snapshot with the next sequence number to prevent race conditions
 func (q *Queries) InsertSnapshot(ctx context.Context, arg InsertSnapshotParams) (GraphNodeSnapshot, error) {
-	row := q.db.QueryRow(ctx, insertSnapshot, arg.NodeID, arg.SnapshotData, arg.SequenceNumber)
+	row := q.db.QueryRow(ctx, insertSnapshot, arg.NodeID, arg.SnapshotData)
 	var i GraphNodeSnapshot
 	err := row.Scan(
 		&i.ID,
@@ -758,11 +749,11 @@ func (q *Queries) InsertSnapshot(ctx context.Context, arg InsertSnapshotParams) 
 const searchGraphNodes = `-- name: SearchGraphNodes :many
 SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at
 FROM graph_nodes
-WHERE (node_type = $1 OR $1 IS NULL)
+WHERE (node_type = $1::text OR $1::text IS NULL)
+  AND LENGTH($2::text) > 0
   AND (
-    external_id ILIKE '%' || $2 || '%'
-    OR data::text ILIKE '%' || $2 || '%'
-    OR $2 IS NULL
+    external_id ILIKE '%' || $2::text || '%'
+    OR data::text ILIKE '%' || $2::text || '%'
   )
 ORDER BY duplicate_count DESC, updated_at DESC
 LIMIT $4 OFFSET $3
@@ -770,11 +761,13 @@ LIMIT $4 OFFSET $3
 
 type SearchGraphNodesParams struct {
 	NodeType   pgtype.Text `json:"node_type"`
-	SearchTerm pgtype.Text `json:"search_term"`
+	SearchTerm string      `json:"search_term"`
 	Offset     int32       `json:"offset"`
 	Limit      int32       `json:"limit"`
 }
 
+// Note: search_term is required and must be non-empty to prevent full table scans
+// Use GetGraphNodesByType for listing nodes without a search filter
 func (q *Queries) SearchGraphNodes(ctx context.Context, arg SearchGraphNodesParams) ([]GraphNode, error) {
 	rows, err := q.db.Query(ctx, searchGraphNodes,
 		arg.NodeType,
