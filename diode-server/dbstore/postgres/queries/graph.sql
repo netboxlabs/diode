@@ -210,9 +210,13 @@ WHERE outer_snap.node_id = $1
   );
 
 -- name: GetNodeWithLatestSnapshot :one
+-- Note: snapshot fields use COALESCE defaults for NULL safety when no snapshot exists
+-- sequence_number = 0 and empty snapshot_data indicate no snapshot
 SELECT
     n.id, n.external_id, n.node_type, n.data as matching_data, n.duplicate_count, n.matching_schema_version, n.created_at, n.updated_at,
-    s.snapshot_data, s.sequence_number, s.created_at as snapshot_created_at
+    COALESCE(s.snapshot_data, '{}'::jsonb) as snapshot_data,
+    COALESCE(s.sequence_number, 0) as sequence_number,
+    s.created_at as snapshot_created_at
 FROM graph_nodes n
 LEFT JOIN LATERAL (
     SELECT snapshot_data, sequence_number, created_at
