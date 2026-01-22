@@ -505,13 +505,13 @@ func (q *Queries) GetGraphStats(ctx context.Context) (GetGraphStatsRow, error) {
 }
 
 const getGraphStatsByType = `-- name: GetGraphStatsByType :many
-SELECT 
+SELECT
     node_type,
     COUNT(*) as node_count,
     SUM(duplicate_count) as total_observations,
     AVG(duplicate_count) as avg_observations_per_node,
     MAX(duplicate_count) as max_observations,
-    MIN(updated_at) as first_seen,
+    MIN(created_at) as first_seen,
     MAX(updated_at) as last_seen
 FROM graph_nodes
 GROUP BY node_type
