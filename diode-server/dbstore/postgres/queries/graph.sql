@@ -180,9 +180,9 @@ LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: InsertSnapshot :one
 -- Atomically inserts a snapshot with next sequence number using advisory lock to prevent races.
--- pg_advisory_xact_lock serializes concurrent inserts for the same node_id within the transaction.
+-- Uses namespaced lock (1=snapshot_insert, node_id) to avoid clashes with other advisory locks.
 WITH lock AS (
-    SELECT pg_advisory_xact_lock($1)
+    SELECT pg_advisory_xact_lock(1, $1::int)
 )
 INSERT INTO graph_node_snapshots (node_id, snapshot_data, sequence_number)
 SELECT $1, $2, COALESCE(MAX(sequence_number), 0) + 1

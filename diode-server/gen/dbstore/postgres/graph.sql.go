@@ -720,7 +720,7 @@ func (q *Queries) GetSnapshotsByNode(ctx context.Context, arg GetSnapshotsByNode
 const insertSnapshot = `-- name: InsertSnapshot :one
 
 WITH lock AS (
-    SELECT pg_advisory_xact_lock($1)
+    SELECT pg_advisory_xact_lock(1, $1::int)
 )
 INSERT INTO graph_node_snapshots (node_id, snapshot_data, sequence_number)
 SELECT $1, $2, COALESCE(MAX(sequence_number), 0) + 1
@@ -736,7 +736,7 @@ type InsertSnapshotParams struct {
 
 // Snapshot management queries
 // Atomically inserts a snapshot with next sequence number using advisory lock to prevent races.
-// pg_advisory_xact_lock serializes concurrent inserts for the same node_id within the transaction.
+// Uses namespaced lock (1=snapshot_insert, node_id) to avoid clashes with other advisory locks.
 func (q *Queries) InsertSnapshot(ctx context.Context, arg InsertSnapshotParams) (GraphNodeSnapshot, error) {
 	row := q.db.QueryRow(ctx, insertSnapshot, arg.NodeID, arg.SnapshotData)
 	var i GraphNodeSnapshot
