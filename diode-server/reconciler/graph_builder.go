@@ -435,35 +435,7 @@ func (gb *GraphBuilder) processEntityRecursively(ctx context.Context, entity *di
 	}
 
 	// Try confidence-based matching first before creating new node
-	var matchedNode *GraphNode
-	var matchConfidence matching.MatchConfidence
-	var matchReason string
-	var bestMatch *matching.MatchResult
-
-	if gb.entityMatcher != nil {
-		var matchErr error
-		bestMatch, matchErr = gb.entityMatcher.FindBestMatch(ctx, entity)
-		if matchErr != nil {
-			gb.logger.Warn("failed to find entity matches", "error", matchErr, "entity_type", nodeType)
-		} else if bestMatch != nil && bestMatch.NodeID != nil {
-			// Found a confident match, use existing node
-			matchedNode = &GraphNode{
-				ID:         *bestMatch.NodeID,
-				ExternalID: externalID, // Keep new external ID for this observation
-				NodeType:   nodeType,
-				Data:       bestMatch.ExistingData,
-			}
-			matchConfidence = bestMatch.Confidence
-			matchReason = bestMatch.MatchReason
-
-			gb.logger.Info("found confident match for entity",
-				"entity_type", nodeType,
-				"matched_node_id", *bestMatch.NodeID,
-				"confidence", float64(bestMatch.Confidence),
-				"reason", bestMatch.MatchReason,
-				"matching_fields", bestMatch.MatchingFields)
-		}
-	}
+	bestMatch := gb.findEntityMatch(ctx, entity, nodeType)
 
 	// Marshal entity data
 	entityData, err := protojson.Marshal(entity)
@@ -471,121 +443,14 @@ func (gb *GraphBuilder) processEntityRecursively(ctx context.Context, entity *di
 		return nil, fmt.Errorf("failed to marshal entity: %w", err)
 	}
 
+	// Process node: either update matched node or create new one
 	var node *GraphNode
-
-	if matchedNode != nil {
-		// Found a confident match - use the existing node's external ID to find and update it
-		if bestMatch.ExternalID == nil {
-			return nil, fmt.Errorf("matched node missing external ID")
-		}
-
-		existingNode, err := gb.repo.FindGraphNode(ctx, postgres.FindGraphNodeParams{
-			NodeType:   nodeType,
-			ExternalID: *bestMatch.ExternalID,
-		})
+	if bestMatch != nil && bestMatch.NodeID != nil {
+		node, err = gb.updateMatchedNode(ctx, bestMatch, nodeType, entityData)
 		if err != nil {
-			return nil, fmt.Errorf("failed to find existing matched node: %w", err)
+			return nil, err
 		}
-
-		// Extract matching attributes from the new entity data
-		matchingData, err := gb.extractMatchingAttributes(nodeType, entityData)
-		if err != nil {
-			gb.logger.Warn("failed to extract matching attributes, using full data", "error", err, "node_type", nodeType)
-			matchingData = entityData
-		}
-
-		// Convert FindGraphNodeRow to GraphNode for schema checks
-		existingGraphNode := &postgres.GraphNode{
-			ID:                    existingNode.ID,
-			ExternalID:            existingNode.ExternalID,
-			NodeType:              existingNode.NodeType,
-			Data:                  existingNode.Data,
-			DuplicateCount:        existingNode.DuplicateCount,
-			MatchingSchemaVersion: existingNode.MatchingSchemaVersion,
-		}
-
-		// Check if existing node needs schema update (lazy migration)
-		if gb.needsSchemaUpdate(existingGraphNode) {
-			gb.logger.Info("updating node matching data due to schema change",
-				"node_type", nodeType,
-				"external_id", existingNode.ExternalID,
-				"old_version", existingNode.MatchingSchemaVersion,
-				"new_version", CurrentSchemaVersion)
-
-			err = gb.updateNodeMatchingData(ctx, existingGraphNode, entityData)
-			if err != nil {
-				gb.logger.Warn("failed to update node schema, continuing", "error", err)
-			}
-		}
-
-		// Create a unique key for this node in this request
-		requestKey := fmt.Sprintf("%s:%s", nodeType, existingNode.ExternalID)
-
-		var result postgres.UpsertGraphNodeRow
-		if gb.seenInThisRequest[requestKey] {
-			// Already seen in this request - update data but don't increment duplicate count
-			updateResult, err := gb.repo.UpdateGraphNodeData(ctx, postgres.UpdateGraphNodeDataParams{
-				NodeType:              nodeType,
-				ExternalID:            existingNode.ExternalID,
-				Data:                  matchingData,
-				MatchingSchemaVersion: CurrentSchemaVersion,
-			})
-			if err == nil {
-				// Convert UpdateGraphNodeDataRow to UpsertGraphNodeRow format
-				result = postgres.UpsertGraphNodeRow(updateResult)
-			}
-			gb.logger.Debug("updated matched node data without incrementing duplicate count",
-				"node_type", nodeType,
-				"external_id", existingNode.ExternalID)
-		} else {
-			// First time seeing this node in this request - normal upsert with duplicate count increment
-			params := postgres.UpsertGraphNodeParams{
-				ExternalID:            existingNode.ExternalID, // Keep existing external ID
-				NodeType:              nodeType,
-				Data:                  matchingData, // Use extracted matching data
-				MatchingSchemaVersion: CurrentSchemaVersion,
-			}
-			result, err = gb.repo.UpsertGraphNode(ctx, params)
-			// Mark this node as seen in this request
-			gb.seenInThisRequest[requestKey] = true
-			gb.logger.Debug("updated matched node with duplicate count increment",
-				"node_type", nodeType,
-				"external_id", existingNode.ExternalID,
-				"duplicate_count", result.DuplicateCount)
-		}
-
-		if err != nil {
-			return nil, fmt.Errorf("failed to update matched node: %w", err)
-		}
-
-		// Create snapshot with full entity data
-		err = gb.createSnapshot(ctx, result.ID, entityData)
-		if err != nil {
-			gb.logger.Warn("failed to create entity snapshot", "error", err, "node_id", result.ID)
-			// Don't fail the entire operation for snapshot issues
-		}
-
-		node = &GraphNode{
-			ID:                    result.ID,
-			ExternalID:            result.ExternalID,
-			NodeType:              result.NodeType,
-			Data:                  result.Data,
-			DuplicateCount:        result.DuplicateCount,
-			MatchingSchemaVersion: result.MatchingSchemaVersion,
-		}
-
-		// Track this node as updated for propagation
-		nodeKey := fmt.Sprintf("%s:%s", nodeType, result.ExternalID)
-		gb.updatedNodes[nodeKey] = node
-
-		gb.logger.Info("reused existing matched node",
-			"matched_node_id", matchedNode.ID,
-			"confidence", float64(matchConfidence),
-			"reason", matchReason,
-			"duplicate_count", node.DuplicateCount,
-			"external_id", result.ExternalID)
 	} else {
-		// Create or update node in database (no match found)
 		node, err = gb.upsertNode(ctx, externalID, nodeType, entityData)
 		if err != nil {
 			return nil, fmt.Errorf("failed to upsert node: %w", err)
@@ -602,27 +467,182 @@ func (gb *GraphBuilder) processEntityRecursively(ctx context.Context, entity *di
 		"node_id", node.ID)
 
 	// Recursively process all nested entities and create edges
+	gb.createEdgesForNode(ctx, entity, node, nodeType, externalID)
+
+	return node, nil
+}
+
+// findEntityMatch attempts to find an existing entity match using confidence-based matching.
+// Returns nil if no match found or if entity matcher is not configured.
+func (gb *GraphBuilder) findEntityMatch(ctx context.Context, entity *diodepb.Entity, nodeType string) *matching.MatchResult {
+	if gb.entityMatcher == nil {
+		return nil
+	}
+
+	bestMatch, err := gb.entityMatcher.FindBestMatch(ctx, entity)
+	if err != nil {
+		gb.logger.Warn("failed to find entity matches", "error", err, "entity_type", nodeType)
+		return nil
+	}
+
+	if bestMatch != nil && bestMatch.NodeID != nil {
+		gb.logger.Info("found confident match for entity",
+			"entity_type", nodeType,
+			"matched_node_id", *bestMatch.NodeID,
+			"confidence", float64(bestMatch.Confidence),
+			"reason", bestMatch.MatchReason,
+			"matching_fields", bestMatch.MatchingFields)
+		return bestMatch
+	}
+
+	return nil
+}
+
+// updateMatchedNode updates an existing matched node with new entity data.
+func (gb *GraphBuilder) updateMatchedNode(ctx context.Context, bestMatch *matching.MatchResult, nodeType string, entityData json.RawMessage) (*GraphNode, error) {
+	if bestMatch.ExternalID == nil {
+		return nil, fmt.Errorf("matched node missing external ID")
+	}
+
+	existingNode, err := gb.repo.FindGraphNode(ctx, postgres.FindGraphNodeParams{
+		NodeType:   nodeType,
+		ExternalID: *bestMatch.ExternalID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to find existing matched node: %w", err)
+	}
+
+	// Extract matching attributes from the new entity data
+	matchingData, err := gb.extractMatchingAttributes(nodeType, entityData)
+	if err != nil {
+		gb.logger.Warn("failed to extract matching attributes, using full data", "error", err, "node_type", nodeType)
+		matchingData = entityData
+	}
+
+	// Check if existing node needs schema update (lazy migration)
+	gb.maybeUpdateNodeSchema(ctx, &existingNode, nodeType, entityData)
+
+	// Upsert the node with appropriate duplicate count handling
+	result, err := gb.upsertMatchedNodeData(ctx, nodeType, existingNode.ExternalID, matchingData)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update matched node: %w", err)
+	}
+
+	// Create snapshot with full entity data
+	if err := gb.createSnapshot(ctx, result.ID, entityData); err != nil {
+		gb.logger.Warn("failed to create entity snapshot", "error", err, "node_id", result.ID)
+	}
+
+	node := &GraphNode{
+		ID:                    result.ID,
+		ExternalID:            result.ExternalID,
+		NodeType:              result.NodeType,
+		Data:                  result.Data,
+		DuplicateCount:        result.DuplicateCount,
+		MatchingSchemaVersion: result.MatchingSchemaVersion,
+	}
+
+	// Track this node as updated for propagation
+	nodeKey := fmt.Sprintf("%s:%s", nodeType, result.ExternalID)
+	gb.updatedNodes[nodeKey] = node
+
+	gb.logger.Info("reused existing matched node",
+		"matched_node_id", *bestMatch.NodeID,
+		"confidence", float64(bestMatch.Confidence),
+		"reason", bestMatch.MatchReason,
+		"duplicate_count", node.DuplicateCount,
+		"external_id", result.ExternalID)
+
+	return node, nil
+}
+
+// maybeUpdateNodeSchema checks if a node needs schema migration and updates it if necessary.
+func (gb *GraphBuilder) maybeUpdateNodeSchema(ctx context.Context, existingNode *postgres.FindGraphNodeRow, nodeType string, entityData json.RawMessage) {
+	existingGraphNode := &postgres.GraphNode{
+		ID:                    existingNode.ID,
+		ExternalID:            existingNode.ExternalID,
+		NodeType:              existingNode.NodeType,
+		Data:                  existingNode.Data,
+		DuplicateCount:        existingNode.DuplicateCount,
+		MatchingSchemaVersion: existingNode.MatchingSchemaVersion,
+	}
+
+	if gb.needsSchemaUpdate(existingGraphNode) {
+		gb.logger.Info("updating node matching data due to schema change",
+			"node_type", nodeType,
+			"external_id", existingNode.ExternalID,
+			"old_version", existingNode.MatchingSchemaVersion,
+			"new_version", CurrentSchemaVersion)
+
+		if err := gb.updateNodeMatchingData(ctx, existingGraphNode, entityData); err != nil {
+			gb.logger.Warn("failed to update node schema, continuing", "error", err)
+		}
+	}
+}
+
+// upsertMatchedNodeData handles the upsert logic for a matched node, respecting duplicate count rules.
+func (gb *GraphBuilder) upsertMatchedNodeData(ctx context.Context, nodeType, externalID string, matchingData json.RawMessage) (postgres.UpsertGraphNodeRow, error) {
+	requestKey := fmt.Sprintf("%s:%s", nodeType, externalID)
+
+	if gb.seenInThisRequest[requestKey] {
+		// Already seen in this request - update data but don't increment duplicate count
+		updateResult, err := gb.repo.UpdateGraphNodeData(ctx, postgres.UpdateGraphNodeDataParams{
+			NodeType:              nodeType,
+			ExternalID:            externalID,
+			Data:                  matchingData,
+			MatchingSchemaVersion: CurrentSchemaVersion,
+		})
+		if err != nil {
+			return postgres.UpsertGraphNodeRow{}, err
+		}
+		gb.logger.Debug("updated matched node data without incrementing duplicate count",
+			"node_type", nodeType,
+			"external_id", externalID)
+		return postgres.UpsertGraphNodeRow(updateResult), nil
+	}
+
+	// First time seeing this node in this request - normal upsert with duplicate count increment
+	params := postgres.UpsertGraphNodeParams{
+		ExternalID:            externalID,
+		NodeType:              nodeType,
+		Data:                  matchingData,
+		MatchingSchemaVersion: CurrentSchemaVersion,
+	}
+	result, err := gb.repo.UpsertGraphNode(ctx, params)
+	if err != nil {
+		return postgres.UpsertGraphNodeRow{}, err
+	}
+
+	gb.seenInThisRequest[requestKey] = true
+	gb.logger.Debug("updated matched node with duplicate count increment",
+		"node_type", nodeType,
+		"external_id", externalID,
+		"duplicate_count", result.DuplicateCount)
+
+	return result, nil
+}
+
+// createEdgesForNode extracts and creates all edges for a node.
+func (gb *GraphBuilder) createEdgesForNode(ctx context.Context, entity *diodepb.Entity, node *GraphNode, nodeType, externalID string) {
 	edges, err := gb.extractEdgesRecursively(ctx, entity, node)
 	if err != nil {
 		gb.logger.Warn("failed to extract edges recursively",
 			"node_type", nodeType,
 			"external_id", externalID,
 			"error", err)
-	} else {
-		// Create all edges
-		for _, edge := range edges {
-			if err := gb.upsertEdge(ctx, edge); err != nil {
-				gb.logger.Warn("failed to create edge",
-					"source_id", edge.SourceNodeID,
-					"target_id", edge.TargetNodeID,
-					"edge_type", edge.EdgeType,
-					"error", err)
-			}
-		}
-		gb.logger.Debug("processed edges for node", "count", len(edges), "node_id", node.ID)
+		return
 	}
 
-	return node, nil
+	for _, edge := range edges {
+		if err := gb.upsertEdge(ctx, edge); err != nil {
+			gb.logger.Warn("failed to create edge",
+				"source_id", edge.SourceNodeID,
+				"target_id", edge.TargetNodeID,
+				"edge_type", edge.EdgeType,
+				"error", err)
+		}
+	}
+	gb.logger.Debug("processed edges for node", "count", len(edges), "node_id", node.ID)
 }
 
 // extractEdgesRecursively finds all relationships within the entity and creates edges recursively
