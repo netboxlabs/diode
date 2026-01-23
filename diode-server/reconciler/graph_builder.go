@@ -689,6 +689,23 @@ func (gb *GraphBuilder) extractEdgesRecursively(ctx context.Context, entity *dio
 			}
 			edges = append(edges, sliceEdges...)
 		}
+
+		// Process oneof fields (interface types in generated Go code)
+		if field.Kind() == reflect.Interface && !field.IsNil() {
+			gb.logger.Debug("processing oneof/interface field", "field", fieldName, "type", fmt.Sprintf("%T", field.Interface()))
+			// Unwrap the interface to get the concrete value
+			concreteValue := reflect.ValueOf(field.Interface())
+			if concreteValue.IsValid() && concreteValue.Kind() == reflect.Ptr && !concreteValue.IsNil() {
+				fieldEdges, err := gb.processFieldRecursively(ctx, sourceNode, concreteValue, fieldName)
+				if err != nil {
+					gb.logger.Warn("failed to process oneof field recursively", "field", fieldName, "error", err)
+					continue
+				}
+				if len(fieldEdges) > 0 {
+					edges = append(edges, fieldEdges...)
+				}
+			}
+		}
 	}
 
 	return edges, nil
@@ -827,7 +844,18 @@ func (gb *GraphBuilder) processSliceFieldRecursively(ctx context.Context, source
 
 	for i := 0; i < field.Len(); i++ {
 		item := field.Index(i)
-		if !item.IsValid() || item.IsNil() {
+		if !item.IsValid() {
+			continue
+		}
+
+		// Only check IsNil for types that support it (ptr, map, slice, chan, func, interface)
+		// Scalar types like string, int, etc. will panic on IsNil
+		if canBeNil(item) && item.IsNil() {
+			continue
+		}
+
+		// Skip scalar types (string, int, etc.) - they don't represent entity references
+		if !canBeNil(item) && item.Kind() != reflect.Struct {
 			continue
 		}
 
@@ -1022,6 +1050,16 @@ func (gb *GraphBuilder) upsertEdge(ctx context.Context, edge *GraphEdge) error {
 		EdgeType:     edge.EdgeType,
 		Properties:   edge.Properties,
 	})
+}
+
+// canBeNil returns true if the reflect.Value's kind supports nil checks.
+// Calling IsNil on other types (string, int, struct, etc.) will panic.
+func canBeNil(v reflect.Value) bool {
+	switch v.Kind() {
+	case reflect.Ptr, reflect.Map, reflect.Slice, reflect.Chan, reflect.Func, reflect.Interface:
+		return true
+	}
+	return false
 }
 
 // getEntityTypeName extracts the entity type name from an entity using proto names
