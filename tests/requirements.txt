@@ -2,4 +2,3 @@ pytest==8.4.1
 pytest-xdist==3.8.0
 pytest-cov==6.0.0
 requests==2.32.4
-netboxlabs-diode-sdk
