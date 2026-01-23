@@ -582,12 +582,12 @@ func (m *Matcher) findCandidatesByFallbackStrategy(ctx context.Context, entityTy
 
 // deduplicateCandidates removes duplicate nodes from the candidate list
 func (m *Matcher) deduplicateCandidates(candidates []*reconciler.GraphNode) []*reconciler.GraphNode {
-	seen := make(map[int64]bool)
+	seen := make(map[int64]struct{})
 	var unique []*reconciler.GraphNode
 
 	for _, candidate := range candidates {
-		if !seen[candidate.ID] {
-			seen[candidate.ID] = true
+		if _, exists := seen[candidate.ID]; !exists {
+			seen[candidate.ID] = struct{}{}
 			unique = append(unique, candidate)
 		}
 	}
