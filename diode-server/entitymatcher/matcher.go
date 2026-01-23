@@ -2,6 +2,8 @@ package entitymatcher
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -867,9 +869,9 @@ func (m *Matcher) clearCacheForEntityType(entityType string) {
 }
 
 func (m *Matcher) getCacheKey(entity *diodepb.Entity, entityType string) string {
-	// Create a simple cache key based on entity type and primary identifying fields
-	// This is a simplified approach - in production you might want a more sophisticated key
-	return fmt.Sprintf("%s:%p", entityType, entity)
+	// Create content-based cache key using hash of protobuf string representation
+	hash := sha256.Sum256([]byte(entity.String()))
+	return entityType + ":" + base64.RawURLEncoding.EncodeToString(hash[:12])
 }
 
 // Utility functions
