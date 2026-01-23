@@ -56,6 +56,10 @@ func (fm *FuzzyMatcher) CalculateSimilarity(s1, s2 string, options *FuzzyOptions
 	return jaroWinkler
 }
 
+// maxLevenshteinLen is the maximum string length for Levenshtein calculation.
+// Longer strings would cause excessive memory allocation and potential overflow.
+const maxLevenshteinLen = 10000
+
 // levenshteinDistance calculates the Levenshtein distance between two strings
 func (fm *FuzzyMatcher) levenshteinDistance(s1, s2 string) int {
 	if len(s1) == 0 {
@@ -63,6 +67,12 @@ func (fm *FuzzyMatcher) levenshteinDistance(s1, s2 string) int {
 	}
 	if len(s2) == 0 {
 		return len(s1)
+	}
+
+	// Guard against overflow and excessive memory allocation
+	if len(s1) > maxLevenshteinLen || len(s2) > maxLevenshteinLen {
+		// For very long strings, return max length as distance (no similarity)
+		return maxInt(len(s1), len(s2))
 	}
 
 	// Create a matrix to store distances
@@ -115,6 +125,11 @@ func (fm *FuzzyMatcher) jaroSimilarity(s1, s2 string) float64 {
 
 	len1, len2 := len(s1), len(s2)
 	if len1 == 0 || len2 == 0 {
+		return 0.0
+	}
+
+	// Guard against excessive memory allocation for very long strings
+	if len1 > maxLevenshteinLen || len2 > maxLevenshteinLen {
 		return 0.0
 	}
 
