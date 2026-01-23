@@ -19,12 +19,22 @@ import (
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/gen/protograph"
 	"github.com/netboxlabs/diode/diode-server/matching"
-	"github.com/netboxlabs/diode/diode-server/reconciler"
 )
+
+// GraphNode is an alias to the SQLC-generated GraphNode type
+type GraphNode = postgres.GraphNode
+
+// Repository defines the repository interface needed by Matcher.
+// This is kept minimal to allow simpler mocking in tests.
+// reconciler.GraphRepository satisfies this interface.
+type Repository interface {
+	FindNodesByFieldMatch(ctx context.Context, arg postgres.FindNodesByFieldMatchParams) ([]postgres.GraphNode, error)
+	GetGraphNodesByType(ctx context.Context, arg postgres.GetGraphNodesByTypeParams) ([]postgres.GraphNode, error)
+}
 
 // Matcher implements confidence-based entity matching
 type Matcher struct {
-	repo         reconciler.GraphRepository
+	repo         Repository
 	config       *matching.EntityMatchingConfig
 	logger       *slog.Logger
 	fuzzyMatcher *matching.FuzzyMatcher
@@ -35,7 +45,7 @@ type Matcher struct {
 }
 
 // NewMatcher creates a new EntityMatcher with the given configuration
-func NewMatcher(repo reconciler.GraphRepository, config *matching.EntityMatchingConfig, logger *slog.Logger) *Matcher {
+func NewMatcher(repo Repository, config *matching.EntityMatchingConfig, logger *slog.Logger) *Matcher {
 	if config == nil {
 		config = DefaultEntityMatchingConfig()
 	}
@@ -85,7 +95,7 @@ func getEntityTypeName(entity *diodepb.Entity) string {
 }
 
 // extractFieldValue extracts a field value from entity data using a JSON path
-func extractFieldValue(data interface{}, fieldPath string) (interface{}, error) {
+func extractFieldValue(data any, fieldPath string) (any, error) {
 	if data == nil {
 		return nil, fmt.Errorf("data is nil")
 	}
@@ -95,7 +105,7 @@ func extractFieldValue(data interface{}, fieldPath string) (interface{}, error) 
 
 	for _, part := range parts {
 		switch v := current.(type) {
-		case map[string]interface{}:
+		case map[string]any:
 			// Try exact match first, then case-insensitive
 			if val, exists := v[part]; exists {
 				current = val
@@ -113,7 +123,7 @@ func extractFieldValue(data interface{}, fieldPath string) (interface{}, error) 
 					current = nil
 				}
 			}
-		case *map[string]interface{}:
+		case *map[string]any:
 			if v != nil {
 				// Try exact match first, then case-insensitive
 				if val, exists := (*v)[part]; exists {
@@ -276,7 +286,7 @@ func (m *Matcher) UpdateMatchingRule(entityType string, rule *matching.EntityMat
 }
 
 // findCandidateNodes searches the database for potential matching nodes
-func (m *Matcher) findCandidateNodes(ctx context.Context, entity *diodepb.Entity, entityType string, rule *matching.EntityMatchingRule) ([]*reconciler.GraphNode, error) {
+func (m *Matcher) findCandidateNodes(ctx context.Context, entity *diodepb.Entity, entityType string, rule *matching.EntityMatchingRule) ([]*GraphNode, error) {
 	// Extract entity data for comparison
 	entityData, err := m.entityToMap(entity)
 	if err != nil {
@@ -289,7 +299,7 @@ func (m *Matcher) findCandidateNodes(ctx context.Context, entity *diodepb.Entity
 		"secondary_rules", len(rule.SecondaryRules),
 		"fallback_rules", len(rule.FallbackRules))
 
-	var allCandidates []*reconciler.GraphNode
+	var allCandidates []*GraphNode
 
 	// Strategy 1: Try exact matches on primary fields first
 	primaryCandidates, err := m.findCandidatesByPrimaryFields(ctx, entityType, entityData, rule.PrimaryRules)
@@ -334,8 +344,8 @@ func (m *Matcher) findCandidateNodes(ctx context.Context, entity *diodepb.Entity
 }
 
 // findCandidatesByPrimaryFields searches using primary matching fields (supports both exact and fuzzy matches)
-func (m *Matcher) findCandidatesByPrimaryFields(ctx context.Context, entityType string, entityData map[string]interface{}, primaryRules []matching.FieldMatchRule) ([]*reconciler.GraphNode, error) {
-	var candidates []*reconciler.GraphNode
+func (m *Matcher) findCandidatesByPrimaryFields(ctx context.Context, entityType string, entityData map[string]any, primaryRules []matching.FieldMatchRule) ([]*GraphNode, error) {
+	var candidates []*GraphNode
 
 	for _, rule := range primaryRules {
 		// Extract field value from entity data
@@ -390,7 +400,7 @@ func (m *Matcher) findCandidatesByPrimaryFields(ctx context.Context, entityType 
 
 		// Convert to GraphNode format
 		for _, dbNode := range dbNodes {
-			candidates = append(candidates, &reconciler.GraphNode{
+			candidates = append(candidates, &GraphNode{
 				ID:             dbNode.ID,
 				ExternalID:     dbNode.ExternalID,
 				NodeType:       dbNode.NodeType,
@@ -431,7 +441,7 @@ func (m *Matcher) findFuzzyCandidatesForField(ctx context.Context, entityType, f
 	// Check each node for fuzzy match
 	for _, node := range allNodes {
 		// Parse node data to extract field value
-		var nodeData map[string]interface{}
+		var nodeData map[string]any
 		if err := json.Unmarshal(node.Data, &nodeData); err != nil {
 			m.logger.Warn("failed to parse node data for fuzzy matching", "node_id", node.ID, "error", err)
 			continue
@@ -483,8 +493,8 @@ func (m *Matcher) findFuzzyCandidatesForField(ctx context.Context, entityType, f
 }
 
 // findCandidatesBySecondaryFields searches using secondary matching fields (supports both exact and fuzzy matches)
-func (m *Matcher) findCandidatesBySecondaryFields(ctx context.Context, entityType string, entityData map[string]interface{}, secondaryRules []matching.FieldMatchRule) ([]*reconciler.GraphNode, error) {
-	var candidates []*reconciler.GraphNode
+func (m *Matcher) findCandidatesBySecondaryFields(ctx context.Context, entityType string, entityData map[string]any, secondaryRules []matching.FieldMatchRule) ([]*GraphNode, error) {
+	var candidates []*GraphNode
 
 	// For secondary rules, try both exact and fuzzy matching approaches
 	for _, rule := range secondaryRules {
@@ -535,7 +545,7 @@ func (m *Matcher) findCandidatesBySecondaryFields(ctx context.Context, entityTyp
 
 		// Convert to GraphNode format and add to candidates
 		for _, dbNode := range dbNodes {
-			candidates = append(candidates, &reconciler.GraphNode{
+			candidates = append(candidates, &GraphNode{
 				ID:             dbNode.ID,
 				ExternalID:     dbNode.ExternalID,
 				NodeType:       dbNode.NodeType,
@@ -554,7 +564,7 @@ func (m *Matcher) findCandidatesBySecondaryFields(ctx context.Context, entityTyp
 }
 
 // findCandidatesByFallbackStrategy searches using broader criteria
-func (m *Matcher) findCandidatesByFallbackStrategy(ctx context.Context, entityType string, _ map[string]interface{}, _ []matching.FieldMatchRule) ([]*reconciler.GraphNode, error) {
+func (m *Matcher) findCandidatesByFallbackStrategy(ctx context.Context, entityType string, _ map[string]any, _ []matching.FieldMatchRule) ([]*GraphNode, error) {
 	// For fallback, get all nodes of this type and let the scoring algorithm handle fuzzy matching
 	params := postgres.GetGraphNodesByTypeParams{
 		NodeType: entityType,
@@ -567,9 +577,9 @@ func (m *Matcher) findCandidatesByFallbackStrategy(ctx context.Context, entityTy
 		return nil, fmt.Errorf("fallback node retrieval failed: %w", err)
 	}
 
-	var candidates []*reconciler.GraphNode
+	var candidates []*GraphNode
 	for _, dbNode := range dbNodes {
-		candidates = append(candidates, &reconciler.GraphNode{
+		candidates = append(candidates, &GraphNode{
 			ID:             dbNode.ID,
 			ExternalID:     dbNode.ExternalID,
 			NodeType:       dbNode.NodeType,
@@ -583,9 +593,9 @@ func (m *Matcher) findCandidatesByFallbackStrategy(ctx context.Context, entityTy
 }
 
 // deduplicateCandidates removes duplicate nodes from the candidate list
-func (m *Matcher) deduplicateCandidates(candidates []*reconciler.GraphNode) []*reconciler.GraphNode {
+func (m *Matcher) deduplicateCandidates(candidates []*GraphNode) []*GraphNode {
 	seen := make(map[int64]struct{})
-	var unique []*reconciler.GraphNode
+	var unique []*GraphNode
 
 	for _, candidate := range candidates {
 		if _, exists := seen[candidate.ID]; !exists {
@@ -598,13 +608,13 @@ func (m *Matcher) deduplicateCandidates(candidates []*reconciler.GraphNode) []*r
 }
 
 // extractFieldFromMap extracts a field value from a map using dot notation
-func (m *Matcher) extractFieldFromMap(data map[string]interface{}, fieldPath string) (interface{}, bool) {
+func (m *Matcher) extractFieldFromMap(data map[string]any, fieldPath string) (any, bool) {
 	value, err := extractFieldValue(data, fieldPath)
 	return value, err == nil && value != nil
 }
 
 // scoreMatch calculates the confidence score for a potential match
-func (m *Matcher) scoreMatch(entity *diodepb.Entity, candidate *reconciler.GraphNode, rule *matching.EntityMatchingRule) (*matching.MatchResult, error) {
+func (m *Matcher) scoreMatch(entity *diodepb.Entity, candidate *GraphNode, rule *matching.EntityMatchingRule) (*matching.MatchResult, error) {
 	// Convert entity to comparable format
 	entityData, err := m.entityToMap(entity)
 	if err != nil {
@@ -612,7 +622,7 @@ func (m *Matcher) scoreMatch(entity *diodepb.Entity, candidate *reconciler.Graph
 	}
 
 	// Parse candidate data
-	var candidateData map[string]interface{}
+	var candidateData map[string]any
 	if err := json.Unmarshal(candidate.Data, &candidateData); err != nil {
 		return nil, fmt.Errorf("failed to parse candidate data: %w", err)
 	}
@@ -665,7 +675,7 @@ func (m *Matcher) scoreMatch(entity *diodepb.Entity, candidate *reconciler.Graph
 }
 
 // scoreFieldRules scores a set of field rules and returns confidence, matching fields, and reason
-func (m *Matcher) scoreFieldRules(entityData, candidateData map[string]interface{}, rules []matching.FieldMatchRule) (matching.MatchConfidence, []string, string) {
+func (m *Matcher) scoreFieldRules(entityData, candidateData map[string]any, rules []matching.FieldMatchRule) (matching.MatchConfidence, []string, string) {
 	if len(rules) == 0 {
 		return matching.ConfidenceNone, nil, "no rules defined"
 	}
@@ -704,7 +714,7 @@ func (m *Matcher) scoreFieldRules(entityData, candidateData map[string]interface
 }
 
 // compareFieldValues compares two field values based on the match rule
-func (m *Matcher) compareFieldValues(entityValue, candidateValue interface{}, rule matching.FieldMatchRule) (bool, matching.MatchConfidence) {
+func (m *Matcher) compareFieldValues(entityValue, candidateValue any, rule matching.FieldMatchRule) (bool, matching.MatchConfidence) {
 	if entityValue == nil || candidateValue == nil {
 		// MatchExists requires both values to be present; if either is nil, no match
 		return false, matching.ConfidenceNone
@@ -739,7 +749,7 @@ func (m *Matcher) compareFieldValues(entityValue, candidateValue interface{}, ru
 }
 
 // compareExact performs exact value comparison
-func (m *Matcher) compareExact(entityValue, candidateValue interface{}) bool {
+func (m *Matcher) compareExact(entityValue, candidateValue any) bool {
 	// Convert both to strings for comparison
 	entityStr := fmt.Sprintf("%v", entityValue)
 	candidateStr := fmt.Sprintf("%v", candidateValue)
@@ -747,7 +757,7 @@ func (m *Matcher) compareExact(entityValue, candidateValue interface{}) bool {
 }
 
 // compareFuzzy performs fuzzy string matching using advanced algorithms
-func (m *Matcher) compareFuzzy(entityValue, candidateValue interface{}, options *matching.FuzzyOptions, baseConfidence matching.MatchConfidence) (bool, matching.MatchConfidence) {
+func (m *Matcher) compareFuzzy(entityValue, candidateValue any, options *matching.FuzzyOptions, baseConfidence matching.MatchConfidence) (bool, matching.MatchConfidence) {
 	entityStr := fmt.Sprintf("%v", entityValue)
 	candidateStr := fmt.Sprintf("%v", candidateValue)
 
@@ -764,7 +774,7 @@ func (m *Matcher) compareFuzzy(entityValue, candidateValue interface{}, options 
 }
 
 // compareContains checks if one string contains the other
-func (m *Matcher) compareContains(entityValue, candidateValue interface{}) bool {
+func (m *Matcher) compareContains(entityValue, candidateValue any) bool {
 	entityStr := strings.ToLower(fmt.Sprintf("%v", entityValue))
 	candidateStr := strings.ToLower(fmt.Sprintf("%v", candidateValue))
 
@@ -772,7 +782,7 @@ func (m *Matcher) compareContains(entityValue, candidateValue interface{}) bool 
 }
 
 // compareNumeric performs numeric comparison with tolerance
-func (m *Matcher) compareNumeric(entityValue, candidateValue interface{}) bool {
+func (m *Matcher) compareNumeric(entityValue, candidateValue any) bool {
 	entityFloat, err1 := parseFloat(entityValue)
 	candidateFloat, err2 := parseFloat(candidateValue)
 
@@ -786,7 +796,7 @@ func (m *Matcher) compareNumeric(entityValue, candidateValue interface{}) bool {
 }
 
 // compareRegex performs regular expression matching
-func (m *Matcher) compareRegex(entityValue, candidateValue interface{}) bool {
+func (m *Matcher) compareRegex(entityValue, candidateValue any) bool {
 	pattern := fmt.Sprintf("%v", entityValue)
 	text := fmt.Sprintf("%v", candidateValue)
 
@@ -799,7 +809,7 @@ func (m *Matcher) compareRegex(entityValue, candidateValue interface{}) bool {
 }
 
 // entityToMap converts a protobuf entity to a map for field extraction
-func (m *Matcher) entityToMap(entity *diodepb.Entity) (map[string]interface{}, error) {
+func (m *Matcher) entityToMap(entity *diodepb.Entity) (map[string]any, error) {
 	// Get the actual entity from the wrapper
 	actualEntity := entity.GetEntity()
 	if actualEntity == nil {
@@ -812,7 +822,7 @@ func (m *Matcher) entityToMap(entity *diodepb.Entity) (map[string]interface{}, e
 		return nil, fmt.Errorf("failed to marshal entity: %w", err)
 	}
 
-	var result map[string]interface{}
+	var result map[string]any
 	if err := json.Unmarshal(data, &result); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal entity to map: %w", err)
 	}
@@ -876,7 +886,7 @@ func (m *Matcher) getCacheKey(entity *diodepb.Entity, entityType string) string 
 
 // Utility functions
 
-func parseFloat(value interface{}) (float64, error) {
+func parseFloat(value any) (float64, error) {
 	switch v := value.(type) {
 	case float64:
 		return v, nil
@@ -901,7 +911,7 @@ func abs(x float64) float64 {
 }
 
 // getMapKeys returns the keys of a map as a slice for debugging
-func getMapKeys(m map[string]interface{}) []string {
+func getMapKeys(m map[string]any) []string {
 	keys := make([]string, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)

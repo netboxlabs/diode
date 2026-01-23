@@ -9,11 +9,11 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 
 	"github.com/netboxlabs/diode/diode-server/gen/dbstore/postgres"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/matching"
-	"github.com/netboxlabs/diode/diode-server/reconciler"
 	"github.com/netboxlabs/diode/diode-server/reconciler/mocks"
 )
 
@@ -230,9 +230,7 @@ func TestEntityMatcherFuzzyMatching(t *testing.T) {
 func TestDefaultEntityMatchingConfig(t *testing.T) {
 	config := DefaultEntityMatchingConfig()
 
-	if config == nil {
-		t.Fatal("DefaultEntityMatchingConfig returned nil")
-	}
+	require.NotNil(t, config, "DefaultEntityMatchingConfig returned nil")
 	if config.Rules == nil {
 		t.Error("Rules map should not be nil")
 	}
@@ -256,9 +254,7 @@ func TestNewMatcherWithNilConfig(t *testing.T) {
 
 	matcher := NewMatcher(mockRepo, nil, logger)
 
-	if matcher == nil {
-		t.Fatal("NewMatcher returned nil")
-	}
+	require.NotNil(t, matcher, "NewMatcher returned nil")
 	// Should use default config when nil is passed
 	if matcher.config == nil {
 		t.Error("Matcher config should not be nil")
@@ -415,7 +411,7 @@ func TestDeduplicateCandidates(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 	matcher := &Matcher{logger: logger}
 
-	candidates := []*reconciler.GraphNode{
+	candidates := []*GraphNode{
 		{ID: 1, ExternalID: "node-1"},
 		{ID: 2, ExternalID: "node-2"},
 		{ID: 1, ExternalID: "node-1"}, // duplicate
@@ -1154,7 +1150,7 @@ func TestScoreMatchWithInvalidCandidateData(t *testing.T) {
 	}
 
 	// Create candidate with invalid JSON
-	candidate := &reconciler.GraphNode{
+	candidate := &GraphNode{
 		ID:         1,
 		ExternalID: "device-01",
 		NodeType:   "Device",
@@ -1190,9 +1186,7 @@ func TestFindBestMatchWithHighConfidence(t *testing.T) {
 		t.Fatalf("FindBestMatch failed: %v", err)
 	}
 
-	if best == nil {
-		t.Fatal("Expected a best match, got nil")
-	}
+	require.NotNil(t, best, "Expected a best match, got nil")
 
 	// Should have high confidence due to exact match on both fields
 	if best.Confidence < matching.ConfidenceMedium {
