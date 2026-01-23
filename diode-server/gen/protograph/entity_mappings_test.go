@@ -15,34 +15,11 @@ func TestCreateEntityFromInterface(t *testing.T) {
 		wantNil  bool
 		wantType string
 	}{
-		{
-			name:    "nil input",
-			input:   nil,
-			wantNil: true,
-		},
-		{
-			name:     "device pointer",
-			input:    &diodepb.Device{},
-			wantNil:  false,
-			wantType: "Device",
-		},
-		{
-			name:     "site pointer",
-			input:    &diodepb.Site{},
-			wantNil:  false,
-			wantType: "Site",
-		},
-		{
-			name:     "interface pointer",
-			input:    &diodepb.Interface{},
-			wantNil:  false,
-			wantType: "Interface",
-		},
-		{
-			name:    "unknown type",
-			input:   "string",
-			wantNil: true,
-		},
+		{"nil input", nil, true, ""},
+		{"device pointer", &diodepb.Device{}, false, "Device"},
+		{"site pointer", &diodepb.Site{}, false, "Site"},
+		{"interface pointer", &diodepb.Interface{}, false, "Interface"},
+		{"unknown type", "string", true, ""},
 	}
 
 	for _, tt := range tests {
@@ -52,6 +29,7 @@ func TestCreateEntityFromInterface(t *testing.T) {
 				assert.Nil(t, result)
 			} else {
 				assert.NotNil(t, result)
+				assert.Equal(t, tt.wantType, GetEntityTypeName(tt.input))
 			}
 		})
 	}
