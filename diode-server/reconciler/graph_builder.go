@@ -5,21 +5,23 @@ package reconciler
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 	"maps"
 	"reflect"
 	"strings"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/netboxlabs/diode/diode-server/entityhash"
 	"github.com/netboxlabs/diode/diode-server/gen/dbstore/postgres"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
-	"github.com/netboxlabs/diode/diode-server/gen/netbox"
 	"github.com/netboxlabs/diode/diode-server/gen/protograph"
 	"github.com/netboxlabs/diode/diode-server/matching"
+	"github.com/netboxlabs/diode/diode-server/strcase"
 )
 
 const (
@@ -667,13 +669,13 @@ func (gb *GraphBuilder) extractEdgesRecursively(ctx context.Context, entity *dio
 		// Process single entity field
 		if field.Kind() == reflect.Ptr && !field.IsNil() {
 			gb.logger.Debug("processing pointer field", "field", fieldName, "type", fmt.Sprintf("%T", field.Interface()))
-			edge, err := gb.processFieldRecursively(ctx, sourceNode, field, fieldName)
+			fieldEdges, err := gb.processFieldRecursively(ctx, sourceNode, field, fieldName)
 			if err != nil {
 				gb.logger.Warn("failed to process field recursively", "field", fieldName, "error", err)
 				continue
 			}
-			if edge != nil {
-				edges = append(edges, edge)
+			if len(fieldEdges) > 0 {
+				edges = append(edges, fieldEdges...)
 			}
 		}
 
@@ -692,10 +694,10 @@ func (gb *GraphBuilder) extractEdgesRecursively(ctx context.Context, entity *dio
 	return edges, nil
 }
 
-// extractEdgeProperties extracts properties to be stored on an edge based on reflection
+// extractEdgeProperties extracts properties to be stored on an edge based on reflection.
 // It automatically identifies fields that should be edge properties (not node properties)
 // based on the edge_property_fields configuration in the matching config.
-func (gb *GraphBuilder) extractEdgeProperties(fieldValue any, _ string) json.RawMessage {
+func (gb *GraphBuilder) extractEdgeProperties(fieldValue any) json.RawMessage {
 	if fieldValue == nil {
 		return json.RawMessage("{}")
 	}
@@ -734,7 +736,7 @@ func (gb *GraphBuilder) extractEdgeProperties(fieldValue any, _ string) json.Raw
 			// Only include non-zero values
 			if !reflect.DeepEqual(fieldValue, reflect.Zero(field.Type()).Interface()) {
 				// Convert field name to snake_case for JSON
-				jsonFieldName := gb.toSnakeCase(fieldName)
+				jsonFieldName := strcase.ToSnakeCase(fieldName)
 				properties[jsonFieldName] = fieldValue
 			}
 		}
@@ -770,25 +772,9 @@ func (gb *GraphBuilder) getEntityTypeNameFromValue(fieldValue any) string {
 	return typ.Name()
 }
 
-// toSnakeCase converts a PascalCase or camelCase string to snake_case
-func (gb *GraphBuilder) toSnakeCase(s string) string {
-	if s == "" {
-		return ""
-	}
-
-	var result strings.Builder
-	for i, r := range s {
-		if i > 0 && r >= 'A' && r <= 'Z' {
-			result.WriteRune('_')
-		}
-		result.WriteRune(r)
-	}
-
-	return strings.ToLower(result.String())
-}
-
-// processFieldRecursively processes a single field and creates an edge if it references another entity, recursively processing nested entities
-func (gb *GraphBuilder) processFieldRecursively(ctx context.Context, sourceNode *GraphNode, field reflect.Value, fieldName string) (*GraphEdge, error) {
+// processFieldRecursively processes a single field and creates bidirectional edges if it references another entity.
+// Returns both forward (BELONGS_TO) and reverse (HAS) edges.
+func (gb *GraphBuilder) processFieldRecursively(ctx context.Context, sourceNode *GraphNode, field reflect.Value, fieldName string) ([]*GraphEdge, error) {
 	if !field.IsValid() || field.IsNil() {
 		return nil, nil
 	}
@@ -796,7 +782,7 @@ func (gb *GraphBuilder) processFieldRecursively(ctx context.Context, sourceNode 
 	fieldInterface := field.Interface()
 
 	// Try to recursively process this field as a nested entity first
-	targetNode, err := gb.processNestedEntityRecursively(ctx, fieldInterface, fieldName)
+	targetNode, err := gb.processNestedEntityRecursively(ctx, fieldInterface)
 	if err != nil {
 		return nil, err
 	}
@@ -813,18 +799,29 @@ func (gb *GraphBuilder) processFieldRecursively(ctx context.Context, sourceNode 
 		return nil, nil
 	}
 
-	// Create edge based on field name
-	edgeType := gb.getEdgeTypeFromFieldName(fieldName)
+	// Create bidirectional edges
+	edgeTypes := gb.getEdgeTypesForField(fieldName, sourceNode.NodeType)
 
-	return &GraphEdge{
-		SourceNodeID: sourceNode.ID,
-		TargetNodeID: targetNode.ID,
-		EdgeType:     edgeType,
-		Properties:   json.RawMessage("{}"),
+	return []*GraphEdge{
+		{
+			// Forward: Source BELONGS_TO Target (e.g., Device BELONGS_TO_SITE Site)
+			SourceNodeID: sourceNode.ID,
+			TargetNodeID: targetNode.ID,
+			EdgeType:     edgeTypes.Forward,
+			Properties:   json.RawMessage("{}"),
+		},
+		{
+			// Reverse: Target HAS Source (e.g., Site HAS_DEVICE Device)
+			SourceNodeID: targetNode.ID,
+			TargetNodeID: sourceNode.ID,
+			EdgeType:     edgeTypes.Reverse,
+			Properties:   json.RawMessage("{}"),
+		},
 	}, nil
 }
 
-// processSliceFieldRecursively processes slice fields that may contain multiple references, recursively processing each nested entity
+// processSliceFieldRecursively processes slice fields that may contain multiple references.
+// Creates bidirectional edges (forward and reverse) for each nested entity.
 func (gb *GraphBuilder) processSliceFieldRecursively(ctx context.Context, sourceNode *GraphNode, field reflect.Value, fieldName string) ([]*GraphEdge, error) {
 	var edges []*GraphEdge
 
@@ -835,9 +832,9 @@ func (gb *GraphBuilder) processSliceFieldRecursively(ctx context.Context, source
 		}
 
 		// Extract edge properties before processing (for ServicePort, extract port_state)
-		edgeProperties := gb.extractEdgeProperties(item.Interface(), fieldName)
+		edgeProperties := gb.extractEdgeProperties(item.Interface())
 
-		targetNode, err := gb.processNestedEntityRecursively(ctx, item.Interface(), fieldName)
+		targetNode, err := gb.processNestedEntityRecursively(ctx, item.Interface())
 		if err != nil {
 			gb.logger.Warn("failed to process slice item", "field", fieldName, "index", i, "error", err)
 			continue
@@ -847,11 +844,22 @@ func (gb *GraphBuilder) processSliceFieldRecursively(ctx context.Context, source
 			continue
 		}
 
-		edgeType := gb.getEdgeTypeFromFieldName(fieldName)
+		// Create bidirectional edges
+		edgeTypes := gb.getEdgeTypesForField(fieldName, sourceNode.NodeType)
+
+		// Forward: Source BELONGS_TO Target
 		edges = append(edges, &GraphEdge{
 			SourceNodeID: sourceNode.ID,
 			TargetNodeID: targetNode.ID,
-			EdgeType:     edgeType,
+			EdgeType:     edgeTypes.Forward,
+			Properties:   edgeProperties,
+		})
+
+		// Reverse: Target HAS Source
+		edges = append(edges, &GraphEdge{
+			SourceNodeID: targetNode.ID,
+			TargetNodeID: sourceNode.ID,
+			EdgeType:     edgeTypes.Reverse,
 			Properties:   edgeProperties,
 		})
 	}
@@ -859,8 +867,8 @@ func (gb *GraphBuilder) processSliceFieldRecursively(ctx context.Context, source
 	return edges, nil
 }
 
-// processNestedEntityRecursively attempts to process a nested entity recursively
-func (gb *GraphBuilder) processNestedEntityRecursively(ctx context.Context, fieldValue any, _ string) (*GraphNode, error) {
+// processNestedEntityRecursively attempts to process a nested entity recursively.
+func (gb *GraphBuilder) processNestedEntityRecursively(ctx context.Context, fieldValue any) (*GraphNode, error) {
 	// Use generated function to create entity from field value
 	entity := protograph.CreateEntityFromInterface(fieldValue)
 	if entity == nil {
@@ -920,7 +928,7 @@ func (gb *GraphBuilder) upsertNode(ctx context.Context, externalID, nodeType str
 	}
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("upserting node %s/%s: %w", nodeType, externalID, err)
 	}
 
 	// Create snapshot with full entity data
@@ -991,10 +999,10 @@ func (gb *GraphBuilder) findNodeByTypeAndID(ctx context.Context, nodeType, exter
 	})
 	if err != nil {
 		// Check if this is a "no rows" error - return nil, nil if so
-		if err.Error() == "no rows in result set" {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
-		return nil, err
+		return nil, fmt.Errorf("finding node %s/%s: %w", nodeType, externalID, err)
 	}
 
 	return &GraphNode{
@@ -1038,178 +1046,16 @@ func getEntityTypeName(entity *diodepb.Entity) string {
 	return typeName
 }
 
-// getEdgeTypeFromFieldName maps field names to semantic edge types
-func (gb *GraphBuilder) getEdgeTypeFromFieldName(fieldName string) string {
-	switch fieldName {
-	// Hierarchical relationships
-	case "Device", "device":
-		return "BELONGS_TO_DEVICE"
-	case "Site", "site":
-		return "BELONGS_TO_SITE"
-	case "Location", "location":
-		return "LOCATED_IN"
-	case "Rack", "rack":
-		return "POSITIONED_IN_RACK"
-	case "Region", "region":
-		return "BELONGS_TO_REGION"
-	case "SiteGroup", "site_group":
-		return "BELONGS_TO_SITE_GROUP"
-	case "Cluster", "cluster":
-		return "BELONGS_TO_CLUSTER"
-	case "ClusterGroup", "cluster_group":
-		return "BELONGS_TO_CLUSTER_GROUP"
-	case "VirtualMachine", "virtual_machine":
-		return "BELONGS_TO_VM"
-
-	// Network relationships
-	case "Vrf", "vrf":
-		return "MEMBER_OF_VRF"
-	case "TaggedVlans", "tagged_vlans", "Vlan", "vlan":
-		return "TAGGED_WITH_VLAN"
-	case "UntaggedVlan", "untagged_vlan":
-		return "UNTAGGED_VLAN"
-	case "Interface", "interface":
-		return "CONNECTS_TO_INTERFACE"
-	case "VMInterface", "vm_interface":
-		return "CONNECTS_TO_VM_INTERFACE"
-
-	// Organizational relationships
-	case "Tags", "tags", "Tag", "tag":
-		return "TAGGED_WITH"
-	case "Tenant", "tenant":
-		return "BELONGS_TO_TENANT"
-	case "TenantGroup", "tenant_group":
-		return "BELONGS_TO_TENANT_GROUP"
-	case "Contact", "contact":
-		return "ASSIGNED_CONTACT"
-	case "ContactGroup", "contact_group":
-		return "BELONGS_TO_CONTACT_GROUP"
-	case "ContactRole", "contact_role":
-		return "HAS_CONTACT_ROLE"
-
-	// Type relationships
-	case "DeviceType", "device_type":
-		return "INSTANCE_OF_DEVICE_TYPE"
-	case "DeviceRole", "device_role":
-		return "HAS_DEVICE_ROLE"
-	case "Platform", "platform":
-		return "RUNS_ON_PLATFORM"
-	case "Manufacturer", "manufacturer":
-		return "MANUFACTURED_BY"
-	case "ClusterType", "cluster_type":
-		return "INSTANCE_OF_CLUSTER_TYPE"
-	case "RackType", "rack_type":
-		return "INSTANCE_OF_RACK_TYPE"
-	case "RackRole", "rack_role":
-		return "HAS_RACK_ROLE"
-
-	// Circuit relationships
-	case "Provider", "provider":
-		return "PROVIDED_BY"
-	case "Circuit", "circuit":
-		return "BELONGS_TO_CIRCUIT"
-	case "CircuitType", "circuit_type":
-		return "INSTANCE_OF_CIRCUIT_TYPE"
-
-	// Cable relationships
-	case "Cable", "cable":
-		return "CONNECTED_BY_CABLE"
-	case "ATerminations", "a_terminations":
-		return "CABLE_A_SIDE"
-	case "BTerminations", "b_terminations":
-		return "CABLE_B_SIDE"
-
-	// Power relationships
-	case "PowerFeed", "power_feed":
-		return "POWERED_BY"
-	case "PowerPanel", "power_panel":
-		return "POWERED_FROM_PANEL"
-	case "PowerOutlet", "power_outlet":
-		return "CONNECTS_TO_POWER_OUTLET"
-	case "PowerPort", "power_port":
-		return "CONNECTS_TO_POWER_PORT"
-
-	// Parent/child relationships
-	case "Parent", "parent":
-		return "CHILD_OF"
-	case "ParentInterface", "parent_interface":
-		return "CHILD_OF_INTERFACE"
-
-	// Service port relationships
-	case "ServicePorts", "service_ports", "ServicePort", "service_port":
-		return "HAS_SERVICE_PORT"
-
-	default:
-		return "REFERENCES"
-	}
+// getEdgeTypesForField returns both forward and reverse edge types for bidirectional relationships.
+// Forward: BELONGS_TO_X (source references target)
+// Reverse: HAS_X (target contains source)
+func (gb *GraphBuilder) getEdgeTypesForField(fieldName, sourceEntityType string) protograph.EdgeTypePair {
+	return protograph.GetEdgeTypesForField(fieldName, sourceEntityType)
 }
 
-// getNodeTypeFromFieldName maps field names to netbox object types using existing constants
+// getNodeTypeFromFieldName returns the node type (entity type name) for a given field name using generated mappings.
 func (gb *GraphBuilder) getNodeTypeFromFieldName(fieldName string) string {
-	switch fieldName {
-	case "Device", "device":
-		return netbox.DeviceObjectType
-	case "Site", "site":
-		return netbox.SiteObjectType
-	case "Location", "location":
-		return netbox.LocationObjectType
-	case "Rack", "rack":
-		return netbox.RackObjectType
-	case "Vrf", "vrf":
-		return netbox.VRFObjectType
-	case "TaggedVlans", "tagged_vlans", "Vlan", "vlan":
-		return netbox.VLANObjectType
-	case "Tags", "tags", "Tag", "tag":
-		return netbox.TagObjectType
-	case "Tenant", "tenant":
-		return netbox.TenantObjectType
-	case "DeviceType", "device_type":
-		return netbox.DeviceTypeObjectType
-	case "DeviceRole", "device_role":
-		return netbox.DeviceRoleObjectType
-	case "Platform", "platform":
-		return netbox.PlatformObjectType
-	case "Manufacturer", "manufacturer":
-		return netbox.ManufacturerObjectType
-	case "Interface", "interface":
-		return netbox.InterfaceObjectType
-	case "Region", "region":
-		return netbox.RegionObjectType
-	case "SiteGroup", "site_group":
-		return netbox.SiteGroupObjectType
-	case "TenantGroup", "tenant_group":
-		return netbox.TenantGroupObjectType
-	case "RackRole", "rack_role":
-		return netbox.RackRoleObjectType
-	case "RackType", "rack_type":
-		return netbox.RackTypeObjectType
-	case "Cluster", "cluster":
-		return netbox.ClusterObjectType
-	case "ClusterType", "cluster_type":
-		return netbox.ClusterTypeObjectType
-	case "ClusterGroup", "cluster_group":
-		return netbox.ClusterGroupObjectType
-	case "VirtualMachine", "virtual_machine":
-		return netbox.VirtualMachineObjectType
-	case "VMInterface", "vm_interface":
-		return netbox.VMInterfaceObjectType
-	case "Contact", "contact":
-		return netbox.ContactObjectType
-	case "ContactGroup", "contact_group":
-		return netbox.ContactGroupObjectType
-	case "ContactRole", "contact_role":
-		return netbox.ContactRoleObjectType
-	case "Provider", "provider":
-		return netbox.ProviderObjectType
-	case "Circuit", "circuit":
-		return netbox.CircuitObjectType
-	case "CircuitType", "circuit_type":
-		return netbox.CircuitTypeObjectType
-	case "Cable", "cable":
-		return netbox.CableObjectType
-	default:
-		return "unknown"
-	}
+	return protograph.GetNodeTypeForField(fieldName)
 }
 
 // propagateNodeUpdates finds nodes that reference updated nodes and refreshes them with the latest data
@@ -1299,7 +1145,7 @@ func (gb *GraphBuilder) checkDataForUpdatedReferences(data any, excludeNodeKey s
 							if entityMap, ok := entityData.(map[string]any); ok {
 								if updatedName, ok := entityMap["name"]; ok && updatedName == nameStr {
 									// Check if the node types could be related (e.g., Manufacturer)
-									if gb.couldBeRelatedNodeType(updatedNode.NodeType, v) {
+									if gb.couldBeRelatedNodeType(updatedNode.NodeType) {
 										gb.logger.Debug("found reference that needs update",
 											"referring_name", nameStr,
 											"updated_node_type", updatedNode.NodeType,
@@ -1331,8 +1177,8 @@ func (gb *GraphBuilder) checkDataForUpdatedReferences(data any, excludeNodeKey s
 	return false
 }
 
-// couldBeRelatedNodeType checks if an updated node type could be referenced by the given data
-func (gb *GraphBuilder) couldBeRelatedNodeType(updatedNodeType string, _ map[string]any) bool {
+// couldBeRelatedNodeType checks if an updated node type could be referenced by the given data.
+func (gb *GraphBuilder) couldBeRelatedNodeType(updatedNodeType string) bool {
 	// The logic here is: if we updated a node of type X, and this referenceData
 	// represents a reference to type X (by having the same name), then it's related
 
