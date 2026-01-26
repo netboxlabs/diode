@@ -5,6 +5,8 @@ import (
 	"os"
 	"regexp"
 	"strings"
+
+	"github.com/netboxlabs/diode/diode-server/strcase"
 )
 
 // ParseProtobuf parses the protobuf file and extracts all entity types from the Entity oneof
@@ -264,7 +266,7 @@ func (g *Generator) parseFieldLine(line string) (EntityField, error) {
 
 	field := EntityField{
 		Name:       matches[3],
-		GoName:     snakeToPascal(matches[3]),
+		GoName:     strcase.ToPascalCase(matches[3]),
 		Type:       matches[2],
 		IsOptional: matches[1] == "optional" || strings.Contains(line, "oneof"),
 		IsRepeated: matches[1] == "repeated",
@@ -272,20 +274,6 @@ func (g *Generator) parseFieldLine(line string) (EntityField, error) {
 	}
 
 	return field, nil
-}
-
-// snakeToPascal converts snake_case to PascalCase
-// e.g., "tagged_vlans" -> "TaggedVlans", "site" -> "Site"
-func snakeToPascal(s string) string {
-	parts := strings.Split(s, "_")
-	var result strings.Builder
-	for _, part := range parts {
-		if len(part) > 0 {
-			result.WriteString(strings.ToUpper(part[:1]))
-			result.WriteString(part[1:])
-		}
-	}
-	return result.String()
 }
 
 // isNestedType determines if a field type is a nested message type
