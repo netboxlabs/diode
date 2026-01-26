@@ -69,6 +69,7 @@ type IngestionProcessor struct {
 	metrics            Metrics
 	cancel             context.CancelFunc
 	mx                 sync.Mutex
+	graphBuilder       *GraphBuilder // nil when ENABLE_GRAPH_DB is false
 }
 
 // IngestionLogToProcess represents an ingestion log to process
@@ -89,8 +90,20 @@ type IngestionProcessorOps interface {
 	RefreshDefaultBranch(ctx context.Context) (*netboxdiodeplugin.Branch, error)
 }
 
+// ProcessorOption is a functional option for configuring IngestionProcessor
+type ProcessorOption func(*IngestionProcessor)
+
+// WithGraphBuilder sets the GraphBuilder for graph-based entity extraction.
+// When set, entities are also stored in the graph database for relationship tracking.
+// Pass nil to disable graph extraction.
+func WithGraphBuilder(gb *GraphBuilder) ProcessorOption {
+	return func(p *IngestionProcessor) {
+		p.graphBuilder = gb
+	}
+}
+
 // NewIngestionProcessor creates a new ingestion processor
-func NewIngestionProcessor(_ context.Context, logger *slog.Logger, cfg Config, redisClient, redisStreamClient RedisClient, redisStreamID string, redisConsumerGroup string, ops IngestionProcessorOps, metrics Metrics) (*IngestionProcessor, error) {
+func NewIngestionProcessor(_ context.Context, logger *slog.Logger, cfg Config, redisClient, redisStreamClient RedisClient, redisStreamID string, redisConsumerGroup string, ops IngestionProcessorOps, metrics Metrics, opts ...ProcessorOption) (*IngestionProcessor, error) {
 	hostname, err := os.Hostname()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get hostname: %v", err)
@@ -106,6 +119,11 @@ func NewIngestionProcessor(_ context.Context, logger *slog.Logger, cfg Config, r
 		redisConsumerGroup: redisConsumerGroup,
 		ops:                ops,
 		metrics:            metrics,
+	}
+
+	// Apply functional options
+	for _, opt := range opts {
+		opt(component)
 	}
 
 	return component, nil
@@ -435,6 +453,17 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 		ctx = telemetry.ContextWithMetricAttributes(ctx, attrs...)
 
 		p.metrics.RecordIngestionLogCreate(ctx, true)
+
+		// Extract graph data if graph DB is enabled (non-blocking, errors logged but not fatal)
+		if p.graphBuilder != nil {
+			if err := p.graphBuilder.ExtractGraph(ctx, v); err != nil {
+				p.logger.Warn("graph extraction failed",
+					"error", err,
+					"ingestion_log_id", id,
+					"entity_type", objectType)
+				// Don't fail the main processing path - graph extraction is supplementary
+			}
+		}
 
 		if result.WasDuplicate && result.IngestionLog.State == reconcilerpb.State_IGNORED {
 			p.logger.Debug("skipping ingestion log because it is a duplicate of an ignored ingestion log", "id", id, "externalID", ingestionLog.GetId())
