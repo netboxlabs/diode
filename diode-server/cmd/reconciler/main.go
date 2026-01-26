@@ -17,6 +17,9 @@ import (
 
 	"github.com/netboxlabs/diode/diode-server/authutil"
 	"github.com/netboxlabs/diode/diode-server/dbstore/postgres"
+	"github.com/netboxlabs/diode/diode-server/entitymatcher"
+	dbpostgres "github.com/netboxlabs/diode/diode-server/gen/dbstore/postgres"
+	"github.com/netboxlabs/diode/diode-server/matching"
 	"github.com/netboxlabs/diode/diode-server/migrator"
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
 	"github.com/netboxlabs/diode/diode-server/reconciler"
@@ -128,6 +131,51 @@ func main() {
 
 	repository := postgres.NewRepository(dbPool)
 
+	// Initialize GraphBuilder if graph DB feature is enabled
+	var graphBuilderOpt reconciler.ProcessorOption
+	if cfg.EnableGraphDB {
+		s.Logger().Info("Graph DB feature enabled, initializing GraphBuilder")
+
+		// Load matching configuration if provided
+		var matchingConfig *matching.Config
+		if cfg.EntityMatchingConfigPath != "" {
+			var err error
+			matchingConfig, err = matching.LoadMatchingConfig(cfg.EntityMatchingConfigPath)
+			if err != nil {
+				s.Logger().Warn("failed to load entity matching config, using defaults",
+					"path", cfg.EntityMatchingConfigPath,
+					"error", err)
+			} else {
+				s.Logger().Info("loaded entity matching configuration",
+					"path", cfg.EntityMatchingConfigPath)
+			}
+		}
+
+		// Use SQLC-generated queries directly for graph operations
+		graphQueries := dbpostgres.New(dbPool)
+
+		// Create GraphBuilder with graph queries
+		graphBuilder := reconciler.NewGraphBuilder(graphQueries, s.Logger())
+
+		// Set up entity matcher if matching config was loaded
+		if matchingConfig != nil {
+			graphBuilder.SetMatchingConfig(matchingConfig)
+
+			// Create entity matcher for confidence-based matching
+			matcherConfig := &matching.EntityMatchingConfig{
+				Rules:          matchingConfig.GetFinalRules(),
+				GlobalMinConf:  matching.MatchConfidence(matchingConfig.GlobalSettings.DefaultMinConfidence),
+				EnableFallback: true,
+				CacheResults:   true,
+				MaxCacheSize:   1000,
+			}
+			entityMatcher := entitymatcher.NewMatcher(graphQueries, matcherConfig, s.Logger())
+			graphBuilder.SetEntityMatcher(entityMatcher)
+		}
+
+		graphBuilderOpt = reconciler.WithGraphBuilder(graphBuilder)
+	}
+
 	diodeToNetBoxMaxRetries := 3
 
 	nbClient, err := netboxdiodeplugin.NewClient(
@@ -149,7 +197,13 @@ func main() {
 
 	ops := reconciler.NewOps(repository, nbClient, s.Logger(), nil)
 
-	ingestionProcessor, err := reconciler.NewIngestionProcessor(ctx, s.Logger(), cfg, redisClient, redisStreamClient, reconciler.DefaultRedisStreamID, reconciler.DefaultRedisConsumerGroup, ops, metricRecorder)
+	// Build processor options
+	var processorOpts []reconciler.ProcessorOption
+	if graphBuilderOpt != nil {
+		processorOpts = append(processorOpts, graphBuilderOpt)
+	}
+
+	ingestionProcessor, err := reconciler.NewIngestionProcessor(ctx, s.Logger(), cfg, redisClient, redisStreamClient, reconciler.DefaultRedisStreamID, reconciler.DefaultRedisConsumerGroup, ops, metricRecorder, processorOpts...)
 	if err != nil {
 		s.Logger().Error("failed to instantiate ingestion processor", "error", err)
 		metricRecorder.RecordServiceStartupAttempt(ctx, false)
