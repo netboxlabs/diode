@@ -5,6 +5,8 @@ import (
 	"os"
 	"regexp"
 	"strings"
+
+	"github.com/netboxlabs/diode/diode-server/strcase"
 )
 
 // ParseProtobuf parses the protobuf file and extracts all entity types from the Entity oneof
@@ -151,7 +153,7 @@ func (g *Generator) parseOneofField(line string) EntityType {
 	}
 }
 
-// convertFieldNameToOneofName converts proto field names to Go oneof field names
+// convertFieldNameToOneofName converts proto field names to Go oneof field names.
 // e.g., "asn" -> "Asn", "asn_range" -> "AsnRange", "device_type" -> "DeviceType"
 func convertFieldNameToOneofName(fieldName string) string {
 	// Handle special cases for acronyms first
@@ -184,13 +186,14 @@ func convertFieldNameToOneofName(fieldName string) string {
 
 	// Convert snake_case to CamelCase for regular cases
 	parts := strings.Split(fieldName, "_")
-	result := ""
+	var result strings.Builder
 	for _, part := range parts {
 		if len(part) > 0 {
-			result += strings.ToUpper(part[:1]) + part[1:]
+			result.WriteString(strings.ToUpper(part[:1]))
+			result.WriteString(part[1:])
 		}
 	}
-	return result
+	return result.String()
 }
 
 // parseEntityFields extracts field information from a specific message type
@@ -200,29 +203,34 @@ func (g *Generator) parseEntityFields(content, entityName string) ([]EntityField
 	// Find the message definition for this entity
 	lines := strings.Split(content, "\n")
 	inMessage := false
+	braceDepth := 0
 	messagePattern := fmt.Sprintf("message %s", entityName)
 
 	for _, line := range lines {
-		line = strings.TrimSpace(line)
+		trimmedLine := strings.TrimSpace(line)
 
 		// Find the message start
-		if strings.HasPrefix(line, messagePattern+" ") || line == messagePattern+" {" {
+		if strings.HasPrefix(trimmedLine, messagePattern+" ") || trimmedLine == messagePattern+" {" {
 			inMessage = true
+			braceDepth = 1 // Start at depth 1 for the message opening brace
 			continue
 		}
 
-		// Exit message when we find closing brace or another message
-		if inMessage && (strings.HasPrefix(line, "}") || strings.HasPrefix(line, "message ")) {
-			if strings.HasPrefix(line, "}") {
-				break
-			}
-			inMessage = false
+		if !inMessage {
 			continue
 		}
 
-		// Parse field definitions
-		if inMessage && strings.Contains(line, "=") && !strings.HasPrefix(line, "//") && !strings.Contains(line, "oneof") {
-			field, err := g.parseFieldLine(line)
+		// Track brace depth for nested blocks (enums, validation rules, etc.)
+		braceDepth += strings.Count(trimmedLine, "{") - strings.Count(trimmedLine, "}")
+
+		// Exit message when we return to depth 0
+		if braceDepth <= 0 {
+			break
+		}
+
+		// Only parse fields at depth 1 (direct message fields, not nested blocks)
+		if braceDepth == 1 && strings.Contains(trimmedLine, "=") && !strings.HasPrefix(trimmedLine, "//") && !strings.Contains(trimmedLine, "oneof") {
+			field, err := g.parseFieldLine(trimmedLine)
 			if err != nil {
 				continue // Skip malformed lines
 			}
@@ -258,6 +266,7 @@ func (g *Generator) parseFieldLine(line string) (EntityField, error) {
 
 	field := EntityField{
 		Name:       matches[3],
+		GoName:     strcase.ToPascalCase(matches[3]),
 		Type:       matches[2],
 		IsOptional: matches[1] == "optional" || strings.Contains(line, "oneof"),
 		IsRepeated: matches[1] == "repeated",

@@ -4,11 +4,12 @@ package protograph
 
 import (
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
+	"github.com/netboxlabs/diode/diode-server/strcase"
 )
 
 // CreateEntityFromInterface creates a diodepb.Entity from a typed interface value.
 // This replaces the large manual switch statements in the GraphBuilder.
-func CreateEntityFromInterface(fieldValue interface{}) *diodepb.Entity {
+func CreateEntityFromInterface(fieldValue any) *diodepb.Entity {
 	if fieldValue == nil {
 		return nil
 	}
@@ -211,7 +212,7 @@ func CreateEntityFromInterface(fieldValue interface{}) *diodepb.Entity {
 
 // GetEntityTypeName returns the entity type name for a given interface value.
 // This is useful for debugging and logging.
-func GetEntityTypeName(fieldValue interface{}) string {
+func GetEntityTypeName(fieldValue any) string {
 	if fieldValue == nil {
 		return ""
 	}
@@ -413,7 +414,7 @@ func GetEntityTypeName(fieldValue interface{}) string {
 }
 
 // IsKnownEntityType checks if the given interface value is a known entity type.
-func IsKnownEntityType(fieldValue interface{}) bool {
+func IsKnownEntityType(fieldValue any) bool {
 	if fieldValue == nil {
 		return false
 	}
@@ -714,4 +715,196 @@ func GetAllEntityTypes() []string {
 		"Owner",
 		"OwnerGroup",
 	}
+}
+
+// EdgeTypePair represents both directions of a relationship.
+type EdgeTypePair struct {
+	Forward string // e.g., BELONGS_TO_SITE (source references target)
+	Reverse string // e.g., HAS_DEVICE (target contains source)
+}
+
+// GetEdgeTypesForField returns both edge types for a bidirectional relationship.
+// Forward: BELONGS_TO_X (source entity references target entity)
+// Reverse: HAS_X (target entity contains source entity)
+// e.g., Device.Site -> Forward: "BELONGS_TO_SITE", Reverse: "HAS_DEVICE"
+func GetEdgeTypesForField(fieldName, sourceEntityType string) EdgeTypePair {
+	return EdgeTypePair{
+		Forward: "BELONGS_TO_" + strcase.ToUpperSnakeCase(fieldName),
+		Reverse: "HAS_" + strcase.ToUpperSnakeCase(sourceEntityType),
+	}
+}
+
+// GetEdgeTypeForField returns the forward edge type for a given field name.
+// Convention: BELONGS_TO_UPPER_SNAKE_CASE(fieldName)
+// e.g., "Site" -> "BELONGS_TO_SITE", "DeviceType" -> "BELONGS_TO_DEVICE_TYPE"
+func GetEdgeTypeForField(fieldName string) string {
+	return "BELONGS_TO_" + strcase.ToUpperSnakeCase(fieldName)
+}
+
+// GetReverseEdgeTypeForField returns the reverse edge type for a given source entity type.
+// Convention: HAS_UPPER_SNAKE_CASE(sourceEntityType)
+// e.g., "Device" -> "HAS_DEVICE", "Interface" -> "HAS_INTERFACE"
+func GetReverseEdgeTypeForField(sourceEntityType string) string {
+	return "HAS_" + strcase.ToUpperSnakeCase(sourceEntityType)
+}
+
+// GetNodeTypeForField returns the node type (entity type name) for a given field name.
+// Supports both PascalCase (Go reflection) and snake_case (proto/JSON) field names.
+// e.g., "TaggedVlans" -> "VLAN", "tagged_vlans" -> "VLAN", "Site" -> "Site"
+func GetNodeTypeForField(fieldName string) string {
+	// Map field names to their target entity types
+	// Extracted from proto message field definitions
+	fieldToType := map[string]string{
+		"Accounts":                "ProviderAccount",
+		"Asns":                    "ASN",
+		"Assignments":             "CircuitGroupAssignment",
+		"Bridge":                  "Interface",
+		"Cable":                   "Cable",
+		"ChoiceSet":               "CustomFieldChoiceSet",
+		"Circuit":                 "Circuit",
+		"Cluster":                 "Cluster",
+		"Contact":                 "Contact",
+		"DefaultPlatform":         "Platform",
+		"Device":                  "Device",
+		"DeviceType":              "DeviceType",
+		"ExportTargets":           "RouteTarget",
+		"Group":                   "CircuitGroup",
+		"Groups":                  "ContactGroup",
+		"IkePolicy":               "IKEPolicy",
+		"ImportTargets":           "RouteTarget",
+		"InstalledDevice":         "Device",
+		"InstalledModule":         "Module",
+		"Interface":               "Interface",
+		"InterfaceA":              "Interface",
+		"InterfaceB":              "Interface",
+		"Ipaddresses":             "IPAddress",
+		"IpsecPolicy":             "IPSecPolicy",
+		"IpsecProfile":            "IPSecProfile",
+		"L2vpn":                   "L2VPN",
+		"Lag":                     "Interface",
+		"Location":                "Location",
+		"Manufacturer":            "Manufacturer",
+		"Master":                  "Device",
+		"Module":                  "Module",
+		"ModuleBay":               "ModuleBay",
+		"ModuleType":              "ModuleType",
+		"NatInside":               "IPAddress",
+		"OobIp":                   "IPAddress",
+		"OutsideIp":               "IPAddress",
+		"Owner":                   "Owner",
+		"Parent":                  "ContactGroup",
+		"Platform":                "Platform",
+		"Policy":                  "VLANTranslationPolicy",
+		"PowerPanel":              "PowerPanel",
+		"PowerPort":               "PowerPort",
+		"PrimaryIp4":              "IPAddress",
+		"PrimaryIp6":              "IPAddress",
+		"PrimaryMacAddress":       "MACAddress",
+		"Profile":                 "ModuleTypeProfile",
+		"Proposals":               "IKEProposal",
+		"Provider":                "Provider",
+		"ProviderAccount":         "ProviderAccount",
+		"ProviderNetwork":         "ProviderNetwork",
+		"QinqSvlan":               "VLAN",
+		"Rack":                    "Rack",
+		"RackType":                "RackType",
+		"RearPort":                "RearPort",
+		"Region":                  "Region",
+		"Rir":                     "RIR",
+		"Role":                    "ContactRole",
+		"Site":                    "Site",
+		"Sites":                   "Site",
+		"TaggedVlans":             "VLAN",
+		"Tags":                    "Tag",
+		"Tenant":                  "Tenant",
+		"Tunnel":                  "Tunnel",
+		"Type":                    "CircuitType",
+		"UntaggedVlan":            "VLAN",
+		"Vdcs":                    "VirtualDeviceContext",
+		"VirtualChassis":          "VirtualChassis",
+		"VirtualCircuit":          "VirtualCircuit",
+		"VirtualMachine":          "VirtualMachine",
+		"Vlan":                    "VLAN",
+		"VlanTranslationPolicy":   "VLANTranslationPolicy",
+		"Vrf":                     "VRF",
+		"WirelessLans":            "WirelessLAN",
+		"accounts":                "ProviderAccount",
+		"asns":                    "ASN",
+		"assignments":             "CircuitGroupAssignment",
+		"bridge":                  "Interface",
+		"cable":                   "Cable",
+		"choice_set":              "CustomFieldChoiceSet",
+		"circuit":                 "Circuit",
+		"cluster":                 "Cluster",
+		"contact":                 "Contact",
+		"default_platform":        "Platform",
+		"device":                  "Device",
+		"device_type":             "DeviceType",
+		"export_targets":          "RouteTarget",
+		"group":                   "CircuitGroup",
+		"groups":                  "ContactGroup",
+		"ike_policy":              "IKEPolicy",
+		"import_targets":          "RouteTarget",
+		"installed_device":        "Device",
+		"installed_module":        "Module",
+		"interface":               "Interface",
+		"interface_a":             "Interface",
+		"interface_b":             "Interface",
+		"ipaddresses":             "IPAddress",
+		"ipsec_policy":            "IPSecPolicy",
+		"ipsec_profile":           "IPSecProfile",
+		"l2vpn":                   "L2VPN",
+		"lag":                     "Interface",
+		"location":                "Location",
+		"manufacturer":            "Manufacturer",
+		"master":                  "Device",
+		"module":                  "Module",
+		"module_bay":              "ModuleBay",
+		"module_type":             "ModuleType",
+		"nat_inside":              "IPAddress",
+		"oob_ip":                  "IPAddress",
+		"outside_ip":              "IPAddress",
+		"owner":                   "Owner",
+		"parent":                  "ContactGroup",
+		"platform":                "Platform",
+		"policy":                  "VLANTranslationPolicy",
+		"power_panel":             "PowerPanel",
+		"power_port":              "PowerPort",
+		"primary_ip4":             "IPAddress",
+		"primary_ip6":             "IPAddress",
+		"primary_mac_address":     "MACAddress",
+		"profile":                 "ModuleTypeProfile",
+		"proposals":               "IKEProposal",
+		"provider":                "Provider",
+		"provider_account":        "ProviderAccount",
+		"provider_network":        "ProviderNetwork",
+		"qinq_svlan":              "VLAN",
+		"rack":                    "Rack",
+		"rack_type":               "RackType",
+		"rear_port":               "RearPort",
+		"region":                  "Region",
+		"rir":                     "RIR",
+		"role":                    "ContactRole",
+		"site":                    "Site",
+		"sites":                   "Site",
+		"tagged_vlans":            "VLAN",
+		"tags":                    "Tag",
+		"tenant":                  "Tenant",
+		"tunnel":                  "Tunnel",
+		"type":                    "CircuitType",
+		"untagged_vlan":           "VLAN",
+		"vdcs":                    "VirtualDeviceContext",
+		"virtual_chassis":         "VirtualChassis",
+		"virtual_circuit":         "VirtualCircuit",
+		"virtual_machine":         "VirtualMachine",
+		"vlan":                    "VLAN",
+		"vlan_translation_policy": "VLANTranslationPolicy",
+		"vrf":                     "VRF",
+		"wireless_lans":           "WirelessLAN",
+	}
+
+	if entityType, ok := fieldToType[fieldName]; ok {
+		return entityType
+	}
+	return fieldName // Return as-is if not found (may be the entity type itself)
 }
