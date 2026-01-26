@@ -1,6 +1,7 @@
 UTILITIES        = authmanager
+GENERATORS       = protograph
 BUILD_UTILITIES  = $(addprefix build-,$(UTILITIES))
-SERVICES         := $(filter-out $(UTILITIES),$(shell find ./cmd/* -type d -exec basename {} \;))
+SERVICES         := $(filter-out $(UTILITIES) $(GENERATORS),$(shell find ./cmd/* -type d -exec basename {} \;))
 BUILD_SERVICES   = $(addprefix build-,$(SERVICES))
 DOCKER_SERVICES  = $(addprefix docker-,$(SERVICES))
 BUILD_DIR        ?= ./build
