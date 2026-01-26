@@ -47,15 +47,7 @@ type GraphBuilder struct {
 // Note: EntityMatcher is nil by default. Use NewGraphBuilderWithMatcher or SetEntityMatcher
 // to enable confidence-based entity matching.
 func NewGraphBuilder(repo GraphRepository, logger *slog.Logger) *GraphBuilder {
-	return &GraphBuilder{
-		repo:              repo,
-		logger:            logger,
-		nodeCache:         make(map[string]*GraphNode),
-		entityMatcher:     nil, // Set via NewGraphBuilderWithMatcher or SetEntityMatcher
-		updatedNodes:      make(map[string]*GraphNode),
-		seenInThisRequest: make(map[string]bool),
-		snapshotRetention: DefaultSnapshotRetention,
-	}
+	return NewGraphBuilderWithMatcher(repo, logger, nil)
 }
 
 // NewGraphBuilderWithMatcher creates a new GraphBuilder instance with custom entity matcher
@@ -768,13 +760,13 @@ func (gb *GraphBuilder) extractEdgeProperties(fieldValue any) json.RawMessage {
 	// Extract each configured edge property field
 	for _, fieldName := range propertyFieldNames {
 		if field := val.FieldByName(fieldName); field.IsValid() && field.CanInterface() {
-			fieldValue := field.Interface()
+			fv := field.Interface()
 
 			// Only include non-zero values
-			if !reflect.DeepEqual(fieldValue, reflect.Zero(field.Type()).Interface()) {
+			if !reflect.DeepEqual(fv, reflect.Zero(field.Type()).Interface()) {
 				// Convert field name to snake_case for JSON
 				jsonFieldName := strcase.ToSnakeCase(fieldName)
-				properties[jsonFieldName] = fieldValue
+				properties[jsonFieldName] = fv
 			}
 		}
 	}
