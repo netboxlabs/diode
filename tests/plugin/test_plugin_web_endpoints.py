@@ -104,8 +104,8 @@ def test_add_credential_requires_client_name(netbox_web_client):
         f"Expected form validation error, got {response.status_code}"
 
     # Check for error message in response
-    assert ("Enter a name for the client credential that will be created for authentication to "
-            "the Diode ingestion service") in response.text.lower() or "error" in response.text.lower(), \
+    assert ("enter a name for the client credential that will be created for authentication to "
+            "the diode ingestion service") in response.text.lower() or "error" in response.text.lower(), \
         "Should show validation error for missing client_name"
 
 

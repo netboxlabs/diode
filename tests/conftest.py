@@ -42,7 +42,6 @@ def pytest_configure(config):
 @pytest.fixture(scope="session")
 def test_config():
     """Provide test configuration."""
-    import os
     return {
         "diode_target": os.getenv("DIODE_TARGET", "grpc://localhost:8080/diode"),
         "netbox_url": os.getenv("NETBOX_URL", "http://localhost:8000/netbox/"),
@@ -173,7 +172,12 @@ def diode_client_credential(netbox_web_client):
 
     yield credential
 
-    # Cleanup happens automatically when fixture scope ends
+    # Cleanup: Delete the credential
+    try:
+        netbox_web_client.delete_credential(credential['client_id'])
+        logger.info(f"Deleted test credential: {credential['client_id']}")
+    except Exception as e:
+        logger.warning(f"Failed to delete test credential {credential['client_id']}: {e}")
 
 
 @pytest.fixture(scope="function")

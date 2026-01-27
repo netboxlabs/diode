@@ -1,4 +1,4 @@
-"""Tests for device ingestion."""
+"""Tests for site ingestion."""
 import uuid
 import time
 
@@ -7,7 +7,7 @@ from netboxlabs.diode.sdk.ingester import (Entity, Site)
 
 
 @pytest.mark.integration
-def test_ingest_device_minimal(diode_client, netbox_api_client):
+def test_ingest_site_minimal(diode_client, netbox_api_client):
     """Test ingesting a site with minimal required fields.
 
     This test verifies the complete flow:
