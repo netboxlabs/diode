@@ -60,10 +60,14 @@ services:
       - DIODE_AUTH_TOKEN_URL=${DIODE_AUTH_TOKEN_URL}
       - DIODE_TO_NETBOX_CLIENT_ID=${DIODE_TO_NETBOX_CLIENT_ID}
       - DIODE_TO_NETBOX_CLIENT_SECRET=${DIODE_TO_NETBOX_CLIENT_SECRET}
+      - ENABLE_GRAPH_DB=${ENABLE_GRAPH_DB:-false}
+      - ENTITY_MATCHING_CONFIG_PATH=${ENTITY_MATCHING_CONFIG_PATH:-}
     restart: on-failure
     ports: [ ]
     volumes:
       - ./oauth2/client:/etc/config/oauth2/client:z,ro
+      # Uncomment to mount entity matching config when ENABLE_GRAPH_DB=true
+      # - ./examples/entity_matching_config.yaml:/etc/diode/entity_matching.yaml:z,ro
     depends_on:
       redis:
         condition: service_started

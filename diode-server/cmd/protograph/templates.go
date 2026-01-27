@@ -6,11 +6,12 @@ package {{.Package}}
 
 import (
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
+	"github.com/netboxlabs/diode/diode-server/strcase"
 )
 
 // CreateEntityFromInterface creates a diodepb.Entity from a typed interface value.
 // This replaces the large manual switch statements in the GraphBuilder.
-func CreateEntityFromInterface(fieldValue interface{}) *diodepb.Entity {
+func CreateEntityFromInterface(fieldValue any) *diodepb.Entity {
 	if fieldValue == nil {
 		return nil
 	}
@@ -27,7 +28,7 @@ func CreateEntityFromInterface(fieldValue interface{}) *diodepb.Entity {
 
 // GetEntityTypeName returns the entity type name for a given interface value.
 // This is useful for debugging and logging.
-func GetEntityTypeName(fieldValue interface{}) string {
+func GetEntityTypeName(fieldValue any) string {
 	if fieldValue == nil {
 		return ""
 	}
@@ -43,7 +44,7 @@ func GetEntityTypeName(fieldValue interface{}) string {
 }
 
 // IsKnownEntityType checks if the given interface value is a known entity type.
-func IsKnownEntityType(fieldValue interface{}) bool {
+func IsKnownEntityType(fieldValue any) bool {
 	if fieldValue == nil {
 		return false
 	}
@@ -67,4 +68,54 @@ func GetAllEntityTypes() []string {
 {{- end}}
 	}
 }
+
+// EdgeTypePair represents both directions of a relationship.
+type EdgeTypePair struct {
+	Forward string // e.g., BELONGS_TO_SITE (source references target)
+	Reverse string // e.g., HAS_DEVICE (target contains source)
+}
+
+// GetEdgeTypesForField returns both edge types for a bidirectional relationship.
+// Forward: BELONGS_TO_X (source entity references target entity)
+// Reverse: HAS_X (target entity contains source entity)
+// e.g., Device.Site -> Forward: "BELONGS_TO_SITE", Reverse: "HAS_DEVICE"
+func GetEdgeTypesForField(fieldName, sourceEntityType string) EdgeTypePair {
+	return EdgeTypePair{
+		Forward: "BELONGS_TO_" + strcase.ToUpperSnakeCase(fieldName),
+		Reverse: "HAS_" + strcase.ToUpperSnakeCase(sourceEntityType),
+	}
+}
+
+// GetEdgeTypeForField returns the forward edge type for a given field name.
+// Convention: BELONGS_TO_UPPER_SNAKE_CASE(fieldName)
+// e.g., "Site" -> "BELONGS_TO_SITE", "DeviceType" -> "BELONGS_TO_DEVICE_TYPE"
+func GetEdgeTypeForField(fieldName string) string {
+	return "BELONGS_TO_" + strcase.ToUpperSnakeCase(fieldName)
+}
+
+// GetReverseEdgeTypeForField returns the reverse edge type for a given source entity type.
+// Convention: HAS_UPPER_SNAKE_CASE(sourceEntityType)
+// e.g., "Device" -> "HAS_DEVICE", "Interface" -> "HAS_INTERFACE"
+func GetReverseEdgeTypeForField(sourceEntityType string) string {
+	return "HAS_" + strcase.ToUpperSnakeCase(sourceEntityType)
+}
+
+// GetNodeTypeForField returns the node type (entity type name) for a given field name.
+// Supports both PascalCase (Go reflection) and snake_case (proto/JSON) field names.
+// e.g., "TaggedVlans" -> "VLAN", "tagged_vlans" -> "VLAN", "Site" -> "Site"
+func GetNodeTypeForField(fieldName string) string {
+	// Map field names to their target entity types
+	// Extracted from proto message field definitions
+	fieldToType := map[string]string{
+{{- range .FieldMappings}}
+		"{{.FieldName}}": "{{.EntityType}}",
+{{- end}}
+	}
+
+	if entityType, ok := fieldToType[fieldName]; ok {
+		return entityType
+	}
+	return fieldName // Return as-is if not found (may be the entity type itself)
+}
+
 `

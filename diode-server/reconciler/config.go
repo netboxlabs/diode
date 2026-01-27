@@ -35,4 +35,11 @@ type Config struct {
 
 	RedisTLS  tls.Config       `envconfig:"REDIS_TLS"`
 	Telemetry telemetry.Config `envconfig:"TELEMETRY"`
+
+	// Experimental
+	EnableGraphDB bool `envconfig:"ENABLE_GRAPH_DB" default:"false"`
+
+	// Entity matching configuration file path (only used when graph DB is enabled)
+	// If empty, default matching rules are used
+	EntityMatchingConfigPath string `envconfig:"ENTITY_MATCHING_CONFIG_PATH" default:""`
 }
