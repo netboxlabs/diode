@@ -97,8 +97,8 @@ def test_add_credential_requires_client_name(netbox_web_client):
 
     This test verifies that form validation works correctly.
     """
-    # Try to add credential without client_name
-    response = netbox_web_client.add_credential(None)
+    # Try to add credential with empty client_name
+    response = netbox_web_client.add_credential("")
 
     # Should NOT redirect (form validation should fail)
     assert response.status_code == 200, \
