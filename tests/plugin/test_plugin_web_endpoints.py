@@ -161,8 +161,9 @@ def test_unauthenticated_access_redirects_to_login(test_config):
     session = requests.Session()
 
     # Try to access settings page without authentication
+    base_url = test_config['netbox_url'].removesuffix('/')
     response = session.get(
-        f"{test_config['netbox_url']}/plugins/diode/settings/",
+        f"{base_url}/plugins/diode/settings/",
         allow_redirects=False
     )
 
