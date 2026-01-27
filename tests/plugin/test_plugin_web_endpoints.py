@@ -24,10 +24,10 @@ def test_get_settings_page(netbox_web_client):
     assert "Settings" in response.text, \
         "Settings page should have 'Settings' title"
 
-    # Verify Diode target format: starts with grpc:// and ends with /diode
-    diode_target_pattern = r'grpc://[^\s<]+/diode'
+    # Verify Diode target format: starts with grpc:// or grpcs:// and ends with /diode
+    diode_target_pattern = r'grpcs?://[^\s<]+/diode'
     assert re.search(diode_target_pattern, response.text), \
-        "Settings page should contain Diode target starting with 'grpc://' and ending with '/diode'"
+        "Settings page should contain Diode target starting with 'grpc://' or 'grpcs://' and ending with '/diode'"
 
     # Verify Branch shows Main (default)
     assert "Main (default)" in response.text, \
@@ -75,8 +75,9 @@ def test_add_credential_flow(netbox_web_client):
 
     # Step 2: Follow redirect to secret page
     secret_url = response.headers["Location"]
+    base_url = netbox_web_client.base_url.removesuffix('/netbox/').removesuffix('/netbox')
     secret_response = netbox_web_client.session.get(
-        f"{netbox_web_client.base_url.rstrip('netbox/')}{secret_url}"
+        f"{base_url}{secret_url}"
     )
 
     assert secret_response.status_code == 200, \
