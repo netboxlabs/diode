@@ -141,8 +141,9 @@ def diode_client_credential(netbox_web_client):
 
     # Follow redirect to secret page
     secret_url = response.headers["Location"]
+    base_url = netbox_web_client.base_url.removesuffix('/netbox/').removesuffix('/netbox')
     secret_response = netbox_web_client.session.get(
-        f"{netbox_web_client.base_url.rstrip('netbox/')}{secret_url}"
+        f"{base_url}{secret_url}"
     )
 
     assert secret_response.status_code == 200, pytest.fail(f"Failed to get secret page: {secret_response.status_code}")
