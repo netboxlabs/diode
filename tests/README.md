@@ -1,92 +1,83 @@
 # Tests
 
-This directory contains integrations tests that can be run against the Diode Plugin
+This directory contains integration tests for the Diode project, using pytest.
 
-Here's what you'll need to do in order to run these tests:
+## Prerequisites
 
-- Start docker containers stack (diode and NetBox)
-- Check the users and their tokens
-- Configure the test settings
-- Run behave
+To run the tests, you'll need:
 
-## Start the Docker container for Netbox with Diode Plugin
+- Python 3.9+
+- A running Diode server
+- A running NetBox instance with the Diode plugin installed
 
-To run the tests, you must have the diode plugin directory, and execute the following commands in the **diode-server**
-folder.
+## Setup
+
+### 1. Configure NetBox Connection
+
+If you're using an external NetBox instance (not running locally on default port), you need to configure the connection.
+
+#### 1.1. Copy the environment template
+
+From the **root of the repository**:
 
 ```bash
-pip install netboxlabs-diode-netbox-plugin
+cp tests/.env.example tests/.env
 ```
 
-After that, you can start the docker container by running the following command:
+#### 1.2. Edit `tests/.env` with your NetBox details
 
+**Required configurations:**
+
+- **NETBOX_URL**: URL of your NetBox instance (e.g., `http://my-netbox-server:8000`)
+- **NETBOX_API_TOKEN**: NetBox API token with appropriate permissions
+- **NETBOX_USERNAME**: NetBox web UI username (for plugin UI tests)
+- **NETBOX_PASSWORD**: NetBox web UI password (for plugin UI tests)
+
+**Diode admin credentials (required for most tests):**
+
+- **DIODE_ADMIN_CLIENT_ID**: Admin client ID from Diode
+- **DIODE_ADMIN_CLIENT_SECRET**: Admin client secret from Diode
+
+**Optional (only if using non-default values):**
+
+- **DIODE_TARGET**: Diode gRPC server URL (default: `grpc://localhost:8080/diode`)
+
+### 2. Obtain Diode Admin Credentials
+
+To get the admin credentials for Diode:
+
+1. Log into your NetBox instance
+2. Navigate to **Plugins** → **Diode**
+3. Go to **OAuth2 Clients**
+4. Create a new client with scope: `diode:read diode:write`
+5. Copy the `client_id` and `client_secret` to your `tests/.env` file
+
+**Note**: If you don't configure admin credentials, tests that require them will be automatically skipped.
+
+## Running Tests
+
+Run all tests:
 ```bash
-make docker-compose-up
-
-make docker-compose-netbox-up
+pytest tests/
 ```
 
-## Users and tokens
+Run specific test files:
+```bash
+pytest tests/test_ingestion.py
+```
 
-The command above will create all users necessary to run the tests.
+Run tests with verbose output:
+```bash
+pytest tests/ -v
+```
 
-Using the Admin user, you can access the Netbox at http://0.0.0.0:8000/netbox/.
+Run tests with coverage:
+```bash
+pytest tests/ --cov=diode
+```
 
-- username: admin
-- password: admin
+## Test Structure
 
-To check the tokens of the users, navigate to the "Admin" menu and select "API Token". This will display a list of all
-the tokens associated with the users.
-
-Please, pay attention to the token for user "INGESTION", it will be used in the next section.
-
-## Test settings
-
-Create the test config file from the template: `cp config.ini.tpl config.ini`.
-
-Then fill in the correct values:
-
-- **user_token**:
-    - Mandatory!
-    - string
-    - **ADMIN** token created in the previous step
-
-- **api_root_path**:
-    - Mandatory!
-    - string
-    - netbox API URL, e.g. http://0.0.0.0:8000/netbox/api
-
-- **api_key**:
-    - Mandatory!
-    - string
-    - **INGESTION** user token created in the previous step
-
-## Run behave using parallel process
-
-You can use [behavex](https://github.com/hrcorval/behavex) to run the scenarios using multiprocess by simply run:
-
-Examples:
-
-> behavex -t @\<TAG\> --parallel-processes=2 --parallel-schema=feature
-
-> behavex -t @\<TAG\> --parallel-processes=2 --parallel-schema=feature
-
-Running smoke tests:
-
-> behavex -t=@smoke --parallel-processes=2 --parallel-scheme=feature
-
-## Test execution reports
-
-[behavex](https://github.com/hrcorval/behavex) provides a friendly HTML test execution report that contains information
-related to test scenarios, execution status, execution evidence and metrics. A filters bar is also provided to filter
-scenarios by name, tag or status.
-
-It should be available at the following path:
-
-`<output_folder>/report.html`
-
-## Clean your environment
-
-After running the tests, clean up your environment by running the command:
-
-> behavex -t=@cleanup --parallel-processes=2 --parallel-scheme=feature
+- `tests/`: Integration tests for the Diode SDK and NetBox plugin
+- `tests/.env.example`: Template for test configuration
+- `tests/.env`: Your local configuration (not tracked in git)
