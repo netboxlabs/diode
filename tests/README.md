@@ -12,47 +12,34 @@ To run the tests, you'll need:
 
 ## Setup
 
-### 1. Configure NetBox Connection
+### 1. Configure Environment Variables
 
-If you're using an external NetBox instance (not running locally on default port), you need to configure the connection.
+The tests read configuration from environment variables. Configure them according to your setup:
 
-#### 1.1. Copy the environment template
+#### Environment Variables
 
-From the **root of the repository**:
+**NetBox connection (required for external NetBox):**
+- `NETBOX_URL`: URL of your NetBox instance (default: `http://localhost:8000/netbox/`)
+- `NETBOX_USERNAME`: NetBox web UI username (default: `admin`)
+- `NETBOX_PASSWORD`: NetBox web UI password (default: `admin`)
+
+**Diode server (optional):**
+- `DIODE_TARGET`: Diode gRPC server URL (default: `grpc://localhost:8080/diode`)
+
+**Note**: The tests automatically create Diode client credentials dynamically via the NetBox plugin web interface during test execution. You don't need to manually configure `DIODE_ADMIN_CLIENT_ID` or `DIODE_ADMIN_CLIENT_SECRET`.
+
+#### Setting Environment Variables
+
+You can set these variables in your shell before running tests:
 
 ```bash
-cp tests/.env.example tests/.env
+export NETBOX_URL="http://my-netbox-server:8000/netbox/"
+export NETBOX_USERNAME="admin"
+export NETBOX_PASSWORD="admin"
 ```
 
-#### 1.2. Edit `tests/.env` with your NetBox details
+Or create a `.env` file in the project root and the tests will load it automatically (requires `python-dotenv` installed)
 
-**Required configurations:**
-
-- **NETBOX_URL**: URL of your NetBox instance (e.g., `http://my-netbox-server:8000`)
-- **NETBOX_API_TOKEN**: NetBox API token with appropriate permissions
-- **NETBOX_USERNAME**: NetBox web UI username (for plugin UI tests)
-- **NETBOX_PASSWORD**: NetBox web UI password (for plugin UI tests)
-
-**Diode admin credentials (required for most tests):**
-
-- **DIODE_ADMIN_CLIENT_ID**: Admin client ID from Diode
-- **DIODE_ADMIN_CLIENT_SECRET**: Admin client secret from Diode
-
-**Optional (only if using non-default values):**
-
-- **DIODE_TARGET**: Diode gRPC server URL (default: `grpc://localhost:8080/diode`)
-
-### 2. Obtain Diode Admin Credentials
-
-To get the admin credentials for Diode:
-
-1. Log into your NetBox instance
-2. Navigate to **Plugins** → **Diode**
-3. Go to **OAuth2 Clients**
-4. Create a new client with scope: `diode:read diode:write`
-5. Copy the `client_id` and `client_secret` to your `tests/.env` file
-
-**Note**: If you don't configure admin credentials, tests that require them will be automatically skipped.
 
 ## Running Tests
 
