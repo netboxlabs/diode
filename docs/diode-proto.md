@@ -198,8 +198,11 @@
     - [ChangeSet](#diode-v1-ChangeSet)
     - [Deviation](#diode-v1-Deviation)
     - [DeviationError](#diode-v1-DeviationError)
+    - [DiodeEntity](#diode-v1-DiodeEntity)
     - [IngestionLog](#diode-v1-IngestionLog)
     - [IngestionMetrics](#diode-v1-IngestionMetrics)
+    - [ListEntitiesRequest](#diode-v1-ListEntitiesRequest)
+    - [ListEntitiesResponse](#diode-v1-ListEntitiesResponse)
     - [RetrieveDeviationByIDRequest](#diode-v1-RetrieveDeviationByIDRequest)
     - [RetrieveDeviationByIDResponse](#diode-v1-RetrieveDeviationByIDResponse)
     - [RetrieveDeviationsRequest](#diode-v1-RetrieveDeviationsRequest)
@@ -4989,6 +4992,30 @@ Deviation error
 
 
 
+<a name="diode-v1-DiodeEntity"></a>
+
+### DiodeEntity
+A discovered entity with its metadata
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  | Diode entity ID (UUID) |
+| object_type | [string](#string) |  | Entity type (e.g., &#34;dcim.device&#34;) |
+| ingestion_ts | [int64](#int64) |  | When the entity was ingested |
+| source_ts | [int64](#int64) |  | Timestamp from the entity source |
+| entity | [Entity](#diode-v1-Entity) |  | The actual entity data |
+| source_metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  | Metadata (agent_id, policy_id, job_id, etc.) |
+| created_at | [int64](#int64) |  | When first created in Diode |
+| updated_at | [int64](#int64) |  | When last updated |
+| last_seen_ts | [int64](#int64) |  | When entity was last seen/ingested |
+| duplicate_count | [int32](#int32) |  | Number of times this entity was re-ingested |
+
+
+
+
+
+
 <a name="diode-v1-IngestionLog"></a>
 
 ### IngestionLog
@@ -5030,6 +5057,44 @@ Ingestion metrics
 | reconciled | [int32](#int32) |  |  |
 | failed | [int32](#int32) |  |  |
 | no_changes | [int32](#int32) |  |  |
+
+
+
+
+
+
+<a name="diode-v1-ListEntitiesRequest"></a>
+
+### ListEntitiesRequest
+Request to list entities with optional filters
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| page_size | [int32](#int32) | optional | Number of entities per page (default 100, max 1000) |
+| page_token | [string](#string) |  | Token to fetch the next page |
+| metadata_filters | [google.protobuf.Struct](#google-protobuf-Struct) |  | Flexible metadata filter - matches all provided key-value pairs Example: {&#34;agent_id&#34;: &#34;agent-123&#34;, &#34;policy_id&#34;: &#34;policy-456&#34;} |
+| object_type | [string](#string) | repeated | Standard filters
+
+Filter by object types |
+| ingestion_ts_start | [int64](#int64) | optional | Filter by ingestion timestamp range start |
+| ingestion_ts_end | [int64](#int64) | optional | Filter by ingestion timestamp range end |
+
+
+
+
+
+
+<a name="diode-v1-ListEntitiesResponse"></a>
+
+### ListEntitiesResponse
+Response from the list entities request
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| entities | [DiodeEntity](#diode-v1-DiodeEntity) | repeated | List of entities |
+| next_page_token | [string](#string) |  | Token for the next page, if any |
 
 
 
@@ -5177,6 +5242,7 @@ Reconciler service API
 | RetrieveIngestionLogs | [RetrieveIngestionLogsRequest](#diode-v1-RetrieveIngestionLogsRequest) | [RetrieveIngestionLogsResponse](#diode-v1-RetrieveIngestionLogsResponse) | Retrieves ingestion logs |
 | RetrieveDeviations | [RetrieveDeviationsRequest](#diode-v1-RetrieveDeviationsRequest) | [RetrieveDeviationsResponse](#diode-v1-RetrieveDeviationsResponse) | Retrieve deviations |
 | RetrieveDeviationByID | [RetrieveDeviationByIDRequest](#diode-v1-RetrieveDeviationByIDRequest) | [RetrieveDeviationByIDResponse](#diode-v1-RetrieveDeviationByIDResponse) | Retrieve deviation by ID |
+| ListEntities | [ListEntitiesRequest](#diode-v1-ListEntitiesRequest) | [ListEntitiesResponse](#diode-v1-ListEntitiesResponse) | List discovered entities with filtering |
 
  
 
