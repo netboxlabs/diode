@@ -11,6 +11,7 @@ import (
 	diodepb "github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	structpb "google.golang.org/protobuf/types/known/structpb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -1071,11 +1072,269 @@ func (x *RetrieveDeviationByIDResponse) GetDeviation() *Deviation {
 	return nil
 }
 
+// A discovered entity with its metadata
+type DiodeEntity struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                                                 // Diode entity ID (UUID)
+	ObjectType     string                 `protobuf:"bytes,2,opt,name=object_type,json=objectType,proto3" json:"object_type,omitempty"`               // Entity type (e.g., "dcim.device")
+	IngestionTs    int64                  `protobuf:"varint,3,opt,name=ingestion_ts,json=ingestionTs,proto3" json:"ingestion_ts,omitempty"`           // When the entity was ingested
+	SourceTs       int64                  `protobuf:"varint,4,opt,name=source_ts,json=sourceTs,proto3" json:"source_ts,omitempty"`                    // Timestamp from the entity source
+	Entity         *diodepb.Entity        `protobuf:"bytes,5,opt,name=entity,proto3" json:"entity,omitempty"`                                         // The actual entity data
+	SourceMetadata *structpb.Struct       `protobuf:"bytes,6,opt,name=source_metadata,json=sourceMetadata,proto3" json:"source_metadata,omitempty"`   // Metadata (agent_id, policy_id, job_id, etc.)
+	CreatedAt      int64                  `protobuf:"varint,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`                 // When first created in Diode
+	UpdatedAt      int64                  `protobuf:"varint,8,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`                 // When last updated
+	LastSeenTs     int64                  `protobuf:"varint,9,opt,name=last_seen_ts,json=lastSeenTs,proto3" json:"last_seen_ts,omitempty"`            // When entity was last seen/ingested
+	DuplicateCount int32                  `protobuf:"varint,10,opt,name=duplicate_count,json=duplicateCount,proto3" json:"duplicate_count,omitempty"` // Number of times this entity was re-ingested
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *DiodeEntity) Reset() {
+	*x = DiodeEntity{}
+	mi := &file_diode_v1_reconciler_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DiodeEntity) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DiodeEntity) ProtoMessage() {}
+
+func (x *DiodeEntity) ProtoReflect() protoreflect.Message {
+	mi := &file_diode_v1_reconciler_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DiodeEntity.ProtoReflect.Descriptor instead.
+func (*DiodeEntity) Descriptor() ([]byte, []int) {
+	return file_diode_v1_reconciler_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *DiodeEntity) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *DiodeEntity) GetObjectType() string {
+	if x != nil {
+		return x.ObjectType
+	}
+	return ""
+}
+
+func (x *DiodeEntity) GetIngestionTs() int64 {
+	if x != nil {
+		return x.IngestionTs
+	}
+	return 0
+}
+
+func (x *DiodeEntity) GetSourceTs() int64 {
+	if x != nil {
+		return x.SourceTs
+	}
+	return 0
+}
+
+func (x *DiodeEntity) GetEntity() *diodepb.Entity {
+	if x != nil {
+		return x.Entity
+	}
+	return nil
+}
+
+func (x *DiodeEntity) GetSourceMetadata() *structpb.Struct {
+	if x != nil {
+		return x.SourceMetadata
+	}
+	return nil
+}
+
+func (x *DiodeEntity) GetCreatedAt() int64 {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return 0
+}
+
+func (x *DiodeEntity) GetUpdatedAt() int64 {
+	if x != nil {
+		return x.UpdatedAt
+	}
+	return 0
+}
+
+func (x *DiodeEntity) GetLastSeenTs() int64 {
+	if x != nil {
+		return x.LastSeenTs
+	}
+	return 0
+}
+
+func (x *DiodeEntity) GetDuplicateCount() int32 {
+	if x != nil {
+		return x.DuplicateCount
+	}
+	return 0
+}
+
+// Request to list entities with optional filters
+type ListEntitiesRequest struct {
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	PageSize  *int32                 `protobuf:"varint,1,opt,name=page_size,json=pageSize,proto3,oneof" json:"page_size,omitempty"` // Number of entities per page (default 100, max 1000)
+	PageToken string                 `protobuf:"bytes,2,opt,name=page_token,json=pageToken,proto3" json:"page_token,omitempty"`     // Token to fetch the next page
+	// Flexible metadata filter - matches all provided key-value pairs
+	// Example: {"agent_id": "agent-123", "policy_id": "policy-456"}
+	MetadataFilters *structpb.Struct `protobuf:"bytes,3,opt,name=metadata_filters,json=metadataFilters,proto3" json:"metadata_filters,omitempty"`
+	// Standard filters
+	ObjectType       []string `protobuf:"bytes,4,rep,name=object_type,json=objectType,proto3" json:"object_type,omitempty"`                            // Filter by object types
+	IngestionTsStart *int64   `protobuf:"varint,5,opt,name=ingestion_ts_start,json=ingestionTsStart,proto3,oneof" json:"ingestion_ts_start,omitempty"` // Filter by ingestion timestamp range start
+	IngestionTsEnd   *int64   `protobuf:"varint,6,opt,name=ingestion_ts_end,json=ingestionTsEnd,proto3,oneof" json:"ingestion_ts_end,omitempty"`       // Filter by ingestion timestamp range end
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *ListEntitiesRequest) Reset() {
+	*x = ListEntitiesRequest{}
+	mi := &file_diode_v1_reconciler_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListEntitiesRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListEntitiesRequest) ProtoMessage() {}
+
+func (x *ListEntitiesRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_diode_v1_reconciler_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListEntitiesRequest.ProtoReflect.Descriptor instead.
+func (*ListEntitiesRequest) Descriptor() ([]byte, []int) {
+	return file_diode_v1_reconciler_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *ListEntitiesRequest) GetPageSize() int32 {
+	if x != nil && x.PageSize != nil {
+		return *x.PageSize
+	}
+	return 0
+}
+
+func (x *ListEntitiesRequest) GetPageToken() string {
+	if x != nil {
+		return x.PageToken
+	}
+	return ""
+}
+
+func (x *ListEntitiesRequest) GetMetadataFilters() *structpb.Struct {
+	if x != nil {
+		return x.MetadataFilters
+	}
+	return nil
+}
+
+func (x *ListEntitiesRequest) GetObjectType() []string {
+	if x != nil {
+		return x.ObjectType
+	}
+	return nil
+}
+
+func (x *ListEntitiesRequest) GetIngestionTsStart() int64 {
+	if x != nil && x.IngestionTsStart != nil {
+		return *x.IngestionTsStart
+	}
+	return 0
+}
+
+func (x *ListEntitiesRequest) GetIngestionTsEnd() int64 {
+	if x != nil && x.IngestionTsEnd != nil {
+		return *x.IngestionTsEnd
+	}
+	return 0
+}
+
+// Response from the list entities request
+type ListEntitiesResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Entities      []*DiodeEntity         `protobuf:"bytes,1,rep,name=entities,proto3" json:"entities,omitempty"`                                  // List of entities
+	NextPageToken string                 `protobuf:"bytes,2,opt,name=next_page_token,json=nextPageToken,proto3" json:"next_page_token,omitempty"` // Token for the next page, if any
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListEntitiesResponse) Reset() {
+	*x = ListEntitiesResponse{}
+	mi := &file_diode_v1_reconciler_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListEntitiesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListEntitiesResponse) ProtoMessage() {}
+
+func (x *ListEntitiesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_diode_v1_reconciler_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListEntitiesResponse.ProtoReflect.Descriptor instead.
+func (*ListEntitiesResponse) Descriptor() ([]byte, []int) {
+	return file_diode_v1_reconciler_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *ListEntitiesResponse) GetEntities() []*DiodeEntity {
+	if x != nil {
+		return x.Entities
+	}
+	return nil
+}
+
+func (x *ListEntitiesResponse) GetNextPageToken() string {
+	if x != nil {
+		return x.NextPageToken
+	}
+	return ""
+}
+
 var File_diode_v1_reconciler_proto protoreflect.FileDescriptor
 
 const file_diode_v1_reconciler_proto_rawDesc = "" +
 	"\n" +
-	"\x19diode/v1/reconciler.proto\x12\bdiode.v1\x1a\x17diode/v1/ingester.proto\x1a\x17validate/validate.proto\"\x97\x01\n" +
+	"\x19diode/v1/reconciler.proto\x12\bdiode.v1\x1a\x17diode/v1/ingester.proto\x1a\x1cgoogle/protobuf/struct.proto\x1a\x17validate/validate.proto\"\x97\x01\n" +
 	"\x10IngestionMetrics\x12\x14\n" +
 	"\x05total\x18\x01 \x01(\x05R\x05total\x12\x16\n" +
 	"\x06queued\x18\x02 \x01(\x05R\x06queued\x12\x1e\n" +
@@ -1183,7 +1442,39 @@ const file_diode_v1_reconciler_proto_rawDesc = "" +
 	"\x1cRetrieveDeviationByIDRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"R\n" +
 	"\x1dRetrieveDeviationByIDResponse\x121\n" +
-	"\tdeviation\x18\x01 \x01(\v2\x13.diode.v1.DeviationR\tdeviation*w\n" +
+	"\tdeviation\x18\x01 \x01(\v2\x13.diode.v1.DeviationR\tdeviation\"\xf3\x02\n" +
+	"\vDiodeEntity\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1f\n" +
+	"\vobject_type\x18\x02 \x01(\tR\n" +
+	"objectType\x12!\n" +
+	"\fingestion_ts\x18\x03 \x01(\x03R\vingestionTs\x12\x1b\n" +
+	"\tsource_ts\x18\x04 \x01(\x03R\bsourceTs\x12(\n" +
+	"\x06entity\x18\x05 \x01(\v2\x10.diode.v1.EntityR\x06entity\x12@\n" +
+	"\x0fsource_metadata\x18\x06 \x01(\v2\x17.google.protobuf.StructR\x0esourceMetadata\x12\x1d\n" +
+	"\n" +
+	"created_at\x18\a \x01(\x03R\tcreatedAt\x12\x1d\n" +
+	"\n" +
+	"updated_at\x18\b \x01(\x03R\tupdatedAt\x12 \n" +
+	"\flast_seen_ts\x18\t \x01(\x03R\n" +
+	"lastSeenTs\x12'\n" +
+	"\x0fduplicate_count\x18\n" +
+	" \x01(\x05R\x0eduplicateCount\"\xd7\x02\n" +
+	"\x13ListEntitiesRequest\x12 \n" +
+	"\tpage_size\x18\x01 \x01(\x05H\x00R\bpageSize\x88\x01\x01\x12\x1d\n" +
+	"\n" +
+	"page_token\x18\x02 \x01(\tR\tpageToken\x12B\n" +
+	"\x10metadata_filters\x18\x03 \x01(\v2\x17.google.protobuf.StructR\x0fmetadataFilters\x12\x1f\n" +
+	"\vobject_type\x18\x04 \x03(\tR\n" +
+	"objectType\x121\n" +
+	"\x12ingestion_ts_start\x18\x05 \x01(\x03H\x01R\x10ingestionTsStart\x88\x01\x01\x12-\n" +
+	"\x10ingestion_ts_end\x18\x06 \x01(\x03H\x02R\x0eingestionTsEnd\x88\x01\x01B\f\n" +
+	"\n" +
+	"_page_sizeB\x15\n" +
+	"\x13_ingestion_ts_startB\x13\n" +
+	"\x11_ingestion_ts_end\"q\n" +
+	"\x14ListEntitiesResponse\x121\n" +
+	"\bentities\x18\x01 \x03(\v2\x15.diode.v1.DiodeEntityR\bentities\x12&\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken*w\n" +
 	"\x05State\x12\x15\n" +
 	"\x11STATE_UNSPECIFIED\x10\x00\x12\n" +
 	"\n" +
@@ -1195,11 +1486,12 @@ const file_diode_v1_reconciler_proto_rawDesc = "" +
 	"\n" +
 	"NO_CHANGES\x10\x05\x12\v\n" +
 	"\aIGNORED\x10\x06\x12\v\n" +
-	"\aERRORED\x10\a2\xcd\x02\n" +
+	"\aERRORED\x10\a2\x9c\x03\n" +
 	"\x11ReconcilerService\x12m\n" +
 	"\x15RetrieveIngestionLogs\x12&.diode.v1.RetrieveIngestionLogsRequest\x1a'.diode.v1.RetrieveIngestionLogsResponse\"\x03\x88\x02\x01\x12_\n" +
 	"\x12RetrieveDeviations\x12#.diode.v1.RetrieveDeviationsRequest\x1a$.diode.v1.RetrieveDeviationsResponse\x12h\n" +
-	"\x15RetrieveDeviationByID\x12&.diode.v1.RetrieveDeviationByIDRequest\x1a'.diode.v1.RetrieveDeviationByIDResponseB\xa4\x01\n" +
+	"\x15RetrieveDeviationByID\x12&.diode.v1.RetrieveDeviationByIDRequest\x1a'.diode.v1.RetrieveDeviationByIDResponse\x12M\n" +
+	"\fListEntities\x12\x1d.diode.v1.ListEntitiesRequest\x1a\x1e.diode.v1.ListEntitiesResponseB\xa4\x01\n" +
 	"\fcom.diode.v1B\x0fReconcilerProtoP\x01ZBgithub.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb\xa2\x02\x03DXX\xaa\x02\bDiode.V1\xca\x02\bDiode\\V1\xe2\x02\x14Diode\\V1\\GPBMetadata\xea\x02\tDiode::V1b\x06proto3"
 
 var (
@@ -1215,7 +1507,7 @@ func file_diode_v1_reconciler_proto_rawDescGZIP() []byte {
 }
 
 var file_diode_v1_reconciler_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_diode_v1_reconciler_proto_msgTypes = make([]protoimpl.MessageInfo, 12)
+var file_diode_v1_reconciler_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_diode_v1_reconciler_proto_goTypes = []any{
 	(State)(0),                            // 0: diode.v1.State
 	(*IngestionMetrics)(nil),              // 1: diode.v1.IngestionMetrics
@@ -1230,11 +1522,15 @@ var file_diode_v1_reconciler_proto_goTypes = []any{
 	(*RetrieveDeviationsResponse)(nil),    // 10: diode.v1.RetrieveDeviationsResponse
 	(*RetrieveDeviationByIDRequest)(nil),  // 11: diode.v1.RetrieveDeviationByIDRequest
 	(*RetrieveDeviationByIDResponse)(nil), // 12: diode.v1.RetrieveDeviationByIDResponse
-	(*diodepb.Entity)(nil),                // 13: diode.v1.Entity
+	(*DiodeEntity)(nil),                   // 13: diode.v1.DiodeEntity
+	(*ListEntitiesRequest)(nil),           // 14: diode.v1.ListEntitiesRequest
+	(*ListEntitiesResponse)(nil),          // 15: diode.v1.ListEntitiesResponse
+	(*diodepb.Entity)(nil),                // 16: diode.v1.Entity
+	(*structpb.Struct)(nil),               // 17: google.protobuf.Struct
 }
 var file_diode_v1_reconciler_proto_depIdxs = []int32{
 	0,  // 0: diode.v1.IngestionLog.state:type_name -> diode.v1.State
-	13, // 1: diode.v1.IngestionLog.entity:type_name -> diode.v1.Entity
+	16, // 1: diode.v1.IngestionLog.entity:type_name -> diode.v1.Entity
 	7,  // 2: diode.v1.IngestionLog.error:type_name -> diode.v1.DeviationError
 	2,  // 3: diode.v1.IngestionLog.change_set:type_name -> diode.v1.ChangeSet
 	0,  // 4: diode.v1.RetrieveIngestionLogsRequest.state:type_name -> diode.v1.State
@@ -1242,22 +1538,28 @@ var file_diode_v1_reconciler_proto_depIdxs = []int32{
 	1,  // 6: diode.v1.RetrieveIngestionLogsResponse.metrics:type_name -> diode.v1.IngestionMetrics
 	0,  // 7: diode.v1.RetrieveDeviationsRequest.state:type_name -> diode.v1.State
 	0,  // 8: diode.v1.Deviation.state:type_name -> diode.v1.State
-	13, // 9: diode.v1.Deviation.ingested_entity:type_name -> diode.v1.Entity
+	16, // 9: diode.v1.Deviation.ingested_entity:type_name -> diode.v1.Entity
 	7,  // 10: diode.v1.Deviation.error:type_name -> diode.v1.DeviationError
 	8,  // 11: diode.v1.Deviation.changes:type_name -> diode.v1.Change
 	9,  // 12: diode.v1.RetrieveDeviationsResponse.deviations:type_name -> diode.v1.Deviation
 	9,  // 13: diode.v1.RetrieveDeviationByIDResponse.deviation:type_name -> diode.v1.Deviation
-	4,  // 14: diode.v1.ReconcilerService.RetrieveIngestionLogs:input_type -> diode.v1.RetrieveIngestionLogsRequest
-	6,  // 15: diode.v1.ReconcilerService.RetrieveDeviations:input_type -> diode.v1.RetrieveDeviationsRequest
-	11, // 16: diode.v1.ReconcilerService.RetrieveDeviationByID:input_type -> diode.v1.RetrieveDeviationByIDRequest
-	5,  // 17: diode.v1.ReconcilerService.RetrieveIngestionLogs:output_type -> diode.v1.RetrieveIngestionLogsResponse
-	10, // 18: diode.v1.ReconcilerService.RetrieveDeviations:output_type -> diode.v1.RetrieveDeviationsResponse
-	12, // 19: diode.v1.ReconcilerService.RetrieveDeviationByID:output_type -> diode.v1.RetrieveDeviationByIDResponse
-	17, // [17:20] is the sub-list for method output_type
-	14, // [14:17] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	14, // [14:14] is the sub-list for extension extendee
-	0,  // [0:14] is the sub-list for field type_name
+	16, // 14: diode.v1.DiodeEntity.entity:type_name -> diode.v1.Entity
+	17, // 15: diode.v1.DiodeEntity.source_metadata:type_name -> google.protobuf.Struct
+	17, // 16: diode.v1.ListEntitiesRequest.metadata_filters:type_name -> google.protobuf.Struct
+	13, // 17: diode.v1.ListEntitiesResponse.entities:type_name -> diode.v1.DiodeEntity
+	4,  // 18: diode.v1.ReconcilerService.RetrieveIngestionLogs:input_type -> diode.v1.RetrieveIngestionLogsRequest
+	6,  // 19: diode.v1.ReconcilerService.RetrieveDeviations:input_type -> diode.v1.RetrieveDeviationsRequest
+	11, // 20: diode.v1.ReconcilerService.RetrieveDeviationByID:input_type -> diode.v1.RetrieveDeviationByIDRequest
+	14, // 21: diode.v1.ReconcilerService.ListEntities:input_type -> diode.v1.ListEntitiesRequest
+	5,  // 22: diode.v1.ReconcilerService.RetrieveIngestionLogs:output_type -> diode.v1.RetrieveIngestionLogsResponse
+	10, // 23: diode.v1.ReconcilerService.RetrieveDeviations:output_type -> diode.v1.RetrieveDeviationsResponse
+	12, // 24: diode.v1.ReconcilerService.RetrieveDeviationByID:output_type -> diode.v1.RetrieveDeviationByIDResponse
+	15, // 25: diode.v1.ReconcilerService.ListEntities:output_type -> diode.v1.ListEntitiesResponse
+	22, // [22:26] is the sub-list for method output_type
+	18, // [18:22] is the sub-list for method input_type
+	18, // [18:18] is the sub-list for extension type_name
+	18, // [18:18] is the sub-list for extension extendee
+	0,  // [0:18] is the sub-list for field type_name
 }
 
 func init() { file_diode_v1_reconciler_proto_init() }
@@ -1269,13 +1571,14 @@ func file_diode_v1_reconciler_proto_init() {
 	file_diode_v1_reconciler_proto_msgTypes[3].OneofWrappers = []any{}
 	file_diode_v1_reconciler_proto_msgTypes[5].OneofWrappers = []any{}
 	file_diode_v1_reconciler_proto_msgTypes[8].OneofWrappers = []any{}
+	file_diode_v1_reconciler_proto_msgTypes[13].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_diode_v1_reconciler_proto_rawDesc), len(file_diode_v1_reconciler_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   12,
+			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
