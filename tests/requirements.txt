@@ -1,4 +1,5 @@
-behave==1.2.6
-behave-django==1.4.0
-PyHamcrest==2.1.0
+pytest==8.4.1
+pytest-xdist==3.8.0
+pytest-cov==6.0.0
 requests==2.32.4
+netboxlabs-diode-sdk~=1.9
