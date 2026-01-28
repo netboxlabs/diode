@@ -24,9 +24,9 @@ type GraphEdge struct {
 // Used by EntityMatcher and GraphBuilder.
 type GraphRepository interface {
 	// Node operations
-	UpsertGraphNode(ctx context.Context, arg postgres.UpsertGraphNodeParams) (postgres.UpsertGraphNodeRow, error)
-	UpdateGraphNodeData(ctx context.Context, arg postgres.UpdateGraphNodeDataParams) (postgres.UpdateGraphNodeDataRow, error)
-	FindGraphNode(ctx context.Context, arg postgres.FindGraphNodeParams) (postgres.FindGraphNodeRow, error)
+	UpsertGraphNode(ctx context.Context, arg postgres.UpsertGraphNodeParams) (postgres.GraphNode, error)
+	UpdateGraphNodeData(ctx context.Context, arg postgres.UpdateGraphNodeDataParams) (postgres.GraphNode, error)
+	FindGraphNode(ctx context.Context, arg postgres.FindGraphNodeParams) (postgres.GraphNode, error)
 
 	// Edge operations
 	UpsertGraphEdge(ctx context.Context, arg postgres.UpsertGraphEdgeParams) error

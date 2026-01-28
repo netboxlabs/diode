@@ -549,7 +549,7 @@ func (gb *GraphBuilder) updateMatchedNode(ctx context.Context, bestMatch *matchi
 }
 
 // maybeUpdateNodeSchema checks if a node needs schema migration and updates it if necessary.
-func (gb *GraphBuilder) maybeUpdateNodeSchema(ctx context.Context, existingNode *postgres.FindGraphNodeRow, nodeType string, entityData json.RawMessage) {
+func (gb *GraphBuilder) maybeUpdateNodeSchema(ctx context.Context, existingNode *postgres.GraphNode, nodeType string, entityData json.RawMessage) {
 	existingGraphNode := &postgres.GraphNode{
 		ID:                    existingNode.ID,
 		ExternalID:            existingNode.ExternalID,
@@ -573,7 +573,7 @@ func (gb *GraphBuilder) maybeUpdateNodeSchema(ctx context.Context, existingNode 
 }
 
 // upsertMatchedNodeData handles the upsert logic for a matched node, respecting duplicate count rules.
-func (gb *GraphBuilder) upsertMatchedNodeData(ctx context.Context, nodeType, externalID string, matchingData json.RawMessage) (postgres.UpsertGraphNodeRow, error) {
+func (gb *GraphBuilder) upsertMatchedNodeData(ctx context.Context, nodeType, externalID string, matchingData json.RawMessage) (postgres.GraphNode, error) {
 	requestKey := fmt.Sprintf("%s:%s", nodeType, externalID)
 
 	if gb.seenInThisRequest[requestKey] {
@@ -585,12 +585,12 @@ func (gb *GraphBuilder) upsertMatchedNodeData(ctx context.Context, nodeType, ext
 			MatchingSchemaVersion: CurrentSchemaVersion,
 		})
 		if err != nil {
-			return postgres.UpsertGraphNodeRow{}, err
+			return postgres.GraphNode{}, err
 		}
 		gb.logger.Debug("updated matched node data without incrementing duplicate count",
 			"node_type", nodeType,
 			"external_id", externalID)
-		return postgres.UpsertGraphNodeRow(updateResult), nil
+		return updateResult, nil
 	}
 
 	// First time seeing this node in this request - normal upsert with duplicate count increment
@@ -602,7 +602,7 @@ func (gb *GraphBuilder) upsertMatchedNodeData(ctx context.Context, nodeType, ext
 	}
 	result, err := gb.repo.UpsertGraphNode(ctx, params)
 	if err != nil {
-		return postgres.UpsertGraphNodeRow{}, err
+		return postgres.GraphNode{}, err
 	}
 
 	gb.seenInThisRequest[requestKey] = true
@@ -934,7 +934,7 @@ func (gb *GraphBuilder) upsertNode(ctx context.Context, externalID, nodeType str
 	// Check if we've already processed this node in this ingestion request
 	alreadySeenInRequest := gb.seenInThisRequest[requestKey]
 
-	var result postgres.UpsertGraphNodeRow
+	var result postgres.GraphNode
 
 	if alreadySeenInRequest {
 		// This node was already seen in this request - update data but don't increment duplicate count
@@ -945,8 +945,7 @@ func (gb *GraphBuilder) upsertNode(ctx context.Context, externalID, nodeType str
 			MatchingSchemaVersion: CurrentSchemaVersion,
 		})
 		if err == nil {
-			// Convert UpdateGraphNodeDataRow to UpsertGraphNodeRow format
-			result = postgres.UpsertGraphNodeRow(updateResult)
+			result = updateResult
 		}
 		gb.logger.Debug("updated node data without incrementing duplicate count",
 			"node_type", nodeType,

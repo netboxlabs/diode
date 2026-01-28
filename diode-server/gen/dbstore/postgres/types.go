@@ -65,6 +65,8 @@ type GraphNode struct {
 	MatchingSchemaVersion int32              `json:"matching_schema_version"`
 	CreatedAt             pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt             pgtype.Timestamptz `json:"updated_at"`
+	// Timestamp when this entity was last seen/ingested
+	LastSeenTs pgtype.Timestamptz `json:"last_seen_ts"`
 }
 
 type GraphNodeSnapshot struct {
