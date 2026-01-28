@@ -63,5 +63,3 @@ pytest tests/ --cov=diode
 ## Test Structure
 
 - `tests/`: Integration tests for the Diode SDK and NetBox plugin
-- `tests/.env.example`: Template for test configuration
-- `tests/.env`: Your local configuration (not tracked in git)
