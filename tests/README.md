@@ -38,9 +38,6 @@ export NETBOX_USERNAME="admin"
 export NETBOX_PASSWORD="admin"
 ```
 
-Or create a `.env` file in the project root and the tests will load it automatically (requires `python-dotenv` installed)
-
-
 ## Running Tests
 
 Run all tests:
