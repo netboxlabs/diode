@@ -169,6 +169,18 @@ message ListEntitiesResponse {
   string next_page_token = 2; // Token for the next page, if any
 }
 
+// Request to create an entity in the graph database (idempotent)
+message CreateEntityRequest {
+  diode.v1.Entity entity = 1 [(validate.rules).message.required = true]; // The entity to create
+  google.protobuf.Struct metadata = 2; // Optional metadata (agent_id, policy_id, etc.)
+}
+
+// Response from creating an entity
+message CreateEntityResponse {
+  string id = 1; // Diode entity ID (UUID)
+  string object_type = 2; // Entity type
+}
+
 // Reconciler service API
 service ReconcilerService {
   // Retrieves ingestion logs
@@ -184,4 +196,7 @@ service ReconcilerService {
 
   // List observed entities with filtering
   rpc ListEntities(ListEntitiesRequest) returns (ListEntitiesResponse);
+
+  // Create an entity synchronously in the graph database (idempotent - returns existing ID if entity already exists)
+  rpc CreateEntity(CreateEntityRequest) returns (CreateEntityResponse);
 }
