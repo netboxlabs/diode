@@ -4995,7 +4995,7 @@ Deviation error
 <a name="diode-v1-DiodeEntity"></a>
 
 ### DiodeEntity
-A discovered entity with its metadata
+An observed entity with its metadata
 
 
 | Field | Type | Label | Description |
@@ -5242,7 +5242,7 @@ Reconciler service API
 | RetrieveIngestionLogs | [RetrieveIngestionLogsRequest](#diode-v1-RetrieveIngestionLogsRequest) | [RetrieveIngestionLogsResponse](#diode-v1-RetrieveIngestionLogsResponse) | Retrieves ingestion logs |
 | RetrieveDeviations | [RetrieveDeviationsRequest](#diode-v1-RetrieveDeviationsRequest) | [RetrieveDeviationsResponse](#diode-v1-RetrieveDeviationsResponse) | Retrieve deviations |
 | RetrieveDeviationByID | [RetrieveDeviationByIDRequest](#diode-v1-RetrieveDeviationByIDRequest) | [RetrieveDeviationByIDResponse](#diode-v1-RetrieveDeviationByIDResponse) | Retrieve deviation by ID |
-| ListEntities | [ListEntitiesRequest](#diode-v1-ListEntitiesRequest) | [ListEntitiesResponse](#diode-v1-ListEntitiesResponse) | List discovered entities with filtering |
+| ListEntities | [ListEntitiesRequest](#diode-v1-ListEntitiesRequest) | [ListEntitiesResponse](#diode-v1-ListEntitiesResponse) | List observed entities with filtering |
 
  
 
