@@ -1,22 +1,23 @@
 -- name: UpsertGraphNode :one
-INSERT INTO graph_nodes (external_id, node_type, data, duplicate_count, matching_schema_version)
-VALUES ($1, $2, $3, 1, $4)
+INSERT INTO graph_nodes (external_id, node_type, data, duplicate_count, matching_schema_version, last_seen_ts)
+VALUES ($1, $2, $3, 1, $4, NOW())
 ON CONFLICT (node_type, external_id)
 DO UPDATE SET
     data = EXCLUDED.data,
     duplicate_count = graph_nodes.duplicate_count + 1,
     matching_schema_version = EXCLUDED.matching_schema_version,
+    last_seen_ts = NOW(),
     updated_at = NOW()
-RETURNING id, external_id, node_type, data, duplicate_count, matching_schema_version;
+RETURNING id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts;
 
 -- name: UpdateGraphNodeData :one
 UPDATE graph_nodes
-SET data = $3, matching_schema_version = $4, updated_at = NOW()
+SET data = $3, matching_schema_version = $4, last_seen_ts = NOW(), updated_at = NOW()
 WHERE node_type = $1 AND external_id = $2
-RETURNING id, external_id, node_type, data, duplicate_count, matching_schema_version;
+RETURNING id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts;
 
 -- name: FindGraphNode :one
-SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version
+SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts
 FROM graph_nodes
 WHERE node_type = $1 AND external_id = $2;
 
@@ -38,7 +39,7 @@ DO UPDATE SET
     edge_subtype = EXCLUDED.edge_subtype;
 
 -- name: GetGraphNodesByType :many
-SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at
+SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts
 FROM graph_nodes
 WHERE node_type = $1
 ORDER BY updated_at DESC
@@ -52,6 +53,7 @@ SELECT
     target.data,
     target.duplicate_count,
     target.matching_schema_version,
+    target.last_seen_ts,
     edges.edge_type,
     edges.properties as edge_properties
 FROM graph_edges edges
@@ -59,7 +61,7 @@ JOIN graph_nodes target ON edges.target_node_id = target.id
 WHERE edges.source_node_id = $1;
 
 -- name: GetNodesByFrequency :many
-SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at
+SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts
 FROM graph_nodes
 WHERE duplicate_count >= $1
 ORDER BY duplicate_count DESC, updated_at DESC
@@ -70,7 +72,7 @@ LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 -- Empty string returns no results. Use GetGraphNodesByType for listing without filter.
 -- node_type is optional - pass NULL to search across all types.
 -- Note: Very long search_term values may cause slow scans on large datasets.
-SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at
+SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts
 FROM graph_nodes
 WHERE (node_type = sqlc.narg('node_type')::text OR sqlc.narg('node_type')::text IS NULL)
   AND LENGTH(sqlc.arg('search_term')::text) > 0
@@ -105,7 +107,7 @@ ORDER BY node_count DESC;
 -- Entity matching queries for confidence-based matching
 
 -- name: FindNodesByFieldMatch :many
-SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at
+SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts
 FROM graph_nodes
 WHERE node_type = $1
   AND (
@@ -118,7 +120,7 @@ ORDER BY duplicate_count DESC, updated_at DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: FindNodesByMultiFieldMatch :many
-SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at
+SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts
 FROM graph_nodes
 WHERE node_type = $1
   AND (
@@ -138,7 +140,7 @@ LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 -- Uses GIN index (idx_graph_nodes_data_gin) for fast exact field matching.
 -- Callers pass match_filter as JSONB, e.g., '{"name": "exact_value"}' or '{"name": "x", "serial": "y"}'.
 -- Fuzzy/pattern matching should be done in the application layer (matching package).
-SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at
+SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts
 FROM graph_nodes
 WHERE node_type = $1
   AND data @> sqlc.arg('match_filter')::jsonb
@@ -146,7 +148,7 @@ ORDER BY duplicate_count DESC, updated_at DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: FindNodesByComplexMatch :many
-SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at
+SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts
 FROM graph_nodes
 WHERE node_type = $1
   AND (
@@ -206,7 +208,7 @@ WHERE outer_snap.node_id = $1
 -- Note: snapshot fields use COALESCE defaults for NULL safety when no snapshot exists
 -- sequence_number = 0 and empty snapshot_data indicate no snapshot
 SELECT
-    n.id, n.external_id, n.node_type, n.data as matching_data, n.duplicate_count, n.matching_schema_version, n.created_at, n.updated_at,
+    n.id, n.external_id, n.node_type, n.data as matching_data, n.duplicate_count, n.matching_schema_version, n.last_seen_ts, n.created_at, n.updated_at,
     COALESCE(s.snapshot_data, '{}'::jsonb) as snapshot_data,
     COALESCE(s.sequence_number, 0) as sequence_number,
     s.created_at as snapshot_created_at
@@ -221,7 +223,7 @@ LEFT JOIN LATERAL (
 WHERE n.node_type = $1 AND n.external_id = $2;
 
 -- name: FindNodesNeedingSchemaUpdate :many
-SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at
+SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts
 FROM graph_nodes
 WHERE matching_schema_version < $1
 ORDER BY updated_at DESC

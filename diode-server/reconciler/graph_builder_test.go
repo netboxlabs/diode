@@ -104,7 +104,7 @@ func TestExtractGraph_SimpleDevice(t *testing.T) {
 
 	// Setup mock expectations
 	repo.EXPECT().UpsertGraphNode(ctx, mock.AnythingOfType("postgres.UpsertGraphNodeParams")).
-		Return(postgres.UpsertGraphNodeRow{
+		Return(postgres.GraphNode{
 			ID:                    1,
 			ExternalID:            "test-hash",
 			NodeType:              "Device",
@@ -147,7 +147,7 @@ func TestExtractGraph_DeviceWithSite(t *testing.T) {
 	// Setup mock expectations for device node
 	repo.EXPECT().UpsertGraphNode(ctx, mock.MatchedBy(func(params postgres.UpsertGraphNodeParams) bool {
 		return params.NodeType == "Device"
-	})).Return(postgres.UpsertGraphNodeRow{
+	})).Return(postgres.GraphNode{
 		ID:                    1,
 		ExternalID:            "device-hash",
 		NodeType:              "Device",
@@ -167,7 +167,7 @@ func TestExtractGraph_DeviceWithSite(t *testing.T) {
 	// Setup mock expectations for site node
 	repo.EXPECT().UpsertGraphNode(ctx, mock.MatchedBy(func(params postgres.UpsertGraphNodeParams) bool {
 		return params.NodeType == "Site"
-	})).Return(postgres.UpsertGraphNodeRow{
+	})).Return(postgres.GraphNode{
 		ID:                    2,
 		ExternalID:            "site-hash",
 		NodeType:              "Site",
@@ -209,7 +209,7 @@ func TestFindNodeByTypeAndID_Found(t *testing.T) {
 	repo.EXPECT().FindGraphNode(ctx, postgres.FindGraphNodeParams{
 		NodeType:   "Device",
 		ExternalID: "test-id",
-	}).Return(postgres.FindGraphNodeRow{
+	}).Return(postgres.GraphNode{
 		ID:             1,
 		ExternalID:     "test-id",
 		NodeType:       "Device",
@@ -237,7 +237,7 @@ func TestFindNodeByTypeAndID_NotFound(t *testing.T) {
 	repo.EXPECT().FindGraphNode(ctx, postgres.FindGraphNodeParams{
 		NodeType:   "Device",
 		ExternalID: "nonexistent",
-	}).Return(postgres.FindGraphNodeRow{}, pgx.ErrNoRows).Once()
+	}).Return(postgres.GraphNode{}, pgx.ErrNoRows).Once()
 
 	node, err := gb.findNodeByTypeAndID(ctx, "Device", "nonexistent")
 	require.NoError(t, err)

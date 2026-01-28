@@ -70,22 +70,22 @@ func (_c *GraphRepository_CleanupOldSnapshots_Call) RunAndReturn(run func(contex
 }
 
 // FindGraphNode provides a mock function with given fields: ctx, arg
-func (_m *GraphRepository) FindGraphNode(ctx context.Context, arg postgres.FindGraphNodeParams) (postgres.FindGraphNodeRow, error) {
+func (_m *GraphRepository) FindGraphNode(ctx context.Context, arg postgres.FindGraphNodeParams) (postgres.GraphNode, error) {
 	ret := _m.Called(ctx, arg)
 
 	if len(ret) == 0 {
 		panic("no return value specified for FindGraphNode")
 	}
 
-	var r0 postgres.FindGraphNodeRow
+	var r0 postgres.GraphNode
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, postgres.FindGraphNodeParams) (postgres.FindGraphNodeRow, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, postgres.FindGraphNodeParams) (postgres.GraphNode, error)); ok {
 		return rf(ctx, arg)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, postgres.FindGraphNodeParams) postgres.FindGraphNodeRow); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, postgres.FindGraphNodeParams) postgres.GraphNode); ok {
 		r0 = rf(ctx, arg)
 	} else {
-		r0 = ret.Get(0).(postgres.FindGraphNodeRow)
+		r0 = ret.Get(0).(postgres.GraphNode)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, postgres.FindGraphNodeParams) error); ok {
@@ -116,12 +116,12 @@ func (_c *GraphRepository_FindGraphNode_Call) Run(run func(ctx context.Context, 
 	return _c
 }
 
-func (_c *GraphRepository_FindGraphNode_Call) Return(_a0 postgres.FindGraphNodeRow, _a1 error) *GraphRepository_FindGraphNode_Call {
+func (_c *GraphRepository_FindGraphNode_Call) Return(_a0 postgres.GraphNode, _a1 error) *GraphRepository_FindGraphNode_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *GraphRepository_FindGraphNode_Call) RunAndReturn(run func(context.Context, postgres.FindGraphNodeParams) (postgres.FindGraphNodeRow, error)) *GraphRepository_FindGraphNode_Call {
+func (_c *GraphRepository_FindGraphNode_Call) RunAndReturn(run func(context.Context, postgres.FindGraphNodeParams) (postgres.GraphNode, error)) *GraphRepository_FindGraphNode_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -593,22 +593,22 @@ func (_c *GraphRepository_InsertSnapshot_Call) RunAndReturn(run func(context.Con
 }
 
 // UpdateGraphNodeData provides a mock function with given fields: ctx, arg
-func (_m *GraphRepository) UpdateGraphNodeData(ctx context.Context, arg postgres.UpdateGraphNodeDataParams) (postgres.UpdateGraphNodeDataRow, error) {
+func (_m *GraphRepository) UpdateGraphNodeData(ctx context.Context, arg postgres.UpdateGraphNodeDataParams) (postgres.GraphNode, error) {
 	ret := _m.Called(ctx, arg)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpdateGraphNodeData")
 	}
 
-	var r0 postgres.UpdateGraphNodeDataRow
+	var r0 postgres.GraphNode
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, postgres.UpdateGraphNodeDataParams) (postgres.UpdateGraphNodeDataRow, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, postgres.UpdateGraphNodeDataParams) (postgres.GraphNode, error)); ok {
 		return rf(ctx, arg)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, postgres.UpdateGraphNodeDataParams) postgres.UpdateGraphNodeDataRow); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, postgres.UpdateGraphNodeDataParams) postgres.GraphNode); ok {
 		r0 = rf(ctx, arg)
 	} else {
-		r0 = ret.Get(0).(postgres.UpdateGraphNodeDataRow)
+		r0 = ret.Get(0).(postgres.GraphNode)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, postgres.UpdateGraphNodeDataParams) error); ok {
@@ -639,12 +639,12 @@ func (_c *GraphRepository_UpdateGraphNodeData_Call) Run(run func(ctx context.Con
 	return _c
 }
 
-func (_c *GraphRepository_UpdateGraphNodeData_Call) Return(_a0 postgres.UpdateGraphNodeDataRow, _a1 error) *GraphRepository_UpdateGraphNodeData_Call {
+func (_c *GraphRepository_UpdateGraphNodeData_Call) Return(_a0 postgres.GraphNode, _a1 error) *GraphRepository_UpdateGraphNodeData_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *GraphRepository_UpdateGraphNodeData_Call) RunAndReturn(run func(context.Context, postgres.UpdateGraphNodeDataParams) (postgres.UpdateGraphNodeDataRow, error)) *GraphRepository_UpdateGraphNodeData_Call {
+func (_c *GraphRepository_UpdateGraphNodeData_Call) RunAndReturn(run func(context.Context, postgres.UpdateGraphNodeDataParams) (postgres.GraphNode, error)) *GraphRepository_UpdateGraphNodeData_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -697,22 +697,22 @@ func (_c *GraphRepository_UpsertGraphEdge_Call) RunAndReturn(run func(context.Co
 }
 
 // UpsertGraphNode provides a mock function with given fields: ctx, arg
-func (_m *GraphRepository) UpsertGraphNode(ctx context.Context, arg postgres.UpsertGraphNodeParams) (postgres.UpsertGraphNodeRow, error) {
+func (_m *GraphRepository) UpsertGraphNode(ctx context.Context, arg postgres.UpsertGraphNodeParams) (postgres.GraphNode, error) {
 	ret := _m.Called(ctx, arg)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpsertGraphNode")
 	}
 
-	var r0 postgres.UpsertGraphNodeRow
+	var r0 postgres.GraphNode
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, postgres.UpsertGraphNodeParams) (postgres.UpsertGraphNodeRow, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, postgres.UpsertGraphNodeParams) (postgres.GraphNode, error)); ok {
 		return rf(ctx, arg)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, postgres.UpsertGraphNodeParams) postgres.UpsertGraphNodeRow); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, postgres.UpsertGraphNodeParams) postgres.GraphNode); ok {
 		r0 = rf(ctx, arg)
 	} else {
-		r0 = ret.Get(0).(postgres.UpsertGraphNodeRow)
+		r0 = ret.Get(0).(postgres.GraphNode)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, postgres.UpsertGraphNodeParams) error); ok {
@@ -743,12 +743,12 @@ func (_c *GraphRepository_UpsertGraphNode_Call) Run(run func(ctx context.Context
 	return _c
 }
 
-func (_c *GraphRepository_UpsertGraphNode_Call) Return(_a0 postgres.UpsertGraphNodeRow, _a1 error) *GraphRepository_UpsertGraphNode_Call {
+func (_c *GraphRepository_UpsertGraphNode_Call) Return(_a0 postgres.GraphNode, _a1 error) *GraphRepository_UpsertGraphNode_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *GraphRepository_UpsertGraphNode_Call) RunAndReturn(run func(context.Context, postgres.UpsertGraphNodeParams) (postgres.UpsertGraphNodeRow, error)) *GraphRepository_UpsertGraphNode_Call {
+func (_c *GraphRepository_UpsertGraphNode_Call) RunAndReturn(run func(context.Context, postgres.UpsertGraphNodeParams) (postgres.GraphNode, error)) *GraphRepository_UpsertGraphNode_Call {
 	_c.Call.Return(run)
 	return _c
 }

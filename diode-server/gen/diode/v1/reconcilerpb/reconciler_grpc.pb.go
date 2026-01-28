@@ -22,6 +22,7 @@ const (
 	ReconcilerService_RetrieveIngestionLogs_FullMethodName = "/diode.v1.ReconcilerService/RetrieveIngestionLogs"
 	ReconcilerService_RetrieveDeviations_FullMethodName    = "/diode.v1.ReconcilerService/RetrieveDeviations"
 	ReconcilerService_RetrieveDeviationByID_FullMethodName = "/diode.v1.ReconcilerService/RetrieveDeviationByID"
+	ReconcilerService_ListEntities_FullMethodName          = "/diode.v1.ReconcilerService/ListEntities"
 )
 
 // ReconcilerServiceClient is the client API for ReconcilerService service.
@@ -35,6 +36,8 @@ type ReconcilerServiceClient interface {
 	RetrieveDeviations(ctx context.Context, in *RetrieveDeviationsRequest, opts ...grpc.CallOption) (*RetrieveDeviationsResponse, error)
 	// Retrieve deviation by ID
 	RetrieveDeviationByID(ctx context.Context, in *RetrieveDeviationByIDRequest, opts ...grpc.CallOption) (*RetrieveDeviationByIDResponse, error)
+	// List observed entities with filtering
+	ListEntities(ctx context.Context, in *ListEntitiesRequest, opts ...grpc.CallOption) (*ListEntitiesResponse, error)
 }
 
 type reconcilerServiceClient struct {
@@ -73,6 +76,15 @@ func (c *reconcilerServiceClient) RetrieveDeviationByID(ctx context.Context, in 
 	return out, nil
 }
 
+func (c *reconcilerServiceClient) ListEntities(ctx context.Context, in *ListEntitiesRequest, opts ...grpc.CallOption) (*ListEntitiesResponse, error) {
+	out := new(ListEntitiesResponse)
+	err := c.cc.Invoke(ctx, ReconcilerService_ListEntities_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ReconcilerServiceServer is the server API for ReconcilerService service.
 // All implementations must embed UnimplementedReconcilerServiceServer
 // for forward compatibility
@@ -84,6 +96,8 @@ type ReconcilerServiceServer interface {
 	RetrieveDeviations(context.Context, *RetrieveDeviationsRequest) (*RetrieveDeviationsResponse, error)
 	// Retrieve deviation by ID
 	RetrieveDeviationByID(context.Context, *RetrieveDeviationByIDRequest) (*RetrieveDeviationByIDResponse, error)
+	// List observed entities with filtering
+	ListEntities(context.Context, *ListEntitiesRequest) (*ListEntitiesResponse, error)
 	mustEmbedUnimplementedReconcilerServiceServer()
 }
 
@@ -99,6 +113,9 @@ func (UnimplementedReconcilerServiceServer) RetrieveDeviations(context.Context, 
 }
 func (UnimplementedReconcilerServiceServer) RetrieveDeviationByID(context.Context, *RetrieveDeviationByIDRequest) (*RetrieveDeviationByIDResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RetrieveDeviationByID not implemented")
+}
+func (UnimplementedReconcilerServiceServer) ListEntities(context.Context, *ListEntitiesRequest) (*ListEntitiesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListEntities not implemented")
 }
 func (UnimplementedReconcilerServiceServer) mustEmbedUnimplementedReconcilerServiceServer() {}
 
@@ -167,6 +184,24 @@ func _ReconcilerService_RetrieveDeviationByID_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ReconcilerService_ListEntities_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListEntitiesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReconcilerServiceServer).ListEntities(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReconcilerService_ListEntities_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReconcilerServiceServer).ListEntities(ctx, req.(*ListEntitiesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ReconcilerService_ServiceDesc is the grpc.ServiceDesc for ReconcilerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -185,6 +220,10 @@ var ReconcilerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RetrieveDeviationByID",
 			Handler:    _ReconcilerService_RetrieveDeviationByID_Handler,
+		},
+		{
+			MethodName: "ListEntities",
+			Handler:    _ReconcilerService_ListEntities_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
