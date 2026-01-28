@@ -40,6 +40,21 @@ export NETBOX_PASSWORD="admin"
 
 ## Running Tests
 
+### Install Dependencies
+
+Before running tests, create a virtual environment and install dependencies:
+
+```bash
+# Create and activate virtual environment
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install test dependencies
+pip install -r tests/requirements.txt
+```
+
+### Run Tests
+
 Run all tests:
 ```bash
 pytest tests/
