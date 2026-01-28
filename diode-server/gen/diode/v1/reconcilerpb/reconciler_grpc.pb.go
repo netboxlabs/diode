@@ -36,7 +36,7 @@ type ReconcilerServiceClient interface {
 	RetrieveDeviations(ctx context.Context, in *RetrieveDeviationsRequest, opts ...grpc.CallOption) (*RetrieveDeviationsResponse, error)
 	// Retrieve deviation by ID
 	RetrieveDeviationByID(ctx context.Context, in *RetrieveDeviationByIDRequest, opts ...grpc.CallOption) (*RetrieveDeviationByIDResponse, error)
-	// List discovered entities with filtering
+	// List observed entities with filtering
 	ListEntities(ctx context.Context, in *ListEntitiesRequest, opts ...grpc.CallOption) (*ListEntitiesResponse, error)
 }
 
@@ -96,7 +96,7 @@ type ReconcilerServiceServer interface {
 	RetrieveDeviations(context.Context, *RetrieveDeviationsRequest) (*RetrieveDeviationsResponse, error)
 	// Retrieve deviation by ID
 	RetrieveDeviationByID(context.Context, *RetrieveDeviationByIDRequest) (*RetrieveDeviationByIDResponse, error)
-	// List discovered entities with filtering
+	// List observed entities with filtering
 	ListEntities(context.Context, *ListEntitiesRequest) (*ListEntitiesResponse, error)
 	mustEmbedUnimplementedReconcilerServiceServer()
 }

@@ -1072,7 +1072,7 @@ func (x *RetrieveDeviationByIDResponse) GetDeviation() *Deviation {
 	return nil
 }
 
-// A discovered entity with its metadata
+// An observed entity with its metadata
 type DiodeEntity struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                                                 // Diode entity ID (UUID)

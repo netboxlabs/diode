@@ -134,7 +134,7 @@ message RetrieveDeviationByIDResponse {
   Deviation deviation = 1; // Deviation
 }
 
-// A discovered entity with its metadata
+// An observed entity with its metadata
 message DiodeEntity {
   string id = 1; // Diode entity ID (UUID)
   string object_type = 2; // Entity type (e.g., "dcim.device")
@@ -182,6 +182,6 @@ service ReconcilerService {
   // Retrieve deviation by ID
   rpc RetrieveDeviationByID(RetrieveDeviationByIDRequest) returns (RetrieveDeviationByIDResponse);
 
-  // List discovered entities with filtering
+  // List observed entities with filtering
   rpc ListEntities(ListEntitiesRequest) returns (ListEntitiesResponse);
 }
