@@ -6,7 +6,7 @@ and functioning correctly. They use Django session authentication
 """
 import pytest
 import re
-
+import uuid
 
 @pytest.mark.integration
 def test_get_settings_page(netbox_web_client):
@@ -60,7 +60,8 @@ def test_add_credential_flow(netbox_web_client):
     2. Verifies redirect to secret page
     3. Checks that the secret is displayed
     """
-    client_name = "pytest-test-client"
+
+    client_name = f"pytest-test-{uuid.uuid4()}"
 
     # Step 1: Add new credential
     response = netbox_web_client.add_credential(client_name)
