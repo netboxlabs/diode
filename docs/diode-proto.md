@@ -196,6 +196,8 @@
 - [diode/v1/reconciler.proto](#diode_v1_reconciler-proto)
     - [Change](#diode-v1-Change)
     - [ChangeSet](#diode-v1-ChangeSet)
+    - [CreateEntityRequest](#diode-v1-CreateEntityRequest)
+    - [CreateEntityResponse](#diode-v1-CreateEntityResponse)
     - [Deviation](#diode-v1-Deviation)
     - [DeviationError](#diode-v1-DeviationError)
     - [DiodeEntity](#diode-v1-DiodeEntity)
@@ -4949,6 +4951,38 @@ A change set
 
 
 
+<a name="diode-v1-CreateEntityRequest"></a>
+
+### CreateEntityRequest
+Request to create an entity in the graph database (idempotent)
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| entity | [Entity](#diode-v1-Entity) |  | The entity to create |
+| metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  | Optional metadata (agent_id, policy_id, etc.) |
+
+
+
+
+
+
+<a name="diode-v1-CreateEntityResponse"></a>
+
+### CreateEntityResponse
+Response from creating an entity
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| id | [string](#string) |  | Diode entity ID (UUID) |
+| object_type | [string](#string) |  | Entity type |
+
+
+
+
+
+
 <a name="diode-v1-Deviation"></a>
 
 ### Deviation
@@ -5243,6 +5277,7 @@ Reconciler service API
 | RetrieveDeviations | [RetrieveDeviationsRequest](#diode-v1-RetrieveDeviationsRequest) | [RetrieveDeviationsResponse](#diode-v1-RetrieveDeviationsResponse) | Retrieve deviations |
 | RetrieveDeviationByID | [RetrieveDeviationByIDRequest](#diode-v1-RetrieveDeviationByIDRequest) | [RetrieveDeviationByIDResponse](#diode-v1-RetrieveDeviationByIDResponse) | Retrieve deviation by ID |
 | ListEntities | [ListEntitiesRequest](#diode-v1-ListEntitiesRequest) | [ListEntitiesResponse](#diode-v1-ListEntitiesResponse) | List observed entities with filtering |
+| CreateEntity | [CreateEntityRequest](#diode-v1-CreateEntityRequest) | [CreateEntityResponse](#diode-v1-CreateEntityResponse) | Create an entity synchronously in the graph database (idempotent - returns existing ID if entity already exists) |
 
  
 

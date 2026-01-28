@@ -1330,6 +1330,112 @@ func (x *ListEntitiesResponse) GetNextPageToken() string {
 	return ""
 }
 
+// Request to create an entity in the graph database (idempotent)
+type CreateEntityRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Entity        *diodepb.Entity        `protobuf:"bytes,1,opt,name=entity,proto3" json:"entity,omitempty"`     // The entity to create
+	Metadata      *structpb.Struct       `protobuf:"bytes,2,opt,name=metadata,proto3" json:"metadata,omitempty"` // Optional metadata (agent_id, policy_id, etc.)
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateEntityRequest) Reset() {
+	*x = CreateEntityRequest{}
+	mi := &file_diode_v1_reconciler_proto_msgTypes[15]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateEntityRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateEntityRequest) ProtoMessage() {}
+
+func (x *CreateEntityRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_diode_v1_reconciler_proto_msgTypes[15]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateEntityRequest.ProtoReflect.Descriptor instead.
+func (*CreateEntityRequest) Descriptor() ([]byte, []int) {
+	return file_diode_v1_reconciler_proto_rawDescGZIP(), []int{15}
+}
+
+func (x *CreateEntityRequest) GetEntity() *diodepb.Entity {
+	if x != nil {
+		return x.Entity
+	}
+	return nil
+}
+
+func (x *CreateEntityRequest) GetMetadata() *structpb.Struct {
+	if x != nil {
+		return x.Metadata
+	}
+	return nil
+}
+
+// Response from creating an entity
+type CreateEntityResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`                                   // Diode entity ID (UUID)
+	ObjectType    string                 `protobuf:"bytes,2,opt,name=object_type,json=objectType,proto3" json:"object_type,omitempty"` // Entity type
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateEntityResponse) Reset() {
+	*x = CreateEntityResponse{}
+	mi := &file_diode_v1_reconciler_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateEntityResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateEntityResponse) ProtoMessage() {}
+
+func (x *CreateEntityResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_diode_v1_reconciler_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateEntityResponse.ProtoReflect.Descriptor instead.
+func (*CreateEntityResponse) Descriptor() ([]byte, []int) {
+	return file_diode_v1_reconciler_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *CreateEntityResponse) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *CreateEntityResponse) GetObjectType() string {
+	if x != nil {
+		return x.ObjectType
+	}
+	return ""
+}
+
 var File_diode_v1_reconciler_proto protoreflect.FileDescriptor
 
 const file_diode_v1_reconciler_proto_rawDesc = "" +
@@ -1474,7 +1580,14 @@ const file_diode_v1_reconciler_proto_rawDesc = "" +
 	"\x11_ingestion_ts_end\"q\n" +
 	"\x14ListEntitiesResponse\x121\n" +
 	"\bentities\x18\x01 \x03(\v2\x15.diode.v1.DiodeEntityR\bentities\x12&\n" +
-	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken*w\n" +
+	"\x0fnext_page_token\x18\x02 \x01(\tR\rnextPageToken\"~\n" +
+	"\x13CreateEntityRequest\x122\n" +
+	"\x06entity\x18\x01 \x01(\v2\x10.diode.v1.EntityB\b\xfaB\x05\x8a\x01\x02\x10\x01R\x06entity\x123\n" +
+	"\bmetadata\x18\x02 \x01(\v2\x17.google.protobuf.StructR\bmetadata\"G\n" +
+	"\x14CreateEntityResponse\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1f\n" +
+	"\vobject_type\x18\x02 \x01(\tR\n" +
+	"objectType*w\n" +
 	"\x05State\x12\x15\n" +
 	"\x11STATE_UNSPECIFIED\x10\x00\x12\n" +
 	"\n" +
@@ -1486,12 +1599,13 @@ const file_diode_v1_reconciler_proto_rawDesc = "" +
 	"\n" +
 	"NO_CHANGES\x10\x05\x12\v\n" +
 	"\aIGNORED\x10\x06\x12\v\n" +
-	"\aERRORED\x10\a2\x9c\x03\n" +
+	"\aERRORED\x10\a2\xeb\x03\n" +
 	"\x11ReconcilerService\x12m\n" +
 	"\x15RetrieveIngestionLogs\x12&.diode.v1.RetrieveIngestionLogsRequest\x1a'.diode.v1.RetrieveIngestionLogsResponse\"\x03\x88\x02\x01\x12_\n" +
 	"\x12RetrieveDeviations\x12#.diode.v1.RetrieveDeviationsRequest\x1a$.diode.v1.RetrieveDeviationsResponse\x12h\n" +
 	"\x15RetrieveDeviationByID\x12&.diode.v1.RetrieveDeviationByIDRequest\x1a'.diode.v1.RetrieveDeviationByIDResponse\x12M\n" +
-	"\fListEntities\x12\x1d.diode.v1.ListEntitiesRequest\x1a\x1e.diode.v1.ListEntitiesResponseB\xa4\x01\n" +
+	"\fListEntities\x12\x1d.diode.v1.ListEntitiesRequest\x1a\x1e.diode.v1.ListEntitiesResponse\x12M\n" +
+	"\fCreateEntity\x12\x1d.diode.v1.CreateEntityRequest\x1a\x1e.diode.v1.CreateEntityResponseB\xa4\x01\n" +
 	"\fcom.diode.v1B\x0fReconcilerProtoP\x01ZBgithub.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb\xa2\x02\x03DXX\xaa\x02\bDiode.V1\xca\x02\bDiode\\V1\xe2\x02\x14Diode\\V1\\GPBMetadata\xea\x02\tDiode::V1b\x06proto3"
 
 var (
@@ -1507,7 +1621,7 @@ func file_diode_v1_reconciler_proto_rawDescGZIP() []byte {
 }
 
 var file_diode_v1_reconciler_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_diode_v1_reconciler_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
+var file_diode_v1_reconciler_proto_msgTypes = make([]protoimpl.MessageInfo, 17)
 var file_diode_v1_reconciler_proto_goTypes = []any{
 	(State)(0),                            // 0: diode.v1.State
 	(*IngestionMetrics)(nil),              // 1: diode.v1.IngestionMetrics
@@ -1525,12 +1639,14 @@ var file_diode_v1_reconciler_proto_goTypes = []any{
 	(*DiodeEntity)(nil),                   // 13: diode.v1.DiodeEntity
 	(*ListEntitiesRequest)(nil),           // 14: diode.v1.ListEntitiesRequest
 	(*ListEntitiesResponse)(nil),          // 15: diode.v1.ListEntitiesResponse
-	(*diodepb.Entity)(nil),                // 16: diode.v1.Entity
-	(*structpb.Struct)(nil),               // 17: google.protobuf.Struct
+	(*CreateEntityRequest)(nil),           // 16: diode.v1.CreateEntityRequest
+	(*CreateEntityResponse)(nil),          // 17: diode.v1.CreateEntityResponse
+	(*diodepb.Entity)(nil),                // 18: diode.v1.Entity
+	(*structpb.Struct)(nil),               // 19: google.protobuf.Struct
 }
 var file_diode_v1_reconciler_proto_depIdxs = []int32{
 	0,  // 0: diode.v1.IngestionLog.state:type_name -> diode.v1.State
-	16, // 1: diode.v1.IngestionLog.entity:type_name -> diode.v1.Entity
+	18, // 1: diode.v1.IngestionLog.entity:type_name -> diode.v1.Entity
 	7,  // 2: diode.v1.IngestionLog.error:type_name -> diode.v1.DeviationError
 	2,  // 3: diode.v1.IngestionLog.change_set:type_name -> diode.v1.ChangeSet
 	0,  // 4: diode.v1.RetrieveIngestionLogsRequest.state:type_name -> diode.v1.State
@@ -1538,28 +1654,32 @@ var file_diode_v1_reconciler_proto_depIdxs = []int32{
 	1,  // 6: diode.v1.RetrieveIngestionLogsResponse.metrics:type_name -> diode.v1.IngestionMetrics
 	0,  // 7: diode.v1.RetrieveDeviationsRequest.state:type_name -> diode.v1.State
 	0,  // 8: diode.v1.Deviation.state:type_name -> diode.v1.State
-	16, // 9: diode.v1.Deviation.ingested_entity:type_name -> diode.v1.Entity
+	18, // 9: diode.v1.Deviation.ingested_entity:type_name -> diode.v1.Entity
 	7,  // 10: diode.v1.Deviation.error:type_name -> diode.v1.DeviationError
 	8,  // 11: diode.v1.Deviation.changes:type_name -> diode.v1.Change
 	9,  // 12: diode.v1.RetrieveDeviationsResponse.deviations:type_name -> diode.v1.Deviation
 	9,  // 13: diode.v1.RetrieveDeviationByIDResponse.deviation:type_name -> diode.v1.Deviation
-	16, // 14: diode.v1.DiodeEntity.entity:type_name -> diode.v1.Entity
-	17, // 15: diode.v1.DiodeEntity.source_metadata:type_name -> google.protobuf.Struct
-	17, // 16: diode.v1.ListEntitiesRequest.metadata_filters:type_name -> google.protobuf.Struct
+	18, // 14: diode.v1.DiodeEntity.entity:type_name -> diode.v1.Entity
+	19, // 15: diode.v1.DiodeEntity.source_metadata:type_name -> google.protobuf.Struct
+	19, // 16: diode.v1.ListEntitiesRequest.metadata_filters:type_name -> google.protobuf.Struct
 	13, // 17: diode.v1.ListEntitiesResponse.entities:type_name -> diode.v1.DiodeEntity
-	4,  // 18: diode.v1.ReconcilerService.RetrieveIngestionLogs:input_type -> diode.v1.RetrieveIngestionLogsRequest
-	6,  // 19: diode.v1.ReconcilerService.RetrieveDeviations:input_type -> diode.v1.RetrieveDeviationsRequest
-	11, // 20: diode.v1.ReconcilerService.RetrieveDeviationByID:input_type -> diode.v1.RetrieveDeviationByIDRequest
-	14, // 21: diode.v1.ReconcilerService.ListEntities:input_type -> diode.v1.ListEntitiesRequest
-	5,  // 22: diode.v1.ReconcilerService.RetrieveIngestionLogs:output_type -> diode.v1.RetrieveIngestionLogsResponse
-	10, // 23: diode.v1.ReconcilerService.RetrieveDeviations:output_type -> diode.v1.RetrieveDeviationsResponse
-	12, // 24: diode.v1.ReconcilerService.RetrieveDeviationByID:output_type -> diode.v1.RetrieveDeviationByIDResponse
-	15, // 25: diode.v1.ReconcilerService.ListEntities:output_type -> diode.v1.ListEntitiesResponse
-	22, // [22:26] is the sub-list for method output_type
-	18, // [18:22] is the sub-list for method input_type
-	18, // [18:18] is the sub-list for extension type_name
-	18, // [18:18] is the sub-list for extension extendee
-	0,  // [0:18] is the sub-list for field type_name
+	18, // 18: diode.v1.CreateEntityRequest.entity:type_name -> diode.v1.Entity
+	19, // 19: diode.v1.CreateEntityRequest.metadata:type_name -> google.protobuf.Struct
+	4,  // 20: diode.v1.ReconcilerService.RetrieveIngestionLogs:input_type -> diode.v1.RetrieveIngestionLogsRequest
+	6,  // 21: diode.v1.ReconcilerService.RetrieveDeviations:input_type -> diode.v1.RetrieveDeviationsRequest
+	11, // 22: diode.v1.ReconcilerService.RetrieveDeviationByID:input_type -> diode.v1.RetrieveDeviationByIDRequest
+	14, // 23: diode.v1.ReconcilerService.ListEntities:input_type -> diode.v1.ListEntitiesRequest
+	16, // 24: diode.v1.ReconcilerService.CreateEntity:input_type -> diode.v1.CreateEntityRequest
+	5,  // 25: diode.v1.ReconcilerService.RetrieveIngestionLogs:output_type -> diode.v1.RetrieveIngestionLogsResponse
+	10, // 26: diode.v1.ReconcilerService.RetrieveDeviations:output_type -> diode.v1.RetrieveDeviationsResponse
+	12, // 27: diode.v1.ReconcilerService.RetrieveDeviationByID:output_type -> diode.v1.RetrieveDeviationByIDResponse
+	15, // 28: diode.v1.ReconcilerService.ListEntities:output_type -> diode.v1.ListEntitiesResponse
+	17, // 29: diode.v1.ReconcilerService.CreateEntity:output_type -> diode.v1.CreateEntityResponse
+	25, // [25:30] is the sub-list for method output_type
+	20, // [20:25] is the sub-list for method input_type
+	20, // [20:20] is the sub-list for extension type_name
+	20, // [20:20] is the sub-list for extension extendee
+	0,  // [0:20] is the sub-list for field type_name
 }
 
 func init() { file_diode_v1_reconciler_proto_init() }
@@ -1578,7 +1698,7 @@ func file_diode_v1_reconciler_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_diode_v1_reconciler_proto_rawDesc), len(file_diode_v1_reconciler_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   15,
+			NumMessages:   17,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

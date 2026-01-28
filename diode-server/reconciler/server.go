@@ -121,3 +121,8 @@ func (s *Server) RetrieveDeviationByID(ctx context.Context, req *reconcilerpb.Re
 func (s *Server) ListEntities(_ context.Context, _ *reconcilerpb.ListEntitiesRequest) (*reconcilerpb.ListEntitiesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListEntities not implemented")
 }
+
+// CreateEntity creates an entity synchronously in the graph database (idempotent - returns existing ID if entity already exists)
+func (s *Server) CreateEntity(_ context.Context, _ *reconcilerpb.CreateEntityRequest) (*reconcilerpb.CreateEntityResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateEntity not implemented")
+}
