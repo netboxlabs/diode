@@ -1,6 +1,8 @@
 """API helper functions for testing Diode server endpoints."""
+
+from typing import Any
+
 import requests
-from typing import Any, Optional, List
 from netboxlabs.diode.sdk.client import DiodeClient
 from netboxlabs.diode.sdk.ingester import Entity
 
@@ -47,15 +49,11 @@ class DiodeAPIClient:
                 app_name=self.name,
                 app_version="1.0.0",
                 client_id=self.client_id,
-                client_secret=self.client_secret
+                client_secret=self.client_secret,
             )
         return self._client
 
-    def ingest_entities(
-        self,
-        entities: List[Entity],
-        stream: str = "latest"
-    ) -> Any:
+    def ingest_entities(self, entities: list[Entity], stream: str = "latest") -> Any:
         """Ingest entities to Diode.
 
         Args:
@@ -78,7 +76,7 @@ class DiodeAPIClient:
 class NetBoxAPIClient:
     """Client for interacting with NetBox API."""
 
-    def __init__(self, base_url: str = "http://localhost:8000", token: Optional[str] = None):
+    def __init__(self, base_url: str = "http://localhost:8000", token: str | None = None):
         """Initialize the NetBox API client.
 
         Args:
@@ -104,7 +102,7 @@ class NetBoxAPIClient:
         params = {"name": device_name}
         return self.session.get(url, params=params)
 
-    def get_sites(self, name: Optional[str] = None) -> requests.Response:
+    def get_sites(self, name: str | None = None) -> requests.Response:
         """Get sites from NetBox.
 
         Args:
@@ -116,7 +114,6 @@ class NetBoxAPIClient:
         url = f"{self.base_url}/api/dcim/sites/"
         params = {"name": name} if name else {}
         return self.session.get(url, params=params)
-
 
     def close(self):
         """Close the session."""
@@ -131,10 +128,7 @@ class NetBoxPluginWebClient:
     """
 
     def __init__(
-        self,
-        base_url: str = "http://localhost:8000/netbox/",
-        username: str = "admin",
-        password: str = "admin"
+        self, base_url: str = "http://localhost:8000/netbox/", username: str = "admin", password: str = "admin"
     ):
         """Initialize the NetBox plugin web client.
 
@@ -191,7 +185,7 @@ class NetBoxPluginWebClient:
             f"{self.base_url}/login/",
             data=login_data,
             headers={"Referer": f"{self.base_url}/login/"},
-            allow_redirects=False
+            allow_redirects=False,
         )
 
         # Check if login was successful (redirect on success)
@@ -221,7 +215,7 @@ class NetBoxPluginWebClient:
         url = f"{self.base_url}{path}"
         return self.session.get(url, **kwargs)
 
-    def post(self, path: str, data: Optional[dict] = None, **kwargs) -> requests.Response:
+    def post(self, path: str, data: dict | None = None, **kwargs) -> requests.Response:
         """Make authenticated POST request to plugin endpoint.
 
         Args:
@@ -279,11 +273,7 @@ class NetBoxPluginWebClient:
         Returns:
             Response object (should redirect to secret page)
         """
-        return self.post(
-            "/plugins/diode/credentials/add/",
-            data={"client_name": client_name},
-            allow_redirects=False
-        )
+        return self.post("/plugins/diode/credentials/add/", data={"client_name": client_name}, allow_redirects=False)
 
     def delete_credential(self, client_credential_id: str, confirm: bool = True) -> requests.Response:
         """Delete a client credential.
@@ -298,7 +288,7 @@ class NetBoxPluginWebClient:
         return self.post(
             f"/plugins/diode/credentials/delete/{client_credential_id}/",
             data={"confirm": confirm},
-            allow_redirects=False
+            allow_redirects=False,
         )
 
     def close(self):
