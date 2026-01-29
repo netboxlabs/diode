@@ -1,0 +1,45 @@
+name: Python - ruff lint
+
+on:
+  push:
+    branches:
+      - "!release"
+    paths:
+      - "tests/**/*.py"
+      - "tests/pyproject.toml"
+      - ".github/workflows/ruff-lint.yaml"
+  pull_request:
+    paths:
+      - "tests/**/*.py"
+      - "tests/pyproject.toml"
+      - ".github/workflows/ruff-lint.yaml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ruff:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: tests/requirements.txt
+      - name: Install dependencies
+        run: |
+          pip install -r tests/requirements.txt
+      - name: Run ruff check
+        run: |
+          make ruff-check
+      - name: Run ruff format check
+        run: |
+          make ruff-format-check
