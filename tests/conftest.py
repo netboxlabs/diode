@@ -2,11 +2,13 @@
 
 This module provides shared fixtures and configuration for pytest-based tests.
 """
-import sys
+
 import logging
 import os
+import sys
 import uuid
 from pathlib import Path
+
 import pytest
 
 # Add project root and tests directory to Python path
@@ -21,22 +23,10 @@ logger = logging.getLogger(__name__)
 def pytest_configure(config):
     """Configure pytest with custom markers and settings."""
     # Add custom markers
-    config.addinivalue_line(
-        "markers",
-        "integration: mark test as integration test requiring external services"
-    )
-    config.addinivalue_line(
-        "markers",
-        "unit: mark test as unit test (no external dependencies)"
-    )
-    config.addinivalue_line(
-        "markers",
-        "e2e: mark test as end-to-end test"
-    )
-    config.addinivalue_line(
-        "markers",
-        "slow: mark test as slow running"
-    )
+    config.addinivalue_line("markers", "integration: mark test as integration test requiring external services")
+    config.addinivalue_line("markers", "unit: mark test as unit test (no external dependencies)")
+    config.addinivalue_line("markers", "e2e: mark test as end-to-end test")
+    config.addinivalue_line("markers", "slow: mark test as slow running")
 
 
 @pytest.fixture(scope="session")
@@ -94,7 +84,7 @@ def netbox_web_client(test_config, netbox_credentials):
     client = NetBoxPluginWebClient(
         base_url=test_config["netbox_url"],
         username=netbox_credentials["username"],
-        password=netbox_credentials["password"]
+        password=netbox_credentials["password"],
     )
 
     # Perform login
@@ -141,10 +131,8 @@ def diode_client_credential(netbox_web_client):
 
     # Follow redirect to secret page
     secret_url = response.headers["Location"]
-    base_url = netbox_web_client.base_url.removesuffix('/netbox/').removesuffix('/netbox')
-    secret_response = netbox_web_client.session.get(
-        f"{base_url}{secret_url}"
-    )
+    base_url = netbox_web_client.base_url.removesuffix("/netbox/").removesuffix("/netbox")
+    secret_response = netbox_web_client.session.get(f"{base_url}{secret_url}")
 
     assert secret_response.status_code == 200, pytest.fail(f"Failed to get secret page: {secret_response.status_code}")
 
@@ -175,7 +163,7 @@ def diode_client_credential(netbox_web_client):
 
     # Cleanup: Delete the credential
     try:
-        netbox_web_client.delete_credential(credential['client_id'])
+        netbox_web_client.delete_credential(credential["client_id"])
         logger.info(f"Deleted test credential: {credential['client_id']}")
     except Exception as e:
         logger.warning(f"Failed to delete test credential {credential['client_id']}: {e}")
@@ -202,7 +190,7 @@ def diode_client(test_config, diode_client_credential):
         target=test_config["diode_target"],
         name="diode-test-client",
         client_id=diode_client_credential["client_id"],
-        client_secret=diode_client_credential["client_secret"]
+        client_secret=diode_client_credential["client_secret"],
     )
     yield client
     client.close()
@@ -226,10 +214,7 @@ def netbox_api_client(netbox_web_client):
     from helpers.api_helper import NetBoxAPIClient
 
     # Create client and replace its session with the authenticated web client session
-    client = NetBoxAPIClient(
-        base_url=netbox_web_client.base_url,
-        token=None
-    )
+    client = NetBoxAPIClient(base_url=netbox_web_client.base_url, token=None)
     # Use the web client's authenticated session instead of creating a new one
     client.session = netbox_web_client.session
 

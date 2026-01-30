@@ -75,6 +75,42 @@ Run tests with coverage:
 pytest tests/ --cov=diode
 ```
 
+## Linting
+
+This project uses [Ruff](https://docs.astral.sh/ruff/) for Python linting and formatting.
+
+### Run Linting
+
+Check for linting issues:
+```bash
+ruff check .
+```
+
+Automatically fix linting issues:
+```bash
+ruff check --fix .
+```
+
+### Run Formatting
+
+Format code:
+```bash
+ruff format .
+```
+
+Check formatting without making changes:
+```bash
+ruff format --check .
+```
+
+### Configuration
+
+Linting configuration is defined in `pyproject.toml`. The configuration:
+- Targets Python 3.12
+- Sets line length to 120 characters
+- Excludes protobuf generated files (`*.pb2.py`, `*.pb2_grpc.py`)
+- Enables pycodestyle, pyflakes, isort, flake8-bugbear, flake8-comprehensions, and pyupgrade rules
+
 ## Test Structure
 
 - `tests/`: Integration tests for the Diode SDK and NetBox plugin

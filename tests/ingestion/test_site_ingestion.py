@@ -1,9 +1,10 @@
 """Tests for site ingestion."""
-import uuid
+
 import time
+import uuid
 
 import pytest
-from netboxlabs.diode.sdk.ingester import (Entity, Site)
+from netboxlabs.diode.sdk.ingester import Entity, Site
 
 
 @pytest.mark.integration
@@ -19,10 +20,8 @@ def test_ingest_site_minimal(diode_client, netbox_api_client):
 
     # Step 1: Verify site doesn't exist in NetBox before ingestion
     sites_before = netbox_api_client.get_sites(name=site_name)
-    assert sites_before.status_code == 200, \
-        f"Failed to get sites: {sites_before.status_code}"
-    assert sites_before.json()["count"] == 0, \
-        f"Site '{site_name}' already exists in NetBox before test"
+    assert sites_before.status_code == 200, f"Failed to get sites: {sites_before.status_code}"
+    assert sites_before.json()["count"] == 0, f"Site '{site_name}' already exists in NetBox before test"
 
     # Step 2: Ingest site via Diode
     site = Site(name=site_name)
@@ -37,8 +36,7 @@ def test_ingest_site_minimal(diode_client, netbox_api_client):
 
     for attempt in range(max_retries):
         sites_after = netbox_api_client.get_sites(name=site_name)
-        assert sites_after.status_code == 200, \
-            f"Failed to get sites after ingestion: {sites_after.status_code}"
+        assert sites_after.status_code == 200, f"Failed to get sites after ingestion: {sites_after.status_code}"
 
         if sites_after.json()["count"] == 1:
             break
@@ -48,7 +46,6 @@ def test_ingest_site_minimal(diode_client, netbox_api_client):
     else:
         pytest.fail(f"Site '{site_name}' was not created in NetBox after {max_retries} attempts")
 
-    assert sites_after.json()["results"][0]["name"] == site_name, \
+    assert sites_after.json()["results"][0]["name"] == site_name, (
         f"Retrieved site name doesn't match: expected '{site_name}'"
-
-
+    )
