@@ -2,7 +2,7 @@ syntax = "proto3";
 
 // Generated Code. DO NOT EDIT.
 // Source: NetBox v4.5.0
-// Timestamp: 2026-01-12 17:44:12Z
+// Timestamp: 2026-02-02 16:58:58Z
 
 package diode.v1;
 
@@ -122,6 +122,7 @@ message Entity {
     CustomLink custom_link = 94;
     Owner owner = 95;
     OwnerGroup owner_group = 96;
+    DeviceConfig device_config = 97 [(netbox_supported) = false];
   }
 }
 
@@ -905,6 +906,7 @@ message Device {
   map<string, CustomFieldValue> custom_fields = 27;
   google.protobuf.Struct metadata = 28 [(netbox_supported) = false];
   optional Owner owner = 29;
+  optional DeviceConfig config = 30 [(netbox_supported) = false];
 }
 
 message DeviceBay {
@@ -4220,4 +4222,11 @@ message OwnerGroup {
   string name = 1;
   optional string description = 2;
   google.protobuf.Struct metadata = 3 [(netbox_supported) = false];
+}
+
+message DeviceConfig {
+  bytes startup = 1 [(netbox_supported) = false];
+  bytes running = 2 [(netbox_supported) = false];
+  bytes candidate = 3 [(netbox_supported) = false];
+  google.protobuf.Struct metadata = 4 [(netbox_supported) = false];
 }

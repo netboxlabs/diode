@@ -50,6 +50,7 @@
     - [Device.CustomFieldsEntry](#diode-v1-Device-CustomFieldsEntry)
     - [DeviceBay](#diode-v1-DeviceBay)
     - [DeviceBay.CustomFieldsEntry](#diode-v1-DeviceBay-CustomFieldsEntry)
+    - [DeviceConfig](#diode-v1-DeviceConfig)
     - [DeviceRole](#diode-v1-DeviceRole)
     - [DeviceRole.CustomFieldsEntry](#diode-v1-DeviceRole-CustomFieldsEntry)
     - [DeviceType](#diode-v1-DeviceType)
@@ -1345,6 +1346,7 @@
 | custom_fields | [Device.CustomFieldsEntry](#diode-v1-Device-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
 | owner | [Owner](#diode-v1-Owner) | optional |  |
+| config | [DeviceConfig](#diode-v1-DeviceConfig) | optional |  |
 
 
 
@@ -1400,6 +1402,24 @@
 | ----- | ---- | ----- | ----------- |
 | key | [string](#string) |  |  |
 | value | [CustomFieldValue](#diode-v1-CustomFieldValue) |  |  |
+
+
+
+
+
+
+<a name="diode-v1-DeviceConfig"></a>
+
+### DeviceConfig
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| startup | [bytes](#bytes) |  |  |
+| running | [bytes](#bytes) |  |  |
+| candidate | [bytes](#bytes) |  |  |
+| metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
 
 
 
@@ -1599,6 +1619,7 @@
 | custom_link | [CustomLink](#diode-v1-CustomLink) |  |  |
 | owner | [Owner](#diode-v1-Owner) |  |  |
 | owner_group | [OwnerGroup](#diode-v1-OwnerGroup) |  |  |
+| device_config | [DeviceConfig](#diode-v1-DeviceConfig) |  |  |
 
 
 
