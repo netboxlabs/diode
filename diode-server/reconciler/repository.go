@@ -3,6 +3,7 @@ package reconciler
 import (
 	"context"
 
+	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
 )
@@ -21,4 +22,8 @@ type Repository interface {
 	FindPriorIngestionLogByEntityHash(ctx context.Context, entityHash string, currentBranch *string) (*int32, *reconcilerpb.IngestionLog, error)
 	IncrementDuplicateCount(ctx context.Context, id int32) error
 	TruncateChangeSets(ctx context.Context, ingestionLogID int32, limit int32) error
+
+	// Graph-related operations
+	CreateEntityInGraph(ctx context.Context, entity *diodepb.Entity) (externalID string, nodeType string, err error)
+	ListGraphEntities(ctx context.Context, filter *reconcilerpb.ListEntitiesRequest, limit int32, offset int32) ([]*reconcilerpb.DiodeEntity, error)
 }

@@ -27,6 +27,7 @@ type Server struct {
 	grpcServer   *grpc.Server
 	redisClient  RedisClient
 	repository   Repository
+	// graphBuilder *reconciler.GraphBuilder // NOTE: I imagine this be added to Repository in future
 }
 
 // NewServer creates a new reconciler server
@@ -118,11 +119,71 @@ func (s *Server) RetrieveDeviationByID(ctx context.Context, req *reconcilerpb.Re
 }
 
 // ListEntities lists observed entities with filtering
-func (s *Server) ListEntities(_ context.Context, _ *reconcilerpb.ListEntitiesRequest) (*reconcilerpb.ListEntitiesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListEntities not implemented")
+func (s *Server) ListEntities(ctx context.Context, req *reconcilerpb.ListEntitiesRequest) (*reconcilerpb.ListEntitiesResponse, error) {
+	// Set default page size if not specified
+	pageSize := int32(100)
+	if req.PageSize != nil && *req.PageSize > 0 {
+		pageSize = *req.PageSize
+		// Cap at 1000 per proto definition
+		if pageSize > 1000 {
+			pageSize = 1000
+		}
+	}
+
+	// Parse page token for offset (simple implementation using offset as token)
+	offset := int32(0)
+	if req.PageToken != "" {
+		// Simple implementation: page token is just the offset as string
+		// In production, you might want to use a more sophisticated token
+		if _, err := fmt.Sscanf(req.PageToken, "%d", &offset); err != nil {
+			return nil, status.Errorf(codes.InvalidArgument, "invalid page token: %v", err)
+		}
+	}
+
+	// Query entities from the repository
+	entities, err := s.repository.ListGraphEntities(ctx, req, pageSize, offset)
+	if err != nil {
+		s.logger.Error("failed to list graph entities", "error", err)
+		return nil, status.Errorf(codes.Internal, "failed to list entities: %v", err)
+	}
+
+	// Generate next page token if we got a full page
+	nextPageToken := ""
+	if len(entities) == int(pageSize) {
+		nextPageToken = fmt.Sprintf("%d", offset+pageSize)
+	}
+
+	s.logger.Debug("listed entities",
+		"count", len(entities),
+		"page_size", pageSize,
+		"offset", offset,
+		"has_next_page", nextPageToken != "")
+
+	return &reconcilerpb.ListEntitiesResponse{
+		Entities:      entities,
+		NextPageToken: nextPageToken,
+	}, nil
 }
 
 // CreateEntity creates an entity synchronously in the graph database (idempotent - returns existing ID if entity already exists)
-func (s *Server) CreateEntity(_ context.Context, _ *reconcilerpb.CreateEntityRequest) (*reconcilerpb.CreateEntityResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateEntity not implemented")
+func (s *Server) CreateEntity(ctx context.Context, req *reconcilerpb.CreateEntityRequest) (*reconcilerpb.CreateEntityResponse, error) {
+	if req.Entity == nil {
+		return nil, status.Errorf(codes.InvalidArgument, "entity is required")
+	}
+
+	// Create the entity in the graph using the repository
+	externalID, nodeType, err := s.repository.CreateEntityInGraph(ctx, req.Entity)
+	if err != nil {
+		s.logger.Error("failed to create entity in graph", "error", err)
+		return nil, status.Errorf(codes.Internal, "failed to create entity: %v", err)
+	}
+
+	s.logger.Info("created entity in graph",
+		"external_id", externalID,
+		"node_type", nodeType)
+
+	return &reconcilerpb.CreateEntityResponse{
+		Id:         externalID,
+		ObjectType: nodeType,
+	}, nil
 }
