@@ -1,5 +1,5 @@
 // Generated code. DO NOT EDIT.
-// Timestamp: 2026-01-12 17:44:14Z
+// Timestamp: 2026-02-02 16:59:00Z
 package netbox
 
 import (
@@ -200,6 +200,8 @@ const (
 	OwnerObjectTypeName                     = "Owner"
 	OwnerGroupObjectType                    = "users.ownergroup"
 	OwnerGroupObjectTypeName                = "Owner Group"
+	DeviceConfigObjectType                  = "dcim.deviceconfig"
+	DeviceConfigObjectTypeName              = "Device Config"
 )
 
 // entityTypeMap provides O(1) lookup vs O(n) linear switch evaluation
@@ -501,6 +503,8 @@ func GetObjectTypeName(objectType string) (string, error) {
 		return OwnerObjectTypeName, nil
 	case OwnerGroupObjectType:
 		return OwnerGroupObjectTypeName, nil
+	case DeviceConfigObjectType:
+		return DeviceConfigObjectTypeName, nil
 	default:
 		return "", fmt.Errorf("unknown object type: %v", objectType)
 	}
