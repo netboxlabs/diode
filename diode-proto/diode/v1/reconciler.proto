@@ -134,6 +134,24 @@ message RetrieveDeviationByIDResponse {
   Deviation deviation = 1; // Deviation
 }
 
+// The request to list results by job
+message ListResultsByJobRequest {
+  repeated string job_id = 1; // Filter by job IDs from source_metadata
+  optional int32 page_size = 2; // Number of results per page, default is 100, max 1000
+  string page_token = 3; // Token to fetch the next page of results
+  repeated State state = 4; // Optional filter by states
+  repeated string object_type = 5; // Optional filter by object types
+  repeated string branch_id = 6; // Optional filter by branch IDs
+  int64 ingestion_ts_start = 7; // Optional start of ingestion timestamp range
+  int64 ingestion_ts_end = 8; // Optional end of ingestion timestamp range
+}
+
+// The response from the list results by job request
+message ListResultsByJobResponse {
+  repeated Deviation deviations = 1; // List of deviations for the job(s)
+  string next_page_token = 2; // Token for the next page of results, if any
+}
+
 // An observed entity with its metadata
 message DiodeEntity {
   string id = 1; // Diode entity ID (UUID)
@@ -199,4 +217,7 @@ service ReconcilerService {
 
   // Create an entity synchronously in the graph database (idempotent - returns existing ID if entity already exists)
   rpc CreateEntity(CreateEntityRequest) returns (CreateEntityResponse);
+
+  // List results filtered by job ID
+  rpc ListResultsByJob(ListResultsByJobRequest) returns (ListResultsByJobResponse);
 }

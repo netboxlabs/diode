@@ -320,6 +320,67 @@ func (_c *Repository_IncrementDuplicateCount_Call) RunAndReturn(run func(context
 	return _c
 }
 
+// ListResultsByJob provides a mock function with given fields: ctx, filter, limit, offset
+func (_m *Repository) ListResultsByJob(ctx context.Context, filter *reconcilerpb.ListResultsByJobRequest, limit int32, offset int32) ([]*reconcilerpb.Deviation, error) {
+	ret := _m.Called(ctx, filter, limit, offset)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListResultsByJob")
+	}
+
+	var r0 []*reconcilerpb.Deviation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *reconcilerpb.ListResultsByJobRequest, int32, int32) ([]*reconcilerpb.Deviation, error)); ok {
+		return rf(ctx, filter, limit, offset)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *reconcilerpb.ListResultsByJobRequest, int32, int32) []*reconcilerpb.Deviation); ok {
+		r0 = rf(ctx, filter, limit, offset)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*reconcilerpb.Deviation)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *reconcilerpb.ListResultsByJobRequest, int32, int32) error); ok {
+		r1 = rf(ctx, filter, limit, offset)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Repository_ListResultsByJob_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListResultsByJob'
+type Repository_ListResultsByJob_Call struct {
+	*mock.Call
+}
+
+// ListResultsByJob is a helper method to define mock.On call
+//   - ctx context.Context
+//   - filter *reconcilerpb.ListResultsByJobRequest
+//   - limit int32
+//   - offset int32
+func (_e *Repository_Expecter) ListResultsByJob(ctx interface{}, filter interface{}, limit interface{}, offset interface{}) *Repository_ListResultsByJob_Call {
+	return &Repository_ListResultsByJob_Call{Call: _e.mock.On("ListResultsByJob", ctx, filter, limit, offset)}
+}
+
+func (_c *Repository_ListResultsByJob_Call) Run(run func(ctx context.Context, filter *reconcilerpb.ListResultsByJobRequest, limit int32, offset int32)) *Repository_ListResultsByJob_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*reconcilerpb.ListResultsByJobRequest), args[2].(int32), args[3].(int32))
+	})
+	return _c
+}
+
+func (_c *Repository_ListResultsByJob_Call) Return(_a0 []*reconcilerpb.Deviation, _a1 error) *Repository_ListResultsByJob_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Repository_ListResultsByJob_Call) RunAndReturn(run func(context.Context, *reconcilerpb.ListResultsByJobRequest, int32, int32) ([]*reconcilerpb.Deviation, error)) *Repository_ListResultsByJob_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // RetrieveDeviationByID provides a mock function with given fields: ctx, externalID
 func (_m *Repository) RetrieveDeviationByID(ctx context.Context, externalID string) (*reconcilerpb.Deviation, error) {
 	ret := _m.Called(ctx, externalID)

@@ -117,6 +117,11 @@ func (s *Server) RetrieveDeviationByID(ctx context.Context, req *reconcilerpb.Re
 	return retrieveDeviationByID(ctx, s.logger, s.repository, req)
 }
 
+// ListResultsByJob lists deviations filtered by job ID
+func (s *Server) ListResultsByJob(ctx context.Context, req *reconcilerpb.ListResultsByJobRequest) (*reconcilerpb.ListResultsByJobResponse, error) {
+	return listResultsByJob(ctx, s.logger, s.repository, req)
+}
+
 // ListEntities lists observed entities with filtering
 func (s *Server) ListEntities(_ context.Context, _ *reconcilerpb.ListEntitiesRequest) (*reconcilerpb.ListEntitiesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListEntities not implemented")

@@ -50,6 +50,36 @@ func retrieveDeviationByID(ctx context.Context, _ *slog.Logger, repository Repos
 	return &reconcilerpb.RetrieveDeviationByIDResponse{Deviation: deviation}, nil
 }
 
+func listResultsByJob(ctx context.Context, _ *slog.Logger, repository Repository, req *reconcilerpb.ListResultsByJobRequest) (*reconcilerpb.ListResultsByJobResponse, error) {
+	pageSize := req.GetPageSize()
+	if req.PageSize == nil || pageSize >= 1000 {
+		pageSize = 100
+	}
+
+	offset := int32(0)
+	if req.PageToken != "" {
+		decodedPageToken, err := decodePageToken(req.PageToken)
+		if err != nil {
+			return nil, err
+		}
+		offset = decodedPageToken
+	}
+
+	deviations, err := repository.ListResultsByJob(ctx, req, pageSize, offset)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list results by job: %w", err)
+	}
+
+	var nextPageToken string
+
+	if len(deviations) == int(pageSize) {
+		offset += int32(len(deviations))
+		nextPageToken = encodePageNumber(offset)
+	}
+
+	return &reconcilerpb.ListResultsByJobResponse{Deviations: deviations, NextPageToken: nextPageToken}, nil
+}
+
 func decodePageToken(encoded string) (int32, error) {
 	// Decode the base64 string back to bytes
 	decoded, err := base64.StdEncoding.DecodeString(encoded)

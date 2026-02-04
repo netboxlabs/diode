@@ -375,6 +375,54 @@ func (r *Repository) RetrieveDeviationByID(ctx context.Context, externalID strin
 	return deviationPb, nil
 }
 
+// ListResultsByJob retrieves deviations filtered by job_id from source_metadata.
+func (r *Repository) ListResultsByJob(ctx context.Context, filter *reconcilerpb.ListResultsByJobRequest, limit int32, offset int32) ([]*reconcilerpb.Deviation, error) {
+	params := postgres.ListResultsByJobParams{
+		Limit:  limit,
+		Offset: offset,
+	}
+
+	if len(filter.JobId) > 0 {
+		params.JobID = filter.JobId
+	}
+	if len(filter.State) > 0 {
+		states := make([]int32, 0, len(filter.State))
+		for _, state := range filter.State {
+			states = append(states, int32(state))
+		}
+		params.State = states
+	}
+	if len(filter.ObjectType) > 0 {
+		params.ObjectType = filter.ObjectType
+	}
+	if len(filter.BranchId) > 0 {
+		params.BranchID = filter.BranchId
+	}
+	if filter.IngestionTsStart > 0 {
+		params.IngestionTsStart = pgtype.Int8{Int64: filter.IngestionTsStart, Valid: true}
+	}
+	if filter.IngestionTsEnd > 0 {
+		params.IngestionTsEnd = pgtype.Int8{Int64: filter.IngestionTsEnd, Valid: true}
+	}
+
+	rawDeviations, err := r.queries.ListResultsByJob(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+
+	deviations := make([]*reconcilerpb.Deviation, 0, len(rawDeviations))
+	for _, rawDeviation := range rawDeviations {
+		deviationPb, err := deviationToProto(rawDeviation)
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert deviation to proto: %w", err)
+		}
+
+		deviations = append(deviations, deviationPb)
+	}
+
+	return deviations, nil
+}
+
 func deviationToProto(dbDeviation postgres.VDeviation) (*reconcilerpb.Deviation, error) {
 	entity := &diodepb.Entity{}
 	if err := protojson.Unmarshal(dbDeviation.Entity, entity); err != nil {

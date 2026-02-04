@@ -1671,6 +1671,256 @@ var _ interface {
 	ErrorName() string
 } = RetrieveDeviationByIDResponseValidationError{}
 
+// Validate checks the field values on ListResultsByJobRequest with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *ListResultsByJobRequest) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ListResultsByJobRequest with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ListResultsByJobRequestMultiError, or nil if none found.
+func (m *ListResultsByJobRequest) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ListResultsByJobRequest) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for PageToken
+
+	// no validation rules for IngestionTsStart
+
+	// no validation rules for IngestionTsEnd
+
+	if m.PageSize != nil {
+		// no validation rules for PageSize
+	}
+
+	if len(errors) > 0 {
+		return ListResultsByJobRequestMultiError(errors)
+	}
+
+	return nil
+}
+
+// ListResultsByJobRequestMultiError is an error wrapping multiple validation
+// errors returned by ListResultsByJobRequest.ValidateAll() if the designated
+// constraints aren't met.
+type ListResultsByJobRequestMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ListResultsByJobRequestMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ListResultsByJobRequestMultiError) AllErrors() []error { return m }
+
+// ListResultsByJobRequestValidationError is the validation error returned by
+// ListResultsByJobRequest.Validate if the designated constraints aren't met.
+type ListResultsByJobRequestValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ListResultsByJobRequestValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ListResultsByJobRequestValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ListResultsByJobRequestValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ListResultsByJobRequestValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ListResultsByJobRequestValidationError) ErrorName() string {
+	return "ListResultsByJobRequestValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ListResultsByJobRequestValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sListResultsByJobRequest.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ListResultsByJobRequestValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ListResultsByJobRequestValidationError{}
+
+// Validate checks the field values on ListResultsByJobResponse with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *ListResultsByJobResponse) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ListResultsByJobResponse with the
+// rules defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// ListResultsByJobResponseMultiError, or nil if none found.
+func (m *ListResultsByJobResponse) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ListResultsByJobResponse) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	for idx, item := range m.GetDeviations() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ListResultsByJobResponseValidationError{
+						field:  fmt.Sprintf("Deviations[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ListResultsByJobResponseValidationError{
+						field:  fmt.Sprintf("Deviations[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ListResultsByJobResponseValidationError{
+					field:  fmt.Sprintf("Deviations[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	// no validation rules for NextPageToken
+
+	if len(errors) > 0 {
+		return ListResultsByJobResponseMultiError(errors)
+	}
+
+	return nil
+}
+
+// ListResultsByJobResponseMultiError is an error wrapping multiple validation
+// errors returned by ListResultsByJobResponse.ValidateAll() if the designated
+// constraints aren't met.
+type ListResultsByJobResponseMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ListResultsByJobResponseMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ListResultsByJobResponseMultiError) AllErrors() []error { return m }
+
+// ListResultsByJobResponseValidationError is the validation error returned by
+// ListResultsByJobResponse.Validate if the designated constraints aren't met.
+type ListResultsByJobResponseValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ListResultsByJobResponseValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ListResultsByJobResponseValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ListResultsByJobResponseValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ListResultsByJobResponseValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ListResultsByJobResponseValidationError) ErrorName() string {
+	return "ListResultsByJobResponseValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e ListResultsByJobResponseValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sListResultsByJobResponse.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ListResultsByJobResponseValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ListResultsByJobResponseValidationError{}
+
 // Validate checks the field values on DiodeEntity with the rules defined in
 // the proto definition for this message. If any rules are violated, the first
 // error encountered is returned, or nil if there are no violations.

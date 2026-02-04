@@ -17,6 +17,7 @@ type Repository interface {
 	CreateChangeSet(ctx context.Context, changeSet changeset.ChangeSet, ingestionLogID int32) (*int32, error)
 	RetrieveDeviations(ctx context.Context, filter *reconcilerpb.RetrieveDeviationsRequest, limit int32, offset int32) ([]*reconcilerpb.Deviation, error)
 	RetrieveDeviationByID(ctx context.Context, externalID string) (*reconcilerpb.Deviation, error)
+	ListResultsByJob(ctx context.Context, filter *reconcilerpb.ListResultsByJobRequest, limit int32, offset int32) ([]*reconcilerpb.Deviation, error)
 
 	FindPriorIngestionLogByEntityHash(ctx context.Context, entityHash string, currentBranch *string) (*int32, *reconcilerpb.IngestionLog, error)
 	IncrementDuplicateCount(ctx context.Context, id int32) error

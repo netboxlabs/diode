@@ -11,6 +11,84 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const listResultsByJob = `-- name: ListResultsByJob :many
+SELECT v_deviations.id, v_deviations.external_id, v_deviations.object_type, v_deviations.state, v_deviations.request_id, v_deviations.ingestion_ts, v_deviations.source_ts, v_deviations.producer_app_name, v_deviations.producer_app_version, v_deviations.sdk_name, v_deviations.sdk_version, v_deviations.entity, v_deviations.error, v_deviations.source_metadata, v_deviations.created_at, v_deviations.updated_at, v_deviations.change_set, v_deviations.changes
+FROM v_deviations
+WHERE (v_deviations.source_metadata->>'job_id' = ANY ($1::text[]) OR
+       $1 IS NULL)
+  AND (v_deviations.state = ANY ($2::int[]) OR
+       $2 IS NULL)
+  AND (v_deviations.object_type = ANY ($3::text[]) OR
+       $3 IS NULL)
+  AND (v_deviations.change_set ->> 'branch_id' = ANY ($4::text[]) OR
+       $4 IS NULL)
+  AND (v_deviations.ingestion_ts >= $5 OR
+       $5 IS NULL)
+  AND (v_deviations.ingestion_ts <= $6 OR
+       $6 IS NULL)
+ORDER BY v_deviations.id DESC
+LIMIT $8 OFFSET $7
+`
+
+type ListResultsByJobParams struct {
+	JobID            []string    `json:"job_id"`
+	State            []int32     `json:"state"`
+	ObjectType       []string    `json:"object_type"`
+	BranchID         []string    `json:"branch_id"`
+	IngestionTsStart pgtype.Int8 `json:"ingestion_ts_start"`
+	IngestionTsEnd   pgtype.Int8 `json:"ingestion_ts_end"`
+	Offset           int32       `json:"offset"`
+	Limit            int32       `json:"limit"`
+}
+
+func (q *Queries) ListResultsByJob(ctx context.Context, arg ListResultsByJobParams) ([]VDeviation, error) {
+	rows, err := q.db.Query(ctx, listResultsByJob,
+		arg.JobID,
+		arg.State,
+		arg.ObjectType,
+		arg.BranchID,
+		arg.IngestionTsStart,
+		arg.IngestionTsEnd,
+		arg.Offset,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []VDeviation
+	for rows.Next() {
+		var i VDeviation
+		if err := rows.Scan(
+			&i.ID,
+			&i.ExternalID,
+			&i.ObjectType,
+			&i.State,
+			&i.RequestID,
+			&i.IngestionTs,
+			&i.SourceTs,
+			&i.ProducerAppName,
+			&i.ProducerAppVersion,
+			&i.SdkName,
+			&i.SdkVersion,
+			&i.Entity,
+			&i.Error,
+			&i.SourceMetadata,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.ChangeSet,
+			&i.Changes,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const retrieveDeviationByID = `-- name: RetrieveDeviationByID :one
 SELECT v_deviations.id, v_deviations.external_id, v_deviations.object_type, v_deviations.state, v_deviations.request_id, v_deviations.ingestion_ts, v_deviations.source_ts, v_deviations.producer_app_name, v_deviations.producer_app_version, v_deviations.sdk_name, v_deviations.sdk_version, v_deviations.entity, v_deviations.error, v_deviations.source_metadata, v_deviations.created_at, v_deviations.updated_at, v_deviations.change_set, v_deviations.changes
 FROM v_deviations

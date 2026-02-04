@@ -24,6 +24,7 @@ const (
 	ReconcilerService_RetrieveDeviationByID_FullMethodName = "/diode.v1.ReconcilerService/RetrieveDeviationByID"
 	ReconcilerService_ListEntities_FullMethodName          = "/diode.v1.ReconcilerService/ListEntities"
 	ReconcilerService_CreateEntity_FullMethodName          = "/diode.v1.ReconcilerService/CreateEntity"
+	ReconcilerService_ListResultsByJob_FullMethodName      = "/diode.v1.ReconcilerService/ListResultsByJob"
 )
 
 // ReconcilerServiceClient is the client API for ReconcilerService service.
@@ -41,6 +42,8 @@ type ReconcilerServiceClient interface {
 	ListEntities(ctx context.Context, in *ListEntitiesRequest, opts ...grpc.CallOption) (*ListEntitiesResponse, error)
 	// Create an entity synchronously in the graph database (idempotent - returns existing ID if entity already exists)
 	CreateEntity(ctx context.Context, in *CreateEntityRequest, opts ...grpc.CallOption) (*CreateEntityResponse, error)
+	// List results filtered by job ID
+	ListResultsByJob(ctx context.Context, in *ListResultsByJobRequest, opts ...grpc.CallOption) (*ListResultsByJobResponse, error)
 }
 
 type reconcilerServiceClient struct {
@@ -97,6 +100,15 @@ func (c *reconcilerServiceClient) CreateEntity(ctx context.Context, in *CreateEn
 	return out, nil
 }
 
+func (c *reconcilerServiceClient) ListResultsByJob(ctx context.Context, in *ListResultsByJobRequest, opts ...grpc.CallOption) (*ListResultsByJobResponse, error) {
+	out := new(ListResultsByJobResponse)
+	err := c.cc.Invoke(ctx, ReconcilerService_ListResultsByJob_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ReconcilerServiceServer is the server API for ReconcilerService service.
 // All implementations must embed UnimplementedReconcilerServiceServer
 // for forward compatibility
@@ -112,6 +124,8 @@ type ReconcilerServiceServer interface {
 	ListEntities(context.Context, *ListEntitiesRequest) (*ListEntitiesResponse, error)
 	// Create an entity synchronously in the graph database (idempotent - returns existing ID if entity already exists)
 	CreateEntity(context.Context, *CreateEntityRequest) (*CreateEntityResponse, error)
+	// List results filtered by job ID
+	ListResultsByJob(context.Context, *ListResultsByJobRequest) (*ListResultsByJobResponse, error)
 	mustEmbedUnimplementedReconcilerServiceServer()
 }
 
@@ -133,6 +147,9 @@ func (UnimplementedReconcilerServiceServer) ListEntities(context.Context, *ListE
 }
 func (UnimplementedReconcilerServiceServer) CreateEntity(context.Context, *CreateEntityRequest) (*CreateEntityResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateEntity not implemented")
+}
+func (UnimplementedReconcilerServiceServer) ListResultsByJob(context.Context, *ListResultsByJobRequest) (*ListResultsByJobResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListResultsByJob not implemented")
 }
 func (UnimplementedReconcilerServiceServer) mustEmbedUnimplementedReconcilerServiceServer() {}
 
@@ -237,6 +254,24 @@ func _ReconcilerService_CreateEntity_Handler(srv interface{}, ctx context.Contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ReconcilerService_ListResultsByJob_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListResultsByJobRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReconcilerServiceServer).ListResultsByJob(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ReconcilerService_ListResultsByJob_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReconcilerServiceServer).ListResultsByJob(ctx, req.(*ListResultsByJobRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ReconcilerService_ServiceDesc is the grpc.ServiceDesc for ReconcilerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -263,6 +298,10 @@ var ReconcilerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateEntity",
 			Handler:    _ReconcilerService_CreateEntity_Handler,
+		},
+		{
+			MethodName: "ListResultsByJob",
+			Handler:    _ReconcilerService_ListResultsByJob_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

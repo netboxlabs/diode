@@ -206,6 +206,8 @@
     - [IngestionMetrics](#diode-v1-IngestionMetrics)
     - [ListEntitiesRequest](#diode-v1-ListEntitiesRequest)
     - [ListEntitiesResponse](#diode-v1-ListEntitiesResponse)
+    - [ListResultsByJobRequest](#diode-v1-ListResultsByJobRequest)
+    - [ListResultsByJobResponse](#diode-v1-ListResultsByJobResponse)
     - [RetrieveDeviationByIDRequest](#diode-v1-RetrieveDeviationByIDRequest)
     - [RetrieveDeviationByIDResponse](#diode-v1-RetrieveDeviationByIDResponse)
     - [RetrieveDeviationsRequest](#diode-v1-RetrieveDeviationsRequest)
@@ -5156,6 +5158,44 @@ Response from the list entities request
 
 
 
+<a name="diode-v1-ListResultsByJobRequest"></a>
+
+### ListResultsByJobRequest
+The request to list results by job
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| job_id | [string](#string) | repeated | Filter by job IDs from source_metadata |
+| page_size | [int32](#int32) | optional | Number of results per page, default is 100, max 1000 |
+| page_token | [string](#string) |  | Token to fetch the next page of results |
+| state | [State](#diode-v1-State) | repeated | Optional filter by states |
+| object_type | [string](#string) | repeated | Optional filter by object types |
+| branch_id | [string](#string) | repeated | Optional filter by branch IDs |
+| ingestion_ts_start | [int64](#int64) |  | Optional start of ingestion timestamp range |
+| ingestion_ts_end | [int64](#int64) |  | Optional end of ingestion timestamp range |
+
+
+
+
+
+
+<a name="diode-v1-ListResultsByJobResponse"></a>
+
+### ListResultsByJobResponse
+The response from the list results by job request
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| deviations | [Deviation](#diode-v1-Deviation) | repeated | List of deviations for the job(s) |
+| next_page_token | [string](#string) |  | Token for the next page of results, if any |
+
+
+
+
+
+
 <a name="diode-v1-RetrieveDeviationByIDRequest"></a>
 
 ### RetrieveDeviationByIDRequest
@@ -5299,6 +5339,7 @@ Reconciler service API
 | RetrieveDeviationByID | [RetrieveDeviationByIDRequest](#diode-v1-RetrieveDeviationByIDRequest) | [RetrieveDeviationByIDResponse](#diode-v1-RetrieveDeviationByIDResponse) | Retrieve deviation by ID |
 | ListEntities | [ListEntitiesRequest](#diode-v1-ListEntitiesRequest) | [ListEntitiesResponse](#diode-v1-ListEntitiesResponse) | List observed entities with filtering |
 | CreateEntity | [CreateEntityRequest](#diode-v1-CreateEntityRequest) | [CreateEntityResponse](#diode-v1-CreateEntityResponse) | Create an entity synchronously in the graph database (idempotent - returns existing ID if entity already exists) |
+| ListResultsByJob | [ListResultsByJobRequest](#diode-v1-ListResultsByJobRequest) | [ListResultsByJobResponse](#diode-v1-ListResultsByJobResponse) | List results filtered by job ID |
 
  
 
