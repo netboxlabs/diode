@@ -10,6 +10,7 @@ import (
 	"go.opentelemetry.io/otel"
 
 	"github.com/netboxlabs/diode/diode-server/auth"
+	"github.com/netboxlabs/diode/diode-server/pprof"
 	"github.com/netboxlabs/diode/diode-server/server"
 	"github.com/netboxlabs/diode/diode-server/telemetry"
 	"github.com/netboxlabs/diode/diode-server/version"
@@ -20,6 +21,9 @@ const (
 
 	// used by open telemetry metrics
 	telemetryServiceName = "netboxlabs/diode/auth"
+
+	// PProfEnvVar is the environment variable for the optional pprof server address
+	PProfEnvVar = "DIODE_AUTH_PPROF_ADDR"
 )
 
 func main() {
@@ -28,6 +32,10 @@ func main() {
 	s := server.New(ctx, applicationName, version.Release())
 
 	defer s.Recover(sentry.CurrentHub())
+
+	if pprofAddr := os.Getenv(PProfEnvVar); pprofAddr != "" {
+		go pprof.Listen(ctx, s.Logger(), pprofAddr)
+	}
 
 	var cfg auth.Config
 	envconfig.MustProcess("", &cfg)

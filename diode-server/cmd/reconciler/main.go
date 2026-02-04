@@ -22,6 +22,7 @@ import (
 	"github.com/netboxlabs/diode/diode-server/matching"
 	"github.com/netboxlabs/diode/diode-server/migrator"
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
+	"github.com/netboxlabs/diode/diode-server/pprof"
 	"github.com/netboxlabs/diode/diode-server/reconciler"
 	"github.com/netboxlabs/diode/diode-server/server"
 	"github.com/netboxlabs/diode/diode-server/telemetry"
@@ -33,6 +34,9 @@ const (
 
 	// used by open telemetry metrics
 	telemetryServiceName = "netboxlabs/diode/reconciler"
+
+	// PProfEnvVar is the environment variable for the optional pprof server address
+	PProfEnvVar = "DIODE_RECONCILER_PPROF_ADDR"
 )
 
 func main() {
@@ -40,6 +44,10 @@ func main() {
 	s := server.New(ctx, applicationName, version.Release())
 
 	defer s.Recover(sentry.CurrentHub())
+
+	if pprofAddr := os.Getenv(PProfEnvVar); pprofAddr != "" {
+		go pprof.Listen(ctx, s.Logger(), pprofAddr)
+	}
 
 	var cfg reconciler.Config
 	envconfig.MustProcess("", &cfg)
