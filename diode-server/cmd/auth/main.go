@@ -21,9 +21,6 @@ const (
 
 	// used by open telemetry metrics
 	telemetryServiceName = "netboxlabs/diode/auth"
-
-	// PProfEnvVar is the environment variable for the optional pprof server address
-	PProfEnvVar = "DIODE_AUTH_PPROF_ADDR"
 )
 
 func main() {
@@ -33,12 +30,12 @@ func main() {
 
 	defer s.Recover(sentry.CurrentHub())
 
-	if pprofAddr := os.Getenv(PProfEnvVar); pprofAddr != "" {
-		go pprof.Listen(ctx, s.Logger(), pprofAddr)
-	}
-
 	var cfg auth.Config
 	envconfig.MustProcess("", &cfg)
+
+	if cfg.PProfAddr != "" {
+		go pprof.Listen(ctx, s.Logger(), cfg.PProfAddr)
+	}
 
 	// Set default telemetry configuration if not provided
 	if cfg.Telemetry.ServiceName == "" {

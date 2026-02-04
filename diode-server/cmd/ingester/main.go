@@ -25,9 +25,6 @@ const (
 
 	// used by open telemetry metrics
 	telemetryServiceName = "netboxlabs/diode/ingester"
-
-	// PProfEnvVar is the environment variable for the optional pprof server address
-	PProfEnvVar = "DIODE_INGESTER_PPROF_ADDR"
 )
 
 func main() {
@@ -36,13 +33,13 @@ func main() {
 
 	defer s.Recover(sentry.CurrentHub())
 
-	if pprofAddr := os.Getenv(PProfEnvVar); pprofAddr != "" {
-		go pprof.Listen(ctx, s.Logger(), pprofAddr)
-	}
-
 	// Load configuration
 	var cfg ingester.Config
 	envconfig.MustProcess("", &cfg)
+
+	if cfg.PProfAddr != "" {
+		go pprof.Listen(ctx, s.Logger(), cfg.PProfAddr)
+	}
 
 	// Set default telemetry configuration if not provided
 	if cfg.Telemetry.ServiceName == "" {
