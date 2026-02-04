@@ -23,6 +23,7 @@ import (
 func Listen(ctx context.Context, logger *slog.Logger, addr string) {
 	if addr == "" {
 		logger.Error("pprof address cannot be empty")
+		return
 	}
 
 	mux := http.NewServeMux()
