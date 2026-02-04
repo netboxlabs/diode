@@ -127,7 +127,7 @@ func TestCreateEntity(t *testing.T) {
 		},
 		{
 			name:      "invalid nil entity",
-			setupMock: func(m *mocks.Repository) {},
+			setupMock: func(_ *mocks.Repository) {},
 			request: &reconcilerpb.CreateEntityRequest{
 				Entity: nil,
 			},
@@ -208,13 +208,13 @@ func TestCreateEntity(t *testing.T) {
 
 func TestListEntities(t *testing.T) {
 	tests := []struct {
-		name             string
-		setupMock        func(*mocks.Repository)
-		request          *reconcilerpb.ListEntitiesRequest
-		wantEntityCount  int
+		name              string
+		setupMock         func(*mocks.Repository)
+		request           *reconcilerpb.ListEntitiesRequest
+		wantEntityCount   int
 		wantNextPageToken string
-		wantErr          bool
-		errCode          string
+		wantErr           bool
+		errCode           string
 	}{
 		{
 			name: "list existing IPAddress entities",
@@ -249,9 +249,9 @@ func TestListEntities(t *testing.T) {
 			request: &reconcilerpb.ListEntitiesRequest{
 				ObjectType: []string{"ipam.ipaddress"},
 			},
-			wantEntityCount:  2,
+			wantEntityCount:   2,
 			wantNextPageToken: "",
-			wantErr:          false,
+			wantErr:           false,
 		},
 		{
 			name: "list existing Prefix entities",
@@ -275,9 +275,9 @@ func TestListEntities(t *testing.T) {
 			request: &reconcilerpb.ListEntitiesRequest{
 				ObjectType: []string{"ipam.prefix"},
 			},
-			wantEntityCount:  1,
+			wantEntityCount:   1,
 			wantNextPageToken: "",
-			wantErr:          false,
+			wantErr:           false,
 		},
 		{
 			name: "list existing Device entities",
@@ -312,9 +312,9 @@ func TestListEntities(t *testing.T) {
 			request: &reconcilerpb.ListEntitiesRequest{
 				ObjectType: []string{"dcim.device"},
 			},
-			wantEntityCount:  2,
+			wantEntityCount:   2,
 			wantNextPageToken: "",
-			wantErr:          false,
+			wantErr:           false,
 		},
 		{
 			name: "list non-existing entities - empty result",
@@ -326,9 +326,9 @@ func TestListEntities(t *testing.T) {
 			request: &reconcilerpb.ListEntitiesRequest{
 				ObjectType: []string{"nonexistent.type"},
 			},
-			wantEntityCount:  0,
+			wantEntityCount:   0,
 			wantNextPageToken: "",
-			wantErr:          false,
+			wantErr:           false,
 		},
 		{
 			name: "list all entity types",
@@ -371,10 +371,10 @@ func TestListEntities(t *testing.T) {
 					}, nil).
 					Once()
 			},
-			request:          &reconcilerpb.ListEntitiesRequest{},
-			wantEntityCount:  3,
+			request:           &reconcilerpb.ListEntitiesRequest{},
+			wantEntityCount:   3,
 			wantNextPageToken: "",
-			wantErr:          false,
+			wantErr:           false,
 		},
 		{
 			name: "pagination - full page with next token",
@@ -401,9 +401,9 @@ func TestListEntities(t *testing.T) {
 			request: &reconcilerpb.ListEntitiesRequest{
 				PageSize: int32Ptr(2),
 			},
-			wantEntityCount:  2,
+			wantEntityCount:   2,
 			wantNextPageToken: "2",
-			wantErr:          false,
+			wantErr:           false,
 		},
 		{
 			name: "pagination - partial page without next token",
@@ -427,13 +427,13 @@ func TestListEntities(t *testing.T) {
 			request: &reconcilerpb.ListEntitiesRequest{
 				PageSize: int32Ptr(100),
 			},
-			wantEntityCount:  1,
+			wantEntityCount:   1,
 			wantNextPageToken: "",
-			wantErr:          false,
+			wantErr:           false,
 		},
 		{
-			name: "invalid page token",
-			setupMock: func(m *mocks.Repository) {},
+			name:      "invalid page token",
+			setupMock: func(_ *mocks.Repository) {},
 			request: &reconcilerpb.ListEntitiesRequest{
 				PageToken: "invalid-token",
 			},
