@@ -5,6 +5,7 @@ import "github.com/netboxlabs/diode/diode-server/telemetry"
 // Config is the configuration for the auth service
 type Config struct {
 	HTTPPort  int              `envconfig:"HTTP_PORT" default:"8080"`
+	PProfAddr string           `envconfig:"PPROF_ADDR" default:"localhost:6060"`
 	OAuth2    OAuth2Config     `envconfig:"OAUTH2"`
 	Telemetry telemetry.Config `envconfig:"TELEMETRY"`
 }

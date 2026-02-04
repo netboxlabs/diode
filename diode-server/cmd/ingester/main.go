@@ -14,6 +14,7 @@ import (
 
 	"github.com/netboxlabs/diode/diode-server/authutil"
 	"github.com/netboxlabs/diode/diode-server/ingester"
+	"github.com/netboxlabs/diode/diode-server/pprof"
 	"github.com/netboxlabs/diode/diode-server/server"
 	"github.com/netboxlabs/diode/diode-server/telemetry"
 	"github.com/netboxlabs/diode/diode-server/version"
@@ -35,6 +36,10 @@ func main() {
 	// Load configuration
 	var cfg ingester.Config
 	envconfig.MustProcess("", &cfg)
+
+	if cfg.PProfAddr != "" {
+		go pprof.Listen(ctx, s.Logger(), cfg.PProfAddr)
+	}
 
 	// Set default telemetry configuration if not provided
 	if cfg.Telemetry.ServiceName == "" {
