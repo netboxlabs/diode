@@ -27,7 +27,6 @@ type Server struct {
 	grpcServer   *grpc.Server
 	redisClient  RedisClient
 	repository   Repository
-	// graphBuilder *reconciler.GraphBuilder // NOTE: I imagine this be added to Repository in future
 }
 
 // NewServer creates a new reconciler server
