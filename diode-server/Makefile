@@ -57,7 +57,7 @@ test-coverage:
 	@go tool cover -func=.coverage/cover.out | grep total | awk '{print substr($$3, 1, length($$3)-1)}' > .coverage/coverage.txt
 
 .PHONY: test-integration
-test-integration: ## Run integration tests (requires TEST_DATABASE_URL env var)
+test-integration:
 	@go test -tags integration_test -race ./...
 
 .PHONY: $(BUILD_SERVICES)

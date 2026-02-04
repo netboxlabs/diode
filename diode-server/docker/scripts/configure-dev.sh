@@ -154,6 +154,7 @@ set_secrets "$ENV_FILE"
 # Set DIODE_TO_NETBOX_CLIENT_SECRET
 info "Setting DIODE_TO_NETBOX_CLIENT_SECRET in $ENV_FILE"
 DIODE_TO_NETBOX_CLIENT_SECRET=$(jq -r '.[] | select(.client_id == "diode-to-netbox") | .client_secret' oauth2/client/client-credentials.json)
+
 sed "${sed_args[@]}" "s|<PLACEHOLDER_DIODE_TO_NETBOX_CLIENT_SECRET>|$DIODE_TO_NETBOX_CLIENT_SECRET|g" "$ENV_FILE"
 
 # Set NETBOX_HOST
