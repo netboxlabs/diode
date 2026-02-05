@@ -1,5 +1,5 @@
 // Generated code. DO NOT EDIT.
-// Timestamp: 2026-02-02 16:59:00Z
+// Timestamp: 2026-02-04 18:00:21Z
 package netbox
 
 import (
