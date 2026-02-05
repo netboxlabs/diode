@@ -9,23 +9,34 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"google.golang.org/protobuf/encoding/protojson"
 
+	"github.com/netboxlabs/diode/diode-server/entityhash"
 	"github.com/netboxlabs/diode/diode-server/gen/dbstore/postgres"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
+	"github.com/netboxlabs/diode/diode-server/gen/netbox"
+	"github.com/netboxlabs/diode/diode-server/reconciler"
 	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
 )
 
+// GraphBuilder interface for graph operations
+type GraphBuilder interface {
+	ExtractGraph(ctx context.Context, entity *diodepb.Entity) error
+	GetCompleteNodeData(ctx context.Context, nodeType, externalID string) (*reconciler.CompleteNodeData, error)
+}
+
 // Repository is an interface for interacting with ingestion logs and change sets.
 type Repository struct {
-	pool    *pgxpool.Pool
-	queries *postgres.Queries
+	pool         *pgxpool.Pool
+	queries      *postgres.Queries
+	graphBuilder GraphBuilder
 }
 
 // NewRepository creates a new Repository.
-func NewRepository(pool *pgxpool.Pool) *Repository {
+func NewRepository(pool *pgxpool.Pool, graphBuilder GraphBuilder) *Repository {
 	return &Repository{
-		pool:    pool,
-		queries: postgres.New(pool),
+		pool:         pool,
+		queries:      postgres.New(pool),
+		graphBuilder: graphBuilder,
 	}
 }
 
@@ -471,4 +482,113 @@ func (r *Repository) TruncateChangeSets(ctx context.Context, ingestionLogID int3
 		IngestionLogID: ingestionLogID,
 		Limit:          limit,
 	})
+}
+
+// CreateEntityInGraph creates an entity in the graph database using GraphBuilder
+func (r *Repository) CreateEntityInGraph(ctx context.Context, entity *diodepb.Entity) (externalID string, nodeType string, err error) {
+	if r.graphBuilder == nil {
+		return "", "", fmt.Errorf("graph builder not configured")
+	}
+
+	// Extract node type from entity before processing (use NetBox object type format)
+	nodeType, err = netbox.GetObjectType(entity)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to get entity object type: %w", err)
+	}
+
+	// Extract external ID (entity hash) from entity
+	fingerprinter := entityhash.NewEntityFingerprinter()
+	externalID, err = fingerprinter.GenerateEntityHash(entity)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to generate entity hash: %w", err)
+	}
+
+	// Use GraphBuilder to extract and persist the entity graph
+	if err := r.graphBuilder.ExtractGraph(ctx, entity); err != nil {
+		return "", "", fmt.Errorf("failed to extract entity graph: %w", err)
+	}
+
+	return externalID, nodeType, nil
+}
+
+// ListGraphEntities lists entities from the graph database with filtering
+func (r *Repository) ListGraphEntities(ctx context.Context, filter *reconcilerpb.ListEntitiesRequest, limit int32, offset int32) ([]*reconcilerpb.DiodeEntity, error) {
+	if r.graphBuilder == nil {
+		return nil, fmt.Errorf("graph builder not configured")
+	}
+
+	// Build query parameters based on filters
+	var nodes []postgres.GraphNode
+	var err error
+
+	if len(filter.ObjectType) > 0 {
+		// Filter by object types - support single or multiple types
+		if len(filter.ObjectType) == 1 {
+			// Single type - use the simpler query
+			nodes, err = r.queries.GetGraphNodesByType(ctx, postgres.GetGraphNodesByTypeParams{
+				NodeType: filter.ObjectType[0],
+				Limit:    limit,
+				Offset:   offset,
+			})
+		} else {
+			// Multiple types - use the array query
+			nodes, err = r.queries.GetGraphNodesByTypes(ctx, postgres.GetGraphNodesByTypesParams{
+				Column1: filter.ObjectType,
+				Limit:   limit,
+				Offset:  offset,
+			})
+		}
+	} else {
+		// No filter - get all nodes with pagination
+		nodes, err = r.queries.GetAllGraphNodes(ctx, postgres.GetAllGraphNodesParams{
+			Limit:  limit,
+			Offset: offset,
+		})
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to query graph nodes: %w", err)
+	}
+
+	// Convert graph nodes to DiodeEntity responses
+	entities := make([]*reconcilerpb.DiodeEntity, 0, len(nodes))
+	for _, node := range nodes {
+		// Get complete node data with snapshot
+		completeData, err := r.graphBuilder.GetCompleteNodeData(ctx, node.NodeType, node.ExternalID)
+		if err != nil {
+			// Log warning but continue processing other nodes
+			continue
+		}
+
+		// Parse the complete entity data from snapshot
+		entity := &diodepb.Entity{}
+		if err := protojson.Unmarshal(completeData.CompleteData, entity); err != nil {
+			// Skip nodes with invalid data
+			continue
+		}
+
+		// Convert timestamps
+		createdAt := node.CreatedAt.Time.UnixNano()
+		updatedAt := node.UpdatedAt.Time.UnixNano()
+		lastSeenTs := int64(0)
+		if node.LastSeenTs.Valid {
+			lastSeenTs = node.LastSeenTs.Time.UnixNano()
+		}
+
+		diodeEntity := &reconcilerpb.DiodeEntity{
+			Id:             node.ExternalID, // Using external_id as the UUID
+			ObjectType:     node.NodeType,
+			Entity:         entity,
+			CreatedAt:      createdAt,
+			UpdatedAt:      updatedAt,
+			LastSeenTs:     lastSeenTs,
+			DuplicateCount: node.DuplicateCount,
+			// Note: source_metadata, ingestion_ts, and source_ts are not stored in graph_nodes
+			// These would need to be added to the schema if required
+		}
+
+		entities = append(entities, diodeEntity)
+	}
+
+	return entities, nil
 }

@@ -54,6 +54,19 @@ WHERE node_type = $1
 ORDER BY updated_at DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
+-- name: GetGraphNodesByTypes :many
+SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts, metadata, content_hash
+FROM graph_nodes
+WHERE node_type = ANY($1::text[])
+ORDER BY updated_at DESC
+LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
+
+-- name: GetAllGraphNodes :many
+SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts, metadata, content_hash
+FROM graph_nodes
+ORDER BY updated_at DESC
+LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
+
 -- name: GetConnectedNodes :many
 SELECT
     target.id,

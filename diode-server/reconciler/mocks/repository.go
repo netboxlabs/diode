@@ -7,6 +7,8 @@ import (
 
 	changeset "github.com/netboxlabs/diode/diode-server/reconciler/changeset"
 
+	diodepb "github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
+
 	mock "github.com/stretchr/testify/mock"
 
 	reconcilerpb "github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
@@ -139,6 +141,70 @@ func (_c *Repository_CreateChangeSet_Call) Return(_a0 *int32, _a1 error) *Reposi
 }
 
 func (_c *Repository_CreateChangeSet_Call) RunAndReturn(run func(context.Context, changeset.ChangeSet, int32) (*int32, error)) *Repository_CreateChangeSet_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// CreateEntityInGraph provides a mock function with given fields: ctx, entity
+func (_m *Repository) CreateEntityInGraph(ctx context.Context, entity *diodepb.Entity) (string, string, error) {
+	ret := _m.Called(ctx, entity)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CreateEntityInGraph")
+	}
+
+	var r0 string
+	var r1 string
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context, *diodepb.Entity) (string, string, error)); ok {
+		return rf(ctx, entity)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *diodepb.Entity) string); ok {
+		r0 = rf(ctx, entity)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *diodepb.Entity) string); ok {
+		r1 = rf(ctx, entity)
+	} else {
+		r1 = ret.Get(1).(string)
+	}
+
+	if rf, ok := ret.Get(2).(func(context.Context, *diodepb.Entity) error); ok {
+		r2 = rf(ctx, entity)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
+}
+
+// Repository_CreateEntityInGraph_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateEntityInGraph'
+type Repository_CreateEntityInGraph_Call struct {
+	*mock.Call
+}
+
+// CreateEntityInGraph is a helper method to define mock.On call
+//   - ctx context.Context
+//   - entity *diodepb.Entity
+func (_e *Repository_Expecter) CreateEntityInGraph(ctx interface{}, entity interface{}) *Repository_CreateEntityInGraph_Call {
+	return &Repository_CreateEntityInGraph_Call{Call: _e.mock.On("CreateEntityInGraph", ctx, entity)}
+}
+
+func (_c *Repository_CreateEntityInGraph_Call) Run(run func(ctx context.Context, entity *diodepb.Entity)) *Repository_CreateEntityInGraph_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*diodepb.Entity))
+	})
+	return _c
+}
+
+func (_c *Repository_CreateEntityInGraph_Call) Return(externalID string, nodeType string, err error) *Repository_CreateEntityInGraph_Call {
+	_c.Call.Return(externalID, nodeType, err)
+	return _c
+}
+
+func (_c *Repository_CreateEntityInGraph_Call) RunAndReturn(run func(context.Context, *diodepb.Entity) (string, string, error)) *Repository_CreateEntityInGraph_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -316,6 +382,67 @@ func (_c *Repository_IncrementDuplicateCount_Call) Return(_a0 error) *Repository
 }
 
 func (_c *Repository_IncrementDuplicateCount_Call) RunAndReturn(run func(context.Context, int32) error) *Repository_IncrementDuplicateCount_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ListGraphEntities provides a mock function with given fields: ctx, filter, limit, offset
+func (_m *Repository) ListGraphEntities(ctx context.Context, filter *reconcilerpb.ListEntitiesRequest, limit int32, offset int32) ([]*reconcilerpb.DiodeEntity, error) {
+	ret := _m.Called(ctx, filter, limit, offset)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListGraphEntities")
+	}
+
+	var r0 []*reconcilerpb.DiodeEntity
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, *reconcilerpb.ListEntitiesRequest, int32, int32) ([]*reconcilerpb.DiodeEntity, error)); ok {
+		return rf(ctx, filter, limit, offset)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, *reconcilerpb.ListEntitiesRequest, int32, int32) []*reconcilerpb.DiodeEntity); ok {
+		r0 = rf(ctx, filter, limit, offset)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*reconcilerpb.DiodeEntity)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, *reconcilerpb.ListEntitiesRequest, int32, int32) error); ok {
+		r1 = rf(ctx, filter, limit, offset)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Repository_ListGraphEntities_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListGraphEntities'
+type Repository_ListGraphEntities_Call struct {
+	*mock.Call
+}
+
+// ListGraphEntities is a helper method to define mock.On call
+//   - ctx context.Context
+//   - filter *reconcilerpb.ListEntitiesRequest
+//   - limit int32
+//   - offset int32
+func (_e *Repository_Expecter) ListGraphEntities(ctx interface{}, filter interface{}, limit interface{}, offset interface{}) *Repository_ListGraphEntities_Call {
+	return &Repository_ListGraphEntities_Call{Call: _e.mock.On("ListGraphEntities", ctx, filter, limit, offset)}
+}
+
+func (_c *Repository_ListGraphEntities_Call) Run(run func(ctx context.Context, filter *reconcilerpb.ListEntitiesRequest, limit int32, offset int32)) *Repository_ListGraphEntities_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*reconcilerpb.ListEntitiesRequest), args[2].(int32), args[3].(int32))
+	})
+	return _c
+}
+
+func (_c *Repository_ListGraphEntities_Call) Return(_a0 []*reconcilerpb.DiodeEntity, _a1 error) *Repository_ListGraphEntities_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Repository_ListGraphEntities_Call) RunAndReturn(run func(context.Context, *reconcilerpb.ListEntitiesRequest, int32, int32) ([]*reconcilerpb.DiodeEntity, error)) *Repository_ListGraphEntities_Call {
 	_c.Call.Return(run)
 	return _c
 }

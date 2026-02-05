@@ -134,9 +134,8 @@ func main() {
 	}
 	defer dbPool.Close()
 
-	repository := postgres.NewRepository(dbPool)
-
 	// Initialize GraphBuilder if graph DB feature is enabled
+	var graphBuilder *reconciler.GraphBuilder
 	var graphBuilderOpt reconciler.ProcessorOption
 	if cfg.EnableGraphDB {
 		s.Logger().Info("graph DB feature enabled, initializing GraphBuilder")
@@ -160,7 +159,7 @@ func main() {
 		graphQueries := dbpostgres.New(dbPool)
 
 		// Create GraphBuilder with graph queries
-		graphBuilder := reconciler.NewGraphBuilder(graphQueries, s.Logger())
+		graphBuilder = reconciler.NewGraphBuilder(graphQueries, s.Logger())
 
 		// Set up entity matcher if matching config was loaded
 		if matchingConfig != nil {
@@ -180,6 +179,9 @@ func main() {
 
 		graphBuilderOpt = reconciler.WithGraphBuilder(graphBuilder)
 	}
+
+	// Create repository with GraphBuilder (nil if graph DB is not enabled)
+	repository := postgres.NewRepository(dbPool, graphBuilder)
 
 	diodeToNetBoxMaxRetries := 3
 

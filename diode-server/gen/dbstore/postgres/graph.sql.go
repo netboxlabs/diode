@@ -495,6 +495,50 @@ func (q *Queries) FindNodesNeedingSchemaUpdate(ctx context.Context, arg FindNode
 	return items, nil
 }
 
+const getAllGraphNodes = `-- name: GetAllGraphNodes :many
+SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts, metadata, content_hash
+FROM graph_nodes
+ORDER BY updated_at DESC
+LIMIT $2 OFFSET $1
+`
+
+type GetAllGraphNodesParams struct {
+	Offset int32 `json:"offset"`
+	Limit  int32 `json:"limit"`
+}
+
+func (q *Queries) GetAllGraphNodes(ctx context.Context, arg GetAllGraphNodesParams) ([]GraphNode, error) {
+	rows, err := q.db.Query(ctx, getAllGraphNodes, arg.Offset, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GraphNode
+	for rows.Next() {
+		var i GraphNode
+		if err := rows.Scan(
+			&i.ID,
+			&i.ExternalID,
+			&i.NodeType,
+			&i.Data,
+			&i.DuplicateCount,
+			&i.MatchingSchemaVersion,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.LastSeenTs,
+			&i.Metadata,
+			&i.ContentHash,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getConnectedNodes = `-- name: GetConnectedNodes :many
 SELECT
     target.id,
@@ -575,6 +619,52 @@ type GetGraphNodesByTypeParams struct {
 
 func (q *Queries) GetGraphNodesByType(ctx context.Context, arg GetGraphNodesByTypeParams) ([]GraphNode, error) {
 	rows, err := q.db.Query(ctx, getGraphNodesByType, arg.NodeType, arg.Offset, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GraphNode
+	for rows.Next() {
+		var i GraphNode
+		if err := rows.Scan(
+			&i.ID,
+			&i.ExternalID,
+			&i.NodeType,
+			&i.Data,
+			&i.DuplicateCount,
+			&i.MatchingSchemaVersion,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.LastSeenTs,
+			&i.Metadata,
+			&i.ContentHash,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getGraphNodesByTypes = `-- name: GetGraphNodesByTypes :many
+SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts, metadata, content_hash
+FROM graph_nodes
+WHERE node_type = ANY($1::text[])
+ORDER BY updated_at DESC
+LIMIT $3 OFFSET $2
+`
+
+type GetGraphNodesByTypesParams struct {
+	Column1 []string `json:"column_1"`
+	Offset  int32    `json:"offset"`
+	Limit   int32    `json:"limit"`
+}
+
+func (q *Queries) GetGraphNodesByTypes(ctx context.Context, arg GetGraphNodesByTypesParams) ([]GraphNode, error) {
+	rows, err := q.db.Query(ctx, getGraphNodesByTypes, arg.Column1, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
