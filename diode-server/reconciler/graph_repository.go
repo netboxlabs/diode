@@ -35,6 +35,8 @@ type GraphRepository interface {
 	FindNodesByFieldMatch(ctx context.Context, arg postgres.FindNodesByFieldMatchParams) ([]postgres.GraphNode, error)
 	FindNodesByMultiFieldMatch(ctx context.Context, arg postgres.FindNodesByMultiFieldMatchParams) ([]postgres.GraphNode, error)
 	GetGraphNodesByType(ctx context.Context, arg postgres.GetGraphNodesByTypeParams) ([]postgres.GraphNode, error)
+	FindNodeByMetadata(ctx context.Context, arg postgres.FindNodeByMetadataParams) (postgres.GraphNode, error)
+	FindNodeByContentHash(ctx context.Context, arg postgres.FindNodeByContentHashParams) (postgres.GraphNode, error)
 
 	// Snapshot management
 	InsertSnapshot(ctx context.Context, arg postgres.InsertSnapshotParams) (postgres.GraphNodeSnapshot, error)

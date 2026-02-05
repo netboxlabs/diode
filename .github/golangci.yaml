@@ -17,6 +17,10 @@ linters:
           - revive
         path: /*.go
         text: 'package-comments: should have a package comment'
+      - linters:
+          - revive
+        path: errors/errors.go
+        text: 'var-naming: avoid package names that conflict'
       - path: /*.go
         text: 'SA1019: filter.DataType is deprecated'
       - path: /*.go
