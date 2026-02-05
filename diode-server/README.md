@@ -94,11 +94,7 @@ Edit the `.env` file to adjust Diode server settings as needed:
 | `LOGGING_LEVEL` | Log verbosity: `DEBUG`, `INFO`, `WARN`, `ERROR`. | `INFO` |
 | `LOGGING_FORMAT` | Log output format: `json` or `text`. | `json` |
 
-Note that pprof profiling endpoints can be enabled for the reconciler, ingester, and auth services via the following envirnonment variables (using host:port addresses):
-
-AUTH_PPROF_ADDR
-INGESTER_PPROF_ADDR
-RECONCILER_PPROF_ADDR
+Note that pprof profiling endpoints can be enabled for the reconciler, ingester, and auth services via the environnment variable `PPROF_ADDR` (using host:port addresses)
 
 ---
 
