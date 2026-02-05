@@ -540,9 +540,10 @@ func (r *Repository) ListGraphEntities(ctx context.Context, filter *reconcilerpb
 		}
 	} else {
 		// No filter - get all nodes with pagination
-		// Use a high limit and offset to paginate through all types
-		// TODO: Add a proper "GetAllGraphNodes" query
-		return nil, fmt.Errorf("listing all entities without object_type filter is not yet implemented")
+		nodes, err = r.queries.GetAllGraphNodes(ctx, postgres.GetAllGraphNodesParams{
+			Limit:  limit,
+			Offset: offset,
+		})
 	}
 
 	if err != nil {
