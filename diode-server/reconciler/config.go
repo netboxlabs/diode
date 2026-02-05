@@ -8,7 +8,7 @@ import (
 // Config is the configuration for the reconciler service
 type Config struct {
 	GRPCPort                      int    `envconfig:"GRPC_PORT" default:"8081"`
-	PProfAddr                     string `envconfig:"PPROF_ADDR" default:"localhost:6062"`
+	PProfAddr                     string `envconfig:"PPROF_ADDR"`
 	RedisHost                     string `envconfig:"REDIS_HOST" default:"127.0.0.1"`
 	RedisPort                     string `envconfig:"REDIS_PORT" default:"6379"`
 	RedisUsername                 string `envconfig:"REDIS_USERNAME" default:""`
