@@ -1,5 +1,6 @@
 // Generated code. DO NOT EDIT.
-// Timestamp: 2026-02-04 18:00:21Z
+// Source: NetBox v4.5.0
+// Timestamp: 2026-02-05 00:39:19Z
 package netbox
 
 import (
