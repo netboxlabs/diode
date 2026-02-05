@@ -36,7 +36,7 @@ func (q *Queries) CleanupOldSnapshots(ctx context.Context, arg CleanupOldSnapsho
 }
 
 const findGraphNode = `-- name: FindGraphNode :one
-SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts
+SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts, metadata, content_hash
 FROM graph_nodes
 WHERE node_type = $1 AND external_id = $2
 `
@@ -59,12 +59,82 @@ func (q *Queries) FindGraphNode(ctx context.Context, arg FindGraphNodeParams) (G
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.LastSeenTs,
+		&i.Metadata,
+		&i.ContentHash,
+	)
+	return i, err
+}
+
+const findNodeByContentHash = `-- name: FindNodeByContentHash :one
+SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts, metadata, content_hash
+FROM graph_nodes
+WHERE node_type = $1 AND content_hash = $2
+LIMIT 1
+`
+
+type FindNodeByContentHashParams struct {
+	NodeType    string      `json:"node_type"`
+	ContentHash pgtype.Text `json:"content_hash"`
+}
+
+// Finds a single node by content hash for fallback matching when entity matcher config is missing.
+func (q *Queries) FindNodeByContentHash(ctx context.Context, arg FindNodeByContentHashParams) (GraphNode, error) {
+	row := q.db.QueryRow(ctx, findNodeByContentHash, arg.NodeType, arg.ContentHash)
+	var i GraphNode
+	err := row.Scan(
+		&i.ID,
+		&i.ExternalID,
+		&i.NodeType,
+		&i.Data,
+		&i.DuplicateCount,
+		&i.MatchingSchemaVersion,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.LastSeenTs,
+		&i.Metadata,
+		&i.ContentHash,
+	)
+	return i, err
+}
+
+const findNodeByMetadata = `-- name: FindNodeByMetadata :one
+
+SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts, metadata, content_hash
+FROM graph_nodes
+WHERE node_type = $1
+  AND metadata @> $2::jsonb
+LIMIT 1
+`
+
+type FindNodeByMetadataParams struct {
+	NodeType       string `json:"node_type"`
+	MetadataFilter []byte `json:"metadata_filter"`
+}
+
+// Metadata-based lookup queries
+// Finds a single node by exact metadata key-value match using GIN index.
+// Uses @> containment operator for efficient indexed lookup.
+func (q *Queries) FindNodeByMetadata(ctx context.Context, arg FindNodeByMetadataParams) (GraphNode, error) {
+	row := q.db.QueryRow(ctx, findNodeByMetadata, arg.NodeType, arg.MetadataFilter)
+	var i GraphNode
+	err := row.Scan(
+		&i.ID,
+		&i.ExternalID,
+		&i.NodeType,
+		&i.Data,
+		&i.DuplicateCount,
+		&i.MatchingSchemaVersion,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.LastSeenTs,
+		&i.Metadata,
+		&i.ContentHash,
 	)
 	return i, err
 }
 
 const findNodesByComplexMatch = `-- name: FindNodesByComplexMatch :many
-SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts
+SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts, metadata, content_hash
 FROM graph_nodes
 WHERE node_type = $1
   AND (
@@ -117,6 +187,8 @@ func (q *Queries) FindNodesByComplexMatch(ctx context.Context, arg FindNodesByCo
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.LastSeenTs,
+			&i.Metadata,
+			&i.ContentHash,
 		); err != nil {
 			return nil, err
 		}
@@ -129,7 +201,7 @@ func (q *Queries) FindNodesByComplexMatch(ctx context.Context, arg FindNodesByCo
 }
 
 const findNodesByExactFieldMatch = `-- name: FindNodesByExactFieldMatch :many
-SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts
+SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts, metadata, content_hash
 FROM graph_nodes
 WHERE node_type = $1
   AND data @> $2::jsonb
@@ -171,6 +243,8 @@ func (q *Queries) FindNodesByExactFieldMatch(ctx context.Context, arg FindNodesB
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.LastSeenTs,
+			&i.Metadata,
+			&i.ContentHash,
 		); err != nil {
 			return nil, err
 		}
@@ -184,7 +258,7 @@ func (q *Queries) FindNodesByExactFieldMatch(ctx context.Context, arg FindNodesB
 
 const findNodesByFieldMatch = `-- name: FindNodesByFieldMatch :many
 
-SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts
+SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts, metadata, content_hash
 FROM graph_nodes
 WHERE node_type = $1
   AND (
@@ -235,6 +309,63 @@ func (q *Queries) FindNodesByFieldMatch(ctx context.Context, arg FindNodesByFiel
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.LastSeenTs,
+			&i.Metadata,
+			&i.ContentHash,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const findNodesByMetadata = `-- name: FindNodesByMetadata :many
+SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts, metadata, content_hash
+FROM graph_nodes
+WHERE (node_type = $1::text OR $1::text IS NULL)
+  AND metadata @> $2::jsonb
+ORDER BY duplicate_count DESC, updated_at DESC
+LIMIT $4 OFFSET $3
+`
+
+type FindNodesByMetadataParams struct {
+	NodeType       pgtype.Text `json:"node_type"`
+	MetadataFilter []byte      `json:"metadata_filter"`
+	Offset         int32       `json:"offset"`
+	Limit          int32       `json:"limit"`
+}
+
+// Finds all nodes matching metadata filter using GIN index.
+// node_type is optional - pass NULL to search across all types.
+func (q *Queries) FindNodesByMetadata(ctx context.Context, arg FindNodesByMetadataParams) ([]GraphNode, error) {
+	rows, err := q.db.Query(ctx, findNodesByMetadata,
+		arg.NodeType,
+		arg.MetadataFilter,
+		arg.Offset,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GraphNode
+	for rows.Next() {
+		var i GraphNode
+		if err := rows.Scan(
+			&i.ID,
+			&i.ExternalID,
+			&i.NodeType,
+			&i.Data,
+			&i.DuplicateCount,
+			&i.MatchingSchemaVersion,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.LastSeenTs,
+			&i.Metadata,
+			&i.ContentHash,
 		); err != nil {
 			return nil, err
 		}
@@ -247,7 +378,7 @@ func (q *Queries) FindNodesByFieldMatch(ctx context.Context, arg FindNodesByFiel
 }
 
 const findNodesByMultiFieldMatch = `-- name: FindNodesByMultiFieldMatch :many
-SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts
+SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts, metadata, content_hash
 FROM graph_nodes
 WHERE node_type = $1
   AND (
@@ -305,6 +436,8 @@ func (q *Queries) FindNodesByMultiFieldMatch(ctx context.Context, arg FindNodesB
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.LastSeenTs,
+			&i.Metadata,
+			&i.ContentHash,
 		); err != nil {
 			return nil, err
 		}
@@ -317,7 +450,7 @@ func (q *Queries) FindNodesByMultiFieldMatch(ctx context.Context, arg FindNodesB
 }
 
 const findNodesNeedingSchemaUpdate = `-- name: FindNodesNeedingSchemaUpdate :many
-SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts
+SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts, metadata, content_hash
 FROM graph_nodes
 WHERE matching_schema_version < $1
 ORDER BY updated_at DESC
@@ -349,6 +482,8 @@ func (q *Queries) FindNodesNeedingSchemaUpdate(ctx context.Context, arg FindNode
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.LastSeenTs,
+			&i.Metadata,
+			&i.ContentHash,
 		); err != nil {
 			return nil, err
 		}
@@ -369,6 +504,8 @@ SELECT
     target.duplicate_count,
     target.matching_schema_version,
     target.last_seen_ts,
+    target.metadata,
+    target.content_hash,
     edges.edge_type,
     edges.properties as edge_properties
 FROM graph_edges edges
@@ -384,6 +521,8 @@ type GetConnectedNodesRow struct {
 	DuplicateCount        int32              `json:"duplicate_count"`
 	MatchingSchemaVersion int32              `json:"matching_schema_version"`
 	LastSeenTs            pgtype.Timestamptz `json:"last_seen_ts"`
+	Metadata              []byte             `json:"metadata"`
+	ContentHash           pgtype.Text        `json:"content_hash"`
 	EdgeType              string             `json:"edge_type"`
 	EdgeProperties        []byte             `json:"edge_properties"`
 }
@@ -405,6 +544,8 @@ func (q *Queries) GetConnectedNodes(ctx context.Context, sourceNodeID int64) ([]
 			&i.DuplicateCount,
 			&i.MatchingSchemaVersion,
 			&i.LastSeenTs,
+			&i.Metadata,
+			&i.ContentHash,
 			&i.EdgeType,
 			&i.EdgeProperties,
 		); err != nil {
@@ -419,7 +560,7 @@ func (q *Queries) GetConnectedNodes(ctx context.Context, sourceNodeID int64) ([]
 }
 
 const getGraphNodesByType = `-- name: GetGraphNodesByType :many
-SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts
+SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts, metadata, content_hash
 FROM graph_nodes
 WHERE node_type = $1
 ORDER BY updated_at DESC
@@ -451,6 +592,8 @@ func (q *Queries) GetGraphNodesByType(ctx context.Context, arg GetGraphNodesByTy
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.LastSeenTs,
+			&i.Metadata,
+			&i.ContentHash,
 		); err != nil {
 			return nil, err
 		}
@@ -565,7 +708,7 @@ func (q *Queries) GetLatestSnapshot(ctx context.Context, nodeID int64) (GraphNod
 
 const getNodeWithLatestSnapshot = `-- name: GetNodeWithLatestSnapshot :one
 SELECT
-    n.id, n.external_id, n.node_type, n.data as matching_data, n.duplicate_count, n.matching_schema_version, n.last_seen_ts, n.created_at, n.updated_at,
+    n.id, n.external_id, n.node_type, n.data as matching_data, n.duplicate_count, n.matching_schema_version, n.last_seen_ts, n.created_at, n.updated_at, n.metadata,
     COALESCE(s.snapshot_data, '{}'::jsonb) as snapshot_data,
     COALESCE(s.sequence_number, 0) as sequence_number,
     s.created_at as snapshot_created_at
@@ -595,6 +738,7 @@ type GetNodeWithLatestSnapshotRow struct {
 	LastSeenTs            pgtype.Timestamptz `json:"last_seen_ts"`
 	CreatedAt             pgtype.Timestamptz `json:"created_at"`
 	UpdatedAt             pgtype.Timestamptz `json:"updated_at"`
+	Metadata              []byte             `json:"metadata"`
 	SnapshotData          []byte             `json:"snapshot_data"`
 	SequenceNumber        int32              `json:"sequence_number"`
 	SnapshotCreatedAt     pgtype.Timestamptz `json:"snapshot_created_at"`
@@ -615,6 +759,7 @@ func (q *Queries) GetNodeWithLatestSnapshot(ctx context.Context, arg GetNodeWith
 		&i.LastSeenTs,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Metadata,
 		&i.SnapshotData,
 		&i.SequenceNumber,
 		&i.SnapshotCreatedAt,
@@ -623,7 +768,7 @@ func (q *Queries) GetNodeWithLatestSnapshot(ctx context.Context, arg GetNodeWith
 }
 
 const getNodesByFrequency = `-- name: GetNodesByFrequency :many
-SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts
+SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts, metadata, content_hash
 FROM graph_nodes
 WHERE duplicate_count >= $1
 ORDER BY duplicate_count DESC, updated_at DESC
@@ -655,6 +800,8 @@ func (q *Queries) GetNodesByFrequency(ctx context.Context, arg GetNodesByFrequen
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.LastSeenTs,
+			&i.Metadata,
+			&i.ContentHash,
 		); err != nil {
 			return nil, err
 		}
@@ -740,7 +887,7 @@ func (q *Queries) InsertSnapshot(ctx context.Context, arg InsertSnapshotParams) 
 }
 
 const searchGraphNodes = `-- name: SearchGraphNodes :many
-SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts
+SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts, metadata, content_hash
 FROM graph_nodes
 WHERE (node_type = $1::text OR $1::text IS NULL)
   AND LENGTH($2::text) > 0
@@ -787,6 +934,8 @@ func (q *Queries) SearchGraphNodes(ctx context.Context, arg SearchGraphNodesPara
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.LastSeenTs,
+			&i.Metadata,
+			&i.ContentHash,
 		); err != nil {
 			return nil, err
 		}
@@ -800,16 +949,18 @@ func (q *Queries) SearchGraphNodes(ctx context.Context, arg SearchGraphNodesPara
 
 const updateGraphNodeData = `-- name: UpdateGraphNodeData :one
 UPDATE graph_nodes
-SET data = $3, matching_schema_version = $4, last_seen_ts = NOW(), updated_at = NOW()
+SET data = $3, matching_schema_version = $4, last_seen_ts = NOW(), updated_at = NOW(), metadata = graph_nodes.metadata || $5, content_hash = COALESCE($6, graph_nodes.content_hash)
 WHERE node_type = $1 AND external_id = $2
-RETURNING id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts
+RETURNING id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts, metadata, content_hash
 `
 
 type UpdateGraphNodeDataParams struct {
-	NodeType              string `json:"node_type"`
-	ExternalID            string `json:"external_id"`
-	Data                  []byte `json:"data"`
-	MatchingSchemaVersion int32  `json:"matching_schema_version"`
+	NodeType              string      `json:"node_type"`
+	ExternalID            string      `json:"external_id"`
+	Data                  []byte      `json:"data"`
+	MatchingSchemaVersion int32       `json:"matching_schema_version"`
+	Metadata              []byte      `json:"metadata"`
+	ContentHash           pgtype.Text `json:"content_hash"`
 }
 
 func (q *Queries) UpdateGraphNodeData(ctx context.Context, arg UpdateGraphNodeDataParams) (GraphNode, error) {
@@ -818,6 +969,8 @@ func (q *Queries) UpdateGraphNodeData(ctx context.Context, arg UpdateGraphNodeDa
 		arg.ExternalID,
 		arg.Data,
 		arg.MatchingSchemaVersion,
+		arg.Metadata,
+		arg.ContentHash,
 	)
 	var i GraphNode
 	err := row.Scan(
@@ -830,6 +983,41 @@ func (q *Queries) UpdateGraphNodeData(ctx context.Context, arg UpdateGraphNodeDa
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.LastSeenTs,
+		&i.Metadata,
+		&i.ContentHash,
+	)
+	return i, err
+}
+
+const updateGraphNodeMetadata = `-- name: UpdateGraphNodeMetadata :one
+UPDATE graph_nodes
+SET metadata = graph_nodes.metadata || $3, updated_at = NOW()
+WHERE node_type = $1 AND external_id = $2
+RETURNING id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts, metadata, content_hash
+`
+
+type UpdateGraphNodeMetadataParams struct {
+	NodeType   string `json:"node_type"`
+	ExternalID string `json:"external_id"`
+	Metadata   []byte `json:"metadata"`
+}
+
+// Updates only the metadata field, merging with existing metadata.
+func (q *Queries) UpdateGraphNodeMetadata(ctx context.Context, arg UpdateGraphNodeMetadataParams) (GraphNode, error) {
+	row := q.db.QueryRow(ctx, updateGraphNodeMetadata, arg.NodeType, arg.ExternalID, arg.Metadata)
+	var i GraphNode
+	err := row.Scan(
+		&i.ID,
+		&i.ExternalID,
+		&i.NodeType,
+		&i.Data,
+		&i.DuplicateCount,
+		&i.MatchingSchemaVersion,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.LastSeenTs,
+		&i.Metadata,
+		&i.ContentHash,
 	)
 	return i, err
 }
@@ -896,23 +1084,27 @@ func (q *Queries) UpsertGraphEdgeWithConfidence(ctx context.Context, arg UpsertG
 }
 
 const upsertGraphNode = `-- name: UpsertGraphNode :one
-INSERT INTO graph_nodes (external_id, node_type, data, duplicate_count, matching_schema_version, last_seen_ts)
-VALUES ($1, $2, $3, 1, $4, NOW())
+INSERT INTO graph_nodes (external_id, node_type, data, duplicate_count, matching_schema_version, last_seen_ts, metadata, content_hash)
+VALUES ($1, $2, $3, 1, $4, NOW(), $5, $6)
 ON CONFLICT (node_type, external_id)
 DO UPDATE SET
     data = EXCLUDED.data,
     duplicate_count = graph_nodes.duplicate_count + 1,
     matching_schema_version = EXCLUDED.matching_schema_version,
     last_seen_ts = NOW(),
-    updated_at = NOW()
-RETURNING id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts
+    updated_at = NOW(),
+    metadata = graph_nodes.metadata || EXCLUDED.metadata,
+    content_hash = COALESCE(EXCLUDED.content_hash, graph_nodes.content_hash)
+RETURNING id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts, metadata, content_hash
 `
 
 type UpsertGraphNodeParams struct {
-	ExternalID            string `json:"external_id"`
-	NodeType              string `json:"node_type"`
-	Data                  []byte `json:"data"`
-	MatchingSchemaVersion int32  `json:"matching_schema_version"`
+	ExternalID            string      `json:"external_id"`
+	NodeType              string      `json:"node_type"`
+	Data                  []byte      `json:"data"`
+	MatchingSchemaVersion int32       `json:"matching_schema_version"`
+	Metadata              []byte      `json:"metadata"`
+	ContentHash           pgtype.Text `json:"content_hash"`
 }
 
 func (q *Queries) UpsertGraphNode(ctx context.Context, arg UpsertGraphNodeParams) (GraphNode, error) {
@@ -921,6 +1113,8 @@ func (q *Queries) UpsertGraphNode(ctx context.Context, arg UpsertGraphNodeParams
 		arg.NodeType,
 		arg.Data,
 		arg.MatchingSchemaVersion,
+		arg.Metadata,
+		arg.ContentHash,
 	)
 	var i GraphNode
 	err := row.Scan(
@@ -933,6 +1127,8 @@ func (q *Queries) UpsertGraphNode(ctx context.Context, arg UpsertGraphNodeParams
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.LastSeenTs,
+		&i.Metadata,
+		&i.ContentHash,
 	)
 	return i, err
 }

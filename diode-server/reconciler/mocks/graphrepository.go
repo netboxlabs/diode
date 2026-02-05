@@ -126,6 +126,120 @@ func (_c *GraphRepository_FindGraphNode_Call) RunAndReturn(run func(context.Cont
 	return _c
 }
 
+// FindNodeByContentHash provides a mock function with given fields: ctx, arg
+func (_m *GraphRepository) FindNodeByContentHash(ctx context.Context, arg postgres.FindNodeByContentHashParams) (postgres.GraphNode, error) {
+	ret := _m.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for FindNodeByContentHash")
+	}
+
+	var r0 postgres.GraphNode
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, postgres.FindNodeByContentHashParams) (postgres.GraphNode, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, postgres.FindNodeByContentHashParams) postgres.GraphNode); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(postgres.GraphNode)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, postgres.FindNodeByContentHashParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GraphRepository_FindNodeByContentHash_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FindNodeByContentHash'
+type GraphRepository_FindNodeByContentHash_Call struct {
+	*mock.Call
+}
+
+// FindNodeByContentHash is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg postgres.FindNodeByContentHashParams
+func (_e *GraphRepository_Expecter) FindNodeByContentHash(ctx interface{}, arg interface{}) *GraphRepository_FindNodeByContentHash_Call {
+	return &GraphRepository_FindNodeByContentHash_Call{Call: _e.mock.On("FindNodeByContentHash", ctx, arg)}
+}
+
+func (_c *GraphRepository_FindNodeByContentHash_Call) Run(run func(ctx context.Context, arg postgres.FindNodeByContentHashParams)) *GraphRepository_FindNodeByContentHash_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(postgres.FindNodeByContentHashParams))
+	})
+	return _c
+}
+
+func (_c *GraphRepository_FindNodeByContentHash_Call) Return(_a0 postgres.GraphNode, _a1 error) *GraphRepository_FindNodeByContentHash_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *GraphRepository_FindNodeByContentHash_Call) RunAndReturn(run func(context.Context, postgres.FindNodeByContentHashParams) (postgres.GraphNode, error)) *GraphRepository_FindNodeByContentHash_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// FindNodeByMetadata provides a mock function with given fields: ctx, arg
+func (_m *GraphRepository) FindNodeByMetadata(ctx context.Context, arg postgres.FindNodeByMetadataParams) (postgres.GraphNode, error) {
+	ret := _m.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for FindNodeByMetadata")
+	}
+
+	var r0 postgres.GraphNode
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, postgres.FindNodeByMetadataParams) (postgres.GraphNode, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, postgres.FindNodeByMetadataParams) postgres.GraphNode); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(postgres.GraphNode)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, postgres.FindNodeByMetadataParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GraphRepository_FindNodeByMetadata_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FindNodeByMetadata'
+type GraphRepository_FindNodeByMetadata_Call struct {
+	*mock.Call
+}
+
+// FindNodeByMetadata is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg postgres.FindNodeByMetadataParams
+func (_e *GraphRepository_Expecter) FindNodeByMetadata(ctx interface{}, arg interface{}) *GraphRepository_FindNodeByMetadata_Call {
+	return &GraphRepository_FindNodeByMetadata_Call{Call: _e.mock.On("FindNodeByMetadata", ctx, arg)}
+}
+
+func (_c *GraphRepository_FindNodeByMetadata_Call) Run(run func(ctx context.Context, arg postgres.FindNodeByMetadataParams)) *GraphRepository_FindNodeByMetadata_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(postgres.FindNodeByMetadataParams))
+	})
+	return _c
+}
+
+func (_c *GraphRepository_FindNodeByMetadata_Call) Return(_a0 postgres.GraphNode, _a1 error) *GraphRepository_FindNodeByMetadata_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *GraphRepository_FindNodeByMetadata_Call) RunAndReturn(run func(context.Context, postgres.FindNodeByMetadataParams) (postgres.GraphNode, error)) *GraphRepository_FindNodeByMetadata_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // FindNodesByFieldMatch provides a mock function with given fields: ctx, arg
 func (_m *GraphRepository) FindNodesByFieldMatch(ctx context.Context, arg postgres.FindNodesByFieldMatchParams) ([]postgres.GraphNode, error) {
 	ret := _m.Called(ctx, arg)

@@ -67,6 +67,10 @@ type GraphNode struct {
 	UpdatedAt             pgtype.Timestamptz `json:"updated_at"`
 	// Timestamp when this entity was last seen/ingested
 	LastSeenTs pgtype.Timestamptz `json:"last_seen_ts"`
+	// Entity metadata including correlation IDs
+	Metadata []byte `json:"metadata"`
+	// Entity content hash for fallback matching when entity matcher config is missing
+	ContentHash pgtype.Text `json:"content_hash"`
 }
 
 type GraphNodeSnapshot struct {

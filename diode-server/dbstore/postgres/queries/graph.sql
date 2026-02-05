@@ -1,25 +1,34 @@
 -- name: UpsertGraphNode :one
-INSERT INTO graph_nodes (external_id, node_type, data, duplicate_count, matching_schema_version, last_seen_ts)
-VALUES ($1, $2, $3, 1, $4, NOW())
+INSERT INTO graph_nodes (external_id, node_type, data, duplicate_count, matching_schema_version, last_seen_ts, metadata, content_hash)
+VALUES ($1, $2, $3, 1, $4, NOW(), $5, $6)
 ON CONFLICT (node_type, external_id)
 DO UPDATE SET
     data = EXCLUDED.data,
     duplicate_count = graph_nodes.duplicate_count + 1,
     matching_schema_version = EXCLUDED.matching_schema_version,
     last_seen_ts = NOW(),
-    updated_at = NOW()
-RETURNING id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts;
+    updated_at = NOW(),
+    metadata = graph_nodes.metadata || EXCLUDED.metadata,
+    content_hash = COALESCE(EXCLUDED.content_hash, graph_nodes.content_hash)
+RETURNING id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts, metadata, content_hash;
 
 -- name: UpdateGraphNodeData :one
 UPDATE graph_nodes
-SET data = $3, matching_schema_version = $4, last_seen_ts = NOW(), updated_at = NOW()
+SET data = $3, matching_schema_version = $4, last_seen_ts = NOW(), updated_at = NOW(), metadata = graph_nodes.metadata || $5, content_hash = COALESCE($6, graph_nodes.content_hash)
 WHERE node_type = $1 AND external_id = $2
-RETURNING id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts;
+RETURNING id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts, metadata, content_hash;
 
 -- name: FindGraphNode :one
-SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts
+SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts, metadata, content_hash
 FROM graph_nodes
 WHERE node_type = $1 AND external_id = $2;
+
+-- name: FindNodeByContentHash :one
+-- Finds a single node by content hash for fallback matching when entity matcher config is missing.
+SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts, metadata, content_hash
+FROM graph_nodes
+WHERE node_type = $1 AND content_hash = $2
+LIMIT 1;
 
 -- name: UpsertGraphEdge :exec
 INSERT INTO graph_edges (source_node_id, target_node_id, edge_type, properties)
@@ -39,7 +48,7 @@ DO UPDATE SET
     edge_subtype = EXCLUDED.edge_subtype;
 
 -- name: GetGraphNodesByType :many
-SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts
+SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts, metadata, content_hash
 FROM graph_nodes
 WHERE node_type = $1
 ORDER BY updated_at DESC
@@ -54,6 +63,8 @@ SELECT
     target.duplicate_count,
     target.matching_schema_version,
     target.last_seen_ts,
+    target.metadata,
+    target.content_hash,
     edges.edge_type,
     edges.properties as edge_properties
 FROM graph_edges edges
@@ -61,7 +72,7 @@ JOIN graph_nodes target ON edges.target_node_id = target.id
 WHERE edges.source_node_id = $1;
 
 -- name: GetNodesByFrequency :many
-SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts
+SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts, metadata, content_hash
 FROM graph_nodes
 WHERE duplicate_count >= $1
 ORDER BY duplicate_count DESC, updated_at DESC
@@ -72,7 +83,7 @@ LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 -- Empty string returns no results. Use GetGraphNodesByType for listing without filter.
 -- node_type is optional - pass NULL to search across all types.
 -- Note: Very long search_term values may cause slow scans on large datasets.
-SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts
+SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts, metadata, content_hash
 FROM graph_nodes
 WHERE (node_type = sqlc.narg('node_type')::text OR sqlc.narg('node_type')::text IS NULL)
   AND LENGTH(sqlc.arg('search_term')::text) > 0
@@ -107,7 +118,7 @@ ORDER BY node_count DESC;
 -- Entity matching queries for confidence-based matching
 
 -- name: FindNodesByFieldMatch :many
-SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts
+SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts, metadata, content_hash
 FROM graph_nodes
 WHERE node_type = $1
   AND (
@@ -120,7 +131,7 @@ ORDER BY duplicate_count DESC, updated_at DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: FindNodesByMultiFieldMatch :many
-SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts
+SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts, metadata, content_hash
 FROM graph_nodes
 WHERE node_type = $1
   AND (
@@ -140,7 +151,7 @@ LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 -- Uses GIN index (idx_graph_nodes_data_gin) for fast exact field matching.
 -- Callers pass match_filter as JSONB, e.g., '{"name": "exact_value"}' or '{"name": "x", "serial": "y"}'.
 -- Fuzzy/pattern matching should be done in the application layer (matching package).
-SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts
+SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts, metadata, content_hash
 FROM graph_nodes
 WHERE node_type = $1
   AND data @> sqlc.arg('match_filter')::jsonb
@@ -148,7 +159,7 @@ ORDER BY duplicate_count DESC, updated_at DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: FindNodesByComplexMatch :many
-SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts
+SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts, metadata, content_hash
 FROM graph_nodes
 WHERE node_type = $1
   AND (
@@ -208,7 +219,7 @@ WHERE outer_snap.node_id = $1
 -- Note: snapshot fields use COALESCE defaults for NULL safety when no snapshot exists
 -- sequence_number = 0 and empty snapshot_data indicate no snapshot
 SELECT
-    n.id, n.external_id, n.node_type, n.data as matching_data, n.duplicate_count, n.matching_schema_version, n.last_seen_ts, n.created_at, n.updated_at,
+    n.id, n.external_id, n.node_type, n.data as matching_data, n.duplicate_count, n.matching_schema_version, n.last_seen_ts, n.created_at, n.updated_at, n.metadata,
     COALESCE(s.snapshot_data, '{}'::jsonb) as snapshot_data,
     COALESCE(s.sequence_number, 0) as sequence_number,
     s.created_at as snapshot_created_at
@@ -223,8 +234,36 @@ LEFT JOIN LATERAL (
 WHERE n.node_type = $1 AND n.external_id = $2;
 
 -- name: FindNodesNeedingSchemaUpdate :many
-SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts
+SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts, metadata, content_hash
 FROM graph_nodes
 WHERE matching_schema_version < $1
 ORDER BY updated_at DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
+
+-- Metadata-based lookup queries
+
+-- name: FindNodeByMetadata :one
+-- Finds a single node by exact metadata key-value match using GIN index.
+-- Uses @> containment operator for efficient indexed lookup.
+SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts, metadata, content_hash
+FROM graph_nodes
+WHERE node_type = $1
+  AND metadata @> sqlc.arg('metadata_filter')::jsonb
+LIMIT 1;
+
+-- name: FindNodesByMetadata :many
+-- Finds all nodes matching metadata filter using GIN index.
+-- node_type is optional - pass NULL to search across all types.
+SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts, metadata, content_hash
+FROM graph_nodes
+WHERE (node_type = sqlc.narg('node_type')::text OR sqlc.narg('node_type')::text IS NULL)
+  AND metadata @> sqlc.arg('metadata_filter')::jsonb
+ORDER BY duplicate_count DESC, updated_at DESC
+LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
+
+-- name: UpdateGraphNodeMetadata :one
+-- Updates only the metadata field, merging with existing metadata.
+UPDATE graph_nodes
+SET metadata = graph_nodes.metadata || $3, updated_at = NOW()
+WHERE node_type = $1 AND external_id = $2
+RETURNING id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts, metadata, content_hash;
