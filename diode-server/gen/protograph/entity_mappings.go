@@ -205,6 +205,8 @@ func CreateEntityFromInterface(fieldValue any) *diodepb.Entity {
 		return &diodepb.Entity{Entity: &diodepb.Entity_Owner{Owner: v}}
 	case *diodepb.OwnerGroup:
 		return &diodepb.Entity{Entity: &diodepb.Entity_OwnerGroup{OwnerGroup: v}}
+	case *diodepb.DeviceConfig:
+		return &diodepb.Entity{Entity: &diodepb.Entity_DeviceConfig{DeviceConfig: v}}
 	default:
 		return nil
 	}
@@ -408,6 +410,8 @@ func GetEntityTypeName(fieldValue any) string {
 		return "Owner"
 	case *diodepb.OwnerGroup:
 		return "OwnerGroup"
+	case *diodepb.DeviceConfig:
+		return "DeviceConfig"
 	default:
 		return "unknown"
 	}
@@ -610,6 +614,8 @@ func IsKnownEntityType(fieldValue any) bool {
 		return true
 	case *diodepb.OwnerGroup:
 		return true
+	case *diodepb.DeviceConfig:
+		return true
 	default:
 		return false
 	}
@@ -714,6 +720,7 @@ func GetAllEntityTypes() []string {
 		"CustomLink",
 		"Owner",
 		"OwnerGroup",
+		"DeviceConfig",
 	}
 }
 
@@ -763,6 +770,7 @@ func GetNodeTypeForField(fieldName string) string {
 		"ChoiceSet":               "CustomFieldChoiceSet",
 		"Circuit":                 "Circuit",
 		"Cluster":                 "Cluster",
+		"Config":                  "DeviceConfig",
 		"Contact":                 "Contact",
 		"DefaultPlatform":         "Platform",
 		"Device":                  "Device",
@@ -836,6 +844,7 @@ func GetNodeTypeForField(fieldName string) string {
 		"choice_set":              "CustomFieldChoiceSet",
 		"circuit":                 "Circuit",
 		"cluster":                 "Cluster",
+		"config":                  "DeviceConfig",
 		"contact":                 "Contact",
 		"default_platform":        "Platform",
 		"device":                  "Device",

@@ -1193,3 +1193,123 @@ func TestFindBestMatchWithHighConfidence(t *testing.T) {
 		t.Errorf("Expected confidence >= Medium, got %v", best.Confidence)
 	}
 }
+
+func TestFlattenMetadata(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    map[string]any
+		expected map[string]any
+	}{
+		{
+			name:     "empty map",
+			input:    map[string]any{},
+			expected: map[string]any{},
+		},
+		{
+			name:     "flat map",
+			input:    map[string]any{"key1": "value1", "key2": 123},
+			expected: map[string]any{"key1": "value1", "key2": 123},
+		},
+		{
+			name: "nested map one level",
+			input: map[string]any{
+				"source": map[string]any{
+					"id":   "vm-123",
+					"type": "vcenter",
+				},
+			},
+			expected: map[string]any{
+				"source.id":   "vm-123",
+				"source.type": "vcenter",
+			},
+		},
+		{
+			name: "nested map two levels",
+			input: map[string]any{
+				"source": map[string]any{
+					"info": map[string]any{
+						"id": "vm-123",
+					},
+				},
+			},
+			expected: map[string]any{
+				"source.info.id": "vm-123",
+			},
+		},
+		{
+			name: "mixed flat and nested",
+			input: map[string]any{
+				"region": "us-east",
+				"source": map[string]any{
+					"id": "vm-123",
+				},
+			},
+			expected: map[string]any{
+				"region":    "us-east",
+				"source.id": "vm-123",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := matching.FlattenMetadata(tt.input, "")
+			require.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestBuildNestedFilter(t *testing.T) {
+	tests := []struct {
+		name     string
+		key      string
+		value    any
+		expected map[string]any
+	}{
+		{
+			name:     "simple key",
+			key:      "netbox_id",
+			value:    "123",
+			expected: map[string]any{"netbox_id": "123"},
+		},
+		{
+			name:  "one level nested",
+			key:   "source.id",
+			value: "vm-123",
+			expected: map[string]any{
+				"source": map[string]any{
+					"id": "vm-123",
+				},
+			},
+		},
+		{
+			name:  "two levels nested",
+			key:   "source.info.id",
+			value: "vm-123",
+			expected: map[string]any{
+				"source": map[string]any{
+					"info": map[string]any{
+						"id": "vm-123",
+					},
+				},
+			},
+		},
+		{
+			name:  "numeric value",
+			key:   "source.count",
+			value: 42,
+			expected: map[string]any{
+				"source": map[string]any{
+					"count": 42,
+				},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := matching.BuildNestedFilter(tt.key, tt.value)
+			require.Equal(t, tt.expected, result)
+		})
+	}
+}

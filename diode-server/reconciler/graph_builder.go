@@ -12,6 +12,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -29,6 +30,8 @@ const (
 	CurrentSchemaVersion = 1
 	// DefaultSnapshotRetention is the default number of snapshots to keep
 	DefaultSnapshotRetention = 5
+	// ContentHashMatchConfidence is the confidence score for content hash matches
+	ContentHashMatchConfidence = 0.9
 )
 
 // GraphBuilder handles extraction and persistence of entity relationships
@@ -78,6 +81,60 @@ func (gb *GraphBuilder) SetSnapshotRetention(count int) {
 	if count > 0 {
 		gb.snapshotRetention = count
 	}
+}
+
+// extractMetadata extracts metadata from an entity.
+// Returns a JSON-encoded map of metadata key-value pairs.
+//
+// TODO: Add support for merging request-level metadata (IngestRequest.metadata) with
+// entity-level metadata. This would require:
+// 1. Pass IngestRequest.metadata to GraphBuilder (via SetSourceMetadata or ExtractGraph parameter)
+// 2. Merge source metadata with entity metadata (entity takes precedence for duplicate keys)
+// 3. Wire up the call in IngestionProcessor.CreateIngestionLogs before ExtractGraph
+func (gb *GraphBuilder) extractMetadata(entity *diodepb.Entity) (json.RawMessage, error) {
+	if entity == nil || entity.GetEntity() == nil {
+		return json.RawMessage("{}"), nil
+	}
+
+	result := gb.getEntityMetadata(entity)
+	if len(result) == 0 {
+		return json.RawMessage("{}"), nil
+	}
+
+	return json.Marshal(result)
+}
+
+// getEntityMetadata extracts the metadata field from the inner entity.
+// Each entity type (Device, Site, etc.) has a GetMetadata() method returning *structpb.Struct.
+func (gb *GraphBuilder) getEntityMetadata(entity *diodepb.Entity) map[string]any {
+	return matching.ExtractEntityMetadata(entity)
+}
+
+// ensureDiodeID sets source_match.diode_id to the externalID.
+// This allows future lookups by diode_id to find the node directly by externalID.
+// Always overwrites any client-provided diode_id to ensure consistency.
+func (gb *GraphBuilder) ensureDiodeID(metadata json.RawMessage, externalID string) json.RawMessage {
+	var metaMap map[string]any
+	if err := json.Unmarshal(metadata, &metaMap); err != nil {
+		gb.logger.Debug("failed to unmarshal metadata, creating new map", "error", err)
+		metaMap = make(map[string]any)
+	}
+
+	// Get or create source_match
+	sourceMatch, ok := metaMap[sourceMatchKey].(map[string]any)
+	if !ok {
+		sourceMatch = make(map[string]any)
+	}
+
+	// Always set diode_id to externalID (system controls identity)
+	sourceMatch[diodeIDKey] = externalID
+	metaMap[sourceMatchKey] = sourceMatch
+
+	if updated, err := json.Marshal(metaMap); err == nil {
+		return updated
+	}
+
+	return metadata
 }
 
 // extractMatchingAttributes extracts only the attributes needed for matching from the full entity data
@@ -223,12 +280,19 @@ func (gb *GraphBuilder) updateNodeMatchingData(ctx context.Context, node *postgr
 		return fmt.Errorf("failed to extract matching attributes: %w", err)
 	}
 
+	// Keep existing metadata (schema update doesn't change metadata)
+	metadata := node.Metadata
+	if metadata == nil {
+		metadata = json.RawMessage("{}")
+	}
+
 	// Update the node with new matching data and schema version
 	_, err = gb.repo.UpdateGraphNodeData(ctx, postgres.UpdateGraphNodeDataParams{
 		NodeType:              node.NodeType,
 		ExternalID:            node.ExternalID,
 		Data:                  matchingData,
 		MatchingSchemaVersion: CurrentSchemaVersion,
+		Metadata:              metadata,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to update node matching data: %w", err)
@@ -414,20 +478,29 @@ func (gb *GraphBuilder) processEntityRecursively(ctx context.Context, entity *di
 		return nil, fmt.Errorf("failed to get object type from entity")
 	}
 
+	// Generate content hash for same-request deduplication only
 	fingerprinter := entityhash.NewEntityFingerprinter()
-	externalID, err := fingerprinter.GenerateEntityHash(entity)
+	contentHash, err := fingerprinter.GenerateEntityHash(entity)
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate entity hash: %w", err)
 	}
 
-	// Check if we've already processed this node (deduplication)
-	cacheKey := fmt.Sprintf("%s:%s", nodeType, externalID)
+	// Check cache using content hash (same-request deduplication)
+	cacheKey := fmt.Sprintf("%s:%s", nodeType, contentHash)
 	if cachedNode, exists := gb.nodeCache[cacheKey]; exists {
 		return cachedNode, nil
 	}
 
-	// Try confidence-based matching first before creating new node
-	bestMatch := gb.findEntityMatch(ctx, entity, nodeType)
+	// Try to find existing entity match (diode_id checked first, then other metadata, then field-based, then content hash)
+	bestMatch := gb.findEntityMatch(ctx, entity, nodeType, contentHash)
+
+	// Determine externalID: use existing node's UUID or generate new one
+	var externalID string
+	if bestMatch != nil && bestMatch.ExternalID != nil {
+		externalID = *bestMatch.ExternalID
+	} else {
+		externalID = uuid.New().String()
+	}
 
 	// Marshal entity data
 	entityData, err := protojson.Marshal(entity)
@@ -438,12 +511,12 @@ func (gb *GraphBuilder) processEntityRecursively(ctx context.Context, entity *di
 	// Process node: either update matched node or create new one
 	var node *GraphNode
 	if bestMatch != nil && bestMatch.NodeID != nil {
-		node, err = gb.updateMatchedNode(ctx, bestMatch, nodeType, entityData)
+		node, err = gb.updateMatchedNode(ctx, bestMatch, nodeType, entityData, entity, contentHash)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		node, err = gb.upsertNode(ctx, externalID, nodeType, entityData)
+		node, err = gb.upsertNode(ctx, externalID, nodeType, entityData, entity, contentHash)
 		if err != nil {
 			return nil, fmt.Errorf("failed to upsert node: %w", err)
 		}
@@ -452,46 +525,206 @@ func (gb *GraphBuilder) processEntityRecursively(ctx context.Context, entity *di
 	// Cache the node for deduplication
 	gb.nodeCache[cacheKey] = node
 
-	gb.logger.Debug("processed graph node",
-		"node_type", nodeType,
-		"external_id", externalID,
-		"duplicate_count", node.DuplicateCount,
-		"node_id", node.ID)
-
 	// Recursively process all nested entities and create edges
 	gb.createEdgesForNode(ctx, entity, node, nodeType, externalID)
 
 	return node, nil
 }
 
-// findEntityMatch attempts to find an existing entity match using confidence-based matching.
-// Returns nil if no match found or if entity matcher is not configured.
-func (gb *GraphBuilder) findEntityMatch(ctx context.Context, entity *diodepb.Entity, nodeType string) *matching.MatchResult {
-	if gb.entityMatcher == nil {
-		return nil
+// findEntityMatch attempts to find an existing entity match.
+// Priority order:
+// 1. Metadata match (correlation IDs) - works without entity matcher config
+// 2. Field-based matching via entityMatcher (requires config)
+// 3. Content hash fallback - last resort when entity matcher config is missing
+// Returns nil if no match found.
+func (gb *GraphBuilder) findEntityMatch(ctx context.Context, entity *diodepb.Entity, nodeType string, contentHash string) *matching.MatchResult {
+	// Priority 1: Check metadata for correlation IDs (works without entity matcher)
+	if metadataMatch := gb.findMatchByMetadata(ctx, entity, nodeType); metadataMatch != nil {
+		return metadataMatch
 	}
 
-	bestMatch, err := gb.entityMatcher.FindBestMatch(ctx, entity)
-	if err != nil {
-		gb.logger.Warn("failed to find entity matches", "error", err, "entity_type", nodeType)
-		return nil
+	// Priority 2: Fall back to field-based matching if entity matcher is configured
+	if gb.entityMatcher != nil {
+		bestMatch, err := gb.entityMatcher.FindBestMatch(ctx, entity)
+		if err != nil {
+			gb.logger.Warn("failed to find entity matches", "error", err, "entity_type", nodeType)
+		} else if bestMatch != nil && bestMatch.NodeID != nil {
+			gb.logger.Debug("found confident match for entity",
+				"entity_type", nodeType,
+				"matched_node_id", *bestMatch.NodeID,
+				"confidence", float64(bestMatch.Confidence),
+				"reason", bestMatch.MatchReason,
+				"matching_fields", bestMatch.MatchingFields)
+			return bestMatch
+		}
 	}
 
-	if bestMatch != nil && bestMatch.NodeID != nil {
-		gb.logger.Info("found confident match for entity",
-			"entity_type", nodeType,
-			"matched_node_id", *bestMatch.NodeID,
-			"confidence", float64(bestMatch.Confidence),
-			"reason", bestMatch.MatchReason,
-			"matching_fields", bestMatch.MatchingFields)
-		return bestMatch
+	// Priority 3: Content hash fallback - last resort when entity matcher config is missing
+	if contentHash != "" {
+		if hashMatch := gb.findNodeByContentHash(ctx, nodeType, contentHash); hashMatch != nil {
+			return hashMatch
+		}
 	}
 
 	return nil
 }
 
+const (
+	// sourceMatchKey is the metadata key containing correlation IDs for entity matching
+	sourceMatchKey = "source_match"
+	// diodeIDKey is the internal Diode entity ID - highest priority for matching
+	diodeIDKey = "diode_id"
+)
+
+// findMatchByMetadata attempts to find an existing node by checking the source_match metadata.
+// Priority order:
+// 1. source_match.diode_id - if found, return immediately (internal Diode entity)
+// 2. Other source_match.* keys - iterate and return on first match found
+// Returns a match result with confidence 1.0 if found, nil if no match.
+func (gb *GraphBuilder) findMatchByMetadata(ctx context.Context, entity *diodepb.Entity, nodeType string) *matching.MatchResult {
+	if entity == nil {
+		return nil
+	}
+
+	// Extract metadata from the entity
+	entityMetadata := matching.ExtractEntityMetadata(entity)
+	if len(entityMetadata) == 0 {
+		return nil
+	}
+
+	// Get source_match metadata - only this is used for matching
+	sourceMatchRaw, exists := entityMetadata[sourceMatchKey]
+	if !exists {
+		return nil
+	}
+	sourceMatch, ok := sourceMatchRaw.(map[string]any)
+	if !ok || len(sourceMatch) == 0 {
+		return nil
+	}
+
+	// Priority 1: Check diode_id first (internal Diode entity)
+	// diode_id equals externalID, so we can do a direct lookup
+	if diodeID, exists := sourceMatch[diodeIDKey]; exists && diodeID != nil {
+		if diodeIDStr, ok := diodeID.(string); ok && diodeIDStr != "" {
+			if result := gb.findNodeByExternalID(ctx, nodeType, diodeIDStr); result != nil {
+				gb.logger.Debug("found diode_id match for entity",
+					"entity_type", nodeType,
+					"matched_node_id", *result.NodeID,
+					"diode_id", diodeID)
+				return result
+			}
+		}
+	}
+
+	// Priority 2: Check other source_match keys (any match)
+	for key, value := range sourceMatch {
+		if key == diodeIDKey || value == nil {
+			continue
+		}
+
+		if result := gb.findNodeBySourceMatchKey(ctx, nodeType, key, value); result != nil {
+			gb.logger.Debug("found metadata match for entity",
+				"entity_type", nodeType,
+				"matched_node_id", *result.NodeID,
+				"matching_key", key,
+				"matching_value", value)
+			return result
+		}
+	}
+
+	return nil
+}
+
+// findNodeBySourceMatchKey searches for a node by a single source_match key-value pair.
+func (gb *GraphBuilder) findNodeBySourceMatchKey(ctx context.Context, nodeType, key string, value any) *matching.MatchResult {
+	// Build filter: {"source_match": {key: value}}
+	metadataFilter := map[string]any{
+		sourceMatchKey: map[string]any{
+			key: value,
+		},
+	}
+	filterJSON, err := json.Marshal(metadataFilter)
+	if err != nil {
+		gb.logger.Warn("failed to marshal metadata filter", "error", err, "key", key)
+		return nil
+	}
+
+	// Search for existing node with this metadata
+	node, err := gb.repo.FindNodeByMetadata(ctx, postgres.FindNodeByMetadataParams{
+		NodeType:       nodeType,
+		MetadataFilter: filterJSON,
+	})
+	if err != nil {
+		if !errors.Is(err, pgx.ErrNoRows) {
+			gb.logger.Warn("metadata lookup failed", "error", err, "key", key, "value", value)
+		}
+		return nil
+	}
+
+	return &matching.MatchResult{
+		NodeID:         &node.ID,
+		ExternalID:     &node.ExternalID,
+		Confidence:     1.0,
+		MatchingFields: []string{fmt.Sprintf("%s.%s", sourceMatchKey, key)},
+		MatchReason:    fmt.Sprintf("Metadata match: %s.%s=%v", sourceMatchKey, key, value),
+		ExistingData:   node.Data,
+	}
+}
+
+// findNodeByExternalID searches for a node directly by externalID (used for diode_id lookup).
+func (gb *GraphBuilder) findNodeByExternalID(ctx context.Context, nodeType, externalID string) *matching.MatchResult {
+	node, err := gb.repo.FindGraphNode(ctx, postgres.FindGraphNodeParams{
+		NodeType:   nodeType,
+		ExternalID: externalID,
+	})
+	if err != nil {
+		if !errors.Is(err, pgx.ErrNoRows) {
+			gb.logger.Warn("externalID lookup failed", "error", err, "external_id", externalID)
+		}
+		return nil
+	}
+
+	return &matching.MatchResult{
+		NodeID:         &node.ID,
+		ExternalID:     &node.ExternalID,
+		Confidence:     1.0,
+		MatchingFields: []string{fmt.Sprintf("%s.%s", sourceMatchKey, diodeIDKey)},
+		MatchReason:    fmt.Sprintf("Direct lookup: %s.%s=%s", sourceMatchKey, diodeIDKey, externalID),
+		ExistingData:   node.Data,
+	}
+}
+
+// findNodeByContentHash searches for a node by content hash (last resort fallback).
+// Used when entity matcher config is missing and no metadata match found.
+func (gb *GraphBuilder) findNodeByContentHash(ctx context.Context, nodeType, contentHash string) *matching.MatchResult {
+	node, err := gb.repo.FindNodeByContentHash(ctx, postgres.FindNodeByContentHashParams{
+		NodeType:    nodeType,
+		ContentHash: pgtype.Text{String: contentHash, Valid: true},
+	})
+	if err != nil {
+		if !errors.Is(err, pgx.ErrNoRows) {
+			gb.logger.Warn("content hash lookup failed", "error", err, "content_hash", contentHash)
+		}
+		return nil
+	}
+
+	gb.logger.Debug("found content hash match for entity",
+		"entity_type", nodeType,
+		"matched_node_id", node.ID,
+		"content_hash", contentHash)
+
+	return &matching.MatchResult{
+		NodeID:         &node.ID,
+		ExternalID:     &node.ExternalID,
+		Confidence:     ContentHashMatchConfidence,
+		MatchingFields: []string{"content_hash"},
+		MatchReason:    fmt.Sprintf("Content hash match: %s", contentHash),
+		ExistingData:   node.Data,
+	}
+}
+
 // updateMatchedNode updates an existing matched node with new entity data.
-func (gb *GraphBuilder) updateMatchedNode(ctx context.Context, bestMatch *matching.MatchResult, nodeType string, entityData json.RawMessage) (*GraphNode, error) {
+func (gb *GraphBuilder) updateMatchedNode(ctx context.Context, bestMatch *matching.MatchResult, nodeType string, entityData json.RawMessage, entity *diodepb.Entity, contentHash string) (*GraphNode, error) {
 	if bestMatch.ExternalID == nil {
 		return nil, fmt.Errorf("matched node missing external ID")
 	}
@@ -511,11 +744,21 @@ func (gb *GraphBuilder) updateMatchedNode(ctx context.Context, bestMatch *matchi
 		matchingData = entityData
 	}
 
+	// Extract metadata from entity and source
+	metadata, err := gb.extractMetadata(entity)
+	if err != nil {
+		gb.logger.Warn("failed to extract metadata", "error", err, "node_type", nodeType)
+		metadata = json.RawMessage("{}")
+	}
+
+	// Ensure source_match.diode_id is set to externalID for future lookups
+	metadata = gb.ensureDiodeID(metadata, existingNode.ExternalID)
+
 	// Check if existing node needs schema update (lazy migration)
 	gb.maybeUpdateNodeSchema(ctx, &existingNode, nodeType, entityData)
 
 	// Upsert the node with appropriate duplicate count handling
-	result, err := gb.upsertMatchedNodeData(ctx, nodeType, existingNode.ExternalID, matchingData)
+	result, err := gb.upsertMatchedNodeData(ctx, nodeType, existingNode.ExternalID, matchingData, metadata, contentHash)
 	if err != nil {
 		return nil, fmt.Errorf("failed to update matched node: %w", err)
 	}
@@ -532,13 +775,14 @@ func (gb *GraphBuilder) updateMatchedNode(ctx context.Context, bestMatch *matchi
 		Data:                  result.Data,
 		DuplicateCount:        result.DuplicateCount,
 		MatchingSchemaVersion: result.MatchingSchemaVersion,
+		Metadata:              result.Metadata,
 	}
 
 	// Track this node as updated for propagation
 	nodeKey := fmt.Sprintf("%s:%s", nodeType, result.ExternalID)
 	gb.updatedNodes[nodeKey] = node
 
-	gb.logger.Info("reused existing matched node",
+	gb.logger.Debug("reused existing matched node",
 		"matched_node_id", *bestMatch.NodeID,
 		"confidence", float64(bestMatch.Confidence),
 		"reason", bestMatch.MatchReason,
@@ -550,31 +794,24 @@ func (gb *GraphBuilder) updateMatchedNode(ctx context.Context, bestMatch *matchi
 
 // maybeUpdateNodeSchema checks if a node needs schema migration and updates it if necessary.
 func (gb *GraphBuilder) maybeUpdateNodeSchema(ctx context.Context, existingNode *postgres.GraphNode, nodeType string, entityData json.RawMessage) {
-	existingGraphNode := &postgres.GraphNode{
-		ID:                    existingNode.ID,
-		ExternalID:            existingNode.ExternalID,
-		NodeType:              existingNode.NodeType,
-		Data:                  existingNode.Data,
-		DuplicateCount:        existingNode.DuplicateCount,
-		MatchingSchemaVersion: existingNode.MatchingSchemaVersion,
-	}
-
-	if gb.needsSchemaUpdate(existingGraphNode) {
+	if gb.needsSchemaUpdate(existingNode) {
 		gb.logger.Info("updating node matching data due to schema change",
 			"node_type", nodeType,
 			"external_id", existingNode.ExternalID,
 			"old_version", existingNode.MatchingSchemaVersion,
 			"new_version", CurrentSchemaVersion)
 
-		if err := gb.updateNodeMatchingData(ctx, existingGraphNode, entityData); err != nil {
+		if err := gb.updateNodeMatchingData(ctx, existingNode, entityData); err != nil {
 			gb.logger.Warn("failed to update node schema, continuing", "error", err)
 		}
 	}
 }
 
 // upsertMatchedNodeData handles the upsert logic for a matched node, respecting duplicate count rules.
-func (gb *GraphBuilder) upsertMatchedNodeData(ctx context.Context, nodeType, externalID string, matchingData json.RawMessage) (postgres.GraphNode, error) {
+func (gb *GraphBuilder) upsertMatchedNodeData(ctx context.Context, nodeType, externalID string, matchingData, metadata json.RawMessage, contentHash string) (postgres.GraphNode, error) {
 	requestKey := fmt.Sprintf("%s:%s", nodeType, externalID)
+
+	contentHashPg := pgtype.Text{String: contentHash, Valid: contentHash != ""}
 
 	if gb.seenInThisRequest[requestKey] {
 		// Already seen in this request - update data but don't increment duplicate count
@@ -583,13 +820,12 @@ func (gb *GraphBuilder) upsertMatchedNodeData(ctx context.Context, nodeType, ext
 			ExternalID:            externalID,
 			Data:                  matchingData,
 			MatchingSchemaVersion: CurrentSchemaVersion,
+			Metadata:              metadata,
+			ContentHash:           contentHashPg,
 		})
 		if err != nil {
 			return postgres.GraphNode{}, err
 		}
-		gb.logger.Debug("updated matched node data without incrementing duplicate count",
-			"node_type", nodeType,
-			"external_id", externalID)
 		return updateResult, nil
 	}
 
@@ -599,6 +835,8 @@ func (gb *GraphBuilder) upsertMatchedNodeData(ctx context.Context, nodeType, ext
 		NodeType:              nodeType,
 		Data:                  matchingData,
 		MatchingSchemaVersion: CurrentSchemaVersion,
+		Metadata:              metadata,
+		ContentHash:           contentHashPg,
 	}
 	result, err := gb.repo.UpsertGraphNode(ctx, params)
 	if err != nil {
@@ -606,11 +844,6 @@ func (gb *GraphBuilder) upsertMatchedNodeData(ctx context.Context, nodeType, ext
 	}
 
 	gb.seenInThisRequest[requestKey] = true
-	gb.logger.Debug("updated matched node with duplicate count increment",
-		"node_type", nodeType,
-		"external_id", externalID,
-		"duplicate_count", result.DuplicateCount)
-
 	return result, nil
 }
 
@@ -634,7 +867,6 @@ func (gb *GraphBuilder) createEdgesForNode(ctx context.Context, entity *diodepb.
 				"error", err)
 		}
 	}
-	gb.logger.Debug("processed edges for node", "count", len(edges), "node_id", node.ID)
 }
 
 // extractEdgesRecursively finds all relationships within the entity and creates edges recursively
@@ -664,7 +896,6 @@ func (gb *GraphBuilder) extractEdgesRecursively(ctx context.Context, entity *dio
 	}
 
 	entityType := entityValue.Type()
-	gb.logger.Debug("processing actual entity fields", "entity_type", entityType.Name(), "num_fields", entityValue.NumField())
 
 	for i := 0; i < entityValue.NumField(); i++ {
 		field := entityValue.Field(i)
@@ -676,11 +907,8 @@ func (gb *GraphBuilder) extractEdgesRecursively(ctx context.Context, entity *dio
 			continue
 		}
 
-		gb.logger.Debug("found field", "field", fieldName, "kind", field.Kind().String(), "type", fmt.Sprintf("%T", field.Interface()))
-
 		// Process single entity field
 		if field.Kind() == reflect.Ptr && !field.IsNil() {
-			gb.logger.Debug("processing pointer field", "field", fieldName, "type", fmt.Sprintf("%T", field.Interface()))
 			fieldEdges, err := gb.processFieldRecursively(ctx, sourceNode, field, fieldName)
 			if err != nil {
 				gb.logger.Warn("failed to process field recursively", "field", fieldName, "error", err)
@@ -693,7 +921,6 @@ func (gb *GraphBuilder) extractEdgesRecursively(ctx context.Context, entity *dio
 
 		// Process slice fields (repeated references)
 		if field.Kind() == reflect.Slice {
-			gb.logger.Debug("processing slice field", "field", fieldName, "length", field.Len())
 			sliceEdges, err := gb.processSliceFieldRecursively(ctx, sourceNode, field, fieldName)
 			if err != nil {
 				gb.logger.Warn("failed to process slice field recursively", "field", fieldName, "error", err)
@@ -704,7 +931,6 @@ func (gb *GraphBuilder) extractEdgesRecursively(ctx context.Context, entity *dio
 
 		// Process oneof fields (interface types in generated Go code)
 		if field.Kind() == reflect.Interface && !field.IsNil() {
-			gb.logger.Debug("processing oneof/interface field", "field", fieldName, "type", fmt.Sprintf("%T", field.Interface()))
 			// Unwrap the interface to get the concrete value
 			concreteValue := reflect.ValueOf(field.Interface())
 			if concreteValue.IsValid() && concreteValue.Kind() == reflect.Ptr && !concreteValue.IsNil() {
@@ -774,9 +1000,6 @@ func (gb *GraphBuilder) extractEdgeProperties(fieldValue any) json.RawMessage {
 	// If we extracted any properties, return them as JSON
 	if len(properties) > 0 {
 		if propsJSON, err := json.Marshal(properties); err == nil {
-			gb.logger.Debug("extracted edge properties",
-				"entity_type", entityTypeName,
-				"properties", properties)
 			return propsJSON
 		}
 	}
@@ -920,7 +1143,7 @@ func (gb *GraphBuilder) processNestedEntityRecursively(ctx context.Context, fiel
 }
 
 // upsertNode creates or updates a node, incrementing duplicate count only once per ingestion request
-func (gb *GraphBuilder) upsertNode(ctx context.Context, externalID, nodeType string, fullEntityData json.RawMessage) (*GraphNode, error) {
+func (gb *GraphBuilder) upsertNode(ctx context.Context, externalID, nodeType string, fullEntityData json.RawMessage, entity *diodepb.Entity, contentHash string) (*GraphNode, error) {
 	// Extract matching attributes from full entity data
 	matchingData, err := gb.extractMatchingAttributes(nodeType, fullEntityData)
 	if err != nil {
@@ -928,28 +1151,39 @@ func (gb *GraphBuilder) upsertNode(ctx context.Context, externalID, nodeType str
 		matchingData = fullEntityData
 	}
 
+	// Extract metadata from entity and source
+	metadata, err := gb.extractMetadata(entity)
+	if err != nil {
+		gb.logger.Warn("failed to extract metadata", "error", err, "node_type", nodeType)
+		metadata = json.RawMessage("{}")
+	}
+
+	// Ensure source_match.diode_id is set to externalID for future lookups
+	metadata = gb.ensureDiodeID(metadata, externalID)
+
 	// Create a unique key for this node in this request
 	requestKey := fmt.Sprintf("%s:%s", nodeType, externalID)
 
 	// Check if we've already processed this node in this ingestion request
 	alreadySeenInRequest := gb.seenInThisRequest[requestKey]
 
+	contentHashPg := pgtype.Text{String: contentHash, Valid: contentHash != ""}
+
 	var result postgres.GraphNode
 
 	if alreadySeenInRequest {
 		// This node was already seen in this request - update data but don't increment duplicate count
-		updateResult, err := gb.repo.UpdateGraphNodeData(ctx, postgres.UpdateGraphNodeDataParams{
+		result, err = gb.repo.UpdateGraphNodeData(ctx, postgres.UpdateGraphNodeDataParams{
 			NodeType:              nodeType,
 			ExternalID:            externalID,
 			Data:                  matchingData,
 			MatchingSchemaVersion: CurrentSchemaVersion,
+			Metadata:              metadata,
+			ContentHash:           contentHashPg,
 		})
-		if err == nil {
-			result = updateResult
+		if err != nil {
+			return nil, fmt.Errorf("updating node %s/%s: %w", nodeType, externalID, err)
 		}
-		gb.logger.Debug("updated node data without incrementing duplicate count",
-			"node_type", nodeType,
-			"external_id", externalID)
 	} else {
 		// First time seeing this node in this request - normal upsert with duplicate count increment
 		result, err = gb.repo.UpsertGraphNode(ctx, postgres.UpsertGraphNodeParams{
@@ -957,17 +1191,14 @@ func (gb *GraphBuilder) upsertNode(ctx context.Context, externalID, nodeType str
 			NodeType:              nodeType,
 			Data:                  matchingData,
 			MatchingSchemaVersion: CurrentSchemaVersion,
+			Metadata:              metadata,
+			ContentHash:           contentHashPg,
 		})
+		if err != nil {
+			return nil, fmt.Errorf("upserting node %s/%s: %w", nodeType, externalID, err)
+		}
 		// Mark this node as seen in this request
 		gb.seenInThisRequest[requestKey] = true
-		gb.logger.Debug("upserted node with duplicate count increment",
-			"node_type", nodeType,
-			"external_id", externalID,
-			"duplicate_count", result.DuplicateCount)
-	}
-
-	if err != nil {
-		return nil, fmt.Errorf("upserting node %s/%s: %w", nodeType, externalID, err)
 	}
 
 	// Create snapshot with full entity data
@@ -984,6 +1215,7 @@ func (gb *GraphBuilder) upsertNode(ctx context.Context, externalID, nodeType str
 		Data:                  result.Data,
 		DuplicateCount:        result.DuplicateCount,
 		MatchingSchemaVersion: result.MatchingSchemaVersion,
+		Metadata:              result.Metadata,
 	}, nil
 }
 
@@ -1113,17 +1345,6 @@ func (gb *GraphBuilder) propagateNodeUpdates(ctx context.Context) error {
 		return nil
 	}
 
-	gb.logger.Debug("propagating node updates", "updated_nodes_count", len(gb.updatedNodes))
-
-	// Debug: Log all updated nodes
-	for key, updatedNode := range gb.updatedNodes {
-		gb.logger.Debug("updated node",
-			"key", key,
-			"node_type", updatedNode.NodeType,
-			"external_id", updatedNode.ExternalID,
-			"node_id", updatedNode.ID)
-	}
-
 	// For each node in the cache, check if it contains references to updated nodes
 	for cacheKey, cachedNode := range gb.nodeCache {
 		// Check if this node references any updated nodes by examining its data
@@ -1136,10 +1357,6 @@ func (gb *GraphBuilder) propagateNodeUpdates(ctx context.Context) error {
 		}
 
 		if needsUpdate {
-			gb.logger.Debug("node needs update due to references",
-				"node_type", cachedNode.NodeType,
-				"external_id", cachedNode.ExternalID)
-
 			// Regenerate the node data with updated references
 			err = gb.refreshNodeWithUpdatedReferences(ctx, cachedNode)
 			if err != nil {
@@ -1147,15 +1364,7 @@ func (gb *GraphBuilder) propagateNodeUpdates(ctx context.Context) error {
 					"error", err,
 					"node_type", cachedNode.NodeType,
 					"external_id", cachedNode.ExternalID)
-			} else {
-				gb.logger.Debug("refreshed node with updated references",
-					"node_type", cachedNode.NodeType,
-					"external_id", cachedNode.ExternalID)
 			}
-		} else {
-			gb.logger.Debug("node does not need update",
-				"node_type", cachedNode.NodeType,
-				"external_id", cachedNode.ExternalID)
 		}
 	}
 
@@ -1195,10 +1404,6 @@ func (gb *GraphBuilder) checkDataForUpdatedReferences(data any, excludeNodeKey s
 								if updatedName, ok := entityMap["name"]; ok && updatedName == nameStr {
 									// Check if the node types could be related (e.g., Manufacturer)
 									if gb.couldBeRelatedNodeType(updatedNode.NodeType) {
-										gb.logger.Debug("found reference that needs update",
-											"referring_name", nameStr,
-											"updated_node_type", updatedNode.NodeType,
-											"updated_node_id", updatedNode.ID)
 										return true
 									}
 								}
@@ -1279,6 +1484,12 @@ func (gb *GraphBuilder) refreshNodeWithUpdatedReferences(ctx context.Context, no
 		return fmt.Errorf("failed to marshal updated node data: %w", err)
 	}
 
+	// Keep existing metadata (reference updates don't change metadata)
+	metadata := existingNode.Metadata
+	if metadata == nil {
+		metadata = json.RawMessage("{}")
+	}
+
 	// Update the node in the database using request-level duplicate counting
 	requestKey := fmt.Sprintf("%s:%s", existingNode.NodeType, existingNode.ExternalID)
 
@@ -1289,6 +1500,7 @@ func (gb *GraphBuilder) refreshNodeWithUpdatedReferences(ctx context.Context, no
 			ExternalID:            existingNode.ExternalID,
 			Data:                  updatedData,
 			MatchingSchemaVersion: existingNode.MatchingSchemaVersion, // Keep existing schema version for reference updates
+			Metadata:              metadata,
 		})
 	} else {
 		// First time seeing this node in this request - increment duplicate count
@@ -1297,6 +1509,7 @@ func (gb *GraphBuilder) refreshNodeWithUpdatedReferences(ctx context.Context, no
 			NodeType:              existingNode.NodeType,
 			Data:                  updatedData,
 			MatchingSchemaVersion: existingNode.MatchingSchemaVersion, // Keep existing schema version for reference updates
+			Metadata:              metadata,
 		})
 		gb.seenInThisRequest[requestKey] = true
 	}
@@ -1325,10 +1538,6 @@ func (gb *GraphBuilder) updateReferencesInNodeData(data map[string]any) {
 									if updatedName, ok := entityMap["name"]; ok && updatedName == nameStr {
 										// Update this reference with the latest entity data
 										maps.Copy(v, entityMap)
-										gb.logger.Debug("updated reference in node data",
-											"reference_name", nameStr,
-											"updated_node_type", updatedNode.NodeType,
-											"updated_fields", len(entityMap))
 									}
 								}
 							}

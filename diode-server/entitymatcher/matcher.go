@@ -30,6 +30,7 @@ type GraphNode = postgres.GraphNode
 type Repository interface {
 	FindNodesByFieldMatch(ctx context.Context, arg postgres.FindNodesByFieldMatchParams) ([]postgres.GraphNode, error)
 	GetGraphNodesByType(ctx context.Context, arg postgres.GetGraphNodesByTypeParams) ([]postgres.GraphNode, error)
+	FindNodeByMetadata(ctx context.Context, arg postgres.FindNodeByMetadataParams) (postgres.GraphNode, error)
 }
 
 // Matcher implements confidence-based entity matching
@@ -234,6 +235,8 @@ func (m *Matcher) FindMatches(ctx context.Context, entity *diodepb.Entity) ([]ma
 }
 
 // FindBestMatch finds the best match for an entity above the confidence threshold
+// using field-based matching rules (primary, secondary, fallback).
+// Note: Metadata matching is handled separately in GraphBuilder.findMatchByMetadata.
 func (m *Matcher) FindBestMatch(ctx context.Context, entity *diodepb.Entity) (*matching.MatchResult, error) {
 	matches, err := m.FindMatches(ctx, entity)
 	if err != nil {

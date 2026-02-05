@@ -134,7 +134,7 @@ func main() {
 	// Initialize GraphBuilder if graph DB feature is enabled
 	var graphBuilderOpt reconciler.ProcessorOption
 	if cfg.EnableGraphDB {
-		s.Logger().Info("Graph DB feature enabled, initializing GraphBuilder")
+		s.Logger().Info("graph DB feature enabled, initializing GraphBuilder")
 
 		// Load matching configuration if provided
 		var matchingConfig *matching.Config
