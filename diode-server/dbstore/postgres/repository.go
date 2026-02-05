@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"reflect"
-	"strings"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -15,6 +13,7 @@ import (
 	"github.com/netboxlabs/diode/diode-server/gen/dbstore/postgres"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
+	"github.com/netboxlabs/diode/diode-server/gen/netbox"
 	"github.com/netboxlabs/diode/diode-server/reconciler"
 	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
 )
@@ -491,10 +490,10 @@ func (r *Repository) CreateEntityInGraph(ctx context.Context, entity *diodepb.En
 		return "", "", fmt.Errorf("graph builder not configured")
 	}
 
-	// Extract node type from entity before processing
-	nodeType = getEntityTypeName(entity)
-	if nodeType == "" {
-		return "", "", fmt.Errorf("failed to get entity type name")
+	// Extract node type from entity before processing (use NetBox object type format)
+	nodeType, err = netbox.GetObjectType(entity)
+	if err != nil {
+		return "", "", fmt.Errorf("failed to get entity object type: %w", err)
 	}
 
 	// Extract external ID (entity hash) from entity
@@ -512,29 +511,6 @@ func (r *Repository) CreateEntityInGraph(ctx context.Context, entity *diodepb.En
 	return externalID, nodeType, nil
 }
 
-// getEntityTypeName extracts the entity type name from an entity using proto names
-// This is similar to the private function in graph_builder.go
-func getEntityTypeName(entity *diodepb.Entity) string {
-	if entity == nil || entity.GetEntity() == nil {
-		return ""
-	}
-
-	// Simple approach using reflection to get the type name
-	entityWrapper := entity.GetEntity()
-	entityType := reflect.TypeOf(entityWrapper)
-	if entityType == nil {
-		return ""
-	}
-
-	// Extract the type name from the wrapper (e.g., "Entity_Device" -> "Device")
-	typeName := entityType.Elem().Name()
-	if name, found := strings.CutPrefix(typeName, "Entity_"); found {
-		return name
-	}
-
-	return typeName
-}
-
 // ListGraphEntities lists entities from the graph database with filtering
 func (r *Repository) ListGraphEntities(ctx context.Context, filter *reconcilerpb.ListEntitiesRequest, limit int32, offset int32) ([]*reconcilerpb.DiodeEntity, error) {
 	if r.graphBuilder == nil {
@@ -546,13 +522,22 @@ func (r *Repository) ListGraphEntities(ctx context.Context, filter *reconcilerpb
 	var err error
 
 	if len(filter.ObjectType) > 0 {
-		// Filter by object types - for now, query the first type
-		// TODO: Support multiple object types in a single query
-		nodes, err = r.queries.GetGraphNodesByType(ctx, postgres.GetGraphNodesByTypeParams{
-			NodeType: filter.ObjectType[0],
-			Limit:    limit,
-			Offset:   offset,
-		})
+		// Filter by object types - support single or multiple types
+		if len(filter.ObjectType) == 1 {
+			// Single type - use the simpler query
+			nodes, err = r.queries.GetGraphNodesByType(ctx, postgres.GetGraphNodesByTypeParams{
+				NodeType: filter.ObjectType[0],
+				Limit:    limit,
+				Offset:   offset,
+			})
+		} else {
+			// Multiple types - use the array query
+			nodes, err = r.queries.GetGraphNodesByTypes(ctx, postgres.GetGraphNodesByTypesParams{
+				Column1: filter.ObjectType,
+				Limit:   limit,
+				Offset:  offset,
+			})
+		}
 	} else {
 		// No filter - get all nodes with pagination
 		// Use a high limit and offset to paginate through all types

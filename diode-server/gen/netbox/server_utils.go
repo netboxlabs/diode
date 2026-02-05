@@ -1,5 +1,6 @@
 // Generated code. DO NOT EDIT.
-// Timestamp: 2026-02-02 16:59:00Z
+// Source: NetBox v4.5.0
+// Timestamp: 2026-02-05 00:39:19Z
 package netbox
 
 import (
@@ -20,8 +21,6 @@ const (
 	CableObjectTypeName                     = "Cable"
 	CablePathObjectType                     = "dcim.cablepath"
 	CablePathObjectTypeName                 = "Cable Path"
-	CableTerminationObjectType              = "dcim.cabletermination"
-	CableTerminationObjectTypeName          = "Cable Termination"
 	CircuitObjectType                       = "circuits.circuit"
 	CircuitObjectTypeName                   = "Circuit"
 	CircuitGroupObjectType                  = "circuits.circuitgroup"
@@ -50,6 +49,12 @@ const (
 	ContactGroupObjectTypeName              = "Contact Group"
 	ContactRoleObjectType                   = "tenancy.contactrole"
 	ContactRoleObjectTypeName               = "Contact Role"
+	CustomFieldObjectType                   = "extras.customfield"
+	CustomFieldObjectTypeName               = "Custom Field"
+	CustomFieldChoiceSetObjectType          = "extras.customfieldchoiceset"
+	CustomFieldChoiceSetObjectTypeName      = "Custom Field Choice Set"
+	CustomLinkObjectType                    = "extras.customlink"
+	CustomLinkObjectTypeName                = "Custom Link"
 	DeviceObjectType                        = "dcim.device"
 	DeviceObjectTypeName                    = "Device"
 	DeviceBayObjectType                     = "dcim.devicebay"
@@ -84,6 +89,8 @@ const (
 	InventoryItemObjectTypeName             = "Inventory Item"
 	InventoryItemRoleObjectType             = "dcim.inventoryitemrole"
 	InventoryItemRoleObjectTypeName         = "Inventory Item Role"
+	JournalEntryObjectType                  = "extras.journalentry"
+	JournalEntryObjectTypeName              = "Journal Entry"
 	L2VPNObjectType                         = "vpn.l2vpn"
 	L2VPNObjectTypeName                     = "L2VPN"
 	L2VPNTerminationObjectType              = "vpn.l2vpntermination"
@@ -100,6 +107,12 @@ const (
 	ModuleBayObjectTypeName                 = "Module Bay"
 	ModuleTypeObjectType                    = "dcim.moduletype"
 	ModuleTypeObjectTypeName                = "Module Type"
+	ModuleTypeProfileObjectType             = "dcim.moduletypeprofile"
+	ModuleTypeProfileObjectTypeName         = "Module Type Profile"
+	OwnerObjectType                         = "users.owner"
+	OwnerObjectTypeName                     = "Owner"
+	OwnerGroupObjectType                    = "users.ownergroup"
+	OwnerGroupObjectTypeName                = "Owner Group"
 	PlatformObjectType                      = "dcim.platform"
 	PlatformObjectTypeName                  = "Platform"
 	PowerFeedObjectType                     = "dcim.powerfeed"
@@ -186,22 +199,6 @@ const (
 	WirelessLANGroupObjectTypeName          = "Wireless LAN Group"
 	WirelessLinkObjectType                  = "wireless.wirelesslink"
 	WirelessLinkObjectTypeName              = "Wireless Link"
-	CustomFieldObjectType                   = "extras.customfield"
-	CustomFieldObjectTypeName               = "Custom Field"
-	CustomFieldChoiceSetObjectType          = "extras.customfieldchoiceset"
-	CustomFieldChoiceSetObjectTypeName      = "Custom Field Choice Set"
-	JournalEntryObjectType                  = "extras.journalentry"
-	JournalEntryObjectTypeName              = "Journal Entry"
-	ModuleTypeProfileObjectType             = "dcim.moduletypeprofile"
-	ModuleTypeProfileObjectTypeName         = "Module Type Profile"
-	CustomLinkObjectType                    = "extras.customlink"
-	CustomLinkObjectTypeName                = "Custom Link"
-	OwnerObjectType                         = "users.owner"
-	OwnerObjectTypeName                     = "Owner"
-	OwnerGroupObjectType                    = "users.ownergroup"
-	OwnerGroupObjectTypeName                = "Owner Group"
-	DeviceConfigObjectType                  = "dcim.deviceconfig"
-	DeviceConfigObjectTypeName              = "Device Config"
 )
 
 // entityTypeMap provides O(1) lookup vs O(n) linear switch evaluation
@@ -211,7 +208,6 @@ var entityTypeMap = map[reflect.Type]string{
 	reflect.TypeOf((*pb.Entity_Aggregate)(nil)):                 AggregateObjectType,
 	reflect.TypeOf((*pb.Entity_Cable)(nil)):                     CableObjectType,
 	reflect.TypeOf((*pb.Entity_CablePath)(nil)):                 CablePathObjectType,
-	reflect.TypeOf((*pb.Entity_CableTermination)(nil)):          CableTerminationObjectType,
 	reflect.TypeOf((*pb.Entity_Circuit)(nil)):                   CircuitObjectType,
 	reflect.TypeOf((*pb.Entity_CircuitGroup)(nil)):              CircuitGroupObjectType,
 	reflect.TypeOf((*pb.Entity_CircuitGroupAssignment)(nil)):    CircuitGroupAssignmentObjectType,
@@ -226,6 +222,9 @@ var entityTypeMap = map[reflect.Type]string{
 	reflect.TypeOf((*pb.Entity_ContactAssignment)(nil)):         ContactAssignmentObjectType,
 	reflect.TypeOf((*pb.Entity_ContactGroup)(nil)):              ContactGroupObjectType,
 	reflect.TypeOf((*pb.Entity_ContactRole)(nil)):               ContactRoleObjectType,
+	reflect.TypeOf((*pb.Entity_CustomField)(nil)):               CustomFieldObjectType,
+	reflect.TypeOf((*pb.Entity_CustomFieldChoiceSet)(nil)):      CustomFieldChoiceSetObjectType,
+	reflect.TypeOf((*pb.Entity_CustomLink)(nil)):                CustomLinkObjectType,
 	reflect.TypeOf((*pb.Entity_Device)(nil)):                    DeviceObjectType,
 	reflect.TypeOf((*pb.Entity_DeviceBay)(nil)):                 DeviceBayObjectType,
 	reflect.TypeOf((*pb.Entity_DeviceRole)(nil)):                DeviceRoleObjectType,
@@ -243,6 +242,7 @@ var entityTypeMap = map[reflect.Type]string{
 	reflect.TypeOf((*pb.Entity_Interface)(nil)):                 InterfaceObjectType,
 	reflect.TypeOf((*pb.Entity_InventoryItem)(nil)):             InventoryItemObjectType,
 	reflect.TypeOf((*pb.Entity_InventoryItemRole)(nil)):         InventoryItemRoleObjectType,
+	reflect.TypeOf((*pb.Entity_JournalEntry)(nil)):              JournalEntryObjectType,
 	reflect.TypeOf((*pb.Entity_L2Vpn)(nil)):                     L2VPNObjectType,
 	reflect.TypeOf((*pb.Entity_L2VpnTermination)(nil)):          L2VPNTerminationObjectType,
 	reflect.TypeOf((*pb.Entity_Location)(nil)):                  LocationObjectType,
@@ -251,6 +251,9 @@ var entityTypeMap = map[reflect.Type]string{
 	reflect.TypeOf((*pb.Entity_Module)(nil)):                    ModuleObjectType,
 	reflect.TypeOf((*pb.Entity_ModuleBay)(nil)):                 ModuleBayObjectType,
 	reflect.TypeOf((*pb.Entity_ModuleType)(nil)):                ModuleTypeObjectType,
+	reflect.TypeOf((*pb.Entity_ModuleTypeProfile)(nil)):         ModuleTypeProfileObjectType,
+	reflect.TypeOf((*pb.Entity_Owner)(nil)):                     OwnerObjectType,
+	reflect.TypeOf((*pb.Entity_OwnerGroup)(nil)):                OwnerGroupObjectType,
 	reflect.TypeOf((*pb.Entity_Platform)(nil)):                  PlatformObjectType,
 	reflect.TypeOf((*pb.Entity_PowerFeed)(nil)):                 PowerFeedObjectType,
 	reflect.TypeOf((*pb.Entity_PowerOutlet)(nil)):               PowerOutletObjectType,
@@ -294,13 +297,6 @@ var entityTypeMap = map[reflect.Type]string{
 	reflect.TypeOf((*pb.Entity_WirelessLan)(nil)):               WirelessLANObjectType,
 	reflect.TypeOf((*pb.Entity_WirelessLanGroup)(nil)):          WirelessLANGroupObjectType,
 	reflect.TypeOf((*pb.Entity_WirelessLink)(nil)):              WirelessLinkObjectType,
-	reflect.TypeOf((*pb.Entity_CustomField)(nil)):               CustomFieldObjectType,
-	reflect.TypeOf((*pb.Entity_CustomFieldChoiceSet)(nil)):      CustomFieldChoiceSetObjectType,
-	reflect.TypeOf((*pb.Entity_JournalEntry)(nil)):              JournalEntryObjectType,
-	reflect.TypeOf((*pb.Entity_ModuleTypeProfile)(nil)):         ModuleTypeProfileObjectType,
-	reflect.TypeOf((*pb.Entity_CustomLink)(nil)):                CustomLinkObjectType,
-	reflect.TypeOf((*pb.Entity_Owner)(nil)):                     OwnerObjectType,
-	reflect.TypeOf((*pb.Entity_OwnerGroup)(nil)):                OwnerGroupObjectType,
 }
 
 func GetObjectType(entity *pb.Entity) (string, error) {
@@ -323,8 +319,6 @@ func GetObjectTypeName(objectType string) (string, error) {
 		return CableObjectTypeName, nil
 	case CablePathObjectType:
 		return CablePathObjectTypeName, nil
-	case CableTerminationObjectType:
-		return CableTerminationObjectTypeName, nil
 	case CircuitObjectType:
 		return CircuitObjectTypeName, nil
 	case CircuitGroupObjectType:
@@ -353,6 +347,12 @@ func GetObjectTypeName(objectType string) (string, error) {
 		return ContactGroupObjectTypeName, nil
 	case ContactRoleObjectType:
 		return ContactRoleObjectTypeName, nil
+	case CustomFieldObjectType:
+		return CustomFieldObjectTypeName, nil
+	case CustomFieldChoiceSetObjectType:
+		return CustomFieldChoiceSetObjectTypeName, nil
+	case CustomLinkObjectType:
+		return CustomLinkObjectTypeName, nil
 	case DeviceObjectType:
 		return DeviceObjectTypeName, nil
 	case DeviceBayObjectType:
@@ -387,6 +387,8 @@ func GetObjectTypeName(objectType string) (string, error) {
 		return InventoryItemObjectTypeName, nil
 	case InventoryItemRoleObjectType:
 		return InventoryItemRoleObjectTypeName, nil
+	case JournalEntryObjectType:
+		return JournalEntryObjectTypeName, nil
 	case L2VPNObjectType:
 		return L2VPNObjectTypeName, nil
 	case L2VPNTerminationObjectType:
@@ -403,6 +405,12 @@ func GetObjectTypeName(objectType string) (string, error) {
 		return ModuleBayObjectTypeName, nil
 	case ModuleTypeObjectType:
 		return ModuleTypeObjectTypeName, nil
+	case ModuleTypeProfileObjectType:
+		return ModuleTypeProfileObjectTypeName, nil
+	case OwnerObjectType:
+		return OwnerObjectTypeName, nil
+	case OwnerGroupObjectType:
+		return OwnerGroupObjectTypeName, nil
 	case PlatformObjectType:
 		return PlatformObjectTypeName, nil
 	case PowerFeedObjectType:
@@ -489,22 +497,6 @@ func GetObjectTypeName(objectType string) (string, error) {
 		return WirelessLANGroupObjectTypeName, nil
 	case WirelessLinkObjectType:
 		return WirelessLinkObjectTypeName, nil
-	case CustomFieldObjectType:
-		return CustomFieldObjectTypeName, nil
-	case CustomFieldChoiceSetObjectType:
-		return CustomFieldChoiceSetObjectTypeName, nil
-	case JournalEntryObjectType:
-		return JournalEntryObjectTypeName, nil
-	case ModuleTypeProfileObjectType:
-		return ModuleTypeProfileObjectTypeName, nil
-	case CustomLinkObjectType:
-		return CustomLinkObjectTypeName, nil
-	case OwnerObjectType:
-		return OwnerObjectTypeName, nil
-	case OwnerGroupObjectType:
-		return OwnerGroupObjectTypeName, nil
-	case DeviceConfigObjectType:
-		return DeviceConfigObjectTypeName, nil
 	default:
 		return "", fmt.Errorf("unknown object type: %v", objectType)
 	}
