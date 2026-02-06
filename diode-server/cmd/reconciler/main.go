@@ -134,6 +134,8 @@ func main() {
 	}
 	defer dbPool.Close()
 
+	var graphBuilder *reconciler.GraphBuilder
+
 	repository := postgres.NewRepository(dbPool)
 
 	// Initialize GraphBuilder if graph DB feature is enabled
@@ -160,7 +162,7 @@ func main() {
 		graphQueries := dbpostgres.New(dbPool)
 
 		// Create GraphBuilder with graph queries
-		graphBuilder := reconciler.NewGraphBuilder(graphQueries, s.Logger())
+		graphBuilder = reconciler.NewGraphBuilder(graphQueries, s.Logger())
 
 		// Set up entity matcher if matching config was loaded
 		if matchingConfig != nil {
@@ -222,7 +224,7 @@ func main() {
 	}
 
 	authorizer := authutil.NewContextAuthorizer(s.Logger())
-	gRPCServer, err := reconciler.NewServer(ctx, s.Logger(), repository, serverInterceptors(authorizer, s.Logger())...)
+	gRPCServer, err := reconciler.NewServer(ctx, s.Logger(), repository, graphBuilder, serverInterceptors(authorizer, s.Logger())...)
 	if err != nil {
 		s.Logger().Error("failed to instantiate gRPC server", "error", err)
 		metricRecorder.RecordServiceStartupAttempt(ctx, false)

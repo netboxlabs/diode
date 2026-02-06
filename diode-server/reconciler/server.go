@@ -27,10 +27,11 @@ type Server struct {
 	grpcServer   *grpc.Server
 	redisClient  RedisClient
 	repository   Repository
+	graphdb      *GraphBuilder
 }
 
 // NewServer creates a new reconciler server
-func NewServer(ctx context.Context, logger *slog.Logger, repository Repository, serverInterceptors ...grpc.UnaryServerInterceptor) (*Server, error) {
+func NewServer(ctx context.Context, logger *slog.Logger, repository Repository, graphdb *GraphBuilder, serverInterceptors ...grpc.UnaryServerInterceptor) (*Server, error) {
 	var cfg Config
 	envconfig.MustProcess("", &cfg)
 
@@ -71,6 +72,7 @@ func NewServer(ctx context.Context, logger *slog.Logger, repository Repository, 
 		grpcServer:   grpcServer,
 		redisClient:  redisClient,
 		repository:   repository,
+		graphdb:      graphdb,
 	}
 
 	reconcilerpb.RegisterReconcilerServiceServer(grpcServer, component)
@@ -123,6 +125,9 @@ func (s *Server) ListEntities(_ context.Context, _ *reconcilerpb.ListEntitiesReq
 }
 
 // CreateEntity creates an entity synchronously in the graph database (idempotent - returns existing ID if entity already exists)
-func (s *Server) CreateEntity(_ context.Context, _ *reconcilerpb.CreateEntityRequest) (*reconcilerpb.CreateEntityResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateEntity not implemented")
+func (s *Server) CreateEntity(ctx context.Context, req *reconcilerpb.CreateEntityRequest) (*reconcilerpb.CreateEntityResponse, error) {
+	if s.graphdb == nil {
+		return nil, status.Errorf(codes.Unavailable, "graph database not available")
+	}
+	return createEntity(ctx, s.graphdb, req)
 }
