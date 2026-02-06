@@ -7,10 +7,11 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
+	"google.golang.org/protobuf/encoding/protojson"
+
 	"github.com/netboxlabs/diode/diode-server/entityhash"
 	"github.com/netboxlabs/diode/diode-server/gen/dbstore/postgres"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
-	"google.golang.org/protobuf/encoding/protojson"
 )
 
 func createEntity(ctx context.Context, graphdb GraphRepository, req *reconcilerpb.CreateEntityRequest) (*reconcilerpb.CreateEntityResponse, error) {
