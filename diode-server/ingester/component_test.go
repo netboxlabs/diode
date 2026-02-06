@@ -76,6 +76,7 @@ const bufSize = 1024 * 1024
 func startReconcilerServer(ctx context.Context, t *testing.T) *reconciler.Server {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
 	mockRepository := mocks.NewRepository(t)
+	mockGraphRepository := mocks.NewGraphRepository(t)
 	authorizer := authutil.NewContextAuthorizer(logger)
 	serverInterceptors := []grpc.UnaryServerInterceptor{
 		authutil.NewUnverifiedJWTInterceptor(logger),
@@ -86,7 +87,7 @@ func startReconcilerServer(ctx context.Context, t *testing.T) *reconciler.Server
 			return handler(ctx, req)
 		},
 	}
-	server, err := reconciler.NewServer(ctx, logger, mockRepository, serverInterceptors...)
+	server, err := reconciler.NewServer(ctx, logger, mockRepository, mockGraphRepository, serverInterceptors...)
 	require.NoError(t, err)
 
 	errChan := make(chan error, 1)

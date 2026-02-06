@@ -26,6 +26,7 @@ func TestNewServer(t *testing.T) {
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
 	mockRepository := mocks.NewRepository(t)
+	mockGraphRepository := mocks.NewGraphRepository(t)
 	authorizer := authutil.NewContextAuthorizer(logger)
 	serverInterceptors := []grpc.UnaryServerInterceptor{
 		authutil.NewUnverifiedJWTInterceptor(logger),
@@ -36,7 +37,7 @@ func TestNewServer(t *testing.T) {
 			return handler(ctx, req)
 		},
 	}
-	server, err := reconciler.NewServer(ctx, logger, mockRepository, serverInterceptors...)
+	server, err := reconciler.NewServer(ctx, logger, mockRepository, mockGraphRepository, serverInterceptors...)
 	require.NoError(t, err)
 	require.NotNil(t, server)
 

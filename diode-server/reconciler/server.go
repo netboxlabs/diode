@@ -27,11 +27,11 @@ type Server struct {
 	grpcServer   *grpc.Server
 	redisClient  RedisClient
 	repository   Repository
-	graphdb      *GraphBuilder
+	graphdb      GraphRepository
 }
 
 // NewServer creates a new reconciler server
-func NewServer(ctx context.Context, logger *slog.Logger, repository Repository, graphdb *GraphBuilder, serverInterceptors ...grpc.UnaryServerInterceptor) (*Server, error) {
+func NewServer(ctx context.Context, logger *slog.Logger, repository Repository, graphdb GraphRepository, serverInterceptors ...grpc.UnaryServerInterceptor) (*Server, error) {
 	var cfg Config
 	envconfig.MustProcess("", &cfg)
 
