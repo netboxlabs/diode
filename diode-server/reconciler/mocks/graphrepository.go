@@ -706,6 +706,65 @@ func (_c *GraphRepository_InsertSnapshot_Call) RunAndReturn(run func(context.Con
 	return _c
 }
 
+// ListGraphNodes provides a mock function with given fields: ctx, arg
+func (_m *GraphRepository) ListGraphNodes(ctx context.Context, arg postgres.ListGraphNodesParams) ([]postgres.GraphNode, error) {
+	ret := _m.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListGraphNodes")
+	}
+
+	var r0 []postgres.GraphNode
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, postgres.ListGraphNodesParams) ([]postgres.GraphNode, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, postgres.ListGraphNodesParams) []postgres.GraphNode); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]postgres.GraphNode)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, postgres.ListGraphNodesParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GraphRepository_ListGraphNodes_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListGraphNodes'
+type GraphRepository_ListGraphNodes_Call struct {
+	*mock.Call
+}
+
+// ListGraphNodes is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg postgres.ListGraphNodesParams
+func (_e *GraphRepository_Expecter) ListGraphNodes(ctx interface{}, arg interface{}) *GraphRepository_ListGraphNodes_Call {
+	return &GraphRepository_ListGraphNodes_Call{Call: _e.mock.On("ListGraphNodes", ctx, arg)}
+}
+
+func (_c *GraphRepository_ListGraphNodes_Call) Run(run func(ctx context.Context, arg postgres.ListGraphNodesParams)) *GraphRepository_ListGraphNodes_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(postgres.ListGraphNodesParams))
+	})
+	return _c
+}
+
+func (_c *GraphRepository_ListGraphNodes_Call) Return(_a0 []postgres.GraphNode, _a1 error) *GraphRepository_ListGraphNodes_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *GraphRepository_ListGraphNodes_Call) RunAndReturn(run func(context.Context, postgres.ListGraphNodesParams) ([]postgres.GraphNode, error)) *GraphRepository_ListGraphNodes_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // UpdateGraphNodeData provides a mock function with given fields: ctx, arg
 func (_m *GraphRepository) UpdateGraphNodeData(ctx context.Context, arg postgres.UpdateGraphNodeDataParams) (postgres.GraphNode, error) {
 	ret := _m.Called(ctx, arg)

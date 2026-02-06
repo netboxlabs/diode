@@ -267,3 +267,22 @@ UPDATE graph_nodes
 SET metadata = graph_nodes.metadata || $3, updated_at = NOW()
 WHERE node_type = $1 AND external_id = $2
 RETURNING id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts, metadata, content_hash;
+
+-- name: ListGraphNodes :many
+-- Lists graph nodes with optional filtering by types, metadata, and timestamp range.
+-- All filters are optional - pass NULL/empty to skip filtering.
+-- node_types: pass NULL or empty array to list all types
+-- metadata_filter: pass NULL to skip metadata filtering (uses GIN index when provided)
+-- ts_start/ts_end: pass NULL to skip timestamp range filtering
+SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts, metadata, content_hash
+FROM graph_nodes
+WHERE
+  -- Filter by node types (optional)
+  (sqlc.narg('node_types')::text[] IS NULL OR array_length(sqlc.narg('node_types')::text[], 1) IS NULL OR node_type = ANY(sqlc.narg('node_types')::text[]))
+  -- Filter by metadata (optional)
+  AND (sqlc.narg('metadata_filter')::jsonb IS NULL OR metadata @> sqlc.narg('metadata_filter')::jsonb)
+  -- Filter by timestamp range (optional)
+  AND (sqlc.narg('ts_start')::timestamptz IS NULL OR last_seen_ts >= sqlc.narg('ts_start')::timestamptz)
+  AND (sqlc.narg('ts_end')::timestamptz IS NULL OR last_seen_ts <= sqlc.narg('ts_end')::timestamptz)
+ORDER BY last_seen_ts DESC, id
+LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');

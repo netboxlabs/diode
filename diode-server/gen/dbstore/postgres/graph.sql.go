@@ -886,6 +886,74 @@ func (q *Queries) InsertSnapshot(ctx context.Context, arg InsertSnapshotParams) 
 	return i, err
 }
 
+const listGraphNodes = `-- name: ListGraphNodes :many
+SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts, metadata, content_hash
+FROM graph_nodes
+WHERE
+  -- Filter by node types (optional)
+  ($1::text[] IS NULL OR array_length($1::text[], 1) IS NULL OR node_type = ANY($1::text[]))
+  -- Filter by metadata (optional)
+  AND ($2::jsonb IS NULL OR metadata @> $2::jsonb)
+  -- Filter by timestamp range (optional)
+  AND ($3::timestamptz IS NULL OR last_seen_ts >= $3::timestamptz)
+  AND ($4::timestamptz IS NULL OR last_seen_ts <= $4::timestamptz)
+ORDER BY last_seen_ts DESC, id
+LIMIT $6 OFFSET $5
+`
+
+type ListGraphNodesParams struct {
+	NodeTypes      []string           `json:"node_types"`
+	MetadataFilter []byte             `json:"metadata_filter"`
+	TsStart        pgtype.Timestamptz `json:"ts_start"`
+	TsEnd          pgtype.Timestamptz `json:"ts_end"`
+	Offset         int32              `json:"offset"`
+	Limit          int32              `json:"limit"`
+}
+
+// Lists graph nodes with optional filtering by types, metadata, and timestamp range.
+// All filters are optional - pass NULL/empty to skip filtering.
+// node_types: pass NULL or empty array to list all types
+// metadata_filter: pass NULL to skip metadata filtering (uses GIN index when provided)
+// ts_start/ts_end: pass NULL to skip timestamp range filtering
+func (q *Queries) ListGraphNodes(ctx context.Context, arg ListGraphNodesParams) ([]GraphNode, error) {
+	rows, err := q.db.Query(ctx, listGraphNodes,
+		arg.NodeTypes,
+		arg.MetadataFilter,
+		arg.TsStart,
+		arg.TsEnd,
+		arg.Offset,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GraphNode
+	for rows.Next() {
+		var i GraphNode
+		if err := rows.Scan(
+			&i.ID,
+			&i.ExternalID,
+			&i.NodeType,
+			&i.Data,
+			&i.DuplicateCount,
+			&i.MatchingSchemaVersion,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.LastSeenTs,
+			&i.Metadata,
+			&i.ContentHash,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const searchGraphNodes = `-- name: SearchGraphNodes :many
 SELECT id, external_id, node_type, data, duplicate_count, matching_schema_version, created_at, updated_at, last_seen_ts, metadata, content_hash
 FROM graph_nodes

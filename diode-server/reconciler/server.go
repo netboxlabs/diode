@@ -120,8 +120,11 @@ func (s *Server) RetrieveDeviationByID(ctx context.Context, req *reconcilerpb.Re
 }
 
 // ListEntities lists observed entities with filtering
-func (s *Server) ListEntities(_ context.Context, _ *reconcilerpb.ListEntitiesRequest) (*reconcilerpb.ListEntitiesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListEntities not implemented")
+func (s *Server) ListEntities(ctx context.Context, req *reconcilerpb.ListEntitiesRequest) (*reconcilerpb.ListEntitiesResponse, error) {
+	if s.graphdb == nil {
+		return nil, status.Errorf(codes.Unavailable, "graph database not available")
+	}
+	return listEntities(ctx, s.graphdb, req)
 }
 
 // CreateEntity creates an entity synchronously in the graph database (idempotent - returns existing ID if entity already exists)

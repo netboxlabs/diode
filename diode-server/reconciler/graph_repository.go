@@ -37,6 +37,7 @@ type GraphRepository interface {
 	GetGraphNodesByType(ctx context.Context, arg postgres.GetGraphNodesByTypeParams) ([]postgres.GraphNode, error)
 	FindNodeByMetadata(ctx context.Context, arg postgres.FindNodeByMetadataParams) (postgres.GraphNode, error)
 	FindNodeByContentHash(ctx context.Context, arg postgres.FindNodeByContentHashParams) (postgres.GraphNode, error)
+	ListGraphNodes(ctx context.Context, arg postgres.ListGraphNodesParams) ([]postgres.GraphNode, error)
 
 	// Snapshot management
 	InsertSnapshot(ctx context.Context, arg postgres.InsertSnapshotParams) (postgres.GraphNodeSnapshot, error)
