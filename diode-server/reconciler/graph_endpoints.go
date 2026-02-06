@@ -7,9 +7,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/netboxlabs/diode/diode-server/entityhash"
 	"github.com/netboxlabs/diode/diode-server/gen/dbstore/postgres"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
-	"github.com/netboxlabs/diode/diode-server/entityhash"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
