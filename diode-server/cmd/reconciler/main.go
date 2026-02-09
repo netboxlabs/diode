@@ -134,6 +134,8 @@ func main() {
 	}
 	defer dbPool.Close()
 
+	var graphRepo *postgres.GraphRepository
+
 	repository := postgres.NewRepository(dbPool)
 
 	// Initialize GraphBuilder if graph DB feature is enabled
@@ -157,7 +159,7 @@ func main() {
 		}
 
 		// Create graph repository adapter
-		graphRepo := postgres.NewGraphRepository(dbPool)
+		graphRepo = postgres.NewGraphRepository(dbPool)
 
 		// Create Builder with graph repository
 		var builderOpts []graph.BuilderOption
