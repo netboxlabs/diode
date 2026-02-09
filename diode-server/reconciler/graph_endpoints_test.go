@@ -262,7 +262,7 @@ func TestCreateEntity_IdempotencyBroken(t *testing.T) {
 	var capturedExternalIDs []string
 
 	mockRepo := mocks.NewGraphRepository(t)
-	mockRepo.EXPECT().UpsertGraphNode(ctx, mock.Anything).Run(func(ctx context.Context, arg postgres.UpsertGraphNodeParams) {
+	mockRepo.EXPECT().UpsertGraphNode(ctx, mock.Anything).Run(func(_ context.Context, arg postgres.UpsertGraphNodeParams) {
 		capturedExternalIDs = append(capturedExternalIDs, arg.ExternalID)
 	}).Return(postgres.GraphNode{
 		ID:                    1,
@@ -408,7 +408,7 @@ func TestCreateEntity_ContentHashGeneration(t *testing.T) {
 		MatchingSchemaVersion: CurrentSchemaVersion,
 	}
 
-	mockRepo.EXPECT().UpsertGraphNode(ctx, mock.Anything).Run(func(ctx context.Context, arg postgres.UpsertGraphNodeParams) {
+	mockRepo.EXPECT().UpsertGraphNode(ctx, mock.Anything).Run(func(_ context.Context, arg postgres.UpsertGraphNodeParams) {
 		capturedContentHash = arg.ContentHash
 	}).Return(expectedNode, nil).Once()
 
@@ -444,7 +444,7 @@ func TestCreateEntity_MetadataDefaultsToEmptyObject(t *testing.T) {
 		MatchingSchemaVersion: CurrentSchemaVersion,
 	}
 
-	mockRepo.EXPECT().UpsertGraphNode(ctx, mock.Anything).Run(func(ctx context.Context, arg postgres.UpsertGraphNodeParams) {
+	mockRepo.EXPECT().UpsertGraphNode(ctx, mock.Anything).Run(func(_ context.Context, arg postgres.UpsertGraphNodeParams) {
 		capturedMetadata = arg.Metadata
 	}).Return(expectedNode, nil).Once()
 
