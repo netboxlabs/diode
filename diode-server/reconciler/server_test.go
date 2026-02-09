@@ -12,6 +12,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/netboxlabs/diode/diode-server/authutil"
+	gmocks "github.com/netboxlabs/diode/diode-server/graph/mocks"
 	"github.com/netboxlabs/diode/diode-server/reconciler"
 	"github.com/netboxlabs/diode/diode-server/reconciler/mocks"
 )
@@ -26,6 +27,7 @@ func TestNewServer(t *testing.T) {
 
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
 	mockRepository := mocks.NewRepository(t)
+	mockGraphs := gmocks.NewRepository(t)
 	authorizer := authutil.NewContextAuthorizer(logger)
 	serverInterceptors := []grpc.UnaryServerInterceptor{
 		authutil.NewUnverifiedJWTInterceptor(logger),
@@ -36,7 +38,7 @@ func TestNewServer(t *testing.T) {
 			return handler(ctx, req)
 		},
 	}
-	server, err := reconciler.NewServer(ctx, logger, mockRepository, serverInterceptors...)
+	server, err := reconciler.NewServer(ctx, logger, mockRepository, mockGraphs, serverInterceptors...)
 	require.NoError(t, err)
 	require.NotNil(t, server)
 
