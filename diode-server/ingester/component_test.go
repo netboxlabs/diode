@@ -20,6 +20,7 @@ import (
 
 	"github.com/netboxlabs/diode/diode-server/authutil"
 	pb "github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
+	gmocks "github.com/netboxlabs/diode/diode-server/graph/mocks"
 	"github.com/netboxlabs/diode/diode-server/ingester"
 	"github.com/netboxlabs/diode/diode-server/reconciler"
 	"github.com/netboxlabs/diode/diode-server/reconciler/mocks"
@@ -76,6 +77,7 @@ const bufSize = 1024 * 1024
 func startReconcilerServer(ctx context.Context, t *testing.T) *reconciler.Server {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
 	mockRepository := mocks.NewRepository(t)
+	mockGraphs := gmocks.NewRepository(t)
 	authorizer := authutil.NewContextAuthorizer(logger)
 	serverInterceptors := []grpc.UnaryServerInterceptor{
 		authutil.NewUnverifiedJWTInterceptor(logger),
@@ -86,7 +88,7 @@ func startReconcilerServer(ctx context.Context, t *testing.T) *reconciler.Server
 			return handler(ctx, req)
 		},
 	}
-	server, err := reconciler.NewServer(ctx, logger, mockRepository, serverInterceptors...)
+	server, err := reconciler.NewServer(ctx, logger, mockRepository, mockGraphs, serverInterceptors...)
 	require.NoError(t, err)
 
 	errChan := make(chan error, 1)
