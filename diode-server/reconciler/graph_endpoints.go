@@ -3,10 +3,11 @@ package reconciler
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/netboxlabs/diode/diode-server/entityhash"
@@ -17,13 +18,13 @@ import (
 func createEntity(ctx context.Context, graphdb GraphRepository, req *reconcilerpb.CreateEntityRequest) (*reconcilerpb.CreateEntityResponse, error) {
 	entity := req.GetEntity()
 	if entity == nil || entity.GetEntity() == nil {
-		return nil, fmt.Errorf("entity is required")
+		return nil, status.Error(codes.InvalidArgument, "entity is required")
 	}
 
 	// Extract node type from entity
 	nodeType := getEntityTypeName(entity)
 	if nodeType == "" {
-		return nil, fmt.Errorf("failed to determine entity type")
+		return nil, status.Error(codes.InvalidArgument, "failed to determine entity type")
 	}
 
 	// Generate new UUID for external ID
@@ -32,7 +33,7 @@ func createEntity(ctx context.Context, graphdb GraphRepository, req *reconcilerp
 	// Marshal entity data
 	entityData, err := protojson.Marshal(entity)
 	if err != nil {
-		return nil, fmt.Errorf("failed to marshal entity: %w", err)
+		return nil, status.Errorf(codes.Internal, "failed to marshal entity: %v", err)
 	}
 
 	// Convert request metadata to JSON
@@ -40,7 +41,7 @@ func createEntity(ctx context.Context, graphdb GraphRepository, req *reconcilerp
 	if req.GetMetadata() != nil {
 		metadataBytes, err := req.GetMetadata().MarshalJSON()
 		if err != nil {
-			return nil, fmt.Errorf("failed to marshal metadata: %w", err)
+			return nil, status.Errorf(codes.Internal, "failed to marshal metadata: %v", err)
 		}
 		metadata = metadataBytes
 	} else {
@@ -51,7 +52,7 @@ func createEntity(ctx context.Context, graphdb GraphRepository, req *reconcilerp
 	fingerprinter := entityhash.NewEntityFingerprinter()
 	contentHash, err := fingerprinter.GenerateEntityHash(entity)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate entity hash: %w", err)
+		return nil, status.Errorf(codes.Internal, "failed to generate entity hash: %v", err)
 	}
 
 	args := postgres.UpsertGraphNodeParams{
