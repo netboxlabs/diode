@@ -458,7 +458,7 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 		// Upsert entity into graph if graph DB is enabled (non-blocking, errors logged but not fatal)
 		if p.graphBuilder != nil {
 			if _, err := p.graphBuilder.UpsertEntity(ctx, v); err != nil {
-				p.logger.Warn("graph extraction failed",
+				p.logger.Warn("graph upsert entity failed",
 					"error", err,
 					"ingestion_log_id", id,
 					"entity_type", objectType)
