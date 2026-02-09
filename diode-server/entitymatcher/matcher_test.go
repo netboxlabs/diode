@@ -2,6 +2,7 @@ package entitymatcher
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log/slog"
 	"os"
@@ -11,55 +12,121 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/netboxlabs/diode/diode-server/gen/dbstore/postgres"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
+	"github.com/netboxlabs/diode/diode-server/graph"
 	"github.com/netboxlabs/diode/diode-server/matching"
-	"github.com/netboxlabs/diode/diode-server/reconciler/mocks"
 )
 
-// setupMockRepository sets up the mockery-generated GraphRepository with test expectations
-func setupMockRepository(_ *testing.T) *mocks.GraphRepository {
-	mockRepo := &mocks.GraphRepository{}
+// mockNodeFinder is an inline mock that implements NodeFinder.
+// We cannot import entitymatcher/mocks from package entitymatcher (import cycle),
+// so we define a minimal testify mock here.
+type mockNodeFinder struct {
+	mock.Mock
+}
+
+func (m *mockNodeFinder) FindNodesByFieldMatch(ctx context.Context, arg graph.FindNodesByFieldMatchParams) ([]graph.Node, error) {
+	ret := m.Called(ctx, arg)
+	var r0 []graph.Node
+	if rf, ok := ret.Get(0).(func(context.Context, graph.FindNodesByFieldMatchParams) ([]graph.Node, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, graph.FindNodesByFieldMatchParams) []graph.Node); ok {
+		r0 = rf(ctx, arg)
+	} else if ret.Get(0) != nil {
+		r0 = ret.Get(0).([]graph.Node)
+	}
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, graph.FindNodesByFieldMatchParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+func (m *mockNodeFinder) GetNodesByType(ctx context.Context, arg graph.GetNodesByTypeParams) ([]graph.Node, error) {
+	ret := m.Called(ctx, arg)
+	var r0 []graph.Node
+	if rf, ok := ret.Get(0).(func(context.Context, graph.GetNodesByTypeParams) ([]graph.Node, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, graph.GetNodesByTypeParams) []graph.Node); ok {
+		r0 = rf(ctx, arg)
+	} else if ret.Get(0) != nil {
+		r0 = ret.Get(0).([]graph.Node)
+	}
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, graph.GetNodesByTypeParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+func (m *mockNodeFinder) FindNodeByMetadata(ctx context.Context, arg graph.FindNodeByMetadataParams) (graph.Node, error) {
+	ret := m.Called(ctx, arg)
+	var r0 graph.Node
+	if rf, ok := ret.Get(0).(func(context.Context, graph.FindNodeByMetadataParams) (graph.Node, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, graph.FindNodeByMetadataParams) graph.Node); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(graph.Node)
+	}
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, graph.FindNodeByMetadataParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// setupMockRepository sets up the mockNodeFinder with test expectations
+func setupMockRepository(_ *testing.T) *mockNodeFinder {
+	mockRepo := &mockNodeFinder{}
 
 	// Setup test nodes
-	testNodes := []postgres.GraphNode{
+	testNodes := []graph.Node{
 		{
 			ID:             1,
 			ExternalID:     "device-01",
 			NodeType:       "Device",
-			Data:           []byte(`{"Device": {"name": "server-01", "serial": "ABC123"}}`),
+			Data:           json.RawMessage(`{"Device": {"name": "server-01", "serial": "ABC123"}}`),
 			DuplicateCount: 1,
 		},
 		{
 			ID:             2,
 			ExternalID:     "device-02",
 			NodeType:       "Device",
-			Data:           []byte(`{"Device": {"name": "server-02", "serial": "DEF456"}}`),
+			Data:           json.RawMessage(`{"Device": {"name": "server-02", "serial": "DEF456"}}`),
 			DuplicateCount: 1,
 		},
 	}
 
 	// Mock FindNodesByFieldMatch - return matching node based on field
-	mockRepo.On("FindNodesByFieldMatch", mock.Anything, mock.Anything).Return(func(_ context.Context, arg postgres.FindNodesByFieldMatchParams) []postgres.GraphNode {
-		if !arg.JsonField.Valid {
-			return []postgres.GraphNode{}
+	mockRepo.On("FindNodesByFieldMatch", mock.Anything, mock.Anything).Return(func(_ context.Context, arg graph.FindNodesByFieldMatchParams) []graph.Node {
+		if arg.JSONField == "" {
+			return []graph.Node{}
 		}
-		fieldName := arg.JsonField.String
-		fieldValue := arg.FieldValue.String
+		fieldName := arg.JSONField
+		fieldValue := arg.FieldValue
 
 		for _, node := range testNodes {
 			if node.NodeType == arg.NodeType {
 				if fieldName == "Device.serial" && fieldValue == "ABC123" {
-					return []postgres.GraphNode{testNodes[0]}
+					return []graph.Node{testNodes[0]}
 				}
 			}
 		}
-		return []postgres.GraphNode{}
+		return []graph.Node{}
 	}, nil)
 
-	// Mock GetGraphNodesByType - needed for fuzzy matching to get all nodes of a type
-	mockRepo.On("GetGraphNodesByType", mock.Anything, mock.Anything).Return(func(_ context.Context, arg postgres.GetGraphNodesByTypeParams) []postgres.GraphNode {
-		var result []postgres.GraphNode
+	// Mock GetNodesByType - needed for fuzzy matching to get all nodes of a type
+	mockRepo.On("GetNodesByType", mock.Anything, mock.Anything).Return(func(_ context.Context, arg graph.GetNodesByTypeParams) []graph.Node {
+		var result []graph.Node
 		for _, node := range testNodes {
 			if node.NodeType == arg.NodeType {
 				result = append(result, node)
@@ -249,7 +316,7 @@ func TestDefaultEntityMatchingConfig(t *testing.T) {
 }
 
 func TestNewMatcherWithNilConfig(t *testing.T) {
-	mockRepo := &mocks.GraphRepository{}
+	mockRepo := &mockNodeFinder{}
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 
 	matcher := NewMatcher(mockRepo, nil, logger)
@@ -411,7 +478,7 @@ func TestDeduplicateCandidates(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 	matcher := &Matcher{logger: logger}
 
-	candidates := []*GraphNode{
+	candidates := []*graph.Node{
 		{ID: 1, ExternalID: "node-1"},
 		{ID: 2, ExternalID: "node-2"},
 		{ID: 1, ExternalID: "node-1"}, // duplicate
@@ -436,7 +503,7 @@ func TestDeduplicateCandidates(t *testing.T) {
 }
 
 func TestUpdateMatchingRule(t *testing.T) {
-	mockRepo := &mocks.GraphRepository{}
+	mockRepo := &mockNodeFinder{}
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 	config := &matching.EntityMatchingConfig{
 		Rules:        make(map[string]*matching.EntityMatchingRule),
@@ -474,7 +541,7 @@ func TestUpdateMatchingRule(t *testing.T) {
 }
 
 func TestGetMatchingRuleNotFound(t *testing.T) {
-	mockRepo := &mocks.GraphRepository{}
+	mockRepo := &mockNodeFinder{}
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 	config := &matching.EntityMatchingConfig{
 		Rules: make(map[string]*matching.EntityMatchingRule),
@@ -488,7 +555,7 @@ func TestGetMatchingRuleNotFound(t *testing.T) {
 }
 
 func TestFindMatchesNilEntity(t *testing.T) {
-	mockRepo := &mocks.GraphRepository{}
+	mockRepo := &mockNodeFinder{}
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 	config := createTestMatchingConfig()
 	matcher := NewMatcher(mockRepo, config, logger)
@@ -500,7 +567,7 @@ func TestFindMatchesNilEntity(t *testing.T) {
 }
 
 func TestFindMatchesNoMatchingRule(t *testing.T) {
-	mockRepo := &mocks.GraphRepository{}
+	mockRepo := &mockNodeFinder{}
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 	config := &matching.EntityMatchingConfig{
 		Rules: make(map[string]*matching.EntityMatchingRule),
@@ -526,7 +593,7 @@ func TestFindMatchesNoMatchingRule(t *testing.T) {
 }
 
 func TestFindBestMatchNoMatches(t *testing.T) {
-	mockRepo := &mocks.GraphRepository{}
+	mockRepo := &mockNodeFinder{}
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 	config := &matching.EntityMatchingConfig{
 		Rules: make(map[string]*matching.EntityMatchingRule),
@@ -687,26 +754,26 @@ func TestCompareFieldValuesAllTypes(t *testing.T) {
 }
 
 func TestSecondaryFieldMatching(t *testing.T) {
-	mockRepo := &mocks.GraphRepository{}
+	mockRepo := &mockNodeFinder{}
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
 	// Setup mock to return nodes when queried
-	testNodes := []postgres.GraphNode{
+	testNodes := []graph.Node{
 		{
 			ID:             1,
 			ExternalID:     "device-01",
 			NodeType:       "Device",
-			Data:           []byte(`{"Device": {"name": "server-01", "description": "Primary server"}}`),
+			Data:           json.RawMessage(`{"Device": {"name": "server-01", "description": "Primary server"}}`),
 			DuplicateCount: 1,
 		},
 	}
 
-	mockRepo.On("FindNodesByFieldMatch", mock.Anything, mock.MatchedBy(func(arg postgres.FindNodesByFieldMatchParams) bool {
-		return arg.NodeType == "Device" && arg.JsonField.String == "Device.description"
+	mockRepo.On("FindNodesByFieldMatch", mock.Anything, mock.MatchedBy(func(arg graph.FindNodesByFieldMatchParams) bool {
+		return arg.NodeType == "Device" && arg.JSONField == "Device.description"
 	})).Return(testNodes, nil)
 
-	mockRepo.On("FindNodesByFieldMatch", mock.Anything, mock.Anything).Return([]postgres.GraphNode{}, nil)
-	mockRepo.On("GetGraphNodesByType", mock.Anything, mock.Anything).Return([]postgres.GraphNode{}, nil)
+	mockRepo.On("FindNodesByFieldMatch", mock.Anything, mock.Anything).Return([]graph.Node{}, nil)
+	mockRepo.On("GetNodesByType", mock.Anything, mock.Anything).Return([]graph.Node{}, nil)
 
 	config := &matching.EntityMatchingConfig{
 		Rules: map[string]*matching.EntityMatchingRule{
@@ -758,22 +825,22 @@ func TestSecondaryFieldMatching(t *testing.T) {
 }
 
 func TestFallbackStrategyMatching(t *testing.T) {
-	mockRepo := &mocks.GraphRepository{}
+	mockRepo := &mockNodeFinder{}
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
 	// Setup mock to return nodes for fallback query
-	testNodes := []postgres.GraphNode{
+	testNodes := []graph.Node{
 		{
 			ID:             1,
 			ExternalID:     "device-01",
 			NodeType:       "Device",
-			Data:           []byte(`{"Device": {"name": "server-01"}}`),
+			Data:           json.RawMessage(`{"Device": {"name": "server-01"}}`),
 			DuplicateCount: 1,
 		},
 	}
 
-	mockRepo.On("FindNodesByFieldMatch", mock.Anything, mock.Anything).Return([]postgres.GraphNode{}, nil)
-	mockRepo.On("GetGraphNodesByType", mock.Anything, mock.MatchedBy(func(arg postgres.GetGraphNodesByTypeParams) bool {
+	mockRepo.On("FindNodesByFieldMatch", mock.Anything, mock.Anything).Return([]graph.Node{}, nil)
+	mockRepo.On("GetNodesByType", mock.Anything, mock.MatchedBy(func(arg graph.GetNodesByTypeParams) bool {
 		return arg.NodeType == "Device"
 	})).Return(testNodes, nil)
 
@@ -909,7 +976,7 @@ func TestExtractFieldValueWithStruct(t *testing.T) {
 }
 
 func TestCacheEviction(t *testing.T) {
-	mockRepo := &mocks.GraphRepository{}
+	mockRepo := &mockNodeFinder{}
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
 	config := &matching.EntityMatchingConfig{
@@ -941,7 +1008,7 @@ func TestCacheEviction(t *testing.T) {
 }
 
 func TestCacheDisabled(t *testing.T) {
-	mockRepo := &mocks.GraphRepository{}
+	mockRepo := &mockNodeFinder{}
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
 	config := &matching.EntityMatchingConfig{
@@ -971,7 +1038,7 @@ func TestCacheDisabled(t *testing.T) {
 }
 
 func TestClearCacheForEntityType(t *testing.T) {
-	mockRepo := &mocks.GraphRepository{}
+	mockRepo := &mockNodeFinder{}
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 
 	config := &matching.EntityMatchingConfig{
@@ -1010,7 +1077,7 @@ func TestClearCacheForEntityType(t *testing.T) {
 }
 
 func TestEntityToMapEmptyEntity(t *testing.T) {
-	mockRepo := &mocks.GraphRepository{}
+	mockRepo := &mockNodeFinder{}
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 	config := DefaultEntityMatchingConfig()
 	matcher := NewMatcher(mockRepo, config, logger)
@@ -1137,7 +1204,7 @@ func TestGetEntityTypeName(t *testing.T) {
 }
 
 func TestScoreMatchWithInvalidCandidateData(t *testing.T) {
-	mockRepo := &mocks.GraphRepository{}
+	mockRepo := &mockNodeFinder{}
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 	config := createTestMatchingConfig()
 	matcher := NewMatcher(mockRepo, config, logger)
@@ -1150,11 +1217,11 @@ func TestScoreMatchWithInvalidCandidateData(t *testing.T) {
 	}
 
 	// Create candidate with invalid JSON
-	candidate := &GraphNode{
+	candidate := &graph.Node{
 		ID:         1,
 		ExternalID: "device-01",
 		NodeType:   "Device",
-		Data:       []byte(`{invalid json`),
+		Data:       json.RawMessage(`{invalid json`),
 	}
 
 	rule := config.Rules["Device"]

@@ -13,29 +13,24 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/jackc/pgx/v5/pgtype"
-
-	"github.com/netboxlabs/diode/diode-server/gen/dbstore/postgres"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/gen/protograph"
+	"github.com/netboxlabs/diode/diode-server/graph"
 	"github.com/netboxlabs/diode/diode-server/matching"
 )
 
-// GraphNode is an alias to the SQLC-generated GraphNode type
-type GraphNode = postgres.GraphNode
-
-// Repository defines the repository interface needed by Matcher.
+// NodeFinder defines the repository interface needed by Matcher.
 // This is kept minimal to allow simpler mocking in tests.
-// reconciler.GraphRepository satisfies this interface.
-type Repository interface {
-	FindNodesByFieldMatch(ctx context.Context, arg postgres.FindNodesByFieldMatchParams) ([]postgres.GraphNode, error)
-	GetGraphNodesByType(ctx context.Context, arg postgres.GetGraphNodesByTypeParams) ([]postgres.GraphNode, error)
-	FindNodeByMetadata(ctx context.Context, arg postgres.FindNodeByMetadataParams) (postgres.GraphNode, error)
+// graph.Repository satisfies this interface.
+type NodeFinder interface {
+	FindNodesByFieldMatch(ctx context.Context, arg graph.FindNodesByFieldMatchParams) ([]graph.Node, error)
+	GetNodesByType(ctx context.Context, arg graph.GetNodesByTypeParams) ([]graph.Node, error)
+	FindNodeByMetadata(ctx context.Context, arg graph.FindNodeByMetadataParams) (graph.Node, error)
 }
 
 // Matcher implements confidence-based entity matching
 type Matcher struct {
-	repo         Repository
+	repo         NodeFinder
 	config       *matching.EntityMatchingConfig
 	logger       *slog.Logger
 	fuzzyMatcher *matching.FuzzyMatcher
@@ -46,7 +41,7 @@ type Matcher struct {
 }
 
 // NewMatcher creates a new EntityMatcher with the given configuration
-func NewMatcher(repo Repository, config *matching.EntityMatchingConfig, logger *slog.Logger) *Matcher {
+func NewMatcher(repo NodeFinder, config *matching.EntityMatchingConfig, logger *slog.Logger) *Matcher {
 	if config == nil {
 		config = DefaultEntityMatchingConfig()
 	}
@@ -289,7 +284,7 @@ func (m *Matcher) UpdateMatchingRule(entityType string, rule *matching.EntityMat
 }
 
 // findCandidateNodes searches the database for potential matching nodes
-func (m *Matcher) findCandidateNodes(ctx context.Context, entity *diodepb.Entity, entityType string, rule *matching.EntityMatchingRule) ([]*GraphNode, error) {
+func (m *Matcher) findCandidateNodes(ctx context.Context, entity *diodepb.Entity, entityType string, rule *matching.EntityMatchingRule) ([]*graph.Node, error) {
 	// Extract entity data for comparison
 	entityData, err := m.entityToMap(entity)
 	if err != nil {
@@ -302,7 +297,7 @@ func (m *Matcher) findCandidateNodes(ctx context.Context, entity *diodepb.Entity
 		"secondary_rules", len(rule.SecondaryRules),
 		"fallback_rules", len(rule.FallbackRules))
 
-	var allCandidates []*GraphNode
+	var allCandidates []*graph.Node
 
 	// Strategy 1: Try exact matches on primary fields first
 	primaryCandidates, err := m.findCandidatesByPrimaryFields(ctx, entityType, entityData, rule.PrimaryRules)
@@ -347,8 +342,8 @@ func (m *Matcher) findCandidateNodes(ctx context.Context, entity *diodepb.Entity
 }
 
 // findCandidatesByPrimaryFields searches using primary matching fields (supports both exact and fuzzy matches)
-func (m *Matcher) findCandidatesByPrimaryFields(ctx context.Context, entityType string, entityData map[string]any, primaryRules []matching.FieldMatchRule) ([]*GraphNode, error) {
-	var candidates []*GraphNode
+func (m *Matcher) findCandidatesByPrimaryFields(ctx context.Context, entityType string, entityData map[string]any, primaryRules []matching.FieldMatchRule) ([]*graph.Node, error) {
+	var candidates []*graph.Node
 
 	for _, rule := range primaryRules {
 		// Extract field value from entity data
@@ -366,15 +361,15 @@ func (m *Matcher) findCandidatesByPrimaryFields(ctx context.Context, entityType 
 			continue
 		}
 
-		var dbNodes []postgres.GraphNode
+		var dbNodes []graph.Node
 		var err error
 
 		if rule.MatchType == matching.MatchExact {
 			// Use exact field match query for exact matches
-			params := postgres.FindNodesByFieldMatchParams{
+			params := graph.FindNodesByFieldMatchParams{
 				NodeType:   entityType,
-				JsonField:  pgtype.Text{String: rule.FieldPath, Valid: true},
-				FieldValue: pgtype.Text{String: valueStr, Valid: true},
+				JSONField:  rule.FieldPath,
+				FieldValue: valueStr,
 				Limit:      10,
 				Offset:     0,
 			}
@@ -403,7 +398,7 @@ func (m *Matcher) findCandidatesByPrimaryFields(ctx context.Context, entityType 
 
 		// Convert to GraphNode format
 		for _, dbNode := range dbNodes {
-			candidates = append(candidates, &GraphNode{
+			candidates = append(candidates, &graph.Node{
 				ID:             dbNode.ID,
 				ExternalID:     dbNode.ExternalID,
 				NodeType:       dbNode.NodeType,
@@ -422,24 +417,24 @@ func (m *Matcher) findCandidatesByPrimaryFields(ctx context.Context, entityType 
 }
 
 // findFuzzyCandidatesForField performs fuzzy matching for a specific field by fetching all nodes and comparing
-func (m *Matcher) findFuzzyCandidatesForField(ctx context.Context, entityType, fieldPath, searchValue string, fuzzyOptions *matching.FuzzyOptions) ([]postgres.GraphNode, error) {
+func (m *Matcher) findFuzzyCandidatesForField(ctx context.Context, entityType, fieldPath, searchValue string, fuzzyOptions *matching.FuzzyOptions) ([]graph.Node, error) {
 	if fuzzyOptions == nil {
 		return nil, fmt.Errorf("fuzzy options required for fuzzy matching")
 	}
 
 	// Get all nodes of this type to search against
-	params := postgres.GetGraphNodesByTypeParams{
+	params := graph.GetNodesByTypeParams{
 		NodeType: entityType,
 		Limit:    100, // Reasonable limit to avoid performance issues
 		Offset:   0,
 	}
 
-	allNodes, err := m.repo.GetGraphNodesByType(ctx, params)
+	allNodes, err := m.repo.GetNodesByType(ctx, params)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch nodes for fuzzy matching: %w", err)
 	}
 
-	var candidates []postgres.GraphNode
+	var candidates []graph.Node
 
 	// Check each node for fuzzy match
 	for _, node := range allNodes {
@@ -496,8 +491,8 @@ func (m *Matcher) findFuzzyCandidatesForField(ctx context.Context, entityType, f
 }
 
 // findCandidatesBySecondaryFields searches using secondary matching fields (supports both exact and fuzzy matches)
-func (m *Matcher) findCandidatesBySecondaryFields(ctx context.Context, entityType string, entityData map[string]any, secondaryRules []matching.FieldMatchRule) ([]*GraphNode, error) {
-	var candidates []*GraphNode
+func (m *Matcher) findCandidatesBySecondaryFields(ctx context.Context, entityType string, entityData map[string]any, secondaryRules []matching.FieldMatchRule) ([]*graph.Node, error) {
+	var candidates []*graph.Node
 
 	// For secondary rules, try both exact and fuzzy matching approaches
 	for _, rule := range secondaryRules {
@@ -511,15 +506,15 @@ func (m *Matcher) findCandidatesBySecondaryFields(ctx context.Context, entityTyp
 			continue
 		}
 
-		var dbNodes []postgres.GraphNode
+		var dbNodes []graph.Node
 		var err error
 
 		if rule.MatchType == matching.MatchExact {
 			// Use single field exact match for secondary rules
-			params := postgres.FindNodesByFieldMatchParams{
+			params := graph.FindNodesByFieldMatchParams{
 				NodeType:   entityType,
-				JsonField:  pgtype.Text{String: rule.FieldPath, Valid: true},
-				FieldValue: pgtype.Text{String: valueStr, Valid: true},
+				JSONField:  rule.FieldPath,
+				FieldValue: valueStr,
 				Limit:      15, // Moderate limit for secondary matches
 				Offset:     0,
 			}
@@ -548,7 +543,7 @@ func (m *Matcher) findCandidatesBySecondaryFields(ctx context.Context, entityTyp
 
 		// Convert to GraphNode format and add to candidates
 		for _, dbNode := range dbNodes {
-			candidates = append(candidates, &GraphNode{
+			candidates = append(candidates, &graph.Node{
 				ID:             dbNode.ID,
 				ExternalID:     dbNode.ExternalID,
 				NodeType:       dbNode.NodeType,
@@ -567,22 +562,22 @@ func (m *Matcher) findCandidatesBySecondaryFields(ctx context.Context, entityTyp
 }
 
 // findCandidatesByFallbackStrategy searches using broader criteria
-func (m *Matcher) findCandidatesByFallbackStrategy(ctx context.Context, entityType string, _ map[string]any, _ []matching.FieldMatchRule) ([]*GraphNode, error) {
+func (m *Matcher) findCandidatesByFallbackStrategy(ctx context.Context, entityType string, _ map[string]any, _ []matching.FieldMatchRule) ([]*graph.Node, error) {
 	// For fallback, get all nodes of this type and let the scoring algorithm handle fuzzy matching
-	params := postgres.GetGraphNodesByTypeParams{
+	params := graph.GetNodesByTypeParams{
 		NodeType: entityType,
 		Limit:    30, // Reasonable limit for fallback strategy
 		Offset:   0,
 	}
 
-	dbNodes, err := m.repo.GetGraphNodesByType(ctx, params)
+	dbNodes, err := m.repo.GetNodesByType(ctx, params)
 	if err != nil {
 		return nil, fmt.Errorf("fallback node retrieval failed: %w", err)
 	}
 
-	var candidates []*GraphNode
+	var candidates []*graph.Node
 	for _, dbNode := range dbNodes {
-		candidates = append(candidates, &GraphNode{
+		candidates = append(candidates, &graph.Node{
 			ID:             dbNode.ID,
 			ExternalID:     dbNode.ExternalID,
 			NodeType:       dbNode.NodeType,
@@ -596,9 +591,9 @@ func (m *Matcher) findCandidatesByFallbackStrategy(ctx context.Context, entityTy
 }
 
 // deduplicateCandidates removes duplicate nodes from the candidate list
-func (m *Matcher) deduplicateCandidates(candidates []*GraphNode) []*GraphNode {
+func (m *Matcher) deduplicateCandidates(candidates []*graph.Node) []*graph.Node {
 	seen := make(map[int64]struct{})
-	var unique []*GraphNode
+	var unique []*graph.Node
 
 	for _, candidate := range candidates {
 		if _, exists := seen[candidate.ID]; !exists {
@@ -617,7 +612,7 @@ func (m *Matcher) extractFieldFromMap(data map[string]any, fieldPath string) (an
 }
 
 // scoreMatch calculates the confidence score for a potential match
-func (m *Matcher) scoreMatch(entity *diodepb.Entity, candidate *GraphNode, rule *matching.EntityMatchingRule) (*matching.MatchResult, error) {
+func (m *Matcher) scoreMatch(entity *diodepb.Entity, candidate *graph.Node, rule *matching.EntityMatchingRule) (*matching.MatchResult, error) {
 	// Convert entity to comparable format
 	entityData, err := m.entityToMap(entity)
 	if err != nil {

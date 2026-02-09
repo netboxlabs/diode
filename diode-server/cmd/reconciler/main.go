@@ -18,7 +18,7 @@ import (
 	"github.com/netboxlabs/diode/diode-server/authutil"
 	"github.com/netboxlabs/diode/diode-server/dbstore/postgres"
 	"github.com/netboxlabs/diode/diode-server/entitymatcher"
-	dbpostgres "github.com/netboxlabs/diode/diode-server/gen/dbstore/postgres"
+	"github.com/netboxlabs/diode/diode-server/graph"
 	"github.com/netboxlabs/diode/diode-server/matching"
 	"github.com/netboxlabs/diode/diode-server/migrator"
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
@@ -156,15 +156,13 @@ func main() {
 			}
 		}
 
-		// Use SQLC-generated queries directly for graph operations
-		graphQueries := dbpostgres.New(dbPool)
+		// Create graph repository adapter
+		graphRepo := postgres.NewGraphRepository(dbPool)
 
-		// Create GraphBuilder with graph queries
-		graphBuilder := reconciler.NewGraphBuilder(graphQueries, s.Logger())
-
-		// Set up entity matcher if matching config was loaded
+		// Create Builder with graph repository
+		var builderOpts []graph.BuilderOption
 		if matchingConfig != nil {
-			graphBuilder.SetMatchingConfig(matchingConfig)
+			builderOpts = append(builderOpts, graph.WithMatchingConfig(matchingConfig))
 
 			// Create entity matcher for confidence-based matching
 			matcherConfig := &matching.EntityMatchingConfig{
@@ -174,9 +172,10 @@ func main() {
 				CacheResults:   true,
 				MaxCacheSize:   1000,
 			}
-			entityMatcher := entitymatcher.NewMatcher(graphQueries, matcherConfig, s.Logger())
-			graphBuilder.SetEntityMatcher(entityMatcher)
+			entityMatcher := entitymatcher.NewMatcher(graphRepo, matcherConfig, s.Logger())
+			builderOpts = append(builderOpts, graph.WithEntityMatcher(entityMatcher))
 		}
+		graphBuilder := graph.NewBuilder(graphRepo, s.Logger(), builderOpts...)
 
 		graphBuilderOpt = reconciler.WithGraphBuilder(graphBuilder)
 	}
