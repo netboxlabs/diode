@@ -21,6 +21,7 @@ import (
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 	"github.com/netboxlabs/diode/diode-server/gen/netbox"
+	"github.com/netboxlabs/diode/diode-server/graph"
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
 	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
 	"github.com/netboxlabs/diode/diode-server/reconciler/ops"
@@ -69,7 +70,7 @@ type IngestionProcessor struct {
 	metrics            Metrics
 	cancel             context.CancelFunc
 	mx                 sync.Mutex
-	graphBuilder       *GraphBuilder // nil when ENABLE_GRAPH_DB is false
+	graphBuilder       *graph.Builder // nil when ENABLE_GRAPH_DB is false
 }
 
 // IngestionLogToProcess represents an ingestion log to process
@@ -93,10 +94,10 @@ type IngestionProcessorOps interface {
 // ProcessorOption is a functional option for configuring IngestionProcessor
 type ProcessorOption func(*IngestionProcessor)
 
-// WithGraphBuilder sets the GraphBuilder for graph-based entity extraction.
+// WithGraphBuilder sets the graph.Builder for graph-based entity extraction.
 // When set, entities are also stored in the graph database for relationship tracking.
 // Pass nil to disable graph extraction.
-func WithGraphBuilder(gb *GraphBuilder) ProcessorOption {
+func WithGraphBuilder(gb *graph.Builder) ProcessorOption {
 	return func(p *IngestionProcessor) {
 		p.graphBuilder = gb
 	}

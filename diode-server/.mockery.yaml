@@ -20,6 +20,11 @@ packages:
       all: true
       dir: "{{.InterfaceDir}}/mocks"
       outpkg: mocks
+  github.com/netboxlabs/diode/diode-server/graph:
+    config:
+      all: true
+      dir: "{{.InterfaceDir}}/mocks"
+      outpkg: mocks
   github.com/netboxlabs/diode/diode-server/entitymatcher:
     config:
       all: true
