@@ -66,28 +66,28 @@ func TestWithSnapshotRetention(t *testing.T) {
 	assert.Equal(t, graph.DefaultSnapshotRetention, gb.TestSnapshotRetention())
 }
 
-func TestExtractGraph_NilEntity(t *testing.T) {
+func TestUpsertEntity_NilEntity(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()
 	gb := graph.NewBuilder(repo, logger)
 
-	err := gb.ExtractGraph(context.Background(), nil)
+	_, err := gb.UpsertEntity(context.Background(), nil)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "entity or entity content is nil")
 }
 
-func TestExtractGraph_EmptyEntity(t *testing.T) {
+func TestUpsertEntity_EmptyEntity(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()
 	gb := graph.NewBuilder(repo, logger)
 
 	entity := &diodepb.Entity{}
-	err := gb.ExtractGraph(context.Background(), entity)
+	_, err := gb.UpsertEntity(context.Background(), entity)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "entity or entity content is nil")
 }
 
-func TestExtractGraph_SimpleDevice(t *testing.T) {
+func TestUpsertEntity_SimpleDevice(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()
 	gb := graph.NewBuilder(repo, logger)
@@ -122,13 +122,13 @@ func TestExtractGraph_SimpleDevice(t *testing.T) {
 	repo.EXPECT().CleanupOldSnapshots(ctx, mock.AnythingOfType("graph.CleanupOldSnapshotsParams")).
 		Return(nil).Once()
 
-	err := gb.ExtractGraph(ctx, entity)
+	_, err := gb.UpsertEntity(ctx, entity)
 	assert.NoError(t, err)
 
 	repo.AssertExpectations(t)
 }
 
-func TestExtractGraph_DeviceWithSite(t *testing.T) {
+func TestUpsertEntity_DeviceWithSite(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()
 	gb := graph.NewBuilder(repo, logger)
@@ -205,7 +205,7 @@ func TestExtractGraph_DeviceWithSite(t *testing.T) {
 		return params.EdgeType == "HAS_DEVICE"
 	})).Return(nil).Once()
 
-	err := gb.ExtractGraph(ctx, entity)
+	_, err := gb.UpsertEntity(ctx, entity)
 	assert.NoError(t, err)
 
 	repo.AssertExpectations(t)

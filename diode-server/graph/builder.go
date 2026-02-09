@@ -88,9 +88,9 @@ func NewBuilder(repo Repository, logger *slog.Logger, opts ...BuilderOption) *Bu
 //
 // TODO: Add support for merging request-level metadata (IngestRequest.metadata) with
 // entity-level metadata. This would require:
-// 1. Pass IngestRequest.metadata to Builder (via SetSourceMetadata or ExtractGraph parameter)
+// 1. Pass IngestRequest.metadata to Builder (via SetSourceMetadata or UpsertEntity parameter)
 // 2. Merge source metadata with entity metadata (entity takes precedence for duplicate keys)
-// 3. Wire up the call in IngestionProcessor.CreateIngestionLogs before ExtractGraph
+// 3. Wire up the call in IngestionProcessor.CreateIngestionLogs before UpsertEntity
 func (gb *Builder) extractMetadata(entity *diodepb.Entity) (json.RawMessage, error) {
 	if entity == nil || entity.GetEntity() == nil {
 		return json.RawMessage("{}"), nil
@@ -445,10 +445,10 @@ func (gb *Builder) MigrateNodesToCurrentSchema(ctx context.Context, batchSize in
 	return migratedCount, nil
 }
 
-// ExtractGraph processes an entity and creates/updates its graph representation recursively
-func (gb *Builder) ExtractGraph(ctx context.Context, entity *diodepb.Entity) error {
+// UpsertEntity processes an entity and creates/updates its graph representation recursively
+func (gb *Builder) UpsertEntity(ctx context.Context, entity *diodepb.Entity) (*Node, error) {
 	if entity == nil || entity.GetEntity() == nil {
-		return fmt.Errorf("entity or entity content is nil")
+		return nil, fmt.Errorf("entity or entity content is nil")
 	}
 
 	// Clear caches for each top-level extraction
@@ -459,7 +459,7 @@ func (gb *Builder) ExtractGraph(ctx context.Context, entity *diodepb.Entity) err
 	// Recursively process the entire entity tree
 	rootNode, err := gb.processEntityRecursively(ctx, entity)
 	if err != nil {
-		return fmt.Errorf("failed to process entity tree: %w", err)
+		return nil, fmt.Errorf("failed to process entity tree: %w", err)
 	}
 
 	// Propagate updates to dependent nodes
@@ -470,13 +470,13 @@ func (gb *Builder) ExtractGraph(ctx context.Context, entity *diodepb.Entity) err
 		}
 	}
 
-	gb.logger.Debug("completed recursive graph extraction",
+	gb.logger.Debug("entity upserted",
 		"root_node_type", rootNode.NodeType,
 		"root_external_id", rootNode.ExternalID,
 		"total_nodes_processed", len(gb.nodeCache),
 		"nodes_updated", len(gb.updatedNodes))
 
-	return nil
+	return rootNode, nil
 }
 
 // processEntityRecursively processes an entity and all its nested entities recursively

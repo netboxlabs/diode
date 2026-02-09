@@ -455,9 +455,9 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 
 		p.metrics.RecordIngestionLogCreate(ctx, true)
 
-		// Extract graph data if graph DB is enabled (non-blocking, errors logged but not fatal)
+		// Upsert entity into graph if graph DB is enabled (non-blocking, errors logged but not fatal)
 		if p.graphBuilder != nil {
-			if err := p.graphBuilder.ExtractGraph(ctx, v); err != nil {
+			if _, err := p.graphBuilder.UpsertEntity(ctx, v); err != nil {
 				p.logger.Warn("graph extraction failed",
 					"error", err,
 					"ingestion_log_id", id,
