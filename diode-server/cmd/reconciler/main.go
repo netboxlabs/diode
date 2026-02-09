@@ -223,7 +223,7 @@ func main() {
 	}
 
 	authorizer := authutil.NewContextAuthorizer(s.Logger())
-	gRPCServer, err := reconciler.NewServer(ctx, s.Logger(), repository, serverInterceptors(authorizer, s.Logger())...)
+	gRPCServer, err := reconciler.NewServer(ctx, s.Logger(), repository, graphRepo, serverInterceptors(authorizer, s.Logger())...)
 	if err != nil {
 		s.Logger().Error("failed to instantiate gRPC server", "error", err)
 		metricRecorder.RecordServiceStartupAttempt(ctx, false)
