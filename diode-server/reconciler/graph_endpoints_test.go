@@ -42,6 +42,9 @@ func TestCreateEntity_ValidDevice(t *testing.T) {
 		MatchingSchemaVersion: CurrentSchemaVersion,
 	}
 
+	// No existing node — new entity
+	mockRepo.EXPECT().FindNodeByContentHash(ctx, mock.Anything).Return(graph.Node{}, graph.ErrNotFound).Once()
+
 	mockRepo.EXPECT().UpsertNode(ctx, mock.MatchedBy(func(arg graph.UpsertNodeParams) bool {
 		return arg.NodeType == "Device" &&
 			arg.MatchingSchemaVersion == graph.CurrentSchemaVersion &&
@@ -77,6 +80,8 @@ func TestCreateEntity_ValidSite(t *testing.T) {
 		Data:                  []byte(`{"name":"test-site"}`),
 		MatchingSchemaVersion: CurrentSchemaVersion,
 	}
+
+	mockRepo.EXPECT().FindNodeByContentHash(ctx, mock.Anything).Return(graph.Node{}, graph.ErrNotFound).Once()
 
 	mockRepo.EXPECT().UpsertNode(ctx, mock.MatchedBy(func(arg graph.UpsertNodeParams) bool {
 		return arg.NodeType == "Site"
@@ -118,6 +123,8 @@ func TestCreateEntity_WithMetadata(t *testing.T) {
 		Data:                  []byte(`{"name":"test-device"}`),
 		MatchingSchemaVersion: CurrentSchemaVersion,
 	}
+
+	mockRepo.EXPECT().FindNodeByContentHash(ctx, mock.Anything).Return(graph.Node{}, graph.ErrNotFound).Once()
 
 	mockRepo.EXPECT().UpsertNode(ctx, mock.MatchedBy(func(arg graph.UpsertNodeParams) bool {
 		// Verify metadata is included
@@ -184,6 +191,8 @@ func TestCreateEntity_DatabaseError(t *testing.T) {
 		Entity: entity,
 	}
 
+	mockRepo.EXPECT().FindNodeByContentHash(ctx, mock.Anything).Return(graph.Node{}, graph.ErrNotFound).Once()
+
 	dbErr := errors.New("database connection failed")
 	mockRepo.EXPECT().UpsertNode(ctx, mock.Anything).Return(graph.Node{}, dbErr).Once()
 
@@ -208,9 +217,6 @@ func TestCreateEntity_Idempotency(t *testing.T) {
 	}
 
 	t.Run("same content hash returns same ID", func(t *testing.T) {
-		mockRepo := mocks.NewRepository(t)
-
-		// First call - new entity
 		expectedNode := graph.Node{
 			ID:                    1,
 			ExternalID:            "idempotent-uuid-123",
@@ -220,34 +226,37 @@ func TestCreateEntity_Idempotency(t *testing.T) {
 			ContentHash:           newPtr("hash123"),
 		}
 
+		// First call - no existing node, generates new UUID
+		mockRepo := mocks.NewRepository(t)
+		mockRepo.EXPECT().FindNodeByContentHash(ctx, mock.Anything).Return(graph.Node{}, graph.ErrNotFound).Once()
 		mockRepo.EXPECT().UpsertNode(ctx, mock.MatchedBy(func(arg graph.UpsertNodeParams) bool {
-			return arg.NodeType == "Device" && arg.ContentHash != nil && *arg.ContentHash == "hash123" // use const for string
+			return arg.NodeType == "Device" && arg.ContentHash != nil && *arg.ContentHash != ""
 		})).Return(expectedNode, nil).Once()
 
 		resp1, err := createEntity(ctx, mockRepo, req)
 		require.NoError(t, err)
 		require.NotNil(t, resp1)
 
-		// Second call - should match on content hash via upsert
+		// Second call - existing node found by content hash, reuses ExternalID
 		mockRepo2 := mocks.NewRepository(t)
+		mockRepo2.EXPECT().FindNodeByContentHash(ctx, mock.Anything).Return(expectedNode, nil).Once()
 		mockRepo2.EXPECT().UpsertNode(ctx, mock.MatchedBy(func(arg graph.UpsertNodeParams) bool {
-			return arg.NodeType == "Device" && arg.ContentHash != nil && *arg.ContentHash == "hash123" // same hash as before
+			return arg.NodeType == "Device" &&
+				arg.ExternalID == "idempotent-uuid-123" && // reuses existing ID
+				arg.ContentHash != nil && *arg.ContentHash != ""
 		})).Return(expectedNode, nil).Once()
 
 		resp2, err := createEntity(ctx, mockRepo2, req)
 		require.NoError(t, err)
 		require.NotNil(t, resp2)
 
-		// Both responses should reference the same entity ID
-		// NOTE: Currently this will fail because a new UUID is generated each time
-		// This test documents the expected idempotent behavior
 		assert.Equal(t, resp1.Id, resp2.Id, "repeated requests with same content should return same ID")
 	})
 }
 
-func TestCreateEntity_IdempotencyBroken(t *testing.T) {
-	// This test demonstrates the current broken idempotency behavior
-	// where each call generates a new external ID regardless of content hash
+func TestCreateEntity_IdempotencyPreservesExternalID(t *testing.T) {
+	// Verifies that when a node already exists (found by content hash),
+	// the same ExternalID is reused in the upsert.
 	ctx := context.Background()
 
 	device := &diodepb.Device{
@@ -260,30 +269,38 @@ func TestCreateEntity_IdempotencyBroken(t *testing.T) {
 		Entity: entity,
 	}
 
+	existingNode := graph.Node{
+		ID:                    1,
+		ExternalID:            "existing-uuid-999",
+		NodeType:              "Device",
+		MatchingSchemaVersion: CurrentSchemaVersion,
+	}
+
 	var capturedExternalIDs []string
 
 	mockRepo := mocks.NewRepository(t)
+	// First call: not found, generates new UUID
+	mockRepo.EXPECT().FindNodeByContentHash(ctx, mock.Anything).Return(graph.Node{}, graph.ErrNotFound).Once()
+	// Second call: found, reuses existing ExternalID
+	mockRepo.EXPECT().FindNodeByContentHash(ctx, mock.Anything).Return(existingNode, nil).Once()
+
 	mockRepo.EXPECT().UpsertNode(ctx, mock.Anything).Run(func(_ context.Context, arg graph.UpsertNodeParams) {
 		capturedExternalIDs = append(capturedExternalIDs, arg.ExternalID)
-	}).Return(graph.Node{
-		ID:                    1,
-		ExternalID:            "will-be-overwritten",
-		NodeType:              "Device",
-		MatchingSchemaVersion: CurrentSchemaVersion,
-	}, nil).Times(2)
+	}).Return(existingNode, nil).Times(2)
 
-	// First request
+	// First request — new entity
 	_, err := createEntity(ctx, mockRepo, req)
 	require.NoError(t, err)
 
-	// Second identical request
+	// Second identical request — existing entity found
 	_, err = createEntity(ctx, mockRepo, req)
 	require.NoError(t, err)
 
-	// Verify two different UUIDs were generated (demonstrating broken idempotency)
 	require.Len(t, capturedExternalIDs, 2)
 	assert.NotEqual(t, capturedExternalIDs[0], capturedExternalIDs[1],
-		"BUG: each createEntity call generates a new UUID instead of being idempotent")
+		"first call should generate a new UUID")
+	assert.Equal(t, "existing-uuid-999", capturedExternalIDs[1],
+		"second call should reuse the existing ExternalID")
 }
 
 func TestCreateEntity_VariousEntityTypes(t *testing.T) {
@@ -373,6 +390,8 @@ func TestCreateEntity_VariousEntityTypes(t *testing.T) {
 				MatchingSchemaVersion: CurrentSchemaVersion,
 			}
 
+			mockRepo.EXPECT().FindNodeByContentHash(ctx, mock.Anything).Return(graph.Node{}, graph.ErrNotFound).Once()
+
 			mockRepo.EXPECT().UpsertNode(ctx, mock.MatchedBy(func(arg graph.UpsertNodeParams) bool {
 				return arg.NodeType == tt.expectedType
 			})).Return(expectedNode, nil).Once()
@@ -409,6 +428,8 @@ func TestCreateEntity_ContentHashGeneration(t *testing.T) {
 		MatchingSchemaVersion: CurrentSchemaVersion,
 	}
 
+	mockRepo.EXPECT().FindNodeByContentHash(ctx, mock.Anything).Return(graph.Node{}, graph.ErrNotFound).Once()
+
 	mockRepo.EXPECT().UpsertNode(ctx, mock.Anything).Run(func(_ context.Context, arg graph.UpsertNodeParams) {
 		capturedContentHash = arg.ContentHash
 	}).Return(expectedNode, nil).Once()
@@ -417,7 +438,6 @@ func TestCreateEntity_ContentHashGeneration(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify content hash was generated and is valid
-	// assert.True(t, capturedContentHash.Valid, "content hash should be generated")
 	assert.NotEmpty(t, capturedContentHash, "content hash should not be empty")
 }
 
@@ -444,6 +464,8 @@ func TestCreateEntity_MetadataDefaultsToEmptyObject(t *testing.T) {
 		NodeType:              "Device",
 		MatchingSchemaVersion: CurrentSchemaVersion,
 	}
+
+	mockRepo.EXPECT().FindNodeByContentHash(ctx, mock.Anything).Return(graph.Node{}, graph.ErrNotFound).Once()
 
 	mockRepo.EXPECT().UpsertNode(ctx, mock.Anything).Run(func(_ context.Context, arg graph.UpsertNodeParams) {
 		capturedMetadata = arg.Metadata
