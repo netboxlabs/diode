@@ -134,7 +134,7 @@ func main() {
 	}
 	defer dbPool.Close()
 
-	var graphRepo *postgres.GraphRepository
+	var graphRepo graph.Repository
 
 	repository := postgres.NewRepository(dbPool)
 
