@@ -106,6 +106,9 @@ func listEntities(ctx context.Context, graphdb GraphRepository, req *reconcilerp
 		if err != nil {
 			return nil, fmt.Errorf("invalid page token: %w", err)
 		}
+		if offsetVal < 0 {
+			return nil, fmt.Errorf("invalid page token: negative offset")
+		}
 		offset = int32(offsetVal)
 	}
 
