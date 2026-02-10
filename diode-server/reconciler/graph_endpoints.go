@@ -73,7 +73,6 @@ func createEntity(ctx context.Context, gr graph.Repository, req *reconcilerpb.Cr
 	}
 
 	node, err := gr.UpsertNode(ctx, args)
-
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to create entity: %v", err)
 	}
