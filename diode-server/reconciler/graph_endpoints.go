@@ -3,7 +3,6 @@ package reconciler
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"reflect"
 	"strings"
 
@@ -59,8 +58,6 @@ func createEntity(ctx context.Context, gr graph.Repository, req *reconcilerpb.Cr
 	})
 	if err == nil {
 		externalID = existing.ExternalID
-	} else if !errors.Is(err, graph.ErrNotFound) {
-		return nil, status.Errorf(codes.Internal, "failed to look up entity: %v", err)
 	}
 
 	args := graph.UpsertNodeParams{
