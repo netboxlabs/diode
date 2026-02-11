@@ -26,6 +26,7 @@ import (
 	"github.com/netboxlabs/diode/diode-server/reconciler"
 	"github.com/netboxlabs/diode/diode-server/server"
 	"github.com/netboxlabs/diode/diode-server/telemetry"
+	diodetls "github.com/netboxlabs/diode/diode-server/tls"
 	"github.com/netboxlabs/diode/diode-server/version"
 )
 
@@ -85,23 +86,11 @@ func main() {
 		}
 	}
 
-	redisTLSConfig, err := cfg.RedisTLS.ToTLSConfig()
+	redisOptions, err := diodetls.NewRedisOptions(cfg.RedisHost, cfg.RedisPort, cfg.RedisUsername, cfg.RedisPassword, cfg.RedisDB, &cfg.RedisTLS)
 	if err != nil {
-		s.Logger().Error("failed to create TLS config for Redis", "error", err)
+		s.Logger().Error("failed to create Redis options", "error", err)
 		metricRecorder.RecordServiceStartupAttempt(ctx, false)
 		os.Exit(1)
-	}
-
-	redisOptions := redis.Options{
-		Addr:      fmt.Sprintf("%s:%s", cfg.RedisHost, cfg.RedisPort),
-		DB:        cfg.RedisDB,
-		TLSConfig: redisTLSConfig,
-	}
-	if cfg.RedisUsername != "" {
-		redisOptions.Username = cfg.RedisUsername
-	}
-	if cfg.RedisPassword != "" {
-		redisOptions.Password = cfg.RedisPassword
 	}
 	redisClient := redis.NewClient(&redisOptions)
 
@@ -111,16 +100,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	redisStreamOptions := redis.Options{
-		Addr:      fmt.Sprintf("%s:%s", cfg.RedisHost, cfg.RedisPort),
-		DB:        cfg.RedisStreamDB,
-		TLSConfig: redisTLSConfig,
-	}
-	if cfg.RedisUsername != "" {
-		redisStreamOptions.Username = cfg.RedisUsername
-	}
-	if cfg.RedisPassword != "" {
-		redisStreamOptions.Password = cfg.RedisPassword
+	redisStreamOptions, err := diodetls.NewRedisOptions(cfg.RedisHost, cfg.RedisPort, cfg.RedisUsername, cfg.RedisPassword, cfg.RedisStreamDB, &cfg.RedisTLS)
+	if err != nil {
+		s.Logger().Error("failed to create Redis stream options", "error", err)
+		metricRecorder.RecordServiceStartupAttempt(ctx, false)
+		os.Exit(1)
 	}
 	redisStreamClient := redis.NewClient(&redisStreamOptions)
 
