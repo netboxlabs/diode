@@ -299,6 +299,65 @@ func (_c *Repository_FindNodesByFieldMatch_Call) RunAndReturn(run func(context.C
 	return _c
 }
 
+// FindNodesByMetadata provides a mock function with given fields: ctx, arg
+func (_m *Repository) FindNodesByMetadata(ctx context.Context, arg graph.FindNodesByMetadataParams) ([]graph.Node, error) {
+	ret := _m.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for FindNodesByMetadata")
+	}
+
+	var r0 []graph.Node
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, graph.FindNodesByMetadataParams) ([]graph.Node, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, graph.FindNodesByMetadataParams) []graph.Node); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]graph.Node)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, graph.FindNodesByMetadataParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Repository_FindNodesByMetadata_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FindNodesByMetadata'
+type Repository_FindNodesByMetadata_Call struct {
+	*mock.Call
+}
+
+// FindNodesByMetadata is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg graph.FindNodesByMetadataParams
+func (_e *Repository_Expecter) FindNodesByMetadata(ctx interface{}, arg interface{}) *Repository_FindNodesByMetadata_Call {
+	return &Repository_FindNodesByMetadata_Call{Call: _e.mock.On("FindNodesByMetadata", ctx, arg)}
+}
+
+func (_c *Repository_FindNodesByMetadata_Call) Run(run func(ctx context.Context, arg graph.FindNodesByMetadataParams)) *Repository_FindNodesByMetadata_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(graph.FindNodesByMetadataParams))
+	})
+	return _c
+}
+
+func (_c *Repository_FindNodesByMetadata_Call) Return(_a0 []graph.Node, _a1 error) *Repository_FindNodesByMetadata_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Repository_FindNodesByMetadata_Call) RunAndReturn(run func(context.Context, graph.FindNodesByMetadataParams) ([]graph.Node, error)) *Repository_FindNodesByMetadata_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // FindNodesNeedingSchemaUpdate provides a mock function with given fields: ctx, arg
 func (_m *Repository) FindNodesNeedingSchemaUpdate(ctx context.Context, arg graph.FindNodesNeedingSchemaUpdateParams) ([]graph.Node, error) {
 	ret := _m.Called(ctx, arg)

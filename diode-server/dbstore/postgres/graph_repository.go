@@ -190,6 +190,20 @@ func (r *GraphRepository) FindNodeByMetadata(ctx context.Context, arg graph.Find
 	return toNode(result), nil
 }
 
+// FindNodesByMetadata implements graph.Repository.
+func (r *GraphRepository) FindNodesByMetadata(ctx context.Context, arg graph.FindNodesByMetadataParams) ([]graph.Node, error) {
+	result, err := r.queries.FindNodesByMetadata(ctx, postgres.FindNodesByMetadataParams{
+		NodeType:       pgtype.Text{String: arg.NodeType, Valid: arg.NodeType != ""},
+		MetadataFilter: []byte(arg.MetadataFilter),
+		Offset:         arg.Offset,
+		Limit:          arg.Limit,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return toNodes(result), nil
+}
+
 // FindNodeByContentHash implements graph.Repository.
 func (r *GraphRepository) FindNodeByContentHash(ctx context.Context, arg graph.FindNodeByContentHashParams) (graph.Node, error) {
 	result, err := r.queries.FindNodeByContentHash(ctx, postgres.FindNodeByContentHashParams{

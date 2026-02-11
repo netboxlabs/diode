@@ -363,6 +363,11 @@ func (gb *Builder) UpsertEdge(ctx context.Context, params UpsertEdgeParams) erro
 	return gb.repo.UpsertEdge(ctx, params)
 }
 
+// FindNodesByMetadata finds nodes matching a metadata filter with pagination.
+func (gb *Builder) FindNodesByMetadata(ctx context.Context, params FindNodesByMetadataParams) ([]Node, error) {
+	return gb.repo.FindNodesByMetadata(ctx, params)
+}
+
 // CompleteNodeData represents a node with its complete entity data
 type CompleteNodeData struct {
 	ID                     int64           `json:"id"`

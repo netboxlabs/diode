@@ -117,6 +117,14 @@ type FindNodeByMetadataParams struct {
 	MetadataFilter json.RawMessage
 }
 
+// FindNodesByMetadataParams contains parameters for finding nodes by metadata with pagination.
+type FindNodesByMetadataParams struct {
+	NodeType       string
+	MetadataFilter json.RawMessage
+	Offset         int32
+	Limit          int32
+}
+
 // FindNodeByContentHashParams contains parameters for finding a node by content hash.
 type FindNodeByContentHashParams struct {
 	NodeType    string

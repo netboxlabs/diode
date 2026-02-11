@@ -21,6 +21,7 @@ type Repository interface {
 	FindNodesByFieldMatch(ctx context.Context, arg FindNodesByFieldMatchParams) ([]Node, error)
 	GetNodesByType(ctx context.Context, arg GetNodesByTypeParams) ([]Node, error)
 	FindNodeByMetadata(ctx context.Context, arg FindNodeByMetadataParams) (Node, error)
+	FindNodesByMetadata(ctx context.Context, arg FindNodesByMetadataParams) ([]Node, error)
 	FindNodeByContentHash(ctx context.Context, arg FindNodeByContentHashParams) (Node, error)
 
 	// Snapshot management
