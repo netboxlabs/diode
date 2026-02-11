@@ -3,7 +3,6 @@ syntax = "proto3";
 package diode.v1;
 
 import "diode/v1/ingester.proto";
-import "google/protobuf/struct.proto";
 import "validate/validate.proto";
 
 option go_package = "github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb";
@@ -134,53 +133,6 @@ message RetrieveDeviationByIDResponse {
   Deviation deviation = 1; // Deviation
 }
 
-// An observed entity with its metadata
-message DiodeEntity {
-  string id = 1; // Diode entity ID (UUID)
-  string object_type = 2; // Entity type (e.g., "dcim.device")
-  int64 ingestion_ts = 3; // When the entity was ingested
-  int64 source_ts = 4; // Timestamp from the entity source
-  diode.v1.Entity entity = 5; // The actual entity data
-  google.protobuf.Struct source_metadata = 6; // Metadata (agent_id, policy_id, job_id, etc.)
-  int64 created_at = 7; // When first created in Diode
-  int64 updated_at = 8; // When last updated
-  int64 last_seen_ts = 9; // When entity was last seen/ingested
-  int32 duplicate_count = 10; // Number of times this entity was re-ingested
-}
-
-// Request to list entities with optional filters
-message ListEntitiesRequest {
-  optional int32 page_size = 1; // Number of entities per page (default 100, max 1000)
-  string page_token = 2; // Token to fetch the next page
-
-  // Flexible metadata filter - matches all provided key-value pairs
-  // Example: {"agent_id": "agent-123", "policy_id": "policy-456"}
-  google.protobuf.Struct metadata_filters = 3;
-
-  // Standard filters
-  repeated string object_type = 4; // Filter by object types
-  optional int64 ingestion_ts_start = 5; // Filter by ingestion timestamp range start
-  optional int64 ingestion_ts_end = 6; // Filter by ingestion timestamp range end
-}
-
-// Response from the list entities request
-message ListEntitiesResponse {
-  repeated DiodeEntity entities = 1; // List of entities
-  string next_page_token = 2; // Token for the next page, if any
-}
-
-// Request to create an entity in the graph database (idempotent)
-message CreateEntityRequest {
-  diode.v1.Entity entity = 1 [(validate.rules).message.required = true]; // The entity to create
-  google.protobuf.Struct metadata = 2; // Optional metadata (agent_id, policy_id, etc.)
-}
-
-// Response from creating an entity
-message CreateEntityResponse {
-  string id = 1; // Diode entity ID (UUID)
-  string object_type = 2; // Entity type
-}
-
 // Reconciler service API
 service ReconcilerService {
   // Retrieves ingestion logs
@@ -193,10 +145,4 @@ service ReconcilerService {
 
   // Retrieve deviation by ID
   rpc RetrieveDeviationByID(RetrieveDeviationByIDRequest) returns (RetrieveDeviationByIDResponse);
-
-  // List observed entities with filtering
-  rpc ListEntities(ListEntitiesRequest) returns (ListEntitiesResponse);
-
-  // Create an entity synchronously in the graph database (idempotent - returns existing ID if entity already exists)
-  rpc CreateEntity(CreateEntityRequest) returns (CreateEntityResponse);
 }

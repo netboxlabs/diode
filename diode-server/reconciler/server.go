@@ -10,9 +10,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/reflection"
-	"google.golang.org/grpc/status"
 
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 )
@@ -115,14 +113,4 @@ func (s *Server) RetrieveDeviations(ctx context.Context, req *reconcilerpb.Retri
 // RetrieveDeviationByID retrieves a deviation by ID
 func (s *Server) RetrieveDeviationByID(ctx context.Context, req *reconcilerpb.RetrieveDeviationByIDRequest) (*reconcilerpb.RetrieveDeviationByIDResponse, error) {
 	return retrieveDeviationByID(ctx, s.logger, s.repository, req)
-}
-
-// ListEntities lists observed entities with filtering
-func (s *Server) ListEntities(_ context.Context, _ *reconcilerpb.ListEntitiesRequest) (*reconcilerpb.ListEntitiesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListEntities not implemented")
-}
-
-// CreateEntity creates an entity synchronously in the graph database (idempotent - returns existing ID if entity already exists)
-func (s *Server) CreateEntity(_ context.Context, _ *reconcilerpb.CreateEntityRequest) (*reconcilerpb.CreateEntityResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateEntity not implemented")
 }
