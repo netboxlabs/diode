@@ -70,7 +70,7 @@ type IngestionProcessor struct {
 	metrics            Metrics
 	cancel             context.CancelFunc
 	mx                 sync.Mutex
-	graphBuilder       *graph.Builder // nil when ENABLE_GRAPH_DB is false
+	graphService       *graph.Service // nil when ENABLE_GRAPH_DB is false
 }
 
 // IngestionLogToProcess represents an ingestion log to process
@@ -94,12 +94,12 @@ type IngestionProcessorOps interface {
 // ProcessorOption is a functional option for configuring IngestionProcessor
 type ProcessorOption func(*IngestionProcessor)
 
-// WithGraphBuilder sets the graph.Builder for graph-based entity extraction.
+// WithGraphService sets the graph.Service for graph-based entity extraction.
 // When set, entities are also stored in the graph database for relationship tracking.
 // Pass nil to disable graph extraction.
-func WithGraphBuilder(gb *graph.Builder) ProcessorOption {
+func WithGraphService(svc *graph.Service) ProcessorOption {
 	return func(p *IngestionProcessor) {
-		p.graphBuilder = gb
+		p.graphService = svc
 	}
 }
 
@@ -456,8 +456,8 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 		p.metrics.RecordIngestionLogCreate(ctx, true)
 
 		// Upsert entity into graph if graph DB is enabled (non-blocking, errors logged but not fatal)
-		if p.graphBuilder != nil {
-			if _, err := p.graphBuilder.UpsertEntity(ctx, v); err != nil {
+		if p.graphService != nil {
+			if _, err := p.graphService.UpsertEntity(ctx, v); err != nil {
 				p.logger.Warn("graph upsert entity failed",
 					"error", err,
 					"ingestion_log_id", id,

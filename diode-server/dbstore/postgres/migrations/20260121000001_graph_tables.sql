@@ -7,7 +7,6 @@ CREATE TABLE IF NOT EXISTS graph_nodes (
     node_type TEXT NOT NULL,
     data JSONB NOT NULL,
     duplicate_count INTEGER DEFAULT 1 NOT NULL,
-    matching_schema_version INTEGER DEFAULT 1 NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
 
@@ -46,8 +45,6 @@ CREATE INDEX IF NOT EXISTS idx_graph_nodes_type ON graph_nodes (node_type);
 CREATE INDEX IF NOT EXISTS idx_graph_nodes_duplicate_count ON graph_nodes (duplicate_count);
 CREATE INDEX IF NOT EXISTS idx_graph_nodes_data_gin ON graph_nodes USING GIN (data);
 CREATE INDEX IF NOT EXISTS idx_graph_nodes_updated_at ON graph_nodes (updated_at);
-CREATE INDEX IF NOT EXISTS idx_graph_nodes_schema_version ON graph_nodes (matching_schema_version);
-
 -- Standard indexes for commonly searched fields (fuzzy matching now handled in application layer)
 CREATE INDEX IF NOT EXISTS idx_graph_nodes_data_name ON graph_nodes ((data->>'name'));
 CREATE INDEX IF NOT EXISTS idx_graph_nodes_data_serial ON graph_nodes ((data->>'serial'));
@@ -72,7 +69,6 @@ CREATE TRIGGER update_graph_nodes_updated_at
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Add comments for documentation
-COMMENT ON COLUMN graph_nodes.matching_schema_version IS 'Version of the matching configuration used to extract matching attributes';
 COMMENT ON COLUMN graph_node_snapshots.snapshot_data IS 'Complete entity protojson snapshot for historical tracking';
 COMMENT ON COLUMN graph_node_snapshots.sequence_number IS 'Sequential number for ordering snapshots, higher is newer';
 COMMENT ON COLUMN graph_edges.confidence_score IS 'Confidence score (0.0-1.0) for the relationship match';
@@ -83,7 +79,6 @@ COMMENT ON COLUMN graph_edges.edge_subtype IS 'Subtype of edge based on confiden
 -- +goose Down
 
 -- Remove comments
-COMMENT ON COLUMN graph_nodes.matching_schema_version IS NULL;
 COMMENT ON COLUMN graph_node_snapshots.snapshot_data IS NULL;
 COMMENT ON COLUMN graph_node_snapshots.sequence_number IS NULL;
 COMMENT ON COLUMN graph_edges.confidence_score IS NULL;
@@ -109,7 +104,6 @@ DROP INDEX IF EXISTS idx_graph_node_snapshots_node_id;
 
 DROP INDEX IF EXISTS idx_graph_nodes_data_serial;
 DROP INDEX IF EXISTS idx_graph_nodes_data_name;
-DROP INDEX IF EXISTS idx_graph_nodes_schema_version;
 DROP INDEX IF EXISTS idx_graph_nodes_updated_at;
 DROP INDEX IF EXISTS idx_graph_nodes_data_gin;
 DROP INDEX IF EXISTS idx_graph_nodes_duplicate_count;

@@ -56,15 +56,13 @@ type GraphEdge struct {
 }
 
 type GraphNode struct {
-	ID             int64  `json:"id"`
-	ExternalID     string `json:"external_id"`
-	NodeType       string `json:"node_type"`
-	Data           []byte `json:"data"`
-	DuplicateCount int32  `json:"duplicate_count"`
-	// Version of the matching configuration used to extract matching attributes
-	MatchingSchemaVersion int32              `json:"matching_schema_version"`
-	CreatedAt             pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt             pgtype.Timestamptz `json:"updated_at"`
+	ID             int64              `json:"id"`
+	ExternalID     string             `json:"external_id"`
+	NodeType       string             `json:"node_type"`
+	Data           []byte             `json:"data"`
+	DuplicateCount int32              `json:"duplicate_count"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
 	// Timestamp when this entity was last seen/ingested
 	LastSeenTs pgtype.Timestamptz `json:"last_seen_ts"`
 	// Entity metadata including correlation IDs

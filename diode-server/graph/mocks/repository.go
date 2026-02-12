@@ -299,65 +299,6 @@ func (_c *Repository_FindNodesByFieldMatch_Call) RunAndReturn(run func(context.C
 	return _c
 }
 
-// FindNodesNeedingSchemaUpdate provides a mock function with given fields: ctx, arg
-func (_m *Repository) FindNodesNeedingSchemaUpdate(ctx context.Context, arg graph.FindNodesNeedingSchemaUpdateParams) ([]graph.Node, error) {
-	ret := _m.Called(ctx, arg)
-
-	if len(ret) == 0 {
-		panic("no return value specified for FindNodesNeedingSchemaUpdate")
-	}
-
-	var r0 []graph.Node
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, graph.FindNodesNeedingSchemaUpdateParams) ([]graph.Node, error)); ok {
-		return rf(ctx, arg)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, graph.FindNodesNeedingSchemaUpdateParams) []graph.Node); ok {
-		r0 = rf(ctx, arg)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]graph.Node)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, graph.FindNodesNeedingSchemaUpdateParams) error); ok {
-		r1 = rf(ctx, arg)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// Repository_FindNodesNeedingSchemaUpdate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FindNodesNeedingSchemaUpdate'
-type Repository_FindNodesNeedingSchemaUpdate_Call struct {
-	*mock.Call
-}
-
-// FindNodesNeedingSchemaUpdate is a helper method to define mock.On call
-//   - ctx context.Context
-//   - arg graph.FindNodesNeedingSchemaUpdateParams
-func (_e *Repository_Expecter) FindNodesNeedingSchemaUpdate(ctx interface{}, arg interface{}) *Repository_FindNodesNeedingSchemaUpdate_Call {
-	return &Repository_FindNodesNeedingSchemaUpdate_Call{Call: _e.mock.On("FindNodesNeedingSchemaUpdate", ctx, arg)}
-}
-
-func (_c *Repository_FindNodesNeedingSchemaUpdate_Call) Run(run func(ctx context.Context, arg graph.FindNodesNeedingSchemaUpdateParams)) *Repository_FindNodesNeedingSchemaUpdate_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(graph.FindNodesNeedingSchemaUpdateParams))
-	})
-	return _c
-}
-
-func (_c *Repository_FindNodesNeedingSchemaUpdate_Call) Return(_a0 []graph.Node, _a1 error) *Repository_FindNodesNeedingSchemaUpdate_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *Repository_FindNodesNeedingSchemaUpdate_Call) RunAndReturn(run func(context.Context, graph.FindNodesNeedingSchemaUpdateParams) ([]graph.Node, error)) *Repository_FindNodesNeedingSchemaUpdate_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // GetLatestSnapshot provides a mock function with given fields: ctx, nodeID
 func (_m *Repository) GetLatestSnapshot(ctx context.Context, nodeID int64) (graph.Snapshot, error) {
 	ret := _m.Called(ctx, nodeID)

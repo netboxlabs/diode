@@ -11,17 +11,16 @@ var ErrNotFound = errors.New("not found")
 
 // Node represents a node in the entity graph.
 type Node struct {
-	ID                    int64           `json:"id"`
-	ExternalID            string          `json:"external_id"`
-	NodeType              string          `json:"node_type"`
-	Data                  json.RawMessage `json:"data"`
-	DuplicateCount        int32           `json:"duplicate_count"`
-	MatchingSchemaVersion int32           `json:"matching_schema_version"`
-	CreatedAt             time.Time       `json:"created_at"`
-	UpdatedAt             time.Time       `json:"updated_at"`
-	LastSeenTs            *time.Time      `json:"last_seen_ts,omitempty"`
-	Metadata              json.RawMessage `json:"metadata"`
-	ContentHash           *string         `json:"content_hash,omitempty"`
+	ID             int64           `json:"id"`
+	ExternalID     string          `json:"external_id"`
+	NodeType       string          `json:"node_type"`
+	Data           json.RawMessage `json:"data"`
+	DuplicateCount int32           `json:"duplicate_count"`
+	CreatedAt      time.Time       `json:"created_at"`
+	UpdatedAt      time.Time       `json:"updated_at"`
+	LastSeenTs     *time.Time      `json:"last_seen_ts,omitempty"`
+	Metadata       json.RawMessage `json:"metadata"`
+	ContentHash    *string         `json:"content_hash,omitempty"`
 }
 
 // Snapshot represents a point-in-time snapshot of a graph node's data.
@@ -44,39 +43,63 @@ type Edge struct {
 
 // NodeWithLatestSnapshot combines a graph node with its latest snapshot data.
 type NodeWithLatestSnapshot struct {
-	ID                    int64           `json:"id"`
-	ExternalID            string          `json:"external_id"`
-	NodeType              string          `json:"node_type"`
-	MatchingData          json.RawMessage `json:"matching_data"`
-	DuplicateCount        int32           `json:"duplicate_count"`
-	MatchingSchemaVersion int32           `json:"matching_schema_version"`
-	LastSeenTs            *time.Time      `json:"last_seen_ts,omitempty"`
-	CreatedAt             time.Time       `json:"created_at"`
-	UpdatedAt             time.Time       `json:"updated_at"`
-	Metadata              json.RawMessage `json:"metadata"`
-	SnapshotData          json.RawMessage `json:"snapshot_data"`
-	SequenceNumber        int32           `json:"sequence_number"`
-	SnapshotCreatedAt     *time.Time      `json:"snapshot_created_at,omitempty"`
+	ID                int64           `json:"id"`
+	ExternalID        string          `json:"external_id"`
+	NodeType          string          `json:"node_type"`
+	MatchingData      json.RawMessage `json:"matching_data"`
+	DuplicateCount    int32           `json:"duplicate_count"`
+	LastSeenTs        *time.Time      `json:"last_seen_ts,omitempty"`
+	CreatedAt         time.Time       `json:"created_at"`
+	UpdatedAt         time.Time       `json:"updated_at"`
+	Metadata          json.RawMessage `json:"metadata"`
+	SnapshotData      json.RawMessage `json:"snapshot_data"`
+	SequenceNumber    int32           `json:"sequence_number"`
+	SnapshotCreatedAt *time.Time      `json:"snapshot_created_at,omitempty"`
+}
+
+// CompleteNodeData represents a node with its complete entity data.
+type CompleteNodeData struct {
+	ID                     int64           `json:"id"`
+	ExternalID             string          `json:"external_id"`
+	NodeType               string          `json:"node_type"`
+	MatchingData           json.RawMessage `json:"matching_data"`
+	CompleteData           json.RawMessage `json:"complete_data"`
+	DuplicateCount         int32           `json:"duplicate_count"`
+	SnapshotSequenceNumber *int32          `json:"snapshot_sequence_number,omitempty"`
+	CreatedAt              time.Time       `json:"created_at"`
+	UpdatedAt              time.Time       `json:"updated_at"`
+	SnapshotCreatedAt      *time.Time      `json:"snapshot_created_at,omitempty"`
+}
+
+// ListNodesParams contains parameters for listing nodes with pagination and filtering.
+type ListNodesParams struct {
+	ObjectTypes []string
+	PageSize    int32
+	PageToken   string
+}
+
+// ListNodesResult contains the result of listing nodes.
+type ListNodesResult struct {
+	Nodes         []NodeWithLatestSnapshot
+	NextPageToken string
 }
 
 // UpsertNodeParams contains parameters for upserting a graph node.
 type UpsertNodeParams struct {
-	ExternalID            string
-	NodeType              string
-	Data                  json.RawMessage
-	MatchingSchemaVersion int32
-	Metadata              json.RawMessage
-	ContentHash           *string
+	ExternalID  string
+	NodeType    string
+	Data        json.RawMessage
+	Metadata    json.RawMessage
+	ContentHash *string
 }
 
 // UpdateNodeDataParams contains parameters for updating a graph node's data.
 type UpdateNodeDataParams struct {
-	NodeType              string
-	ExternalID            string
-	Data                  json.RawMessage
-	MatchingSchemaVersion int32
-	Metadata              json.RawMessage
-	ContentHash           *string
+	NodeType    string
+	ExternalID  string
+	Data        json.RawMessage
+	Metadata    json.RawMessage
+	ContentHash *string
 }
 
 // FindNodeParams contains parameters for finding a graph node.
@@ -146,13 +169,6 @@ type GetSnapshotsByNodeParams struct {
 	NodeID int64
 	Offset int32
 	Limit  int32
-}
-
-// FindNodesNeedingSchemaUpdateParams contains parameters for finding nodes that need schema updates.
-type FindNodesNeedingSchemaUpdateParams struct {
-	MatchingSchemaVersion int32
-	Offset                int32
-	Limit                 int32
 }
 
 // ptrIfNonEmpty returns a pointer to s if s is non-empty, otherwise nil.

@@ -10,7 +10,7 @@ import (
 )
 
 // CreateEntityFromInterface creates a diodepb.Entity from a typed interface value.
-// This replaces the large manual switch statements in the GraphBuilder.
+// This replaces the large manual switch statements in the graph Service.
 func CreateEntityFromInterface(fieldValue any) *diodepb.Entity {
 	if fieldValue == nil {
 		return nil

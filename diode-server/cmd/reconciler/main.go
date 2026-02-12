@@ -136,10 +136,10 @@ func main() {
 
 	repository := postgres.NewRepository(dbPool)
 
-	// Initialize GraphBuilder if graph DB feature is enabled
-	var graphBuilderOpt reconciler.ProcessorOption
+	// Initialize graph Service if graph DB feature is enabled
+	var graphServiceOpt reconciler.ProcessorOption
 	if cfg.EnableGraphDB {
-		s.Logger().Info("graph DB feature enabled, initializing GraphBuilder")
+		s.Logger().Info("graph DB feature enabled, initializing graph Service")
 
 		// Load matching configuration if provided
 		var matchingConfig *matching.Config
@@ -159,10 +159,10 @@ func main() {
 		// Create graph repository adapter
 		graphRepo := postgres.NewGraphRepository(dbPool)
 
-		// Create Builder with graph repository
-		var builderOpts []graph.BuilderOption
+		// Create graph Service with repository
+		var opts []graph.Option
 		if matchingConfig != nil {
-			builderOpts = append(builderOpts, graph.WithMatchingConfig(matchingConfig))
+			opts = append(opts, graph.WithMatchingConfig(matchingConfig))
 
 			// Create entity matcher for confidence-based matching
 			matcherConfig := &matching.EntityMatchingConfig{
@@ -173,11 +173,11 @@ func main() {
 				MaxCacheSize:   1000,
 			}
 			entityMatcher := entitymatcher.NewMatcher(graphRepo, matcherConfig, s.Logger())
-			builderOpts = append(builderOpts, graph.WithEntityMatcher(entityMatcher))
+			opts = append(opts, graph.WithEntityMatcher(entityMatcher))
 		}
-		graphBuilder := graph.NewBuilder(graphRepo, s.Logger(), builderOpts...)
+		graphService := graph.NewService(graphRepo, s.Logger(), opts...)
 
-		graphBuilderOpt = reconciler.WithGraphBuilder(graphBuilder)
+		graphServiceOpt = reconciler.WithGraphService(graphService)
 	}
 
 	diodeToNetBoxMaxRetries := 3
@@ -203,8 +203,8 @@ func main() {
 
 	// Build processor options
 	var processorOpts []reconciler.ProcessorOption
-	if graphBuilderOpt != nil {
-		processorOpts = append(processorOpts, graphBuilderOpt)
+	if graphServiceOpt != nil {
+		processorOpts = append(processorOpts, graphServiceOpt)
 	}
 
 	ingestionProcessor, err := reconciler.NewIngestionProcessor(ctx, s.Logger(), cfg, redisClient, redisStreamClient, reconciler.DefaultRedisStreamID, reconciler.DefaultRedisConsumerGroup, ops, metricRecorder, processorOpts...)

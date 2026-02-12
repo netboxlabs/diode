@@ -231,7 +231,7 @@ func (m *Matcher) FindMatches(ctx context.Context, entity *diodepb.Entity) ([]ma
 
 // FindBestMatch finds the best match for an entity above the confidence threshold
 // using field-based matching rules (primary, secondary, fallback).
-// Note: Metadata matching is handled separately in GraphBuilder.findMatchByMetadata.
+// Note: Metadata matching is handled separately in graph.Service.findMatchByMetadata.
 func (m *Matcher) FindBestMatch(ctx context.Context, entity *diodepb.Entity) (*matching.MatchResult, error) {
 	matches, err := m.FindMatches(ctx, entity)
 	if err != nil {
