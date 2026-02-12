@@ -73,8 +73,8 @@ type CompleteNodeData struct {
 
 // ListNodesParams contains parameters for listing nodes with pagination and filtering.
 type ListNodesParams struct {
-	NodeTypes      []string        // optional; filter by one or more node types
-	MetadataFilter json.RawMessage // optional; JSONB containment filter
+	NodeTypes      []string
+	MetadataFilter json.RawMessage
 	Limit          int32
 	Offset         int32
 }
