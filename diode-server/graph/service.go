@@ -28,6 +28,15 @@ const (
 	MaxListLimit = 1000
 )
 
+// EntityStore persists and queries entities in the graph.
+type EntityStore interface {
+	UpsertEntity(ctx context.Context, entity *diodepb.Entity) (*Node, error)
+	ListEntities(ctx context.Context, params ListNodesParams) ([]NodeWithLatestSnapshot, error)
+}
+
+// Compile-time check that Service implements EntityStore.
+var _ EntityStore = (*Service)(nil)
+
 // Service handles extraction and persistence of entity relationships.
 // A Service is not safe for concurrent use; each goroutine should use its own
 // instance, or calls to UpsertEntity must be serialized.
