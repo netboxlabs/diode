@@ -825,6 +825,89 @@ func (q *Queries) InsertSnapshot(ctx context.Context, arg InsertSnapshotParams) 
 	return i, err
 }
 
+const listNodes = `-- name: ListNodes :many
+SELECT
+    n.id, n.external_id, n.node_type,
+    n.data AS matching_data, n.duplicate_count,
+    n.last_seen_ts, n.created_at, n.updated_at, n.metadata,
+    COALESCE(s.snapshot_data, '{}'::jsonb) AS snapshot_data,
+    COALESCE(s.sequence_number, 0) AS sequence_number,
+    s.created_at AS snapshot_created_at
+FROM graph_nodes n
+LEFT JOIN LATERAL (
+    SELECT snapshot_data, sequence_number, created_at
+    FROM graph_node_snapshots
+    WHERE node_id = n.id
+    ORDER BY sequence_number DESC
+    LIMIT 1
+) s ON true
+WHERE
+    (n.node_type = ANY($1::text[]) OR $1::text[] IS NULL)
+    AND ($2::jsonb IS NULL OR n.metadata @> $2::jsonb)
+ORDER BY n.updated_at DESC
+LIMIT $4 OFFSET $3
+`
+
+type ListNodesParams struct {
+	NodeTypes      []string `json:"node_types"`
+	MetadataFilter []byte   `json:"metadata_filter"`
+	Offset         int32    `json:"offset"`
+	Limit          int32    `json:"limit"`
+}
+
+type ListNodesRow struct {
+	ID                int64              `json:"id"`
+	ExternalID        string             `json:"external_id"`
+	NodeType          string             `json:"node_type"`
+	MatchingData      []byte             `json:"matching_data"`
+	DuplicateCount    int32              `json:"duplicate_count"`
+	LastSeenTs        pgtype.Timestamptz `json:"last_seen_ts"`
+	CreatedAt         pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt         pgtype.Timestamptz `json:"updated_at"`
+	Metadata          []byte             `json:"metadata"`
+	SnapshotData      []byte             `json:"snapshot_data"`
+	SequenceNumber    int32              `json:"sequence_number"`
+	SnapshotCreatedAt pgtype.Timestamptz `json:"snapshot_created_at"`
+}
+
+func (q *Queries) ListNodes(ctx context.Context, arg ListNodesParams) ([]ListNodesRow, error) {
+	rows, err := q.db.Query(ctx, listNodes,
+		arg.NodeTypes,
+		arg.MetadataFilter,
+		arg.Offset,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListNodesRow
+	for rows.Next() {
+		var i ListNodesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ExternalID,
+			&i.NodeType,
+			&i.MatchingData,
+			&i.DuplicateCount,
+			&i.LastSeenTs,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Metadata,
+			&i.SnapshotData,
+			&i.SequenceNumber,
+			&i.SnapshotCreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const searchGraphNodes = `-- name: SearchGraphNodes :many
 SELECT id, external_id, node_type, data, duplicate_count, created_at, updated_at, last_seen_ts, metadata, content_hash
 FROM graph_nodes

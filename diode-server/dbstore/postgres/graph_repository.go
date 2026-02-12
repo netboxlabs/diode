@@ -228,6 +228,47 @@ func (r *GraphRepository) CleanupOldSnapshots(ctx context.Context, arg graph.Cle
 	})
 }
 
+// nodeWithSnapshotFields is a common shape shared by GetNodeWithLatestSnapshotRow and ListNodesRow.
+type nodeWithSnapshotFields struct {
+	ID                int64
+	ExternalID        string
+	NodeType          string
+	MatchingData      []byte
+	DuplicateCount    int32
+	LastSeenTs        pgtype.Timestamptz
+	CreatedAt         pgtype.Timestamptz
+	UpdatedAt         pgtype.Timestamptz
+	Metadata          []byte
+	SnapshotData      []byte
+	SequenceNumber    int32
+	SnapshotCreatedAt pgtype.Timestamptz
+}
+
+func toNodeWithLatestSnapshot(r nodeWithSnapshotFields) graph.NodeWithLatestSnapshot {
+	var lastSeen *time.Time
+	if r.LastSeenTs.Valid {
+		lastSeen = &r.LastSeenTs.Time
+	}
+	var snapshotCreatedAt *time.Time
+	if r.SnapshotCreatedAt.Valid {
+		snapshotCreatedAt = &r.SnapshotCreatedAt.Time
+	}
+	return graph.NodeWithLatestSnapshot{
+		ID:                r.ID,
+		ExternalID:        r.ExternalID,
+		NodeType:          r.NodeType,
+		MatchingData:      json.RawMessage(r.MatchingData),
+		DuplicateCount:    r.DuplicateCount,
+		LastSeenTs:        lastSeen,
+		CreatedAt:         r.CreatedAt.Time,
+		UpdatedAt:         r.UpdatedAt.Time,
+		Metadata:          json.RawMessage(r.Metadata),
+		SnapshotData:      json.RawMessage(r.SnapshotData),
+		SequenceNumber:    r.SequenceNumber,
+		SnapshotCreatedAt: snapshotCreatedAt,
+	}
+}
+
 // GetNodeWithLatestSnapshot implements graph.Repository.
 func (r *GraphRepository) GetNodeWithLatestSnapshot(ctx context.Context, arg graph.GetNodeWithLatestSnapshotParams) (graph.NodeWithLatestSnapshot, error) {
 	result, err := r.queries.GetNodeWithLatestSnapshot(ctx, postgres.GetNodeWithLatestSnapshotParams{
@@ -237,30 +278,51 @@ func (r *GraphRepository) GetNodeWithLatestSnapshot(ctx context.Context, arg gra
 	if err != nil {
 		return graph.NodeWithLatestSnapshot{}, wrapNotFound(err)
 	}
-
-	var lastSeen *time.Time
-	if result.LastSeenTs.Valid {
-		lastSeen = &result.LastSeenTs.Time
-	}
-	var snapshotCreatedAt *time.Time
-	if result.SnapshotCreatedAt.Valid {
-		snapshotCreatedAt = &result.SnapshotCreatedAt.Time
-	}
-
-	return graph.NodeWithLatestSnapshot{
+	return toNodeWithLatestSnapshot(nodeWithSnapshotFields{
 		ID:                result.ID,
 		ExternalID:        result.ExternalID,
 		NodeType:          result.NodeType,
-		MatchingData:      json.RawMessage(result.MatchingData),
+		MatchingData:      result.MatchingData,
 		DuplicateCount:    result.DuplicateCount,
-		LastSeenTs:        lastSeen,
-		CreatedAt:         result.CreatedAt.Time,
-		UpdatedAt:         result.UpdatedAt.Time,
-		Metadata:          json.RawMessage(result.Metadata),
-		SnapshotData:      json.RawMessage(result.SnapshotData),
+		LastSeenTs:        result.LastSeenTs,
+		CreatedAt:         result.CreatedAt,
+		UpdatedAt:         result.UpdatedAt,
+		Metadata:          result.Metadata,
+		SnapshotData:      result.SnapshotData,
 		SequenceNumber:    result.SequenceNumber,
-		SnapshotCreatedAt: snapshotCreatedAt,
-	}, nil
+		SnapshotCreatedAt: result.SnapshotCreatedAt,
+	}), nil
+}
+
+// ListNodes implements graph.Repository.
+func (r *GraphRepository) ListNodes(ctx context.Context, arg graph.ListNodesParams) ([]graph.NodeWithLatestSnapshot, error) {
+	rows, err := r.queries.ListNodes(ctx, postgres.ListNodesParams{
+		NodeTypes:      arg.NodeTypes,
+		MetadataFilter: []byte(arg.MetadataFilter),
+		Limit:          arg.Limit,
+		Offset:         arg.Offset,
+	})
+	if err != nil {
+		return nil, err
+	}
+	result := make([]graph.NodeWithLatestSnapshot, len(rows))
+	for i, row := range rows {
+		result[i] = toNodeWithLatestSnapshot(nodeWithSnapshotFields{
+			ID:                row.ID,
+			ExternalID:        row.ExternalID,
+			NodeType:          row.NodeType,
+			MatchingData:      row.MatchingData,
+			DuplicateCount:    row.DuplicateCount,
+			LastSeenTs:        row.LastSeenTs,
+			CreatedAt:         row.CreatedAt,
+			UpdatedAt:         row.UpdatedAt,
+			Metadata:          row.Metadata,
+			SnapshotData:      row.SnapshotData,
+			SequenceNumber:    row.SequenceNumber,
+			SnapshotCreatedAt: row.SnapshotCreatedAt,
+		})
+	}
+	return result, nil
 }
 
 // GetSnapshotsByNode implements graph.Repository.

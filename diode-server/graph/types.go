@@ -73,15 +73,10 @@ type CompleteNodeData struct {
 
 // ListNodesParams contains parameters for listing nodes with pagination and filtering.
 type ListNodesParams struct {
-	ObjectTypes []string
-	PageSize    int32
-	PageToken   string
-}
-
-// ListNodesResult contains the result of listing nodes.
-type ListNodesResult struct {
-	Nodes         []NodeWithLatestSnapshot
-	NextPageToken string
+	NodeTypes      []string        // optional; filter by one or more node types
+	MetadataFilter json.RawMessage // optional; JSONB containment filter
+	Limit          int32
+	Offset         int32
 }
 
 // UpsertNodeParams contains parameters for upserting a graph node.

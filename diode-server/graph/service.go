@@ -111,9 +111,8 @@ func (s *Service) UpsertEntity(ctx context.Context, entity *diodepb.Entity) (*No
 }
 
 // ListEntities returns a paginated list of entities with optional filtering.
-func (s *Service) ListEntities(_ context.Context, _ ListNodesParams) (*ListNodesResult, error) {
-	// TODO: implement once ListNodes query is added to Repository
-	return &ListNodesResult{}, nil
+func (s *Service) ListEntities(ctx context.Context, params ListNodesParams) ([]NodeWithLatestSnapshot, error) {
+	return s.repo.ListNodes(ctx, params)
 }
 
 // GetCompleteNodeData retrieves a node with its complete entity data by combining matching data and latest snapshot.

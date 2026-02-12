@@ -17,6 +17,7 @@ type NodeReader interface {
 	GetNodesByType(ctx context.Context, arg GetNodesByTypeParams) ([]Node, error)
 	FindNodeByMetadata(ctx context.Context, arg FindNodeByMetadataParams) (Node, error)
 	FindNodeByContentHash(ctx context.Context, arg FindNodeByContentHashParams) (Node, error)
+	ListNodes(ctx context.Context, arg ListNodesParams) ([]NodeWithLatestSnapshot, error)
 }
 
 // EdgeWriter persists edge mutations.

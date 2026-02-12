@@ -311,6 +311,65 @@ func (_c *NodeReader_GetNodesByType_Call) RunAndReturn(run func(context.Context,
 	return _c
 }
 
+// ListNodes provides a mock function with given fields: ctx, arg
+func (_m *NodeReader) ListNodes(ctx context.Context, arg graph.ListNodesParams) ([]graph.NodeWithLatestSnapshot, error) {
+	ret := _m.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListNodes")
+	}
+
+	var r0 []graph.NodeWithLatestSnapshot
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, graph.ListNodesParams) ([]graph.NodeWithLatestSnapshot, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, graph.ListNodesParams) []graph.NodeWithLatestSnapshot); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]graph.NodeWithLatestSnapshot)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, graph.ListNodesParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// NodeReader_ListNodes_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListNodes'
+type NodeReader_ListNodes_Call struct {
+	*mock.Call
+}
+
+// ListNodes is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg graph.ListNodesParams
+func (_e *NodeReader_Expecter) ListNodes(ctx interface{}, arg interface{}) *NodeReader_ListNodes_Call {
+	return &NodeReader_ListNodes_Call{Call: _e.mock.On("ListNodes", ctx, arg)}
+}
+
+func (_c *NodeReader_ListNodes_Call) Run(run func(ctx context.Context, arg graph.ListNodesParams)) *NodeReader_ListNodes_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(graph.ListNodesParams))
+	})
+	return _c
+}
+
+func (_c *NodeReader_ListNodes_Call) Return(_a0 []graph.NodeWithLatestSnapshot, _a1 error) *NodeReader_ListNodes_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *NodeReader_ListNodes_Call) RunAndReturn(run func(context.Context, graph.ListNodesParams) ([]graph.NodeWithLatestSnapshot, error)) *NodeReader_ListNodes_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewNodeReader creates a new instance of NodeReader. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewNodeReader(t interface {
