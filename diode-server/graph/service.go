@@ -21,6 +21,11 @@ const (
 	DefaultSnapshotRetention = 5
 	// ContentHashMatchConfidence is the confidence score for content hash matches
 	ContentHashMatchConfidence = 0.9
+
+	// DefaultListLimit is used when the caller does not specify a limit.
+	DefaultListLimit = 100
+	// MaxListLimit is the maximum number of nodes that can be returned in a single ListEntities call.
+	MaxListLimit = 1000
 )
 
 // Service handles extraction and persistence of entity relationships.
@@ -112,6 +117,11 @@ func (s *Service) UpsertEntity(ctx context.Context, entity *diodepb.Entity) (*No
 
 // ListEntities returns a paginated list of entities with optional filtering.
 func (s *Service) ListEntities(ctx context.Context, params ListNodesParams) ([]NodeWithLatestSnapshot, error) {
+	if params.Limit <= 0 {
+		params.Limit = DefaultListLimit
+	} else if params.Limit > MaxListLimit {
+		params.Limit = MaxListLimit
+	}
 	return s.repo.ListNodes(ctx, params)
 }
 
