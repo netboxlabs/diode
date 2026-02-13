@@ -4,32 +4,47 @@ import (
 	"context"
 )
 
-// Repository defines the interface for graph database operations.
-// All types are domain types defined in types.go.
-// The adapter in dbstore/postgres/graph_repository.go translates between
-// these domain types and SQLC-generated types.
-type Repository interface {
-	// Node operations
+// NodeWriter persists node mutations.
+type NodeWriter interface {
 	UpsertNode(ctx context.Context, arg UpsertNodeParams) (Node, error)
 	UpdateNodeData(ctx context.Context, arg UpdateNodeDataParams) (Node, error)
+}
+
+// NodeReader queries nodes.
+type NodeReader interface {
 	FindNode(ctx context.Context, arg FindNodeParams) (Node, error)
-
-	// Edge operations
-	UpsertEdge(ctx context.Context, arg UpsertEdgeParams) error
-
-	// Entity matching queries
 	FindNodesByFieldMatch(ctx context.Context, arg FindNodesByFieldMatchParams) ([]Node, error)
 	GetNodesByType(ctx context.Context, arg GetNodesByTypeParams) ([]Node, error)
 	FindNodeByMetadata(ctx context.Context, arg FindNodeByMetadataParams) (Node, error)
 	FindNodeByContentHash(ctx context.Context, arg FindNodeByContentHashParams) (Node, error)
+	ListNodes(ctx context.Context, arg ListNodesParams) ([]NodeWithLatestSnapshot, error)
+}
 
-	// Snapshot management
+// EdgeWriter persists edge mutations.
+type EdgeWriter interface {
+	UpsertEdge(ctx context.Context, arg UpsertEdgeParams) error
+}
+
+// SnapshotWriter persists snapshot mutations.
+type SnapshotWriter interface {
 	InsertSnapshot(ctx context.Context, arg InsertSnapshotParams) (Snapshot, error)
-	GetLatestSnapshot(ctx context.Context, nodeID int64) (Snapshot, error)
 	CleanupOldSnapshots(ctx context.Context, arg CleanupOldSnapshotsParams) error
+}
+
+// SnapshotReader queries snapshots.
+type SnapshotReader interface {
+	GetLatestSnapshot(ctx context.Context, nodeID int64) (Snapshot, error)
 	GetNodeWithLatestSnapshot(ctx context.Context, arg GetNodeWithLatestSnapshotParams) (NodeWithLatestSnapshot, error)
 	GetSnapshotsByNode(ctx context.Context, arg GetSnapshotsByNodeParams) ([]Snapshot, error)
+}
 
-	// Schema update queries
-	FindNodesNeedingSchemaUpdate(ctx context.Context, arg FindNodesNeedingSchemaUpdateParams) ([]Node, error)
+// Repository composes all graph database operations.
+// The adapter in dbstore/postgres/graph_repository.go translates between
+// these domain types and SQLC-generated types.
+type Repository interface {
+	NodeWriter
+	NodeReader
+	EdgeWriter
+	SnapshotWriter
+	SnapshotReader
 }

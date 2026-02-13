@@ -25,11 +25,11 @@ func newTestLogger() *slog.Logger {
 	return slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 }
 
-func TestNewBuilder(t *testing.T) {
+func TestNewService(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()
 
-	gb := graph.NewBuilder(repo, logger)
+	gb := graph.NewService(repo, logger)
 
 	assert.NotNil(t, gb)
 	assert.NotNil(t, gb.TestNodeCache())
@@ -39,11 +39,11 @@ func TestNewBuilder(t *testing.T) {
 	assert.Nil(t, gb.TestEntityMatcher())
 }
 
-func TestNewBuilderWithOptions(t *testing.T) {
+func TestNewServiceWithOptions(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()
 
-	gb := graph.NewBuilder(repo, logger, graph.WithMatchingConfig(&matching.Config{}))
+	gb := graph.NewService(repo, logger, graph.WithMatchingConfig(&matching.Config{}))
 
 	assert.NotNil(t, gb)
 	assert.Nil(t, gb.TestEntityMatcher())
@@ -54,22 +54,22 @@ func TestWithSnapshotRetention(t *testing.T) {
 	logger := newTestLogger()
 
 	// Valid retention
-	gb := graph.NewBuilder(repo, logger, graph.WithSnapshotRetention(10))
+	gb := graph.NewService(repo, logger, graph.WithSnapshotRetention(10))
 	assert.Equal(t, 10, gb.TestSnapshotRetention())
 
 	// Zero falls back to default
-	gb = graph.NewBuilder(repo, logger, graph.WithSnapshotRetention(0))
+	gb = graph.NewService(repo, logger, graph.WithSnapshotRetention(0))
 	assert.Equal(t, graph.DefaultSnapshotRetention, gb.TestSnapshotRetention())
 
 	// Negative falls back to default
-	gb = graph.NewBuilder(repo, logger, graph.WithSnapshotRetention(-5))
+	gb = graph.NewService(repo, logger, graph.WithSnapshotRetention(-5))
 	assert.Equal(t, graph.DefaultSnapshotRetention, gb.TestSnapshotRetention())
 }
 
 func TestUpsertEntity_NilEntity(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()
-	gb := graph.NewBuilder(repo, logger)
+	gb := graph.NewService(repo, logger)
 
 	_, err := gb.UpsertEntity(context.Background(), nil)
 	assert.Error(t, err)
@@ -79,7 +79,7 @@ func TestUpsertEntity_NilEntity(t *testing.T) {
 func TestUpsertEntity_EmptyEntity(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()
-	gb := graph.NewBuilder(repo, logger)
+	gb := graph.NewService(repo, logger)
 
 	entity := &diodepb.Entity{}
 	_, err := gb.UpsertEntity(context.Background(), entity)
@@ -90,7 +90,7 @@ func TestUpsertEntity_EmptyEntity(t *testing.T) {
 func TestUpsertEntity_SimpleDevice(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()
-	gb := graph.NewBuilder(repo, logger)
+	gb := graph.NewService(repo, logger)
 
 	ctx := context.Background()
 
@@ -108,12 +108,11 @@ func TestUpsertEntity_SimpleDevice(t *testing.T) {
 
 	repo.EXPECT().UpsertNode(ctx, mock.AnythingOfType("graph.UpsertNodeParams")).
 		Return(graph.Node{
-			ID:                    1,
-			ExternalID:            "test-hash",
-			NodeType:              "Device",
-			Data:                  json.RawMessage(`{}`),
-			DuplicateCount:        1,
-			MatchingSchemaVersion: 1,
+			ID:             1,
+			ExternalID:     "test-hash",
+			NodeType:       "Device",
+			Data:           json.RawMessage(`{}`),
+			DuplicateCount: 1,
 		}, nil).Once()
 
 	repo.EXPECT().InsertSnapshot(ctx, mock.AnythingOfType("graph.InsertSnapshotParams")).
@@ -131,7 +130,7 @@ func TestUpsertEntity_SimpleDevice(t *testing.T) {
 func TestUpsertEntity_DeviceWithSite(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()
-	gb := graph.NewBuilder(repo, logger)
+	gb := graph.NewService(repo, logger)
 
 	ctx := context.Background()
 
@@ -160,12 +159,11 @@ func TestUpsertEntity_DeviceWithSite(t *testing.T) {
 	repo.EXPECT().UpsertNode(ctx, mock.MatchedBy(func(params graph.UpsertNodeParams) bool {
 		return params.NodeType == "Device"
 	})).Return(graph.Node{
-		ID:                    1,
-		ExternalID:            "device-hash",
-		NodeType:              "Device",
-		Data:                  json.RawMessage(`{}`),
-		DuplicateCount:        1,
-		MatchingSchemaVersion: 1,
+		ID:             1,
+		ExternalID:     "device-hash",
+		NodeType:       "Device",
+		Data:           json.RawMessage(`{}`),
+		DuplicateCount: 1,
 	}, nil).Once()
 
 	repo.EXPECT().InsertSnapshot(ctx, mock.MatchedBy(func(params graph.InsertSnapshotParams) bool {
@@ -180,12 +178,11 @@ func TestUpsertEntity_DeviceWithSite(t *testing.T) {
 	repo.EXPECT().UpsertNode(ctx, mock.MatchedBy(func(params graph.UpsertNodeParams) bool {
 		return params.NodeType == "Site"
 	})).Return(graph.Node{
-		ID:                    2,
-		ExternalID:            "site-hash",
-		NodeType:              "Site",
-		Data:                  json.RawMessage(`{}`),
-		DuplicateCount:        1,
-		MatchingSchemaVersion: 1,
+		ID:             2,
+		ExternalID:     "site-hash",
+		NodeType:       "Site",
+		Data:           json.RawMessage(`{}`),
+		DuplicateCount: 1,
 	}, nil).Once()
 
 	repo.EXPECT().InsertSnapshot(ctx, mock.MatchedBy(func(params graph.InsertSnapshotParams) bool {
@@ -214,7 +211,7 @@ func TestUpsertEntity_DeviceWithSite(t *testing.T) {
 func TestFindNodeByTypeAndID_Found(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()
-	gb := graph.NewBuilder(repo, logger)
+	gb := graph.NewService(repo, logger)
 
 	ctx := context.Background()
 
@@ -242,7 +239,7 @@ func TestFindNodeByTypeAndID_Found(t *testing.T) {
 func TestFindNodeByTypeAndID_NotFound(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()
-	gb := graph.NewBuilder(repo, logger)
+	gb := graph.NewService(repo, logger)
 
 	ctx := context.Background()
 
@@ -338,7 +335,7 @@ func TestGetEntityTypeName(t *testing.T) {
 func TestExtractFieldByPath(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()
-	gb := graph.NewBuilder(repo, logger)
+	gb := graph.NewService(repo, logger)
 
 	data := map[string]any{
 		"name": "test",
@@ -373,7 +370,7 @@ func TestExtractFieldByPath(t *testing.T) {
 func TestSetFieldByPath(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()
-	gb := graph.NewBuilder(repo, logger)
+	gb := graph.NewService(repo, logger)
 
 	tests := []struct {
 		name     string
@@ -411,7 +408,7 @@ func TestSetFieldByPath(t *testing.T) {
 func TestGetCompleteNodeData(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()
-	gb := graph.NewBuilder(repo, logger)
+	gb := graph.NewService(repo, logger)
 
 	ctx := context.Background()
 
@@ -419,15 +416,14 @@ func TestGetCompleteNodeData(t *testing.T) {
 		NodeType:   "Device",
 		ExternalID: "test-id",
 	}).Return(graph.NodeWithLatestSnapshot{
-		ID:                    1,
-		ExternalID:            "test-id",
-		NodeType:              "Device",
-		MatchingData:          json.RawMessage(`{"name":"test"}`),
-		SnapshotData:          json.RawMessage(`{"name":"test","serial":"123"}`),
-		DuplicateCount:        1,
-		MatchingSchemaVersion: 1,
-		SequenceNumber:        1,
-		SnapshotCreatedAt:     func() *time.Time { t := time.Now(); return &t }(),
+		ID:                1,
+		ExternalID:        "test-id",
+		NodeType:          "Device",
+		MatchingData:      json.RawMessage(`{"name":"test"}`),
+		SnapshotData:      json.RawMessage(`{"name":"test","serial":"123"}`),
+		DuplicateCount:    1,
+		SequenceNumber:    1,
+		SnapshotCreatedAt: func() *time.Time { t := time.Now(); return &t }(),
 	}, nil).Once()
 
 	result, err := gb.GetCompleteNodeData(ctx, "Device", "test-id")
@@ -443,7 +439,7 @@ func TestGetCompleteNodeData(t *testing.T) {
 func TestGetSnapshots(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()
-	gb := graph.NewBuilder(repo, logger)
+	gb := graph.NewService(repo, logger)
 
 	ctx := context.Background()
 
@@ -465,29 +461,6 @@ func TestGetSnapshots(t *testing.T) {
 	repo.AssertExpectations(t)
 }
 
-func TestNeedsSchemaUpdate(t *testing.T) {
-	repo := new(mocks.Repository)
-	logger := newTestLogger()
-	gb := graph.NewBuilder(repo, logger)
-
-	tests := []struct {
-		name     string
-		version  int32
-		expected bool
-	}{
-		{"older version", 0, true},
-		{"current version", graph.CurrentSchemaVersion, false},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			node := &graph.Node{MatchingSchemaVersion: tt.version}
-			result := gb.TestNeedsSchemaUpdate(node)
-			assert.Equal(t, tt.expected, result)
-		})
-	}
-}
-
 // Helper function to create string pointer
 func ptrString(s string) *string {
 	return &s
@@ -496,7 +469,7 @@ func ptrString(s string) *string {
 func TestFindMatchByMetadata_DiodeIDMatch(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()
-	gb := graph.NewBuilder(repo, logger)
+	gb := graph.NewService(repo, logger)
 
 	ctx := context.Background()
 
@@ -542,7 +515,7 @@ func TestFindMatchByMetadata_DiodeIDMatch(t *testing.T) {
 func TestFindMatchByMetadata_OtherSourceMatchKey(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()
-	gb := graph.NewBuilder(repo, logger)
+	gb := graph.NewService(repo, logger)
 
 	ctx := context.Background()
 
@@ -592,7 +565,7 @@ func TestFindMatchByMetadata_OtherSourceMatchKey(t *testing.T) {
 func TestFindMatchByMetadata_DiodeIDPriorityOverOther(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()
-	gb := graph.NewBuilder(repo, logger)
+	gb := graph.NewService(repo, logger)
 
 	ctx := context.Background()
 
@@ -638,7 +611,7 @@ func TestFindMatchByMetadata_DiodeIDPriorityOverOther(t *testing.T) {
 func TestFindMatchByMetadata_NoSourceMatchKey(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()
-	gb := graph.NewBuilder(repo, logger)
+	gb := graph.NewService(repo, logger)
 
 	ctx := context.Background()
 
@@ -666,7 +639,7 @@ func TestFindMatchByMetadata_NoSourceMatchKey(t *testing.T) {
 func TestFindMatchByMetadata_EmptySourceMatch(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()
-	gb := graph.NewBuilder(repo, logger)
+	gb := graph.NewService(repo, logger)
 
 	ctx := context.Background()
 
@@ -694,7 +667,7 @@ func TestFindMatchByMetadata_EmptySourceMatch(t *testing.T) {
 func TestFindMatchByMetadata_NilEntity(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()
-	gb := graph.NewBuilder(repo, logger)
+	gb := graph.NewService(repo, logger)
 
 	ctx := context.Background()
 
@@ -707,7 +680,7 @@ func TestFindMatchByMetadata_NilEntity(t *testing.T) {
 func TestFindMatchByMetadata_NoMetadata(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()
-	gb := graph.NewBuilder(repo, logger)
+	gb := graph.NewService(repo, logger)
 
 	ctx := context.Background()
 
@@ -728,7 +701,7 @@ func TestFindMatchByMetadata_NoMetadata(t *testing.T) {
 func TestFindMatchByMetadata_NoMatch(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()
-	gb := graph.NewBuilder(repo, logger)
+	gb := graph.NewService(repo, logger)
 
 	ctx := context.Background()
 
@@ -761,7 +734,7 @@ func TestFindMatchByMetadata_NoMatch(t *testing.T) {
 func TestFindNodeBySourceMatchKey(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()
-	gb := graph.NewBuilder(repo, logger)
+	gb := graph.NewService(repo, logger)
 
 	ctx := context.Background()
 
@@ -795,7 +768,7 @@ func TestFindNodeBySourceMatchKey(t *testing.T) {
 func TestFindNodeBySourceMatchKey_NotFound(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()
-	gb := graph.NewBuilder(repo, logger)
+	gb := graph.NewService(repo, logger)
 
 	ctx := context.Background()
 
@@ -811,7 +784,7 @@ func TestFindNodeBySourceMatchKey_NotFound(t *testing.T) {
 func TestFindNodeBySourceMatchKey_DatabaseError(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()
-	gb := graph.NewBuilder(repo, logger)
+	gb := graph.NewService(repo, logger)
 
 	ctx := context.Background()
 
@@ -829,7 +802,7 @@ func TestFindNodeBySourceMatchKey_DatabaseError(t *testing.T) {
 func TestExtractMetadata(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()
-	gb := graph.NewBuilder(repo, logger)
+	gb := graph.NewService(repo, logger)
 
 	tests := []struct {
 		name     string
@@ -860,7 +833,7 @@ func TestExtractMetadata(t *testing.T) {
 func TestExtractMetadata_WithMetadata(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()
-	gb := graph.NewBuilder(repo, logger)
+	gb := graph.NewService(repo, logger)
 
 	metadata, err := structpb.NewStruct(map[string]any{
 		"key": "value",
@@ -887,7 +860,7 @@ func TestExtractMetadata_WithMetadata(t *testing.T) {
 func TestFindNodeByExternalID(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()
-	gb := graph.NewBuilder(repo, logger)
+	gb := graph.NewService(repo, logger)
 
 	ctx := context.Background()
 
@@ -916,7 +889,7 @@ func TestFindNodeByExternalID(t *testing.T) {
 func TestFindNodeByExternalID_NotFound(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()
-	gb := graph.NewBuilder(repo, logger)
+	gb := graph.NewService(repo, logger)
 
 	ctx := context.Background()
 
@@ -932,7 +905,7 @@ func TestFindNodeByExternalID_NotFound(t *testing.T) {
 func TestEnsureDiodeID_AddsWhenMissing(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()
-	gb := graph.NewBuilder(repo, logger)
+	gb := graph.NewService(repo, logger)
 
 	// Empty metadata
 	metadata := json.RawMessage(`{}`)
@@ -950,7 +923,7 @@ func TestEnsureDiodeID_AddsWhenMissing(t *testing.T) {
 func TestEnsureDiodeID_OverwritesExisting(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()
-	gb := graph.NewBuilder(repo, logger)
+	gb := graph.NewService(repo, logger)
 
 	// Metadata with existing diode_id (client-provided)
 	metadata := json.RawMessage(`{"source_match":{"diode_id":"client-provided-id","other":"value"}}`)
@@ -971,7 +944,7 @@ func TestEnsureDiodeID_OverwritesExisting(t *testing.T) {
 func TestEnsureDiodeID_AddsToExistingSourceMatch(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()
-	gb := graph.NewBuilder(repo, logger)
+	gb := graph.NewService(repo, logger)
 
 	// Metadata with source_match but no diode_id
 	metadata := json.RawMessage(`{"source_match":{"netbox_id":"456"}}`)
@@ -990,7 +963,7 @@ func TestEnsureDiodeID_AddsToExistingSourceMatch(t *testing.T) {
 func TestFindNodeByContentHash(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()
-	gb := graph.NewBuilder(repo, logger)
+	gb := graph.NewService(repo, logger)
 
 	ctx := context.Background()
 
@@ -999,12 +972,11 @@ func TestFindNodeByContentHash(t *testing.T) {
 		NodeType:    "Device",
 		ContentHash: "abc123hash",
 	}).Return(graph.Node{
-		ID:                    42,
-		ExternalID:            "existing-uuid",
-		NodeType:              "Device",
-		Data:                  json.RawMessage(`{"name":"test-device"}`),
-		DuplicateCount:        5,
-		MatchingSchemaVersion: 1,
+		ID:             42,
+		ExternalID:     "existing-uuid",
+		NodeType:       "Device",
+		Data:           json.RawMessage(`{"name":"test-device"}`),
+		DuplicateCount: 5,
 	}, nil).Once()
 
 	result := gb.TestFindNodeByContentHash(ctx, "Device", "abc123hash")
@@ -1022,7 +994,7 @@ func TestFindNodeByContentHash(t *testing.T) {
 func TestFindNodeByContentHash_NotFound(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()
-	gb := graph.NewBuilder(repo, logger)
+	gb := graph.NewService(repo, logger)
 
 	ctx := context.Background()
 
@@ -1042,7 +1014,7 @@ func TestFindNodeByContentHash_NotFound(t *testing.T) {
 func TestFindNodeByContentHash_DatabaseError(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()
-	gb := graph.NewBuilder(repo, logger)
+	gb := graph.NewService(repo, logger)
 
 	ctx := context.Background()
 

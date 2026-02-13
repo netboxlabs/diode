@@ -40,17 +40,16 @@ func toNode(n postgres.GraphNode) graph.Node {
 		contentHash = &n.ContentHash.String
 	}
 	return graph.Node{
-		ID:                    n.ID,
-		ExternalID:            n.ExternalID,
-		NodeType:              n.NodeType,
-		Data:                  json.RawMessage(n.Data),
-		DuplicateCount:        n.DuplicateCount,
-		MatchingSchemaVersion: n.MatchingSchemaVersion,
-		CreatedAt:             n.CreatedAt.Time,
-		UpdatedAt:             n.UpdatedAt.Time,
-		LastSeenTs:            lastSeen,
-		Metadata:              json.RawMessage(n.Metadata),
-		ContentHash:           contentHash,
+		ID:             n.ID,
+		ExternalID:     n.ExternalID,
+		NodeType:       n.NodeType,
+		Data:           json.RawMessage(n.Data),
+		DuplicateCount: n.DuplicateCount,
+		CreatedAt:      n.CreatedAt.Time,
+		UpdatedAt:      n.UpdatedAt.Time,
+		LastSeenTs:     lastSeen,
+		Metadata:       json.RawMessage(n.Metadata),
+		ContentHash:    contentHash,
 	}
 }
 
@@ -97,12 +96,11 @@ func wrapNotFound(err error) error {
 // UpsertNode implements graph.Repository.
 func (r *GraphRepository) UpsertNode(ctx context.Context, arg graph.UpsertNodeParams) (graph.Node, error) {
 	result, err := r.queries.UpsertGraphNode(ctx, postgres.UpsertGraphNodeParams{
-		ExternalID:            arg.ExternalID,
-		NodeType:              arg.NodeType,
-		Data:                  []byte(arg.Data),
-		MatchingSchemaVersion: arg.MatchingSchemaVersion,
-		Metadata:              []byte(arg.Metadata),
-		ContentHash:           toOptionalPgText(arg.ContentHash),
+		ExternalID:  arg.ExternalID,
+		NodeType:    arg.NodeType,
+		Data:        []byte(arg.Data),
+		Metadata:    []byte(arg.Metadata),
+		ContentHash: toOptionalPgText(arg.ContentHash),
 	})
 	if err != nil {
 		return graph.Node{}, err
@@ -113,12 +111,11 @@ func (r *GraphRepository) UpsertNode(ctx context.Context, arg graph.UpsertNodePa
 // UpdateNodeData implements graph.Repository.
 func (r *GraphRepository) UpdateNodeData(ctx context.Context, arg graph.UpdateNodeDataParams) (graph.Node, error) {
 	result, err := r.queries.UpdateGraphNodeData(ctx, postgres.UpdateGraphNodeDataParams{
-		NodeType:              arg.NodeType,
-		ExternalID:            arg.ExternalID,
-		Data:                  []byte(arg.Data),
-		MatchingSchemaVersion: arg.MatchingSchemaVersion,
-		Metadata:              []byte(arg.Metadata),
-		ContentHash:           toOptionalPgText(arg.ContentHash),
+		NodeType:    arg.NodeType,
+		ExternalID:  arg.ExternalID,
+		Data:        []byte(arg.Data),
+		Metadata:    []byte(arg.Metadata),
+		ContentHash: toOptionalPgText(arg.ContentHash),
 	})
 	if err != nil {
 		return graph.Node{}, wrapNotFound(err)
@@ -231,6 +228,47 @@ func (r *GraphRepository) CleanupOldSnapshots(ctx context.Context, arg graph.Cle
 	})
 }
 
+// nodeWithSnapshotFields is a common shape shared by GetNodeWithLatestSnapshotRow and ListNodesRow.
+type nodeWithSnapshotFields struct {
+	ID                int64
+	ExternalID        string
+	NodeType          string
+	MatchingData      []byte
+	DuplicateCount    int32
+	LastSeenTs        pgtype.Timestamptz
+	CreatedAt         pgtype.Timestamptz
+	UpdatedAt         pgtype.Timestamptz
+	Metadata          []byte
+	SnapshotData      []byte
+	SequenceNumber    int32
+	SnapshotCreatedAt pgtype.Timestamptz
+}
+
+func toNodeWithLatestSnapshot(r nodeWithSnapshotFields) graph.NodeWithLatestSnapshot {
+	var lastSeen *time.Time
+	if r.LastSeenTs.Valid {
+		lastSeen = &r.LastSeenTs.Time
+	}
+	var snapshotCreatedAt *time.Time
+	if r.SnapshotCreatedAt.Valid {
+		snapshotCreatedAt = &r.SnapshotCreatedAt.Time
+	}
+	return graph.NodeWithLatestSnapshot{
+		ID:                r.ID,
+		ExternalID:        r.ExternalID,
+		NodeType:          r.NodeType,
+		MatchingData:      json.RawMessage(r.MatchingData),
+		DuplicateCount:    r.DuplicateCount,
+		LastSeenTs:        lastSeen,
+		CreatedAt:         r.CreatedAt.Time,
+		UpdatedAt:         r.UpdatedAt.Time,
+		Metadata:          json.RawMessage(r.Metadata),
+		SnapshotData:      json.RawMessage(r.SnapshotData),
+		SequenceNumber:    r.SequenceNumber,
+		SnapshotCreatedAt: snapshotCreatedAt,
+	}
+}
+
 // GetNodeWithLatestSnapshot implements graph.Repository.
 func (r *GraphRepository) GetNodeWithLatestSnapshot(ctx context.Context, arg graph.GetNodeWithLatestSnapshotParams) (graph.NodeWithLatestSnapshot, error) {
 	result, err := r.queries.GetNodeWithLatestSnapshot(ctx, postgres.GetNodeWithLatestSnapshotParams{
@@ -240,31 +278,51 @@ func (r *GraphRepository) GetNodeWithLatestSnapshot(ctx context.Context, arg gra
 	if err != nil {
 		return graph.NodeWithLatestSnapshot{}, wrapNotFound(err)
 	}
+	return toNodeWithLatestSnapshot(nodeWithSnapshotFields{
+		ID:                result.ID,
+		ExternalID:        result.ExternalID,
+		NodeType:          result.NodeType,
+		MatchingData:      result.MatchingData,
+		DuplicateCount:    result.DuplicateCount,
+		LastSeenTs:        result.LastSeenTs,
+		CreatedAt:         result.CreatedAt,
+		UpdatedAt:         result.UpdatedAt,
+		Metadata:          result.Metadata,
+		SnapshotData:      result.SnapshotData,
+		SequenceNumber:    result.SequenceNumber,
+		SnapshotCreatedAt: result.SnapshotCreatedAt,
+	}), nil
+}
 
-	var lastSeen *time.Time
-	if result.LastSeenTs.Valid {
-		lastSeen = &result.LastSeenTs.Time
+// ListNodes implements graph.Repository.
+func (r *GraphRepository) ListNodes(ctx context.Context, arg graph.ListNodesParams) ([]graph.NodeWithLatestSnapshot, error) {
+	rows, err := r.queries.ListNodes(ctx, postgres.ListNodesParams{
+		NodeTypes:      arg.NodeTypes,
+		MetadataFilter: []byte(arg.MetadataFilter),
+		Limit:          arg.Limit,
+		Offset:         arg.Offset,
+	})
+	if err != nil {
+		return nil, err
 	}
-	var snapshotCreatedAt *time.Time
-	if result.SnapshotCreatedAt.Valid {
-		snapshotCreatedAt = &result.SnapshotCreatedAt.Time
+	result := make([]graph.NodeWithLatestSnapshot, len(rows))
+	for i, row := range rows {
+		result[i] = toNodeWithLatestSnapshot(nodeWithSnapshotFields{
+			ID:                row.ID,
+			ExternalID:        row.ExternalID,
+			NodeType:          row.NodeType,
+			MatchingData:      row.MatchingData,
+			DuplicateCount:    row.DuplicateCount,
+			LastSeenTs:        row.LastSeenTs,
+			CreatedAt:         row.CreatedAt,
+			UpdatedAt:         row.UpdatedAt,
+			Metadata:          row.Metadata,
+			SnapshotData:      row.SnapshotData,
+			SequenceNumber:    row.SequenceNumber,
+			SnapshotCreatedAt: row.SnapshotCreatedAt,
+		})
 	}
-
-	return graph.NodeWithLatestSnapshot{
-		ID:                    result.ID,
-		ExternalID:            result.ExternalID,
-		NodeType:              result.NodeType,
-		MatchingData:          json.RawMessage(result.MatchingData),
-		DuplicateCount:        result.DuplicateCount,
-		MatchingSchemaVersion: result.MatchingSchemaVersion,
-		LastSeenTs:            lastSeen,
-		CreatedAt:             result.CreatedAt.Time,
-		UpdatedAt:             result.UpdatedAt.Time,
-		Metadata:              json.RawMessage(result.Metadata),
-		SnapshotData:          json.RawMessage(result.SnapshotData),
-		SequenceNumber:        result.SequenceNumber,
-		SnapshotCreatedAt:     snapshotCreatedAt,
-	}, nil
+	return result, nil
 }
 
 // GetSnapshotsByNode implements graph.Repository.
@@ -278,17 +336,4 @@ func (r *GraphRepository) GetSnapshotsByNode(ctx context.Context, arg graph.GetS
 		return nil, err
 	}
 	return toSnapshots(result), nil
-}
-
-// FindNodesNeedingSchemaUpdate implements graph.Repository.
-func (r *GraphRepository) FindNodesNeedingSchemaUpdate(ctx context.Context, arg graph.FindNodesNeedingSchemaUpdateParams) ([]graph.Node, error) {
-	result, err := r.queries.FindNodesNeedingSchemaUpdate(ctx, postgres.FindNodesNeedingSchemaUpdateParams{
-		MatchingSchemaVersion: arg.MatchingSchemaVersion,
-		Offset:                arg.Offset,
-		Limit:                 arg.Limit,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return toNodes(result), nil
 }

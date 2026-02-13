@@ -9,46 +9,42 @@ import (
 	"github.com/netboxlabs/diode/diode-server/matching"
 )
 
-// Exported wrappers for unexported Builder methods used by external tests.
+// Exported wrappers for unexported Service methods used by external tests.
 
-func (gb *Builder) TestFindNodeByTypeAndID(ctx context.Context, nodeType, externalID string) (*Node, error) {
-	return gb.findNodeByTypeAndID(ctx, nodeType, externalID)
+func (s *Service) TestFindNodeByTypeAndID(ctx context.Context, nodeType, externalID string) (*Node, error) {
+	return s.findNodeByTypeAndID(ctx, nodeType, externalID)
 }
 
-func (gb *Builder) TestExtractFieldByPath(data map[string]any, fieldPath string) any {
-	return gb.extractFieldByPath(data, fieldPath)
+func (s *Service) TestExtractFieldByPath(data map[string]any, fieldPath string) any {
+	return s.extractFieldByPath(data, fieldPath)
 }
 
-func (gb *Builder) TestSetFieldByPath(data map[string]any, fieldPath string, value any) {
-	gb.setFieldByPath(data, fieldPath, value)
+func (s *Service) TestSetFieldByPath(data map[string]any, fieldPath string, value any) {
+	s.setFieldByPath(data, fieldPath, value)
 }
 
-func (gb *Builder) TestNeedsSchemaUpdate(node *Node) bool {
-	return gb.needsSchemaUpdate(node)
+func (s *Service) TestFindMatchByMetadata(ctx context.Context, entity *diodepb.Entity, nodeType string) *matching.MatchResult {
+	return s.findMatchByMetadata(ctx, entity, nodeType)
 }
 
-func (gb *Builder) TestFindMatchByMetadata(ctx context.Context, entity *diodepb.Entity, nodeType string) *matching.MatchResult {
-	return gb.findMatchByMetadata(ctx, entity, nodeType)
+func (s *Service) TestFindNodeBySourceMatchKey(ctx context.Context, nodeType, key string, value any) *matching.MatchResult {
+	return s.findNodeBySourceMatchKey(ctx, nodeType, key, value)
 }
 
-func (gb *Builder) TestFindNodeBySourceMatchKey(ctx context.Context, nodeType, key string, value any) *matching.MatchResult {
-	return gb.findNodeBySourceMatchKey(ctx, nodeType, key, value)
+func (s *Service) TestExtractMetadata(entity *diodepb.Entity) (json.RawMessage, error) {
+	return s.extractMetadata(entity)
 }
 
-func (gb *Builder) TestExtractMetadata(entity *diodepb.Entity) (json.RawMessage, error) {
-	return gb.extractMetadata(entity)
+func (s *Service) TestFindNodeByExternalID(ctx context.Context, nodeType, externalID string) *matching.MatchResult {
+	return s.findNodeByExternalID(ctx, nodeType, externalID)
 }
 
-func (gb *Builder) TestFindNodeByExternalID(ctx context.Context, nodeType, externalID string) *matching.MatchResult {
-	return gb.findNodeByExternalID(ctx, nodeType, externalID)
+func (s *Service) TestEnsureDiodeID(metadata json.RawMessage, externalID string) json.RawMessage {
+	return s.ensureDiodeID(metadata, externalID)
 }
 
-func (gb *Builder) TestEnsureDiodeID(metadata json.RawMessage, externalID string) json.RawMessage {
-	return gb.ensureDiodeID(metadata, externalID)
-}
-
-func (gb *Builder) TestFindNodeByContentHash(ctx context.Context, nodeType, contentHash string) *matching.MatchResult {
-	return gb.findNodeByContentHash(ctx, nodeType, contentHash)
+func (s *Service) TestFindNodeByContentHash(ctx context.Context, nodeType, contentHash string) *matching.MatchResult {
+	return s.findNodeByContentHash(ctx, nodeType, contentHash)
 }
 
 // Exported wrappers for standalone functions.
@@ -61,10 +57,10 @@ func ExportGetEntityTypeName(entity *diodepb.Entity) string {
 	return getEntityTypeName(entity)
 }
 
-// Field accessors for Builder.
+// Field accessors for Service.
 
-func (gb *Builder) TestSnapshotRetention() int                { return gb.snapshotRetention }
-func (gb *Builder) TestEntityMatcher() matching.EntityMatcher { return gb.entityMatcher }
-func (gb *Builder) TestNodeCache() map[string]*Node           { return gb.nodeCache }
-func (gb *Builder) TestUpdatedNodes() map[string]*Node        { return gb.updatedNodes }
-func (gb *Builder) TestSeenInThisRequest() map[string]bool    { return gb.seenInThisRequest }
+func (s *Service) TestSnapshotRetention() int                { return s.snapshotRetention }
+func (s *Service) TestEntityMatcher() matching.EntityMatcher { return s.entityMatcher }
+func (s *Service) TestNodeCache() map[string]*Node           { return s.nodeCache }
+func (s *Service) TestUpdatedNodes() map[string]*Node        { return s.updatedNodes }
+func (s *Service) TestSeenInThisRequest() map[string]bool    { return s.seenInThisRequest }
