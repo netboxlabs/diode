@@ -57,6 +57,39 @@ func ExportGetEntityTypeName(entity *diodepb.Entity) string {
 	return getEntityTypeName(entity)
 }
 
+// Exported wrappers for propagate functions.
+
+func ExportUpdateRefsInData(data map[string]any, updates []ParsedUpdateForTest) {
+	internal := make([]parsedUpdate, len(updates))
+	for i, u := range updates {
+		internal[i] = parsedUpdate{
+			key:       u.Key,
+			nodeType:  u.NodeType,
+			entityMap: u.EntityMap,
+		}
+	}
+	updateRefsInData(data, internal)
+}
+
+func ExportCheckForUpdatedRefs(data any, excludeNodeKey string, updates []ParsedUpdateForTest) bool {
+	internal := make([]parsedUpdate, len(updates))
+	for i, u := range updates {
+		internal[i] = parsedUpdate{
+			key:       u.Key,
+			nodeType:  u.NodeType,
+			entityMap: u.EntityMap,
+		}
+	}
+	return checkForUpdatedRefs(data, excludeNodeKey, internal)
+}
+
+// ParsedUpdateForTest is an exported version of parsedUpdate for tests.
+type ParsedUpdateForTest struct {
+	Key       string
+	NodeType  string
+	EntityMap map[string]any
+}
+
 // Field accessors for Service.
 
 func (s *Service) TestSnapshotRetention() int                { return s.snapshotRetention }
