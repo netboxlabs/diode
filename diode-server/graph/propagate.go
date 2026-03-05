@@ -172,16 +172,24 @@ func updateRefsInData(data map[string]any, updates []parsedUpdate) {
 	for _, value := range data {
 		switch v := value.(type) {
 		case map[string]any:
+			matched := false
 			if name, hasName := v["name"]; hasName {
 				if nameStr, ok := name.(string); ok {
 					for _, u := range updates {
 						if updatedName, ok := u.entityMap["name"]; ok && updatedName == nameStr {
 							maps.Copy(v, u.entityMap)
+							matched = true
 						}
 					}
 				}
 			}
-			updateRefsInData(v, updates)
+			// Skip recursion into maps that were just updated via maps.Copy
+			// to prevent infinite recursion: the copied entityMap may contain
+			// nested maps with matching names that would trigger the same
+			// copy indefinitely.
+			if !matched {
+				updateRefsInData(v, updates)
+			}
 		case []any:
 			for _, item := range v {
 				if itemMap, ok := item.(map[string]any); ok {
