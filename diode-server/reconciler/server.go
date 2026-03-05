@@ -39,12 +39,14 @@ func NewServer(ctx context.Context, logger *slog.Logger, repository Repository, 
 
 	redisOptions := redis.Options{
 		Addr:      fmt.Sprintf("%s:%s", cfg.RedisHost, cfg.RedisPort),
-		Password:  cfg.RedisPassword,
 		DB:        cfg.RedisDB,
 		TLSConfig: redisTLSConfig,
 	}
 	if cfg.RedisUsername != "" {
 		redisOptions.Username = cfg.RedisUsername
+	}
+	if cfg.RedisPassword != "" {
+		redisOptions.Password = cfg.RedisPassword
 	}
 	redisClient := redis.NewClient(&redisOptions)
 
