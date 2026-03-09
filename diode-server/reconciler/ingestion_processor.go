@@ -15,7 +15,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"go.opentelemetry.io/otel/attribute"
-	"golang.org/x/time/rate"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
@@ -311,8 +310,6 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 
 // GenerateChangeSet generates a change set for an ingestion log
 func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChangeSetChan <-chan IngestionLogToProcess, applyChangeSetChan chan<- IngestionLogToProcess, doneChan chan<- struct{}) {
-	limiter := rate.NewLimiter(rate.Limit(p.Config.ReconcilerRateLimiterRPS), p.Config.ReconcilerRateLimiterBurst)
-
 	go func() {
 		defer func() {
 			if applyChangeSetChan != nil {
@@ -330,10 +327,6 @@ func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChan
 				return
 			case msg, ok := <-generateChangeSetChan:
 				if !ok {
-					return
-				}
-				if err := limiter.Wait(ctx); err != nil {
-					p.logger.Debug("rate limiter wait", "error", err)
 					return
 				}
 
@@ -363,8 +356,6 @@ func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChan
 
 // ApplyChangeSet applies a change set for an ingestion log
 func (p *IngestionProcessor) ApplyChangeSet(ctx context.Context, applyChan <-chan IngestionLogToProcess, doneChan chan<- struct{}) {
-	limiter := rate.NewLimiter(rate.Limit(p.Config.ReconcilerRateLimiterRPS), p.Config.ReconcilerRateLimiterBurst)
-
 	go func() {
 		defer func() {
 			if doneChan != nil {
@@ -379,10 +370,6 @@ func (p *IngestionProcessor) ApplyChangeSet(ctx context.Context, applyChan <-cha
 				return
 			case msg, ok := <-applyChan:
 				if !ok {
-					return
-				}
-				if err := limiter.Wait(ctx); err != nil {
-					p.logger.Debug("rate limiter wait", "error", err)
 					return
 				}
 
