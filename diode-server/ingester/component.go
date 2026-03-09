@@ -1,6 +1,7 @@
 package ingester
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"log/slog"
@@ -8,6 +9,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/andybalholm/brotli"
 	"github.com/redis/go-redis/v9"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel/attribute"
@@ -152,8 +154,20 @@ func (c *Component) Ingest(ctx context.Context, in *diodepb.IngestRequest) (*dio
 	}
 
 	msg := map[string]any{
-		"request":      encodedRequest,
 		"ingestion_ts": time.Now().UnixNano(),
+	}
+
+	if c.config.CompressStreamMessages {
+		compressed, cErr := compressBrotli(encodedRequest)
+		if cErr != nil {
+			c.metrics.RecordIngestRequest(ctx, false)
+			c.logger.Error("failed to compress request", "error", cErr)
+			return nil, status.Error(codes.Internal, "")
+		}
+		msg["request"] = compressed
+		msg["encoding"] = "br"
+	} else {
+		msg["request"] = encodedRequest
 	}
 
 	streamID, err := c.streamRouter.GetIngestStreamID(ctx, in)
@@ -211,4 +225,16 @@ func validateRequest(in *diodepb.IngestRequest) error {
 	}
 
 	return nil
+}
+
+func compressBrotli(data []byte) ([]byte, error) {
+	var buf bytes.Buffer
+	w := brotli.NewWriterLevel(&buf, 1)
+	if _, err := w.Write(data); err != nil {
+		return nil, fmt.Errorf("brotli write: %w", err)
+	}
+	if err := w.Close(); err != nil {
+		return nil, fmt.Errorf("brotli close: %w", err)
+	}
+	return buf.Bytes(), nil
 }

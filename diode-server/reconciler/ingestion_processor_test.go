@@ -1,6 +1,7 @@
 package reconciler_test
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
 	"log/slog"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	"github.com/alicebob/miniredis/v2"
+	"github.com/andybalholm/brotli"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
@@ -28,6 +30,16 @@ import (
 
 func int32Ptr(i int32) *int32 { return &i }
 func intPtr(i int) *int       { return &i }
+
+func compressBrotliTest(t *testing.T, data []byte) []byte {
+	t.Helper()
+	var buf bytes.Buffer
+	w := brotli.NewWriterLevel(&buf, 1)
+	_, err := w.Write(data)
+	require.NoError(t, err)
+	require.NoError(t, w.Close())
+	return buf.Bytes()
+}
 
 func TestNewIngestionProcessor(t *testing.T) {
 	ctx := context.Background()
@@ -267,6 +279,7 @@ func TestIngestionProcessorStart(t *testing.T) {
 	}
 	reqBytes, err := proto.Marshal(ingestReq)
 	assert.NoError(t, err)
+	compressedReq := compressBrotliTest(t, reqBytes)
 
 	// Start processor in a separate goroutine
 	go func() {
@@ -309,15 +322,15 @@ func TestIngestionProcessorStart(t *testing.T) {
 	mockMetrics.On("RecordChangeSetCreate", mock.Anything, mock.Anything, mock.Anything).Return()
 	mockMetrics.On("RecordChangeSetApply", mock.Anything, mock.Anything, mock.Anything).Return()
 
-	// Add a message to the Redis stream
-	metadata := []string{
-		"request", string(reqBytes),
-		"ingestion_ts", "1720425600",
-	}
+	// Add a compressed message to the Redis stream
 	streamID := reconciler.DefaultRedisStreamID
 	err = redisStreamClient.XAdd(context.Background(), &redis.XAddArgs{
 		Stream: streamID,
-		Values: metadata,
+		Values: map[string]interface{}{
+			"request":      string(compressedReq),
+			"encoding":     "br",
+			"ingestion_ts": "1720425600",
+		},
 	}).Err()
 	assert.NoError(t, err)
 
@@ -520,13 +533,15 @@ func TestIngestionProcessor_DuplicateHandling(t *testing.T) {
 			}
 			reqBytes, err := proto.Marshal(ingestReq)
 			require.NoError(t, err)
+			compressedReq := compressBrotliTest(t, reqBytes)
 
 			streamID := reconciler.DefaultRedisStreamID
 			err = redisStreamClient.XAdd(ctx, &redis.XAddArgs{
 				Stream: streamID,
-				Values: []string{
-					"request", string(reqBytes),
-					"ingestion_ts", "1720425600",
+				Values: map[string]interface{}{
+					"request":      string(compressedReq),
+					"encoding":     "br",
+					"ingestion_ts": "1720425600",
 				},
 			}).Err()
 			require.NoError(t, err)

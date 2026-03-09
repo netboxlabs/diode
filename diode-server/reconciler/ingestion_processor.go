@@ -1,9 +1,11 @@
 package reconciler
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"strconv"
@@ -11,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/andybalholm/brotli"
 	"github.com/cloudflare/backoff"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
@@ -224,8 +227,18 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 	}
 	ctx = telemetry.ContextWithMetricAttributes(ctx, attrs...)
 
+	reqBytes := []byte(msg.Values["request"].(string))
+	if enc, ok := msg.Values["encoding"].(string); ok && enc == "br" {
+		var err error
+		reqBytes, err = decompressBrotli(reqBytes)
+		if err != nil {
+			p.metrics.RecordHandleMessage(ctx, false)
+			return doneChan, fmt.Errorf("failed to decompress request: %w", err)
+		}
+	}
+
 	ingestReq := &diodepb.IngestRequest{}
-	if err := proto.Unmarshal([]byte(msg.Values["request"].(string)), ingestReq); err != nil {
+	if err := proto.Unmarshal(reqBytes, ingestReq); err != nil {
 		p.metrics.RecordHandleMessage(ctx, false)
 		return doneChan, err
 	}
@@ -467,4 +480,13 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 	}
 
 	return errs
+}
+
+func decompressBrotli(data []byte) ([]byte, error) {
+	r := brotli.NewReader(bytes.NewReader(data))
+	out, err := io.ReadAll(r)
+	if err != nil {
+		return nil, fmt.Errorf("brotli decompress: %w", err)
+	}
+	return out, nil
 }
