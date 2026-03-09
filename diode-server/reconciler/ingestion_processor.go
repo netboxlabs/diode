@@ -323,26 +323,13 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 
 // GenerateChangeSet generates a change set for an ingestion log
 func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChangeSetChan <-chan IngestionLogToProcess, applyChangeSetChan chan<- IngestionLogToProcess, doneChan chan<- struct{}) {
-	go func() {
-		defer func() {
-			if applyChangeSetChan != nil {
-				close(applyChangeSetChan)
-			}
-			if doneChan != nil {
-				doneChan <- struct{}{}
-			}
-		}()
-
-		for {
-			select {
-			case <-ctx.Done():
-				p.logger.Debug("context cancelled", "error", ctx.Err())
-				return
-			case msg, ok := <-generateChangeSetChan:
-				if !ok {
-					return
-				}
-
+	concurrency := max(p.Config.GenerateChangeSetConcurrency, 1)
+	var wg sync.WaitGroup
+	wg.Add(concurrency)
+	for i := 0; i < concurrency; i++ {
+		go func() {
+			defer wg.Done()
+			for msg := range generateChangeSetChan {
 				id, changeSet, err := p.ops.GenerateChangeSet(ctx, msg.ingestionLogID, msg.ingestionLog, msg.branchID)
 				if err != nil {
 					p.logger.Error("error generating changeset", "error", err)
@@ -363,29 +350,28 @@ func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChan
 					}
 				}
 			}
+		}()
+	}
+	go func() {
+		wg.Wait()
+		if applyChangeSetChan != nil {
+			close(applyChangeSetChan)
+		}
+		if doneChan != nil {
+			doneChan <- struct{}{}
 		}
 	}()
 }
 
 // ApplyChangeSet applies a change set for an ingestion log
 func (p *IngestionProcessor) ApplyChangeSet(ctx context.Context, applyChan <-chan IngestionLogToProcess, doneChan chan<- struct{}) {
-	go func() {
-		defer func() {
-			if doneChan != nil {
-				doneChan <- struct{}{}
-			}
-		}()
-
-		for {
-			select {
-			case <-ctx.Done():
-				p.logger.Debug("context cancelled", "error", ctx.Err())
-				return
-			case msg, ok := <-applyChan:
-				if !ok {
-					return
-				}
-
+	concurrency := max(p.Config.ApplyChangeSetConcurrency, 1)
+	var wg sync.WaitGroup
+	wg.Add(concurrency)
+	for i := 0; i < concurrency; i++ {
+		go func() {
+			defer wg.Done()
+			for msg := range applyChan {
 				if err := p.ops.ApplyChangeSet(ctx, msg.ingestionLogID, msg.ingestionLog, msg.changeSetID, msg.changeSet); err != nil {
 					p.logger.Error("error applying changeset", "error", err)
 					p.metrics.RecordChangeSetApply(ctx, false, 0)
@@ -393,6 +379,12 @@ func (p *IngestionProcessor) ApplyChangeSet(ctx context.Context, applyChan <-cha
 					p.metrics.RecordChangeSetApply(ctx, true, int64(len(msg.changeSet.Changes)))
 				}
 			}
+		}()
+	}
+	go func() {
+		wg.Wait()
+		if doneChan != nil {
+			doneChan <- struct{}{}
 		}
 	}()
 }

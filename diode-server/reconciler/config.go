@@ -37,6 +37,9 @@ type Config struct {
 	RedisTLS  tls.Config       `envconfig:"REDIS_TLS"`
 	Telemetry telemetry.Config `envconfig:"TELEMETRY"`
 
+	GenerateChangeSetConcurrency int `envconfig:"GENERATE_CHANGESET_CONCURRENCY" default:"4"`
+	ApplyChangeSetConcurrency    int `envconfig:"APPLY_CHANGESET_CONCURRENCY" default:"4"`
+
 	// Experimental
 	EnableGraphDB bool `envconfig:"ENABLE_GRAPH_DB" default:"false"`
 
