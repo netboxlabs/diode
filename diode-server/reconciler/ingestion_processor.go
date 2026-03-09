@@ -449,12 +449,17 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 
 		// Upsert entity into graph if graph DB is enabled (non-blocking, errors logged but not fatal)
 		if p.graphService != nil {
-			if _, err := p.graphService.UpsertEntity(ctx, v); err != nil {
+			start := time.Now()
+			_, err := p.graphService.UpsertEntity(ctx, v)
+			duration := time.Since(start).Seconds()
+			if err != nil {
 				p.logger.Warn("graph upsert entity failed",
 					"error", err,
 					"ingestion_log_id", id,
 					"entity_type", objectType)
-				// Don't fail the main processing path - graph extraction is supplementary
+				p.metrics.RecordGraphUpsert(ctx, false, objectType, duration)
+			} else {
+				p.metrics.RecordGraphUpsert(ctx, true, objectType, duration)
 			}
 		}
 
