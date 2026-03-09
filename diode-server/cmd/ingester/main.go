@@ -75,12 +75,14 @@ func main() {
 
 	redisOptions := redis.Options{
 		Addr:      fmt.Sprintf("%s:%s", cfg.RedisHost, cfg.RedisPort),
-		Password:  cfg.RedisPassword,
 		DB:        cfg.RedisStreamDB,
 		TLSConfig: redisTLSConfig,
 	}
 	if cfg.RedisUsername != "" {
 		redisOptions.Username = cfg.RedisUsername
+	}
+	if cfg.RedisPassword != "" {
+		redisOptions.Password = cfg.RedisPassword
 	}
 	redisStreamClient := redis.NewClient(&redisOptions)
 

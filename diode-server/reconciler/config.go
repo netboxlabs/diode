@@ -12,7 +12,7 @@ type Config struct {
 	RedisHost                     string `envconfig:"REDIS_HOST" default:"127.0.0.1"`
 	RedisPort                     string `envconfig:"REDIS_PORT" default:"6379"`
 	RedisUsername                 string `envconfig:"REDIS_USERNAME" default:""`
-	RedisPassword                 string `envconfig:"REDIS_PASSWORD" required:"true"`
+	RedisPassword                 string `envconfig:"REDIS_PASSWORD" default:""`
 	RedisDB                       int    `envconfig:"REDIS_DB" default:"0"`
 	RedisStreamDB                 int    `envconfig:"REDIS_STREAM_DB" default:"1"`
 	MigrationEnabled              bool   `envconfig:"MIGRATION_ENABLED" default:"true"`
