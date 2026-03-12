@@ -17,8 +17,6 @@ type Config struct {
 	RedisStreamDB                 int    `envconfig:"REDIS_STREAM_DB" default:"1"`
 	MigrationEnabled              bool   `envconfig:"MIGRATION_ENABLED" default:"true"`
 	AutoApplyChangesets           bool   `envconfig:"AUTO_APPLY_CHANGESETS" default:"true"`
-	ReconcilerRateLimiterRPS      int    `envconfig:"RECONCILER_RATE_LIMITER_RPS" default:"20"`
-	ReconcilerRateLimiterBurst    int    `envconfig:"RECONCILER_RATE_LIMITER_BURST" default:"1"`
 	DiodeToNetBoxRateLimiterRPS   int    `envconfig:"DIODE_TO_NETBOX_RATE_LIMITER_RPS" default:"20"`
 	DiodeToNetBoxRateLimiterBurst int    `envconfig:"DIODE_TO_NETBOX_RATE_LIMITER_BURST" default:"1"`
 	PostgresHost                  string `envconfig:"POSTGRES_HOST"`

@@ -2,7 +2,7 @@
 
 A Helm chart for Diode
 
-![Version: 1.13.0](https://img.shields.io/badge/Version-1.13.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.5.0](https://img.shields.io/badge/AppVersion-1.5.0-informational?style=flat-square)
+![Version: 1.13.1](https://img.shields.io/badge/Version-1.13.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.5.0](https://img.shields.io/badge/AppVersion-1.5.0-informational?style=flat-square)
 
 ## Prerequisites
 
@@ -289,8 +289,6 @@ helm show values diode/diode
 | diodeReconciler.config.netboxDiodePluginSkipTlsVerify | bool | `false` | netbox diode plugin skip tls verify |
 | diodeReconciler.config.postgresDbName | string | `"diode"` | postgres db name |
 | diodeReconciler.config.postgresUser | string | `"diode"` | postgres user |
-| diodeReconciler.config.reconcilerRateLimiterBurst | int | `1` | reconciler rate limiter burst |
-| diodeReconciler.config.reconcilerRateLimiterRps | int | `20` | reconciler rate limiter rps |
 | diodeReconciler.config.redisDb | int | `0` | redis db |
 | diodeReconciler.config.redisStreamDb | int | `1` | redis stream db |
 | diodeReconciler.config.sentryDsn | string | `""` | sentry DSN |

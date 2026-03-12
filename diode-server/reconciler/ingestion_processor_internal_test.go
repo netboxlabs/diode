@@ -174,8 +174,6 @@ func TestHandleStreamMessage(t *testing.T) {
 				logger:            logger,
 				Config: Config{
 					AutoApplyChangesets:          true,
-					ReconcilerRateLimiterRPS:     20,
-					ReconcilerRateLimiterBurst:   1,
 					GenerateChangeSetConcurrency: 1,
 					ApplyChangeSetConcurrency:    1,
 				},
@@ -331,8 +329,6 @@ func TestConsumeIngestionStream(t *testing.T) {
 				logger:            logger,
 				Config: Config{
 					AutoApplyChangesets:          true,
-					ReconcilerRateLimiterRPS:     20,
-					ReconcilerRateLimiterBurst:   1,
 					GenerateChangeSetConcurrency: 1,
 					ApplyChangeSetConcurrency:    1,
 				},
@@ -367,8 +363,6 @@ func TestHandleStreamMessageLegacyUncompressed(t *testing.T) {
 		logger:            logger,
 		Config: Config{
 			AutoApplyChangesets:          true,
-			ReconcilerRateLimiterRPS:     20,
-			ReconcilerRateLimiterBurst:   1,
 			GenerateChangeSetConcurrency: 1,
 			ApplyChangeSetConcurrency:    1,
 		},
@@ -601,8 +595,6 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 				logger:      logger,
 				Config: Config{
 					AutoApplyChangesets:          tt.autoApplyChangesets,
-					ReconcilerRateLimiterRPS:     20,
-					ReconcilerRateLimiterBurst:   1,
 					GenerateChangeSetConcurrency: 1,
 					ApplyChangeSetConcurrency:    1,
 				},

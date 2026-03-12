@@ -262,10 +262,6 @@ diodeReconciler:
     migrationEnabled: "true"
     # -- auto apply changesets
     autoApplyChangesets: "true"
-    # -- reconciler rate limiter rps
-    reconcilerRateLimiterRps: 20
-    # -- reconciler rate limiter burst
-    reconcilerRateLimiterBurst: 1
     # -- diode to netbox rate limiter rps
     diodeToNetboxRateLimiterRps: 20
     # -- diode to netbox rate limiter burst

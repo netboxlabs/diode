@@ -29,8 +29,6 @@ data:
   {{- end }}
   MIGRATION_ENABLED: {{ $config.migrationEnabled | default "true" | quote }}
   AUTO_APPLY_CHANGESETS: {{ $config.autoApplyChangesets | default "true" | quote }}
-  RECONCILER_RATE_LIMITER_RPS: {{ $config.reconcilerRateLimiterRps | default "20" | quote }}
-  RECONCILER_RATE_LIMITER_BURST: {{ $config.reconcilerRateLimiterBurst | default "1" | quote }}
   DIODE_TO_NETBOX_RATE_LIMITER_RPS: {{ $config.diodeToNetboxRateLimiterRps | default "20" | quote }}
   DIODE_TO_NETBOX_RATE_LIMITER_BURST: {{ $config.diodeToNetboxRateLimiterBurst | default "1" | quote }}
   POSTGRES_HOST: {{ include "diode.postgresql.hostname" . | quote }}
