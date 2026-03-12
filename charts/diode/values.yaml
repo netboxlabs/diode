@@ -266,6 +266,10 @@ diodeReconciler:
     diodeToNetboxRateLimiterRps: 20
     # -- diode to netbox rate limiter burst
     diodeToNetboxRateLimiterBurst: 1
+    # -- generate changeset concurrency
+    generateChangesetConcurrency: 4
+    # -- apply changeset concurrency
+    applyChangesetConcurrency: 4
     # -- postgres db name
     postgresDbName: diode
     # -- postgres user

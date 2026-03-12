@@ -279,10 +279,12 @@ helm show values diode/diode
 | diodeIngester.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
 | diodeIngester.serviceAccount.create | bool | `true` | create service account |
 | diodeReconciler.annotations | object | `{}` | annotations to add to the reconciler deployment |
+| diodeReconciler.config.applyChangesetConcurrency | int | `4` | apply changeset concurrency |
 | diodeReconciler.config.autoApplyChangesets | string | `"true"` | auto apply changesets |
 | diodeReconciler.config.diodeToNetBoxClientId | string | `"diode-to-netbox"` | diode to netbox client id |
 | diodeReconciler.config.diodeToNetboxRateLimiterBurst | int | `1` | diode to netbox rate limiter burst |
 | diodeReconciler.config.diodeToNetboxRateLimiterRps | int | `20` | diode to netbox rate limiter rps |
+| diodeReconciler.config.generateChangesetConcurrency | int | `4` | generate changeset concurrency |
 | diodeReconciler.config.loggingLevel | string | `"INFO"` | logging level |
 | diodeReconciler.config.migrationEnabled | string | `"true"` | migration enabled |
 | diodeReconciler.config.netboxDiodePluginApiBaseUrl | string | `"http://localhost:8000/netbox/api/plugins/diode"` | netbox diode plugin api base url |

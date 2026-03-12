@@ -31,6 +31,8 @@ data:
   AUTO_APPLY_CHANGESETS: {{ $config.autoApplyChangesets | default "true" | quote }}
   DIODE_TO_NETBOX_RATE_LIMITER_RPS: {{ $config.diodeToNetboxRateLimiterRps | default "20" | quote }}
   DIODE_TO_NETBOX_RATE_LIMITER_BURST: {{ $config.diodeToNetboxRateLimiterBurst | default "1" | quote }}
+  GENERATE_CHANGESET_CONCURRENCY: {{ $config.generateChangesetConcurrency | default "4" | quote }}
+  APPLY_CHANGESET_CONCURRENCY: {{ $config.applyChangesetConcurrency | default "4" | quote }}
   POSTGRES_HOST: {{ include "diode.postgresql.hostname" . | quote }}
   POSTGRES_PORT: {{ include "diode.postgresql.port" . | quote }}
   POSTGRES_DB_NAME: {{ include "diode.postgresql.database" . | quote }}
