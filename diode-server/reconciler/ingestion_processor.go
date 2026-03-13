@@ -233,7 +233,7 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 		reqBytes, err = decompressBrotli(reqBytes)
 		if err != nil {
 			p.metrics.RecordHandleMessage(ctx, false)
-			return doneChan, fmt.Errorf("failed to decompress request: %w", err)
+			return doneChan, fmt.Errorf("decompressing request: %w", err)
 		}
 	}
 

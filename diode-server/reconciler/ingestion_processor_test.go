@@ -31,7 +31,7 @@ import (
 func int32Ptr(i int32) *int32 { return &i }
 func intPtr(i int) *int       { return &i }
 
-func compressBrotliTest(t *testing.T, data []byte) []byte {
+func testCompressBrotli(t *testing.T, data []byte) []byte {
 	t.Helper()
 	var buf bytes.Buffer
 	w := brotli.NewWriterLevel(&buf, 1)
@@ -279,7 +279,7 @@ func TestIngestionProcessorStart(t *testing.T) {
 	}
 	reqBytes, err := proto.Marshal(ingestReq)
 	assert.NoError(t, err)
-	compressedReq := compressBrotliTest(t, reqBytes)
+	compressedReq := testCompressBrotli(t, reqBytes)
 
 	// Start processor in a separate goroutine
 	go func() {
@@ -533,7 +533,7 @@ func TestIngestionProcessor_DuplicateHandling(t *testing.T) {
 			}
 			reqBytes, err := proto.Marshal(ingestReq)
 			require.NoError(t, err)
-			compressedReq := compressBrotliTest(t, reqBytes)
+			compressedReq := testCompressBrotli(t, reqBytes)
 
 			streamID := reconciler.DefaultRedisStreamID
 			err = redisStreamClient.XAdd(ctx, &redis.XAddArgs{
