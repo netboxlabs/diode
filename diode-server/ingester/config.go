@@ -15,6 +15,11 @@ type Config struct {
 	RedisPassword string `envconfig:"REDIS_PASSWORD" default:""`
 	RedisStreamDB int    `envconfig:"REDIS_STREAM_DB" default:"1"`
 
+	// CompressStreamMessages enables Brotli compression for Redis stream messages.
+	// When enabled, protobuf payloads are compressed before XADD and an "encoding":"br"
+	// field is added to the message. The reconciler auto-detects compressed vs raw messages.
+	CompressStreamMessages bool `envconfig:"COMPRESS_STREAM_MESSAGES" default:"true"`
+
 	RedisTLS  tls.Config       `envconfig:"REDIS_TLS"`
 	Telemetry telemetry.Config `envconfig:"TELEMETRY"`
 }

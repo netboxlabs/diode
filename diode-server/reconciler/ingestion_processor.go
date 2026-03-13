@@ -1,9 +1,11 @@
 package reconciler
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"strconv"
@@ -11,11 +13,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/andybalholm/brotli"
 	"github.com/cloudflare/backoff"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"go.opentelemetry.io/otel/attribute"
-	"golang.org/x/time/rate"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
@@ -225,8 +227,18 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 	}
 	ctx = telemetry.ContextWithMetricAttributes(ctx, attrs...)
 
+	reqBytes := []byte(msg.Values["request"].(string))
+	if enc, ok := msg.Values["encoding"].(string); ok && enc == "br" {
+		var err error
+		reqBytes, err = decompressBrotli(reqBytes)
+		if err != nil {
+			p.metrics.RecordHandleMessage(ctx, false)
+			return doneChan, fmt.Errorf("decompressing request: %w", err)
+		}
+	}
+
 	ingestReq := &diodepb.IngestRequest{}
-	if err := proto.Unmarshal([]byte(msg.Values["request"].(string)), ingestReq); err != nil {
+	if err := proto.Unmarshal(reqBytes, ingestReq); err != nil {
 		p.metrics.RecordHandleMessage(ctx, false)
 		return doneChan, err
 	}
@@ -311,32 +323,13 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 
 // GenerateChangeSet generates a change set for an ingestion log
 func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChangeSetChan <-chan IngestionLogToProcess, applyChangeSetChan chan<- IngestionLogToProcess, doneChan chan<- struct{}) {
-	limiter := rate.NewLimiter(rate.Limit(p.Config.ReconcilerRateLimiterRPS), p.Config.ReconcilerRateLimiterBurst)
-
-	go func() {
-		defer func() {
-			if applyChangeSetChan != nil {
-				close(applyChangeSetChan)
-			}
-			if doneChan != nil {
-				doneChan <- struct{}{}
-			}
-		}()
-
-		for {
-			select {
-			case <-ctx.Done():
-				p.logger.Debug("context cancelled", "error", ctx.Err())
-				return
-			case msg, ok := <-generateChangeSetChan:
-				if !ok {
-					return
-				}
-				if err := limiter.Wait(ctx); err != nil {
-					p.logger.Debug("rate limiter wait", "error", err)
-					return
-				}
-
+	concurrency := max(p.Config.GenerateChangeSetConcurrency, 1)
+	var wg sync.WaitGroup
+	wg.Add(concurrency)
+	for i := 0; i < concurrency; i++ {
+		go func() {
+			defer wg.Done()
+			for msg := range generateChangeSetChan {
 				id, changeSet, err := p.ops.GenerateChangeSet(ctx, msg.ingestionLogID, msg.ingestionLog, msg.branchID)
 				if err != nil {
 					p.logger.Error("error generating changeset", "error", err)
@@ -357,35 +350,28 @@ func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChan
 					}
 				}
 			}
+		}()
+	}
+	go func() {
+		wg.Wait()
+		if applyChangeSetChan != nil {
+			close(applyChangeSetChan)
+		}
+		if doneChan != nil {
+			doneChan <- struct{}{}
 		}
 	}()
 }
 
 // ApplyChangeSet applies a change set for an ingestion log
 func (p *IngestionProcessor) ApplyChangeSet(ctx context.Context, applyChan <-chan IngestionLogToProcess, doneChan chan<- struct{}) {
-	limiter := rate.NewLimiter(rate.Limit(p.Config.ReconcilerRateLimiterRPS), p.Config.ReconcilerRateLimiterBurst)
-
-	go func() {
-		defer func() {
-			if doneChan != nil {
-				doneChan <- struct{}{}
-			}
-		}()
-
-		for {
-			select {
-			case <-ctx.Done():
-				p.logger.Debug("context cancelled", "error", ctx.Err())
-				return
-			case msg, ok := <-applyChan:
-				if !ok {
-					return
-				}
-				if err := limiter.Wait(ctx); err != nil {
-					p.logger.Debug("rate limiter wait", "error", err)
-					return
-				}
-
+	concurrency := max(p.Config.ApplyChangeSetConcurrency, 1)
+	var wg sync.WaitGroup
+	wg.Add(concurrency)
+	for i := 0; i < concurrency; i++ {
+		go func() {
+			defer wg.Done()
+			for msg := range applyChan {
 				if err := p.ops.ApplyChangeSet(ctx, msg.ingestionLogID, msg.ingestionLog, msg.changeSetID, msg.changeSet); err != nil {
 					p.logger.Error("error applying changeset", "error", err)
 					p.metrics.RecordChangeSetApply(ctx, false, 0)
@@ -393,6 +379,12 @@ func (p *IngestionProcessor) ApplyChangeSet(ctx context.Context, applyChan <-cha
 					p.metrics.RecordChangeSetApply(ctx, true, int64(len(msg.changeSet.Changes)))
 				}
 			}
+		}()
+	}
+	go func() {
+		wg.Wait()
+		if doneChan != nil {
+			doneChan <- struct{}{}
 		}
 	}()
 }
@@ -457,12 +449,17 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 
 		// Upsert entity into graph if graph DB is enabled (non-blocking, errors logged but not fatal)
 		if p.graphService != nil {
-			if _, err := p.graphService.UpsertEntity(ctx, v); err != nil {
+			start := time.Now()
+			_, err := p.graphService.UpsertEntity(ctx, v)
+			duration := time.Since(start).Seconds()
+			if err != nil {
 				p.logger.Warn("graph upsert entity failed",
 					"error", err,
 					"ingestion_log_id", id,
 					"entity_type", objectType)
-				// Don't fail the main processing path - graph extraction is supplementary
+				p.metrics.RecordGraphUpsert(ctx, false, objectType, duration)
+			} else {
+				p.metrics.RecordGraphUpsert(ctx, true, objectType, duration)
 			}
 		}
 
@@ -480,4 +477,13 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 	}
 
 	return errs
+}
+
+func decompressBrotli(data []byte) ([]byte, error) {
+	r := brotli.NewReader(bytes.NewReader(data))
+	out, err := io.ReadAll(r)
+	if err != nil {
+		return nil, fmt.Errorf("brotli decompress: %w", err)
+	}
+	return out, nil
 }

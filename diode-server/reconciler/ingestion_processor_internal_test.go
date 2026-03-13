@@ -30,6 +30,17 @@ import (
 func int32Ptr(i int32) *int32 { return &i }
 func strPtr(s string) *string { return &s }
 
+// testCompressBrotli compresses data using brotli for test message construction.
+func testCompressBrotli(t *testing.T, data []byte) []byte {
+	t.Helper()
+	var buf bytes.Buffer
+	w := brotli.NewWriterLevel(&buf, 1)
+	_, err := w.Write(data)
+	require.NoError(t, err)
+	require.NoError(t, w.Close())
+	return buf.Bytes()
+}
+
 func TestHandleStreamMessage(t *testing.T) {
 	tests := []struct {
 		name              string
@@ -162,9 +173,9 @@ func TestHandleStreamMessage(t *testing.T) {
 				redisStreamClient: mockRedisStreamClient,
 				logger:            logger,
 				Config: Config{
-					AutoApplyChangesets:        true,
-					ReconcilerRateLimiterRPS:   20,
-					ReconcilerRateLimiterBurst: 1,
+					AutoApplyChangesets:          true,
+					GenerateChangeSetConcurrency: 1,
+					ApplyChangeSetConcurrency:    1,
 				},
 				ops:     NewOps(mockRepository, mockNbClient, logger, nil),
 				metrics: mockMetrics,
@@ -177,10 +188,12 @@ func TestHandleStreamMessage(t *testing.T) {
 					Entities: tt.entities,
 				})
 				if err == nil {
+					compressed := testCompressBrotli(t, reqBytes)
 					request = redis.XMessage{
 						ID: "1",
 						Values: map[string]interface{}{
-							"request":      string(reqBytes),
+							"request":      string(compressed),
+							"encoding":     "br",
 							"ingestion_ts": "1720425600",
 						},
 					}
@@ -315,9 +328,9 @@ func TestConsumeIngestionStream(t *testing.T) {
 				redisStreamClient: mockRedisClient,
 				logger:            logger,
 				Config: Config{
-					AutoApplyChangesets:        true,
-					ReconcilerRateLimiterRPS:   20,
-					ReconcilerRateLimiterBurst: 1,
+					AutoApplyChangesets:          true,
+					GenerateChangeSetConcurrency: 1,
+					ApplyChangeSetConcurrency:    1,
 				},
 				metrics: mockMetrics,
 			}
@@ -333,6 +346,77 @@ func TestConsumeIngestionStream(t *testing.T) {
 			mockRedisClient.AssertExpectations(t)
 		})
 	}
+}
+
+func TestHandleStreamMessageLegacyUncompressed(t *testing.T) {
+	ctx := context.Background()
+	mockRedisClient := new(mr.RedisClient)
+	mockRedisStreamClient := new(mr.RedisClient)
+	mockNbClient := new(mnp.NetBoxAPI)
+	mockRepository := new(mr.Repository)
+	mockMetrics := mr.NewMetrics(t)
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+
+	p := &IngestionProcessor{
+		redisClient:       mockRedisClient,
+		redisStreamClient: mockRedisStreamClient,
+		logger:            logger,
+		Config: Config{
+			AutoApplyChangesets:          true,
+			GenerateChangeSetConcurrency: 1,
+			ApplyChangeSetConcurrency:    1,
+		},
+		ops:     NewOps(mockRepository, mockNbClient, logger, nil),
+		metrics: mockMetrics,
+	}
+
+	// Construct an uncompressed message (no "encoding" field) — legacy format
+	reqBytes, err := proto.Marshal(&diodepb.IngestRequest{
+		Id: "legacy-req",
+		Entities: []*diodepb.Entity{
+			{
+				Entity: &diodepb.Entity_Site{
+					Site: &diodepb.Site{Name: "legacy-site"},
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	request := redis.XMessage{
+		ID: "1",
+		Values: map[string]interface{}{
+			"request":      string(reqBytes),
+			"ingestion_ts": "1720425600",
+		},
+	}
+
+	mockNbClient.On("GetDefaultBranch", mock.Anything).Return((*netboxdiodeplugin.Branch)(nil), nil)
+	mockNbClient.On("GenerateDiff", mock.Anything, mock.Anything).Return(&netboxdiodeplugin.ChangeSetResult{
+		ChangeSet: &netboxdiodeplugin.ChangeSet{
+			Changes: []netboxdiodeplugin.Change{},
+		},
+	}, nil)
+	mockRepository.On("CreateIngestionLog", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
+	mockRepository.On("FindPriorIngestionLogByEntityHash", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, sql.ErrNoRows)
+	mockRepository.On("CreateChangeSet", mock.Anything, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
+	mockRepository.On("UpdateIngestionLogStateWithError", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mockRepository.On("TruncateChangeSets", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	mockRedisStreamClient.On("XAck", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(redis.NewIntCmd(ctx))
+	mockRedisStreamClient.On("XDel", mock.Anything, mock.Anything, mock.Anything).Return(redis.NewIntCmd(ctx))
+	mockMetrics.On("RecordHandleMessage", mock.Anything, mock.Anything).Return()
+	mockMetrics.On("RecordIngestionLogCreate", mock.Anything, mock.Anything).Return()
+	mockMetrics.On("RecordChangeSetCreate", mock.Anything, mock.Anything, mock.Anything).Return()
+
+	allDone, err := p.handleStreamMessage(ctx, request)
+	require.NoError(t, err)
+	select {
+	case <-allDone:
+	case <-time.After(1 * time.Second):
+		require.Fail(t, "allDone channel did not close")
+	}
+
+	mockRepository.AssertExpectations(t)
 }
 
 func TestCompressChangeSet(t *testing.T) {
@@ -510,9 +594,9 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 				redisClient: mockRedisClient,
 				logger:      logger,
 				Config: Config{
-					AutoApplyChangesets:        tt.autoApplyChangesets,
-					ReconcilerRateLimiterRPS:   20,
-					ReconcilerRateLimiterBurst: 1,
+					AutoApplyChangesets:          tt.autoApplyChangesets,
+					GenerateChangeSetConcurrency: 1,
+					ApplyChangeSetConcurrency:    1,
 				},
 				ops:     NewOps(mockRepository, mockNbClient, logger, nil),
 				metrics: mockMetrics,

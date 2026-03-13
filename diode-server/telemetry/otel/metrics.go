@@ -95,10 +95,16 @@ func (m *MetricRecorder) createMetrics(definitions map[string]MetricDefinition) 
 			m.updowns[key] = updown
 
 		case Histogram:
-			histogram, err := m.meter.Float64Histogram(
-				metricName,
+			opts := []metric.Float64HistogramOption{
 				metric.WithDescription(def.Description),
 				metric.WithUnit(string(def.Unit)),
+			}
+			if len(def.Boundaries) > 0 {
+				opts = append(opts, metric.WithExplicitBucketBoundaries(def.Boundaries...))
+			}
+			histogram, err := m.meter.Float64Histogram(
+				metricName,
+				opts...,
 			)
 			if err != nil {
 				return fmt.Errorf("failed to create histogram %s: %w", metricName, err)
@@ -181,6 +187,7 @@ type MetricDefinition struct {
 	Unit        Unit
 	Description string
 	Attributes  []string
+	Boundaries  []float64 // explicit histogram bucket boundaries (optional, Histogram only)
 }
 
 // MetricType represents the type of metric
