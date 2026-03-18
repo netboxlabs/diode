@@ -336,6 +336,55 @@ func (_c *RedisClient_Scan_Call) RunAndReturn(run func(context.Context, uint64, 
 	return _c
 }
 
+// XAutoClaim provides a mock function with given fields: ctx, a
+func (_m *RedisClient) XAutoClaim(ctx context.Context, a *redis.XAutoClaimArgs) *redis.XAutoClaimCmd {
+	ret := _m.Called(ctx, a)
+
+	if len(ret) == 0 {
+		panic("no return value specified for XAutoClaim")
+	}
+
+	var r0 *redis.XAutoClaimCmd
+	if rf, ok := ret.Get(0).(func(context.Context, *redis.XAutoClaimArgs) *redis.XAutoClaimCmd); ok {
+		r0 = rf(ctx, a)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*redis.XAutoClaimCmd)
+		}
+	}
+
+	return r0
+}
+
+// RedisClient_XAutoClaim_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'XAutoClaim'
+type RedisClient_XAutoClaim_Call struct {
+	*mock.Call
+}
+
+// XAutoClaim is a helper method to define mock.On call
+//   - ctx context.Context
+//   - a *redis.XAutoClaimArgs
+func (_e *RedisClient_Expecter) XAutoClaim(ctx interface{}, a interface{}) *RedisClient_XAutoClaim_Call {
+	return &RedisClient_XAutoClaim_Call{Call: _e.mock.On("XAutoClaim", ctx, a)}
+}
+
+func (_c *RedisClient_XAutoClaim_Call) Run(run func(ctx context.Context, a *redis.XAutoClaimArgs)) *RedisClient_XAutoClaim_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*redis.XAutoClaimArgs))
+	})
+	return _c
+}
+
+func (_c *RedisClient_XAutoClaim_Call) Return(_a0 *redis.XAutoClaimCmd) *RedisClient_XAutoClaim_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *RedisClient_XAutoClaim_Call) RunAndReturn(run func(context.Context, *redis.XAutoClaimArgs) *redis.XAutoClaimCmd) *RedisClient_XAutoClaim_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // XAck provides a mock function with given fields: ctx, stream, group, ids
 func (_m *RedisClient) XAck(ctx context.Context, stream string, group string, ids ...string) *redis.IntCmd {
 	_va := make([]interface{}, len(ids))

@@ -315,6 +315,10 @@ func TestConsumeIngestionStream(t *testing.T) {
 			if tt.groupError {
 				status.SetErr(errors.New("group create error"))
 			} else {
+				// Mock XAutoClaim to return no pending messages
+				autoClaimCmd := redis.NewXAutoClaimCmd(ctx)
+				autoClaimCmd.SetVal([]redis.XMessage{}, "0-0")
+				mockRedisClient.On("XAutoClaim", mock.Anything, mock.Anything).Return(autoClaimCmd)
 				mockRedisClient.On("XReadGroup", mock.Anything, mock.Anything).Return(cmdSlice)
 			}
 			mockRedisClient.On("XGroupCreateMkStream", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(status)
@@ -346,6 +350,182 @@ func TestConsumeIngestionStream(t *testing.T) {
 			mockRedisClient.AssertExpectations(t)
 		})
 	}
+}
+
+func TestReclaimPendingMessages(t *testing.T) {
+	t.Run("no pending messages", func(t *testing.T) {
+		ctx := context.Background()
+		mockRedisStreamClient := new(mr.RedisClient)
+		logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+
+		autoClaimCmd := redis.NewXAutoClaimCmd(ctx)
+		autoClaimCmd.SetVal([]redis.XMessage{}, "0-0")
+		mockRedisStreamClient.On("XAutoClaim", mock.Anything, mock.Anything).Return(autoClaimCmd)
+
+		p := &IngestionProcessor{
+			redisStreamClient: mockRedisStreamClient,
+			logger:            logger,
+			metrics:           mr.NewMetrics(t),
+		}
+
+		err := p.reclaimPendingMessages(ctx, "test-stream", "test-group", "test-consumer")
+		require.NoError(t, err)
+		mockRedisStreamClient.AssertExpectations(t)
+	})
+
+	t.Run("reclaims pending messages successfully", func(t *testing.T) {
+		ctx := context.Background()
+		mockRedisStreamClient := new(mr.RedisClient)
+		mockRedisClient := new(mr.RedisClient)
+		mockNbClient := new(mnp.NetBoxAPI)
+		mockRepository := new(mr.Repository)
+		mockMetrics := mr.NewMetrics(t)
+		logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+
+		reqBytes, err := proto.Marshal(&diodepb.IngestRequest{
+			Id: "reclaim-req",
+			Entities: []*diodepb.Entity{
+				{
+					Entity: &diodepb.Entity_Site{
+						Site: &diodepb.Site{Name: "reclaimed-site"},
+					},
+				},
+			},
+		})
+		require.NoError(t, err)
+		compressed := testCompressBrotli(t, reqBytes)
+
+		// First call returns one pending message
+		autoClaimCmd := redis.NewXAutoClaimCmd(ctx)
+		autoClaimCmd.SetVal([]redis.XMessage{
+			{
+				ID: "1-0",
+				Values: map[string]interface{}{
+					"request":      string(compressed),
+					"encoding":     "br",
+					"ingestion_ts": "1720425600",
+				},
+			},
+		}, "0-0")
+
+		mockRedisStreamClient.On("XAutoClaim", mock.Anything, mock.Anything).Return(autoClaimCmd).Once()
+
+		// handleStreamMessage mocks — synchronous path
+		mockNbClient.On("GetDefaultBranch", mock.Anything).Return((*netboxdiodeplugin.Branch)(nil), nil)
+		mockRepository.On("CreateIngestionLog", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
+		mockRepository.On("FindPriorIngestionLogByEntityHash", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, sql.ErrNoRows)
+		mockRedisStreamClient.On("XAck", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(redis.NewIntCmd(ctx))
+		mockRedisStreamClient.On("XDel", mock.Anything, mock.Anything, mock.Anything).Return(redis.NewIntCmd(ctx))
+		mockMetrics.On("RecordHandleMessage", mock.Anything, mock.Anything).Return()
+		mockMetrics.On("RecordIngestionLogCreate", mock.Anything, mock.Anything).Return()
+
+		// Async goroutine mocks (GenerateChangeSet/ApplyChangeSet) — may or may not
+		// complete before the test ends, so use Maybe()
+		mockNbClient.On("GenerateDiff", mock.Anything, mock.Anything).Maybe().Return(&netboxdiodeplugin.ChangeSetResult{
+			ChangeSet: &netboxdiodeplugin.ChangeSet{Changes: []netboxdiodeplugin.Change{}},
+		}, nil)
+		mockRepository.On("CreateChangeSet", mock.Anything, mock.Anything, mock.Anything).Maybe().Return(int32Ptr(1), nil)
+		mockRepository.On("UpdateIngestionLogStateWithError", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Maybe().Return(nil)
+		mockRepository.On("TruncateChangeSets", mock.Anything, mock.Anything, mock.Anything).Maybe().Return(nil)
+		mockMetrics.On("RecordChangeSetCreate", mock.Anything, mock.Anything, mock.Anything).Maybe().Return()
+
+		p := &IngestionProcessor{
+			redisClient:        mockRedisClient,
+			redisStreamClient:  mockRedisStreamClient,
+			redisStreamID:      "test-stream",
+			redisConsumerGroup: "test-group",
+			logger:             logger,
+			Config: Config{
+				AutoApplyChangesets:          false,
+				GenerateChangeSetConcurrency: 1,
+				ApplyChangeSetConcurrency:    1,
+			},
+			ops:     NewOps(mockRepository, mockNbClient, logger, nil),
+			metrics: mockMetrics,
+		}
+
+		err = p.reclaimPendingMessages(ctx, "test-stream", "test-group", "test-consumer")
+		require.NoError(t, err)
+		mockRedisStreamClient.AssertExpectations(t)
+	})
+
+	t.Run("NOGROUP error returns nil", func(t *testing.T) {
+		ctx := context.Background()
+		mockRedisStreamClient := new(mr.RedisClient)
+		logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+
+		autoClaimCmd := redis.NewXAutoClaimCmd(ctx)
+		autoClaimCmd.SetErr(errors.New("NOGROUP No such key 'stream' or consumer group 'group'"))
+		mockRedisStreamClient.On("XAutoClaim", mock.Anything, mock.Anything).Return(autoClaimCmd)
+
+		p := &IngestionProcessor{
+			redisStreamClient: mockRedisStreamClient,
+			logger:            logger,
+			metrics:           mr.NewMetrics(t),
+		}
+
+		err := p.reclaimPendingMessages(ctx, "test-stream", "test-group", "test-consumer")
+		require.NoError(t, err)
+		mockRedisStreamClient.AssertExpectations(t)
+	})
+
+	t.Run("other XAutoClaim error", func(t *testing.T) {
+		ctx := context.Background()
+		mockRedisStreamClient := new(mr.RedisClient)
+		logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+
+		autoClaimCmd := redis.NewXAutoClaimCmd(ctx)
+		autoClaimCmd.SetErr(errors.New("connection refused"))
+		mockRedisStreamClient.On("XAutoClaim", mock.Anything, mock.Anything).Return(autoClaimCmd)
+
+		p := &IngestionProcessor{
+			redisStreamClient: mockRedisStreamClient,
+			logger:            logger,
+			metrics:           mr.NewMetrics(t),
+		}
+
+		err := p.reclaimPendingMessages(ctx, "test-stream", "test-group", "test-consumer")
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "connection refused")
+		mockRedisStreamClient.AssertExpectations(t)
+	})
+
+	t.Run("handle message error on reclaimed message", func(t *testing.T) {
+		ctx := context.Background()
+		mockRedisStreamClient := new(mr.RedisClient)
+		mockMetrics := mr.NewMetrics(t)
+		logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+
+		autoClaimCmd := redis.NewXAutoClaimCmd(ctx)
+		autoClaimCmd.SetVal([]redis.XMessage{
+			{
+				ID: "1-0",
+				Values: map[string]interface{}{
+					"request":      "invalid-request",
+					"ingestion_ts": "1720425600",
+				},
+			},
+		}, "0-0")
+		mockRedisStreamClient.On("XAutoClaim", mock.Anything, mock.Anything).Return(autoClaimCmd)
+		mockMetrics.On("RecordHandleMessage", mock.Anything, mock.Anything).Return()
+
+		p := &IngestionProcessor{
+			redisStreamClient:  mockRedisStreamClient,
+			redisStreamID:      "test-stream",
+			redisConsumerGroup: "test-group",
+			logger:             logger,
+			Config: Config{
+				GenerateChangeSetConcurrency: 1,
+				ApplyChangeSetConcurrency:    1,
+			},
+			metrics: mockMetrics,
+		}
+
+		err := p.reclaimPendingMessages(ctx, "test-stream", "test-group", "test-consumer")
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "failed to handle reclaimed message")
+		mockRedisStreamClient.AssertExpectations(t)
+	})
 }
 
 func TestHandleStreamMessageLegacyUncompressed(t *testing.T) {

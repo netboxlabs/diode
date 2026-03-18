@@ -53,6 +53,7 @@ type RedisClient interface {
 	XReadGroup(ctx context.Context, a *redis.XReadGroupArgs) *redis.XStreamSliceCmd
 	XAck(ctx context.Context, stream, group string, ids ...string) *redis.IntCmd
 	XDel(ctx context.Context, stream string, ids ...string) *redis.IntCmd
+	XAutoClaim(ctx context.Context, a *redis.XAutoClaimArgs) *redis.XAutoClaimCmd
 	Do(ctx context.Context, args ...interface{}) *redis.Cmd
 	Scan(ctx context.Context, cursor uint64, match string, count int64) *redis.ScanCmd
 	Del(ctx context.Context, keys ...string) *redis.IntCmd
@@ -168,6 +169,13 @@ func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, redisSt
 		return err
 	}
 
+	// Reclaim any pending messages from the PEL before reading new ones.
+	// This handles messages that were delivered to a previous consumer
+	// (e.g., before a restart) but never ACK'd.
+	if err := p.reclaimPendingMessages(ctx, redisStreamID, redisConsumerGroup, redisConsumer); err != nil {
+		return err
+	}
+
 	b := backoff.New(10*time.Second, time.Second)
 	for {
 		select {
@@ -183,7 +191,7 @@ func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, redisSt
 			Count:    100,
 		}).Result()
 		if err != nil || len(streams) == 0 {
-			if strings.Contains(err.Error(), "NOGROUP") {
+			if err != nil && strings.Contains(err.Error(), "NOGROUP") {
 				err := p.redisStreamClient.XGroupCreateMkStream(ctx, redisStreamID, redisConsumerGroup, "$").Err()
 				if err != nil && err.Error() != RedisConsumerGroupExistsErrMsg {
 					p.logger.Debug("Failed to recreate Redis consumer group.")
@@ -214,6 +222,59 @@ func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, redisSt
 				return err
 			}
 		}
+	}
+}
+
+// reclaimPendingMessages uses XAUTOCLAIM to claim and process any messages
+// stuck in the consumer group's PEL (Pending Entries List). These are messages
+// that were delivered to a previous consumer but never acknowledged, typically
+// due to a processor restart or crash.
+func (p *IngestionProcessor) reclaimPendingMessages(ctx context.Context, redisStreamID, redisConsumerGroup, redisConsumer string) error {
+	p.logger.Info("checking for pending messages to reclaim", "stream", redisStreamID, "group", redisConsumerGroup)
+
+	start := "0-0"
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		default:
+		}
+
+		cmd := p.redisStreamClient.XAutoClaim(ctx, &redis.XAutoClaimArgs{
+			Stream:   redisStreamID,
+			Group:    redisConsumerGroup,
+			Consumer: redisConsumer,
+			MinIdle:  0,
+			Start:    start,
+			Count:    100,
+		})
+		messages, nextStart, err := cmd.Result()
+		if err != nil {
+			if strings.Contains(err.Error(), "NOGROUP") {
+				return nil
+			}
+			return fmt.Errorf("failed to autoclaim pending messages: %w", err)
+		}
+
+		if len(messages) == 0 {
+			p.logger.Info("no pending messages to reclaim")
+			return nil
+		}
+
+		p.logger.Info("reclaiming pending messages", "count", len(messages))
+		for _, msg := range messages {
+			_, err := p.handleStreamMessage(ctx, msg)
+			if err != nil {
+				p.logger.Error("failed to handle reclaimed message", "error", err, "message_id", msg.ID)
+				return fmt.Errorf("failed to handle reclaimed message: %w", err)
+			}
+		}
+
+		// "0-0" means no more entries to claim
+		if nextStart == "0-0" {
+			return nil
+		}
+		start = nextStart
 	}
 }
 
