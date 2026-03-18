@@ -210,6 +210,7 @@ func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, redisSt
 			Consumer: redisConsumer,
 			Streams:  []string{redisStreamID, ">"},
 			Count:    ReadBatchSize,
+			Block:    ReclaimInterval,
 		}).Result()
 		if err != nil || len(streams) == 0 {
 			if err != nil && strings.Contains(err.Error(), "NOGROUP") {
