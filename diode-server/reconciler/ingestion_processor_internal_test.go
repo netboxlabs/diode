@@ -315,7 +315,7 @@ func TestConsumeIngestionStream(t *testing.T) {
 			if tt.groupError {
 				status.SetErr(errors.New("group create error"))
 			} else {
-				// Mock XAutoClaim to return no pending messages
+				// Mock XAutoClaim for periodic reclaim (called inside the loop)
 				autoClaimCmd := redis.NewXAutoClaimCmd(ctx)
 				autoClaimCmd.SetVal([]redis.XMessage{}, "0-0")
 				mockRedisClient.On("XAutoClaim", mock.Anything, mock.Anything).Return(autoClaimCmd)
@@ -365,11 +365,12 @@ func TestReclaimPendingMessages(t *testing.T) {
 		p := &IngestionProcessor{
 			redisStreamClient: mockRedisStreamClient,
 			logger:            logger,
+			reclaimFailures:   make(map[string]int),
+			reclaimCursor:     "0-0",
 			metrics:           mr.NewMetrics(t),
 		}
 
-		err := p.reclaimPendingMessages(ctx, "test-stream", "test-group", "test-consumer")
-		require.NoError(t, err)
+		p.reclaimPendingMessages(ctx, "test-stream", "test-group", "test-consumer")
 		mockRedisStreamClient.AssertExpectations(t)
 	})
 
@@ -395,7 +396,6 @@ func TestReclaimPendingMessages(t *testing.T) {
 		require.NoError(t, err)
 		compressed := testCompressBrotli(t, reqBytes)
 
-		// First call returns one pending message
 		autoClaimCmd := redis.NewXAutoClaimCmd(ctx)
 		autoClaimCmd.SetVal([]redis.XMessage{
 			{
@@ -440,16 +440,17 @@ func TestReclaimPendingMessages(t *testing.T) {
 				GenerateChangeSetConcurrency: 1,
 				ApplyChangeSetConcurrency:    1,
 			},
-			ops:     NewOps(mockRepository, mockNbClient, logger, nil),
-			metrics: mockMetrics,
+			ops:             NewOps(mockRepository, mockNbClient, logger, nil),
+			metrics:         mockMetrics,
+			reclaimFailures: make(map[string]int),
+			reclaimCursor:   "0-0",
 		}
 
-		err = p.reclaimPendingMessages(ctx, "test-stream", "test-group", "test-consumer")
-		require.NoError(t, err)
+		p.reclaimPendingMessages(ctx, "test-stream", "test-group", "test-consumer")
 		mockRedisStreamClient.AssertExpectations(t)
 	})
 
-	t.Run("NOGROUP error returns nil", func(t *testing.T) {
+	t.Run("NOGROUP error is non-fatal", func(t *testing.T) {
 		ctx := context.Background()
 		mockRedisStreamClient := new(mr.RedisClient)
 		logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
@@ -461,15 +462,17 @@ func TestReclaimPendingMessages(t *testing.T) {
 		p := &IngestionProcessor{
 			redisStreamClient: mockRedisStreamClient,
 			logger:            logger,
+			reclaimFailures:   make(map[string]int),
+			reclaimCursor:     "0-0",
 			metrics:           mr.NewMetrics(t),
 		}
 
-		err := p.reclaimPendingMessages(ctx, "test-stream", "test-group", "test-consumer")
-		require.NoError(t, err)
+		// Should not panic or propagate error
+		p.reclaimPendingMessages(ctx, "test-stream", "test-group", "test-consumer")
 		mockRedisStreamClient.AssertExpectations(t)
 	})
 
-	t.Run("other XAutoClaim error", func(t *testing.T) {
+	t.Run("other XAutoClaim error is non-fatal", func(t *testing.T) {
 		ctx := context.Background()
 		mockRedisStreamClient := new(mr.RedisClient)
 		logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
@@ -481,16 +484,58 @@ func TestReclaimPendingMessages(t *testing.T) {
 		p := &IngestionProcessor{
 			redisStreamClient: mockRedisStreamClient,
 			logger:            logger,
+			reclaimFailures:   make(map[string]int),
+			reclaimCursor:     "0-0",
 			metrics:           mr.NewMetrics(t),
 		}
 
-		err := p.reclaimPendingMessages(ctx, "test-stream", "test-group", "test-consumer")
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "connection refused")
+		// Should not panic or propagate error — just logs
+		p.reclaimPendingMessages(ctx, "test-stream", "test-group", "test-consumer")
 		mockRedisStreamClient.AssertExpectations(t)
 	})
 
-	t.Run("handle message error on reclaimed message", func(t *testing.T) {
+	t.Run("poison message discarded after max retries", func(t *testing.T) {
+		ctx := context.Background()
+		mockRedisStreamClient := new(mr.RedisClient)
+		mockMetrics := mr.NewMetrics(t)
+		logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+
+		autoClaimCmd := redis.NewXAutoClaimCmd(ctx)
+		autoClaimCmd.SetVal([]redis.XMessage{
+			{
+				ID: "1-0",
+				Values: map[string]interface{}{
+					"request":      "invalid-request",
+					"ingestion_ts": "1720425600",
+				},
+			},
+		}, "0-0")
+		mockRedisStreamClient.On("XAutoClaim", mock.Anything, mock.Anything).Return(autoClaimCmd)
+		mockMetrics.On("RecordHandleMessage", mock.Anything, mock.Anything).Return()
+		mockRedisStreamClient.On("XAck", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(redis.NewIntCmd(ctx))
+
+		p := &IngestionProcessor{
+			redisStreamClient:  mockRedisStreamClient,
+			redisStreamID:      "test-stream",
+			redisConsumerGroup: "test-group",
+			logger:             logger,
+			Config: Config{
+				GenerateChangeSetConcurrency: 1,
+				ApplyChangeSetConcurrency:    1,
+			},
+			metrics:         mockMetrics,
+			reclaimFailures: map[string]int{"1-0": MaxReclaimRetries - 1}, // one more failure triggers discard
+		}
+
+		p.reclaimPendingMessages(ctx, "test-stream", "test-group", "test-consumer")
+
+		// Verify the poison message was ACK'd (discarded)
+		mockRedisStreamClient.AssertCalled(t, "XAck", mock.Anything, "test-stream", "test-group", "1-0")
+		// Verify the failure counter was cleaned up
+		require.Empty(t, p.reclaimFailures)
+	})
+
+	t.Run("failed message retried on next cycle", func(t *testing.T) {
 		ctx := context.Background()
 		mockRedisStreamClient := new(mr.RedisClient)
 		mockMetrics := mr.NewMetrics(t)
@@ -518,13 +563,16 @@ func TestReclaimPendingMessages(t *testing.T) {
 				GenerateChangeSetConcurrency: 1,
 				ApplyChangeSetConcurrency:    1,
 			},
-			metrics: mockMetrics,
+			metrics:         mockMetrics,
+			reclaimFailures: make(map[string]int),
+			reclaimCursor:   "0-0",
 		}
 
-		err := p.reclaimPendingMessages(ctx, "test-stream", "test-group", "test-consumer")
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "failed to handle reclaimed message")
-		mockRedisStreamClient.AssertExpectations(t)
+		p.reclaimPendingMessages(ctx, "test-stream", "test-group", "test-consumer")
+
+		// Should have incremented failure counter but NOT ACK'd
+		require.Equal(t, 1, p.reclaimFailures["1-0"])
+		mockRedisStreamClient.AssertNotCalled(t, "XAck", mock.Anything, mock.Anything, mock.Anything, "1-0")
 	})
 }
 
