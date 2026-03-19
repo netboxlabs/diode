@@ -1082,7 +1082,7 @@ func TestGetDefaultBranch(t *testing.T) {
 			maxRetries:                3,
 			expectedBranch:            nil,
 			shouldError:               true,
-			expectedErrorString:       "get default branch failed with status 500",
+			expectedErrorString:       "giving up after 4 attempt(s)",
 		},
 		{
 			name:                      "HTTP 404 error returns sentinel error",

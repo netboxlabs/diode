@@ -192,18 +192,15 @@ func NewClient(options ClientOptions) (*Client, error) {
 	}
 
 	baseTransport := NewHTTPTransport()
+	// Use per-request timeout on the transport instead of http.Client.Timeout.
+	// Client.Timeout cancels the request context, which prevents retryablehttp
+	// from retrying. ResponseHeaderTimeout only limits the server response wait
+	// per attempt, allowing retries on timeout errors.
+	baseTransport.ResponseHeaderTimeout = timeout
 
-	headerRoundTripper := &headerRoundTripper{
+	headerRT := &headerRoundTripper{
 		transport: baseTransport,
 	}
-
-	rhttp := retryablehttp.NewClient()
-	rhttp.RetryMax = options.MaxRetries
-	rhttp.RetryWaitMin = 150 * time.Millisecond
-	rhttp.RetryWaitMax = 2 * time.Second
-	rhttp.Logger = options.Logger
-
-	rhttp.HTTPClient.Transport = headerRoundTripper
 
 	oauthConfig := &clientcredentials.Config{
 		ClientID:       options.ClientID,
@@ -215,13 +212,17 @@ func NewClient(options ClientOptions) (*Client, error) {
 
 	oauthTransport := &oauth2.Transport{
 		Source: oauthConfig.TokenSource(context.Background()),
-		Base:   rhttp.HTTPClient.Transport,
+		Base:   otelhttp.NewTransport(headerRT),
 	}
 
-	httpClient := &http.Client{
-		Transport: otelhttp.NewTransport(oauthTransport),
-		Timeout:   timeout,
-	}
+	rhttp := retryablehttp.NewClient()
+	rhttp.HTTPClient = &http.Client{Transport: oauthTransport}
+	rhttp.RetryMax = options.MaxRetries
+	rhttp.RetryWaitMin = 150 * time.Millisecond
+	rhttp.RetryWaitMax = 2 * time.Second
+	rhttp.Logger = options.Logger
+
+	httpClient := rhttp.StandardClient()
 
 	client := &Client{
 		logger:    options.Logger,
