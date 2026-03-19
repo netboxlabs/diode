@@ -63,3 +63,32 @@ UPDATE ingestion_logs
 SET duplicate_count = duplicate_count + 1,
     last_seen = CURRENT_TIMESTAMP
 WHERE id = $1;
+
+-- name: FindPriorIngestionLogsByEntityHashes :many
+SELECT DISTINCT ON (il.entity_hash) il.*
+FROM ingestion_logs il
+LEFT JOIN LATERAL (
+    SELECT branch_id
+    FROM change_sets cs
+    WHERE cs.ingestion_log_id = il.id
+    ORDER BY cs.id DESC
+    LIMIT 1
+) lcs ON true
+WHERE il.entity_hash = ANY(@entity_hashes::text[])
+  AND lcs.branch_id IS NOT DISTINCT FROM sqlc.narg('branch_id')::text
+ORDER BY il.entity_hash, il.created_at DESC;
+
+-- name: BulkCreateIngestionLogs :copyfrom
+INSERT INTO ingestion_logs (external_id, object_type, state, request_id, ingestion_ts, source_ts,
+                            producer_app_name, producer_app_version, sdk_name, sdk_version,
+                            entity, source_metadata, entity_hash)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13);
+
+-- name: FindIngestionLogIDsByExternalIDs :many
+SELECT id, external_id FROM ingestion_logs WHERE external_id = ANY(@external_ids::text[]);
+
+-- name: BulkIncrementDuplicateCounts :exec
+UPDATE ingestion_logs
+SET duplicate_count = duplicate_count + 1,
+    last_seen = CURRENT_TIMESTAMP
+WHERE id = ANY(@ids::int4[]);

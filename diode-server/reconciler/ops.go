@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/hashicorp/golang-lru/v2/expirable"
+	"github.com/netboxlabs/diode/diode-server/reconciler/differ"
+	"github.com/netboxlabs/diode/diode-server/sentry"
 
 	"github.com/netboxlabs/diode/diode-server/entityhash"
 	diodeErrors "github.com/netboxlabs/diode/diode-server/errors"
@@ -16,9 +18,7 @@ import (
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
 	"github.com/netboxlabs/diode/diode-server/reconciler/applier"
 	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
-	"github.com/netboxlabs/diode/diode-server/reconciler/differ"
 	"github.com/netboxlabs/diode/diode-server/reconciler/ops"
-	"github.com/netboxlabs/diode/diode-server/sentry"
 )
 
 const (
@@ -161,6 +161,109 @@ func (o *Ops) CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb
 	}
 
 	return result, nil
+}
+
+// BulkCreateIngestionLogs creates multiple ingestion logs in bulk, deduplicating against existing records.
+func (o *Ops) BulkCreateIngestionLogs(ctx context.Context, ingestionLogs []*reconcilerpb.IngestionLog, sourceMetadata [][]byte, entityHashes []string) ([]*ops.CreateIngestionLogResult, error) {
+	// Fetch default branch (cached)
+	var defaultBranchID *string
+	var branchIDForResult string
+	if branch, err := o.DefaultBranch(ctx); err != nil {
+		o.logger.Warn("failed to fetch default branch from NetBox plugin", "error", err)
+	} else if branch != nil {
+		branchID := fmt.Sprintf("%s (%s)", branch.Name, branch.ID)
+		defaultBranchID = &branchID
+		branchIDForResult = branch.ID
+		o.logger.Debug("using default branch for bulk ingestion log deduplication", "branch", branch.Name, "branchID", branch.ID)
+	}
+
+	// Collect unique hashes for the batch find
+	uniqueHashes := make(map[string]struct{}, len(entityHashes))
+	for _, h := range entityHashes {
+		uniqueHashes[h] = struct{}{}
+	}
+	hashSlice := make([]string, 0, len(uniqueHashes))
+	for h := range uniqueHashes {
+		hashSlice = append(hashSlice, h)
+	}
+
+	// Batch find priors
+	priors, err := o.repository.FindPriorIngestionLogsByEntityHashes(ctx, hashSlice, defaultBranchID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to batch find prior ingestion logs: %w", err)
+	}
+
+	// Partition into new and duplicate
+	var newLogs []*reconcilerpb.IngestionLog
+	var newSourceMetadata [][]byte
+	var newEntityHashes []string
+	var newIndices []int // original indices for correlation
+
+	var duplicateIDs []int32
+	results := make([]*ops.CreateIngestionLogResult, len(ingestionLogs))
+
+	for i, log := range ingestionLogs {
+		hash := entityHashes[i]
+		prior, found := priors[hash]
+		if !found {
+			newLogs = append(newLogs, log)
+			var sm []byte
+			if i < len(sourceMetadata) {
+				sm = sourceMetadata[i]
+			}
+			newSourceMetadata = append(newSourceMetadata, sm)
+			newEntityHashes = append(newEntityHashes, hash)
+			newIndices = append(newIndices, i)
+		} else {
+			duplicateIDs = append(duplicateIDs, prior.ID)
+			results[i] = &ops.CreateIngestionLogResult{
+				ID:           prior.ID,
+				IngestionLog: prior.IngestionLog,
+				WasDuplicate: true,
+				BranchID:     branchIDForResult,
+			}
+		}
+	}
+
+	// Bulk increment duplicate counts
+	if len(duplicateIDs) > 0 {
+		if err := o.repository.BulkIncrementDuplicateCounts(ctx, duplicateIDs); err != nil {
+			return nil, fmt.Errorf("failed to bulk increment duplicate counts: %w", err)
+		}
+	}
+
+	// Bulk insert new logs
+	if len(newLogs) > 0 {
+		if _, err := o.repository.BulkCreateIngestionLogs(ctx, newLogs, newSourceMetadata, newEntityHashes); err != nil {
+			return nil, fmt.Errorf("failed to bulk create ingestion logs: %w", err)
+		}
+
+		// Fetch the auto-generated IDs
+		externalIDs := make([]string, len(newLogs))
+		for i, log := range newLogs {
+			externalIDs[i] = log.Id
+		}
+		idMap, err := o.repository.FindIngestionLogIDsByExternalIDs(ctx, externalIDs)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch inserted ingestion log IDs: %w", err)
+		}
+
+		for j, log := range newLogs {
+			origIdx := newIndices[j]
+			id, ok := idMap[log.Id]
+			if !ok {
+				return nil, fmt.Errorf("inserted ingestion log ID not found for external_id %s", log.Id)
+			}
+			results[origIdx] = &ops.CreateIngestionLogResult{
+				ID:           id,
+				IngestionLog: log,
+				WasDuplicate: false,
+				BranchID:     branchIDForResult,
+			}
+		}
+	}
+
+	return results, nil
 }
 
 // GenerateChangeSet creates a change set based on current NetBox state with optional branch

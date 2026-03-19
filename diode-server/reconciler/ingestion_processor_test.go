@@ -3,7 +3,6 @@ package reconciler_test
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"log/slog"
 	"os"
 	"testing"
@@ -25,7 +24,7 @@ import (
 	"github.com/netboxlabs/diode/diode-server/reconciler"
 	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
 	"github.com/netboxlabs/diode/diode-server/reconciler/mocks"
-	"github.com/netboxlabs/diode/diode-server/reconciler/ops"
+	reconops "github.com/netboxlabs/diode/diode-server/reconciler/ops"
 )
 
 func int32Ptr(i int32) *int32 { return &i }
@@ -289,8 +288,16 @@ func TestIngestionProcessorStart(t *testing.T) {
 	// Wait server
 	time.Sleep(50 * time.Millisecond)
 
-	mockRepository.On("CreateIngestionLog", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
-	mockRepository.On("FindPriorIngestionLogByEntityHash", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, sql.ErrNoRows)
+	mockRepository.On("FindPriorIngestionLogsByEntityHashes", mock.Anything, mock.Anything, mock.Anything).Return(map[string]*reconops.PriorIngestionLog{}, nil)
+	mockRepository.On("BulkCreateIngestionLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(int64(1), nil)
+	mockRepository.On("FindIngestionLogIDsByExternalIDs", mock.Anything, mock.Anything).Return(
+		func(_ context.Context, externalIDs []string) map[string]int32 {
+			result := make(map[string]int32, len(externalIDs))
+			for i, id := range externalIDs {
+				result[id] = int32(i + 1)
+			}
+			return result
+		}, nil)
 	mockRepository.On("UpdateIngestionLogStateWithError", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mockRepository.On("CreateChangeSet", mock.Anything, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
 	mockRepository.On("TruncateChangeSets", mock.Anything, mock.Anything, mock.Anything).Return(nil)
@@ -473,14 +480,14 @@ func TestIngestionProcessor_DuplicateHandling(t *testing.T) {
 				Entity:     testEntity,
 			}
 
-			duplicateResult := &ops.CreateIngestionLogResult{
+			duplicateResult := &reconops.CreateIngestionLogResult{
 				ID:           existingLogID,
 				IngestionLog: existingLog,
 				WasDuplicate: true,
 			}
 
 			mockOps.On("RefreshDefaultBranch", mock.Anything).Return((*netboxdiodeplugin.Branch)(nil), nil)
-			mockOps.On("CreateIngestionLog", mock.Anything, mock.Anything, mock.Anything).Return(duplicateResult, nil)
+			mockOps.On("BulkCreateIngestionLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return([]*reconops.CreateIngestionLogResult{duplicateResult}, nil)
 
 			if !tt.expectSkipProcessing {
 				changeSetLogID := existingLogID

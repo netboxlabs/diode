@@ -20,6 +20,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/netboxlabs/diode/diode-server/entityhash"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 	"github.com/netboxlabs/diode/diode-server/gen/netbox"
@@ -106,6 +107,7 @@ type IngestionLogToProcess struct {
 // IngestionProcessorOps represents the basic operations that the ingestion processor performs
 type IngestionProcessorOps interface {
 	CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb.IngestionLog, sourceMetadata []byte) (*ops.CreateIngestionLogResult, error)
+	BulkCreateIngestionLogs(ctx context.Context, ingestionLogs []*reconcilerpb.IngestionLog, sourceMetadata [][]byte, entityHashes []string) ([]*ops.CreateIngestionLogResult, error)
 	GenerateChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, branchID string) (*int32, *changeset.ChangeSet, error)
 	ApplyChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, changeSetID int32, changeSet *changeset.ChangeSet) error
 	DefaultBranch(ctx context.Context) (*netboxdiodeplugin.Branch, error)
@@ -229,6 +231,16 @@ func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, redisSt
 		}
 		b.Reset()
 
+		// ACK all messages immediately to prevent other instances from reclaiming
+		// them while we process serially. Each handleStreamMessage takes ~10s due
+		// to the changeset generation pipeline, so without early ACK, messages
+		// later in the batch exceed ReclaimMinIdle and get double-processed.
+		msgIDs := make([]string, len(streams[0].Messages))
+		for i, msg := range streams[0].Messages {
+			msgIDs[i] = msg.ID
+		}
+		p.redisStreamClient.XAck(ctx, redisStreamID, redisConsumerGroup, msgIDs...)
+
 		for _, msg := range streams[0].Messages {
 			_, err := p.handleStreamMessage(ctx, msg)
 			if err != nil {
@@ -310,7 +322,8 @@ func (p *IngestionProcessor) reclaimPendingMessages(ctx context.Context, redisSt
 			}
 			continue
 		}
-		// Success — clean up tracking
+		// Success — ACK and clean up tracking
+		p.redisStreamClient.XAck(ctx, redisStreamID, redisConsumerGroup, msg.ID)
 		delete(p.reclaimFailures, msg.ID)
 	}
 }
@@ -394,8 +407,6 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 	if len(createIngestionLogsErrs) > 0 {
 		errs = append(errs, createIngestionLogsErrs...)
 	}
-
-	p.redisStreamClient.XAck(ctx, p.redisStreamID, p.redisConsumerGroup, msg.ID)
 
 	if len(errs) > 0 {
 		errsStr := make([]string, 0)
@@ -487,7 +498,7 @@ func (p *IngestionProcessor) ApplyChangeSet(ctx context.Context, applyChan <-cha
 	}()
 }
 
-// CreateIngestionLogs creates ingestion logs for an ingest request
+// CreateIngestionLogs creates ingestion logs for an ingest request using bulk operations
 func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq *diodepb.IngestRequest, ingestionTs int, generateIngestionLogChan chan<- IngestionLogToProcess) []error {
 	defer close(generateIngestionLogChan)
 
@@ -495,6 +506,19 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 
 	// Ensure the current default branch is retrieved
 	_, _ = p.ops.RefreshDefaultBranch(ctx)
+
+	// Phase 1: Pre-validate entities, build ingestion log protos, and generate entity hashes
+	fingerprinter := entityhash.NewEntityFingerprinter()
+
+	type validEntity struct {
+		index        int
+		ingestionLog *reconcilerpb.IngestionLog
+		entityHash   string
+		entity       *diodepb.Entity
+		objectType   string
+	}
+
+	var valid []validEntity
 
 	for i, v := range ingestReq.GetEntities() {
 		if v.GetEntity() == nil {
@@ -505,6 +529,12 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 		objectType, err := netbox.GetObjectType(v)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("failed to extract object type for index %d: %v", i, err))
+			continue
+		}
+
+		hash, err := fingerprinter.GenerateEntityHash(v)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("failed to generate entity hash for index %d: %v", i, err))
 			continue
 		}
 
@@ -523,13 +553,44 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 			SourceTs:           v.GetTimestamp().AsTime().UnixNano(),
 		}
 
-		result, err := p.ops.CreateIngestionLog(ctx, ingestionLog, nil)
-		if err != nil {
-			errs = append(errs, fmt.Errorf("failed to process ingestion log: %v", err))
-			p.metrics.RecordIngestionLogCreate(ctx, false)
+		valid = append(valid, validEntity{
+			index:        i,
+			ingestionLog: ingestionLog,
+			entityHash:   hash,
+			entity:       v,
+			objectType:   objectType,
+		})
+	}
+
+	if len(valid) == 0 {
+		return errs
+	}
+
+	// Phase 2-4: Bulk create via Ops
+	logs := make([]*reconcilerpb.IngestionLog, len(valid))
+	sourceMetadata := make([][]byte, len(valid))
+	entityHashes := make([]string, len(valid))
+	for i, v := range valid {
+		logs[i] = v.ingestionLog
+		sourceMetadata[i] = nil
+		entityHashes[i] = v.entityHash
+	}
+
+	results, err := p.ops.BulkCreateIngestionLogs(ctx, logs, sourceMetadata, entityHashes)
+	if err != nil {
+		errs = append(errs, fmt.Errorf("failed to bulk create ingestion logs: %v", err))
+		p.metrics.RecordIngestionLogCreate(ctx, false)
+		return errs
+	}
+
+	// Phase 5: Post-processing — metrics, graph upserts, send to channel
+	for i, result := range results {
+		if result == nil {
 			continue
 		}
-		ingestionLog = result.IngestionLog
+
+		v := valid[i]
+		ingestionLog := result.IngestionLog
 		id := result.ID
 
 		if !result.WasDuplicate {
@@ -541,23 +602,22 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 		attrs := []attribute.KeyValue{
 			attribute.Bool(telemetry.AttributeDuplicate, result.WasDuplicate),
 		}
-		ctx = telemetry.ContextWithMetricAttributes(ctx, attrs...)
-
-		p.metrics.RecordIngestionLogCreate(ctx, true)
+		metricsCtx := telemetry.ContextWithMetricAttributes(ctx, attrs...)
+		p.metrics.RecordIngestionLogCreate(metricsCtx, true)
 
 		// Upsert entity into graph if graph DB is enabled (non-blocking, errors logged but not fatal)
 		if p.graphService != nil {
 			start := time.Now()
-			_, err := p.graphService.UpsertEntity(ctx, v)
+			_, graphErr := p.graphService.UpsertEntity(ctx, v.entity)
 			duration := time.Since(start).Seconds()
-			if err != nil {
+			if graphErr != nil {
 				p.logger.Warn("graph upsert entity failed",
-					"error", err,
+					"error", graphErr,
 					"ingestion_log_id", id,
-					"entity_type", objectType)
-				p.metrics.RecordGraphUpsert(ctx, false, objectType, duration)
+					"entity_type", v.objectType)
+				p.metrics.RecordGraphUpsert(ctx, false, v.objectType, duration)
 			} else {
-				p.metrics.RecordGraphUpsert(ctx, true, objectType, duration)
+				p.metrics.RecordGraphUpsert(ctx, true, v.objectType, duration)
 			}
 		}
 
