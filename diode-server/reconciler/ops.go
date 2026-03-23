@@ -9,8 +9,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/golang-lru/v2/expirable"
-	"github.com/netboxlabs/diode/diode-server/reconciler/differ"
-	"github.com/netboxlabs/diode/diode-server/sentry"
 
 	"github.com/netboxlabs/diode/diode-server/entityhash"
 	diodeErrors "github.com/netboxlabs/diode/diode-server/errors"
@@ -18,7 +16,9 @@ import (
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
 	"github.com/netboxlabs/diode/diode-server/reconciler/applier"
 	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
+	"github.com/netboxlabs/diode/diode-server/reconciler/differ"
 	"github.com/netboxlabs/diode/diode-server/reconciler/ops"
+	"github.com/netboxlabs/diode/diode-server/sentry"
 )
 
 const (
