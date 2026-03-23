@@ -13,6 +13,7 @@ import (
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
+	"github.com/netboxlabs/diode/diode-server/reconciler/ops"
 )
 
 // Repository is an interface for interacting with ingestion logs and change sets.
@@ -471,4 +472,89 @@ func (r *Repository) TruncateChangeSets(ctx context.Context, ingestionLogID int3
 		IngestionLogID: ingestionLogID,
 		Limit:          limit,
 	})
+}
+
+// FindPriorIngestionLogsByEntityHashes finds prior ingestion logs matching the given entity hashes, scoped by branch.
+func (r *Repository) FindPriorIngestionLogsByEntityHashes(ctx context.Context, entityHashes []string, currentBranch *string) (map[string]*ops.PriorIngestionLog, error) {
+	params := postgres.FindPriorIngestionLogsByEntityHashesParams{
+		EntityHashes: entityHashes,
+	}
+	if currentBranch != nil {
+		params.BranchID = pgtype.Text{String: *currentBranch, Valid: true}
+	}
+
+	dbLogs, err := r.queries.FindPriorIngestionLogsByEntityHashes(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[string]*ops.PriorIngestionLog, len(dbLogs))
+	for _, dbLog := range dbLogs {
+		log, err := dbLog.ToProto()
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert to proto: %w", err)
+		}
+		result[dbLog.EntityHash.String] = &ops.PriorIngestionLog{
+			ID:           dbLog.ID,
+			IngestionLog: log,
+		}
+	}
+	return result, nil
+}
+
+// BulkCreateIngestionLogs bulk inserts ingestion logs using the COPY protocol.
+func (r *Repository) BulkCreateIngestionLogs(ctx context.Context, logs []*reconcilerpb.IngestionLog, sourceMetadata [][]byte, entityHashes []string) (int64, error) {
+	marshaler := protojson.MarshalOptions{
+		UseProtoNames: true,
+	}
+
+	params := make([]postgres.BulkCreateIngestionLogsParams, 0, len(logs))
+	for i, log := range logs {
+		entityJSON, err := marshaler.Marshal(log.Entity)
+		if err != nil {
+			return 0, fmt.Errorf("failed to marshal entity at index %d: %w", i, err)
+		}
+
+		var sm []byte
+		if i < len(sourceMetadata) {
+			sm = sourceMetadata[i]
+		}
+
+		params = append(params, postgres.BulkCreateIngestionLogsParams{
+			ExternalID:         log.Id,
+			ObjectType:         pgtype.Text{String: log.ObjectType, Valid: true},
+			State:              pgtype.Int4{Int32: int32(log.State), Valid: true},
+			RequestID:          pgtype.Text{String: log.RequestId, Valid: true},
+			IngestionTs:        pgtype.Int8{Int64: log.IngestionTs, Valid: true},
+			SourceTs:           pgtype.Int8{Int64: log.SourceTs, Valid: true},
+			ProducerAppName:    pgtype.Text{String: log.ProducerAppName, Valid: true},
+			ProducerAppVersion: pgtype.Text{String: log.ProducerAppVersion, Valid: true},
+			SdkName:            pgtype.Text{String: log.SdkName, Valid: true},
+			SdkVersion:         pgtype.Text{String: log.SdkVersion, Valid: true},
+			Entity:             entityJSON,
+			SourceMetadata:     sm,
+			EntityHash:         pgtype.Text{String: entityHashes[i], Valid: true},
+		})
+	}
+
+	return r.queries.BulkCreateIngestionLogs(ctx, params)
+}
+
+// FindIngestionLogIDsByExternalIDs returns a map of external_id → id for the given external IDs.
+func (r *Repository) FindIngestionLogIDsByExternalIDs(ctx context.Context, externalIDs []string) (map[string]int32, error) {
+	rows, err := r.queries.FindIngestionLogIDsByExternalIDs(ctx, externalIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[string]int32, len(rows))
+	for _, row := range rows {
+		result[row.ExternalID] = row.ID
+	}
+	return result, nil
+}
+
+// BulkIncrementDuplicateCounts increments the duplicate count for multiple ingestion logs.
+func (r *Repository) BulkIncrementDuplicateCounts(ctx context.Context, ids []int32) error {
+	return r.queries.BulkIncrementDuplicateCounts(ctx, ids)
 }

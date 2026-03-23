@@ -12,6 +12,34 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type BulkCreateIngestionLogsParams struct {
+	ExternalID         string      `json:"external_id"`
+	ObjectType         pgtype.Text `json:"object_type"`
+	State              pgtype.Int4 `json:"state"`
+	RequestID          pgtype.Text `json:"request_id"`
+	IngestionTs        pgtype.Int8 `json:"ingestion_ts"`
+	SourceTs           pgtype.Int8 `json:"source_ts"`
+	ProducerAppName    pgtype.Text `json:"producer_app_name"`
+	ProducerAppVersion pgtype.Text `json:"producer_app_version"`
+	SdkName            pgtype.Text `json:"sdk_name"`
+	SdkVersion         pgtype.Text `json:"sdk_version"`
+	Entity             []byte      `json:"entity"`
+	SourceMetadata     []byte      `json:"source_metadata"`
+	EntityHash         pgtype.Text `json:"entity_hash"`
+}
+
+const bulkIncrementDuplicateCounts = `-- name: BulkIncrementDuplicateCounts :exec
+UPDATE ingestion_logs
+SET duplicate_count = duplicate_count + 1,
+    last_seen = CURRENT_TIMESTAMP
+WHERE id = ANY($1::int4[])
+`
+
+func (q *Queries) BulkIncrementDuplicateCounts(ctx context.Context, ids []int32) error {
+	_, err := q.db.Exec(ctx, bulkIncrementDuplicateCounts, ids)
+	return err
+}
+
 const countIngestionLogsPerState = `-- name: CountIngestionLogsPerState :many
 SELECT state, COUNT(*) AS count
 FROM ingestion_logs
@@ -107,6 +135,35 @@ func (q *Queries) CreateIngestionLog(ctx context.Context, arg CreateIngestionLog
 	return i, err
 }
 
+const findIngestionLogIDsByExternalIDs = `-- name: FindIngestionLogIDsByExternalIDs :many
+SELECT id, external_id FROM ingestion_logs WHERE external_id = ANY($1::text[])
+`
+
+type FindIngestionLogIDsByExternalIDsRow struct {
+	ID         int32  `json:"id"`
+	ExternalID string `json:"external_id"`
+}
+
+func (q *Queries) FindIngestionLogIDsByExternalIDs(ctx context.Context, externalIds []string) ([]FindIngestionLogIDsByExternalIDsRow, error) {
+	rows, err := q.db.Query(ctx, findIngestionLogIDsByExternalIDs, externalIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []FindIngestionLogIDsByExternalIDsRow
+	for rows.Next() {
+		var i FindIngestionLogIDsByExternalIDsRow
+		if err := rows.Scan(&i.ID, &i.ExternalID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const findPriorIngestionLogByEntityHash = `-- name: FindPriorIngestionLogByEntityHash :one
 SELECT il.id, il.external_id, il.object_type, il.state, il.request_id, il.ingestion_ts, il.source_ts, il.producer_app_name, il.producer_app_version, il.sdk_name, il.sdk_version, il.entity, il.error, il.source_metadata, il.created_at, il.updated_at, il.entity_hash, il.last_seen, il.duplicate_count
 FROM ingestion_logs il
@@ -153,6 +210,66 @@ func (q *Queries) FindPriorIngestionLogByEntityHash(ctx context.Context, arg Fin
 		&i.DuplicateCount,
 	)
 	return i, err
+}
+
+const findPriorIngestionLogsByEntityHashes = `-- name: FindPriorIngestionLogsByEntityHashes :many
+SELECT DISTINCT ON (il.entity_hash) il.id, il.external_id, il.object_type, il.state, il.request_id, il.ingestion_ts, il.source_ts, il.producer_app_name, il.producer_app_version, il.sdk_name, il.sdk_version, il.entity, il.error, il.source_metadata, il.created_at, il.updated_at, il.entity_hash, il.last_seen, il.duplicate_count
+FROM ingestion_logs il
+LEFT JOIN LATERAL (
+    SELECT branch_id
+    FROM change_sets cs
+    WHERE cs.ingestion_log_id = il.id
+    ORDER BY cs.id DESC
+    LIMIT 1
+) lcs ON true
+WHERE il.entity_hash = ANY($1::text[])
+  AND lcs.branch_id IS NOT DISTINCT FROM $2::text
+ORDER BY il.entity_hash, il.created_at DESC
+`
+
+type FindPriorIngestionLogsByEntityHashesParams struct {
+	EntityHashes []string    `json:"entity_hashes"`
+	BranchID     pgtype.Text `json:"branch_id"`
+}
+
+func (q *Queries) FindPriorIngestionLogsByEntityHashes(ctx context.Context, arg FindPriorIngestionLogsByEntityHashesParams) ([]IngestionLog, error) {
+	rows, err := q.db.Query(ctx, findPriorIngestionLogsByEntityHashes, arg.EntityHashes, arg.BranchID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []IngestionLog
+	for rows.Next() {
+		var i IngestionLog
+		if err := rows.Scan(
+			&i.ID,
+			&i.ExternalID,
+			&i.ObjectType,
+			&i.State,
+			&i.RequestID,
+			&i.IngestionTs,
+			&i.SourceTs,
+			&i.ProducerAppName,
+			&i.ProducerAppVersion,
+			&i.SdkName,
+			&i.SdkVersion,
+			&i.Entity,
+			&i.Error,
+			&i.SourceMetadata,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.EntityHash,
+			&i.LastSeen,
+			&i.DuplicateCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const incrementDuplicateCount = `-- name: IncrementDuplicateCount :exec

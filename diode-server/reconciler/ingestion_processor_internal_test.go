@@ -3,7 +3,6 @@ package reconciler
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"io"
@@ -25,6 +24,7 @@ import (
 	mnp "github.com/netboxlabs/diode/diode-server/netboxdiodeplugin/mocks"
 	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
 	mr "github.com/netboxlabs/diode/diode-server/reconciler/mocks"
+	"github.com/netboxlabs/diode/diode-server/reconciler/ops"
 )
 
 func int32Ptr(i int32) *int32 { return &i }
@@ -228,9 +228,17 @@ func TestHandleStreamMessage(t *testing.T) {
 			}
 			mockNbClient.On("ApplyChangeSet", mock.Anything, mock.Anything).Return(tt.changeSetResponse, tt.changeSetError)
 			if tt.entities[0].Entity != nil {
-				mockRepository.On("CreateIngestionLog", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
-				// Mock FindPriorIngestionLogByEntityHash to return no duplicate found (sql.ErrNoRows)
-				mockRepository.On("FindPriorIngestionLogByEntityHash", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, sql.ErrNoRows)
+				// Bulk path mocks
+				mockRepository.On("FindPriorIngestionLogsByEntityHashes", mock.Anything, mock.Anything, mock.Anything).Return(map[string]*ops.PriorIngestionLog{}, nil)
+				mockRepository.On("BulkCreateIngestionLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(int64(1), nil)
+				mockRepository.On("FindIngestionLogIDsByExternalIDs", mock.Anything, mock.Anything).Return(
+					func(_ context.Context, externalIDs []string) map[string]int32 {
+						result := make(map[string]int32, len(externalIDs))
+						for _, id := range externalIDs {
+							result[id] = 1
+						}
+						return result
+					}, nil)
 				mockRepository.On("CreateChangeSet", mock.Anything, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
 				mockRepository.On("UpdateIngestionLogStateWithError", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 			}
@@ -320,6 +328,7 @@ func TestConsumeIngestionStream(t *testing.T) {
 				autoClaimCmd.SetVal([]redis.XMessage{}, "0-0")
 				mockRedisClient.On("XAutoClaim", mock.Anything, mock.Anything).Return(autoClaimCmd)
 				mockRedisClient.On("XReadGroup", mock.Anything, mock.Anything).Return(cmdSlice)
+				mockRedisClient.On("XAck", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(redis.NewIntCmd(ctx))
 			}
 			mockRedisClient.On("XGroupCreateMkStream", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(status)
 			mockMetrics := mr.NewMetrics(t)
@@ -410,10 +419,18 @@ func TestReclaimPendingMessages(t *testing.T) {
 
 		mockRedisStreamClient.On("XAutoClaim", mock.Anything, mock.Anything).Return(autoClaimCmd).Once()
 
-		// handleStreamMessage mocks — synchronous path
+		// handleStreamMessage mocks — synchronous path (bulk)
 		mockNbClient.On("GetDefaultBranch", mock.Anything).Return((*netboxdiodeplugin.Branch)(nil), nil)
-		mockRepository.On("CreateIngestionLog", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
-		mockRepository.On("FindPriorIngestionLogByEntityHash", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, sql.ErrNoRows)
+		mockRepository.On("FindPriorIngestionLogsByEntityHashes", mock.Anything, mock.Anything, mock.Anything).Return(map[string]*ops.PriorIngestionLog{}, nil)
+		mockRepository.On("BulkCreateIngestionLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(int64(1), nil)
+		mockRepository.On("FindIngestionLogIDsByExternalIDs", mock.Anything, mock.Anything).Return(
+			func(_ context.Context, externalIDs []string) map[string]int32 {
+				result := make(map[string]int32, len(externalIDs))
+				for _, id := range externalIDs {
+					result[id] = 1
+				}
+				return result
+			}, nil)
 		mockRedisStreamClient.On("XAck", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(redis.NewIntCmd(ctx))
 		mockRedisStreamClient.On("XDel", mock.Anything, mock.Anything, mock.Anything).Return(redis.NewIntCmd(ctx))
 		mockMetrics.On("RecordHandleMessage", mock.Anything, mock.Anything).Return()
@@ -625,8 +642,16 @@ func TestHandleStreamMessageLegacyUncompressed(t *testing.T) {
 			Changes: []netboxdiodeplugin.Change{},
 		},
 	}, nil)
-	mockRepository.On("CreateIngestionLog", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
-	mockRepository.On("FindPriorIngestionLogByEntityHash", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, sql.ErrNoRows)
+	mockRepository.On("FindPriorIngestionLogsByEntityHashes", mock.Anything, mock.Anything, mock.Anything).Return(map[string]*ops.PriorIngestionLog{}, nil)
+	mockRepository.On("BulkCreateIngestionLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(int64(1), nil)
+	mockRepository.On("FindIngestionLogIDsByExternalIDs", mock.Anything, mock.Anything).Return(
+		func(_ context.Context, externalIDs []string) map[string]int32 {
+			result := make(map[string]int32, len(externalIDs))
+			for _, id := range externalIDs {
+				result[id] = 1
+			}
+			return result
+		}, nil)
 	mockRepository.On("CreateChangeSet", mock.Anything, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
 	mockRepository.On("UpdateIngestionLogStateWithError", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mockRepository.On("TruncateChangeSets", mock.Anything, mock.Anything, mock.Anything).Return(nil)
