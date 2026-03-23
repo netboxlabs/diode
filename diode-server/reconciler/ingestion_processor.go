@@ -43,6 +43,22 @@ const (
 
 	// RedisConsumerGroupExistsErrMsg is the error message returned by the redis client when the consumer group already exists
 	RedisConsumerGroupExistsErrMsg = "BUSYGROUP Consumer Group name already exists"
+
+	// ReclaimMinIdle is the minimum idle time before a pending message can be reclaimed.
+	// Prevents stealing messages from live consumers during rolling upgrades.
+	ReclaimMinIdle = 1 * time.Minute
+
+	// ReclaimInterval is how often to check for pending messages in the main loop.
+	ReclaimInterval = 30 * time.Second
+
+	// ReadBatchSize is the maximum number of messages to read per XReadGroup call.
+	ReadBatchSize = 100
+
+	// ReclaimBatchSize is the maximum number of messages to reclaim per cycle.
+	ReclaimBatchSize = 100
+
+	// MaxReclaimRetries is the number of times a message can fail reclaim before being discarded.
+	MaxReclaimRetries = 3
 )
 
 // RedisClient is an interface that represents the methods used from redis.Client
@@ -53,6 +69,7 @@ type RedisClient interface {
 	XReadGroup(ctx context.Context, a *redis.XReadGroupArgs) *redis.XStreamSliceCmd
 	XAck(ctx context.Context, stream, group string, ids ...string) *redis.IntCmd
 	XDel(ctx context.Context, stream string, ids ...string) *redis.IntCmd
+	XAutoClaim(ctx context.Context, a *redis.XAutoClaimArgs) *redis.XAutoClaimCmd
 	Do(ctx context.Context, args ...interface{}) *redis.Cmd
 	Scan(ctx context.Context, cursor uint64, match string, count int64) *redis.ScanCmd
 	Del(ctx context.Context, keys ...string) *redis.IntCmd
@@ -73,6 +90,8 @@ type IngestionProcessor struct {
 	cancel             context.CancelFunc
 	mx                 sync.Mutex
 	graphService       *graph.Service // nil when ENABLE_GRAPH_DB is false
+	reclaimFailures    map[string]int // tracks per-message reclaim failure counts for poison message detection
+	reclaimCursor      string         // XAUTOCLAIM cursor to resume scanning the PEL across cycles
 }
 
 // IngestionLogToProcess represents an ingestion log to process
@@ -122,6 +141,8 @@ func NewIngestionProcessor(_ context.Context, logger *slog.Logger, cfg Config, r
 		redisConsumerGroup: redisConsumerGroup,
 		ops:                ops,
 		metrics:            metrics,
+		reclaimFailures:    make(map[string]int),
+		reclaimCursor:      "0-0",
 	}
 
 	// Apply functional options
@@ -169,6 +190,7 @@ func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, redisSt
 	}
 
 	b := backoff.New(10*time.Second, time.Second)
+	lastReclaimTime := time.Time{} // zero value ensures first reclaim runs immediately
 	for {
 		select {
 		case <-ctx.Done():
@@ -176,14 +198,22 @@ func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, redisSt
 			return nil
 		default:
 		}
+
+		// Periodically reclaim pending messages (non-blocking, best-effort)
+		if time.Since(lastReclaimTime) >= ReclaimInterval {
+			p.reclaimPendingMessages(ctx, redisStreamID, redisConsumerGroup, redisConsumer)
+			lastReclaimTime = time.Now()
+		}
+
 		streams, err := p.redisStreamClient.XReadGroup(ctx, &redis.XReadGroupArgs{
 			Group:    redisConsumerGroup,
 			Consumer: redisConsumer,
 			Streams:  []string{redisStreamID, ">"},
-			Count:    100,
+			Count:    ReadBatchSize,
+			Block:    ReclaimInterval,
 		}).Result()
 		if err != nil || len(streams) == 0 {
-			if strings.Contains(err.Error(), "NOGROUP") {
+			if err != nil && strings.Contains(err.Error(), "NOGROUP") {
 				err := p.redisStreamClient.XGroupCreateMkStream(ctx, redisStreamID, redisConsumerGroup, "$").Err()
 				if err != nil && err.Error() != RedisConsumerGroupExistsErrMsg {
 					p.logger.Debug("Failed to recreate Redis consumer group.")
@@ -214,6 +244,74 @@ func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, redisSt
 				return err
 			}
 		}
+	}
+}
+
+// reclaimPendingMessages uses XAUTOCLAIM to claim and process a single batch
+// of messages stuck in the consumer group's PEL (Pending Entries List).
+// It is called periodically from the main loop and is non-blocking:
+// errors are logged but do not propagate to the caller.
+// Poison messages that fail MaxReclaimRetries times are ACK'd and discarded.
+func (p *IngestionProcessor) reclaimPendingMessages(ctx context.Context, redisStreamID, redisConsumerGroup, redisConsumer string) {
+	p.logger.Debug("checking for pending messages to reclaim", "stream", redisStreamID, "group", redisConsumerGroup)
+
+	cmd := p.redisStreamClient.XAutoClaim(ctx, &redis.XAutoClaimArgs{
+		Stream:   redisStreamID,
+		Group:    redisConsumerGroup,
+		Consumer: redisConsumer,
+		MinIdle:  ReclaimMinIdle,
+		Start:    p.reclaimCursor,
+		Count:    ReclaimBatchSize,
+	})
+	messages, nextCursor, err := cmd.Result()
+	if err != nil {
+		if strings.Contains(err.Error(), "NOGROUP") {
+			return
+		}
+		p.logger.Error("failed to autoclaim pending messages", "error", err)
+		return
+	}
+
+	// Advance cursor for next cycle; "0-0" means we've scanned the entire PEL, so wrap around
+	if nextCursor == "0-0" {
+		p.reclaimCursor = "0-0"
+	} else {
+		p.reclaimCursor = nextCursor
+	}
+
+	if len(messages) == 0 {
+		return
+	}
+
+	p.logger.Info("reclaiming pending messages", "count", len(messages))
+	for _, msg := range messages {
+		_, err := p.handleStreamMessage(ctx, msg)
+		if err != nil {
+			p.reclaimFailures[msg.ID]++
+			failures := p.reclaimFailures[msg.ID]
+
+			if failures >= MaxReclaimRetries {
+				p.logger.Error("discarding poison message after max reclaim retries",
+					"message_id", msg.ID, "retries", failures, "error", err)
+
+				contextMap := map[string]any{
+					"redis_stream_msg_id": msg.ID,
+					"consumer":            redisConsumer,
+					"hostname":            p.hostname,
+					"retries":             failures,
+				}
+				sentry.CaptureError(fmt.Errorf("poison message discarded after %d retries: %v", failures, err), nil, "Reclaim poison message", contextMap)
+
+				p.redisStreamClient.XAck(ctx, redisStreamID, redisConsumerGroup, msg.ID)
+				delete(p.reclaimFailures, msg.ID)
+			} else {
+				p.logger.Warn("failed to handle reclaimed message, will retry",
+					"message_id", msg.ID, "retries", failures, "error", err)
+			}
+			continue
+		}
+		// Success — clean up tracking
+		delete(p.reclaimFailures, msg.ID)
 	}
 }
 
