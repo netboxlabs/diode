@@ -279,86 +279,104 @@ func TestHandleStreamMessage(t *testing.T) {
 }
 
 func TestConsumeIngestionStream(t *testing.T) {
-	tests := []struct {
-		name          string
-		groupError    bool
-		expectedError bool
-	}{
-		{
-			name:          "group create error",
-			groupError:    true,
-			expectedError: true,
-		},
-		{
-			name:          "handle stream message error",
-			groupError:    false,
-			expectedError: true,
-		},
-	}
+	t.Run("group create error", func(t *testing.T) {
+		ctx := context.Background()
+		mockRedisClient := new(mr.RedisClient)
+		logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ctx := context.Background()
-			mockRedisClient := new(mr.RedisClient)
-			logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+		status := redis.NewStatusCmd(ctx)
+		status.SetErr(errors.New("group create error"))
+		mockRedisClient.On("XGroupCreateMkStream", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(status)
 
-			cmdSlice := redis.NewXStreamSliceCmd(ctx)
-			streams := []redis.XStream{
-				{
-					Stream: "test-stream",
-					Messages: []redis.XMessage{
-						{
-							ID: "1",
-							Values: map[string]interface{}{
-								"request":      "invalid-request",
-								"ingestion_ts": "timestamp",
-							},
+		p := &IngestionProcessor{
+			redisStreamClient: mockRedisClient,
+			logger:            logger,
+			Config: Config{
+				AutoApplyChangesets:          true,
+				GenerateChangeSetConcurrency: 1,
+				ApplyChangeSetConcurrency:    1,
+			},
+			metrics:         mr.NewMetrics(t),
+			inFlight:        make(map[string]struct{}),
+			reclaimFailures: make(map[string]int),
+			reclaimCursor:   "0-0",
+		}
+
+		err := p.consumeIngestionStream(ctx, "test-stream", "test-group", "test-consumer")
+		require.Error(t, err)
+		mockRedisClient.AssertExpectations(t)
+	})
+
+	t.Run("handle stream message error is non-fatal", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		mockRedisClient := new(mr.RedisClient)
+		mockMetrics := mr.NewMetrics(t)
+		logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+
+		// Phase 1 (drainPEL): return empty PEL
+		emptySlice := redis.NewXStreamSliceCmd(ctx)
+		emptySlice.SetVal([]redis.XStream{})
+
+		// Phase 2: return one invalid message, then cancel context
+		invalidSlice := redis.NewXStreamSliceCmd(ctx)
+		invalidSlice.SetVal([]redis.XStream{
+			{
+				Stream: "test-stream",
+				Messages: []redis.XMessage{
+					{
+						ID: "1",
+						Values: map[string]interface{}{
+							"request":      "invalid-request",
+							"ingestion_ts": "timestamp",
 						},
 					},
 				},
-			}
-			cmdSlice.SetVal(streams)
-
-			status := redis.NewStatusCmd(ctx)
-			if tt.groupError {
-				status.SetErr(errors.New("group create error"))
-			} else {
-				// Mock XAutoClaim for periodic reclaim (called inside the loop)
-				autoClaimCmd := redis.NewXAutoClaimCmd(ctx)
-				autoClaimCmd.SetVal([]redis.XMessage{}, "0-0")
-				mockRedisClient.On("XAutoClaim", mock.Anything, mock.Anything).Return(autoClaimCmd)
-				mockRedisClient.On("XReadGroup", mock.Anything, mock.Anything).Return(cmdSlice)
-				mockRedisClient.On("XAck", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(redis.NewIntCmd(ctx))
-			}
-			mockRedisClient.On("XGroupCreateMkStream", ctx, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(status)
-			mockMetrics := mr.NewMetrics(t)
-			if !tt.groupError {
-				// Only expect metrics if we're actually processing messages (no group error)
-				mockMetrics.On("RecordHandleMessage", mock.Anything, mock.Anything).Return()
-			}
-
-			p := &IngestionProcessor{
-				redisStreamClient: mockRedisClient,
-				logger:            logger,
-				Config: Config{
-					AutoApplyChangesets:          true,
-					GenerateChangeSetConcurrency: 1,
-					ApplyChangeSetConcurrency:    1,
-				},
-				metrics: mockMetrics,
-			}
-
-			err := p.consumeIngestionStream(ctx, "test-stream", "test-group", "test-consumer")
-
-			if tt.expectedError {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-			}
-
-			mockRedisClient.AssertExpectations(t)
+			},
 		})
-	}
+
+		// First XReadGroup call returns empty (drainPEL with "0"), second returns invalid message
+		mockRedisClient.On("XReadGroup", mock.Anything, mock.MatchedBy(func(a *redis.XReadGroupArgs) bool {
+			return a.Streams[1] == "0"
+		})).Return(emptySlice)
+		mockRedisClient.On("XReadGroup", mock.Anything, mock.MatchedBy(func(a *redis.XReadGroupArgs) bool {
+			return a.Streams[1] == ">"
+		})).Run(func(_ mock.Arguments) {
+			// Cancel after dispatching so the loop exits
+			go func() {
+				time.Sleep(100 * time.Millisecond)
+				cancel()
+			}()
+		}).Return(invalidSlice)
+
+		status := redis.NewStatusCmd(ctx)
+		mockRedisClient.On("XGroupCreateMkStream", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(status)
+		// Heartbeat and reclaimer mocks
+		autoClaimCmd := redis.NewXAutoClaimCmd(ctx)
+		autoClaimCmd.SetVal([]redis.XMessage{}, "0-0")
+		mockRedisClient.On("XAutoClaim", mock.Anything, mock.Anything).Maybe().Return(autoClaimCmd)
+		mockRedisClient.On("XClaim", mock.Anything, mock.Anything).Maybe().Return(redis.NewXMessageSliceCmd(ctx))
+		mockMetrics.On("RecordHandleMessage", mock.Anything, mock.Anything).Return()
+
+		p := &IngestionProcessor{
+			redisStreamClient: mockRedisClient,
+			logger:            logger,
+			Config: Config{
+				AutoApplyChangesets:          true,
+				GenerateChangeSetConcurrency: 1,
+				ApplyChangeSetConcurrency:    1,
+				StreamWorkerCount:            1,
+				StreamHeartbeatInterval:      60,
+			},
+			metrics:         mockMetrics,
+			inFlight:        make(map[string]struct{}),
+			reclaimFailures: make(map[string]int),
+			reclaimCursor:   "0-0",
+		}
+
+		// Should return nil — errors are non-fatal, context cancellation is graceful
+		err := p.consumeIngestionStream(ctx, "test-stream", "test-group", "test-consumer")
+		require.NoError(t, err)
+	})
 }
 
 func TestReclaimPendingMessages(t *testing.T) {
@@ -376,10 +394,12 @@ func TestReclaimPendingMessages(t *testing.T) {
 			logger:            logger,
 			reclaimFailures:   make(map[string]int),
 			reclaimCursor:     "0-0",
+			inFlight:          make(map[string]struct{}),
 			metrics:           mr.NewMetrics(t),
 		}
 
-		p.reclaimPendingMessages(ctx, "test-stream", "test-group", "test-consumer")
+		sem := make(chan struct{}, 4)
+		p.reclaimPendingMessages(ctx, "test-stream", "test-group", "test-consumer", sem)
 		mockRedisStreamClient.AssertExpectations(t)
 	})
 
@@ -461,9 +481,11 @@ func TestReclaimPendingMessages(t *testing.T) {
 			metrics:         mockMetrics,
 			reclaimFailures: make(map[string]int),
 			reclaimCursor:   "0-0",
+			inFlight:        make(map[string]struct{}),
 		}
 
-		p.reclaimPendingMessages(ctx, "test-stream", "test-group", "test-consumer")
+		sem := make(chan struct{}, 4)
+		p.reclaimPendingMessages(ctx, "test-stream", "test-group", "test-consumer", sem)
 		mockRedisStreamClient.AssertExpectations(t)
 	})
 
@@ -481,11 +503,13 @@ func TestReclaimPendingMessages(t *testing.T) {
 			logger:            logger,
 			reclaimFailures:   make(map[string]int),
 			reclaimCursor:     "0-0",
+			inFlight:          make(map[string]struct{}),
 			metrics:           mr.NewMetrics(t),
 		}
 
 		// Should not panic or propagate error
-		p.reclaimPendingMessages(ctx, "test-stream", "test-group", "test-consumer")
+		sem := make(chan struct{}, 4)
+		p.reclaimPendingMessages(ctx, "test-stream", "test-group", "test-consumer", sem)
 		mockRedisStreamClient.AssertExpectations(t)
 	})
 
@@ -503,11 +527,13 @@ func TestReclaimPendingMessages(t *testing.T) {
 			logger:            logger,
 			reclaimFailures:   make(map[string]int),
 			reclaimCursor:     "0-0",
+			inFlight:          make(map[string]struct{}),
 			metrics:           mr.NewMetrics(t),
 		}
 
 		// Should not panic or propagate error — just logs
-		p.reclaimPendingMessages(ctx, "test-stream", "test-group", "test-consumer")
+		sem := make(chan struct{}, 4)
+		p.reclaimPendingMessages(ctx, "test-stream", "test-group", "test-consumer", sem)
 		mockRedisStreamClient.AssertExpectations(t)
 	})
 
@@ -542,9 +568,11 @@ func TestReclaimPendingMessages(t *testing.T) {
 			},
 			metrics:         mockMetrics,
 			reclaimFailures: map[string]int{"1-0": MaxReclaimRetries - 1}, // one more failure triggers discard
+			inFlight:        make(map[string]struct{}),
 		}
 
-		p.reclaimPendingMessages(ctx, "test-stream", "test-group", "test-consumer")
+		sem := make(chan struct{}, 4)
+		p.reclaimPendingMessages(ctx, "test-stream", "test-group", "test-consumer", sem)
 
 		// Verify the poison message was ACK'd (discarded)
 		mockRedisStreamClient.AssertCalled(t, "XAck", mock.Anything, "test-stream", "test-group", "1-0")
@@ -583,9 +611,11 @@ func TestReclaimPendingMessages(t *testing.T) {
 			metrics:         mockMetrics,
 			reclaimFailures: make(map[string]int),
 			reclaimCursor:   "0-0",
+			inFlight:        make(map[string]struct{}),
 		}
 
-		p.reclaimPendingMessages(ctx, "test-stream", "test-group", "test-consumer")
+		sem := make(chan struct{}, 4)
+		p.reclaimPendingMessages(ctx, "test-stream", "test-group", "test-consumer", sem)
 
 		// Should have incremented failure counter but NOT ACK'd
 		require.Equal(t, 1, p.reclaimFailures["1-0"])
