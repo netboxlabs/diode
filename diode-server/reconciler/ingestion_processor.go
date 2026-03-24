@@ -47,7 +47,7 @@ const (
 
 	// ReclaimMinIdle is the minimum idle time before a pending message can be reclaimed.
 	// Prevents stealing messages from live consumers during rolling upgrades.
-	ReclaimMinIdle = 1 * time.Minute
+	ReclaimMinIdle = 2 * time.Minute
 
 	// ReclaimInterval is how often to check for pending messages in the main loop.
 	ReclaimInterval = 30 * time.Second
@@ -60,6 +60,12 @@ const (
 
 	// MaxReclaimRetries is the number of times a message can fail reclaim before being discarded.
 	MaxReclaimRetries = 3
+
+	// DefaultStreamWorkerCount is the default number of concurrent stream message workers.
+	DefaultStreamWorkerCount = 4
+
+	// DefaultStreamHeartbeatInterval is the default interval for the in-flight message heartbeat.
+	DefaultStreamHeartbeatInterval = 30 * time.Second
 )
 
 // RedisClient is an interface that represents the methods used from redis.Client
@@ -71,6 +77,7 @@ type RedisClient interface {
 	XAck(ctx context.Context, stream, group string, ids ...string) *redis.IntCmd
 	XDel(ctx context.Context, stream string, ids ...string) *redis.IntCmd
 	XAutoClaim(ctx context.Context, a *redis.XAutoClaimArgs) *redis.XAutoClaimCmd
+	XClaim(ctx context.Context, a *redis.XClaimArgs) *redis.XMessageSliceCmd
 	Do(ctx context.Context, args ...interface{}) *redis.Cmd
 	Scan(ctx context.Context, cursor uint64, match string, count int64) *redis.ScanCmd
 	Del(ctx context.Context, keys ...string) *redis.IntCmd
@@ -93,6 +100,10 @@ type IngestionProcessor struct {
 	graphService       *graph.Service // nil when ENABLE_GRAPH_DB is false
 	reclaimFailures    map[string]int // tracks per-message reclaim failure counts for poison message detection
 	reclaimCursor      string         // XAUTOCLAIM cursor to resume scanning the PEL across cycles
+	// inFlightMu protects inFlight
+	inFlightMu sync.Mutex
+	inFlight   map[string]struct{} // message IDs currently being processed (for heartbeat)
+	workerWg   sync.WaitGroup      // tracks in-flight worker goroutines for graceful shutdown
 }
 
 // IngestionLogToProcess represents an ingestion log to process
@@ -145,6 +156,7 @@ func NewIngestionProcessor(_ context.Context, logger *slog.Logger, cfg Config, r
 		metrics:            metrics,
 		reclaimFailures:    make(map[string]int),
 		reclaimCursor:      "0-0",
+		inFlight:           make(map[string]struct{}),
 	}
 
 	// Apply functional options
@@ -185,26 +197,184 @@ func (p *IngestionProcessor) Stop() error {
 	return errors.Join(redisStreamErr, redisClientErr)
 }
 
+func (p *IngestionProcessor) trackInFlight(msgID string) {
+	p.inFlightMu.Lock()
+	defer p.inFlightMu.Unlock()
+	p.inFlight[msgID] = struct{}{}
+}
+
+func (p *IngestionProcessor) untrackInFlight(msgID string) {
+	p.inFlightMu.Lock()
+	defer p.inFlightMu.Unlock()
+	delete(p.inFlight, msgID)
+}
+
+func (p *IngestionProcessor) getInFlightIDs() []string {
+	p.inFlightMu.Lock()
+	defer p.inFlightMu.Unlock()
+	ids := make([]string, 0, len(p.inFlight))
+	for id := range p.inFlight {
+		ids = append(ids, id)
+	}
+	return ids
+}
+
+// runStreamHeartbeat periodically XCLAIMs all in-flight message IDs to reset their idle time,
+// preventing XAUTOCLAIM from other consumers from stealing messages being actively processed.
+func (p *IngestionProcessor) runStreamHeartbeat(ctx context.Context, stream, group, consumer string) {
+	interval := time.Duration(p.Config.StreamHeartbeatInterval) * time.Second
+	if interval <= 0 {
+		interval = DefaultStreamHeartbeatInterval
+	}
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			ids := p.getInFlightIDs()
+			if len(ids) == 0 {
+				continue
+			}
+			p.logger.Debug("heartbeat: refreshing in-flight message idle times", "count", len(ids))
+			if err := p.redisStreamClient.XClaim(ctx, &redis.XClaimArgs{
+				Stream:   stream,
+				Group:    group,
+				Consumer: consumer,
+				MinIdle:  0,
+				Messages: ids,
+			}).Err(); err != nil {
+				p.logger.Warn("heartbeat: failed to refresh in-flight message idle times", "error", err)
+			}
+		}
+	}
+}
+
+// drainPEL reads and processes own pending messages from a prior crash/restart
+// using XREADGROUP with "0" before switching to new message consumption.
+func (p *IngestionProcessor) drainPEL(ctx context.Context, stream, group, consumer string, sem chan struct{}) error {
+	p.logger.Info("draining own PEL before reading new messages")
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		default:
+		}
+
+		streams, err := p.redisStreamClient.XReadGroup(ctx, &redis.XReadGroupArgs{
+			Group:    group,
+			Consumer: consumer,
+			Streams:  []string{stream, "0"},
+			Count:    ReadBatchSize,
+		}).Result()
+		if err != nil {
+			if strings.Contains(err.Error(), "NOGROUP") {
+				return nil
+			}
+			return fmt.Errorf("draining PEL: %w", err)
+		}
+
+		if len(streams) == 0 || len(streams[0].Messages) == 0 {
+			p.logger.Info("PEL drained, switching to new messages")
+			return nil
+		}
+
+		p.logger.Info("draining pending messages from PEL", "count", len(streams[0].Messages))
+		for _, msg := range streams[0].Messages {
+			p.processStreamMessageAsync(ctx, msg, stream, group, consumer, sem)
+		}
+	}
+}
+
+// processStreamMessageAsync sends a message to the worker pool for concurrent processing.
+// It acquires a semaphore token, tracks the message as in-flight, and spawns a goroutine
+// that processes the message and ACKs it on success.
+func (p *IngestionProcessor) processStreamMessageAsync(ctx context.Context, msg redis.XMessage, stream, group, consumer string, sem chan struct{}) {
+	select {
+	case sem <- struct{}{}:
+	case <-ctx.Done():
+		return
+	}
+
+	p.trackInFlight(msg.ID)
+	p.workerWg.Add(1)
+
+	go func() {
+		defer func() {
+			<-sem
+			p.untrackInFlight(msg.ID)
+			p.workerWg.Done()
+		}()
+
+		allDone, err := p.handleStreamMessage(ctx, msg)
+		if err != nil {
+			p.logger.Error("failed to handle stream message", "error", err, "message_id", msg.ID)
+			contextMap := map[string]any{
+				"redis_stream_msg_id": msg.ID,
+				"consumer":            consumer,
+				"hostname":            p.hostname,
+			}
+			sentry.CaptureError(fmt.Errorf("failed to handle stream message: %w", err), nil, "Ingestion stream", contextMap)
+			// Leave un-ACK'd in PEL for reclaimer to pick up
+			return
+		}
+
+		// Wait for async pipelines (GenerateChangeSet/ApplyChangeSet) to complete
+		select {
+		case <-allDone:
+		case <-ctx.Done():
+			return
+		}
+
+		if err := p.redisStreamClient.XAck(ctx, stream, group, msg.ID).Err(); err != nil {
+			p.logger.Error("failed to ACK stream message", "error", err, "message_id", msg.ID)
+			return
+		}
+		p.redisStreamClient.XDel(ctx, stream, msg.ID)
+	}()
+}
+
 func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, redisStreamID string, redisConsumerGroup, redisConsumer string) error {
 	err := p.redisStreamClient.XGroupCreateMkStream(ctx, redisStreamID, redisConsumerGroup, "$").Err()
 	if err != nil && err.Error() != RedisConsumerGroupExistsErrMsg {
 		return err
 	}
 
+	// Local cancel ensures heartbeat/reclaimer goroutines are stopped on all exit paths
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	workerCount := p.Config.StreamWorkerCount
+	if workerCount <= 0 {
+		workerCount = DefaultStreamWorkerCount
+	}
+	sem := make(chan struct{}, workerCount)
+
+	// Start heartbeat goroutine — keeps in-flight messages' idle time low
+	go p.runStreamHeartbeat(ctx, redisStreamID, redisConsumerGroup, redisConsumer)
+
+	// Start reclaimer goroutine — periodically reclaims messages from dead consumers
+	go p.runPELReclaimer(ctx, redisStreamID, redisConsumerGroup, redisConsumer, sem)
+
+	// Phase 1: Drain own PEL from prior crash/restart
+	if err := p.drainPEL(ctx, redisStreamID, redisConsumerGroup, redisConsumer, sem); err != nil {
+		return err
+	}
+
+	// Phase 2: Read new messages
 	b := backoff.New(10*time.Second, time.Second)
-	lastReclaimTime := time.Time{} // zero value ensures first reclaim runs immediately
+	drainWorkers := func() {
+		p.logger.Debug("ingestion processor: waiting for in-flight workers to finish")
+		p.workerWg.Wait()
+	}
 	for {
 		select {
 		case <-ctx.Done():
-			p.logger.Debug("ingestion processor exiting consumer loop on request")
+			drainWorkers()
 			return nil
 		default:
-		}
-
-		// Periodically reclaim pending messages (non-blocking, best-effort)
-		if time.Since(lastReclaimTime) >= ReclaimInterval {
-			p.reclaimPendingMessages(ctx, redisStreamID, redisConsumerGroup, redisConsumer)
-			lastReclaimTime = time.Now()
 		}
 
 		streams, err := p.redisStreamClient.XReadGroup(ctx, &redis.XReadGroupArgs{
@@ -223,7 +393,7 @@ func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, redisSt
 			}
 			select {
 			case <-ctx.Done():
-				p.logger.Debug("ingestion processor exiting consumer loop on request")
+				drainWorkers()
 				return nil
 			case <-time.After(b.Duration()):
 				continue
@@ -231,46 +401,39 @@ func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, redisSt
 		}
 		b.Reset()
 
-		// ACK all messages immediately to prevent other instances from reclaiming
-		// them while we process serially. Each handleStreamMessage takes ~10s due
-		// to the changeset generation pipeline, so without early ACK, messages
-		// later in the batch exceed ReclaimMinIdle and get double-processed.
-		msgIDs := make([]string, len(streams[0].Messages))
-		for i, msg := range streams[0].Messages {
-			msgIDs[i] = msg.ID
-		}
-		p.redisStreamClient.XAck(ctx, redisStreamID, redisConsumerGroup, msgIDs...)
-
 		for _, msg := range streams[0].Messages {
-			_, err := p.handleStreamMessage(ctx, msg)
-			if err != nil {
-				p.logger.Error("failed to handle stream message", "error", err, "message", msg)
+			p.processStreamMessageAsync(ctx, msg, redisStreamID, redisConsumerGroup, redisConsumer, sem)
+		}
+	}
+}
 
-				contextMap := map[string]any{
-					"redis_stream_msg_id": msg.ID,
-					"consumer":            redisConsumer,
-					"hostname":            p.hostname,
-				}
-				sentry.CaptureError(fmt.Errorf("failed to handle stream message: %v", err), nil, "Ingestion stream", contextMap)
+// runPELReclaimer periodically reclaims messages from dead consumers using XAUTOCLAIM.
+func (p *IngestionProcessor) runPELReclaimer(ctx context.Context, stream, group, consumer string, sem chan struct{}) {
+	ticker := time.NewTicker(ReclaimInterval)
+	defer ticker.Stop()
 
-				return err
-			}
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			p.reclaimPendingMessages(ctx, stream, group, consumer, sem)
 		}
 	}
 }
 
 // reclaimPendingMessages uses XAUTOCLAIM to claim and process a single batch
 // of messages stuck in the consumer group's PEL (Pending Entries List).
-// It is called periodically from the main loop and is non-blocking:
+// It is called periodically by runPELReclaimer and is non-blocking:
 // errors are logged but do not propagate to the caller.
 // Poison messages that fail MaxReclaimRetries times are ACK'd and discarded.
-func (p *IngestionProcessor) reclaimPendingMessages(ctx context.Context, redisStreamID, redisConsumerGroup, redisConsumer string) {
-	p.logger.Debug("checking for pending messages to reclaim", "stream", redisStreamID, "group", redisConsumerGroup)
+func (p *IngestionProcessor) reclaimPendingMessages(ctx context.Context, stream, group, consumer string, sem chan struct{}) {
+	p.logger.Debug("checking for pending messages to reclaim", "stream", stream, "group", group)
 
 	cmd := p.redisStreamClient.XAutoClaim(ctx, &redis.XAutoClaimArgs{
-		Stream:   redisStreamID,
-		Group:    redisConsumerGroup,
-		Consumer: redisConsumer,
+		Stream:   stream,
+		Group:    group,
+		Consumer: consumer,
 		MinIdle:  ReclaimMinIdle,
 		Start:    p.reclaimCursor,
 		Count:    ReclaimBatchSize,
@@ -297,35 +460,69 @@ func (p *IngestionProcessor) reclaimPendingMessages(ctx context.Context, redisSt
 
 	p.logger.Info("reclaiming pending messages", "count", len(messages))
 	for _, msg := range messages {
-		_, err := p.handleStreamMessage(ctx, msg)
-		if err != nil {
-			p.reclaimFailures[msg.ID]++
-			failures := p.reclaimFailures[msg.ID]
-
-			if failures >= MaxReclaimRetries {
-				p.logger.Error("discarding poison message after max reclaim retries",
-					"message_id", msg.ID, "retries", failures, "error", err)
-
-				contextMap := map[string]any{
-					"redis_stream_msg_id": msg.ID,
-					"consumer":            redisConsumer,
-					"hostname":            p.hostname,
-					"retries":             failures,
-				}
-				sentry.CaptureError(fmt.Errorf("poison message discarded after %d retries: %v", failures, err), nil, "Reclaim poison message", contextMap)
-
-				p.redisStreamClient.XAck(ctx, redisStreamID, redisConsumerGroup, msg.ID)
-				delete(p.reclaimFailures, msg.ID)
-			} else {
-				p.logger.Warn("failed to handle reclaimed message, will retry",
-					"message_id", msg.ID, "retries", failures, "error", err)
-			}
-			continue
+		// Acquire semaphore to respect worker pool concurrency limit
+		select {
+		case sem <- struct{}{}:
+		case <-ctx.Done():
+			return
 		}
-		// Success — ACK and clean up tracking
-		p.redisStreamClient.XAck(ctx, redisStreamID, redisConsumerGroup, msg.ID)
-		delete(p.reclaimFailures, msg.ID)
+
+		if !p.processReclaimedMessage(ctx, msg, stream, group, consumer, sem) {
+			return
+		}
 	}
+}
+
+// processReclaimedMessage processes a single reclaimed message within the semaphore.
+// Returns false if the caller should stop processing (context cancelled).
+func (p *IngestionProcessor) processReclaimedMessage(ctx context.Context, msg redis.XMessage, stream, group, consumer string, sem chan struct{}) bool {
+	p.trackInFlight(msg.ID)
+	defer func() {
+		p.untrackInFlight(msg.ID)
+		<-sem
+	}()
+
+	allDone, err := p.handleStreamMessage(ctx, msg)
+	if err != nil {
+		p.reclaimFailures[msg.ID]++
+		failures := p.reclaimFailures[msg.ID]
+
+		if failures >= MaxReclaimRetries {
+			p.logger.Error("discarding poison message after max reclaim retries",
+				"message_id", msg.ID, "retries", failures, "error", err)
+
+			contextMap := map[string]any{
+				"redis_stream_msg_id": msg.ID,
+				"consumer":            consumer,
+				"hostname":            p.hostname,
+				"retries":             failures,
+			}
+			sentry.CaptureError(fmt.Errorf("poison message discarded after %d retries: %w", failures, err), nil, "Reclaim poison message", contextMap)
+
+			p.redisStreamClient.XAck(ctx, stream, group, msg.ID)
+			delete(p.reclaimFailures, msg.ID)
+		} else {
+			p.logger.Warn("failed to handle reclaimed message, will retry",
+				"message_id", msg.ID, "retries", failures, "error", err)
+		}
+		return true
+	}
+
+	// Wait for async pipelines to complete
+	select {
+	case <-allDone:
+	case <-ctx.Done():
+		return false
+	}
+
+	// Success — ACK, delete from stream, and clean up tracking
+	if err := p.redisStreamClient.XAck(ctx, stream, group, msg.ID).Err(); err != nil {
+		p.logger.Error("failed to ACK reclaimed message", "error", err, "message_id", msg.ID)
+		return true
+	}
+	p.redisStreamClient.XDel(ctx, stream, msg.ID)
+	delete(p.reclaimFailures, msg.ID)
+	return true
 }
 
 func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.XMessage) (chan struct{}, error) {
@@ -338,7 +535,12 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 	}
 	ctx = telemetry.ContextWithMetricAttributes(ctx, attrs...)
 
-	reqBytes := []byte(msg.Values["request"].(string))
+	reqStr, ok := msg.Values["request"].(string)
+	if !ok {
+		p.metrics.RecordHandleMessage(ctx, false)
+		return doneChan, fmt.Errorf("message %s has missing or invalid request field", msg.ID)
+	}
+	reqBytes := []byte(reqStr)
 	if enc, ok := msg.Values["encoding"].(string); ok && enc == "br" {
 		var err error
 		reqBytes, err = decompressBrotli(reqBytes)
@@ -377,11 +579,10 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 	generateIngestionLogChan := make(chan IngestionLogToProcess, bufCapacity)
 	generateIngestionLogDoneChan := make(chan struct{})
 	var applyChangeSetChan chan IngestionLogToProcess
-	var applyChangeSetDoneChan chan struct{}
+	applyChangeSetDoneChan := make(chan struct{})
 
 	if p.Config.AutoApplyChangesets {
 		applyChangeSetChan = make(chan IngestionLogToProcess, bufCapacity)
-		applyChangeSetDoneChan = make(chan struct{})
 	}
 
 	p.GenerateChangeSet(ctx, generateIngestionLogChan, applyChangeSetChan, generateIngestionLogDoneChan)
@@ -389,10 +590,7 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 	if p.Config.AutoApplyChangesets {
 		p.ApplyChangeSet(ctx, applyChangeSetChan, applyChangeSetDoneChan)
 	} else {
-		// Only close the channel if it's not nil to avoid panic
-		if applyChangeSetDoneChan != nil {
-			close(applyChangeSetDoneChan)
-		}
+		close(applyChangeSetDoneChan)
 	}
 
 	allDone := make(chan struct{})
@@ -423,7 +621,6 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 		sentry.CaptureError(fmt.Errorf("failed to handle ingest request: %v", errs), nil, "Ingestion request", contextMap)
 		p.metrics.RecordHandleMessage(ctx, false)
 	} else {
-		p.redisStreamClient.XDel(ctx, p.redisStreamID, msg.ID)
 		p.metrics.RecordHandleMessage(ctx, true)
 	}
 

@@ -450,6 +450,55 @@ func (_c *RedisClient_XAutoClaim_Call) RunAndReturn(run func(context.Context, *r
 	return _c
 }
 
+// XClaim provides a mock function with given fields: ctx, a
+func (_m *RedisClient) XClaim(ctx context.Context, a *redis.XClaimArgs) *redis.XMessageSliceCmd {
+	ret := _m.Called(ctx, a)
+
+	if len(ret) == 0 {
+		panic("no return value specified for XClaim")
+	}
+
+	var r0 *redis.XMessageSliceCmd
+	if rf, ok := ret.Get(0).(func(context.Context, *redis.XClaimArgs) *redis.XMessageSliceCmd); ok {
+		r0 = rf(ctx, a)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*redis.XMessageSliceCmd)
+		}
+	}
+
+	return r0
+}
+
+// RedisClient_XClaim_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'XClaim'
+type RedisClient_XClaim_Call struct {
+	*mock.Call
+}
+
+// XClaim is a helper method to define mock.On call
+//   - ctx context.Context
+//   - a *redis.XClaimArgs
+func (_e *RedisClient_Expecter) XClaim(ctx interface{}, a interface{}) *RedisClient_XClaim_Call {
+	return &RedisClient_XClaim_Call{Call: _e.mock.On("XClaim", ctx, a)}
+}
+
+func (_c *RedisClient_XClaim_Call) Run(run func(ctx context.Context, a *redis.XClaimArgs)) *RedisClient_XClaim_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*redis.XClaimArgs))
+	})
+	return _c
+}
+
+func (_c *RedisClient_XClaim_Call) Return(_a0 *redis.XMessageSliceCmd) *RedisClient_XClaim_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *RedisClient_XClaim_Call) RunAndReturn(run func(context.Context, *redis.XClaimArgs) *redis.XMessageSliceCmd) *RedisClient_XClaim_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // XDel provides a mock function with given fields: ctx, stream, ids
 func (_m *RedisClient) XDel(ctx context.Context, stream string, ids ...string) *redis.IntCmd {
 	_va := make([]interface{}, len(ids))
