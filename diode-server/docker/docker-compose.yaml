@@ -141,7 +141,7 @@ services:
           size: 1000000
 
   hydra:
-    image: oryd/hydra:v25.4.0
+    image: oryd/hydra:v26.2.0
     pull_policy: always
     expose:
       - "4444" # Public port
@@ -162,7 +162,7 @@ services:
       - postgres
 
   hydra-migrate:
-    image: oryd/hydra:v25.4.0
+    image: oryd/hydra:v26.2.0
     pull_policy: always
     command: migrate sql up -e --yes
     environment:
