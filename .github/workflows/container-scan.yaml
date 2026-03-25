@@ -1,0 +1,201 @@
+name: Container Scan
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "diode-server/**"
+      - "!diode-server/docker/**"
+      - "!diode-server/Makefile"
+      - "!diode-server/README.md"
+      - ".github/workflows/container-scan.yaml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GO_VERSION: '1.25'
+
+jobs:
+  build-and-scan:
+    name: ${{ matrix.app }}
+    runs-on: blacksmith-2vcpu-ubuntu-2404
+    timeout-minutes: 15
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: write
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [auth, ingester, reconciler]
+    env:
+      TRIVY_DISABLE_VEX_NOTICE: "true"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
+
+      - name: Set build info
+        env:
+          APP: ${{ matrix.app }}
+        run: |
+          echo ${GITHUB_SHA::7} > ./diode-server/version/BUILD_COMMIT.txt
+          LATEST_RELEASE=$(curl --silent "https://api.github.com/repos/${{ github.repository }}/releases/latest" | jq -r '.tag_name')
+          echo $LATEST_RELEASE > ./diode-server/version/BUILD_VERSION.txt
+
+      - name: Build image
+        uses: docker/build-push-action@1dc73863535b631f98b2378be8619f83b136f4a0 # v6.17.0
+        with:
+          context: diode-server
+          file: diode-server/docker/Dockerfile-build.${{ matrix.app }}
+          load: true
+          push: false
+          platforms: linux/amd64
+          cache-from: type=gha,scope=${{ matrix.app }}
+          cache-to: type=gha,scope=${{ matrix.app }},mode=max
+          build-args: |
+            SVC=${{ matrix.app }}
+          tags: diode-${{ matrix.app }}:scan
+
+      - name: Scan image for vulnerabilities
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # v0.35.0
+        with:
+          image-ref: diode-${{ matrix.app }}:scan
+          format: json
+          output: trivy-output.json
+          vuln-type: os,library
+          scanners: vuln,secret
+          severity: CRITICAL,HIGH,MEDIUM,LOW
+          ignore-unfixed: true
+          exit-code: "0"
+          list-all-pkgs: "true"
+
+      - name: Build scan summary
+        id: scan-summary
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        env:
+          APP: ${{ matrix.app }}
+        with:
+          script: |
+            const fs = require('fs');
+            const app = process.env.APP;
+            const data = JSON.parse(fs.readFileSync('trivy-output.json', 'utf8'));
+            const vulns = (data.Results || []).flatMap(r =>
+              (r.Vulnerabilities || []).map(v => ({ ...v, target: r.Target }))
+            );
+
+            const blockingSeverities = new Set(app === 'auth' ? ['CRITICAL'] : ['CRITICAL', 'HIGH']);
+
+            const SEVERITY_LABEL = {
+              CRITICAL: '🔴 **CRITICAL**',
+              HIGH: '🟠 **HIGH**',
+              MEDIUM: '🟡 MEDIUM',
+              LOW: '⚪ LOW'
+            };
+
+            const counts = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0 };
+            for (const v of vulns) {
+              if (counts[v.Severity] !== undefined) counts[v.Severity]++;
+            }
+
+            const hasBlocking = vulns.some(v => blockingSeverities.has(v.Severity));
+            core.setOutput('has_blocking', hasBlocking.toString());
+
+            const buildTable = (vulns) => {
+              if (vulns.length === 0) return '_No vulnerabilities found._\n';
+              let t = '| Library | CVE | Severity | Installed | Fixed | Title |\n';
+              t += '|---|---|---|---|---|---|\n';
+              for (const v of vulns) {
+                const title = (v.Title || '').replace(/\|/g, '\\|').substring(0, 80);
+                const cve = v.PrimaryURL ? `[${v.VulnerabilityID}](${v.PrimaryURL})` : v.VulnerabilityID;
+                t += `| ${v.PkgName} | ${cve} | ${SEVERITY_LABEL[v.Severity] || v.Severity} | ${v.InstalledVersion} | ${v.FixedVersion || 'N/A'} | ${title} |\n`;
+              }
+              return t;
+            };
+
+            const table = buildTable(vulns);
+            fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,
+              `## Vulnerability Scan Results — diode-${app}\n\n` + table
+            );
+
+            const artifact = JSON.stringify({ table, hasBlocking, counts });
+            fs.writeFileSync('scan-result.json', artifact);
+
+      - name: Post scan results as PR comment
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
+        env:
+          APP: ${{ matrix.app }}
+          COMMIT_SHA: ${{ github.sha }}
+        with:
+          script: |
+            const fs = require('fs');
+            const app = process.env.APP;
+            const { table, hasBlocking } = JSON.parse(fs.readFileSync('scan-result.json', 'utf8'));
+
+            const heading = hasBlocking
+              ? `## Vulnerability Scan: Failed — diode-${app}`
+              : `## Vulnerability Scan: Passed — diode-${app}`;
+
+            const commitSha = process.env.COMMIT_SHA;
+            const marker = `<!-- trivy-scan-diode-${app} -->`;
+            const body = `${marker}\n${heading}\n\n**Image:** \`diode-${app}:scan\`\n\n${table}\n*Commit: ${commitSha}*`;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find(c => c.body.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+      - name: Fail on blocking vulnerabilities
+        if: steps.scan-summary.outputs.has_blocking == 'true'
+        env:
+          APP: ${{ matrix.app }}
+        run: |
+          echo "Blocking vulnerabilities found for diode-${APP}. Failing build."
+          exit 1
+
+      - name: Convert scan results to SBOM
+        if: "!cancelled()"
+        run: trivy convert --format cyclonedx --output sbom.cdx.json trivy-output.json
+
+      - name: Upload SBOM artifact
+        if: "!cancelled()"
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: sbom-diode-${{ matrix.app }}-${{ github.sha }}
+          path: sbom.cdx.json
+          retention-days: 90
+
+      - name: Convert scan results to SARIF
+        if: "!cancelled()"
+        run: trivy convert --format sarif --output trivy-results.sarif trivy-output.json
+
+      - name: Upload SARIF to GitHub Code Scanning
+        if: "!cancelled()"
+        uses: github/codeql-action/upload-sarif@0d579ffd059c29b07949a3cce3983f0780820c98 # v4.32.6
+        with:
+          sarif_file: trivy-results.sarif
+          category: diode-${{ matrix.app }}
