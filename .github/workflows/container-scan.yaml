@@ -90,9 +90,9 @@ jobs:
               (r.Vulnerabilities || []).map(v => ({ ...v, target: r.Target }))
             );
 
-            // auth copies oryd/hydra:v25.4.0 which carries unfixed CRITICAL and HIGH CVEs
+            // auth copies oryd/hydra:v26.2.0 built with Go 1.26.0 which carries unfixed HIGH CVEs
             // Tracked: https://github.com/ory/hydra/issues/4080
-            const blockingSeverities = new Set(app === 'auth' ? [] : ['CRITICAL', 'HIGH']);
+            const blockingSeverities = new Set(app === 'auth' ? ['CRITICAL'] : ['CRITICAL', 'HIGH']);
 
             const SEVERITY_LABEL = {
               CRITICAL: '🔴 **CRITICAL**',
