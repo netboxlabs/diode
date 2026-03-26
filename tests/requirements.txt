@@ -1,6 +1,6 @@
 pytest==8.4.1
 pytest-xdist==3.8.0
 pytest-cov==6.0.0
-requests==2.32.4
+requests==2.33.0
 netboxlabs-diode-sdk~=1.9
 ruff>=0.8.0
