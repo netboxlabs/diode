@@ -83,9 +83,16 @@ func (_c *EntityStore_ListEntities_Call) RunAndReturn(run func(context.Context, 
 	return _c
 }
 
-// UpsertEntity provides a mock function with given fields: ctx, entity
-func (_m *EntityStore) UpsertEntity(ctx context.Context, entity *diodepb.Entity) (*graph.Node, error) {
-	ret := _m.Called(ctx, entity)
+// UpsertEntity provides a mock function with given fields: ctx, entity, requestMetadata
+func (_m *EntityStore) UpsertEntity(ctx context.Context, entity *diodepb.Entity, requestMetadata ...map[string]any) (*graph.Node, error) {
+	_va := make([]interface{}, len(requestMetadata))
+	for _i := range requestMetadata {
+		_va[_i] = requestMetadata[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, entity)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	if len(ret) == 0 {
 		panic("no return value specified for UpsertEntity")
@@ -93,19 +100,19 @@ func (_m *EntityStore) UpsertEntity(ctx context.Context, entity *diodepb.Entity)
 
 	var r0 *graph.Node
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *diodepb.Entity) (*graph.Node, error)); ok {
-		return rf(ctx, entity)
+	if rf, ok := ret.Get(0).(func(context.Context, *diodepb.Entity, ...map[string]any) (*graph.Node, error)); ok {
+		return rf(ctx, entity, requestMetadata...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *diodepb.Entity) *graph.Node); ok {
-		r0 = rf(ctx, entity)
+	if rf, ok := ret.Get(0).(func(context.Context, *diodepb.Entity, ...map[string]any) *graph.Node); ok {
+		r0 = rf(ctx, entity, requestMetadata...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*graph.Node)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *diodepb.Entity) error); ok {
-		r1 = rf(ctx, entity)
+	if rf, ok := ret.Get(1).(func(context.Context, *diodepb.Entity, ...map[string]any) error); ok {
+		r1 = rf(ctx, entity, requestMetadata...)
 	} else {
 		r1 = ret.Error(1)
 	}

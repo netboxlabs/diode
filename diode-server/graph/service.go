@@ -30,7 +30,7 @@ const (
 
 // EntityStore persists and queries entities in the graph.
 type EntityStore interface {
-	UpsertEntity(ctx context.Context, entity *diodepb.Entity) (*Node, error)
+	UpsertEntity(ctx context.Context, entity *diodepb.Entity, requestMetadata ...map[string]any) (*Node, error)
 	ListEntities(ctx context.Context, params ListNodesParams) ([]NodeWithLatestSnapshot, error)
 }
 
