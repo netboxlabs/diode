@@ -49,6 +49,7 @@ type Service struct {
 	seenInThisRequest map[string]bool        // Track which nodes have been seen in this ingestion request
 	matchingConfig    *matching.Config       // Entity matching configuration for extracting attributes
 	snapshotRetention int                    // Number of snapshots to retain per node
+	requestMetadata   map[string]any         // Request-level metadata (e.g. run_id) merged into entity metadata
 }
 
 // Option configures a Service.
@@ -91,7 +92,7 @@ func NewService(repo Repository, logger *slog.Logger, opts ...Option) *Service {
 }
 
 // UpsertEntity processes an entity and creates/updates its graph representation recursively.
-func (s *Service) UpsertEntity(ctx context.Context, entity *diodepb.Entity) (*Node, error) {
+func (s *Service) UpsertEntity(ctx context.Context, entity *diodepb.Entity, requestMetadata ...map[string]any) (*Node, error) {
 	if entity == nil || entity.GetEntity() == nil {
 		return nil, fmt.Errorf("entity or entity content is nil")
 	}
@@ -100,6 +101,12 @@ func (s *Service) UpsertEntity(ctx context.Context, entity *diodepb.Entity) (*No
 	s.nodeCache = make(map[string]*Node)
 	s.updatedNodes = make(map[string]*Node)
 	s.seenInThisRequest = make(map[string]bool)
+
+	// Store request-level metadata for merging during entity processing
+	s.requestMetadata = nil
+	if len(requestMetadata) > 0 && requestMetadata[0] != nil {
+		s.requestMetadata = requestMetadata[0]
+	}
 
 	// Recursively process the entire entity tree
 	rootNode, err := s.processEntityRecursively(ctx, entity)
