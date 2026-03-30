@@ -229,6 +229,11 @@ func TestEntityFingerprinter_BasicEntities(t *testing.T) {
 				Entity: &diodepb.Entity_Device{
 					Device: &diodepb.Device{
 						Name: strPtr("device1"),
+						Metadata: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"run_id": structpb.NewStringValue("run-1"),
+							},
+						},
 						Site: &diodepb.Site{
 							Name: "site1",
 							Metadata: &structpb.Struct{
@@ -244,6 +249,11 @@ func TestEntityFingerprinter_BasicEntities(t *testing.T) {
 				Entity: &diodepb.Entity_Device{
 					Device: &diodepb.Device{
 						Name: strPtr("device1"),
+						Metadata: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"run_id": structpb.NewStringValue("run-2"),
+							},
+						},
 						Site: &diodepb.Site{
 							Name: "site1",
 							Metadata: &structpb.Struct{
