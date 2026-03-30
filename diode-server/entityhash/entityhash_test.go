@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/netboxlabs/diode/diode-server/entityhash"
@@ -134,6 +135,127 @@ func TestEntityFingerprinter_BasicEntities(t *testing.T) {
 				},
 			},
 			shouldMatch: false,
+		},
+		{
+			name: "same device with different metadata produces same hash",
+			entity1: &diodepb.Entity{
+				Timestamp: timestamp,
+				Entity: &diodepb.Entity_Device{
+					Device: &diodepb.Device{
+						Name:   strPtr("device1"),
+						Serial: strPtr("serial123"),
+						Metadata: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"run_id": structpb.NewStringValue("run-1"),
+							},
+						},
+					},
+				},
+			},
+			entity2: &diodepb.Entity{
+				Timestamp: timestamp,
+				Entity: &diodepb.Entity_Device{
+					Device: &diodepb.Device{
+						Name:   strPtr("device1"),
+						Serial: strPtr("serial123"),
+						Metadata: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"run_id": structpb.NewStringValue("run-2"),
+							},
+						},
+					},
+				},
+			},
+			shouldMatch: true,
+		},
+		{
+			name: "same device with and without metadata produces same hash",
+			entity1: &diodepb.Entity{
+				Timestamp: timestamp,
+				Entity: &diodepb.Entity_Device{
+					Device: &diodepb.Device{
+						Name:   strPtr("device1"),
+						Serial: strPtr("serial123"),
+					},
+				},
+			},
+			entity2: &diodepb.Entity{
+				Timestamp: timestamp,
+				Entity: &diodepb.Entity_Device{
+					Device: &diodepb.Device{
+						Name:   strPtr("device1"),
+						Serial: strPtr("serial123"),
+						Metadata: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"run_id": structpb.NewStringValue("run-1"),
+							},
+						},
+					},
+				},
+			},
+			shouldMatch: true,
+		},
+		{
+			name: "same site with different metadata produces same hash",
+			entity1: &diodepb.Entity{
+				Entity: &diodepb.Entity_Site{
+					Site: &diodepb.Site{
+						Name: "site1",
+						Metadata: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"job_name": structpb.NewStringValue("job-a"),
+							},
+						},
+					},
+				},
+			},
+			entity2: &diodepb.Entity{
+				Entity: &diodepb.Entity_Site{
+					Site: &diodepb.Site{
+						Name: "site1",
+						Metadata: &structpb.Struct{
+							Fields: map[string]*structpb.Value{
+								"job_name": structpb.NewStringValue("job-b"),
+							},
+						},
+					},
+				},
+			},
+			shouldMatch: true,
+		},
+		{
+			name: "device with nested entity metadata produces same hash",
+			entity1: &diodepb.Entity{
+				Entity: &diodepb.Entity_Device{
+					Device: &diodepb.Device{
+						Name: strPtr("device1"),
+						Site: &diodepb.Site{
+							Name: "site1",
+							Metadata: &structpb.Struct{
+								Fields: map[string]*structpb.Value{
+									"run_id": structpb.NewStringValue("run-1"),
+								},
+							},
+						},
+					},
+				},
+			},
+			entity2: &diodepb.Entity{
+				Entity: &diodepb.Entity_Device{
+					Device: &diodepb.Device{
+						Name: strPtr("device1"),
+						Site: &diodepb.Site{
+							Name: "site1",
+							Metadata: &structpb.Struct{
+								Fields: map[string]*structpb.Value{
+									"run_id": structpb.NewStringValue("run-2"),
+								},
+							},
+						},
+					},
+				},
+			},
+			shouldMatch: true,
 		},
 		{
 			name: "different entity types produce different hashes",
