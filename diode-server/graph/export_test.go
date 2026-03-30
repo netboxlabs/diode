@@ -35,6 +35,12 @@ func (s *Service) TestExtractMetadata(entity *diodepb.Entity) (json.RawMessage, 
 	return s.extractMetadata(entity)
 }
 
+// TestExtractMetadataWithRequest sets request-level metadata the same way UpsertEntity does, then runs extractMetadata.
+func (s *Service) TestExtractMetadataWithRequest(entity *diodepb.Entity, requestMetadata map[string]any) (json.RawMessage, error) {
+	s.requestMetadata = requestMetadata
+	return s.extractMetadata(entity)
+}
+
 func (s *Service) TestFindNodeByExternalID(ctx context.Context, nodeType, externalID string) *matching.MatchResult {
 	return s.findNodeByExternalID(ctx, nodeType, externalID)
 }

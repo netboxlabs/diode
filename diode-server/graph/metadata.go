@@ -7,20 +7,23 @@ import (
 	"github.com/netboxlabs/diode/diode-server/matching"
 )
 
-// extractMetadata extracts metadata from an entity.
-// Returns a JSON-encoded map of metadata key-value pairs.
-//
-// TODO: Add support for merging request-level metadata (IngestRequest.metadata) with
-// entity-level metadata. This would require:
-// 1. Pass IngestRequest.metadata to Service (via SetSourceMetadata or UpsertEntity parameter)
-// 2. Merge source metadata with entity metadata (entity takes precedence for duplicate keys)
-// 3. Wire up the call in IngestionProcessor.CreateIngestionLogs before UpsertEntity
+// extractMetadata extracts metadata from an entity, merging with request-level
+// metadata (e.g. run_id from IngestRequest.metadata). Entity-level metadata
+// takes precedence over request-level metadata for duplicate keys.
 func (s *Service) extractMetadata(entity *diodepb.Entity) (json.RawMessage, error) {
-	if entity == nil || entity.GetEntity() == nil {
-		return json.RawMessage("{}"), nil
+	// Start with request-level metadata as the base
+	result := make(map[string]any)
+	for k, v := range s.requestMetadata {
+		result[k] = v
 	}
 
-	result := matching.ExtractEntityMetadata(entity)
+	// Entity-level metadata takes precedence
+	if entity != nil && entity.GetEntity() != nil {
+		for k, v := range matching.ExtractEntityMetadata(entity) {
+			result[k] = v
+		}
+	}
+
 	if len(result) == 0 {
 		return json.RawMessage("{}"), nil
 	}

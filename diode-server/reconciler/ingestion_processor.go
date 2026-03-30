@@ -805,7 +805,12 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 		// Upsert entity into graph if graph DB is enabled (non-blocking, errors logged but not fatal)
 		if p.graphService != nil {
 			start := time.Now()
-			_, graphErr := p.graphService.UpsertEntity(ctx, v.entity)
+			// Pass request-level metadata (e.g. run_id) for graph storage
+			var reqMeta map[string]any
+			if md := ingestReq.GetMetadata(); md != nil {
+				reqMeta = md.AsMap()
+			}
+			_, graphErr := p.graphService.UpsertEntity(ctx, v.entity, reqMeta)
 			duration := time.Since(start).Seconds()
 			if graphErr != nil {
 				p.logger.Warn("graph upsert entity failed",
