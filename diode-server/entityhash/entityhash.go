@@ -3,6 +3,7 @@ package entityhash
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 
 	"github.com/gowebpki/jcs"
@@ -28,6 +29,7 @@ func NewEntityFingerprinter() *EntityFingerprinter {
 
 // GenerateEntityHash creates a SHA256 hash for an entity that includes the object type
 // and canonicalized entity content, excluding the timestamp from the outer envelope
+// and metadata fields from all entity types.
 func (f *EntityFingerprinter) GenerateEntityHash(entity *diodepb.Entity) (string, error) {
 	if entity == nil {
 		return "", fmt.Errorf("entity cannot be nil")
@@ -45,6 +47,14 @@ func (f *EntityFingerprinter) GenerateEntityHash(entity *diodepb.Entity) (string
 		return "", fmt.Errorf("failed to marshal entity: %w", err)
 	}
 
+	// Strip metadata fields before hashing — metadata is not part of entity
+	// identity and varies between ingestion runs (e.g. run_id), causing
+	// duplicate deviations for identical entity data.
+	entityJSON, err = stripMetadataFromJSON(entityJSON)
+	if err != nil {
+		return "", fmt.Errorf("failed to strip metadata from entity: %w", err)
+	}
+
 	return f.GenerateEntityHashFromJSON(entityJSON)
 }
 
@@ -60,4 +70,30 @@ func (f *EntityFingerprinter) GenerateEntityHashFromJSON(entityJSON []byte) (str
 	// Generate SHA256 hash
 	hash := sha256.Sum256(canonicalJSON)
 	return hex.EncodeToString(hash[:]), nil
+}
+
+// stripMetadataFromJSON removes all "metadata" keys from a JSON object
+// recursively, so that entity-level metadata does not affect the hash.
+func stripMetadataFromJSON(data []byte) ([]byte, error) {
+	var obj interface{}
+	if err := json.Unmarshal(data, &obj); err != nil {
+		return nil, err
+	}
+	stripMetadata(obj)
+	return json.Marshal(obj)
+}
+
+// stripMetadata recursively removes "metadata" keys from JSON objects.
+func stripMetadata(v interface{}) {
+	switch val := v.(type) {
+	case map[string]interface{}:
+		delete(val, "metadata")
+		for _, child := range val {
+			stripMetadata(child)
+		}
+	case []interface{}:
+		for _, item := range val {
+			stripMetadata(item)
+		}
+	}
 }
