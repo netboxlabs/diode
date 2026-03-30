@@ -857,6 +857,103 @@ func TestExtractMetadata_WithMetadata(t *testing.T) {
 	assert.Equal(t, "value", parsed["key"])
 }
 
+func TestExtractMetadataWithRequest_MergesRequestAndEntity(t *testing.T) {
+	repo := new(mocks.Repository)
+	logger := newTestLogger()
+	gb := graph.NewService(repo, logger)
+
+	entityMeta, err := structpb.NewStruct(map[string]any{
+		"entity_key": "from_entity",
+		"shared":     "entity_wins",
+	})
+	require.NoError(t, err)
+
+	device := &diodepb.Device{
+		Name:     ptrString("d"),
+		Metadata: entityMeta,
+	}
+	entity := &diodepb.Entity{
+		Entity: &diodepb.Entity_Device{Device: device},
+	}
+
+	req := map[string]any{
+		"run_id": "run-1",
+		"shared": "request_loses",
+	}
+
+	raw, err := gb.TestExtractMetadataWithRequest(entity, req)
+	require.NoError(t, err)
+
+	var parsed map[string]any
+	require.NoError(t, json.Unmarshal(raw, &parsed))
+	assert.Equal(t, "run-1", parsed["run_id"])
+	assert.Equal(t, "from_entity", parsed["entity_key"])
+	assert.Equal(t, "entity_wins", parsed["shared"])
+}
+
+func TestExtractMetadataWithRequest_RequestOnlyNilEntity(t *testing.T) {
+	repo := new(mocks.Repository)
+	logger := newTestLogger()
+	gb := graph.NewService(repo, logger)
+
+	raw, err := gb.TestExtractMetadataWithRequest(nil, map[string]any{"run_id": "run-99"})
+	require.NoError(t, err)
+
+	var parsed map[string]any
+	require.NoError(t, json.Unmarshal(raw, &parsed))
+	assert.Equal(t, "run-99", parsed["run_id"])
+}
+
+func TestUpsertEntity_RequestMetadataMergedIntoUpsertNode(t *testing.T) {
+	repo := new(mocks.Repository)
+	logger := newTestLogger()
+	gb := graph.NewService(repo, logger)
+
+	ctx := context.Background()
+
+	device := &diodepb.Device{
+		Name: ptrString("test-device"),
+	}
+	entity := &diodepb.Entity{
+		Entity: &diodepb.Entity_Device{Device: device},
+	}
+
+	repo.EXPECT().FindNodeByContentHash(ctx, mock.AnythingOfType("graph.FindNodeByContentHashParams")).
+		Return(graph.Node{}, graph.ErrNotFound).Once()
+
+	repo.EXPECT().UpsertNode(ctx, mock.MatchedBy(func(params graph.UpsertNodeParams) bool {
+		if params.NodeType != "Device" {
+			return false
+		}
+		var m map[string]any
+		if err := json.Unmarshal(params.Metadata, &m); err != nil {
+			return false
+		}
+		if m["run_id"] != "ingest-run-1" {
+			return false
+		}
+		sm, ok := m["source_match"].(map[string]any)
+		return ok && sm["diode_id"] != nil
+	})).Return(graph.Node{
+		ID:             1,
+		ExternalID:     "test-hash",
+		NodeType:       "Device",
+		Data:           json.RawMessage(`{}`),
+		DuplicateCount: 1,
+	}, nil).Once()
+
+	repo.EXPECT().InsertSnapshot(ctx, mock.AnythingOfType("graph.InsertSnapshotParams")).
+		Return(graph.Snapshot{}, nil).Once()
+
+	repo.EXPECT().CleanupOldSnapshots(ctx, mock.AnythingOfType("graph.CleanupOldSnapshotsParams")).
+		Return(nil).Once()
+
+	_, err := gb.UpsertEntity(ctx, entity, map[string]any{"run_id": "ingest-run-1"})
+	require.NoError(t, err)
+
+	repo.AssertExpectations(t)
+}
+
 func TestFindNodeByExternalID(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()
