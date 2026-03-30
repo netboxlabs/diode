@@ -128,13 +128,21 @@ type EntityStore_UpsertEntity_Call struct {
 // UpsertEntity is a helper method to define mock.On call
 //   - ctx context.Context
 //   - entity *diodepb.Entity
-func (_e *EntityStore_Expecter) UpsertEntity(ctx interface{}, entity interface{}) *EntityStore_UpsertEntity_Call {
-	return &EntityStore_UpsertEntity_Call{Call: _e.mock.On("UpsertEntity", ctx, entity)}
+//   - requestMetadata ...map[string]any
+func (_e *EntityStore_Expecter) UpsertEntity(ctx interface{}, entity interface{}, requestMetadata ...interface{}) *EntityStore_UpsertEntity_Call {
+	return &EntityStore_UpsertEntity_Call{Call: _e.mock.On("UpsertEntity",
+		append([]interface{}{ctx, entity}, requestMetadata...)...)}
 }
 
-func (_c *EntityStore_UpsertEntity_Call) Run(run func(ctx context.Context, entity *diodepb.Entity)) *EntityStore_UpsertEntity_Call {
+func (_c *EntityStore_UpsertEntity_Call) Run(run func(ctx context.Context, entity *diodepb.Entity, requestMetadata ...map[string]any)) *EntityStore_UpsertEntity_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*diodepb.Entity))
+		variadicArgs := make([]map[string]any, len(args)-2)
+		for i, a := range args[2:] {
+			if a != nil {
+				variadicArgs[i] = a.(map[string]any)
+			}
+		}
+		run(args[0].(context.Context), args[1].(*diodepb.Entity), variadicArgs...)
 	})
 	return _c
 }
@@ -144,7 +152,7 @@ func (_c *EntityStore_UpsertEntity_Call) Return(_a0 *graph.Node, _a1 error) *Ent
 	return _c
 }
 
-func (_c *EntityStore_UpsertEntity_Call) RunAndReturn(run func(context.Context, *diodepb.Entity) (*graph.Node, error)) *EntityStore_UpsertEntity_Call {
+func (_c *EntityStore_UpsertEntity_Call) RunAndReturn(run func(context.Context, *diodepb.Entity, ...map[string]any) (*graph.Node, error)) *EntityStore_UpsertEntity_Call {
 	_c.Call.Return(run)
 	return _c
 }

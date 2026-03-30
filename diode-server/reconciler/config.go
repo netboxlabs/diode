@@ -37,8 +37,6 @@ type Config struct {
 
 	GenerateChangeSetConcurrency int `envconfig:"GENERATE_CHANGESET_CONCURRENCY" default:"4"`
 	ApplyChangeSetConcurrency    int `envconfig:"APPLY_CHANGESET_CONCURRENCY" default:"4"`
-	StreamWorkerCount            int `envconfig:"STREAM_WORKER_COUNT" default:"4"`
-	StreamHeartbeatInterval      int `envconfig:"STREAM_HEARTBEAT_INTERVAL_SECONDS" default:"30"`
 
 	// Experimental
 	EnableGraphDB bool `envconfig:"ENABLE_GRAPH_DB" default:"false"`
