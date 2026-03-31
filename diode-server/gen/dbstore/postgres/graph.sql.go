@@ -834,9 +834,9 @@ SELECT
     n.id, n.external_id, n.node_type,
     n.data AS matching_data, n.duplicate_count,
     n.last_seen_ts, n.created_at, n.updated_at, n.metadata,
-    COALESCE(s.snapshot_data, '{}'::jsonb) AS snapshot_data,
-    COALESCE(s.sequence_number, 0) AS sequence_number,
-    s.created_at AS snapshot_created_at
+    COALESCE(s_filtered.snapshot_data, s_latest.snapshot_data, '{}'::jsonb) AS snapshot_data,
+    COALESCE(s_filtered.sequence_number, s_latest.sequence_number, 0) AS sequence_number,
+    COALESCE(s_filtered.created_at, s_latest.created_at) AS snapshot_created_at
 FROM graph_nodes n
 LEFT JOIN LATERAL (
     SELECT snapshot_data, sequence_number, created_at
@@ -845,10 +845,17 @@ LEFT JOIN LATERAL (
       AND ($2::jsonb IS NULL OR metadata @> $2::jsonb)
     ORDER BY sequence_number DESC
     LIMIT 1
-) s ON true
+) s_filtered ON true
+LEFT JOIN LATERAL (
+    SELECT snapshot_data, sequence_number, created_at
+    FROM graph_node_snapshots
+    WHERE node_id = n.id
+    ORDER BY sequence_number DESC
+    LIMIT 1
+) s_latest ON s_filtered.snapshot_data IS NULL
 WHERE
     (n.node_type = ANY($1::text[]) OR $1::text[] IS NULL)
-    AND ($2::jsonb IS NULL OR s.snapshot_data IS NOT NULL)
+    AND ($2::jsonb IS NULL OR s_filtered.snapshot_data IS NOT NULL OR n.metadata @> $2::jsonb)
 ORDER BY n.updated_at DESC
 LIMIT $4 OFFSET $3
 `

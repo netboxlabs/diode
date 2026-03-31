@@ -232,16 +232,19 @@ LEFT JOIN LATERAL (
 WHERE n.node_type = $1 AND n.external_id = $2;
 
 -- name: ListNodes :many
--- When metadata_filter is provided, filters by snapshot metadata (not node metadata)
--- so that entities remain visible for the run that discovered them, even after
--- a later run overwrites the node-level metadata.
+-- When metadata_filter is provided, prefers snapshot metadata so that entities
+-- remain visible for the run that discovered them even after a later run
+-- overwrites the node-level metadata. Falls back to node-level metadata for
+-- entities whose snapshots lack the filtered key (e.g. Device references).
+-- Uses two lateral joins: s_filtered tries metadata-matched snapshots first,
+-- s_latest provides the most recent snapshot as fallback for entity data.
 SELECT
     n.id, n.external_id, n.node_type,
     n.data AS matching_data, n.duplicate_count,
     n.last_seen_ts, n.created_at, n.updated_at, n.metadata,
-    COALESCE(s.snapshot_data, '{}'::jsonb) AS snapshot_data,
-    COALESCE(s.sequence_number, 0) AS sequence_number,
-    s.created_at AS snapshot_created_at
+    COALESCE(s_filtered.snapshot_data, s_latest.snapshot_data, '{}'::jsonb) AS snapshot_data,
+    COALESCE(s_filtered.sequence_number, s_latest.sequence_number, 0) AS sequence_number,
+    COALESCE(s_filtered.created_at, s_latest.created_at) AS snapshot_created_at
 FROM graph_nodes n
 LEFT JOIN LATERAL (
     SELECT snapshot_data, sequence_number, created_at
@@ -250,10 +253,17 @@ LEFT JOIN LATERAL (
       AND (sqlc.narg('metadata_filter')::jsonb IS NULL OR metadata @> sqlc.narg('metadata_filter')::jsonb)
     ORDER BY sequence_number DESC
     LIMIT 1
-) s ON true
+) s_filtered ON true
+LEFT JOIN LATERAL (
+    SELECT snapshot_data, sequence_number, created_at
+    FROM graph_node_snapshots
+    WHERE node_id = n.id
+    ORDER BY sequence_number DESC
+    LIMIT 1
+) s_latest ON s_filtered.snapshot_data IS NULL
 WHERE
     (n.node_type = ANY(sqlc.narg('node_types')::text[]) OR sqlc.narg('node_types')::text[] IS NULL)
-    AND (sqlc.narg('metadata_filter')::jsonb IS NULL OR s.snapshot_data IS NOT NULL)
+    AND (sqlc.narg('metadata_filter')::jsonb IS NULL OR s_filtered.snapshot_data IS NOT NULL OR n.metadata @> sqlc.narg('metadata_filter')::jsonb)
 ORDER BY n.updated_at DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
