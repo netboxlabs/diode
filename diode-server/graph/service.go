@@ -91,7 +91,6 @@ func NewService(repo Repository, logger *slog.Logger, opts ...Option) *Service {
 	return s
 }
 
-// UpsertEntity processes an entity and creates/updates its graph representation recursively.
 // ResetBatchState clears state accumulated across UpsertEntity calls.
 // Call this between ingestion batches (e.g. between Redis messages) so that
 // snapshot deduplication does not span unrelated batches.
@@ -99,6 +98,7 @@ func (s *Service) ResetBatchState() {
 	s.seenInThisRequest = make(map[string]bool)
 }
 
+// UpsertEntity processes an entity and creates/updates its graph representation recursively.
 func (s *Service) UpsertEntity(ctx context.Context, entity *diodepb.Entity, requestMetadata ...map[string]any) (*Node, error) {
 	if entity == nil || entity.GetEntity() == nil {
 		return nil, fmt.Errorf("entity or entity content is nil")

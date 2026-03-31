@@ -1218,3 +1218,40 @@ func TestFindNodeByContentHash_DatabaseError(t *testing.T) {
 
 	repo.AssertExpectations(t)
 }
+
+func TestResetBatchState_ClearsSeenState(t *testing.T) {
+	repo := new(mocks.Repository)
+	logger := newTestLogger()
+	gb := graph.NewService(repo, logger)
+
+	// Verify seenInThisRequest starts empty
+	assert.Empty(t, gb.TestSeenInThisRequest())
+
+	ctx := context.Background()
+
+	device := &diodepb.Device{
+		Name: ptrString("batch-device"),
+	}
+
+	// First call populates seenInThisRequest
+	repo.EXPECT().FindNodeByContentHash(ctx, mock.AnythingOfType("graph.FindNodeByContentHashParams")).
+		Return(graph.Node{}, graph.ErrNotFound).Once()
+	repo.EXPECT().UpsertNode(ctx, mock.AnythingOfType("graph.UpsertNodeParams")).
+		Return(graph.Node{ID: 1, ExternalID: "batch-hash", NodeType: "Device", Data: json.RawMessage(`{}`)}, nil).Once()
+	repo.EXPECT().InsertSnapshot(ctx, mock.AnythingOfType("graph.InsertSnapshotParams")).
+		Return(graph.Snapshot{}, nil).Once()
+	repo.EXPECT().CleanupOldSnapshots(ctx, mock.AnythingOfType("graph.CleanupOldSnapshotsParams")).
+		Return(nil).Once()
+
+	_, err := gb.UpsertEntity(ctx, &diodepb.Entity{Entity: &diodepb.Entity_Device{Device: device}})
+	require.NoError(t, err)
+
+	// seenInThisRequest should NOT be empty (preserved across UpsertEntity calls)
+	assert.NotEmpty(t, gb.TestSeenInThisRequest())
+
+	// ResetBatchState clears it
+	gb.ResetBatchState()
+	assert.Empty(t, gb.TestSeenInThisRequest())
+
+	repo.AssertExpectations(t)
+}
