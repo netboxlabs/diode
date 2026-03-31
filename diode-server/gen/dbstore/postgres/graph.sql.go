@@ -628,7 +628,7 @@ func (q *Queries) GetGraphStatsByType(ctx context.Context) ([]GetGraphStatsByTyp
 }
 
 const getLatestSnapshot = `-- name: GetLatestSnapshot :one
-SELECT id, node_id, snapshot_data, sequence_number, created_at
+SELECT id, node_id, snapshot_data, sequence_number, created_at, metadata
 FROM graph_node_snapshots
 WHERE node_id = $1
 ORDER BY sequence_number DESC
@@ -644,6 +644,7 @@ func (q *Queries) GetLatestSnapshot(ctx context.Context, nodeID int64) (GraphNod
 		&i.SnapshotData,
 		&i.SequenceNumber,
 		&i.CreatedAt,
+		&i.Metadata,
 	)
 	return i, err
 }
@@ -753,7 +754,7 @@ func (q *Queries) GetNodesByFrequency(ctx context.Context, arg GetNodesByFrequen
 }
 
 const getSnapshotsByNode = `-- name: GetSnapshotsByNode :many
-SELECT id, node_id, snapshot_data, sequence_number, created_at
+SELECT id, node_id, snapshot_data, sequence_number, created_at, metadata
 FROM graph_node_snapshots
 WHERE node_id = $1
 ORDER BY sequence_number DESC
@@ -781,6 +782,7 @@ func (q *Queries) GetSnapshotsByNode(ctx context.Context, arg GetSnapshotsByNode
 			&i.SnapshotData,
 			&i.SequenceNumber,
 			&i.CreatedAt,
+			&i.Metadata,
 		); err != nil {
 			return nil, err
 		}
@@ -797,23 +799,24 @@ const insertSnapshot = `-- name: InsertSnapshot :one
 WITH lock AS (
     SELECT pg_advisory_xact_lock(1, $1::int)
 )
-INSERT INTO graph_node_snapshots (node_id, snapshot_data, sequence_number)
-SELECT $1, $2, COALESCE(MAX(sequence_number), 0) + 1
+INSERT INTO graph_node_snapshots (node_id, snapshot_data, sequence_number, metadata)
+SELECT $1, $2, COALESCE(MAX(sequence_number), 0) + 1, $3
 FROM graph_node_snapshots, lock
 WHERE node_id = $1
-RETURNING id, node_id, snapshot_data, sequence_number, created_at
+RETURNING id, node_id, snapshot_data, sequence_number, created_at, metadata
 `
 
 type InsertSnapshotParams struct {
 	NodeID       int64  `json:"node_id"`
 	SnapshotData []byte `json:"snapshot_data"`
+	Metadata     []byte `json:"metadata"`
 }
 
 // Snapshot management queries
 // Atomically inserts a snapshot with next sequence number using advisory lock to prevent races.
 // Uses namespaced lock (1=snapshot_insert, node_id) to avoid clashes with other advisory locks.
 func (q *Queries) InsertSnapshot(ctx context.Context, arg InsertSnapshotParams) (GraphNodeSnapshot, error) {
-	row := q.db.QueryRow(ctx, insertSnapshot, arg.NodeID, arg.SnapshotData)
+	row := q.db.QueryRow(ctx, insertSnapshot, arg.NodeID, arg.SnapshotData, arg.Metadata)
 	var i GraphNodeSnapshot
 	err := row.Scan(
 		&i.ID,
@@ -821,6 +824,7 @@ func (q *Queries) InsertSnapshot(ctx context.Context, arg InsertSnapshotParams) 
 		&i.SnapshotData,
 		&i.SequenceNumber,
 		&i.CreatedAt,
+		&i.Metadata,
 	)
 	return i, err
 }
@@ -838,12 +842,13 @@ LEFT JOIN LATERAL (
     SELECT snapshot_data, sequence_number, created_at
     FROM graph_node_snapshots
     WHERE node_id = n.id
+      AND ($2::jsonb IS NULL OR metadata @> $2::jsonb)
     ORDER BY sequence_number DESC
     LIMIT 1
 ) s ON true
 WHERE
     (n.node_type = ANY($1::text[]) OR $1::text[] IS NULL)
-    AND ($2::jsonb IS NULL OR n.metadata @> $2::jsonb)
+    AND ($2::jsonb IS NULL OR s.snapshot_data IS NOT NULL)
 ORDER BY n.updated_at DESC
 LIMIT $4 OFFSET $3
 `

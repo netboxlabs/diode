@@ -954,6 +954,97 @@ func TestUpsertEntity_RequestMetadataMergedIntoUpsertNode(t *testing.T) {
 	repo.AssertExpectations(t)
 }
 
+func TestUpsertEntity_SnapshotReceivesMetadata(t *testing.T) {
+	repo := new(mocks.Repository)
+	logger := newTestLogger()
+	gb := graph.NewService(repo, logger)
+
+	ctx := context.Background()
+
+	device := &diodepb.Device{
+		Name: ptrString("snap-meta-device"),
+	}
+	entity := &diodepb.Entity{
+		Entity: &diodepb.Entity_Device{Device: device},
+	}
+
+	repo.EXPECT().FindNodeByContentHash(ctx, mock.AnythingOfType("graph.FindNodeByContentHashParams")).
+		Return(graph.Node{}, graph.ErrNotFound).Once()
+
+	repo.EXPECT().UpsertNode(ctx, mock.AnythingOfType("graph.UpsertNodeParams")).
+		Return(graph.Node{
+			ID:             42,
+			ExternalID:     "snap-hash",
+			NodeType:       "Device",
+			Data:           json.RawMessage(`{}`),
+			DuplicateCount: 1,
+		}, nil).Once()
+
+	// Verify the snapshot receives metadata containing run_id
+	repo.EXPECT().InsertSnapshot(ctx, mock.MatchedBy(func(params graph.InsertSnapshotParams) bool {
+		if params.NodeID != 42 {
+			return false
+		}
+		if len(params.Metadata) == 0 {
+			return false
+		}
+		var m map[string]any
+		if err := json.Unmarshal(params.Metadata, &m); err != nil {
+			return false
+		}
+		return m["run_id"] == "snapshot-run-1"
+	})).Return(graph.Snapshot{}, nil).Once()
+
+	repo.EXPECT().CleanupOldSnapshots(ctx, mock.AnythingOfType("graph.CleanupOldSnapshotsParams")).
+		Return(nil).Once()
+
+	_, err := gb.UpsertEntity(ctx, entity, map[string]any{"run_id": "snapshot-run-1"})
+	require.NoError(t, err)
+
+	repo.AssertExpectations(t)
+}
+
+func TestUpsertEntity_SnapshotMetadataEmpty_WhenNoRequestMetadata(t *testing.T) {
+	repo := new(mocks.Repository)
+	logger := newTestLogger()
+	gb := graph.NewService(repo, logger)
+
+	ctx := context.Background()
+
+	device := &diodepb.Device{
+		Name: ptrString("no-meta-device"),
+	}
+	entity := &diodepb.Entity{
+		Entity: &diodepb.Entity_Device{Device: device},
+	}
+
+	repo.EXPECT().FindNodeByContentHash(ctx, mock.AnythingOfType("graph.FindNodeByContentHashParams")).
+		Return(graph.Node{}, graph.ErrNotFound).Once()
+
+	repo.EXPECT().UpsertNode(ctx, mock.AnythingOfType("graph.UpsertNodeParams")).
+		Return(graph.Node{
+			ID:             99,
+			ExternalID:     "no-meta-hash",
+			NodeType:       "Device",
+			Data:           json.RawMessage(`{}`),
+			DuplicateCount: 1,
+		}, nil).Once()
+
+	// Without request metadata the snapshot should still get metadata
+	// (containing at least source_match.diode_id from ensureDiodeID)
+	repo.EXPECT().InsertSnapshot(ctx, mock.MatchedBy(func(params graph.InsertSnapshotParams) bool {
+		return params.NodeID == 99 && len(params.Metadata) > 0
+	})).Return(graph.Snapshot{}, nil).Once()
+
+	repo.EXPECT().CleanupOldSnapshots(ctx, mock.AnythingOfType("graph.CleanupOldSnapshotsParams")).
+		Return(nil).Once()
+
+	_, err := gb.UpsertEntity(ctx, entity)
+	require.NoError(t, err)
+
+	repo.AssertExpectations(t)
+}
+
 func TestFindNodeByExternalID(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()

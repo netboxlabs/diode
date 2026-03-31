@@ -30,6 +30,7 @@ type Snapshot struct {
 	SnapshotData   json.RawMessage `json:"snapshot_data"`
 	SequenceNumber int32           `json:"sequence_number"`
 	CreatedAt      time.Time       `json:"created_at"`
+	Metadata       json.RawMessage `json:"metadata"`
 }
 
 // Edge represents an edge between two nodes.
@@ -145,6 +146,7 @@ type FindNodeByContentHashParams struct {
 type InsertSnapshotParams struct {
 	NodeID       int64
 	SnapshotData json.RawMessage
+	Metadata     json.RawMessage
 }
 
 // CleanupOldSnapshotsParams contains parameters for cleaning up old snapshots.

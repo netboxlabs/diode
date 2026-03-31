@@ -289,8 +289,8 @@ func (s *Service) updateMatchedNode(ctx context.Context, bestMatch *matching.Mat
 		return nil, fmt.Errorf("updating matched node: %w", err)
 	}
 
-	// Create snapshot with full entity data
-	if err := s.createSnapshot(ctx, result.ID, entityData); err != nil {
+	// Create snapshot with full entity data and current metadata
+	if err := s.createSnapshot(ctx, result.ID, entityData, metadata); err != nil {
 		s.logger.Warn("failed to create entity snapshot", "error", err, "node_id", result.ID)
 	}
 
@@ -412,8 +412,8 @@ func (s *Service) upsertNode(ctx context.Context, externalID, nodeType string, f
 		s.seenInThisRequest[requestKey] = true
 	}
 
-	// Create snapshot with full entity data
-	err = s.createSnapshot(ctx, result.ID, fullEntityData)
+	// Create snapshot with full entity data and current metadata
+	err = s.createSnapshot(ctx, result.ID, fullEntityData, metadata)
 	if err != nil {
 		s.logger.Warn("failed to create entity snapshot", "error", err, "node_id", result.ID)
 		// Don't fail the entire operation for snapshot issues
@@ -429,12 +429,14 @@ func (s *Service) upsertNode(ctx context.Context, externalID, nodeType string, f
 	}, nil
 }
 
-// createSnapshot creates a new snapshot for the given node with the full entity data.
-func (s *Service) createSnapshot(ctx context.Context, nodeID int64, fullEntityData json.RawMessage) error {
+// createSnapshot creates a new snapshot for the given node with the full entity data
+// and the metadata that was current at the time of ingestion (e.g. run_id).
+func (s *Service) createSnapshot(ctx context.Context, nodeID int64, fullEntityData, metadata json.RawMessage) error {
 	// Insert the new snapshot (sequence number is auto-computed by the SQL query)
 	_, err := s.repo.InsertSnapshot(ctx, InsertSnapshotParams{
 		NodeID:       nodeID,
 		SnapshotData: fullEntityData,
+		Metadata:     metadata,
 	})
 	if err != nil {
 		return fmt.Errorf("inserting snapshot: %w", err)

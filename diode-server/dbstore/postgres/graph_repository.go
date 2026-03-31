@@ -68,6 +68,7 @@ func toSnapshot(s postgres.GraphNodeSnapshot) graph.Snapshot {
 		SnapshotData:   json.RawMessage(s.SnapshotData),
 		SequenceNumber: s.SequenceNumber,
 		CreatedAt:      s.CreatedAt.Time,
+		Metadata:       json.RawMessage(s.Metadata),
 	}
 }
 
@@ -201,9 +202,14 @@ func (r *GraphRepository) FindNodeByContentHash(ctx context.Context, arg graph.F
 
 // InsertSnapshot implements graph.Repository.
 func (r *GraphRepository) InsertSnapshot(ctx context.Context, arg graph.InsertSnapshotParams) (graph.Snapshot, error) {
+	metadata := []byte(arg.Metadata)
+	if len(metadata) == 0 {
+		metadata = []byte("{}")
+	}
 	result, err := r.queries.InsertSnapshot(ctx, postgres.InsertSnapshotParams{
 		NodeID:       arg.NodeID,
 		SnapshotData: []byte(arg.SnapshotData),
+		Metadata:     metadata,
 	})
 	if err != nil {
 		return graph.Snapshot{}, err

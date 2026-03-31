@@ -79,6 +79,7 @@ type GraphNodeSnapshot struct {
 	// Sequential number for ordering snapshots, higher is newer
 	SequenceNumber int32              `json:"sequence_number"`
 	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	Metadata       []byte             `json:"metadata"`
 }
 
 type IngestionLog struct {

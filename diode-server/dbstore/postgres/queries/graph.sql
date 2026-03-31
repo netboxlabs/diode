@@ -180,21 +180,21 @@ LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 WITH lock AS (
     SELECT pg_advisory_xact_lock(1, $1::int)
 )
-INSERT INTO graph_node_snapshots (node_id, snapshot_data, sequence_number)
-SELECT $1, $2, COALESCE(MAX(sequence_number), 0) + 1
+INSERT INTO graph_node_snapshots (node_id, snapshot_data, sequence_number, metadata)
+SELECT $1, $2, COALESCE(MAX(sequence_number), 0) + 1, $3
 FROM graph_node_snapshots, lock
 WHERE node_id = $1
-RETURNING id, node_id, snapshot_data, sequence_number, created_at;
+RETURNING id, node_id, snapshot_data, sequence_number, created_at, metadata;
 
 -- name: GetLatestSnapshot :one
-SELECT id, node_id, snapshot_data, sequence_number, created_at
+SELECT id, node_id, snapshot_data, sequence_number, created_at, metadata
 FROM graph_node_snapshots
 WHERE node_id = $1
 ORDER BY sequence_number DESC
 LIMIT 1;
 
 -- name: GetSnapshotsByNode :many
-SELECT id, node_id, snapshot_data, sequence_number, created_at
+SELECT id, node_id, snapshot_data, sequence_number, created_at, metadata
 FROM graph_node_snapshots
 WHERE node_id = $1
 ORDER BY sequence_number DESC
@@ -232,6 +232,9 @@ LEFT JOIN LATERAL (
 WHERE n.node_type = $1 AND n.external_id = $2;
 
 -- name: ListNodes :many
+-- When metadata_filter is provided, filters by snapshot metadata (not node metadata)
+-- so that entities remain visible for the run that discovered them, even after
+-- a later run overwrites the node-level metadata.
 SELECT
     n.id, n.external_id, n.node_type,
     n.data AS matching_data, n.duplicate_count,
@@ -244,12 +247,13 @@ LEFT JOIN LATERAL (
     SELECT snapshot_data, sequence_number, created_at
     FROM graph_node_snapshots
     WHERE node_id = n.id
+      AND (sqlc.narg('metadata_filter')::jsonb IS NULL OR metadata @> sqlc.narg('metadata_filter')::jsonb)
     ORDER BY sequence_number DESC
     LIMIT 1
 ) s ON true
 WHERE
     (n.node_type = ANY(sqlc.narg('node_types')::text[]) OR sqlc.narg('node_types')::text[] IS NULL)
-    AND (sqlc.narg('metadata_filter')::jsonb IS NULL OR n.metadata @> sqlc.narg('metadata_filter')::jsonb)
+    AND (sqlc.narg('metadata_filter')::jsonb IS NULL OR s.snapshot_data IS NOT NULL)
 ORDER BY n.updated_at DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
