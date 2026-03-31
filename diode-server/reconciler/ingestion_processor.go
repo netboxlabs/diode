@@ -395,6 +395,13 @@ func (p *IngestionProcessor) ApplyChangeSet(ctx context.Context, applyChan <-cha
 func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq *diodepb.IngestRequest, ingestionTs int, generateIngestionLogChan chan<- IngestionLogToProcess) []error {
 	defer close(generateIngestionLogChan)
 
+	// Reset graph snapshot deduplication state so each batch (IngestRequest)
+	// starts fresh, while entities within the same batch share state to avoid
+	// redundant snapshots for multiply-referenced entities (e.g. Device).
+	if p.graphService != nil {
+		p.graphService.ResetBatchState()
+	}
+
 	errs := make([]error, 0)
 
 	// Ensure the current default branch is retrieved

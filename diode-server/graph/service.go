@@ -92,15 +92,25 @@ func NewService(repo Repository, logger *slog.Logger, opts ...Option) *Service {
 }
 
 // UpsertEntity processes an entity and creates/updates its graph representation recursively.
+// ResetBatchState clears state accumulated across UpsertEntity calls.
+// Call this between ingestion batches (e.g. between Redis messages) so that
+// snapshot deduplication does not span unrelated batches.
+func (s *Service) ResetBatchState() {
+	s.seenInThisRequest = make(map[string]bool)
+}
+
 func (s *Service) UpsertEntity(ctx context.Context, entity *diodepb.Entity, requestMetadata ...map[string]any) (*Node, error) {
 	if entity == nil || entity.GetEntity() == nil {
 		return nil, fmt.Errorf("entity or entity content is nil")
 	}
 
-	// Clear caches for each top-level extraction
+	// Clear per-entity-tree caches. seenInThisRequest is intentionally
+	// preserved across UpsertEntity calls so that entities referenced by
+	// multiple root entities (e.g. a Device referenced by 20 Interfaces)
+	// only get one snapshot per batch, preventing snapshot retention from
+	// purging older runs' snapshots.
 	s.nodeCache = make(map[string]*Node)
 	s.updatedNodes = make(map[string]*Node)
-	s.seenInThisRequest = make(map[string]bool)
 
 	// Store request-level metadata for merging during entity processing
 	s.requestMetadata = nil
@@ -283,15 +293,22 @@ func (s *Service) updateMatchedNode(ctx context.Context, bestMatch *matching.Mat
 	// Ensure source_match.diode_id is set to externalID for future lookups
 	metadata = s.ensureDiodeID(metadata, existingNode.ExternalID)
 
+	requestKey := fmt.Sprintf("%s:%s", nodeType, existingNode.ExternalID)
+	alreadySeen := s.seenInThisRequest[requestKey]
+
 	// Upsert the node with appropriate duplicate count handling
 	result, err := s.upsertMatchedNodeData(ctx, nodeType, existingNode.ExternalID, matchingData, metadata, contentHash)
 	if err != nil {
 		return nil, fmt.Errorf("updating matched node: %w", err)
 	}
 
-	// Create snapshot with full entity data and current metadata
-	if err := s.createSnapshot(ctx, result.ID, entityData, metadata); err != nil {
-		s.logger.Warn("failed to create entity snapshot", "error", err, "node_id", result.ID)
+	// Only snapshot the first time this node is seen in this request to avoid
+	// exhausting snapshot retention with redundant copies from nested references.
+	if !alreadySeen {
+		s.seenInThisRequest[requestKey] = true
+		if err := s.createSnapshot(ctx, result.ID, entityData, metadata); err != nil {
+			s.logger.Warn("failed to create entity snapshot", "error", err, "node_id", result.ID)
+		}
 	}
 
 	node := &Node{
@@ -412,11 +429,14 @@ func (s *Service) upsertNode(ctx context.Context, externalID, nodeType string, f
 		s.seenInThisRequest[requestKey] = true
 	}
 
-	// Create snapshot with full entity data and current metadata
-	err = s.createSnapshot(ctx, result.ID, fullEntityData, metadata)
-	if err != nil {
-		s.logger.Warn("failed to create entity snapshot", "error", err, "node_id", result.ID)
-		// Don't fail the entire operation for snapshot issues
+	// Only snapshot the first time this node is seen in this request to avoid
+	// exhausting snapshot retention with redundant copies from nested references.
+	if !alreadySeenInRequest {
+		err = s.createSnapshot(ctx, result.ID, fullEntityData, metadata)
+		if err != nil {
+			s.logger.Warn("failed to create entity snapshot", "error", err, "node_id", result.ID)
+			// Don't fail the entire operation for snapshot issues
+		}
 	}
 
 	return &Node{
