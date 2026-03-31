@@ -69,6 +69,63 @@ func (_c *Repository_CleanupOldSnapshots_Call) RunAndReturn(run func(context.Con
 	return _c
 }
 
+// FindLatestSnapshotByHash provides a mock function with given fields: ctx, arg
+func (_m *Repository) FindLatestSnapshotByHash(ctx context.Context, arg graph.FindLatestSnapshotByHashParams) (graph.Snapshot, error) {
+	ret := _m.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for FindLatestSnapshotByHash")
+	}
+
+	var r0 graph.Snapshot
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, graph.FindLatestSnapshotByHashParams) (graph.Snapshot, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, graph.FindLatestSnapshotByHashParams) graph.Snapshot); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(graph.Snapshot)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, graph.FindLatestSnapshotByHashParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Repository_FindLatestSnapshotByHash_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FindLatestSnapshotByHash'
+type Repository_FindLatestSnapshotByHash_Call struct {
+	*mock.Call
+}
+
+// FindLatestSnapshotByHash is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg graph.FindLatestSnapshotByHashParams
+func (_e *Repository_Expecter) FindLatestSnapshotByHash(ctx interface{}, arg interface{}) *Repository_FindLatestSnapshotByHash_Call {
+	return &Repository_FindLatestSnapshotByHash_Call{Call: _e.mock.On("FindLatestSnapshotByHash", ctx, arg)}
+}
+
+func (_c *Repository_FindLatestSnapshotByHash_Call) Run(run func(ctx context.Context, arg graph.FindLatestSnapshotByHashParams)) *Repository_FindLatestSnapshotByHash_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(graph.FindLatestSnapshotByHashParams))
+	})
+	return _c
+}
+
+func (_c *Repository_FindLatestSnapshotByHash_Call) Return(_a0 graph.Snapshot, _a1 error) *Repository_FindLatestSnapshotByHash_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Repository_FindLatestSnapshotByHash_Call) RunAndReturn(run func(context.Context, graph.FindLatestSnapshotByHashParams) (graph.Snapshot, error)) *Repository_FindLatestSnapshotByHash_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // FindNode provides a mock function with given fields: ctx, arg
 func (_m *Repository) FindNode(ctx context.Context, arg graph.FindNodeParams) (graph.Node, error) {
 	ret := _m.Called(ctx, arg)
@@ -584,6 +641,63 @@ func (_c *Repository_InsertSnapshot_Call) Return(_a0 graph.Snapshot, _a1 error) 
 }
 
 func (_c *Repository_InsertSnapshot_Call) RunAndReturn(run func(context.Context, graph.InsertSnapshotParams) (graph.Snapshot, error)) *Repository_InsertSnapshot_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// InsertSnapshotMetadata provides a mock function with given fields: ctx, arg
+func (_m *Repository) InsertSnapshotMetadata(ctx context.Context, arg graph.InsertSnapshotMetadataParams) (graph.SnapshotMetadata, error) {
+	ret := _m.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for InsertSnapshotMetadata")
+	}
+
+	var r0 graph.SnapshotMetadata
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, graph.InsertSnapshotMetadataParams) (graph.SnapshotMetadata, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, graph.InsertSnapshotMetadataParams) graph.SnapshotMetadata); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(graph.SnapshotMetadata)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, graph.InsertSnapshotMetadataParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Repository_InsertSnapshotMetadata_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InsertSnapshotMetadata'
+type Repository_InsertSnapshotMetadata_Call struct {
+	*mock.Call
+}
+
+// InsertSnapshotMetadata is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg graph.InsertSnapshotMetadataParams
+func (_e *Repository_Expecter) InsertSnapshotMetadata(ctx interface{}, arg interface{}) *Repository_InsertSnapshotMetadata_Call {
+	return &Repository_InsertSnapshotMetadata_Call{Call: _e.mock.On("InsertSnapshotMetadata", ctx, arg)}
+}
+
+func (_c *Repository_InsertSnapshotMetadata_Call) Run(run func(ctx context.Context, arg graph.InsertSnapshotMetadataParams)) *Repository_InsertSnapshotMetadata_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(graph.InsertSnapshotMetadataParams))
+	})
+	return _c
+}
+
+func (_c *Repository_InsertSnapshotMetadata_Call) Return(_a0 graph.SnapshotMetadata, _a1 error) *Repository_InsertSnapshotMetadata_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Repository_InsertSnapshotMetadata_Call) RunAndReturn(run func(context.Context, graph.InsertSnapshotMetadataParams) (graph.SnapshotMetadata, error)) *Repository_InsertSnapshotMetadata_Call {
 	_c.Call.Return(run)
 	return _c
 }

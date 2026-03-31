@@ -17,8 +17,9 @@ import (
 )
 
 const (
-	// DefaultSnapshotRetention is the default number of snapshots to keep
-	DefaultSnapshotRetention = 5
+	// DefaultSnapshotRetention is the default number of snapshots to keep.
+	// 0 means no pruning (retain all snapshots).
+	DefaultSnapshotRetention = 0
 	// ContentHashMatchConfidence is the confidence score for content hash matches
 	ContentHashMatchConfidence = 0.9
 
@@ -289,8 +290,8 @@ func (s *Service) updateMatchedNode(ctx context.Context, bestMatch *matching.Mat
 		return nil, fmt.Errorf("updating matched node: %w", err)
 	}
 
-	// Create snapshot with full entity data
-	if err := s.createSnapshot(ctx, result.ID, entityData); err != nil {
+	// Create snapshot with full entity data, metadata, and content hash for dedup
+	if err := s.createSnapshot(ctx, result.ID, entityData, metadata, contentHash); err != nil {
 		s.logger.Warn("failed to create entity snapshot", "error", err, "node_id", result.ID)
 	}
 
@@ -412,8 +413,8 @@ func (s *Service) upsertNode(ctx context.Context, externalID, nodeType string, f
 		s.seenInThisRequest[requestKey] = true
 	}
 
-	// Create snapshot with full entity data
-	err = s.createSnapshot(ctx, result.ID, fullEntityData)
+	// Create snapshot with full entity data, metadata, and content hash for dedup
+	err = s.createSnapshot(ctx, result.ID, fullEntityData, metadata, contentHash)
 	if err != nil {
 		s.logger.Warn("failed to create entity snapshot", "error", err, "node_id", result.ID)
 		// Don't fail the entire operation for snapshot issues
@@ -429,25 +430,59 @@ func (s *Service) upsertNode(ctx context.Context, externalID, nodeType string, f
 	}, nil
 }
 
-// createSnapshot creates a new snapshot for the given node with the full entity data.
-func (s *Service) createSnapshot(ctx context.Context, nodeID int64, fullEntityData json.RawMessage) error {
-	// Insert the new snapshot (sequence number is auto-computed by the SQL query)
-	_, err := s.repo.InsertSnapshot(ctx, InsertSnapshotParams{
-		NodeID:       nodeID,
-		SnapshotData: fullEntityData,
-	})
-	if err != nil {
-		return fmt.Errorf("inserting snapshot: %w", err)
+// createSnapshot creates or reuses a snapshot for the given node and records ingestion metadata.
+// If the entity data (identified by dataHash) hasn't changed since the last snapshot,
+// the existing snapshot is reused and only a new metadata row is inserted.
+func (s *Service) createSnapshot(ctx context.Context, nodeID int64, fullEntityData, metadata json.RawMessage, dataHash string) error {
+	var snapshotID int64
+
+	// Check if we can reuse an existing snapshot with the same data hash
+	if dataHash != "" {
+		existing, err := s.repo.FindLatestSnapshotByHash(ctx, FindLatestSnapshotByHashParams{
+			NodeID:   nodeID,
+			DataHash: dataHash,
+		})
+		if err == nil {
+			// Entity data unchanged — reuse existing snapshot
+			snapshotID = existing.ID
+			s.logger.Debug("reusing existing snapshot (data unchanged)",
+				"node_id", nodeID, "snapshot_id", snapshotID, "data_hash", dataHash)
+		}
 	}
 
-	// Clean up old snapshots to maintain retention limit
-	err = s.repo.CleanupOldSnapshots(ctx, CleanupOldSnapshotsParams{
-		NodeID: nodeID,
-		Limit:  int32(s.snapshotRetention),
-	})
-	if err != nil {
-		s.logger.Warn("failed to cleanup old snapshots", "error", err, "node_id", nodeID)
-		// Don't fail the entire operation for cleanup issues
+	// If no existing snapshot found, insert a new one
+	if snapshotID == 0 {
+		snapshot, err := s.repo.InsertSnapshot(ctx, InsertSnapshotParams{
+			NodeID:       nodeID,
+			SnapshotData: fullEntityData,
+			DataHash:     dataHash,
+		})
+		if err != nil {
+			return fmt.Errorf("inserting snapshot: %w", err)
+		}
+		snapshotID = snapshot.ID
+	}
+
+	// Record ingestion metadata for this snapshot
+	if len(metadata) > 0 && string(metadata) != "{}" {
+		_, err := s.repo.InsertSnapshotMetadata(ctx, InsertSnapshotMetadataParams{
+			SnapshotID: snapshotID,
+			Metadata:   metadata,
+		})
+		if err != nil {
+			s.logger.Warn("failed to insert snapshot metadata", "error", err, "snapshot_id", snapshotID)
+		}
+	}
+
+	// Clean up old snapshots to maintain retention limit (0 means no pruning)
+	if s.snapshotRetention > 0 {
+		err := s.repo.CleanupOldSnapshots(ctx, CleanupOldSnapshotsParams{
+			NodeID: nodeID,
+			Limit:  int32(s.snapshotRetention),
+		})
+		if err != nil {
+			s.logger.Warn("failed to cleanup old snapshots", "error", err, "node_id", nodeID)
+		}
 	}
 
 	return nil

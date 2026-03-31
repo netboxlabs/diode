@@ -68,6 +68,7 @@ func toSnapshot(s postgres.GraphNodeSnapshot) graph.Snapshot {
 		SnapshotData:   json.RawMessage(s.SnapshotData),
 		SequenceNumber: s.SequenceNumber,
 		CreatedAt:      s.CreatedAt.Time,
+		DataHash:       s.DataHash,
 	}
 }
 
@@ -204,11 +205,45 @@ func (r *GraphRepository) InsertSnapshot(ctx context.Context, arg graph.InsertSn
 	result, err := r.queries.InsertSnapshot(ctx, postgres.InsertSnapshotParams{
 		NodeID:       arg.NodeID,
 		SnapshotData: []byte(arg.SnapshotData),
+		DataHash:     arg.DataHash,
 	})
 	if err != nil {
 		return graph.Snapshot{}, err
 	}
 	return toSnapshot(result), nil
+}
+
+// FindLatestSnapshotByHash implements graph.Repository.
+func (r *GraphRepository) FindLatestSnapshotByHash(ctx context.Context, arg graph.FindLatestSnapshotByHashParams) (graph.Snapshot, error) {
+	result, err := r.queries.FindLatestSnapshotByHash(ctx, postgres.FindLatestSnapshotByHashParams{
+		NodeID:   arg.NodeID,
+		DataHash: arg.DataHash,
+	})
+	if err != nil {
+		return graph.Snapshot{}, wrapNotFound(err)
+	}
+	return toSnapshot(result), nil
+}
+
+// InsertSnapshotMetadata implements graph.Repository.
+func (r *GraphRepository) InsertSnapshotMetadata(ctx context.Context, arg graph.InsertSnapshotMetadataParams) (graph.SnapshotMetadata, error) {
+	metadata := arg.Metadata
+	if len(metadata) == 0 {
+		metadata = json.RawMessage("{}")
+	}
+	result, err := r.queries.InsertSnapshotMetadata(ctx, postgres.InsertSnapshotMetadataParams{
+		SnapshotID: arg.SnapshotID,
+		Metadata:   []byte(metadata),
+	})
+	if err != nil {
+		return graph.SnapshotMetadata{}, err
+	}
+	return graph.SnapshotMetadata{
+		ID:         result.ID,
+		SnapshotID: result.SnapshotID,
+		Metadata:   json.RawMessage(result.Metadata),
+		CreatedAt:  result.CreatedAt.Time,
+	}, nil
 }
 
 // GetLatestSnapshot implements graph.Repository.
@@ -242,6 +277,7 @@ type nodeWithSnapshotFields struct {
 	SnapshotData      []byte
 	SequenceNumber    int32
 	SnapshotCreatedAt pgtype.Timestamptz
+	SnapshotMetadata  []byte
 }
 
 func toNodeWithLatestSnapshot(r nodeWithSnapshotFields) graph.NodeWithLatestSnapshot {
@@ -252,6 +288,10 @@ func toNodeWithLatestSnapshot(r nodeWithSnapshotFields) graph.NodeWithLatestSnap
 	var snapshotCreatedAt *time.Time
 	if r.SnapshotCreatedAt.Valid {
 		snapshotCreatedAt = &r.SnapshotCreatedAt.Time
+	}
+	var snapshotMetadata json.RawMessage
+	if len(r.SnapshotMetadata) > 0 {
+		snapshotMetadata = json.RawMessage(r.SnapshotMetadata)
 	}
 	return graph.NodeWithLatestSnapshot{
 		ID:                r.ID,
@@ -266,6 +306,7 @@ func toNodeWithLatestSnapshot(r nodeWithSnapshotFields) graph.NodeWithLatestSnap
 		SnapshotData:      json.RawMessage(r.SnapshotData),
 		SequenceNumber:    r.SequenceNumber,
 		SnapshotCreatedAt: snapshotCreatedAt,
+		SnapshotMetadata:  snapshotMetadata,
 	}
 }
 
@@ -320,6 +361,7 @@ func (r *GraphRepository) ListNodes(ctx context.Context, arg graph.ListNodesPara
 			SnapshotData:      row.SnapshotData,
 			SequenceNumber:    row.SequenceNumber,
 			SnapshotCreatedAt: row.SnapshotCreatedAt,
+			SnapshotMetadata:  row.SnapshotMetadata,
 		})
 	}
 	return result, nil

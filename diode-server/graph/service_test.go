@@ -57,11 +57,7 @@ func TestWithSnapshotRetention(t *testing.T) {
 	gb := graph.NewService(repo, logger, graph.WithSnapshotRetention(10))
 	assert.Equal(t, 10, gb.TestSnapshotRetention())
 
-	// Zero falls back to default
-	gb = graph.NewService(repo, logger, graph.WithSnapshotRetention(0))
-	assert.Equal(t, graph.DefaultSnapshotRetention, gb.TestSnapshotRetention())
-
-	// Negative falls back to default
+	// Negative falls back to default (0 = no pruning)
 	gb = graph.NewService(repo, logger, graph.WithSnapshotRetention(-5))
 	assert.Equal(t, graph.DefaultSnapshotRetention, gb.TestSnapshotRetention())
 }
@@ -115,11 +111,14 @@ func TestUpsertEntity_SimpleDevice(t *testing.T) {
 			DuplicateCount: 1,
 		}, nil).Once()
 
-	repo.EXPECT().InsertSnapshot(ctx, mock.AnythingOfType("graph.InsertSnapshotParams")).
-		Return(graph.Snapshot{}, nil).Once()
+	repo.EXPECT().FindLatestSnapshotByHash(ctx, mock.AnythingOfType("graph.FindLatestSnapshotByHashParams")).
+		Return(graph.Snapshot{}, graph.ErrNotFound).Once()
 
-	repo.EXPECT().CleanupOldSnapshots(ctx, mock.AnythingOfType("graph.CleanupOldSnapshotsParams")).
-		Return(nil).Once()
+	repo.EXPECT().InsertSnapshot(ctx, mock.AnythingOfType("graph.InsertSnapshotParams")).
+		Return(graph.Snapshot{ID: 1}, nil).Once()
+
+	repo.EXPECT().InsertSnapshotMetadata(ctx, mock.AnythingOfType("graph.InsertSnapshotMetadataParams")).
+		Return(graph.SnapshotMetadata{}, nil).Once()
 
 	_, err := gb.UpsertEntity(ctx, entity)
 	assert.NoError(t, err)
@@ -166,13 +165,17 @@ func TestUpsertEntity_DeviceWithSite(t *testing.T) {
 		DuplicateCount: 1,
 	}, nil).Once()
 
+	repo.EXPECT().FindLatestSnapshotByHash(ctx, mock.MatchedBy(func(params graph.FindLatestSnapshotByHashParams) bool {
+		return params.NodeID == 1
+	})).Return(graph.Snapshot{}, graph.ErrNotFound).Once()
+
 	repo.EXPECT().InsertSnapshot(ctx, mock.MatchedBy(func(params graph.InsertSnapshotParams) bool {
 		return params.NodeID == 1
-	})).Return(graph.Snapshot{}, nil).Once()
+	})).Return(graph.Snapshot{ID: 1}, nil).Once()
 
-	repo.EXPECT().CleanupOldSnapshots(ctx, mock.MatchedBy(func(params graph.CleanupOldSnapshotsParams) bool {
-		return params.NodeID == 1
-	})).Return(nil).Once()
+	repo.EXPECT().InsertSnapshotMetadata(ctx, mock.MatchedBy(func(params graph.InsertSnapshotMetadataParams) bool {
+		return params.SnapshotID == 1
+	})).Return(graph.SnapshotMetadata{}, nil).Once()
 
 	// Setup mock expectations for site node
 	repo.EXPECT().UpsertNode(ctx, mock.MatchedBy(func(params graph.UpsertNodeParams) bool {
@@ -185,13 +188,17 @@ func TestUpsertEntity_DeviceWithSite(t *testing.T) {
 		DuplicateCount: 1,
 	}, nil).Once()
 
+	repo.EXPECT().FindLatestSnapshotByHash(ctx, mock.MatchedBy(func(params graph.FindLatestSnapshotByHashParams) bool {
+		return params.NodeID == 2
+	})).Return(graph.Snapshot{}, graph.ErrNotFound).Once()
+
 	repo.EXPECT().InsertSnapshot(ctx, mock.MatchedBy(func(params graph.InsertSnapshotParams) bool {
 		return params.NodeID == 2
-	})).Return(graph.Snapshot{}, nil).Once()
+	})).Return(graph.Snapshot{ID: 2}, nil).Once()
 
-	repo.EXPECT().CleanupOldSnapshots(ctx, mock.MatchedBy(func(params graph.CleanupOldSnapshotsParams) bool {
-		return params.NodeID == 2
-	})).Return(nil).Once()
+	repo.EXPECT().InsertSnapshotMetadata(ctx, mock.MatchedBy(func(params graph.InsertSnapshotMetadataParams) bool {
+		return params.SnapshotID == 2
+	})).Return(graph.SnapshotMetadata{}, nil).Once()
 
 	// Setup mock expectations for edges (bidirectional)
 	repo.EXPECT().UpsertEdge(ctx, mock.MatchedBy(func(params graph.UpsertEdgeParams) bool {
@@ -942,11 +949,14 @@ func TestUpsertEntity_RequestMetadataMergedIntoUpsertNode(t *testing.T) {
 		DuplicateCount: 1,
 	}, nil).Once()
 
-	repo.EXPECT().InsertSnapshot(ctx, mock.AnythingOfType("graph.InsertSnapshotParams")).
-		Return(graph.Snapshot{}, nil).Once()
+	repo.EXPECT().FindLatestSnapshotByHash(ctx, mock.AnythingOfType("graph.FindLatestSnapshotByHashParams")).
+		Return(graph.Snapshot{}, graph.ErrNotFound).Once()
 
-	repo.EXPECT().CleanupOldSnapshots(ctx, mock.AnythingOfType("graph.CleanupOldSnapshotsParams")).
-		Return(nil).Once()
+	repo.EXPECT().InsertSnapshot(ctx, mock.AnythingOfType("graph.InsertSnapshotParams")).
+		Return(graph.Snapshot{ID: 1}, nil).Once()
+
+	repo.EXPECT().InsertSnapshotMetadata(ctx, mock.AnythingOfType("graph.InsertSnapshotMetadataParams")).
+		Return(graph.SnapshotMetadata{}, nil).Once()
 
 	_, err := gb.UpsertEntity(ctx, entity, map[string]any{"run_id": "ingest-run-1"})
 	require.NoError(t, err)

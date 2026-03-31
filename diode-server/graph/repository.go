@@ -28,6 +28,8 @@ type EdgeWriter interface {
 // SnapshotWriter persists snapshot mutations.
 type SnapshotWriter interface {
 	InsertSnapshot(ctx context.Context, arg InsertSnapshotParams) (Snapshot, error)
+	InsertSnapshotMetadata(ctx context.Context, arg InsertSnapshotMetadataParams) (SnapshotMetadata, error)
+	FindLatestSnapshotByHash(ctx context.Context, arg FindLatestSnapshotByHashParams) (Snapshot, error)
 	CleanupOldSnapshots(ctx context.Context, arg CleanupOldSnapshotsParams) error
 }
 

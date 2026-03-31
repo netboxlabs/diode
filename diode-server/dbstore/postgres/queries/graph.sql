@@ -177,24 +177,40 @@ LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 -- name: InsertSnapshot :one
 -- Atomically inserts a snapshot with next sequence number using advisory lock to prevent races.
 -- Uses namespaced lock (1=snapshot_insert, node_id) to avoid clashes with other advisory locks.
+-- data_hash is a SHA256 of the entity data (excluding metadata) for deduplication.
 WITH lock AS (
     SELECT pg_advisory_xact_lock(1, $1::int)
 )
-INSERT INTO graph_node_snapshots (node_id, snapshot_data, sequence_number)
-SELECT $1, $2, COALESCE(MAX(sequence_number), 0) + 1
+INSERT INTO graph_node_snapshots (node_id, snapshot_data, sequence_number, data_hash)
+SELECT $1, $2, COALESCE(MAX(sequence_number), 0) + 1, $3
 FROM graph_node_snapshots, lock
 WHERE node_id = $1
-RETURNING id, node_id, snapshot_data, sequence_number, created_at;
+RETURNING id, node_id, snapshot_data, sequence_number, created_at, data_hash;
+
+-- name: FindLatestSnapshotByHash :one
+-- Finds the latest snapshot for a node with a matching data_hash.
+-- Used for deduplication: if entity data hasn't changed, reuse existing snapshot.
+SELECT id, node_id, snapshot_data, sequence_number, created_at, data_hash
+FROM graph_node_snapshots
+WHERE node_id = $1 AND data_hash = $2
+ORDER BY sequence_number DESC
+LIMIT 1;
+
+-- name: InsertSnapshotMetadata :one
+-- Records ingestion metadata for a snapshot (one row per ingestion event).
+INSERT INTO graph_node_snapshot_metadata (snapshot_id, metadata)
+VALUES ($1, $2)
+RETURNING id, snapshot_id, metadata, created_at;
 
 -- name: GetLatestSnapshot :one
-SELECT id, node_id, snapshot_data, sequence_number, created_at
+SELECT id, node_id, snapshot_data, sequence_number, created_at, data_hash
 FROM graph_node_snapshots
 WHERE node_id = $1
 ORDER BY sequence_number DESC
 LIMIT 1;
 
 -- name: GetSnapshotsByNode :many
-SELECT id, node_id, snapshot_data, sequence_number, created_at
+SELECT id, node_id, snapshot_data, sequence_number, created_at, data_hash
 FROM graph_node_snapshots
 WHERE node_id = $1
 ORDER BY sequence_number DESC
@@ -203,6 +219,7 @@ LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 -- name: CleanupOldSnapshots :exec
 -- Deletes old snapshots keeping only the most recent $2 snapshots for a node.
 -- WARNING: If $2 is 0, all snapshots for the node will be deleted.
+-- Associated snapshot_metadata rows are cascade-deleted.
 DELETE FROM graph_node_snapshots outer_snap
 WHERE outer_snap.node_id = $1
   AND outer_snap.id NOT IN (
@@ -232,24 +249,44 @@ LEFT JOIN LATERAL (
 WHERE n.node_type = $1 AND n.external_id = $2;
 
 -- name: ListNodes :many
+-- When metadata_filter is provided, filters on snapshot_metadata and returns the
+-- snapshot (entity state) that was active at the time of that ingestion.
+-- When no metadata_filter is provided, returns the latest snapshot as before.
 SELECT
     n.id, n.external_id, n.node_type,
     n.data AS matching_data, n.duplicate_count,
     n.last_seen_ts, n.created_at, n.updated_at, n.metadata,
     COALESCE(s.snapshot_data, '{}'::jsonb) AS snapshot_data,
     COALESCE(s.sequence_number, 0) AS sequence_number,
-    s.created_at AS snapshot_created_at
+    s.created_at AS snapshot_created_at,
+    COALESCE(sm.metadata, '{}'::jsonb) AS snapshot_metadata
 FROM graph_nodes n
 LEFT JOIN LATERAL (
-    SELECT snapshot_data, sequence_number, created_at
-    FROM graph_node_snapshots
-    WHERE node_id = n.id
-    ORDER BY sequence_number DESC
+    SELECT snap.id AS snap_id, snap.snapshot_data, snap.sequence_number, snap.created_at, meta.metadata
+    FROM graph_node_snapshots snap
+    LEFT JOIN LATERAL (
+        SELECT metadata
+        FROM graph_node_snapshot_metadata
+        WHERE snapshot_id = snap.id
+          AND (sqlc.narg('metadata_filter')::jsonb IS NULL OR metadata @> sqlc.narg('metadata_filter')::jsonb)
+        ORDER BY created_at DESC
+        LIMIT 1
+    ) meta ON true
+    WHERE snap.node_id = n.id
+      AND (sqlc.narg('metadata_filter')::jsonb IS NULL OR meta.metadata IS NOT NULL)
+    ORDER BY snap.sequence_number DESC
     LIMIT 1
 ) s ON true
+LEFT JOIN LATERAL (
+    SELECT metadata
+    FROM graph_node_snapshot_metadata
+    WHERE snapshot_id = s.snap_id
+    ORDER BY created_at DESC
+    LIMIT 1
+) sm ON true
 WHERE
     (n.node_type = ANY(sqlc.narg('node_types')::text[]) OR sqlc.narg('node_types')::text[] IS NULL)
-    AND (sqlc.narg('metadata_filter')::jsonb IS NULL OR n.metadata @> sqlc.narg('metadata_filter')::jsonb)
+    AND (sqlc.narg('metadata_filter')::jsonb IS NULL OR s.snapshot_data IS NOT NULL)
 ORDER BY n.updated_at DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 

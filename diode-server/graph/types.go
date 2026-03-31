@@ -30,6 +30,15 @@ type Snapshot struct {
 	SnapshotData   json.RawMessage `json:"snapshot_data"`
 	SequenceNumber int32           `json:"sequence_number"`
 	CreatedAt      time.Time       `json:"created_at"`
+	DataHash       string          `json:"data_hash"`
+}
+
+// SnapshotMetadata represents ingestion metadata associated with a snapshot.
+type SnapshotMetadata struct {
+	ID         int64           `json:"id"`
+	SnapshotID int64           `json:"snapshot_id"`
+	Metadata   json.RawMessage `json:"metadata"`
+	CreatedAt  time.Time       `json:"created_at"`
 }
 
 // Edge represents an edge between two nodes.
@@ -41,7 +50,8 @@ type Edge struct {
 	Properties   json.RawMessage `json:"properties"`
 }
 
-// NodeWithLatestSnapshot combines a graph node with its latest snapshot data.
+// NodeWithLatestSnapshot combines a graph node with its snapshot data.
+// When filtered by metadata, returns the matching snapshot rather than the latest.
 type NodeWithLatestSnapshot struct {
 	ID                int64           `json:"id"`
 	ExternalID        string          `json:"external_id"`
@@ -55,6 +65,7 @@ type NodeWithLatestSnapshot struct {
 	SnapshotData      json.RawMessage `json:"snapshot_data"`
 	SequenceNumber    int32           `json:"sequence_number"`
 	SnapshotCreatedAt *time.Time      `json:"snapshot_created_at,omitempty"`
+	SnapshotMetadata  json.RawMessage `json:"snapshot_metadata"`
 }
 
 // CompleteNodeData represents a node with its complete entity data.
@@ -145,6 +156,19 @@ type FindNodeByContentHashParams struct {
 type InsertSnapshotParams struct {
 	NodeID       int64
 	SnapshotData json.RawMessage
+	DataHash     string
+}
+
+// FindLatestSnapshotByHashParams contains parameters for finding a snapshot by data hash.
+type FindLatestSnapshotByHashParams struct {
+	NodeID   int64
+	DataHash string
+}
+
+// InsertSnapshotMetadataParams contains parameters for inserting snapshot metadata.
+type InsertSnapshotMetadataParams struct {
+	SnapshotID int64
+	Metadata   json.RawMessage
 }
 
 // CleanupOldSnapshotsParams contains parameters for cleaning up old snapshots.
