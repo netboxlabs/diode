@@ -366,13 +366,7 @@ func (m *Matcher) findCandidatesByPrimaryFields(ctx context.Context, entityType 
 
 		if rule.MatchType == matching.MatchExact {
 			// Use exact field match query for exact matches
-			params := graph.FindNodesByFieldMatchParams{
-				NodeType:   entityType,
-				JSONField:  rule.FieldPath,
-				FieldValue: valueStr,
-				Limit:      10,
-				Offset:     0,
-			}
+			params := buildFieldMatchParams(entityType, rule.FieldPath, valueStr, 10)
 
 			dbNodes, err = m.repo.FindNodesByFieldMatch(ctx, params)
 			if err != nil {
@@ -511,13 +505,7 @@ func (m *Matcher) findCandidatesBySecondaryFields(ctx context.Context, entityTyp
 
 		if rule.MatchType == matching.MatchExact {
 			// Use single field exact match for secondary rules
-			params := graph.FindNodesByFieldMatchParams{
-				NodeType:   entityType,
-				JSONField:  rule.FieldPath,
-				FieldValue: valueStr,
-				Limit:      15, // Moderate limit for secondary matches
-				Offset:     0,
-			}
+			params := buildFieldMatchParams(entityType, rule.FieldPath, valueStr, 15)
 
 			dbNodes, err = m.repo.FindNodesByFieldMatch(ctx, params)
 			if err != nil {
@@ -588,6 +576,24 @@ func (m *Matcher) findCandidatesByFallbackStrategy(ctx context.Context, entityTy
 
 	m.logger.Debug("found fallback candidates", "count", len(candidates))
 	return candidates, nil
+}
+
+// buildFieldMatchParams creates FindNodesByFieldMatchParams, using NestedPath for
+// dot-separated field paths (e.g., "device.name") and JSONField for simple top-level keys.
+func buildFieldMatchParams(nodeType, fieldPath, value string, limit int32) graph.FindNodesByFieldMatchParams {
+	params := graph.FindNodesByFieldMatchParams{
+		NodeType: nodeType,
+		Limit:    limit,
+		Offset:   0,
+	}
+	if strings.Contains(fieldPath, ".") {
+		params.NestedPath = strings.Split(fieldPath, ".")
+		params.NestedValue = value
+	} else {
+		params.JSONField = fieldPath
+		params.FieldValue = value
+	}
+	return params
 }
 
 // deduplicateCandidates removes duplicate nodes from the candidate list

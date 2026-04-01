@@ -11,27 +11,29 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-const cleanupOldSnapshots = `-- name: CleanupOldSnapshots :exec
+const cleanupExpiredSnapshots = `-- name: CleanupExpiredSnapshots :exec
 DELETE FROM graph_node_snapshots outer_snap
 WHERE outer_snap.node_id = $1
-  AND outer_snap.id NOT IN (
+  AND outer_snap.created_at < NOW() - make_interval(days => $2::int)
+  AND outer_snap.id != (
     SELECT s.id
     FROM graph_node_snapshots s
     WHERE s.node_id = $1
     ORDER BY s.sequence_number DESC
-    LIMIT $2
+    LIMIT 1
   )
 `
 
-type CleanupOldSnapshotsParams struct {
-	NodeID int64 `json:"node_id"`
-	Limit  int32 `json:"limit"`
+type CleanupExpiredSnapshotsParams struct {
+	NodeID        int64 `json:"node_id"`
+	RetentionDays int32 `json:"retention_days"`
 }
 
-// Deletes old snapshots keeping only the most recent $2 snapshots for a node.
-// WARNING: If $2 is 0, all snapshots for the node will be deleted.
-func (q *Queries) CleanupOldSnapshots(ctx context.Context, arg CleanupOldSnapshotsParams) error {
-	_, err := q.db.Exec(ctx, cleanupOldSnapshots, arg.NodeID, arg.Limit)
+// Deletes snapshots older than the specified number of days for a node,
+// but always keeps the latest snapshot regardless of age so the current entity state is never lost.
+// Associated snapshot_metadata rows are cascade-deleted.
+func (q *Queries) CleanupExpiredSnapshots(ctx context.Context, arg CleanupExpiredSnapshotsParams) error {
+	_, err := q.db.Exec(ctx, cleanupExpiredSnapshots, arg.NodeID, arg.RetentionDays)
 	return err
 }
 
@@ -60,6 +62,35 @@ func (q *Queries) FindGraphNode(ctx context.Context, arg FindGraphNodeParams) (G
 		&i.LastSeenTs,
 		&i.Metadata,
 		&i.ContentHash,
+	)
+	return i, err
+}
+
+const findLatestSnapshotByHash = `-- name: FindLatestSnapshotByHash :one
+SELECT id, node_id, snapshot_data, sequence_number, created_at, data_hash
+FROM graph_node_snapshots
+WHERE node_id = $1 AND data_hash = $2
+ORDER BY sequence_number DESC
+LIMIT 1
+`
+
+type FindLatestSnapshotByHashParams struct {
+	NodeID   int64  `json:"node_id"`
+	DataHash string `json:"data_hash"`
+}
+
+// Finds the latest snapshot for a node with a matching data_hash.
+// Used for deduplication: if entity data hasn't changed, reuse existing snapshot.
+func (q *Queries) FindLatestSnapshotByHash(ctx context.Context, arg FindLatestSnapshotByHashParams) (GraphNodeSnapshot, error) {
+	row := q.db.QueryRow(ctx, findLatestSnapshotByHash, arg.NodeID, arg.DataHash)
+	var i GraphNodeSnapshot
+	err := row.Scan(
+		&i.ID,
+		&i.NodeID,
+		&i.SnapshotData,
+		&i.SequenceNumber,
+		&i.CreatedAt,
+		&i.DataHash,
 	)
 	return i, err
 }
@@ -628,7 +659,7 @@ func (q *Queries) GetGraphStatsByType(ctx context.Context) ([]GetGraphStatsByTyp
 }
 
 const getLatestSnapshot = `-- name: GetLatestSnapshot :one
-SELECT id, node_id, snapshot_data, sequence_number, created_at
+SELECT id, node_id, snapshot_data, sequence_number, created_at, data_hash
 FROM graph_node_snapshots
 WHERE node_id = $1
 ORDER BY sequence_number DESC
@@ -644,6 +675,7 @@ func (q *Queries) GetLatestSnapshot(ctx context.Context, nodeID int64) (GraphNod
 		&i.SnapshotData,
 		&i.SequenceNumber,
 		&i.CreatedAt,
+		&i.DataHash,
 	)
 	return i, err
 }
@@ -753,7 +785,7 @@ func (q *Queries) GetNodesByFrequency(ctx context.Context, arg GetNodesByFrequen
 }
 
 const getSnapshotsByNode = `-- name: GetSnapshotsByNode :many
-SELECT id, node_id, snapshot_data, sequence_number, created_at
+SELECT id, node_id, snapshot_data, sequence_number, created_at, data_hash
 FROM graph_node_snapshots
 WHERE node_id = $1
 ORDER BY sequence_number DESC
@@ -781,6 +813,7 @@ func (q *Queries) GetSnapshotsByNode(ctx context.Context, arg GetSnapshotsByNode
 			&i.SnapshotData,
 			&i.SequenceNumber,
 			&i.CreatedAt,
+			&i.DataHash,
 		); err != nil {
 			return nil, err
 		}
@@ -797,29 +830,56 @@ const insertSnapshot = `-- name: InsertSnapshot :one
 WITH lock AS (
     SELECT pg_advisory_xact_lock(1, $1::int)
 )
-INSERT INTO graph_node_snapshots (node_id, snapshot_data, sequence_number)
-SELECT $1, $2, COALESCE(MAX(sequence_number), 0) + 1
+INSERT INTO graph_node_snapshots (node_id, snapshot_data, sequence_number, data_hash)
+SELECT $1, $2, COALESCE(MAX(sequence_number), 0) + 1, $3
 FROM graph_node_snapshots, lock
 WHERE node_id = $1
-RETURNING id, node_id, snapshot_data, sequence_number, created_at
+RETURNING id, node_id, snapshot_data, sequence_number, created_at, data_hash
 `
 
 type InsertSnapshotParams struct {
 	NodeID       int64  `json:"node_id"`
 	SnapshotData []byte `json:"snapshot_data"`
+	DataHash     string `json:"data_hash"`
 }
 
 // Snapshot management queries
 // Atomically inserts a snapshot with next sequence number using advisory lock to prevent races.
 // Uses namespaced lock (1=snapshot_insert, node_id) to avoid clashes with other advisory locks.
+// data_hash is a SHA256 of the entity data (excluding metadata) for deduplication.
 func (q *Queries) InsertSnapshot(ctx context.Context, arg InsertSnapshotParams) (GraphNodeSnapshot, error) {
-	row := q.db.QueryRow(ctx, insertSnapshot, arg.NodeID, arg.SnapshotData)
+	row := q.db.QueryRow(ctx, insertSnapshot, arg.NodeID, arg.SnapshotData, arg.DataHash)
 	var i GraphNodeSnapshot
 	err := row.Scan(
 		&i.ID,
 		&i.NodeID,
 		&i.SnapshotData,
 		&i.SequenceNumber,
+		&i.CreatedAt,
+		&i.DataHash,
+	)
+	return i, err
+}
+
+const insertSnapshotMetadata = `-- name: InsertSnapshotMetadata :one
+INSERT INTO graph_node_snapshot_metadata (snapshot_id, metadata)
+VALUES ($1, $2)
+RETURNING id, snapshot_id, metadata, created_at
+`
+
+type InsertSnapshotMetadataParams struct {
+	SnapshotID int64  `json:"snapshot_id"`
+	Metadata   []byte `json:"metadata"`
+}
+
+// Records ingestion metadata for a snapshot (one row per ingestion event).
+func (q *Queries) InsertSnapshotMetadata(ctx context.Context, arg InsertSnapshotMetadataParams) (GraphNodeSnapshotMetadatum, error) {
+	row := q.db.QueryRow(ctx, insertSnapshotMetadata, arg.SnapshotID, arg.Metadata)
+	var i GraphNodeSnapshotMetadatum
+	err := row.Scan(
+		&i.ID,
+		&i.SnapshotID,
+		&i.Metadata,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -843,16 +903,14 @@ LEFT JOIN LATERAL (
 ) s ON true
 WHERE
     (n.node_type = ANY($1::text[]) OR $1::text[] IS NULL)
-    AND ($2::jsonb IS NULL OR n.metadata @> $2::jsonb)
 ORDER BY n.updated_at DESC
-LIMIT $4 OFFSET $3
+LIMIT $3 OFFSET $2
 `
 
 type ListNodesParams struct {
-	NodeTypes      []string `json:"node_types"`
-	MetadataFilter []byte   `json:"metadata_filter"`
-	Offset         int32    `json:"offset"`
-	Limit          int32    `json:"limit"`
+	NodeTypes []string `json:"node_types"`
+	Offset    int32    `json:"offset"`
+	Limit     int32    `json:"limit"`
 }
 
 type ListNodesRow struct {
@@ -870,13 +928,9 @@ type ListNodesRow struct {
 	SnapshotCreatedAt pgtype.Timestamptz `json:"snapshot_created_at"`
 }
 
+// Returns nodes with their latest snapshot. No metadata filtering.
 func (q *Queries) ListNodes(ctx context.Context, arg ListNodesParams) ([]ListNodesRow, error) {
-	rows, err := q.db.Query(ctx, listNodes,
-		arg.NodeTypes,
-		arg.MetadataFilter,
-		arg.Offset,
-		arg.Limit,
-	)
+	rows, err := q.db.Query(ctx, listNodes, arg.NodeTypes, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
@@ -897,6 +951,104 @@ func (q *Queries) ListNodes(ctx context.Context, arg ListNodesParams) ([]ListNod
 			&i.SnapshotData,
 			&i.SequenceNumber,
 			&i.SnapshotCreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listNodesBySnapshotMetadata = `-- name: ListNodesBySnapshotMetadata :many
+SELECT
+    n.id, n.external_id, n.node_type,
+    n.data AS matching_data, n.duplicate_count,
+    n.last_seen_ts, n.created_at, n.updated_at, n.metadata,
+    snap.snapshot_data,
+    snap.sequence_number,
+    snap.created_at AS snapshot_created_at,
+    sm.metadata AS snapshot_metadata
+FROM graph_nodes n
+JOIN LATERAL (
+    SELECT m.snapshot_id, m.metadata
+    FROM graph_node_snapshot_metadata m
+    JOIN graph_node_snapshots s ON s.id = m.snapshot_id
+    WHERE s.node_id = n.id
+      AND m.metadata @> $1::jsonb
+    ORDER BY s.sequence_number DESC
+    LIMIT 1
+) sm ON true
+JOIN graph_node_snapshots snap ON snap.id = sm.snapshot_id
+WHERE
+    n.id IN (
+        SELECT DISTINCT s2.node_id
+        FROM graph_node_snapshot_metadata m2
+        JOIN graph_node_snapshots s2 ON s2.id = m2.snapshot_id
+        WHERE m2.metadata @> $1::jsonb
+    )
+    AND (n.node_type = ANY($2::text[]) OR $2::text[] IS NULL)
+ORDER BY n.updated_at DESC
+LIMIT $4 OFFSET $3
+`
+
+type ListNodesBySnapshotMetadataParams struct {
+	MetadataFilter []byte   `json:"metadata_filter"`
+	NodeTypes      []string `json:"node_types"`
+	Offset         int32    `json:"offset"`
+	Limit          int32    `json:"limit"`
+}
+
+type ListNodesBySnapshotMetadataRow struct {
+	ID                int64              `json:"id"`
+	ExternalID        string             `json:"external_id"`
+	NodeType          string             `json:"node_type"`
+	MatchingData      []byte             `json:"matching_data"`
+	DuplicateCount    int32              `json:"duplicate_count"`
+	LastSeenTs        pgtype.Timestamptz `json:"last_seen_ts"`
+	CreatedAt         pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt         pgtype.Timestamptz `json:"updated_at"`
+	Metadata          []byte             `json:"metadata"`
+	SnapshotData      []byte             `json:"snapshot_data"`
+	SequenceNumber    int32              `json:"sequence_number"`
+	SnapshotCreatedAt pgtype.Timestamptz `json:"snapshot_created_at"`
+	SnapshotMetadata  []byte             `json:"snapshot_metadata"`
+}
+
+// Finds nodes whose snapshots have matching metadata (e.g., run_id).
+// Starts from the metadata table to leverage the GIN index, then joins outward.
+// Returns the entity state (snapshot) that was active at the time of the matching ingestion.
+// Uses a subquery to first identify matching nodes, then fetches full data with consistent ordering.
+func (q *Queries) ListNodesBySnapshotMetadata(ctx context.Context, arg ListNodesBySnapshotMetadataParams) ([]ListNodesBySnapshotMetadataRow, error) {
+	rows, err := q.db.Query(ctx, listNodesBySnapshotMetadata,
+		arg.MetadataFilter,
+		arg.NodeTypes,
+		arg.Offset,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListNodesBySnapshotMetadataRow
+	for rows.Next() {
+		var i ListNodesBySnapshotMetadataRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ExternalID,
+			&i.NodeType,
+			&i.MatchingData,
+			&i.DuplicateCount,
+			&i.LastSeenTs,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Metadata,
+			&i.SnapshotData,
+			&i.SequenceNumber,
+			&i.SnapshotCreatedAt,
+			&i.SnapshotMetadata,
 		); err != nil {
 			return nil, err
 		}

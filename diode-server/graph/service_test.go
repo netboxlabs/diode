@@ -35,7 +35,7 @@ func TestNewService(t *testing.T) {
 	assert.NotNil(t, gb.TestNodeCache())
 	assert.NotNil(t, gb.TestUpdatedNodes())
 	assert.NotNil(t, gb.TestSeenInThisRequest())
-	assert.Equal(t, graph.DefaultSnapshotRetention, gb.TestSnapshotRetention())
+	assert.Equal(t, graph.DefaultSnapshotRetentionDays, gb.TestSnapshotRetentionDays())
 	assert.Nil(t, gb.TestEntityMatcher())
 }
 
@@ -49,21 +49,17 @@ func TestNewServiceWithOptions(t *testing.T) {
 	assert.Nil(t, gb.TestEntityMatcher())
 }
 
-func TestWithSnapshotRetention(t *testing.T) {
+func TestWithSnapshotRetentionDays(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()
 
 	// Valid retention
-	gb := graph.NewService(repo, logger, graph.WithSnapshotRetention(10))
-	assert.Equal(t, 10, gb.TestSnapshotRetention())
+	gb := graph.NewService(repo, logger, graph.WithSnapshotRetentionDays(90))
+	assert.Equal(t, 90, gb.TestSnapshotRetentionDays())
 
-	// Zero falls back to default
-	gb = graph.NewService(repo, logger, graph.WithSnapshotRetention(0))
-	assert.Equal(t, graph.DefaultSnapshotRetention, gb.TestSnapshotRetention())
-
-	// Negative falls back to default
-	gb = graph.NewService(repo, logger, graph.WithSnapshotRetention(-5))
-	assert.Equal(t, graph.DefaultSnapshotRetention, gb.TestSnapshotRetention())
+	// Negative falls back to default (0 = no pruning)
+	gb = graph.NewService(repo, logger, graph.WithSnapshotRetentionDays(-5))
+	assert.Equal(t, graph.DefaultSnapshotRetentionDays, gb.TestSnapshotRetentionDays())
 }
 
 func TestUpsertEntity_NilEntity(t *testing.T) {
@@ -115,11 +111,14 @@ func TestUpsertEntity_SimpleDevice(t *testing.T) {
 			DuplicateCount: 1,
 		}, nil).Once()
 
-	repo.EXPECT().InsertSnapshot(ctx, mock.AnythingOfType("graph.InsertSnapshotParams")).
-		Return(graph.Snapshot{}, nil).Once()
+	repo.EXPECT().FindLatestSnapshotByHash(ctx, mock.AnythingOfType("graph.FindLatestSnapshotByHashParams")).
+		Return(graph.Snapshot{}, graph.ErrNotFound).Once()
 
-	repo.EXPECT().CleanupOldSnapshots(ctx, mock.AnythingOfType("graph.CleanupOldSnapshotsParams")).
-		Return(nil).Once()
+	repo.EXPECT().InsertSnapshot(ctx, mock.AnythingOfType("graph.InsertSnapshotParams")).
+		Return(graph.Snapshot{ID: 1}, nil).Once()
+
+	repo.EXPECT().InsertSnapshotMetadata(ctx, mock.AnythingOfType("graph.InsertSnapshotMetadataParams")).
+		Return(graph.SnapshotMetadata{}, nil).Once()
 
 	_, err := gb.UpsertEntity(ctx, entity)
 	assert.NoError(t, err)
@@ -166,13 +165,17 @@ func TestUpsertEntity_DeviceWithSite(t *testing.T) {
 		DuplicateCount: 1,
 	}, nil).Once()
 
+	repo.EXPECT().FindLatestSnapshotByHash(ctx, mock.MatchedBy(func(params graph.FindLatestSnapshotByHashParams) bool {
+		return params.NodeID == 1
+	})).Return(graph.Snapshot{}, graph.ErrNotFound).Once()
+
 	repo.EXPECT().InsertSnapshot(ctx, mock.MatchedBy(func(params graph.InsertSnapshotParams) bool {
 		return params.NodeID == 1
-	})).Return(graph.Snapshot{}, nil).Once()
+	})).Return(graph.Snapshot{ID: 1}, nil).Once()
 
-	repo.EXPECT().CleanupOldSnapshots(ctx, mock.MatchedBy(func(params graph.CleanupOldSnapshotsParams) bool {
-		return params.NodeID == 1
-	})).Return(nil).Once()
+	repo.EXPECT().InsertSnapshotMetadata(ctx, mock.MatchedBy(func(params graph.InsertSnapshotMetadataParams) bool {
+		return params.SnapshotID == 1
+	})).Return(graph.SnapshotMetadata{}, nil).Once()
 
 	// Setup mock expectations for site node
 	repo.EXPECT().UpsertNode(ctx, mock.MatchedBy(func(params graph.UpsertNodeParams) bool {
@@ -185,13 +188,17 @@ func TestUpsertEntity_DeviceWithSite(t *testing.T) {
 		DuplicateCount: 1,
 	}, nil).Once()
 
+	repo.EXPECT().FindLatestSnapshotByHash(ctx, mock.MatchedBy(func(params graph.FindLatestSnapshotByHashParams) bool {
+		return params.NodeID == 2
+	})).Return(graph.Snapshot{}, graph.ErrNotFound).Once()
+
 	repo.EXPECT().InsertSnapshot(ctx, mock.MatchedBy(func(params graph.InsertSnapshotParams) bool {
 		return params.NodeID == 2
-	})).Return(graph.Snapshot{}, nil).Once()
+	})).Return(graph.Snapshot{ID: 2}, nil).Once()
 
-	repo.EXPECT().CleanupOldSnapshots(ctx, mock.MatchedBy(func(params graph.CleanupOldSnapshotsParams) bool {
-		return params.NodeID == 2
-	})).Return(nil).Once()
+	repo.EXPECT().InsertSnapshotMetadata(ctx, mock.MatchedBy(func(params graph.InsertSnapshotMetadataParams) bool {
+		return params.SnapshotID == 2
+	})).Return(graph.SnapshotMetadata{}, nil).Once()
 
 	// Setup mock expectations for edges (bidirectional)
 	repo.EXPECT().UpsertEdge(ctx, mock.MatchedBy(func(params graph.UpsertEdgeParams) bool {
@@ -942,11 +949,14 @@ func TestUpsertEntity_RequestMetadataMergedIntoUpsertNode(t *testing.T) {
 		DuplicateCount: 1,
 	}, nil).Once()
 
-	repo.EXPECT().InsertSnapshot(ctx, mock.AnythingOfType("graph.InsertSnapshotParams")).
-		Return(graph.Snapshot{}, nil).Once()
+	repo.EXPECT().FindLatestSnapshotByHash(ctx, mock.AnythingOfType("graph.FindLatestSnapshotByHashParams")).
+		Return(graph.Snapshot{}, graph.ErrNotFound).Once()
 
-	repo.EXPECT().CleanupOldSnapshots(ctx, mock.AnythingOfType("graph.CleanupOldSnapshotsParams")).
-		Return(nil).Once()
+	repo.EXPECT().InsertSnapshot(ctx, mock.AnythingOfType("graph.InsertSnapshotParams")).
+		Return(graph.Snapshot{ID: 1}, nil).Once()
+
+	repo.EXPECT().InsertSnapshotMetadata(ctx, mock.AnythingOfType("graph.InsertSnapshotMetadataParams")).
+		Return(graph.SnapshotMetadata{}, nil).Once()
 
 	_, err := gb.UpsertEntity(ctx, entity, map[string]any{"run_id": "ingest-run-1"})
 	require.NoError(t, err)
@@ -1124,6 +1134,95 @@ func TestFindNodeByContentHash_DatabaseError(t *testing.T) {
 	result := gb.TestFindNodeByContentHash(ctx, "Device", "some-hash")
 
 	assert.Nil(t, result)
+
+	repo.AssertExpectations(t)
+}
+
+func TestIsNonEmptyJSON(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    json.RawMessage
+		expected bool
+	}{
+		{"nil", nil, false},
+		{"empty bytes", json.RawMessage{}, false},
+		{"empty object", json.RawMessage(`{}`), false},
+		{"null", json.RawMessage(`null`), false},
+		{"invalid json", json.RawMessage(`not json`), false},
+		{"single key", json.RawMessage(`{"run_id":"run-1"}`), true},
+		{"multiple keys", json.RawMessage(`{"run_id":"run-1","agent_id":"a1"}`), true},
+		{"nested", json.RawMessage(`{"source_match":{"diode_id":"x"}}`), true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, graph.ExportIsNonEmptyJSON(tt.input))
+		})
+	}
+}
+
+func TestListEntities_RoutesToSnapshotMetadataQuery(t *testing.T) {
+	repo := new(mocks.Repository)
+	logger := newTestLogger()
+	gb := graph.NewService(repo, logger)
+
+	ctx := context.Background()
+
+	now := time.Now()
+	expected := []graph.NodeWithLatestSnapshot{
+		{ID: 1, ExternalID: "node-1", NodeType: "Device", SnapshotData: json.RawMessage(`{}`), CreatedAt: now, UpdatedAt: now},
+	}
+
+	// When metadata filter is provided, ListNodesBySnapshotMetadata should be called (not ListNodes)
+	repo.EXPECT().ListNodesBySnapshotMetadata(ctx, graph.ListNodesBySnapshotMetadataParams{
+		MetadataFilter: json.RawMessage(`{"run_id":"run-1"}`),
+		Limit:          100,
+	}).Return(expected, nil).Once()
+
+	result, err := gb.ListEntities(ctx, graph.ListNodesParams{
+		MetadataFilter: json.RawMessage(`{"run_id":"run-1"}`),
+	})
+
+	require.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, "node-1", result[0].ExternalID)
+
+	repo.AssertExpectations(t)
+}
+
+func TestListEntities_RoutesToListNodesWithoutMetadata(t *testing.T) {
+	repo := new(mocks.Repository)
+	logger := newTestLogger()
+	gb := graph.NewService(repo, logger)
+
+	ctx := context.Background()
+
+	// When no metadata filter, ListNodes should be called
+	repo.EXPECT().ListNodes(ctx, mock.MatchedBy(func(p graph.ListNodesParams) bool {
+		return p.Limit == 100
+	})).Return(nil, nil).Once()
+
+	_, err := gb.ListEntities(ctx, graph.ListNodesParams{})
+	require.NoError(t, err)
+
+	repo.AssertExpectations(t)
+}
+
+func TestListEntities_EmptyMetadataRoutesToListNodes(t *testing.T) {
+	repo := new(mocks.Repository)
+	logger := newTestLogger()
+	gb := graph.NewService(repo, logger)
+
+	ctx := context.Background()
+
+	// Empty JSON object should NOT route to metadata query
+	repo.EXPECT().ListNodes(ctx, mock.AnythingOfType("graph.ListNodesParams")).
+		Return(nil, nil).Once()
+
+	_, err := gb.ListEntities(ctx, graph.ListNodesParams{
+		MetadataFilter: json.RawMessage(`{}`),
+	})
+	require.NoError(t, err)
 
 	repo.AssertExpectations(t)
 }

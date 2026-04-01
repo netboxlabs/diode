@@ -22,16 +22,16 @@ func (_m *SnapshotWriter) EXPECT() *SnapshotWriter_Expecter {
 	return &SnapshotWriter_Expecter{mock: &_m.Mock}
 }
 
-// CleanupOldSnapshots provides a mock function with given fields: ctx, arg
-func (_m *SnapshotWriter) CleanupOldSnapshots(ctx context.Context, arg graph.CleanupOldSnapshotsParams) error {
+// CleanupExpiredSnapshots provides a mock function with given fields: ctx, arg
+func (_m *SnapshotWriter) CleanupExpiredSnapshots(ctx context.Context, arg graph.CleanupExpiredSnapshotsParams) error {
 	ret := _m.Called(ctx, arg)
 
 	if len(ret) == 0 {
-		panic("no return value specified for CleanupOldSnapshots")
+		panic("no return value specified for CleanupExpiredSnapshots")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, graph.CleanupOldSnapshotsParams) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, graph.CleanupExpiredSnapshotsParams) error); ok {
 		r0 = rf(ctx, arg)
 	} else {
 		r0 = ret.Error(0)
@@ -40,31 +40,31 @@ func (_m *SnapshotWriter) CleanupOldSnapshots(ctx context.Context, arg graph.Cle
 	return r0
 }
 
-// SnapshotWriter_CleanupOldSnapshots_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CleanupOldSnapshots'
-type SnapshotWriter_CleanupOldSnapshots_Call struct {
+// SnapshotWriter_CleanupExpiredSnapshots_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CleanupExpiredSnapshots'
+type SnapshotWriter_CleanupExpiredSnapshots_Call struct {
 	*mock.Call
 }
 
-// CleanupOldSnapshots is a helper method to define mock.On call
+// CleanupExpiredSnapshots is a helper method to define mock.On call
 //   - ctx context.Context
-//   - arg graph.CleanupOldSnapshotsParams
-func (_e *SnapshotWriter_Expecter) CleanupOldSnapshots(ctx interface{}, arg interface{}) *SnapshotWriter_CleanupOldSnapshots_Call {
-	return &SnapshotWriter_CleanupOldSnapshots_Call{Call: _e.mock.On("CleanupOldSnapshots", ctx, arg)}
+//   - arg graph.CleanupExpiredSnapshotsParams
+func (_e *SnapshotWriter_Expecter) CleanupExpiredSnapshots(ctx interface{}, arg interface{}) *SnapshotWriter_CleanupExpiredSnapshots_Call {
+	return &SnapshotWriter_CleanupExpiredSnapshots_Call{Call: _e.mock.On("CleanupExpiredSnapshots", ctx, arg)}
 }
 
-func (_c *SnapshotWriter_CleanupOldSnapshots_Call) Run(run func(ctx context.Context, arg graph.CleanupOldSnapshotsParams)) *SnapshotWriter_CleanupOldSnapshots_Call {
+func (_c *SnapshotWriter_CleanupExpiredSnapshots_Call) Run(run func(ctx context.Context, arg graph.CleanupExpiredSnapshotsParams)) *SnapshotWriter_CleanupExpiredSnapshots_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(graph.CleanupOldSnapshotsParams))
+		run(args[0].(context.Context), args[1].(graph.CleanupExpiredSnapshotsParams))
 	})
 	return _c
 }
 
-func (_c *SnapshotWriter_CleanupOldSnapshots_Call) Return(_a0 error) *SnapshotWriter_CleanupOldSnapshots_Call {
+func (_c *SnapshotWriter_CleanupExpiredSnapshots_Call) Return(_a0 error) *SnapshotWriter_CleanupExpiredSnapshots_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *SnapshotWriter_CleanupOldSnapshots_Call) RunAndReturn(run func(context.Context, graph.CleanupOldSnapshotsParams) error) *SnapshotWriter_CleanupOldSnapshots_Call {
+func (_c *SnapshotWriter_CleanupExpiredSnapshots_Call) RunAndReturn(run func(context.Context, graph.CleanupExpiredSnapshotsParams) error) *SnapshotWriter_CleanupExpiredSnapshots_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -122,6 +122,63 @@ func (_c *SnapshotWriter_InsertSnapshot_Call) Return(_a0 graph.Snapshot, _a1 err
 }
 
 func (_c *SnapshotWriter_InsertSnapshot_Call) RunAndReturn(run func(context.Context, graph.InsertSnapshotParams) (graph.Snapshot, error)) *SnapshotWriter_InsertSnapshot_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// InsertSnapshotMetadata provides a mock function with given fields: ctx, arg
+func (_m *SnapshotWriter) InsertSnapshotMetadata(ctx context.Context, arg graph.InsertSnapshotMetadataParams) (graph.SnapshotMetadata, error) {
+	ret := _m.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for InsertSnapshotMetadata")
+	}
+
+	var r0 graph.SnapshotMetadata
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, graph.InsertSnapshotMetadataParams) (graph.SnapshotMetadata, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, graph.InsertSnapshotMetadataParams) graph.SnapshotMetadata); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(graph.SnapshotMetadata)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, graph.InsertSnapshotMetadataParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// SnapshotWriter_InsertSnapshotMetadata_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'InsertSnapshotMetadata'
+type SnapshotWriter_InsertSnapshotMetadata_Call struct {
+	*mock.Call
+}
+
+// InsertSnapshotMetadata is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg graph.InsertSnapshotMetadataParams
+func (_e *SnapshotWriter_Expecter) InsertSnapshotMetadata(ctx interface{}, arg interface{}) *SnapshotWriter_InsertSnapshotMetadata_Call {
+	return &SnapshotWriter_InsertSnapshotMetadata_Call{Call: _e.mock.On("InsertSnapshotMetadata", ctx, arg)}
+}
+
+func (_c *SnapshotWriter_InsertSnapshotMetadata_Call) Run(run func(ctx context.Context, arg graph.InsertSnapshotMetadataParams)) *SnapshotWriter_InsertSnapshotMetadata_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(graph.InsertSnapshotMetadataParams))
+	})
+	return _c
+}
+
+func (_c *SnapshotWriter_InsertSnapshotMetadata_Call) Return(_a0 graph.SnapshotMetadata, _a1 error) *SnapshotWriter_InsertSnapshotMetadata_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *SnapshotWriter_InsertSnapshotMetadata_Call) RunAndReturn(run func(context.Context, graph.InsertSnapshotMetadataParams) (graph.SnapshotMetadata, error)) *SnapshotWriter_InsertSnapshotMetadata_Call {
 	_c.Call.Return(run)
 	return _c
 }

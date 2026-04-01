@@ -18,6 +18,7 @@ type NodeReader interface {
 	FindNodeByMetadata(ctx context.Context, arg FindNodeByMetadataParams) (Node, error)
 	FindNodeByContentHash(ctx context.Context, arg FindNodeByContentHashParams) (Node, error)
 	ListNodes(ctx context.Context, arg ListNodesParams) ([]NodeWithLatestSnapshot, error)
+	ListNodesBySnapshotMetadata(ctx context.Context, arg ListNodesBySnapshotMetadataParams) ([]NodeWithLatestSnapshot, error)
 }
 
 // EdgeWriter persists edge mutations.
@@ -28,7 +29,8 @@ type EdgeWriter interface {
 // SnapshotWriter persists snapshot mutations.
 type SnapshotWriter interface {
 	InsertSnapshot(ctx context.Context, arg InsertSnapshotParams) (Snapshot, error)
-	CleanupOldSnapshots(ctx context.Context, arg CleanupOldSnapshotsParams) error
+	InsertSnapshotMetadata(ctx context.Context, arg InsertSnapshotMetadataParams) (SnapshotMetadata, error)
+	CleanupExpiredSnapshots(ctx context.Context, arg CleanupExpiredSnapshotsParams) error
 }
 
 // SnapshotReader queries snapshots.
@@ -36,6 +38,7 @@ type SnapshotReader interface {
 	GetLatestSnapshot(ctx context.Context, nodeID int64) (Snapshot, error)
 	GetNodeWithLatestSnapshot(ctx context.Context, arg GetNodeWithLatestSnapshotParams) (NodeWithLatestSnapshot, error)
 	GetSnapshotsByNode(ctx context.Context, arg GetSnapshotsByNodeParams) ([]Snapshot, error)
+	FindLatestSnapshotByHash(ctx context.Context, arg FindLatestSnapshotByHashParams) (Snapshot, error)
 }
 
 // Repository composes all graph database operations.

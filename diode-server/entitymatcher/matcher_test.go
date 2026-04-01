@@ -1380,3 +1380,140 @@ func TestBuildNestedFilter(t *testing.T) {
 		})
 	}
 }
+
+func TestBuildFieldMatchParams(t *testing.T) {
+	tests := []struct {
+		name      string
+		nodeType  string
+		fieldPath string
+		value     string
+		limit     int32
+		wantJSON  string
+		wantPath  []string
+		wantNest  string
+	}{
+		{
+			name:      "top-level field uses JSONField",
+			nodeType:  "Device",
+			fieldPath: "name",
+			value:     "server-01",
+			limit:     10,
+			wantJSON:  "name",
+		},
+		{
+			name:      "two-level nested path",
+			nodeType:  "Device",
+			fieldPath: "device.name",
+			value:     "PE-000",
+			limit:     10,
+			wantPath:  []string{"device", "name"},
+			wantNest:  "PE-000",
+		},
+		{
+			name:      "three-level nested path",
+			nodeType:  "Interface",
+			fieldPath: "interface.device.name",
+			value:     "router-01",
+			limit:     15,
+			wantPath:  []string{"interface", "device", "name"},
+			wantNest:  "router-01",
+		},
+		{
+			name:      "deeply nested path",
+			nodeType:  "Custom",
+			fieldPath: "a.b.c.d",
+			value:     "deep",
+			limit:     5,
+			wantPath:  []string{"a", "b", "c", "d"},
+			wantNest:  "deep",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			params := buildFieldMatchParams(tt.nodeType, tt.fieldPath, tt.value, tt.limit)
+			require.Equal(t, tt.nodeType, params.NodeType)
+			require.Equal(t, tt.limit, params.Limit)
+			require.Equal(t, int32(0), params.Offset)
+
+			if tt.wantJSON != "" {
+				require.Equal(t, tt.wantJSON, params.JSONField)
+				require.Equal(t, tt.value, params.FieldValue)
+				require.Empty(t, params.NestedPath)
+				require.Empty(t, params.NestedValue)
+			} else {
+				require.Empty(t, params.JSONField)
+				require.Empty(t, params.FieldValue)
+				require.Equal(t, tt.wantPath, params.NestedPath)
+				require.Equal(t, tt.wantNest, params.NestedValue)
+			}
+		})
+	}
+}
+
+func TestNestedFieldMatchingIntegration(t *testing.T) {
+	// Verify that the entity matcher correctly matches a Device entity
+	// using nested field paths like "device.name" and "device.serial".
+	mockRepo := &mockNodeFinder{}
+
+	existingNode := graph.Node{
+		ID:             1,
+		ExternalID:     "existing-device",
+		NodeType:       "Device",
+		Data:           json.RawMessage(`{"device": {"name": "PE-000-00-00-000-00", "serial": "FCW00000000"}}`),
+		DuplicateCount: 1,
+	}
+
+	// Mock should be called with NestedPath (not JSONField) for "device.name"
+	mockRepo.On("FindNodesByFieldMatch", mock.Anything, mock.MatchedBy(func(arg graph.FindNodesByFieldMatchParams) bool {
+		return arg.NodeType == "Device" &&
+			len(arg.NestedPath) == 2 &&
+			arg.NestedPath[0] == "device" && arg.NestedPath[1] == "name" &&
+			arg.NestedValue == "PE-000-00-00-000-00" &&
+			arg.JSONField == ""
+	})).Return([]graph.Node{existingNode}, nil)
+
+	// GetNodesByType shouldn't be needed since primary match succeeds
+	mockRepo.On("GetNodesByType", mock.Anything, mock.Anything).Return([]graph.Node{existingNode}, nil).Maybe()
+
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+
+	requireAllPrimary := false
+	config := &matching.EntityMatchingConfig{
+		Rules: map[string]*matching.EntityMatchingRule{
+			"Device": {
+				MinConfidence:     0.8,
+				RequireAllPrimary: &requireAllPrimary,
+				PrimaryRules: []matching.FieldMatchRule{
+					{FieldPath: "device.name", MatchType: matching.MatchExact, Weight: 1.0, Required: true, Confidence: 0.9},
+				},
+				SecondaryRules: []matching.FieldMatchRule{
+					{FieldPath: "device.serial", MatchType: matching.MatchExact, Weight: 0.8, Required: false, Confidence: 0.7},
+				},
+			},
+		},
+		GlobalMinConf:  0.7,
+		EnableFallback: false,
+	}
+
+	matcher := NewMatcher(mockRepo, config, logger)
+
+	name := "PE-000-00-00-000-00"
+	serial := "FCW00000000"
+	entity := &diodepb.Entity{
+		Entity: &diodepb.Entity_Device{
+			Device: &diodepb.Device{
+				Name:   &name,
+				Serial: &serial,
+			},
+		},
+	}
+
+	bestMatch, err := matcher.FindBestMatch(context.Background(), entity)
+	require.NoError(t, err)
+	require.NotNil(t, bestMatch, "expected a match for device with nested field paths")
+	require.Equal(t, int64(1), *bestMatch.NodeID)
+	require.Equal(t, "existing-device", *bestMatch.ExternalID)
+
+	mockRepo.AssertExpectations(t)
+}

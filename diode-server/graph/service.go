@@ -5,6 +5,7 @@ package graph
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 
@@ -17,8 +18,9 @@ import (
 )
 
 const (
-	// DefaultSnapshotRetention is the default number of snapshots to keep
-	DefaultSnapshotRetention = 5
+	// DefaultSnapshotRetentionDays is the default snapshot retention period in days.
+	// 0 means no pruning (retain all snapshots).
+	DefaultSnapshotRetentionDays = 0
 	// ContentHashMatchConfidence is the confidence score for content hash matches
 	ContentHashMatchConfidence = 0.9
 
@@ -41,15 +43,15 @@ var _ EntityStore = (*Service)(nil)
 // A Service is not safe for concurrent use; each goroutine should use its own
 // instance, or calls to UpsertEntity must be serialized.
 type Service struct {
-	repo              Repository
-	logger            *slog.Logger
-	nodeCache         map[string]*Node       // Cache for deduplication: "nodeType:externalID" -> *Node
-	entityMatcher     matching.EntityMatcher // Confidence-based entity matcher
-	updatedNodes      map[string]*Node       // Track nodes that were updated during processing
-	seenInThisRequest map[string]bool        // Track which nodes have been seen in this ingestion request
-	matchingConfig    *matching.Config       // Entity matching configuration for extracting attributes
-	snapshotRetention int                    // Number of snapshots to retain per node
-	requestMetadata   map[string]any         // Request-level metadata (e.g. run_id) merged into entity metadata
+	repo                  Repository
+	logger                *slog.Logger
+	nodeCache             map[string]*Node       // Cache for deduplication: "nodeType:externalID" -> *Node
+	entityMatcher         matching.EntityMatcher // Confidence-based entity matcher
+	updatedNodes          map[string]*Node       // Track nodes that were updated during processing
+	seenInThisRequest     map[string]bool        // Track which nodes have been seen in this ingestion request
+	matchingConfig        *matching.Config       // Entity matching configuration for extracting attributes
+	snapshotRetentionDays int                    // Snapshot retention period in days (0 = no pruning)
+	requestMetadata       map[string]any         // Request-level metadata (e.g. run_id) merged into entity metadata
 }
 
 // Option configures a Service.
@@ -65,12 +67,13 @@ func WithMatchingConfig(config *matching.Config) Option {
 	return func(s *Service) { s.matchingConfig = config }
 }
 
-// WithSnapshotRetention sets the number of snapshots to retain per node.
-// Values <= 0 are ignored (the default is used).
-func WithSnapshotRetention(count int) Option {
+// WithSnapshotRetentionDays sets the snapshot retention period in days.
+// Snapshots older than this are pruned, except the latest per node is always kept.
+// Values <= 0 are ignored (the default of 0 = no pruning is used).
+func WithSnapshotRetentionDays(days int) Option {
 	return func(s *Service) {
-		if count > 0 {
-			s.snapshotRetention = count
+		if days > 0 {
+			s.snapshotRetentionDays = days
 		}
 	}
 }
@@ -78,12 +81,12 @@ func WithSnapshotRetention(count int) Option {
 // NewService creates a new Service instance.
 func NewService(repo Repository, logger *slog.Logger, opts ...Option) *Service {
 	s := &Service{
-		repo:              repo,
-		logger:            logger,
-		nodeCache:         make(map[string]*Node),
-		updatedNodes:      make(map[string]*Node),
-		seenInThisRequest: make(map[string]bool),
-		snapshotRetention: DefaultSnapshotRetention,
+		repo:                  repo,
+		logger:                logger,
+		nodeCache:             make(map[string]*Node),
+		updatedNodes:          make(map[string]*Node),
+		seenInThisRequest:     make(map[string]bool),
+		snapshotRetentionDays: DefaultSnapshotRetentionDays,
 	}
 	for _, opt := range opts {
 		opt(s)
@@ -132,13 +135,36 @@ func (s *Service) UpsertEntity(ctx context.Context, entity *diodepb.Entity, requ
 }
 
 // ListEntities returns a paginated list of entities with optional filtering.
+// When MetadataFilter is provided, uses a GIN-indexed query on snapshot metadata.
 func (s *Service) ListEntities(ctx context.Context, params ListNodesParams) ([]NodeWithLatestSnapshot, error) {
 	if params.Limit <= 0 {
 		params.Limit = DefaultListLimit
 	} else if params.Limit > MaxListLimit {
 		params.Limit = MaxListLimit
 	}
+
+	if isNonEmptyJSON(params.MetadataFilter) {
+		return s.repo.ListNodesBySnapshotMetadata(ctx, ListNodesBySnapshotMetadataParams{
+			MetadataFilter: params.MetadataFilter,
+			NodeTypes:      params.NodeTypes,
+			Limit:          params.Limit,
+			Offset:         params.Offset,
+		})
+	}
+
 	return s.repo.ListNodes(ctx, params)
+}
+
+// isNonEmptyJSON returns true if raw is valid JSON with at least one key.
+func isNonEmptyJSON(raw json.RawMessage) bool {
+	if len(raw) == 0 {
+		return false
+	}
+	var m map[string]any
+	if err := json.Unmarshal(raw, &m); err != nil {
+		return false
+	}
+	return len(m) > 0
 }
 
 // GetCompleteNodeData retrieves a node with its complete entity data by combining matching data and latest snapshot.
@@ -289,8 +315,8 @@ func (s *Service) updateMatchedNode(ctx context.Context, bestMatch *matching.Mat
 		return nil, fmt.Errorf("updating matched node: %w", err)
 	}
 
-	// Create snapshot with full entity data
-	if err := s.createSnapshot(ctx, result.ID, entityData); err != nil {
+	// Create snapshot with full entity data, metadata, and content hash for dedup
+	if err := s.createSnapshot(ctx, result.ID, entityData, metadata, contentHash); err != nil {
 		s.logger.Warn("failed to create entity snapshot", "error", err, "node_id", result.ID)
 	}
 
@@ -412,8 +438,8 @@ func (s *Service) upsertNode(ctx context.Context, externalID, nodeType string, f
 		s.seenInThisRequest[requestKey] = true
 	}
 
-	// Create snapshot with full entity data
-	err = s.createSnapshot(ctx, result.ID, fullEntityData)
+	// Create snapshot with full entity data, metadata, and content hash for dedup
+	err = s.createSnapshot(ctx, result.ID, fullEntityData, metadata, contentHash)
 	if err != nil {
 		s.logger.Warn("failed to create entity snapshot", "error", err, "node_id", result.ID)
 		// Don't fail the entire operation for snapshot issues
@@ -429,26 +455,63 @@ func (s *Service) upsertNode(ctx context.Context, externalID, nodeType string, f
 	}, nil
 }
 
-// createSnapshot creates a new snapshot for the given node with the full entity data.
-func (s *Service) createSnapshot(ctx context.Context, nodeID int64, fullEntityData json.RawMessage) error {
-	// Insert the new snapshot (sequence number is auto-computed by the SQL query)
-	_, err := s.repo.InsertSnapshot(ctx, InsertSnapshotParams{
-		NodeID:       nodeID,
-		SnapshotData: fullEntityData,
-	})
+// createSnapshot creates or reuses a snapshot for the given node and records ingestion metadata.
+// If the entity data (identified by dataHash) hasn't changed since the last snapshot,
+// the existing snapshot is reused and only a new metadata row is inserted.
+func (s *Service) createSnapshot(ctx context.Context, nodeID int64, fullEntityData, metadata json.RawMessage, dataHash string) error {
+	snapshotID, err := s.findOrCreateSnapshot(ctx, nodeID, fullEntityData, dataHash)
 	if err != nil {
-		return fmt.Errorf("inserting snapshot: %w", err)
+		return err
 	}
 
-	// Clean up old snapshots to maintain retention limit
-	err = s.repo.CleanupOldSnapshots(ctx, CleanupOldSnapshotsParams{
-		NodeID: nodeID,
-		Limit:  int32(s.snapshotRetention),
-	})
-	if err != nil {
-		s.logger.Warn("failed to cleanup old snapshots", "error", err, "node_id", nodeID)
-		// Don't fail the entire operation for cleanup issues
+	// Record ingestion metadata for this snapshot
+	if isNonEmptyJSON(metadata) {
+		if _, err := s.repo.InsertSnapshotMetadata(ctx, InsertSnapshotMetadataParams{
+			SnapshotID: snapshotID,
+			Metadata:   metadata,
+		}); err != nil {
+			return fmt.Errorf("inserting snapshot metadata: %w", err)
+		}
+	}
+
+	// Clean up expired snapshots (0 means no pruning)
+	if s.snapshotRetentionDays > 0 {
+		if err := s.repo.CleanupExpiredSnapshots(ctx, CleanupExpiredSnapshotsParams{
+			NodeID:        nodeID,
+			RetentionDays: int32(s.snapshotRetentionDays),
+		}); err != nil {
+			s.logger.Warn("failed to cleanup expired snapshots", "error", err, "node_id", nodeID)
+		}
 	}
 
 	return nil
+}
+
+// findOrCreateSnapshot returns the ID of an existing snapshot with the same data hash,
+// or inserts a new snapshot and returns its ID.
+func (s *Service) findOrCreateSnapshot(ctx context.Context, nodeID int64, fullEntityData json.RawMessage, dataHash string) (int64, error) {
+	if dataHash != "" {
+		existing, err := s.repo.FindLatestSnapshotByHash(ctx, FindLatestSnapshotByHashParams{
+			NodeID:   nodeID,
+			DataHash: dataHash,
+		})
+		if err == nil {
+			s.logger.Debug("reusing existing snapshot (data unchanged)",
+				"node_id", nodeID, "snapshot_id", existing.ID, "data_hash", dataHash)
+			return existing.ID, nil
+		}
+		if !errors.Is(err, ErrNotFound) {
+			return 0, fmt.Errorf("checking for existing snapshot: %w", err)
+		}
+	}
+
+	snapshot, err := s.repo.InsertSnapshot(ctx, InsertSnapshotParams{
+		NodeID:       nodeID,
+		SnapshotData: fullEntityData,
+		DataHash:     dataHash,
+	})
+	if err != nil {
+		return 0, fmt.Errorf("inserting snapshot: %w", err)
+	}
+	return snapshot.ID, nil
 }
