@@ -98,7 +98,7 @@ type ParsedUpdateForTest struct {
 
 // Field accessors for Service.
 
-func (s *Service) TestSnapshotRetention() int                { return s.snapshotRetention }
+func (s *Service) TestSnapshotRetentionDays() int            { return s.snapshotRetentionDays }
 func (s *Service) TestEntityMatcher() matching.EntityMatcher { return s.entityMatcher }
 func (s *Service) TestNodeCache() map[string]*Node           { return s.nodeCache }
 func (s *Service) TestUpdatedNodes() map[string]*Node        { return s.updatedNodes }

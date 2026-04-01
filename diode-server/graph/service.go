@@ -17,9 +17,9 @@ import (
 )
 
 const (
-	// DefaultSnapshotRetention is the default number of snapshots to keep.
+	// DefaultSnapshotRetentionDays is the default snapshot retention period in days.
 	// 0 means no pruning (retain all snapshots).
-	DefaultSnapshotRetention = 0
+	DefaultSnapshotRetentionDays = 0
 	// ContentHashMatchConfidence is the confidence score for content hash matches
 	ContentHashMatchConfidence = 0.9
 
@@ -42,15 +42,15 @@ var _ EntityStore = (*Service)(nil)
 // A Service is not safe for concurrent use; each goroutine should use its own
 // instance, or calls to UpsertEntity must be serialized.
 type Service struct {
-	repo              Repository
-	logger            *slog.Logger
-	nodeCache         map[string]*Node       // Cache for deduplication: "nodeType:externalID" -> *Node
-	entityMatcher     matching.EntityMatcher // Confidence-based entity matcher
-	updatedNodes      map[string]*Node       // Track nodes that were updated during processing
-	seenInThisRequest map[string]bool        // Track which nodes have been seen in this ingestion request
-	matchingConfig    *matching.Config       // Entity matching configuration for extracting attributes
-	snapshotRetention int                    // Number of snapshots to retain per node
-	requestMetadata   map[string]any         // Request-level metadata (e.g. run_id) merged into entity metadata
+	repo                  Repository
+	logger                *slog.Logger
+	nodeCache             map[string]*Node       // Cache for deduplication: "nodeType:externalID" -> *Node
+	entityMatcher         matching.EntityMatcher // Confidence-based entity matcher
+	updatedNodes          map[string]*Node       // Track nodes that were updated during processing
+	seenInThisRequest     map[string]bool        // Track which nodes have been seen in this ingestion request
+	matchingConfig        *matching.Config       // Entity matching configuration for extracting attributes
+	snapshotRetentionDays int                    // Snapshot retention period in days (0 = no pruning)
+	requestMetadata       map[string]any         // Request-level metadata (e.g. run_id) merged into entity metadata
 }
 
 // Option configures a Service.
@@ -66,12 +66,13 @@ func WithMatchingConfig(config *matching.Config) Option {
 	return func(s *Service) { s.matchingConfig = config }
 }
 
-// WithSnapshotRetention sets the number of snapshots to retain per node.
-// Values <= 0 are ignored (the default is used).
-func WithSnapshotRetention(count int) Option {
+// WithSnapshotRetentionDays sets the snapshot retention period in days.
+// Snapshots older than this are pruned, except the latest per node is always kept.
+// Values <= 0 are ignored (the default of 0 = no pruning is used).
+func WithSnapshotRetentionDays(days int) Option {
 	return func(s *Service) {
-		if count > 0 {
-			s.snapshotRetention = count
+		if days > 0 {
+			s.snapshotRetentionDays = days
 		}
 	}
 }
@@ -79,12 +80,12 @@ func WithSnapshotRetention(count int) Option {
 // NewService creates a new Service instance.
 func NewService(repo Repository, logger *slog.Logger, opts ...Option) *Service {
 	s := &Service{
-		repo:              repo,
-		logger:            logger,
-		nodeCache:         make(map[string]*Node),
-		updatedNodes:      make(map[string]*Node),
-		seenInThisRequest: make(map[string]bool),
-		snapshotRetention: DefaultSnapshotRetention,
+		repo:                  repo,
+		logger:                logger,
+		nodeCache:             make(map[string]*Node),
+		updatedNodes:          make(map[string]*Node),
+		seenInThisRequest:     make(map[string]bool),
+		snapshotRetentionDays: DefaultSnapshotRetentionDays,
 	}
 	for _, opt := range opts {
 		opt(s)
@@ -474,14 +475,14 @@ func (s *Service) createSnapshot(ctx context.Context, nodeID int64, fullEntityDa
 		}
 	}
 
-	// Clean up old snapshots to maintain retention limit (0 means no pruning)
-	if s.snapshotRetention > 0 {
-		err := s.repo.CleanupOldSnapshots(ctx, CleanupOldSnapshotsParams{
-			NodeID: nodeID,
-			Limit:  int32(s.snapshotRetention),
+	// Clean up expired snapshots (0 means no pruning)
+	if s.snapshotRetentionDays > 0 {
+		err := s.repo.CleanupExpiredSnapshots(ctx, CleanupExpiredSnapshotsParams{
+			NodeID:        nodeID,
+			RetentionDays: int32(s.snapshotRetentionDays),
 		})
 		if err != nil {
-			s.logger.Warn("failed to cleanup old snapshots", "error", err, "node_id", nodeID)
+			s.logger.Warn("failed to cleanup expired snapshots", "error", err, "node_id", nodeID)
 		}
 	}
 

@@ -230,6 +230,21 @@ WHERE outer_snap.node_id = $1
     LIMIT $2
   );
 
+-- name: CleanupExpiredSnapshots :exec
+-- Deletes snapshots older than the specified number of days for a node,
+-- but always keeps the latest snapshot regardless of age so the current entity state is never lost.
+-- Associated snapshot_metadata rows are cascade-deleted.
+DELETE FROM graph_node_snapshots outer_snap
+WHERE outer_snap.node_id = $1
+  AND outer_snap.created_at < NOW() - make_interval(days => sqlc.arg('retention_days')::int)
+  AND outer_snap.id != (
+    SELECT s.id
+    FROM graph_node_snapshots s
+    WHERE s.node_id = $1
+    ORDER BY s.sequence_number DESC
+    LIMIT 1
+  );
+
 -- name: GetNodeWithLatestSnapshot :one
 -- Note: snapshot fields use COALESCE defaults for NULL safety when no snapshot exists
 -- sequence_number = 0 and empty snapshot_data indicate no snapshot

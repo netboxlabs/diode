@@ -31,6 +31,7 @@ type SnapshotWriter interface {
 	InsertSnapshotMetadata(ctx context.Context, arg InsertSnapshotMetadataParams) (SnapshotMetadata, error)
 	FindLatestSnapshotByHash(ctx context.Context, arg FindLatestSnapshotByHashParams) (Snapshot, error)
 	CleanupOldSnapshots(ctx context.Context, arg CleanupOldSnapshotsParams) error
+	CleanupExpiredSnapshots(ctx context.Context, arg CleanupExpiredSnapshotsParams) error
 }
 
 // SnapshotReader queries snapshots.

@@ -11,6 +11,32 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const cleanupExpiredSnapshots = `-- name: CleanupExpiredSnapshots :exec
+DELETE FROM graph_node_snapshots outer_snap
+WHERE outer_snap.node_id = $1
+  AND outer_snap.created_at < NOW() - make_interval(days => $2::int)
+  AND outer_snap.id != (
+    SELECT s.id
+    FROM graph_node_snapshots s
+    WHERE s.node_id = $1
+    ORDER BY s.sequence_number DESC
+    LIMIT 1
+  )
+`
+
+type CleanupExpiredSnapshotsParams struct {
+	NodeID        int64 `json:"node_id"`
+	RetentionDays int32 `json:"retention_days"`
+}
+
+// Deletes snapshots older than the specified number of days for a node,
+// but always keeps the latest snapshot regardless of age so the current entity state is never lost.
+// Associated snapshot_metadata rows are cascade-deleted.
+func (q *Queries) CleanupExpiredSnapshots(ctx context.Context, arg CleanupExpiredSnapshotsParams) error {
+	_, err := q.db.Exec(ctx, cleanupExpiredSnapshots, arg.NodeID, arg.RetentionDays)
+	return err
+}
+
 const cleanupOldSnapshots = `-- name: CleanupOldSnapshots :exec
 DELETE FROM graph_node_snapshots outer_snap
 WHERE outer_snap.node_id = $1

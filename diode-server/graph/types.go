@@ -171,10 +171,16 @@ type InsertSnapshotMetadataParams struct {
 	Metadata   json.RawMessage
 }
 
-// CleanupOldSnapshotsParams contains parameters for cleaning up old snapshots.
+// CleanupOldSnapshotsParams contains parameters for cleaning up old snapshots by count.
 type CleanupOldSnapshotsParams struct {
 	NodeID int64
 	Limit  int32
+}
+
+// CleanupExpiredSnapshotsParams contains parameters for cleaning up snapshots by age.
+type CleanupExpiredSnapshotsParams struct {
+	NodeID        int64
+	RetentionDays int32
 }
 
 // GetNodeWithLatestSnapshotParams contains parameters for getting a node with its latest snapshot.

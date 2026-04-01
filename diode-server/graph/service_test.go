@@ -35,7 +35,7 @@ func TestNewService(t *testing.T) {
 	assert.NotNil(t, gb.TestNodeCache())
 	assert.NotNil(t, gb.TestUpdatedNodes())
 	assert.NotNil(t, gb.TestSeenInThisRequest())
-	assert.Equal(t, graph.DefaultSnapshotRetention, gb.TestSnapshotRetention())
+	assert.Equal(t, graph.DefaultSnapshotRetentionDays, gb.TestSnapshotRetentionDays())
 	assert.Nil(t, gb.TestEntityMatcher())
 }
 
@@ -49,17 +49,17 @@ func TestNewServiceWithOptions(t *testing.T) {
 	assert.Nil(t, gb.TestEntityMatcher())
 }
 
-func TestWithSnapshotRetention(t *testing.T) {
+func TestWithSnapshotRetentionDays(t *testing.T) {
 	repo := new(mocks.Repository)
 	logger := newTestLogger()
 
 	// Valid retention
-	gb := graph.NewService(repo, logger, graph.WithSnapshotRetention(10))
-	assert.Equal(t, 10, gb.TestSnapshotRetention())
+	gb := graph.NewService(repo, logger, graph.WithSnapshotRetentionDays(90))
+	assert.Equal(t, 90, gb.TestSnapshotRetentionDays())
 
 	// Negative falls back to default (0 = no pruning)
-	gb = graph.NewService(repo, logger, graph.WithSnapshotRetention(-5))
-	assert.Equal(t, graph.DefaultSnapshotRetention, gb.TestSnapshotRetention())
+	gb = graph.NewService(repo, logger, graph.WithSnapshotRetentionDays(-5))
+	assert.Equal(t, graph.DefaultSnapshotRetentionDays, gb.TestSnapshotRetentionDays())
 }
 
 func TestUpsertEntity_NilEntity(t *testing.T) {

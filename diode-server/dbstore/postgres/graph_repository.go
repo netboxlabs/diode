@@ -263,6 +263,14 @@ func (r *GraphRepository) CleanupOldSnapshots(ctx context.Context, arg graph.Cle
 	})
 }
 
+// CleanupExpiredSnapshots implements graph.Repository.
+func (r *GraphRepository) CleanupExpiredSnapshots(ctx context.Context, arg graph.CleanupExpiredSnapshotsParams) error {
+	return r.queries.CleanupExpiredSnapshots(ctx, postgres.CleanupExpiredSnapshotsParams{
+		NodeID:        arg.NodeID,
+		RetentionDays: arg.RetentionDays,
+	})
+}
+
 // nodeWithSnapshotFields is a common shape shared by GetNodeWithLatestSnapshotRow and ListNodesRow.
 type nodeWithSnapshotFields struct {
 	ID                int64
