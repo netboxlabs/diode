@@ -346,8 +346,38 @@ func (r *GraphRepository) GetNodeWithLatestSnapshot(ctx context.Context, arg gra
 // ListNodes implements graph.Repository.
 func (r *GraphRepository) ListNodes(ctx context.Context, arg graph.ListNodesParams) ([]graph.NodeWithLatestSnapshot, error) {
 	rows, err := r.queries.ListNodes(ctx, postgres.ListNodesParams{
-		NodeTypes:      arg.NodeTypes,
+		NodeTypes: arg.NodeTypes,
+		Limit:     arg.Limit,
+		Offset:    arg.Offset,
+	})
+	if err != nil {
+		return nil, err
+	}
+	result := make([]graph.NodeWithLatestSnapshot, len(rows))
+	for i, row := range rows {
+		result[i] = toNodeWithLatestSnapshot(nodeWithSnapshotFields{
+			ID:                row.ID,
+			ExternalID:        row.ExternalID,
+			NodeType:          row.NodeType,
+			MatchingData:      row.MatchingData,
+			DuplicateCount:    row.DuplicateCount,
+			LastSeenTs:        row.LastSeenTs,
+			CreatedAt:         row.CreatedAt,
+			UpdatedAt:         row.UpdatedAt,
+			Metadata:          row.Metadata,
+			SnapshotData:      row.SnapshotData,
+			SequenceNumber:    row.SequenceNumber,
+			SnapshotCreatedAt: row.SnapshotCreatedAt,
+		})
+	}
+	return result, nil
+}
+
+// ListNodesBySnapshotMetadata implements graph.Repository.
+func (r *GraphRepository) ListNodesBySnapshotMetadata(ctx context.Context, arg graph.ListNodesBySnapshotMetadataParams) ([]graph.NodeWithLatestSnapshot, error) {
+	rows, err := r.queries.ListNodesBySnapshotMetadata(ctx, postgres.ListNodesBySnapshotMetadataParams{
 		MetadataFilter: []byte(arg.MetadataFilter),
+		NodeTypes:      arg.NodeTypes,
 		Limit:          arg.Limit,
 		Offset:         arg.Offset,
 	})

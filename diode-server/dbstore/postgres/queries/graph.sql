@@ -264,45 +264,46 @@ LEFT JOIN LATERAL (
 WHERE n.node_type = $1 AND n.external_id = $2;
 
 -- name: ListNodes :many
--- When metadata_filter is provided, filters on snapshot_metadata and returns the
--- snapshot (entity state) that was active at the time of that ingestion.
--- When no metadata_filter is provided, returns the latest snapshot as before.
+-- Returns nodes with their latest snapshot. No metadata filtering.
 SELECT
     n.id, n.external_id, n.node_type,
     n.data AS matching_data, n.duplicate_count,
     n.last_seen_ts, n.created_at, n.updated_at, n.metadata,
     COALESCE(s.snapshot_data, '{}'::jsonb) AS snapshot_data,
     COALESCE(s.sequence_number, 0) AS sequence_number,
-    s.created_at AS snapshot_created_at,
-    COALESCE(sm.metadata, '{}'::jsonb) AS snapshot_metadata
+    s.created_at AS snapshot_created_at
 FROM graph_nodes n
 LEFT JOIN LATERAL (
-    SELECT snap.id AS snap_id, snap.snapshot_data, snap.sequence_number, snap.created_at, meta.metadata
-    FROM graph_node_snapshots snap
-    LEFT JOIN LATERAL (
-        SELECT metadata
-        FROM graph_node_snapshot_metadata
-        WHERE snapshot_id = snap.id
-          AND (sqlc.narg('metadata_filter')::jsonb IS NULL OR metadata @> sqlc.narg('metadata_filter')::jsonb)
-        ORDER BY created_at DESC
-        LIMIT 1
-    ) meta ON true
-    WHERE snap.node_id = n.id
-      AND (sqlc.narg('metadata_filter')::jsonb IS NULL OR meta.metadata IS NOT NULL)
-    ORDER BY snap.sequence_number DESC
+    SELECT snapshot_data, sequence_number, created_at
+    FROM graph_node_snapshots
+    WHERE node_id = n.id
+    ORDER BY sequence_number DESC
     LIMIT 1
 ) s ON true
-LEFT JOIN LATERAL (
-    SELECT metadata
-    FROM graph_node_snapshot_metadata
-    WHERE snapshot_id = s.snap_id
-    ORDER BY created_at DESC
-    LIMIT 1
-) sm ON true
 WHERE
     (n.node_type = ANY(sqlc.narg('node_types')::text[]) OR sqlc.narg('node_types')::text[] IS NULL)
-    AND (sqlc.narg('metadata_filter')::jsonb IS NULL OR s.snapshot_data IS NOT NULL)
 ORDER BY n.updated_at DESC
+LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
+
+-- name: ListNodesBySnapshotMetadata :many
+-- Finds nodes whose snapshots have matching metadata (e.g., run_id).
+-- Starts from the metadata table to leverage the GIN index, then joins outward.
+-- Returns the entity state (snapshot) that was active at the time of the matching ingestion.
+SELECT DISTINCT ON (n.id)
+    n.id, n.external_id, n.node_type,
+    n.data AS matching_data, n.duplicate_count,
+    n.last_seen_ts, n.created_at, n.updated_at, n.metadata,
+    snap.snapshot_data,
+    snap.sequence_number,
+    snap.created_at AS snapshot_created_at,
+    sm.metadata AS snapshot_metadata
+FROM graph_node_snapshot_metadata sm
+JOIN graph_node_snapshots snap ON snap.id = sm.snapshot_id
+JOIN graph_nodes n ON n.id = snap.node_id
+WHERE
+    sm.metadata @> sqlc.arg('metadata_filter')::jsonb
+    AND (n.node_type = ANY(sqlc.narg('node_types')::text[]) OR sqlc.narg('node_types')::text[] IS NULL)
+ORDER BY n.id, snap.sequence_number DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- Metadata-based lookup queries

@@ -370,6 +370,65 @@ func (_c *NodeReader_ListNodes_Call) RunAndReturn(run func(context.Context, grap
 	return _c
 }
 
+// ListNodesBySnapshotMetadata provides a mock function with given fields: ctx, arg
+func (_m *NodeReader) ListNodesBySnapshotMetadata(ctx context.Context, arg graph.ListNodesBySnapshotMetadataParams) ([]graph.NodeWithLatestSnapshot, error) {
+	ret := _m.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListNodesBySnapshotMetadata")
+	}
+
+	var r0 []graph.NodeWithLatestSnapshot
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, graph.ListNodesBySnapshotMetadataParams) ([]graph.NodeWithLatestSnapshot, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, graph.ListNodesBySnapshotMetadataParams) []graph.NodeWithLatestSnapshot); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]graph.NodeWithLatestSnapshot)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, graph.ListNodesBySnapshotMetadataParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// NodeReader_ListNodesBySnapshotMetadata_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListNodesBySnapshotMetadata'
+type NodeReader_ListNodesBySnapshotMetadata_Call struct {
+	*mock.Call
+}
+
+// ListNodesBySnapshotMetadata is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg graph.ListNodesBySnapshotMetadataParams
+func (_e *NodeReader_Expecter) ListNodesBySnapshotMetadata(ctx interface{}, arg interface{}) *NodeReader_ListNodesBySnapshotMetadata_Call {
+	return &NodeReader_ListNodesBySnapshotMetadata_Call{Call: _e.mock.On("ListNodesBySnapshotMetadata", ctx, arg)}
+}
+
+func (_c *NodeReader_ListNodesBySnapshotMetadata_Call) Run(run func(ctx context.Context, arg graph.ListNodesBySnapshotMetadataParams)) *NodeReader_ListNodesBySnapshotMetadata_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(graph.ListNodesBySnapshotMetadataParams))
+	})
+	return _c
+}
+
+func (_c *NodeReader_ListNodesBySnapshotMetadata_Call) Return(_a0 []graph.NodeWithLatestSnapshot, _a1 error) *NodeReader_ListNodesBySnapshotMetadata_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *NodeReader_ListNodesBySnapshotMetadata_Call) RunAndReturn(run func(context.Context, graph.ListNodesBySnapshotMetadataParams) ([]graph.NodeWithLatestSnapshot, error)) *NodeReader_ListNodesBySnapshotMetadata_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // NewNodeReader creates a new instance of NodeReader. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewNodeReader(t interface {

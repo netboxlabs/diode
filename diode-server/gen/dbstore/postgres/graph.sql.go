@@ -917,44 +917,25 @@ SELECT
     n.last_seen_ts, n.created_at, n.updated_at, n.metadata,
     COALESCE(s.snapshot_data, '{}'::jsonb) AS snapshot_data,
     COALESCE(s.sequence_number, 0) AS sequence_number,
-    s.created_at AS snapshot_created_at,
-    COALESCE(sm.metadata, '{}'::jsonb) AS snapshot_metadata
+    s.created_at AS snapshot_created_at
 FROM graph_nodes n
 LEFT JOIN LATERAL (
-    SELECT snap.id AS snap_id, snap.snapshot_data, snap.sequence_number, snap.created_at, meta.metadata
-    FROM graph_node_snapshots snap
-    LEFT JOIN LATERAL (
-        SELECT metadata
-        FROM graph_node_snapshot_metadata
-        WHERE snapshot_id = snap.id
-          AND ($1::jsonb IS NULL OR metadata @> $1::jsonb)
-        ORDER BY created_at DESC
-        LIMIT 1
-    ) meta ON true
-    WHERE snap.node_id = n.id
-      AND ($1::jsonb IS NULL OR meta.metadata IS NOT NULL)
-    ORDER BY snap.sequence_number DESC
+    SELECT snapshot_data, sequence_number, created_at
+    FROM graph_node_snapshots
+    WHERE node_id = n.id
+    ORDER BY sequence_number DESC
     LIMIT 1
 ) s ON true
-LEFT JOIN LATERAL (
-    SELECT metadata
-    FROM graph_node_snapshot_metadata
-    WHERE snapshot_id = s.snap_id
-    ORDER BY created_at DESC
-    LIMIT 1
-) sm ON true
 WHERE
-    (n.node_type = ANY($2::text[]) OR $2::text[] IS NULL)
-    AND ($1::jsonb IS NULL OR s.snapshot_data IS NOT NULL)
+    (n.node_type = ANY($1::text[]) OR $1::text[] IS NULL)
 ORDER BY n.updated_at DESC
-LIMIT $4 OFFSET $3
+LIMIT $3 OFFSET $2
 `
 
 type ListNodesParams struct {
-	MetadataFilter []byte   `json:"metadata_filter"`
-	NodeTypes      []string `json:"node_types"`
-	Offset         int32    `json:"offset"`
-	Limit          int32    `json:"limit"`
+	NodeTypes []string `json:"node_types"`
+	Offset    int32    `json:"offset"`
+	Limit     int32    `json:"limit"`
 }
 
 type ListNodesRow struct {
@@ -970,14 +951,89 @@ type ListNodesRow struct {
 	SnapshotData      []byte             `json:"snapshot_data"`
 	SequenceNumber    int32              `json:"sequence_number"`
 	SnapshotCreatedAt pgtype.Timestamptz `json:"snapshot_created_at"`
+}
+
+// Returns nodes with their latest snapshot. No metadata filtering.
+func (q *Queries) ListNodes(ctx context.Context, arg ListNodesParams) ([]ListNodesRow, error) {
+	rows, err := q.db.Query(ctx, listNodes, arg.NodeTypes, arg.Offset, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListNodesRow
+	for rows.Next() {
+		var i ListNodesRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ExternalID,
+			&i.NodeType,
+			&i.MatchingData,
+			&i.DuplicateCount,
+			&i.LastSeenTs,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Metadata,
+			&i.SnapshotData,
+			&i.SequenceNumber,
+			&i.SnapshotCreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listNodesBySnapshotMetadata = `-- name: ListNodesBySnapshotMetadata :many
+SELECT DISTINCT ON (n.id)
+    n.id, n.external_id, n.node_type,
+    n.data AS matching_data, n.duplicate_count,
+    n.last_seen_ts, n.created_at, n.updated_at, n.metadata,
+    snap.snapshot_data,
+    snap.sequence_number,
+    snap.created_at AS snapshot_created_at,
+    sm.metadata AS snapshot_metadata
+FROM graph_node_snapshot_metadata sm
+JOIN graph_node_snapshots snap ON snap.id = sm.snapshot_id
+JOIN graph_nodes n ON n.id = snap.node_id
+WHERE
+    sm.metadata @> $1::jsonb
+    AND (n.node_type = ANY($2::text[]) OR $2::text[] IS NULL)
+ORDER BY n.id, snap.sequence_number DESC
+LIMIT $4 OFFSET $3
+`
+
+type ListNodesBySnapshotMetadataParams struct {
+	MetadataFilter []byte   `json:"metadata_filter"`
+	NodeTypes      []string `json:"node_types"`
+	Offset         int32    `json:"offset"`
+	Limit          int32    `json:"limit"`
+}
+
+type ListNodesBySnapshotMetadataRow struct {
+	ID                int64              `json:"id"`
+	ExternalID        string             `json:"external_id"`
+	NodeType          string             `json:"node_type"`
+	MatchingData      []byte             `json:"matching_data"`
+	DuplicateCount    int32              `json:"duplicate_count"`
+	LastSeenTs        pgtype.Timestamptz `json:"last_seen_ts"`
+	CreatedAt         pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt         pgtype.Timestamptz `json:"updated_at"`
+	Metadata          []byte             `json:"metadata"`
+	SnapshotData      []byte             `json:"snapshot_data"`
+	SequenceNumber    int32              `json:"sequence_number"`
+	SnapshotCreatedAt pgtype.Timestamptz `json:"snapshot_created_at"`
 	SnapshotMetadata  []byte             `json:"snapshot_metadata"`
 }
 
-// When metadata_filter is provided, filters on snapshot_metadata and returns the
-// snapshot (entity state) that was active at the time of that ingestion.
-// When no metadata_filter is provided, returns the latest snapshot as before.
-func (q *Queries) ListNodes(ctx context.Context, arg ListNodesParams) ([]ListNodesRow, error) {
-	rows, err := q.db.Query(ctx, listNodes,
+// Finds nodes whose snapshots have matching metadata (e.g., run_id).
+// Starts from the metadata table to leverage the GIN index, then joins outward.
+// Returns the entity state (snapshot) that was active at the time of the matching ingestion.
+func (q *Queries) ListNodesBySnapshotMetadata(ctx context.Context, arg ListNodesBySnapshotMetadataParams) ([]ListNodesBySnapshotMetadataRow, error) {
+	rows, err := q.db.Query(ctx, listNodesBySnapshotMetadata,
 		arg.MetadataFilter,
 		arg.NodeTypes,
 		arg.Offset,
@@ -987,9 +1043,9 @@ func (q *Queries) ListNodes(ctx context.Context, arg ListNodesParams) ([]ListNod
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ListNodesRow
+	var items []ListNodesBySnapshotMetadataRow
 	for rows.Next() {
-		var i ListNodesRow
+		var i ListNodesBySnapshotMetadataRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.ExternalID,

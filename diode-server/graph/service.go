@@ -134,12 +134,23 @@ func (s *Service) UpsertEntity(ctx context.Context, entity *diodepb.Entity, requ
 }
 
 // ListEntities returns a paginated list of entities with optional filtering.
+// When MetadataFilter is provided, uses a GIN-indexed query on snapshot metadata.
 func (s *Service) ListEntities(ctx context.Context, params ListNodesParams) ([]NodeWithLatestSnapshot, error) {
 	if params.Limit <= 0 {
 		params.Limit = DefaultListLimit
 	} else if params.Limit > MaxListLimit {
 		params.Limit = MaxListLimit
 	}
+
+	if len(params.MetadataFilter) > 0 && string(params.MetadataFilter) != "{}" && string(params.MetadataFilter) != "null" {
+		return s.repo.ListNodesBySnapshotMetadata(ctx, ListNodesBySnapshotMetadataParams{
+			MetadataFilter: params.MetadataFilter,
+			NodeTypes:      params.NodeTypes,
+			Limit:          params.Limit,
+			Offset:         params.Offset,
+		})
+	}
+
 	return s.repo.ListNodes(ctx, params)
 }
 

@@ -90,6 +90,14 @@ type ListNodesParams struct {
 	Offset         int32
 }
 
+// ListNodesBySnapshotMetadataParams contains parameters for listing nodes filtered by snapshot metadata.
+type ListNodesBySnapshotMetadataParams struct {
+	MetadataFilter json.RawMessage
+	NodeTypes      []string
+	Limit          int32
+	Offset         int32
+}
+
 // UpsertNodeParams contains parameters for upserting a graph node.
 type UpsertNodeParams struct {
 	ExternalID  string
