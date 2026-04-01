@@ -37,31 +37,6 @@ func (q *Queries) CleanupExpiredSnapshots(ctx context.Context, arg CleanupExpire
 	return err
 }
 
-const cleanupOldSnapshots = `-- name: CleanupOldSnapshots :exec
-DELETE FROM graph_node_snapshots outer_snap
-WHERE outer_snap.node_id = $1
-  AND outer_snap.id NOT IN (
-    SELECT s.id
-    FROM graph_node_snapshots s
-    WHERE s.node_id = $1
-    ORDER BY s.sequence_number DESC
-    LIMIT $2
-  )
-`
-
-type CleanupOldSnapshotsParams struct {
-	NodeID int64 `json:"node_id"`
-	Limit  int32 `json:"limit"`
-}
-
-// Deletes old snapshots keeping only the most recent $2 snapshots for a node.
-// WARNING: If $2 is 0, all snapshots for the node will be deleted.
-// Associated snapshot_metadata rows are cascade-deleted.
-func (q *Queries) CleanupOldSnapshots(ctx context.Context, arg CleanupOldSnapshotsParams) error {
-	_, err := q.db.Exec(ctx, cleanupOldSnapshots, arg.NodeID, arg.Limit)
-	return err
-}
-
 const findGraphNode = `-- name: FindGraphNode :one
 SELECT id, external_id, node_type, data, duplicate_count, created_at, updated_at, last_seen_ts, metadata, content_hash
 FROM graph_nodes
@@ -988,7 +963,7 @@ func (q *Queries) ListNodes(ctx context.Context, arg ListNodesParams) ([]ListNod
 }
 
 const listNodesBySnapshotMetadata = `-- name: ListNodesBySnapshotMetadata :many
-SELECT DISTINCT ON (n.id)
+SELECT
     n.id, n.external_id, n.node_type,
     n.data AS matching_data, n.duplicate_count,
     n.last_seen_ts, n.created_at, n.updated_at, n.metadata,
@@ -996,13 +971,26 @@ SELECT DISTINCT ON (n.id)
     snap.sequence_number,
     snap.created_at AS snapshot_created_at,
     sm.metadata AS snapshot_metadata
-FROM graph_node_snapshot_metadata sm
+FROM graph_nodes n
+JOIN LATERAL (
+    SELECT m.snapshot_id, m.metadata
+    FROM graph_node_snapshot_metadata m
+    JOIN graph_node_snapshots s ON s.id = m.snapshot_id
+    WHERE s.node_id = n.id
+      AND m.metadata @> $1::jsonb
+    ORDER BY s.sequence_number DESC
+    LIMIT 1
+) sm ON true
 JOIN graph_node_snapshots snap ON snap.id = sm.snapshot_id
-JOIN graph_nodes n ON n.id = snap.node_id
 WHERE
-    sm.metadata @> $1::jsonb
+    n.id IN (
+        SELECT DISTINCT s2.node_id
+        FROM graph_node_snapshot_metadata m2
+        JOIN graph_node_snapshots s2 ON s2.id = m2.snapshot_id
+        WHERE m2.metadata @> $1::jsonb
+    )
     AND (n.node_type = ANY($2::text[]) OR $2::text[] IS NULL)
-ORDER BY n.id, snap.sequence_number DESC
+ORDER BY n.updated_at DESC
 LIMIT $4 OFFSET $3
 `
 
@@ -1032,6 +1020,7 @@ type ListNodesBySnapshotMetadataRow struct {
 // Finds nodes whose snapshots have matching metadata (e.g., run_id).
 // Starts from the metadata table to leverage the GIN index, then joins outward.
 // Returns the entity state (snapshot) that was active at the time of the matching ingestion.
+// Uses a subquery to first identify matching nodes, then fetches full data with consistent ordering.
 func (q *Queries) ListNodesBySnapshotMetadata(ctx context.Context, arg ListNodesBySnapshotMetadataParams) ([]ListNodesBySnapshotMetadataRow, error) {
 	rows, err := q.db.Query(ctx, listNodesBySnapshotMetadata,
 		arg.MetadataFilter,

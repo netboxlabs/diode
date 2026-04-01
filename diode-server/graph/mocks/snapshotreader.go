@@ -22,6 +22,63 @@ func (_m *SnapshotReader) EXPECT() *SnapshotReader_Expecter {
 	return &SnapshotReader_Expecter{mock: &_m.Mock}
 }
 
+// FindLatestSnapshotByHash provides a mock function with given fields: ctx, arg
+func (_m *SnapshotReader) FindLatestSnapshotByHash(ctx context.Context, arg graph.FindLatestSnapshotByHashParams) (graph.Snapshot, error) {
+	ret := _m.Called(ctx, arg)
+
+	if len(ret) == 0 {
+		panic("no return value specified for FindLatestSnapshotByHash")
+	}
+
+	var r0 graph.Snapshot
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, graph.FindLatestSnapshotByHashParams) (graph.Snapshot, error)); ok {
+		return rf(ctx, arg)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, graph.FindLatestSnapshotByHashParams) graph.Snapshot); ok {
+		r0 = rf(ctx, arg)
+	} else {
+		r0 = ret.Get(0).(graph.Snapshot)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, graph.FindLatestSnapshotByHashParams) error); ok {
+		r1 = rf(ctx, arg)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// SnapshotReader_FindLatestSnapshotByHash_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FindLatestSnapshotByHash'
+type SnapshotReader_FindLatestSnapshotByHash_Call struct {
+	*mock.Call
+}
+
+// FindLatestSnapshotByHash is a helper method to define mock.On call
+//   - ctx context.Context
+//   - arg graph.FindLatestSnapshotByHashParams
+func (_e *SnapshotReader_Expecter) FindLatestSnapshotByHash(ctx interface{}, arg interface{}) *SnapshotReader_FindLatestSnapshotByHash_Call {
+	return &SnapshotReader_FindLatestSnapshotByHash_Call{Call: _e.mock.On("FindLatestSnapshotByHash", ctx, arg)}
+}
+
+func (_c *SnapshotReader_FindLatestSnapshotByHash_Call) Run(run func(ctx context.Context, arg graph.FindLatestSnapshotByHashParams)) *SnapshotReader_FindLatestSnapshotByHash_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(graph.FindLatestSnapshotByHashParams))
+	})
+	return _c
+}
+
+func (_c *SnapshotReader_FindLatestSnapshotByHash_Call) Return(_a0 graph.Snapshot, _a1 error) *SnapshotReader_FindLatestSnapshotByHash_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *SnapshotReader_FindLatestSnapshotByHash_Call) RunAndReturn(run func(context.Context, graph.FindLatestSnapshotByHashParams) (graph.Snapshot, error)) *SnapshotReader_FindLatestSnapshotByHash_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetLatestSnapshot provides a mock function with given fields: ctx, nodeID
 func (_m *SnapshotReader) GetLatestSnapshot(ctx context.Context, nodeID int64) (graph.Snapshot, error) {
 	ret := _m.Called(ctx, nodeID)

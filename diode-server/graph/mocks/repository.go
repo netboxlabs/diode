@@ -69,53 +69,6 @@ func (_c *Repository_CleanupExpiredSnapshots_Call) RunAndReturn(run func(context
 	return _c
 }
 
-// CleanupOldSnapshots provides a mock function with given fields: ctx, arg
-func (_m *Repository) CleanupOldSnapshots(ctx context.Context, arg graph.CleanupOldSnapshotsParams) error {
-	ret := _m.Called(ctx, arg)
-
-	if len(ret) == 0 {
-		panic("no return value specified for CleanupOldSnapshots")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, graph.CleanupOldSnapshotsParams) error); ok {
-		r0 = rf(ctx, arg)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// Repository_CleanupOldSnapshots_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CleanupOldSnapshots'
-type Repository_CleanupOldSnapshots_Call struct {
-	*mock.Call
-}
-
-// CleanupOldSnapshots is a helper method to define mock.On call
-//   - ctx context.Context
-//   - arg graph.CleanupOldSnapshotsParams
-func (_e *Repository_Expecter) CleanupOldSnapshots(ctx interface{}, arg interface{}) *Repository_CleanupOldSnapshots_Call {
-	return &Repository_CleanupOldSnapshots_Call{Call: _e.mock.On("CleanupOldSnapshots", ctx, arg)}
-}
-
-func (_c *Repository_CleanupOldSnapshots_Call) Run(run func(ctx context.Context, arg graph.CleanupOldSnapshotsParams)) *Repository_CleanupOldSnapshots_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(graph.CleanupOldSnapshotsParams))
-	})
-	return _c
-}
-
-func (_c *Repository_CleanupOldSnapshots_Call) Return(_a0 error) *Repository_CleanupOldSnapshots_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Repository_CleanupOldSnapshots_Call) RunAndReturn(run func(context.Context, graph.CleanupOldSnapshotsParams) error) *Repository_CleanupOldSnapshots_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // FindLatestSnapshotByHash provides a mock function with given fields: ctx, arg
 func (_m *Repository) FindLatestSnapshotByHash(ctx context.Context, arg graph.FindLatestSnapshotByHashParams) (graph.Snapshot, error) {
 	ret := _m.Called(ctx, arg)

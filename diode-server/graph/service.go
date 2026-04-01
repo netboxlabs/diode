@@ -5,6 +5,7 @@ package graph
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log/slog"
 
@@ -142,7 +143,7 @@ func (s *Service) ListEntities(ctx context.Context, params ListNodesParams) ([]N
 		params.Limit = MaxListLimit
 	}
 
-	if len(params.MetadataFilter) > 0 && string(params.MetadataFilter) != "{}" && string(params.MetadataFilter) != "null" {
+	if isNonEmptyJSON(params.MetadataFilter) {
 		return s.repo.ListNodesBySnapshotMetadata(ctx, ListNodesBySnapshotMetadataParams{
 			MetadataFilter: params.MetadataFilter,
 			NodeTypes:      params.NodeTypes,
@@ -152,6 +153,18 @@ func (s *Service) ListEntities(ctx context.Context, params ListNodesParams) ([]N
 	}
 
 	return s.repo.ListNodes(ctx, params)
+}
+
+// isNonEmptyJSON returns true if raw is valid JSON with at least one key.
+func isNonEmptyJSON(raw json.RawMessage) bool {
+	if len(raw) == 0 {
+		return false
+	}
+	var m map[string]any
+	if err := json.Unmarshal(raw, &m); err != nil {
+		return false
+	}
+	return len(m) > 0
 }
 
 // GetCompleteNodeData retrieves a node with its complete entity data by combining matching data and latest snapshot.
@@ -446,56 +459,59 @@ func (s *Service) upsertNode(ctx context.Context, externalID, nodeType string, f
 // If the entity data (identified by dataHash) hasn't changed since the last snapshot,
 // the existing snapshot is reused and only a new metadata row is inserted.
 func (s *Service) createSnapshot(ctx context.Context, nodeID int64, fullEntityData, metadata json.RawMessage, dataHash string) error {
-	var snapshotID int64
+	snapshotID, err := s.findOrCreateSnapshot(ctx, nodeID, fullEntityData, dataHash)
+	if err != nil {
+		return err
+	}
 
-	// Check if we can reuse an existing snapshot with the same data hash
+	// Record ingestion metadata for this snapshot
+	if isNonEmptyJSON(metadata) {
+		if _, err := s.repo.InsertSnapshotMetadata(ctx, InsertSnapshotMetadataParams{
+			SnapshotID: snapshotID,
+			Metadata:   metadata,
+		}); err != nil {
+			return fmt.Errorf("inserting snapshot metadata: %w", err)
+		}
+	}
+
+	// Clean up expired snapshots (0 means no pruning)
+	if s.snapshotRetentionDays > 0 {
+		if err := s.repo.CleanupExpiredSnapshots(ctx, CleanupExpiredSnapshotsParams{
+			NodeID:        nodeID,
+			RetentionDays: int32(s.snapshotRetentionDays),
+		}); err != nil {
+			s.logger.Warn("failed to cleanup expired snapshots", "error", err, "node_id", nodeID)
+		}
+	}
+
+	return nil
+}
+
+// findOrCreateSnapshot returns the ID of an existing snapshot with the same data hash,
+// or inserts a new snapshot and returns its ID.
+func (s *Service) findOrCreateSnapshot(ctx context.Context, nodeID int64, fullEntityData json.RawMessage, dataHash string) (int64, error) {
 	if dataHash != "" {
 		existing, err := s.repo.FindLatestSnapshotByHash(ctx, FindLatestSnapshotByHashParams{
 			NodeID:   nodeID,
 			DataHash: dataHash,
 		})
 		if err == nil {
-			// Entity data unchanged — reuse existing snapshot
-			snapshotID = existing.ID
 			s.logger.Debug("reusing existing snapshot (data unchanged)",
-				"node_id", nodeID, "snapshot_id", snapshotID, "data_hash", dataHash)
+				"node_id", nodeID, "snapshot_id", existing.ID, "data_hash", dataHash)
+			return existing.ID, nil
+		}
+		if !errors.Is(err, ErrNotFound) {
+			return 0, fmt.Errorf("checking for existing snapshot: %w", err)
 		}
 	}
 
-	// If no existing snapshot found, insert a new one
-	if snapshotID == 0 {
-		snapshot, err := s.repo.InsertSnapshot(ctx, InsertSnapshotParams{
-			NodeID:       nodeID,
-			SnapshotData: fullEntityData,
-			DataHash:     dataHash,
-		})
-		if err != nil {
-			return fmt.Errorf("inserting snapshot: %w", err)
-		}
-		snapshotID = snapshot.ID
+	snapshot, err := s.repo.InsertSnapshot(ctx, InsertSnapshotParams{
+		NodeID:       nodeID,
+		SnapshotData: fullEntityData,
+		DataHash:     dataHash,
+	})
+	if err != nil {
+		return 0, fmt.Errorf("inserting snapshot: %w", err)
 	}
-
-	// Record ingestion metadata for this snapshot
-	if len(metadata) > 0 && string(metadata) != "{}" {
-		_, err := s.repo.InsertSnapshotMetadata(ctx, InsertSnapshotMetadataParams{
-			SnapshotID: snapshotID,
-			Metadata:   metadata,
-		})
-		if err != nil {
-			s.logger.Warn("failed to insert snapshot metadata", "error", err, "snapshot_id", snapshotID)
-		}
-	}
-
-	// Clean up expired snapshots (0 means no pruning)
-	if s.snapshotRetentionDays > 0 {
-		err := s.repo.CleanupExpiredSnapshots(ctx, CleanupExpiredSnapshotsParams{
-			NodeID:        nodeID,
-			RetentionDays: int32(s.snapshotRetentionDays),
-		})
-		if err != nil {
-			s.logger.Warn("failed to cleanup expired snapshots", "error", err, "node_id", nodeID)
-		}
-	}
-
-	return nil
+	return snapshot.ID, nil
 }

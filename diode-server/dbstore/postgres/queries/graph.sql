@@ -216,20 +216,6 @@ WHERE node_id = $1
 ORDER BY sequence_number DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
--- name: CleanupOldSnapshots :exec
--- Deletes old snapshots keeping only the most recent $2 snapshots for a node.
--- WARNING: If $2 is 0, all snapshots for the node will be deleted.
--- Associated snapshot_metadata rows are cascade-deleted.
-DELETE FROM graph_node_snapshots outer_snap
-WHERE outer_snap.node_id = $1
-  AND outer_snap.id NOT IN (
-    SELECT s.id
-    FROM graph_node_snapshots s
-    WHERE s.node_id = $1
-    ORDER BY s.sequence_number DESC
-    LIMIT $2
-  );
-
 -- name: CleanupExpiredSnapshots :exec
 -- Deletes snapshots older than the specified number of days for a node,
 -- but always keeps the latest snapshot regardless of age so the current entity state is never lost.
@@ -289,7 +275,8 @@ LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 -- Finds nodes whose snapshots have matching metadata (e.g., run_id).
 -- Starts from the metadata table to leverage the GIN index, then joins outward.
 -- Returns the entity state (snapshot) that was active at the time of the matching ingestion.
-SELECT DISTINCT ON (n.id)
+-- Uses a subquery to first identify matching nodes, then fetches full data with consistent ordering.
+SELECT
     n.id, n.external_id, n.node_type,
     n.data AS matching_data, n.duplicate_count,
     n.last_seen_ts, n.created_at, n.updated_at, n.metadata,
@@ -297,13 +284,26 @@ SELECT DISTINCT ON (n.id)
     snap.sequence_number,
     snap.created_at AS snapshot_created_at,
     sm.metadata AS snapshot_metadata
-FROM graph_node_snapshot_metadata sm
+FROM graph_nodes n
+JOIN LATERAL (
+    SELECT m.snapshot_id, m.metadata
+    FROM graph_node_snapshot_metadata m
+    JOIN graph_node_snapshots s ON s.id = m.snapshot_id
+    WHERE s.node_id = n.id
+      AND m.metadata @> sqlc.arg('metadata_filter')::jsonb
+    ORDER BY s.sequence_number DESC
+    LIMIT 1
+) sm ON true
 JOIN graph_node_snapshots snap ON snap.id = sm.snapshot_id
-JOIN graph_nodes n ON n.id = snap.node_id
 WHERE
-    sm.metadata @> sqlc.arg('metadata_filter')::jsonb
+    n.id IN (
+        SELECT DISTINCT s2.node_id
+        FROM graph_node_snapshot_metadata m2
+        JOIN graph_node_snapshots s2 ON s2.id = m2.snapshot_id
+        WHERE m2.metadata @> sqlc.arg('metadata_filter')::jsonb
+    )
     AND (n.node_type = ANY(sqlc.narg('node_types')::text[]) OR sqlc.narg('node_types')::text[] IS NULL)
-ORDER BY n.id, snap.sequence_number DESC
+ORDER BY n.updated_at DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- Metadata-based lookup queries

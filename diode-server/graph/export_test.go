@@ -96,6 +96,11 @@ type ParsedUpdateForTest struct {
 	EntityMap map[string]any
 }
 
+// ExportIsNonEmptyJSON exposes isNonEmptyJSON for testing.
+func ExportIsNonEmptyJSON(raw json.RawMessage) bool {
+	return isNonEmptyJSON(raw)
+}
+
 // Field accessors for Service.
 
 func (s *Service) TestSnapshotRetentionDays() int            { return s.snapshotRetentionDays }

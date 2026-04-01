@@ -227,13 +227,9 @@ func (r *GraphRepository) FindLatestSnapshotByHash(ctx context.Context, arg grap
 
 // InsertSnapshotMetadata implements graph.Repository.
 func (r *GraphRepository) InsertSnapshotMetadata(ctx context.Context, arg graph.InsertSnapshotMetadataParams) (graph.SnapshotMetadata, error) {
-	metadata := arg.Metadata
-	if len(metadata) == 0 {
-		metadata = json.RawMessage("{}")
-	}
 	result, err := r.queries.InsertSnapshotMetadata(ctx, postgres.InsertSnapshotMetadataParams{
 		SnapshotID: arg.SnapshotID,
-		Metadata:   []byte(metadata),
+		Metadata:   []byte(arg.Metadata),
 	})
 	if err != nil {
 		return graph.SnapshotMetadata{}, err
@@ -253,14 +249,6 @@ func (r *GraphRepository) GetLatestSnapshot(ctx context.Context, nodeID int64) (
 		return graph.Snapshot{}, wrapNotFound(err)
 	}
 	return toSnapshot(result), nil
-}
-
-// CleanupOldSnapshots implements graph.Repository.
-func (r *GraphRepository) CleanupOldSnapshots(ctx context.Context, arg graph.CleanupOldSnapshotsParams) error {
-	return r.queries.CleanupOldSnapshots(ctx, postgres.CleanupOldSnapshotsParams{
-		NodeID: arg.NodeID,
-		Limit:  arg.Limit,
-	})
 }
 
 // CleanupExpiredSnapshots implements graph.Repository.

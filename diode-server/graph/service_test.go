@@ -1137,3 +1137,92 @@ func TestFindNodeByContentHash_DatabaseError(t *testing.T) {
 
 	repo.AssertExpectations(t)
 }
+
+func TestIsNonEmptyJSON(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    json.RawMessage
+		expected bool
+	}{
+		{"nil", nil, false},
+		{"empty bytes", json.RawMessage{}, false},
+		{"empty object", json.RawMessage(`{}`), false},
+		{"null", json.RawMessage(`null`), false},
+		{"invalid json", json.RawMessage(`not json`), false},
+		{"single key", json.RawMessage(`{"run_id":"run-1"}`), true},
+		{"multiple keys", json.RawMessage(`{"run_id":"run-1","agent_id":"a1"}`), true},
+		{"nested", json.RawMessage(`{"source_match":{"diode_id":"x"}}`), true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, graph.ExportIsNonEmptyJSON(tt.input))
+		})
+	}
+}
+
+func TestListEntities_RoutesToSnapshotMetadataQuery(t *testing.T) {
+	repo := new(mocks.Repository)
+	logger := newTestLogger()
+	gb := graph.NewService(repo, logger)
+
+	ctx := context.Background()
+
+	now := time.Now()
+	expected := []graph.NodeWithLatestSnapshot{
+		{ID: 1, ExternalID: "node-1", NodeType: "Device", SnapshotData: json.RawMessage(`{}`), CreatedAt: now, UpdatedAt: now},
+	}
+
+	// When metadata filter is provided, ListNodesBySnapshotMetadata should be called (not ListNodes)
+	repo.EXPECT().ListNodesBySnapshotMetadata(ctx, graph.ListNodesBySnapshotMetadataParams{
+		MetadataFilter: json.RawMessage(`{"run_id":"run-1"}`),
+		Limit:          100,
+	}).Return(expected, nil).Once()
+
+	result, err := gb.ListEntities(ctx, graph.ListNodesParams{
+		MetadataFilter: json.RawMessage(`{"run_id":"run-1"}`),
+	})
+
+	require.NoError(t, err)
+	assert.Len(t, result, 1)
+	assert.Equal(t, "node-1", result[0].ExternalID)
+
+	repo.AssertExpectations(t)
+}
+
+func TestListEntities_RoutesToListNodesWithoutMetadata(t *testing.T) {
+	repo := new(mocks.Repository)
+	logger := newTestLogger()
+	gb := graph.NewService(repo, logger)
+
+	ctx := context.Background()
+
+	// When no metadata filter, ListNodes should be called
+	repo.EXPECT().ListNodes(ctx, mock.MatchedBy(func(p graph.ListNodesParams) bool {
+		return p.Limit == 100
+	})).Return(nil, nil).Once()
+
+	_, err := gb.ListEntities(ctx, graph.ListNodesParams{})
+	require.NoError(t, err)
+
+	repo.AssertExpectations(t)
+}
+
+func TestListEntities_EmptyMetadataRoutesToListNodes(t *testing.T) {
+	repo := new(mocks.Repository)
+	logger := newTestLogger()
+	gb := graph.NewService(repo, logger)
+
+	ctx := context.Background()
+
+	// Empty JSON object should NOT route to metadata query
+	repo.EXPECT().ListNodes(ctx, mock.AnythingOfType("graph.ListNodesParams")).
+		Return(nil, nil).Once()
+
+	_, err := gb.ListEntities(ctx, graph.ListNodesParams{
+		MetadataFilter: json.RawMessage(`{}`),
+	})
+	require.NoError(t, err)
+
+	repo.AssertExpectations(t)
+}
