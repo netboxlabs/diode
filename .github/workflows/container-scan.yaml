@@ -131,6 +131,7 @@ jobs:
             fs.writeFileSync('scan-result.json', artifact);
 
       - name: Post scan results as PR comment
+        continue-on-error: true  # Fork PRs have read-only tokens and cannot post comments
         if: github.event_name == 'pull_request'
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
         env:
