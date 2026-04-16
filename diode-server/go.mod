@@ -15,7 +15,7 @@ require (
 	github.com/gowebpki/jcs v1.0.1
 	github.com/hashicorp/go-retryablehttp v0.7.7
 	github.com/hashicorp/golang-lru/v2 v2.0.7
-	github.com/jackc/pgx/v5 v5.7.5
+	github.com/jackc/pgx/v5 v5.9.0
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/oklog/run v1.1.0
 	github.com/ory/hydra-client-go/v25 v25.4.0
