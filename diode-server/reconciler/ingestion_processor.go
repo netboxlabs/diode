@@ -202,7 +202,7 @@ func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, redisSt
 		b.Reset()
 
 		for _, msg := range streams[0].Messages {
-			_, err := p.handleStreamMessage(ctx, msg)
+			err := p.handleStreamMessage(ctx, msg)
 			if err != nil {
 				p.logger.Error("failed to handle stream message", "error", err, "message", msg)
 
@@ -219,11 +219,7 @@ func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, redisSt
 	}
 }
 
-func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.XMessage) (chan struct{}, error) {
-	doneChan := make(chan struct{})
-	defer close(doneChan)
-
-	// Create attributes for metrics
+func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.XMessage) error {
 	attrs := []attribute.KeyValue{
 		attribute.String(telemetry.AttributeHostname, p.hostname),
 	}
@@ -235,17 +231,16 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 		reqBytes, err = decompressBrotli(reqBytes)
 		if err != nil {
 			p.metrics.RecordHandleMessage(ctx, false)
-			return doneChan, fmt.Errorf("decompressing request: %w", err)
+			return fmt.Errorf("decompressing request: %w", err)
 		}
 	}
 
 	ingestReq := &diodepb.IngestRequest{}
 	if err := proto.Unmarshal(reqBytes, ingestReq); err != nil {
 		p.metrics.RecordHandleMessage(ctx, false)
-		return doneChan, err
+		return err
 	}
 
-	// Add request-specific attributes
 	attrs = append(attrs,
 		attribute.String(telemetry.AttributeSDKName, ingestReq.SdkName),
 		attribute.String(telemetry.AttributeSDKVersion, ingestReq.SdkVersion),
@@ -263,38 +258,7 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 
 	p.logger.Debug("handling ingest request", "request", ingestReq)
 
-	bufCapacity := 100
-
-	generateIngestionLogChan := make(chan IngestionLogToProcess, bufCapacity)
-	generateIngestionLogDoneChan := make(chan struct{})
-	var applyChangeSetChan chan IngestionLogToProcess
-	var applyChangeSetDoneChan chan struct{}
-
-	if p.Config.AutoApplyChangesets {
-		applyChangeSetChan = make(chan IngestionLogToProcess, bufCapacity)
-		applyChangeSetDoneChan = make(chan struct{})
-	}
-
-	p.GenerateChangeSet(ctx, generateIngestionLogChan, applyChangeSetChan, generateIngestionLogDoneChan)
-
-	if p.Config.AutoApplyChangesets {
-		p.ApplyChangeSet(ctx, applyChangeSetChan, applyChangeSetDoneChan)
-	} else {
-		// Only close the channel if it's not nil to avoid panic
-		if applyChangeSetDoneChan != nil {
-			close(applyChangeSetDoneChan)
-		}
-	}
-
-	allDone := make(chan struct{})
-	go func() {
-		<-doneChan
-		<-generateIngestionLogDoneChan
-		<-applyChangeSetDoneChan
-		close(allDone)
-	}()
-
-	createIngestionLogsErrs := p.CreateIngestionLogs(ctx, ingestReq, ingestionTs, generateIngestionLogChan)
+	createIngestionLogsErrs := p.CreateIngestionLogs(ctx, ingestReq, ingestionTs)
 	if len(createIngestionLogsErrs) > 0 {
 		errs = append(errs, createIngestionLogsErrs...)
 	}
@@ -320,7 +284,7 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 		p.metrics.RecordHandleMessage(ctx, true)
 	}
 
-	return allDone, nil
+	return nil
 }
 
 // GenerateChangeSet generates a change set for an ingestion log
@@ -392,8 +356,7 @@ func (p *IngestionProcessor) ApplyChangeSet(ctx context.Context, applyChan <-cha
 }
 
 // CreateIngestionLogs creates ingestion logs for an ingest request using bulk operations
-func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq *diodepb.IngestRequest, ingestionTs int, generateIngestionLogChan chan<- IngestionLogToProcess) []error {
-	defer close(generateIngestionLogChan)
+func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq *diodepb.IngestRequest, ingestionTs int) []error {
 
 	errs := make([]error, 0)
 
@@ -521,14 +484,6 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 
 		if result.WasDuplicate && result.IngestionLog.State == reconcilerpb.State_IGNORED {
 			p.logger.Debug("skipping ingestion log because it is a duplicate of an ignored ingestion log", "id", id, "externalID", ingestionLog.GetId())
-			continue
-		}
-
-		// otherwise, even if it was a duplicate, reprocess to see if it has been updated
-		generateIngestionLogChan <- IngestionLogToProcess{
-			ingestionLogID: id,
-			ingestionLog:   ingestionLog,
-			branchID:       result.BranchID,
 		}
 	}
 

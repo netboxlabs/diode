@@ -43,15 +43,10 @@ func testCompressBrotli(t *testing.T, data []byte) []byte {
 
 func TestHandleStreamMessage(t *testing.T) {
 	tests := []struct {
-		name              string
-		validMsg          bool
-		entities          []*diodepb.Entity
-		mockChangeSet     *changeset.ChangeSet
-		changeSetResponse *netboxdiodeplugin.ChangeSetResult
-		changeSetError    error
-		reconcilerError   bool
-		expectTruncate    bool
-		expectedError     bool
+		name          string
+		validMsg      bool
+		entities      []*diodepb.Entity
+		expectedError bool
 	}{
 		{
 			name:     "successful processing",
@@ -65,10 +60,7 @@ func TestHandleStreamMessage(t *testing.T) {
 					},
 				},
 			},
-			changeSetResponse: &netboxdiodeplugin.ChangeSetResult{},
-			reconcilerError:   false,
-			expectTruncate:    true,
-			expectedError:     false,
+			expectedError: false,
 		},
 		{
 			name:     "unmarshal error",
@@ -78,24 +70,7 @@ func TestHandleStreamMessage(t *testing.T) {
 					Entity: nil,
 				},
 			},
-			reconcilerError: false,
-			expectedError:   true,
-		},
-		{
-			name:     "reconcile error",
-			validMsg: true,
-			entities: []*diodepb.Entity{
-				{
-					Entity: &diodepb.Entity_Site{
-						Site: &diodepb.Site{
-							Name: "test-site-name",
-						},
-					},
-				},
-			},
-			changeSetResponse: &netboxdiodeplugin.ChangeSetResult{},
-			reconcilerError:   true,
-			expectedError:     false,
+			expectedError: true,
 		},
 		{
 			name:     "no entities",
@@ -105,56 +80,7 @@ func TestHandleStreamMessage(t *testing.T) {
 					Entity: nil,
 				},
 			},
-			changeSetResponse: &netboxdiodeplugin.ChangeSetResult{},
-			reconcilerError:   false,
-			expectedError:     false,
-		},
-		{
-			name:     "change set available",
-			validMsg: true,
-			entities: []*diodepb.Entity{
-				{
-					Entity: &diodepb.Entity_Site{
-						Site: &diodepb.Site{
-							Name: "test-site-name",
-						},
-					},
-				},
-			},
-			mockChangeSet: &changeset.ChangeSet{
-				ID:      "cs123",
-				Changes: []changeset.Change{},
-			},
-			changeSetResponse: &netboxdiodeplugin.ChangeSetResult{
-				ID: "cs123",
-			},
-			expectTruncate:  true,
-			reconcilerError: false,
-			expectedError:   false,
-		},
-		{
-			name:     "change set apply error",
-			validMsg: true,
-			entities: []*diodepb.Entity{
-				{
-					Entity: &diodepb.Entity_Site{
-						Site: &diodepb.Site{
-							Name: "test-site-name",
-						},
-					},
-				},
-			},
-			mockChangeSet: &changeset.ChangeSet{
-				ID:      "cs123",
-				Changes: []changeset.Change{},
-			},
-			changeSetResponse: &netboxdiodeplugin.ChangeSetResult{
-				ID: "cs123",
-			},
-			expectTruncate:  true,
-			changeSetError:  errors.New("apply error"),
-			reconcilerError: false,
-			expectedError:   false,
+			expectedError: false,
 		},
 	}
 
@@ -172,13 +98,9 @@ func TestHandleStreamMessage(t *testing.T) {
 				redisClient:       mockRedisClient,
 				redisStreamClient: mockRedisStreamClient,
 				logger:            logger,
-				Config: Config{
-					AutoApplyChangesets:          true,
-					GenerateChangeSetConcurrency: 1,
-					ApplyChangeSetConcurrency:    1,
-				},
-				ops:     NewOps(mockRepository, mockNbClient, logger, nil),
-				metrics: mockMetrics,
+				Config:            Config{},
+				ops:               NewOps(mockRepository, mockNbClient, logger, nil),
+				metrics:           mockMetrics,
 			}
 
 			request := redis.XMessage{}
@@ -207,28 +129,8 @@ func TestHandleStreamMessage(t *testing.T) {
 					},
 				}
 			}
-			// Mock GetDefaultBranch to return nil (no default branch)
 			mockNbClient.On("GetDefaultBranch", mock.Anything).Return((*netboxdiodeplugin.Branch)(nil), nil)
-
-			if tt.reconcilerError {
-				mockNbClient.On("GenerateDiff", mock.Anything, mock.Anything).Return(nil, errors.New("prepare error"))
-			} else {
-				mockNbClient.On("GenerateDiff", mock.Anything, mock.Anything).Return(&netboxdiodeplugin.ChangeSetResult{
-					ChangeSet: &netboxdiodeplugin.ChangeSet{
-						Changes: []netboxdiodeplugin.Change{
-							{
-								ID:         "00000000-0000-0000-0000-000000000000",
-								ChangeType: "create",
-								ObjectType: "dcim.site",
-								Data:       json.RawMessage(`{"name": "Site A"}`),
-							},
-						},
-					},
-				}, nil)
-			}
-			mockNbClient.On("ApplyChangeSet", mock.Anything, mock.Anything).Return(tt.changeSetResponse, tt.changeSetError)
 			if tt.entities[0].Entity != nil {
-				// Bulk path mocks
 				mockRepository.On("FindPriorIngestionLogsByEntityHashes", mock.Anything, mock.Anything, mock.Anything).Return(map[string]*ops.PriorIngestionLog{}, nil)
 				mockRepository.On("BulkCreateIngestionLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
 					func(_ context.Context, logs []*reconcilerpb.IngestionLog, _ [][]byte, _ []string) map[string]int32 {
@@ -238,36 +140,21 @@ func TestHandleStreamMessage(t *testing.T) {
 						}
 						return result
 					}, nil)
-				mockRepository.On("CreateChangeSet", mock.Anything, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
-				mockRepository.On("UpdateIngestionLogStateWithError", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
-			}
-			if tt.expectTruncate {
-				mockRepository.On("TruncateChangeSets", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 			}
 
 			mockRedisStreamClient.On("XAck", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(redis.NewIntCmd(ctx))
 			mockRedisStreamClient.On("XDel", mock.Anything, mock.Anything, mock.Anything).Return(redis.NewIntCmd(ctx))
 			mockMetrics.On("RecordHandleMessage", mock.Anything, mock.Anything).Return()
 
-			// Only expect these metrics calls if we have valid entities that will be processed
 			if tt.entities[0].Entity != nil {
 				mockMetrics.On("RecordIngestionLogCreate", mock.Anything, mock.Anything).Return()
-				mockMetrics.On("RecordChangeSetCreate", mock.Anything, mock.Anything, mock.Anything).Return()
-				if !tt.reconcilerError {
-					mockMetrics.On("RecordChangeSetApply", mock.Anything, mock.Anything, mock.Anything).Return()
-				}
 			}
 
-			allDone, err := p.handleStreamMessage(ctx, request)
+			err := p.handleStreamMessage(ctx, request)
 			if tt.expectedError {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
-			}
-			select {
-			case <-allDone:
-			case <-time.After(1 * time.Second):
-				require.Fail(t, "allDone channel did not close")
 			}
 
 			if tt.validMsg {
@@ -368,16 +255,11 @@ func TestHandleStreamMessageLegacyUncompressed(t *testing.T) {
 		redisClient:       mockRedisClient,
 		redisStreamClient: mockRedisStreamClient,
 		logger:            logger,
-		Config: Config{
-			AutoApplyChangesets:          true,
-			GenerateChangeSetConcurrency: 1,
-			ApplyChangeSetConcurrency:    1,
-		},
-		ops:     NewOps(mockRepository, mockNbClient, logger, nil),
-		metrics: mockMetrics,
+		Config:            Config{},
+		ops:               NewOps(mockRepository, mockNbClient, logger, nil),
+		metrics:           mockMetrics,
 	}
 
-	// Construct an uncompressed message (no "encoding" field) — legacy format
 	reqBytes, err := proto.Marshal(&diodepb.IngestRequest{
 		Id: "legacy-req",
 		Entities: []*diodepb.Entity{
@@ -399,11 +281,6 @@ func TestHandleStreamMessageLegacyUncompressed(t *testing.T) {
 	}
 
 	mockNbClient.On("GetDefaultBranch", mock.Anything).Return((*netboxdiodeplugin.Branch)(nil), nil)
-	mockNbClient.On("GenerateDiff", mock.Anything, mock.Anything).Return(&netboxdiodeplugin.ChangeSetResult{
-		ChangeSet: &netboxdiodeplugin.ChangeSet{
-			Changes: []netboxdiodeplugin.Change{},
-		},
-	}, nil)
 	mockRepository.On("FindPriorIngestionLogsByEntityHashes", mock.Anything, mock.Anything, mock.Anything).Return(map[string]*ops.PriorIngestionLog{}, nil)
 	mockRepository.On("BulkCreateIngestionLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
 		func(_ context.Context, logs []*reconcilerpb.IngestionLog, _ [][]byte, _ []string) map[string]int32 {
@@ -413,22 +290,13 @@ func TestHandleStreamMessageLegacyUncompressed(t *testing.T) {
 			}
 			return result
 		}, nil)
-	mockRepository.On("CreateChangeSet", mock.Anything, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
-	mockRepository.On("UpdateIngestionLogStateWithError", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mockRepository.On("TruncateChangeSets", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 	mockRedisStreamClient.On("XAck", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(redis.NewIntCmd(ctx))
 	mockRedisStreamClient.On("XDel", mock.Anything, mock.Anything, mock.Anything).Return(redis.NewIntCmd(ctx))
 	mockMetrics.On("RecordHandleMessage", mock.Anything, mock.Anything).Return()
 	mockMetrics.On("RecordIngestionLogCreate", mock.Anything, mock.Anything).Return()
-	mockMetrics.On("RecordChangeSetCreate", mock.Anything, mock.Anything, mock.Anything).Return()
 
-	allDone, err := p.handleStreamMessage(ctx, request)
+	err = p.handleStreamMessage(ctx, request)
 	require.NoError(t, err)
-	select {
-	case <-allDone:
-	case <-time.After(1 * time.Second):
-		require.Fail(t, "allDone channel did not close")
-	}
 
 	mockRepository.AssertExpectations(t)
 }
