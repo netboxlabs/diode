@@ -224,6 +224,20 @@ func main() {
 		os.Exit(1)
 	}
 
+	backpressure := func(ctx context.Context) bool {
+		xlen, err := redisStreamClient.XLen(ctx, reconciler.DefaultRedisStreamID).Result()
+		if err != nil {
+			return false
+		}
+		return xlen > cfg.IngestionLogProcessorBackpressureThreshold
+	}
+	ingestionLogProcessor := reconciler.NewIngestionLogProcessor(s.Logger(), cfg, repository, ops, metricRecorder, backpressure)
+	if err := s.RegisterComponent(ingestionLogProcessor); err != nil {
+		s.Logger().Error("failed to register ingestion log processor", "error", err)
+		metricRecorder.RecordServiceStartupAttempt(ctx, false)
+		os.Exit(1)
+	}
+
 	authorizer := authutil.NewContextAuthorizer(s.Logger())
 	gRPCServer, err := reconciler.NewServer(ctx, s.Logger(), repository, serverInterceptors(authorizer, s.Logger())...)
 	if err != nil {

@@ -38,6 +38,9 @@ type Config struct {
 	GenerateChangeSetConcurrency int `envconfig:"GENERATE_CHANGESET_CONCURRENCY" default:"4"`
 	ApplyChangeSetConcurrency    int `envconfig:"APPLY_CHANGESET_CONCURRENCY" default:"4"`
 
+	IngestionLogProcessorBatchSize             int32 `envconfig:"INGESTION_LOG_PROCESSOR_BATCH_SIZE" default:"100"`
+	IngestionLogProcessorBackpressureThreshold int64 `envconfig:"INGESTION_LOG_PROCESSOR_BACKPRESSURE_THRESHOLD" default:"100"`
+
 	// Experimental
 	EnableGraphDB bool `envconfig:"ENABLE_GRAPH_DB" default:"false"`
 

@@ -357,7 +357,6 @@ func (p *IngestionProcessor) ApplyChangeSet(ctx context.Context, applyChan <-cha
 
 // CreateIngestionLogs creates ingestion logs for an ingest request using bulk operations
 func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq *diodepb.IngestRequest, ingestionTs int) []error {
-
 	errs := make([]error, 0)
 
 	// Ensure the current default branch is retrieved
