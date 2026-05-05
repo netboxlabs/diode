@@ -234,18 +234,9 @@ func (o *Ops) BulkCreateIngestionLogs(ctx context.Context, ingestionLogs []*reco
 
 	// Bulk insert new logs
 	if len(newLogs) > 0 {
-		if _, err := o.repository.BulkCreateIngestionLogs(ctx, newLogs, newSourceMetadata, newEntityHashes); err != nil {
-			return nil, fmt.Errorf("failed to bulk create ingestion logs: %w", err)
-		}
-
-		// Fetch the auto-generated IDs
-		externalIDs := make([]string, len(newLogs))
-		for i, log := range newLogs {
-			externalIDs[i] = log.Id
-		}
-		idMap, err := o.repository.FindIngestionLogIDsByExternalIDs(ctx, externalIDs)
+		idMap, err := o.repository.BulkCreateIngestionLogs(ctx, newLogs, newSourceMetadata, newEntityHashes)
 		if err != nil {
-			return nil, fmt.Errorf("failed to fetch inserted ingestion log IDs: %w", err)
+			return nil, fmt.Errorf("failed to bulk create ingestion logs: %w", err)
 		}
 
 		for j, log := range newLogs {

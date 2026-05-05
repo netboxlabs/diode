@@ -230,12 +230,11 @@ func TestHandleStreamMessage(t *testing.T) {
 			if tt.entities[0].Entity != nil {
 				// Bulk path mocks
 				mockRepository.On("FindPriorIngestionLogsByEntityHashes", mock.Anything, mock.Anything, mock.Anything).Return(map[string]*ops.PriorIngestionLog{}, nil)
-				mockRepository.On("BulkCreateIngestionLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(int64(1), nil)
-				mockRepository.On("FindIngestionLogIDsByExternalIDs", mock.Anything, mock.Anything).Return(
-					func(_ context.Context, externalIDs []string) map[string]int32 {
-						result := make(map[string]int32, len(externalIDs))
-						for _, id := range externalIDs {
-							result[id] = 1
+				mockRepository.On("BulkCreateIngestionLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
+					func(_ context.Context, logs []*reconcilerpb.IngestionLog, _ [][]byte, _ []string) map[string]int32 {
+						result := make(map[string]int32, len(logs))
+						for _, log := range logs {
+							result[log.Id] = 1
 						}
 						return result
 					}, nil)
@@ -406,12 +405,11 @@ func TestHandleStreamMessageLegacyUncompressed(t *testing.T) {
 		},
 	}, nil)
 	mockRepository.On("FindPriorIngestionLogsByEntityHashes", mock.Anything, mock.Anything, mock.Anything).Return(map[string]*ops.PriorIngestionLog{}, nil)
-	mockRepository.On("BulkCreateIngestionLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(int64(1), nil)
-	mockRepository.On("FindIngestionLogIDsByExternalIDs", mock.Anything, mock.Anything).Return(
-		func(_ context.Context, externalIDs []string) map[string]int32 {
-			result := make(map[string]int32, len(externalIDs))
-			for _, id := range externalIDs {
-				result[id] = 1
+	mockRepository.On("BulkCreateIngestionLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
+		func(_ context.Context, logs []*reconcilerpb.IngestionLog, _ [][]byte, _ []string) map[string]int32 {
+			result := make(map[string]int32, len(logs))
+			for _, log := range logs {
+				result[log.Id] = 1
 			}
 			return result
 		}, nil)

@@ -12,6 +12,12 @@ INSERT INTO changes (external_id, change_set_id, change_type, object_type, objec
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 RETURNING *;
 
+-- name: BulkCreateChanges :copyfrom
+INSERT INTO changes (external_id, change_set_id, change_type, object_type, object_primary_value, object_id,
+                     ref_id, object_version, before, after, new_refs,
+                     sequence_number)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12);
+
 -- name: TruncateChangeSets :exec
 DELETE FROM change_sets cs1
 WHERE cs1.ingestion_log_id = $1
