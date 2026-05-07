@@ -20,6 +20,12 @@ type Config struct {
 	// field is added to the message. The reconciler auto-detects compressed vs raw messages.
 	CompressStreamMessages bool `envconfig:"COMPRESS_STREAM_MESSAGES" default:"true"`
 
+	// RedisMemoryHighWatermarkBytes, when > 0, causes the ingester to reject new
+	// Ingest requests with codes.ResourceExhausted once Redis used_memory crosses
+	// this threshold. Applied globally regardless of tenant/stream. Zero disables
+	// the check (current behavior). The value is checked at most once per second.
+	RedisMemoryHighWatermarkBytes int64 `envconfig:"REDIS_MEMORY_HIGH_WATERMARK_BYTES" default:"0"`
+
 	RedisTLS  tls.Config       `envconfig:"REDIS_TLS"`
 	Telemetry telemetry.Config `envconfig:"TELEMETRY"`
 }

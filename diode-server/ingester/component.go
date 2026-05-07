@@ -7,6 +7,9 @@ import (
 	"log/slog"
 	"net"
 	"os"
+	"strconv"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/andybalholm/brotli"
@@ -25,6 +28,11 @@ import (
 	"github.com/netboxlabs/diode/diode-server/telemetry"
 )
 
+// redisMemoryCheckInterval bounds how often we hit Redis with INFO memory.
+// The watermark check is only as fresh as this interval; bursts within it
+// are admitted on the previously-cached value.
+const redisMemoryCheckInterval = time.Second
+
 // Component asynchronously ingests data from the distributor
 type Component struct {
 	diodepb.UnimplementedIngesterServiceServer
@@ -38,6 +46,10 @@ type Component struct {
 	redisStreamClient *redis.Client
 	metrics           Metrics
 	streamRouter      StreamRouter
+
+	memCheckMu    sync.Mutex
+	memUsedBytes  int64
+	memCheckedAt  time.Time
 }
 
 // StreamRouter is an interface for determining the stream ID to add ingested data into
@@ -118,6 +130,13 @@ func (c *Component) Ingest(ctx context.Context, in *diodepb.IngestRequest) (*dio
 		attribute.String(telemetry.AttributeProducerAppVersion, in.ProducerAppVersion),
 	}
 	ctx = telemetry.ContextWithMetricAttributes(ctx, attrs...)
+
+	// Reject early when Redis is over the configured high-watermark so SDK
+	// retries push backpressure to producers instead of OOM-crashing Redis.
+	if err := c.checkRedisMemoryWatermark(ctx); err != nil {
+		c.metrics.RecordIngestRequest(ctx, false)
+		return nil, err
+	}
 
 	if err := validateRequest(in); err != nil {
 		c.metrics.RecordIngestRequest(ctx, false)
@@ -225,6 +244,62 @@ func validateRequest(in *diodepb.IngestRequest) error {
 	}
 
 	return nil
+}
+
+// checkRedisMemoryWatermark returns codes.ResourceExhausted when Redis
+// used_memory is at or above the configured high-watermark. Disabled when
+// the threshold is <= 0. The Redis INFO call is rate-limited to once per
+// redisMemoryCheckInterval; INFO failures fail-open (admit the request)
+// to avoid turning a transient Redis hiccup into a hard outage.
+func (c *Component) checkRedisMemoryWatermark(ctx context.Context) error {
+	threshold := c.config.RedisMemoryHighWatermarkBytes
+	if threshold <= 0 {
+		return nil
+	}
+
+	c.memCheckMu.Lock()
+	defer c.memCheckMu.Unlock()
+
+	if time.Since(c.memCheckedAt) >= redisMemoryCheckInterval {
+		used, err := readRedisUsedMemory(ctx, c.redisStreamClient)
+		if err != nil {
+			c.logger.Warn("failed to read Redis memory; skipping watermark check", "error", err)
+			c.memCheckedAt = time.Now()
+			c.memUsedBytes = 0
+			return nil
+		}
+		c.memUsedBytes = used
+		c.memCheckedAt = time.Now()
+	}
+
+	if c.memUsedBytes >= threshold {
+		c.logger.Warn("rejecting ingest: Redis memory above high-watermark",
+			"used_bytes", c.memUsedBytes, "threshold_bytes", threshold)
+		return status.Errorf(codes.ResourceExhausted,
+			"redis memory above high-watermark (%d >= %d bytes)", c.memUsedBytes, threshold)
+	}
+	return nil
+}
+
+// readRedisUsedMemory issues INFO memory and parses the used_memory line.
+func readRedisUsedMemory(ctx context.Context, client *redis.Client) (int64, error) {
+	out, err := client.Info(ctx, "memory").Result()
+	if err != nil {
+		return 0, err
+	}
+	return parseUsedMemory(out)
+}
+
+// parseUsedMemory extracts the used_memory:<int> line from Redis INFO output.
+func parseUsedMemory(info string) (int64, error) {
+	for _, line := range strings.Split(info, "\n") {
+		rest, ok := strings.CutPrefix(strings.TrimSpace(line), "used_memory:")
+		if !ok {
+			continue
+		}
+		return strconv.ParseInt(strings.TrimSpace(rest), 10, 64)
+	}
+	return 0, fmt.Errorf("used_memory not found in INFO output")
 }
 
 func compressBrotli(data []byte) ([]byte, error) {
