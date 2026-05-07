@@ -63,6 +63,42 @@ func Diff(ctx context.Context, entity IngestEntity, branchID string, netboxAPI n
 	return cs, nil
 }
 
+// ConvertBulkPlanResult converts a single BulkPlanResult to a changeset.ChangeSet.
+// Returns nil changeset if the result contains errors.
+func ConvertBulkPlanResult(result netboxdiodeplugin.BulkPlanResult, objectType string) (*changeset.ChangeSet, error) {
+	if len(result.Errors) > 0 && string(result.Errors) != "null" {
+		return nil, fmt.Errorf("bulk plan error for entity %s: %s", result.ID, string(result.Errors))
+	}
+
+	if result.ChangeSet == nil {
+		return nil, fmt.Errorf("no change set returned for entity %s", result.ID)
+	}
+
+	changes := make([]changeset.Change, 0, len(result.ChangeSet.Changes))
+	for _, change := range result.ChangeSet.Changes {
+		changes = append(changes, changeset.Change{
+			ID:                 change.ID,
+			ChangeType:         change.ChangeType,
+			ObjectType:         change.ObjectType,
+			ObjectID:           change.ObjectID,
+			ObjectVersion:      change.ObjectVersion,
+			RefID:              change.RefID,
+			ObjectPrimaryValue: change.ObjectPrimaryValue,
+			After:              change.Data,
+			Before:             change.Before,
+			NewRefs:            change.NewRefs,
+		})
+	}
+
+	deviationName := genDeviationName(changes, objectType)
+	cs := &changeset.ChangeSet{ID: result.ChangeSet.ID, Changes: changes, DeviationName: deviationName}
+	if result.ChangeSet.Branch != nil {
+		branchID := fmt.Sprintf("%s (%s)", result.ChangeSet.Branch.Name, result.ChangeSet.Branch.ID)
+		cs.BranchID = &branchID
+	}
+	return cs, nil
+}
+
 // FindPrimaryChange attempts to find the earliest change that refers to the primary object.
 func FindPrimaryChange(changes []changeset.Change, objectType string) *changeset.Change {
 	// The main complexity is that there is no identifier that binds the entities to the

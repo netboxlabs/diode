@@ -81,24 +81,6 @@ func (p *IngestionLogProcessor) Stop() error {
 }
 
 func (p *IngestionLogProcessor) pollLoop(ctx context.Context) error {
-	concurrency := max(p.config.GenerateChangeSetConcurrency, 1)
-	work := make(chan ops.QueuedIngestionLog, p.batchSize)
-
-	var wg sync.WaitGroup
-	wg.Add(concurrency)
-	for range concurrency {
-		go func() {
-			defer wg.Done()
-			for item := range work {
-				p.processItem(ctx, item)
-			}
-		}()
-	}
-	defer func() {
-		close(work)
-		wg.Wait()
-	}()
-
 	for {
 		select {
 		case <-ctx.Done():
@@ -136,13 +118,7 @@ func (p *IngestionLogProcessor) pollLoop(ctx context.Context) error {
 			}
 		}
 
-		for _, item := range batch {
-			select {
-			case work <- item:
-			case <-ctx.Done():
-				return nil
-			}
-		}
+		p.processBatch(ctx, batch)
 
 		if len(batch) < int(p.batchSize) {
 			select {
@@ -154,39 +130,44 @@ func (p *IngestionLogProcessor) pollLoop(ctx context.Context) error {
 	}
 }
 
-func (p *IngestionLogProcessor) processItem(ctx context.Context, item ops.QueuedIngestionLog) {
-	attrs := []attribute.KeyValue{
-		attribute.String(telemetry.AttributeSDKName, item.IngestionLog.GetSdkName()),
-		attribute.String(telemetry.AttributeProducerAppName, item.IngestionLog.GetProducerAppName()),
-	}
-	ctx = telemetry.ContextWithMetricAttributes(ctx, attrs...)
-
+func (p *IngestionLogProcessor) processBatch(ctx context.Context, batch []ops.QueuedIngestionLog) {
 	branchID := ""
 	if branch, err := p.ops.DefaultBranch(ctx); err == nil && branch != nil {
 		branchID = branch.ID
 	}
 
-	changeSetID, changeSet, err := p.ops.GenerateChangeSet(ctx, item.ID, item.IngestionLog, branchID)
-	if err != nil {
-		p.logger.Error("error generating changeset", "error", err, "ingestionLogID", item.ID)
-		p.metrics.RecordChangeSetCreate(ctx, false, 0)
-		return
-	}
-	if changeSet != nil {
-		p.metrics.RecordChangeSetCreate(ctx, true, int64(len(changeSet.Changes)))
-	}
+	results := p.ops.BulkGenerateChangeSets(ctx, batch, branchID)
 
-	if !p.config.AutoApplyChangesets {
-		return
-	}
-	if changeSet == nil || len(changeSet.Changes) == 0 || changeSetID == nil {
-		return
-	}
+	for i, result := range results {
+		item := batch[i]
 
-	if err := p.ops.ApplyChangeSet(ctx, item.ID, item.IngestionLog, *changeSetID, changeSet); err != nil {
-		p.logger.Error("error applying changeset", "error", err, "ingestionLogID", item.ID)
-		p.metrics.RecordChangeSetApply(ctx, false, 0)
-		return
+		attrs := []attribute.KeyValue{
+			attribute.String(telemetry.AttributeSDKName, item.IngestionLog.GetSdkName()),
+			attribute.String(telemetry.AttributeProducerAppName, item.IngestionLog.GetProducerAppName()),
+		}
+		metricsCtx := telemetry.ContextWithMetricAttributes(ctx, attrs...)
+
+		if result.Err != nil {
+			p.logger.Error("error generating changeset", "error", result.Err, "ingestionLogID", item.ID)
+			p.metrics.RecordChangeSetCreate(metricsCtx, false, 0)
+			continue
+		}
+		if result.ChangeSet != nil {
+			p.metrics.RecordChangeSetCreate(metricsCtx, true, int64(len(result.ChangeSet.Changes)))
+		}
+
+		if !p.config.AutoApplyChangesets {
+			continue
+		}
+		if result.ChangeSet == nil || len(result.ChangeSet.Changes) == 0 || result.ChangeSetID == nil {
+			continue
+		}
+
+		if err := p.ops.ApplyChangeSet(ctx, item.ID, item.IngestionLog, *result.ChangeSetID, result.ChangeSet); err != nil {
+			p.logger.Error("error applying changeset", "error", err, "ingestionLogID", item.ID)
+			p.metrics.RecordChangeSetApply(metricsCtx, false, 0)
+			continue
+		}
+		p.metrics.RecordChangeSetApply(metricsCtx, true, int64(len(result.ChangeSet.Changes)))
 	}
-	p.metrics.RecordChangeSetApply(ctx, true, int64(len(changeSet.Changes)))
 }

@@ -1,6 +1,9 @@
 package ops
 
-import "github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
+import (
+	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
+	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
+)
 
 // CreateIngestionLogResult represents the result of creating an ingestion log.
 type CreateIngestionLogResult struct {
@@ -20,4 +23,12 @@ type PriorIngestionLog struct {
 type QueuedIngestionLog struct {
 	ID           int32
 	IngestionLog *reconcilerpb.IngestionLog
+}
+
+// BulkGenerateChangeSetResult holds the result of generating a change set for a single item in a bulk operation.
+type BulkGenerateChangeSetResult struct {
+	IngestionLogID int32
+	ChangeSetID    *int32
+	ChangeSet      *changeset.ChangeSet
+	Err            error
 }

@@ -338,6 +338,118 @@ func (o *Ops) GenerateChangeSet(ctx context.Context, ingestionLogID int32, inges
 	return changeSetID, changeSet, nil
 }
 
+// BulkGenerateChangeSets generates change sets for a batch of ingestion logs using a single BulkPlan HTTP call.
+func (o *Ops) BulkGenerateChangeSets(ctx context.Context, items []ops.QueuedIngestionLog, branchID string) []ops.BulkGenerateChangeSetResult {
+	results := make([]ops.BulkGenerateChangeSetResult, len(items))
+
+	entities := make([]netboxdiodeplugin.BulkPlanEntity, len(items))
+	for i, item := range items {
+		entity := item.IngestionLog.GetEntity()
+		entities[i] = netboxdiodeplugin.BulkPlanEntity{
+			ID:         fmt.Sprintf("%d", item.ID),
+			ObjectType: item.IngestionLog.GetObjectType(),
+			Entity:     entity,
+		}
+	}
+
+	bulkResp, bulkErr := o.nbClient.BulkPlan(ctx, netboxdiodeplugin.BulkPlanRequest{
+		Entities: entities,
+		BranchID: branchID,
+	})
+
+	if bulkErr != nil {
+		for i, item := range items {
+			results[i] = o.handleGenerateChangeSetFailure(ctx, item, branchID, bulkErr)
+		}
+		return results
+	}
+
+	resultByID := make(map[string]netboxdiodeplugin.BulkPlanResult, len(bulkResp.Results))
+	for _, r := range bulkResp.Results {
+		resultByID[r.ID] = r
+	}
+
+	for i, item := range items {
+		entityID := fmt.Sprintf("%d", item.ID)
+		planResult, found := resultByID[entityID]
+		if !found {
+			results[i] = o.handleGenerateChangeSetFailure(ctx, item, branchID, fmt.Errorf("no result returned for ingestion log %d", item.ID))
+			continue
+		}
+
+		cs, err := differ.ConvertBulkPlanResult(planResult, item.IngestionLog.GetObjectType())
+		if err != nil {
+			results[i] = o.handleGenerateChangeSetFailure(ctx, item, branchID, err)
+			continue
+		}
+
+		results[i] = o.persistChangeSet(ctx, item.ID, item.IngestionLog, cs)
+	}
+
+	return results
+}
+
+func (o *Ops) handleGenerateChangeSetFailure(ctx context.Context, item ops.QueuedIngestionLog, branchID string, err error) ops.BulkGenerateChangeSetResult {
+	ingestEntity := differ.IngestEntity{
+		RequestID:  item.IngestionLog.GetRequestId(),
+		ObjectType: item.IngestionLog.GetObjectType(),
+		Entity:     item.IngestionLog.GetEntity(),
+		State:      int(item.IngestionLog.GetState()),
+	}
+
+	tags := map[string]string{"request_id": ingestEntity.RequestID}
+	contextMap := map[string]any{"request_id": ingestEntity.RequestID, "object_type": ingestEntity.ObjectType}
+	sentry.CaptureError(err, tags, "Ingest Entity", contextMap)
+
+	item.IngestionLog.State = reconcilerpb.State_FAILED
+	changeSetErr := handleChangeSetError(err)
+	if err2 := o.repository.UpdateIngestionLogStateWithError(ctx, item.ID, reconcilerpb.State_FAILED, changeSetErr); err2 != nil {
+		err = errors.Join(err, err2)
+	}
+
+	cs := differ.FailedDiffChangeSet(ingestEntity, branchID)
+	id, err1 := o.repository.CreateChangeSet(ctx, *cs, item.ID)
+	if err1 != nil {
+		o.logger.Error("error creating failure placeholder change set", "ingestionLogID", item.ID)
+		return ops.BulkGenerateChangeSetResult{IngestionLogID: item.ID, Err: errors.Join(err, err1)}
+	}
+
+	return ops.BulkGenerateChangeSetResult{IngestionLogID: item.ID, ChangeSetID: id, ChangeSet: cs, Err: err}
+}
+
+func (o *Ops) persistChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, cs *changeset.ChangeSet) ops.BulkGenerateChangeSetResult {
+	if len(cs.Changes) == 0 && (ingestionLog.State == reconcilerpb.State_NO_CHANGES || ingestionLog.State == reconcilerpb.State_APPLIED) {
+		if err := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, ingestionLog.State, nil); err != nil {
+			o.logger.Error("failed to update ingestion log state (error ignored)", "ingestionLogID", ingestionLogID, "error", err)
+		}
+		return ops.BulkGenerateChangeSetResult{IngestionLogID: ingestionLogID, ChangeSet: cs}
+	}
+
+	changeSetID, err := o.repository.CreateChangeSet(ctx, *cs, ingestionLogID)
+	if err != nil {
+		return ops.BulkGenerateChangeSetResult{IngestionLogID: ingestionLogID, Err: err}
+	}
+
+	maxChangeSets := o.limits.MaxChangeSetsPerIngestionLog()
+	if maxChangeSets > 0 {
+		if err := o.repository.TruncateChangeSets(ctx, ingestionLogID, maxChangeSets); err != nil {
+			o.logger.Error("failed to truncate change sets (error ignored)", "ingestionLogID", ingestionLogID, "error", err)
+		}
+	}
+
+	if len(cs.Changes) > 0 {
+		ingestionLog.State = reconcilerpb.State_OPEN
+	} else {
+		ingestionLog.State = reconcilerpb.State_NO_CHANGES
+	}
+	if err := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, ingestionLog.State, nil); err != nil {
+		o.logger.Error("failed to update ingestion log state (error ignored)", "ingestionLogID", ingestionLogID, "error", err)
+	}
+
+	o.logger.Debug("change set generated", "id", changeSetID, "externalID", cs.ID, "ingestionLogID", ingestionLogID)
+	return ops.BulkGenerateChangeSetResult{IngestionLogID: ingestionLogID, ChangeSetID: changeSetID, ChangeSet: cs}
+}
+
 // ApplyChangeSet applies change set to NetBox and updates related states
 func (o *Ops) ApplyChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, changeSetID int32, changeSet *changeset.ChangeSet) error {
 	if err := applier.ApplyChangeSet(ctx, o.logger, *changeSet, o.nbClient); err != nil {

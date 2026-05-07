@@ -266,6 +266,9 @@ type NetBoxAPI interface {
 	// GenerateDiff generates diff between ingested entity and NetBox object state
 	GenerateDiff(context.Context, GenerateDiffRequest) (*ChangeSetResult, error)
 
+	// BulkPlan generates diffs for multiple entities in a single request
+	BulkPlan(context.Context, BulkPlanRequest) (*BulkPlanResponse, error)
+
 	// ApplyChangeSet applies a change set
 	ApplyChangeSet(context.Context, ApplyChangeSetRequest) (*ChangeSetResult, error)
 
@@ -353,6 +356,97 @@ func (c *Client) GenerateDiff(ctx context.Context, payload GenerateDiffRequest) 
 	}
 
 	return &changeSetResult, nil
+}
+
+// BulkPlanEntity represents a single entity in a bulk plan request
+type BulkPlanEntity struct {
+	ID         string          `json:"id"`
+	ObjectType string          `json:"object_type"`
+	BranchID   string          `json:"-"`
+	Entity     proto.Message   `json:"-"`
+	EntityJSON json.RawMessage `json:"entity"`
+}
+
+// BulkPlanRequest represents a bulk plan request
+type BulkPlanRequest struct {
+	Entities []BulkPlanEntity `json:"entities"`
+	BranchID string           `json:"-"`
+}
+
+// BulkPlanResult represents a single entity result in a bulk plan response
+type BulkPlanResult struct {
+	ID        string          `json:"id"`
+	ChangeSet *ChangeSet      `json:"change_set"`
+	Errors    json.RawMessage `json:"errors"`
+}
+
+// BulkPlanResponse represents the response from the bulk plan endpoint
+type BulkPlanResponse struct {
+	Results []BulkPlanResult `json:"results"`
+}
+
+// BulkPlan generates diffs for multiple entities in a single request
+func (c *Client) BulkPlan(ctx context.Context, payload BulkPlanRequest) (*BulkPlanResponse, error) {
+	endpointURL, err := url.Parse(fmt.Sprintf("%s/bulk-plan/", c.baseURL.String()))
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range payload.Entities {
+		if payload.Entities[i].Entity != nil {
+			payload.Entities[i].EntityJSON, err = protoToJSON(payload.Entities[i].Entity)
+			if err != nil {
+				return nil, fmt.Errorf("marshaling entity %s: %w", payload.Entities[i].ID, err)
+			}
+		}
+	}
+
+	reqBody, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := c.limiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpointURL.String(), bytes.NewBuffer(reqBody))
+	if err != nil {
+		return nil, err
+	}
+
+	branchID := strings.TrimSpace(payload.BranchID)
+	if branchID != "" {
+		req.Header.Set(NetBoxBranchHeader, branchID)
+	}
+
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			c.logger.Warn("failed to close response body", "error", closeErr)
+		}
+	}()
+
+	respBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	c.logger.Debug("bulk plan", "statusCode", resp.StatusCode, "response", string(respBytes))
+
+	if resp.StatusCode >= http.StatusBadRequest {
+		return nil, changeset.NewError("bulk plan failed", diodeErrors.ErrCodeOpsGenerateDiff, respBytes)
+	}
+
+	var bulkPlanResponse BulkPlanResponse
+	if err = json.Unmarshal(respBytes, &bulkPlanResponse); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response body: %w", err)
+	}
+
+	return &bulkPlanResponse, nil
 }
 
 // ApplyChangeSetRequest represents a apply change set request

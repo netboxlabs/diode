@@ -140,6 +140,56 @@ func (_c *IngestionProcessorOps_BulkCreateIngestionLogs_Call) RunAndReturn(run f
 	return _c
 }
 
+// BulkGenerateChangeSets provides a mock function with given fields: ctx, items, branchID
+func (_m *IngestionProcessorOps) BulkGenerateChangeSets(ctx context.Context, items []ops.QueuedIngestionLog, branchID string) []ops.BulkGenerateChangeSetResult {
+	ret := _m.Called(ctx, items, branchID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for BulkGenerateChangeSets")
+	}
+
+	var r0 []ops.BulkGenerateChangeSetResult
+	if rf, ok := ret.Get(0).(func(context.Context, []ops.QueuedIngestionLog, string) []ops.BulkGenerateChangeSetResult); ok {
+		r0 = rf(ctx, items, branchID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]ops.BulkGenerateChangeSetResult)
+		}
+	}
+
+	return r0
+}
+
+// IngestionProcessorOps_BulkGenerateChangeSets_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BulkGenerateChangeSets'
+type IngestionProcessorOps_BulkGenerateChangeSets_Call struct {
+	*mock.Call
+}
+
+// BulkGenerateChangeSets is a helper method to define mock.On call
+//   - ctx context.Context
+//   - items []ops.QueuedIngestionLog
+//   - branchID string
+func (_e *IngestionProcessorOps_Expecter) BulkGenerateChangeSets(ctx interface{}, items interface{}, branchID interface{}) *IngestionProcessorOps_BulkGenerateChangeSets_Call {
+	return &IngestionProcessorOps_BulkGenerateChangeSets_Call{Call: _e.mock.On("BulkGenerateChangeSets", ctx, items, branchID)}
+}
+
+func (_c *IngestionProcessorOps_BulkGenerateChangeSets_Call) Run(run func(ctx context.Context, items []ops.QueuedIngestionLog, branchID string)) *IngestionProcessorOps_BulkGenerateChangeSets_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].([]ops.QueuedIngestionLog), args[2].(string))
+	})
+	return _c
+}
+
+func (_c *IngestionProcessorOps_BulkGenerateChangeSets_Call) Return(_a0 []ops.BulkGenerateChangeSetResult) *IngestionProcessorOps_BulkGenerateChangeSets_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *IngestionProcessorOps_BulkGenerateChangeSets_Call) RunAndReturn(run func(context.Context, []ops.QueuedIngestionLog, string) []ops.BulkGenerateChangeSetResult) *IngestionProcessorOps_BulkGenerateChangeSets_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CreateIngestionLog provides a mock function with given fields: ctx, ingestionLog, sourceMetadata
 func (_m *IngestionProcessorOps) CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb.IngestionLog, sourceMetadata []byte) (*ops.CreateIngestionLogResult, error) {
 	ret := _m.Called(ctx, ingestionLog, sourceMetadata)

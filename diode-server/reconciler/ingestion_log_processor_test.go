@@ -116,8 +116,10 @@ func TestIngestionLogProcessor_ProcessesItems(t *testing.T) {
 		Return([]ops.QueuedIngestionLog{}, nil).Maybe()
 
 	mockOps.On("DefaultBranch", mock.Anything).Return(nil, nil).Maybe()
-	mockOps.On("GenerateChangeSet", mock.Anything, int32(1), ingestionLog, "").Return(csID, cs, nil).Once()
-	mockOps.On("GenerateChangeSet", mock.Anything, int32(2), ingestionLog, "").Return(csID, cs, nil).Once()
+	mockOps.On("BulkGenerateChangeSets", mock.Anything, batch, "").Return([]ops.BulkGenerateChangeSetResult{
+		{IngestionLogID: 1, ChangeSetID: csID, ChangeSet: cs},
+		{IngestionLogID: 2, ChangeSetID: csID, ChangeSet: cs},
+	}).Once()
 	mockMetrics.On("RecordChangeSetCreate", mock.Anything, true, int64(1)).Times(2)
 
 	cfg := reconciler.Config{AutoApplyChangesets: true}
@@ -171,8 +173,9 @@ func TestIngestionLogProcessor_GenerateChangeSetError(t *testing.T) {
 		Return([]ops.QueuedIngestionLog{}, nil).Maybe()
 
 	mockOps.On("DefaultBranch", mock.Anything).Return(nil, nil).Maybe()
-	mockOps.On("GenerateChangeSet", mock.Anything, int32(1), ingestionLog, "").
-		Return(nil, nil, errors.New("netbox error")).Once()
+	mockOps.On("BulkGenerateChangeSets", mock.Anything, batch, "").Return([]ops.BulkGenerateChangeSetResult{
+		{IngestionLogID: 1, Err: errors.New("netbox error")},
+	}).Once()
 	mockMetrics.On("RecordChangeSetCreate", mock.Anything, false, int64(0)).Once()
 
 	p := reconciler.NewIngestionLogProcessor(newIngestionLogProcessorTestLogger(), reconciler.Config{}, repo, mockOps, mockMetrics, nil)
@@ -214,7 +217,9 @@ func TestIngestionLogProcessor_ApplyChangeSetError(t *testing.T) {
 		Return([]ops.QueuedIngestionLog{}, nil).Maybe()
 
 	mockOps.On("DefaultBranch", mock.Anything).Return(nil, nil).Maybe()
-	mockOps.On("GenerateChangeSet", mock.Anything, int32(1), ingestionLog, "").Return(csID, cs, nil).Once()
+	mockOps.On("BulkGenerateChangeSets", mock.Anything, batch, "").Return([]ops.BulkGenerateChangeSetResult{
+		{IngestionLogID: 1, ChangeSetID: csID, ChangeSet: cs},
+	}).Once()
 	mockMetrics.On("RecordChangeSetCreate", mock.Anything, true, int64(1)).Once()
 
 	mockOps.On("ApplyChangeSet", mock.Anything, int32(1), ingestionLog, int32(10), cs).
@@ -261,7 +266,9 @@ func TestIngestionLogProcessor_SkipsApplyWhenDisabled(t *testing.T) {
 		Return([]ops.QueuedIngestionLog{}, nil).Maybe()
 
 	mockOps.On("DefaultBranch", mock.Anything).Return(nil, nil).Maybe()
-	mockOps.On("GenerateChangeSet", mock.Anything, int32(1), ingestionLog, "").Return(csID, cs, nil).Once()
+	mockOps.On("BulkGenerateChangeSets", mock.Anything, batch, "").Return([]ops.BulkGenerateChangeSetResult{
+		{IngestionLogID: 1, ChangeSetID: csID, ChangeSet: cs},
+	}).Once()
 	mockMetrics.On("RecordChangeSetCreate", mock.Anything, true, int64(1)).Once()
 
 	cfg := reconciler.Config{AutoApplyChangesets: false}
@@ -330,7 +337,9 @@ func TestIngestionLogProcessor_BackpressureReleasedResumesProcessing(t *testing.
 		Return([]ops.QueuedIngestionLog{}, nil).Maybe()
 
 	mockOps.On("DefaultBranch", mock.Anything).Return(nil, nil).Maybe()
-	mockOps.On("GenerateChangeSet", mock.Anything, int32(1), ingestionLog, "").Return(nil, nil, nil).Once()
+	mockOps.On("BulkGenerateChangeSets", mock.Anything, batch, "").Return([]ops.BulkGenerateChangeSetResult{
+		{IngestionLogID: 1},
+	}).Once()
 
 	p := reconciler.NewIngestionLogProcessor(newIngestionLogProcessorTestLogger(), reconciler.Config{}, repo, mockOps, mockMetrics, backpressure)
 
