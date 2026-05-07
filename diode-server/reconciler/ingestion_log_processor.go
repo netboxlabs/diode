@@ -81,6 +81,25 @@ func (p *IngestionLogProcessor) Stop() error {
 }
 
 func (p *IngestionLogProcessor) pollLoop(ctx context.Context) error {
+	concurrency := max(p.config.IngestionLogProcessorConcurrency, 1)
+
+	if concurrency == 1 {
+		return p.pollWorker(ctx)
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(concurrency)
+	for range concurrency {
+		go func() {
+			defer wg.Done()
+			_ = p.pollWorker(ctx)
+		}()
+	}
+	wg.Wait()
+	return nil
+}
+
+func (p *IngestionLogProcessor) pollWorker(ctx context.Context) error {
 	for {
 		select {
 		case <-ctx.Done():
