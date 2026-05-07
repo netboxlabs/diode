@@ -47,9 +47,10 @@ type Component struct {
 	metrics           Metrics
 	streamRouter      StreamRouter
 
-	memCheckMu    sync.Mutex
-	memUsedBytes  int64
-	memCheckedAt  time.Time
+	memCheckMu     sync.Mutex
+	memUsedBytes   int64
+	memMaxBytes    int64
+	memCheckedAt   time.Time
 }
 
 // StreamRouter is an interface for determining the stream ID to add ingested data into
@@ -247,13 +248,14 @@ func validateRequest(in *diodepb.IngestRequest) error {
 }
 
 // checkRedisMemoryWatermark returns codes.ResourceExhausted when Redis
-// used_memory is at or above the configured high-watermark. Disabled when
-// the threshold is <= 0. The Redis INFO call is rate-limited to once per
-// redisMemoryCheckInterval; INFO failures fail-open (admit the request)
-// to avoid turning a transient Redis hiccup into a hard outage.
+// used_memory is at or above the configured percentage of maxmemory.
+// Disabled when the threshold is <= 0. The Redis INFO call is rate-limited
+// to once per redisMemoryCheckInterval. Two fail-open conditions admit the
+// request: INFO errors (so a transient Redis hiccup is not a hard outage)
+// and maxmemory=0 (unlimited Redis — percentage is meaningless).
 func (c *Component) checkRedisMemoryWatermark(ctx context.Context) error {
-	threshold := c.config.RedisMemoryHighWatermarkBytes
-	if threshold <= 0 {
+	pct := c.config.RedisMemoryHighWatermarkPct
+	if pct <= 0 {
 		return nil
 	}
 
@@ -261,45 +263,72 @@ func (c *Component) checkRedisMemoryWatermark(ctx context.Context) error {
 	defer c.memCheckMu.Unlock()
 
 	if time.Since(c.memCheckedAt) >= redisMemoryCheckInterval {
-		used, err := readRedisUsedMemory(ctx, c.redisStreamClient)
+		used, max, err := readRedisMemory(ctx, c.redisStreamClient)
 		if err != nil {
 			c.logger.Warn("failed to read Redis memory; skipping watermark check", "error", err)
 			c.memCheckedAt = time.Now()
 			c.memUsedBytes = 0
+			c.memMaxBytes = 0
 			return nil
 		}
 		c.memUsedBytes = used
+		c.memMaxBytes = max
 		c.memCheckedAt = time.Now()
 	}
 
-	if c.memUsedBytes >= threshold {
+	if c.memMaxBytes <= 0 {
+		c.logger.Warn("Redis maxmemory is 0 (unlimited); high-watermark check has no effect")
+		return nil
+	}
+
+	// Integer compare: used/max >= pct/100  <=>  used*100 >= max*pct
+	if c.memUsedBytes*100 >= c.memMaxBytes*int64(pct) {
 		c.logger.Warn("rejecting ingest: Redis memory above high-watermark",
-			"used_bytes", c.memUsedBytes, "threshold_bytes", threshold)
+			"used_bytes", c.memUsedBytes, "max_bytes", c.memMaxBytes, "threshold_pct", pct)
 		return status.Errorf(codes.ResourceExhausted,
-			"redis memory above high-watermark (%d >= %d bytes)", c.memUsedBytes, threshold)
+			"redis memory above high-watermark (%d/%d bytes >= %d%%)",
+			c.memUsedBytes, c.memMaxBytes, pct)
 	}
 	return nil
 }
 
-// readRedisUsedMemory issues INFO memory and parses the used_memory line.
-func readRedisUsedMemory(ctx context.Context, client *redis.Client) (int64, error) {
+// readRedisMemory issues INFO memory and parses the used_memory and maxmemory lines.
+func readRedisMemory(ctx context.Context, client *redis.Client) (used, max int64, err error) {
 	out, err := client.Info(ctx, "memory").Result()
 	if err != nil {
-		return 0, err
+		return 0, 0, err
 	}
-	return parseUsedMemory(out)
+	return parseMemory(out)
 }
 
-// parseUsedMemory extracts the used_memory:<int> line from Redis INFO output.
-func parseUsedMemory(info string) (int64, error) {
+// parseMemory extracts used_memory and maxmemory from Redis INFO output.
+// Returns an error if used_memory is missing; maxmemory defaults to 0 if
+// absent (Redis omits it when no limit is configured).
+func parseMemory(info string) (used, max int64, err error) {
+	usedFound := false
 	for _, line := range strings.Split(info, "\n") {
-		rest, ok := strings.CutPrefix(strings.TrimSpace(line), "used_memory:")
-		if !ok {
+		line = strings.TrimSpace(line)
+		if rest, ok := strings.CutPrefix(line, "used_memory:"); ok {
+			v, parseErr := strconv.ParseInt(strings.TrimSpace(rest), 10, 64)
+			if parseErr != nil {
+				return 0, 0, parseErr
+			}
+			used = v
+			usedFound = true
 			continue
 		}
-		return strconv.ParseInt(strings.TrimSpace(rest), 10, 64)
+		if rest, ok := strings.CutPrefix(line, "maxmemory:"); ok {
+			v, parseErr := strconv.ParseInt(strings.TrimSpace(rest), 10, 64)
+			if parseErr != nil {
+				return 0, 0, parseErr
+			}
+			max = v
+		}
 	}
-	return 0, fmt.Errorf("used_memory not found in INFO output")
+	if !usedFound {
+		return 0, 0, fmt.Errorf("used_memory not found in INFO output")
+	}
+	return used, max, nil
 }
 
 func compressBrotli(data []byte) ([]byte, error) {
