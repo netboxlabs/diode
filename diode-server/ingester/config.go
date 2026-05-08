@@ -38,6 +38,14 @@ type Config struct {
 	// each successful poll, so its freshness tracks this interval.
 	RedisMemoryCheckInterval time.Duration `envconfig:"REDIS_MEMORY_CHECK_INTERVAL" default:"1s"`
 
+	// RedisMemoryCheckTimeout bounds the INFO memory call itself. The
+	// watermark mutex is held across this I/O, so an unbounded INFO would
+	// stall every concurrent Ingest until the redis-client ReadTimeout
+	// fires. Tune this down on latency-sensitive deployments; tune up if
+	// running against a Redis that occasionally needs longer than the
+	// default. Values <= 0 fall back to the default.
+	RedisMemoryCheckTimeout time.Duration `envconfig:"REDIS_MEMORY_CHECK_TIMEOUT" default:"250ms"`
+
 	RedisTLS  tls.Config       `envconfig:"REDIS_TLS"`
 	Telemetry telemetry.Config `envconfig:"TELEMETRY"`
 }

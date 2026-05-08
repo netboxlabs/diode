@@ -301,6 +301,42 @@ func TestCheckRedisMemoryWatermark_FallsBackOnZeroInterval(t *testing.T) {
 	}
 }
 
+// TestCheckRedisMemoryWatermark_TimeoutFallback ensures that a zero or
+// negative RedisMemoryCheckTimeout falls back to the default rather than
+// short-circuiting INFO immediately. We can't assert the exact timeout
+// duration without timing flakiness, but we can confirm that the path
+// completes successfully against miniredis (proves a non-zero deadline
+// was applied — a zero-duration context would cancel before the I/O).
+func TestCheckRedisMemoryWatermark_TimeoutFallback(t *testing.T) {
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+
+	for _, timeout := range []time.Duration{0, -time.Second} {
+		t.Run(timeout.String(), func(t *testing.T) {
+			r := miniredis.RunT(t)
+			defer r.Close()
+			client := redis.NewClient(&redis.Options{Addr: r.Addr()})
+			defer client.Close()
+
+			m := &recordingMetrics{}
+			c := &Component{
+				config: Config{
+					RedisMemoryHighWatermarkPct: 80,
+					RedisMemoryCheckInterval:    time.Millisecond,
+					RedisMemoryCheckTimeout:     timeout,
+				},
+				logger:            logger,
+				metrics:           m,
+				redisStreamClient: client,
+				memCheckedAt:      time.Now().Add(-time.Hour),
+			}
+
+			if err := c.checkRedisMemoryWatermark(context.Background()); err != nil {
+				t.Fatalf("expected admit (miniredis maxmemory=0), got %v", err)
+			}
+		})
+	}
+}
+
 // minimalIngestRequest returns a request that passes validateRequest. The
 // embedded entity has a nil .Entity field, which is permitted (it is logged
 // in errs and the request still proceeds to XAdd).

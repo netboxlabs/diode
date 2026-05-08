@@ -33,6 +33,14 @@ import (
 // bursts within it are admitted on the previously-cached value.
 const defaultRedisMemoryCheckInterval = time.Second
 
+// defaultRedisInfoTimeout is used when Config.RedisMemoryCheckTimeout is
+// zero or negative. The mutex is held across the INFO I/O, so a hung Redis
+// would otherwise stall every concurrent Ingest for the duration of the
+// redis-client ReadTimeout. INFO is a tiny command — if it hasn't returned
+// within the configured timeout, prefer to fail-open on this tick and try
+// again next interval rather than convoy the request path.
+const defaultRedisInfoTimeout = 250 * time.Millisecond
+
 // Component asynchronously ingests data from the distributor
 type Component struct {
 	diodepb.UnimplementedIngesterServiceServer
@@ -279,7 +287,13 @@ func (c *Component) checkRedisMemoryWatermark(ctx context.Context) error {
 	}
 
 	if time.Since(c.memCheckedAt) >= interval {
-		used, max, err := readRedisMemory(ctx, c.redisStreamClient)
+		timeout := c.config.RedisMemoryCheckTimeout
+		if timeout <= 0 {
+			timeout = defaultRedisInfoTimeout
+		}
+		infoCtx, cancel := context.WithTimeout(ctx, timeout)
+		used, max, err := readRedisMemory(infoCtx, c.redisStreamClient)
+		cancel()
 		if err != nil {
 			// Retain the previous reading rather than zeroing it: if Redis
 			// is struggling, INFO is exactly when we want to keep enforcing
@@ -297,12 +311,14 @@ func (c *Component) checkRedisMemoryWatermark(ctx context.Context) error {
 			c.memCheckedAt = time.Now()
 			if max > 0 {
 				c.metrics.SetRedisMemoryRatioBPS(ctx, used*10000/max)
+			} else {
+				// Logged once per refresh tick (not per Ingest request).
+				c.logger.Warn("Redis maxmemory is 0 (unlimited); high-watermark check has no effect")
 			}
 		}
 	}
 
 	if c.memMaxBytes <= 0 {
-		c.logger.Warn("Redis maxmemory is 0 (unlimited); high-watermark check has no effect")
 		return nil
 	}
 
