@@ -14,6 +14,8 @@ import (
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 )
 
 // recordingMetrics is a Metrics impl that captures rejection reasons and
@@ -269,6 +271,118 @@ func TestCheckRedisMemoryWatermark_HonorsConfiguredInterval(t *testing.T) {
 	}
 	if err := c.checkRedisMemoryWatermark(context.Background()); err != nil {
 		t.Fatalf("expected admit (50%% < 80%%), got %v", err)
+	}
+}
+
+// TestCheckRedisMemoryWatermark_FallsBackOnZeroInterval verifies that a
+// zero or negative configured interval falls back to the default rather
+// than treating "0" as "always refresh."
+func TestCheckRedisMemoryWatermark_FallsBackOnZeroInterval(t *testing.T) {
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+
+	for _, interval := range []time.Duration{0, -time.Second} {
+		t.Run(interval.String(), func(t *testing.T) {
+			m := &recordingMetrics{}
+			// Last check 10ms ago. With a sane fallback (1s default), the
+			// refresh is skipped. If the fallback were "always refresh"
+			// (treating 0 literally), a nil client would panic.
+			c := &Component{
+				config:       Config{RedisMemoryHighWatermarkPct: 80, RedisMemoryCheckInterval: interval},
+				logger:       logger,
+				metrics:      m,
+				memUsedBytes: 50,
+				memMaxBytes:  100,
+				memCheckedAt: time.Now().Add(-10 * time.Millisecond),
+			}
+			if err := c.checkRedisMemoryWatermark(context.Background()); err != nil {
+				t.Fatalf("expected admit (refresh skipped under default interval), got %v", err)
+			}
+		})
+	}
+}
+
+// minimalIngestRequest returns a request that passes validateRequest. The
+// embedded entity has a nil .Entity field, which is permitted (it is logged
+// in errs and the request still proceeds to XAdd).
+func minimalIngestRequest() *diodepb.IngestRequest {
+	return &diodepb.IngestRequest{
+		Id:                 "test-id",
+		ProducerAppName:    "test-app",
+		ProducerAppVersion: "v0.0.0",
+		SdkName:            "test-sdk",
+		SdkVersion:         "v0.0.0",
+		Entities:           []*diodepb.Entity{{}},
+	}
+}
+
+// TestIngest_RedisOOMBecomesResourceExhausted exercises the end-to-end
+// OOM mapping: miniredis is configured to fail every command with the
+// real Redis OOM message, and we assert Ingest returns ResourceExhausted
+// with the reason=redis_oom rejection metric recorded.
+func TestIngest_RedisOOMBecomesResourceExhausted(t *testing.T) {
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	r := miniredis.RunT(t)
+	defer r.Close()
+
+	client := redis.NewClient(&redis.Options{Addr: r.Addr()})
+	defer client.Close()
+
+	m := &recordingMetrics{}
+	c := &Component{
+		config:            Config{},
+		logger:            logger,
+		hostname:          "test-host",
+		metrics:           m,
+		streamRouter:      &DefaultStreamRouter{},
+		redisStreamClient: client,
+	}
+
+	r.SetError("OOM command not allowed when used memory > 'maxmemory'.")
+
+	_, err := c.Ingest(context.Background(), minimalIngestRequest())
+	if err == nil {
+		t.Fatalf("expected error, got nil")
+	}
+	if got := status.Code(err); got != codes.ResourceExhausted {
+		t.Fatalf("expected ResourceExhausted, got %s (err=%v)", got, err)
+	}
+	if len(m.rejections) != 1 || m.rejections[0] != "redis_oom" {
+		t.Fatalf("expected one reason=redis_oom rejection, got %v", m.rejections)
+	}
+}
+
+// TestIngest_GenericXAddErrorBecomesInternal is a regression guard: any
+// non-OOM XAdd error must still surface as Internal (not ResourceExhausted)
+// and must not record a redis-rejection metric.
+func TestIngest_GenericXAddErrorBecomesInternal(t *testing.T) {
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	r := miniredis.RunT(t)
+	defer r.Close()
+
+	client := redis.NewClient(&redis.Options{Addr: r.Addr()})
+	defer client.Close()
+
+	m := &recordingMetrics{}
+	c := &Component{
+		config:            Config{},
+		logger:            logger,
+		hostname:          "test-host",
+		metrics:           m,
+		streamRouter:      &DefaultStreamRouter{},
+		redisStreamClient: client,
+	}
+
+	r.SetError("ERR something else went wrong")
+
+	_, err := c.Ingest(context.Background(), minimalIngestRequest())
+	if err == nil {
+		t.Fatalf("expected error, got nil")
+	}
+	if got := status.Code(err); got != codes.Internal {
+		t.Fatalf("expected Internal for non-OOM error, got %s (err=%v)", got, err)
+	}
+	if len(m.rejections) != 0 {
+		t.Fatalf("expected no redis-rejection metric for non-OOM error, got %v", m.rejections)
 	}
 }
 
