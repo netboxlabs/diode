@@ -42,6 +42,8 @@ type Config struct {
 	IngestionLogProcessorConcurrency           int   `envconfig:"INGESTION_LOG_PROCESSOR_CONCURRENCY" default:"1"`
 	IngestionLogProcessorBackpressureThreshold int64 `envconfig:"INGESTION_LOG_PROCESSOR_BACKPRESSURE_THRESHOLD" default:"100"`
 
+	BulkOperationsEnabled bool `envconfig:"BULK_OPERATIONS_ENABLED" default:"false"`
+
 	// Experimental
 	EnableGraphDB bool `envconfig:"ENABLE_GRAPH_DB" default:"false"`
 

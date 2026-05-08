@@ -99,7 +99,7 @@ func TestHandleStreamMessage(t *testing.T) {
 				redisStreamClient: mockRedisStreamClient,
 				logger:            logger,
 				Config:            Config{},
-				ops:               NewOps(mockRepository, mockNbClient, logger, nil),
+				ops:               NewOps(mockRepository, mockNbClient, logger, nil, false),
 				metrics:           mockMetrics,
 			}
 
@@ -256,7 +256,7 @@ func TestHandleStreamMessageLegacyUncompressed(t *testing.T) {
 		redisStreamClient: mockRedisStreamClient,
 		logger:            logger,
 		Config:            Config{},
-		ops:               NewOps(mockRepository, mockNbClient, logger, nil),
+		ops:               NewOps(mockRepository, mockNbClient, logger, nil, false),
 		metrics:           mockMetrics,
 	}
 
@@ -480,7 +480,7 @@ func TestIngestionProcessor_GenerateAndApplyChangeSet(t *testing.T) {
 					GenerateChangeSetConcurrency: 1,
 					ApplyChangeSetConcurrency:    1,
 				},
-				ops:     NewOps(mockRepository, mockNbClient, logger, nil),
+				ops:     NewOps(mockRepository, mockNbClient, logger, nil, false),
 				metrics: mockMetrics,
 			}
 

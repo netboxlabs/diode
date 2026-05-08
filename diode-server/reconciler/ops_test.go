@@ -139,7 +139,7 @@ func TestOpsGenerateChangeSet(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepository := mocks.NewRepository(t)
 			mockNetBoxClient := pluginmocks.NewNetBoxAPI(t)
-			ops := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil)
+			ops := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil, false)
 
 			for _, m := range tt.generateDiff {
 				if m.err == nil {
@@ -302,7 +302,7 @@ func TestOpsCreateIngestionLog(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepository := mocks.NewRepository(t)
 			mockNetBoxClient := pluginmocks.NewNetBoxAPI(t)
-			opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil)
+			opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil, false)
 
 			// Mock GetDefaultBranch to return nil (no default branch)
 			mockNetBoxClient.EXPECT().GetDefaultBranch(mock.Anything).Return((*netboxdiodeplugin.Branch)(nil), nil)
@@ -402,7 +402,7 @@ func TestOpsRefreshDefaultBranch(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepository := mocks.NewRepository(t)
 			mockNetBoxClient := pluginmocks.NewNetBoxAPI(t)
-			opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil)
+			opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil, false)
 
 			// Initial call - populate cache
 			if tt.expectInitialCall {
@@ -495,7 +495,7 @@ func TestOpsDefaultBranch404Caching(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepository := mocks.NewRepository(t)
 			mockNetBoxClient := pluginmocks.NewNetBoxAPI(t)
-			opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil)
+			opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil, false)
 
 			var firstBranch *netboxdiodeplugin.Branch
 			if tt.firstCallError == nil {
