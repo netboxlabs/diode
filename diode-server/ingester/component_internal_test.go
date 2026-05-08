@@ -94,18 +94,18 @@ func TestParseMemory(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			used, maxBytes, err := parseMemory(tt.info)
+			usedBytes, maxBytes, err := parseMemory(tt.info)
 			if tt.wantErr {
 				if err == nil {
-					t.Fatalf("expected error, got used=%d max=%d", used, maxBytes)
+					t.Fatalf("expected error, got used=%d max=%d", usedBytes, maxBytes)
 				}
 				return
 			}
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
-			if used != tt.wantUsed {
-				t.Fatalf("used: got %d, want %d", used, tt.wantUsed)
+			if usedBytes != tt.wantUsed {
+				t.Fatalf("used: got %d, want %d", usedBytes, tt.wantUsed)
 			}
 			if maxBytes != tt.wantMax {
 				t.Fatalf("max: got %d, want %d", maxBytes, tt.wantMax)
