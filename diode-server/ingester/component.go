@@ -55,10 +55,10 @@ type Component struct {
 	metrics           Metrics
 	streamRouter      StreamRouter
 
-	memCheckMu     sync.Mutex
-	memUsedBytes   int64
-	memMaxBytes    int64
-	memCheckedAt   time.Time
+	memCheckMu   sync.Mutex
+	memUsedBytes int64
+	memMaxBytes  int64
+	memCheckedAt time.Time
 }
 
 // StreamRouter is an interface for determining the stream ID to add ingested data into
@@ -298,7 +298,7 @@ func (c *Component) checkRedisMemoryWatermark(ctx context.Context) error {
 			timeout = defaultRedisInfoTimeout
 		}
 		infoCtx, cancel := context.WithTimeout(ctx, timeout)
-		used, max, err := readRedisMemory(infoCtx, c.redisStreamClient)
+		used, maxBytes, err := readRedisMemory(infoCtx, c.redisStreamClient)
 		cancel()
 		if err != nil {
 			// Retain the previous reading rather than zeroing it: if Redis
@@ -313,10 +313,10 @@ func (c *Component) checkRedisMemoryWatermark(ctx context.Context) error {
 			c.memCheckedAt = time.Now()
 		} else {
 			c.memUsedBytes = used
-			c.memMaxBytes = max
+			c.memMaxBytes = maxBytes
 			c.memCheckedAt = time.Now()
-			if max > 0 {
-				c.metrics.SetRedisMemoryRatioBPS(ctx, used*10000/max)
+			if maxBytes > 0 {
+				c.metrics.SetRedisMemoryRatioBPS(ctx, used*10000/maxBytes)
 			} else {
 				// Logged once per refresh tick (not per Ingest request).
 				c.logger.Warn("Redis maxmemory is 0 (unlimited); high-watermark check has no effect")
@@ -353,7 +353,7 @@ func isRedisOOMErr(err error) bool {
 }
 
 // readRedisMemory issues INFO memory and parses the used_memory and maxmemory lines.
-func readRedisMemory(ctx context.Context, client *redis.Client) (used, max int64, err error) {
+func readRedisMemory(ctx context.Context, client *redis.Client) (used, maxBytes int64, err error) {
 	out, err := client.Info(ctx, "memory").Result()
 	if err != nil {
 		return 0, 0, err
@@ -364,7 +364,7 @@ func readRedisMemory(ctx context.Context, client *redis.Client) (used, max int64
 // parseMemory extracts used_memory and maxmemory from Redis INFO output.
 // Returns an error if used_memory is missing; maxmemory defaults to 0 if
 // absent (Redis omits it when no limit is configured).
-func parseMemory(info string) (used, max int64, err error) {
+func parseMemory(info string) (used, maxBytes int64, err error) {
 	usedFound := false
 	for _, line := range strings.Split(info, "\n") {
 		line = strings.TrimSpace(line)
@@ -382,13 +382,13 @@ func parseMemory(info string) (used, max int64, err error) {
 			if parseErr != nil {
 				return 0, 0, parseErr
 			}
-			max = v
+			maxBytes = v
 		}
 	}
 	if !usedFound {
 		return 0, 0, fmt.Errorf("used_memory not found in INFO output")
 	}
-	return used, max, nil
+	return used, maxBytes, nil
 }
 
 func compressBrotli(data []byte) ([]byte, error) {

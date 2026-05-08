@@ -27,15 +27,16 @@ type recordingMetrics struct {
 	ratioBPSValues []int64
 }
 
-func (m *recordingMetrics) SetServiceInfo(context.Context, string)              {}
-func (m *recordingMetrics) RecordServiceStartupAttempt(context.Context, bool)   {}
-func (m *recordingMetrics) RecordIngestRequest(context.Context, bool)           {}
-func (m *recordingMetrics) RecordIngestEntities(context.Context, int64)         {}
+func (m *recordingMetrics) SetServiceInfo(context.Context, string)            {}
+func (m *recordingMetrics) RecordServiceStartupAttempt(context.Context, bool) {}
+func (m *recordingMetrics) RecordIngestRequest(context.Context, bool)         {}
+func (m *recordingMetrics) RecordIngestEntities(context.Context, int64)       {}
 func (m *recordingMetrics) RecordRedisRejection(_ context.Context, reason string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.rejections = append(m.rejections, reason)
 }
+
 func (m *recordingMetrics) SetRedisMemoryRatioBPS(_ context.Context, v int64) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -93,10 +94,10 @@ func TestParseMemory(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			used, max, err := parseMemory(tt.info)
+			used, maxBytes, err := parseMemory(tt.info)
 			if tt.wantErr {
 				if err == nil {
-					t.Fatalf("expected error, got used=%d max=%d", used, max)
+					t.Fatalf("expected error, got used=%d max=%d", used, maxBytes)
 				}
 				return
 			}
@@ -106,8 +107,8 @@ func TestParseMemory(t *testing.T) {
 			if used != tt.wantUsed {
 				t.Fatalf("used: got %d, want %d", used, tt.wantUsed)
 			}
-			if max != tt.wantMax {
-				t.Fatalf("max: got %d, want %d", max, tt.wantMax)
+			if maxBytes != tt.wantMax {
+				t.Fatalf("max: got %d, want %d", maxBytes, tt.wantMax)
 			}
 		})
 	}
@@ -177,7 +178,7 @@ func TestCheckRedisMemoryWatermark_RetainsOnInfoError(t *testing.T) {
 
 	r := miniredis.RunT(t)
 	client := redis.NewClient(&redis.Options{Addr: r.Addr()})
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 
 	m := &recordingMetrics{}
 	c := &Component{
@@ -229,7 +230,7 @@ func TestCheckRedisMemoryWatermark_GaugeOnSuccessfulPoll(t *testing.T) {
 	// reading by injecting an initial cached state of zeros and then
 	// running a single check with a manually-fed pair.
 	client := redis.NewClient(&redis.Options{Addr: r.Addr()})
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 
 	m := &recordingMetrics{}
 	c := &Component{
@@ -315,7 +316,7 @@ func TestCheckRedisMemoryWatermark_TimeoutFallback(t *testing.T) {
 			r := miniredis.RunT(t)
 			defer r.Close()
 			client := redis.NewClient(&redis.Options{Addr: r.Addr()})
-			defer client.Close()
+			defer func() { _ = client.Close() }()
 
 			m := &recordingMetrics{}
 			c := &Component{
@@ -361,7 +362,7 @@ func TestIngest_RedisOOMBecomesResourceExhausted(t *testing.T) {
 	defer r.Close()
 
 	client := redis.NewClient(&redis.Options{Addr: r.Addr()})
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 
 	m := &recordingMetrics{}
 	c := &Component{
@@ -397,7 +398,7 @@ func TestIngest_ValidationRunsBeforeWatermark(t *testing.T) {
 	defer r.Close()
 
 	client := redis.NewClient(&redis.Options{Addr: r.Addr()})
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 
 	m := &recordingMetrics{}
 	c := &Component{
@@ -440,7 +441,7 @@ func TestIngest_GenericXAddErrorBecomesInternal(t *testing.T) {
 	defer r.Close()
 
 	client := redis.NewClient(&redis.Options{Addr: r.Addr()})
-	defer client.Close()
+	defer func() { _ = client.Close() }()
 
 	m := &recordingMetrics{}
 	c := &Component{
@@ -473,7 +474,7 @@ func TestIsRedisOOMErr(t *testing.T) {
 		want bool
 	}{
 		{name: "nil", err: nil, want: false},
-		{name: "exact OOM message from redis", err: errors.New("OOM command not allowed when used memory > 'maxmemory'."), want: true},
+		{name: "exact OOM message from redis", err: errors.New("OOM command not allowed when used memory > 'maxmemory'"), want: true},
 		{name: "OOM prefix with different tail", err: errors.New("OOM something else"), want: true},
 		{name: "wrong case is not OOM", err: errors.New("oom command not allowed"), want: false},
 		{name: "generic error", err: errors.New("connection refused"), want: false},
