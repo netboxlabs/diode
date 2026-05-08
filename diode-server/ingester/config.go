@@ -1,6 +1,8 @@
 package ingester
 
 import (
+	"time"
+
 	"github.com/netboxlabs/diode/diode-server/telemetry"
 	"github.com/netboxlabs/diode/diode-server/tls"
 )
@@ -24,8 +26,17 @@ type Config struct {
 	// Ingest requests with codes.ResourceExhausted once Redis used_memory reaches
 	// this percentage of maxmemory. Applied globally regardless of tenant/stream.
 	// Zero disables the check (current behavior). The value is checked at most
-	// once per second. Has no effect when Redis maxmemory is 0 (unlimited).
+	// once per RedisMemoryCheckInterval. Has no effect when Redis maxmemory is
+	// 0 (unlimited).
 	RedisMemoryHighWatermarkPct int `envconfig:"REDIS_MEMORY_HIGH_WATERMARK_PCT" default:"0"`
+
+	// RedisMemoryCheckInterval bounds how often INFO memory is issued when
+	// the watermark check is enabled. Smaller values reduce the staleness
+	// window (and thus the size of an admit-burst that can slip past the
+	// threshold) at the cost of more INFO calls. Values <= 0 fall back to
+	// the default. The redis_memory_used_ratio_bps gauge is updated on
+	// each successful poll, so its freshness tracks this interval.
+	RedisMemoryCheckInterval time.Duration `envconfig:"REDIS_MEMORY_CHECK_INTERVAL" default:"1s"`
 
 	RedisTLS  tls.Config       `envconfig:"REDIS_TLS"`
 	Telemetry telemetry.Config `envconfig:"TELEMETRY"`
