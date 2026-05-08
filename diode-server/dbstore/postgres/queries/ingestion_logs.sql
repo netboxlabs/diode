@@ -97,6 +97,16 @@ SET duplicate_count = duplicate_count + 1,
     last_seen = CURRENT_TIMESTAMP
 WHERE id = ANY(@ids::int4[]);
 
+-- name: BulkUpdateIngestionLogStates :exec
+UPDATE ingestion_logs il
+SET state = bulk.new_state,
+    error = NULL
+FROM (
+    SELECT unnest(@ids::int4[]) AS id,
+           unnest(@states::int4[]) AS new_state
+) bulk
+WHERE il.id = bulk.id;
+
 -- name: ClaimQueuedIngestionLogs :many
 UPDATE ingestion_logs
 SET state = 2

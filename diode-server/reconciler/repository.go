@@ -28,6 +28,9 @@ type Repository interface {
 	BulkCreateIngestionLogs(ctx context.Context, logs []*reconcilerpb.IngestionLog, sourceMetadata [][]byte, entityHashes []string) (map[string]int32, error)
 	BulkIncrementDuplicateCounts(ctx context.Context, ids []int32) error
 
+	// Bulk changeset persistence
+	BulkPersistChangeSets(ctx context.Context, items []ops.BulkPersistItem, maxChangeSetsPerLog int32) ([]ops.BulkPersistResult, error)
+
 	// Inbox processing
 	ClaimQueuedIngestionLogs(ctx context.Context, batchSize int32) ([]ops.QueuedIngestionLog, error)
 }

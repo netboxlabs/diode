@@ -32,3 +32,17 @@ type BulkGenerateChangeSetResult struct {
 	ChangeSet      *changeset.ChangeSet
 	Err            error
 }
+
+// BulkPersistItem holds data for one changeset to be bulk-persisted.
+type BulkPersistItem struct {
+	IngestionLogID int32
+	ChangeSet      changeset.ChangeSet
+	NewState       reconcilerpb.State
+}
+
+// BulkPersistResult holds the outcome of persisting one changeset.
+type BulkPersistResult struct {
+	IngestionLogID int32
+	ChangeSetID    *int32
+}
+

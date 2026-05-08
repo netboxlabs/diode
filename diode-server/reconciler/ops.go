@@ -369,6 +369,9 @@ func (o *Ops) BulkGenerateChangeSets(ctx context.Context, items []ops.QueuedInge
 		resultByID[r.ID] = r
 	}
 
+	var persistItems []ops.BulkPersistItem
+	persistIndex := make([]int, 0, len(items))
+
 	for i, item := range items {
 		entityID := fmt.Sprintf("%d", item.ID)
 		planResult, found := resultByID[entityID]
@@ -383,10 +386,51 @@ func (o *Ops) BulkGenerateChangeSets(ctx context.Context, items []ops.QueuedInge
 			continue
 		}
 
-		results[i] = o.persistChangeSet(ctx, item.ID, item.IngestionLog, cs)
+		stripNoopOnlyChanges(cs)
+
+		newState := reconcilerpb.State_OPEN
+		if len(cs.Changes) == 0 {
+			newState = reconcilerpb.State_NO_CHANGES
+		}
+
+		persistItems = append(persistItems, ops.BulkPersistItem{
+			IngestionLogID: item.ID,
+			ChangeSet:      *cs,
+			NewState:       newState,
+		})
+		persistIndex = append(persistIndex, i)
+		results[i] = ops.BulkGenerateChangeSetResult{
+			IngestionLogID: item.ID,
+			ChangeSet:      cs,
+		}
+	}
+
+	if len(persistItems) > 0 {
+		persistResults, err := o.repository.BulkPersistChangeSets(ctx, persistItems, o.limits.MaxChangeSetsPerIngestionLog())
+		if err != nil {
+			o.logger.Error("bulk persist failed, falling back to per-item persist", "error", err)
+			for j, idx := range persistIndex {
+				item := items[idx]
+				results[idx] = o.persistChangeSet(ctx, item.ID, item.IngestionLog, &persistItems[j].ChangeSet)
+			}
+		} else {
+			for j, pr := range persistResults {
+				idx := persistIndex[j]
+				results[idx].ChangeSetID = pr.ChangeSetID
+			}
+		}
 	}
 
 	return results
+}
+
+func stripNoopOnlyChanges(cs *changeset.ChangeSet) {
+	for _, c := range cs.Changes {
+		if c.ChangeType != changeset.ChangeTypeNoop {
+			return
+		}
+	}
+	cs.Changes = nil
 }
 
 func (o *Ops) handleGenerateChangeSetFailure(ctx context.Context, item ops.QueuedIngestionLog, branchID string, err error) ops.BulkGenerateChangeSetResult {

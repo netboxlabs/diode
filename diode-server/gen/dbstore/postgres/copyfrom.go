@@ -9,6 +9,42 @@ import (
 	"context"
 )
 
+// iteratorForBulkCreateChangeSets implements pgx.CopyFromSource.
+type iteratorForBulkCreateChangeSets struct {
+	rows                 []BulkCreateChangeSetsParams
+	skippedFirstNextCall bool
+}
+
+func (r *iteratorForBulkCreateChangeSets) Next() bool {
+	if len(r.rows) == 0 {
+		return false
+	}
+	if !r.skippedFirstNextCall {
+		r.skippedFirstNextCall = true
+		return true
+	}
+	r.rows = r.rows[1:]
+	return len(r.rows) > 0
+}
+
+func (r iteratorForBulkCreateChangeSets) Values() ([]interface{}, error) {
+	return []interface{}{
+		r.rows[0].ID,
+		r.rows[0].ExternalID,
+		r.rows[0].IngestionLogID,
+		r.rows[0].BranchID,
+		r.rows[0].DeviationName,
+	}, nil
+}
+
+func (r iteratorForBulkCreateChangeSets) Err() error {
+	return nil
+}
+
+func (q *Queries) BulkCreateChangeSets(ctx context.Context, arg []BulkCreateChangeSetsParams) (int64, error) {
+	return q.db.CopyFrom(ctx, []string{"change_sets"}, []string{"id", "external_id", "ingestion_log_id", "branch_id", "deviation_name"}, &iteratorForBulkCreateChangeSets{rows: arg})
+}
+
 // iteratorForBulkCreateChanges implements pgx.CopyFromSource.
 type iteratorForBulkCreateChanges struct {
 	rows                 []BulkCreateChangesParams

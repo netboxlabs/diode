@@ -135,6 +135,66 @@ func (_c *Repository_BulkIncrementDuplicateCounts_Call) RunAndReturn(run func(co
 	return _c
 }
 
+// BulkPersistChangeSets provides a mock function with given fields: ctx, items, maxChangeSetsPerLog
+func (_m *Repository) BulkPersistChangeSets(ctx context.Context, items []ops.BulkPersistItem, maxChangeSetsPerLog int32) ([]ops.BulkPersistResult, error) {
+	ret := _m.Called(ctx, items, maxChangeSetsPerLog)
+
+	if len(ret) == 0 {
+		panic("no return value specified for BulkPersistChangeSets")
+	}
+
+	var r0 []ops.BulkPersistResult
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []ops.BulkPersistItem, int32) ([]ops.BulkPersistResult, error)); ok {
+		return rf(ctx, items, maxChangeSetsPerLog)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, []ops.BulkPersistItem, int32) []ops.BulkPersistResult); ok {
+		r0 = rf(ctx, items, maxChangeSetsPerLog)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]ops.BulkPersistResult)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, []ops.BulkPersistItem, int32) error); ok {
+		r1 = rf(ctx, items, maxChangeSetsPerLog)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Repository_BulkPersistChangeSets_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BulkPersistChangeSets'
+type Repository_BulkPersistChangeSets_Call struct {
+	*mock.Call
+}
+
+// BulkPersistChangeSets is a helper method to define mock.On call
+//   - ctx context.Context
+//   - items []ops.BulkPersistItem
+//   - maxChangeSetsPerLog int32
+func (_e *Repository_Expecter) BulkPersistChangeSets(ctx interface{}, items interface{}, maxChangeSetsPerLog interface{}) *Repository_BulkPersistChangeSets_Call {
+	return &Repository_BulkPersistChangeSets_Call{Call: _e.mock.On("BulkPersistChangeSets", ctx, items, maxChangeSetsPerLog)}
+}
+
+func (_c *Repository_BulkPersistChangeSets_Call) Run(run func(ctx context.Context, items []ops.BulkPersistItem, maxChangeSetsPerLog int32)) *Repository_BulkPersistChangeSets_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].([]ops.BulkPersistItem), args[2].(int32))
+	})
+	return _c
+}
+
+func (_c *Repository_BulkPersistChangeSets_Call) Return(_a0 []ops.BulkPersistResult, _a1 error) *Repository_BulkPersistChangeSets_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Repository_BulkPersistChangeSets_Call) RunAndReturn(run func(context.Context, []ops.BulkPersistItem, int32) ([]ops.BulkPersistResult, error)) *Repository_BulkPersistChangeSets_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ClaimQueuedIngestionLogs provides a mock function with given fields: ctx, batchSize
 func (_m *Repository) ClaimQueuedIngestionLogs(ctx context.Context, batchSize int32) ([]ops.QueuedIngestionLog, error) {
 	ret := _m.Called(ctx, batchSize)

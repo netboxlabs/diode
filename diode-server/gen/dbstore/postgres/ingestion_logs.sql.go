@@ -41,6 +41,27 @@ func (q *Queries) BulkIncrementDuplicateCounts(ctx context.Context, ids []int32)
 	return err
 }
 
+const bulkUpdateIngestionLogStates = `-- name: BulkUpdateIngestionLogStates :exec
+UPDATE ingestion_logs il
+SET state = bulk.new_state,
+    error = NULL
+FROM (
+    SELECT unnest($1::int4[]) AS id,
+           unnest($2::int4[]) AS new_state
+) bulk
+WHERE il.id = bulk.id
+`
+
+type BulkUpdateIngestionLogStatesParams struct {
+	Ids    []int32 `json:"ids"`
+	States []int32 `json:"states"`
+}
+
+func (q *Queries) BulkUpdateIngestionLogStates(ctx context.Context, arg BulkUpdateIngestionLogStatesParams) error {
+	_, err := q.db.Exec(ctx, bulkUpdateIngestionLogStates, arg.Ids, arg.States)
+	return err
+}
+
 const claimQueuedIngestionLogs = `-- name: ClaimQueuedIngestionLogs :many
 UPDATE ingestion_logs
 SET state = 2
