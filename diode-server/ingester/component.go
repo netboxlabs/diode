@@ -140,13 +140,6 @@ func (c *Component) Ingest(ctx context.Context, in *diodepb.IngestRequest) (*dio
 	}
 	ctx = telemetry.ContextWithMetricAttributes(ctx, attrs...)
 
-	// Reject early when Redis is over the configured high-watermark so SDK
-	// retries push backpressure to producers instead of OOM-crashing Redis.
-	if err := c.checkRedisMemoryWatermark(ctx); err != nil {
-		c.metrics.RecordIngestRequest(ctx, false)
-		return nil, err
-	}
-
 	if err := validateRequest(in); err != nil {
 		c.metrics.RecordIngestRequest(ctx, false)
 
@@ -163,6 +156,15 @@ func (c *Component) Ingest(ctx context.Context, in *diodepb.IngestRequest) (*dio
 			"sdk_version":          in.SdkVersion,
 		}
 		sentry.CaptureError(err, tags, "Ingest Request", contextMap)
+		return nil, err
+	}
+
+	// Shed load after validation but before encoding/compression: format
+	// errors should surface as themselves rather than being masked by
+	// ResourceExhausted, and we don't waste work on requests we're about
+	// to drop.
+	if err := c.checkRedisMemoryWatermark(ctx); err != nil {
+		c.metrics.RecordIngestRequest(ctx, false)
 		return nil, err
 	}
 
@@ -268,10 +270,18 @@ func validateRequest(in *diodepb.IngestRequest) error {
 
 // checkRedisMemoryWatermark returns codes.ResourceExhausted when Redis
 // used_memory is at or above the configured percentage of maxmemory.
-// Disabled when the threshold is <= 0. The Redis INFO call is rate-limited
-// to once per redisMemoryCheckInterval. Two fail-open conditions admit the
-// request: INFO errors (so a transient Redis hiccup is not a hard outage)
-// and maxmemory=0 (unlimited Redis — percentage is meaningless).
+// Disabled when the threshold is <= 0.
+//
+// The check is global on used_memory (not per-tenant/per-stream). The
+// goal is to leave headroom on a Redis that may be shared with other
+// workloads, so Diode's total share against the Redis pool is the
+// relevant budget.
+//
+// INFO is called at most once per RedisMemoryCheckInterval and bounded
+// by RedisMemoryCheckTimeout. On INFO failure or timeout the previous
+// reading is retained, so a struggling Redis does not suddenly admit a
+// flood. With no successful reading yet (cold start) or when Redis
+// maxmemory is 0 (unlimited), the request is admitted.
 func (c *Component) checkRedisMemoryWatermark(ctx context.Context) error {
 	pct := c.config.RedisMemoryHighWatermarkPct
 	if pct <= 0 {

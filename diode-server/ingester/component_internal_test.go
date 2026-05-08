@@ -387,6 +387,50 @@ func TestIngest_RedisOOMBecomesResourceExhausted(t *testing.T) {
 	}
 }
 
+// TestIngest_ValidationRunsBeforeWatermark pins the ordering: when a
+// request is both malformed and the watermark is over threshold,
+// validation must surface its error rather than being masked by
+// ResourceExhausted. Otherwise format bugs go unreported under load.
+func TestIngest_ValidationRunsBeforeWatermark(t *testing.T) {
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	r := miniredis.RunT(t)
+	defer r.Close()
+
+	client := redis.NewClient(&redis.Options{Addr: r.Addr()})
+	defer client.Close()
+
+	m := &recordingMetrics{}
+	c := &Component{
+		// Pre-seed a cached state that would reject every Ingest if
+		// reached. Set memCheckedAt to "now" so the cached state is
+		// used without an INFO call.
+		config: Config{
+			RedisMemoryHighWatermarkPct: 80,
+			RedisMemoryCheckInterval:    time.Hour, // never refresh
+		},
+		logger:            logger,
+		hostname:          "test-host",
+		metrics:           m,
+		streamRouter:      &DefaultStreamRouter{},
+		redisStreamClient: client,
+		memUsedBytes:      90,
+		memMaxBytes:       100,
+		memCheckedAt:      time.Now(),
+	}
+
+	// Empty request: fails validation on every required field.
+	_, err := c.Ingest(context.Background(), &diodepb.IngestRequest{})
+	if err == nil {
+		t.Fatalf("expected validation error, got nil")
+	}
+	if got := status.Code(err); got == codes.ResourceExhausted {
+		t.Fatalf("validation must run first; got watermark rejection: %v", err)
+	}
+	if len(m.rejections) != 0 {
+		t.Fatalf("expected no watermark rejection metric, got %v", m.rejections)
+	}
+}
+
 // TestIngest_GenericXAddErrorBecomesInternal is a regression guard: any
 // non-OOM XAdd error must still surface as Internal (not ResourceExhausted)
 // and must not record a redis-rejection metric.
