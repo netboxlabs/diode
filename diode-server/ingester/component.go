@@ -31,7 +31,7 @@ import (
 // defaultRedisMemoryCheckInterval is used when Config.RedisMemoryCheckInterval
 // is zero or negative. The watermark check is only as fresh as this interval;
 // bursts within it are admitted on the previously-cached value.
-const defaultRedisMemoryCheckInterval = time.Second
+const defaultRedisMemoryCheckInterval = 500 * time.Millisecond
 
 // defaultRedisInfoTimeout is used when Config.RedisMemoryCheckTimeout is
 // zero or negative. The mutex is held across the INFO I/O, so a hung Redis

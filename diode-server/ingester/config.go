@@ -36,7 +36,7 @@ type Config struct {
 	// threshold) at the cost of more INFO calls. Values <= 0 fall back to
 	// the default. The redis_memory_used_ratio_bps gauge is updated on
 	// each successful poll, so its freshness tracks this interval.
-	RedisMemoryCheckInterval time.Duration `envconfig:"REDIS_MEMORY_CHECK_INTERVAL" default:"1s"`
+	RedisMemoryCheckInterval time.Duration `envconfig:"REDIS_MEMORY_CHECK_INTERVAL" default:"500ms"`
 
 	// RedisMemoryCheckTimeout bounds the INFO memory call itself. The
 	// watermark mutex is held across this I/O, so an unbounded INFO would
