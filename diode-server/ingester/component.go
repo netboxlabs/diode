@@ -159,10 +159,6 @@ func (c *Component) Ingest(ctx context.Context, in *diodepb.IngestRequest) (*dio
 		return nil, err
 	}
 
-	// Shed load after validation but before encoding/compression: format
-	// errors should surface as themselves rather than being masked by
-	// ResourceExhausted, and we don't waste work on requests we're about
-	// to drop.
 	if err := c.checkRedisMemoryWatermark(ctx); err != nil {
 		c.metrics.RecordIngestRequest(ctx, false)
 		return nil, err
