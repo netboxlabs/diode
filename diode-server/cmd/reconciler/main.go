@@ -238,6 +238,19 @@ func main() {
 		os.Exit(1)
 	}
 
+	if err := repository.ResetApplyingIngestionLogs(ctx); err != nil {
+		s.Logger().Error("failed to reset applying ingestion logs", "error", err)
+	}
+
+	if cfg.AutoApplyChangesets {
+		applyProcessor := reconciler.NewApplyProcessor(s.Logger(), cfg, repository, ops, metricRecorder)
+		if err := s.RegisterComponent(applyProcessor); err != nil {
+			s.Logger().Error("failed to register apply processor", "error", err)
+			metricRecorder.RecordServiceStartupAttempt(ctx, false)
+			os.Exit(1)
+		}
+	}
+
 	authorizer := authutil.NewContextAuthorizer(s.Logger())
 	gRPCServer, err := reconciler.NewServer(ctx, s.Logger(), repository, serverInterceptors(authorizer, s.Logger())...)
 	if err != nil {

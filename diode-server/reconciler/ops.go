@@ -564,6 +564,44 @@ func (o *Ops) ApplyChangeSet(ctx context.Context, ingestionLogID int32, ingestio
 	return nil
 }
 
+// BulkApplyChangeSets applies multiple change sets in a single HTTP call and updates ingestion log states.
+func (o *Ops) BulkApplyChangeSets(ctx context.Context, items []ops.BulkApplyItem, branchID string) []ops.BulkApplyResult {
+	results := make([]ops.BulkApplyResult, len(items))
+
+	changeSets := make([]changeset.ChangeSet, len(items))
+	for i, item := range items {
+		changeSets[i] = *item.ChangeSet
+	}
+
+	applyResults := applier.BulkApplyChangeSets(ctx, o.logger, changeSets, branchID, o.nbClient)
+
+	for i, ar := range applyResults {
+		item := items[i]
+		results[i].IngestionLogID = item.IngestionLogID
+
+		if ar.Err != nil {
+			o.logger.Debug("failed to apply change set", "changeSetID", item.ChangeSetID, "externalID", item.ChangeSet.ID, "ingestionLogID", item.IngestionLogID, "error", ar.Err)
+
+			changeSetErr := handleChangeSetError(ar.Err)
+			if err2 := o.repository.UpdateIngestionLogStateWithError(ctx, item.IngestionLogID, reconcilerpb.State_FAILED, changeSetErr); err2 != nil {
+				results[i].Err = errors.Join(ar.Err, err2)
+			} else {
+				results[i].Err = ar.Err
+			}
+			continue
+		}
+
+		item.IngestionLog.State = reconcilerpb.State_APPLIED
+		if err := o.repository.UpdateIngestionLogStateWithError(ctx, item.IngestionLogID, reconcilerpb.State_APPLIED, nil); err != nil {
+			o.logger.Warn("failed to update ingestion log state (error ignored)", "ingestionLogID", item.IngestionLogID, "error", err)
+		}
+
+		o.logger.Debug("change set applied", "changeSetID", item.ChangeSetID, "externalID", item.ChangeSet.ID, "ingestionLogID", item.IngestionLogID)
+	}
+
+	return results
+}
+
 func handleChangeSetError(err error) error {
 	var changeSetErr *changeset.Error
 	if errors.As(err, &changeSetErr) {
