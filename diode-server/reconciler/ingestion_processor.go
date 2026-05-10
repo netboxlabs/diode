@@ -76,15 +76,6 @@ type IngestionProcessor struct {
 	graphService       *graph.Service // nil when ENABLE_GRAPH_DB is false
 }
 
-// IngestionLogToProcess represents an ingestion log to process
-type IngestionLogToProcess struct {
-	ingestionLogID int32
-	ingestionLog   *reconcilerpb.IngestionLog
-	changeSetID    int32
-	changeSet      *changeset.ChangeSet
-	branchID       string // the branch ID for this ingestion log (empty string means main branch)
-}
-
 // IngestionProcessorOps represents the basic operations that the ingestion processor performs
 type IngestionProcessorOps interface {
 	CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb.IngestionLog, sourceMetadata []byte) (*ops.CreateIngestionLogResult, error)
@@ -287,74 +278,6 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 	}
 
 	return nil
-}
-
-// GenerateChangeSet generates a change set for an ingestion log
-func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChangeSetChan <-chan IngestionLogToProcess, applyChangeSetChan chan<- IngestionLogToProcess, doneChan chan<- struct{}) {
-	concurrency := max(p.Config.GenerateChangeSetConcurrency, 1)
-	var wg sync.WaitGroup
-	wg.Add(concurrency)
-	for i := 0; i < concurrency; i++ {
-		go func() {
-			defer wg.Done()
-			for msg := range generateChangeSetChan {
-				id, changeSet, err := p.ops.GenerateChangeSet(ctx, msg.ingestionLogID, msg.ingestionLog, msg.branchID)
-				if err != nil {
-					p.logger.Error("error generating changeset", "error", err)
-					p.metrics.RecordChangeSetCreate(ctx, false, 0)
-				} else {
-					p.metrics.RecordChangeSetCreate(ctx, true, int64(len(changeSet.Changes)))
-				}
-
-				if changeSet != nil && len(changeSet.Changes) > 0 {
-					if applyChangeSetChan != nil {
-						applyChangeSetChan <- IngestionLogToProcess{
-							ingestionLogID: msg.ingestionLogID,
-							ingestionLog:   msg.ingestionLog,
-							changeSetID:    *id,
-							changeSet:      changeSet,
-							branchID:       msg.branchID,
-						}
-					}
-				}
-			}
-		}()
-	}
-	go func() {
-		wg.Wait()
-		if applyChangeSetChan != nil {
-			close(applyChangeSetChan)
-		}
-		if doneChan != nil {
-			doneChan <- struct{}{}
-		}
-	}()
-}
-
-// ApplyChangeSet applies a change set for an ingestion log
-func (p *IngestionProcessor) ApplyChangeSet(ctx context.Context, applyChan <-chan IngestionLogToProcess, doneChan chan<- struct{}) {
-	concurrency := max(p.Config.ApplyChangeSetConcurrency, 1)
-	var wg sync.WaitGroup
-	wg.Add(concurrency)
-	for i := 0; i < concurrency; i++ {
-		go func() {
-			defer wg.Done()
-			for msg := range applyChan {
-				if err := p.ops.ApplyChangeSet(ctx, msg.ingestionLogID, msg.ingestionLog, msg.changeSetID, msg.changeSet); err != nil {
-					p.logger.Error("error applying changeset", "error", err)
-					p.metrics.RecordChangeSetApply(ctx, false, 0)
-				} else {
-					p.metrics.RecordChangeSetApply(ctx, true, int64(len(msg.changeSet.Changes)))
-				}
-			}
-		}()
-	}
-	go func() {
-		wg.Wait()
-		if doneChan != nil {
-			doneChan <- struct{}{}
-		}
-	}()
 }
 
 // CreateIngestionLogs creates ingestion logs for an ingest request using bulk operations
