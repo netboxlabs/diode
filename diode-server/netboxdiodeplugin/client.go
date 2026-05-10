@@ -272,6 +272,9 @@ type NetBoxAPI interface {
 	// ApplyChangeSet applies a change set
 	ApplyChangeSet(context.Context, ApplyChangeSetRequest) (*ChangeSetResult, error)
 
+	// BulkApply applies multiple change sets in a single request
+	BulkApply(context.Context, BulkApplyRequest) (*BulkApplyResponse, error)
+
 	// GetDefaultBranch gets the default branch from NetBox plugin settings
 	GetDefaultBranch(context.Context) (*Branch, error)
 }
@@ -513,6 +516,74 @@ func (c *Client) ApplyChangeSet(ctx context.Context, payload ApplyChangeSetReque
 	}
 
 	return &changeSetResult, nil
+}
+
+// BulkApplyRequest represents a request to apply multiple change sets in a single call
+type BulkApplyRequest struct {
+	ChangeSets []ApplyChangeSetRequest `json:"change_sets"`
+	BranchID   string                  `json:"-"`
+}
+
+// BulkApplyResponse represents the response from the bulk-apply endpoint
+type BulkApplyResponse struct {
+	Results []ChangeSetResult `json:"results"`
+}
+
+// BulkApply applies multiple change sets in a single request
+func (c *Client) BulkApply(ctx context.Context, payload BulkApplyRequest) (*BulkApplyResponse, error) {
+	endpointURL, err := url.Parse(fmt.Sprintf("%s/bulk-apply/", c.baseURL.String()))
+	if err != nil {
+		return nil, err
+	}
+
+	reqBody, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := c.limiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
+	c.logger.Debug("bulk apply", "payload", string(reqBody))
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpointURL.String(), bytes.NewBuffer(reqBody))
+	if err != nil {
+		return nil, err
+	}
+
+	branchID := strings.TrimSpace(payload.BranchID)
+	if branchID != "" {
+		req.Header.Set(NetBoxBranchHeader, branchID)
+	}
+
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			c.logger.Warn("failed to close response body", "error", closeErr)
+		}
+	}()
+
+	respBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	c.logger.Debug("bulk apply", "statusCode", resp.StatusCode, "response", string(respBytes))
+
+	if resp.StatusCode >= http.StatusBadRequest {
+		return nil, changeset.NewError("bulk apply failed", diodeErrors.ErrCodeOpsApplyChangeSet, respBytes)
+	}
+
+	var bulkApplyResponse BulkApplyResponse
+	if err = json.Unmarshal(respBytes, &bulkApplyResponse); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response body: %w", err)
+	}
+
+	return &bulkApplyResponse, nil
 }
 
 // GetDefaultBranchResponse represents the response from the default-branch endpoint

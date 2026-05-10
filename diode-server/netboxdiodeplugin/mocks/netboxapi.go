@@ -81,6 +81,65 @@ func (_c *NetBoxAPI_ApplyChangeSet_Call) RunAndReturn(run func(context.Context, 
 	return _c
 }
 
+// BulkApply provides a mock function with given fields: _a0, _a1
+func (_m *NetBoxAPI) BulkApply(_a0 context.Context, _a1 netboxdiodeplugin.BulkApplyRequest) (*netboxdiodeplugin.BulkApplyResponse, error) {
+	ret := _m.Called(_a0, _a1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for BulkApply")
+	}
+
+	var r0 *netboxdiodeplugin.BulkApplyResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, netboxdiodeplugin.BulkApplyRequest) (*netboxdiodeplugin.BulkApplyResponse, error)); ok {
+		return rf(_a0, _a1)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, netboxdiodeplugin.BulkApplyRequest) *netboxdiodeplugin.BulkApplyResponse); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*netboxdiodeplugin.BulkApplyResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, netboxdiodeplugin.BulkApplyRequest) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// NetBoxAPI_BulkApply_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BulkApply'
+type NetBoxAPI_BulkApply_Call struct {
+	*mock.Call
+}
+
+// BulkApply is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - _a1 netboxdiodeplugin.BulkApplyRequest
+func (_e *NetBoxAPI_Expecter) BulkApply(_a0 interface{}, _a1 interface{}) *NetBoxAPI_BulkApply_Call {
+	return &NetBoxAPI_BulkApply_Call{Call: _e.mock.On("BulkApply", _a0, _a1)}
+}
+
+func (_c *NetBoxAPI_BulkApply_Call) Run(run func(_a0 context.Context, _a1 netboxdiodeplugin.BulkApplyRequest)) *NetBoxAPI_BulkApply_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(netboxdiodeplugin.BulkApplyRequest))
+	})
+	return _c
+}
+
+func (_c *NetBoxAPI_BulkApply_Call) Return(_a0 *netboxdiodeplugin.BulkApplyResponse, _a1 error) *NetBoxAPI_BulkApply_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *NetBoxAPI_BulkApply_Call) RunAndReturn(run func(context.Context, netboxdiodeplugin.BulkApplyRequest) (*netboxdiodeplugin.BulkApplyResponse, error)) *NetBoxAPI_BulkApply_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // BulkPlan provides a mock function with given fields: _a0, _a1
 func (_m *NetBoxAPI) BulkPlan(_a0 context.Context, _a1 netboxdiodeplugin.BulkPlanRequest) (*netboxdiodeplugin.BulkPlanResponse, error) {
 	ret := _m.Called(_a0, _a1)
