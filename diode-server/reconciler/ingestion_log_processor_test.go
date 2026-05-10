@@ -122,12 +122,7 @@ func TestIngestionLogProcessor_ProcessesItems(t *testing.T) {
 	}).Once()
 	mockMetrics.On("RecordChangeSetCreate", mock.Anything, true, int64(1)).Times(2)
 
-	cfg := reconciler.Config{AutoApplyChangesets: true}
-	mockOps.On("ApplyChangeSet", mock.Anything, int32(1), ingestionLog, int32(10), cs).Return(nil).Once()
-	mockOps.On("ApplyChangeSet", mock.Anything, int32(2), ingestionLog, int32(10), cs).Return(nil).Once()
-	mockMetrics.On("RecordChangeSetApply", mock.Anything, true, int64(1)).Times(2)
-
-	p := reconciler.NewIngestionLogProcessor(newIngestionLogProcessorTestLogger(), cfg, repo, mockOps, mockMetrics, nil)
+	p := reconciler.NewIngestionLogProcessor(newIngestionLogProcessorTestLogger(), reconciler.Config{}, repo, mockOps, mockMetrics, nil)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)
@@ -193,99 +188,6 @@ func TestIngestionLogProcessor_GenerateChangeSetError(t *testing.T) {
 	mockMetrics.AssertExpectations(t)
 }
 
-func TestIngestionLogProcessor_ApplyChangeSetError(t *testing.T) {
-	repo := mocks.NewRepository(t)
-	mockOps := mocks.NewIngestionProcessorOps(t)
-	mockMetrics := mocks.NewMetrics(t)
-
-	ingestionLog := newTestIngestionLog()
-	batch := []ops.QueuedIngestionLog{{ID: 1, IngestionLog: ingestionLog}}
-	csID := int32Ptr(10)
-	cs := &changeset.ChangeSet{
-		Changes: []changeset.Change{{ChangeType: "create"}},
-	}
-
-	claimed := make(chan struct{}, 1)
-	repo.On("ClaimQueuedIngestionLogs", mock.Anything, int32(100)).
-		Return(batch, nil).Once().Run(func(_ mock.Arguments) {
-		select {
-		case claimed <- struct{}{}:
-		default:
-		}
-	})
-	repo.On("ClaimQueuedIngestionLogs", mock.Anything, int32(100)).
-		Return([]ops.QueuedIngestionLog{}, nil).Maybe()
-
-	mockOps.On("DefaultBranch", mock.Anything).Return(nil, nil).Maybe()
-	mockOps.On("BulkGenerateChangeSets", mock.Anything, batch, "").Return([]ops.BulkGenerateChangeSetResult{
-		{IngestionLogID: 1, ChangeSetID: csID, ChangeSet: cs},
-	}).Once()
-	mockMetrics.On("RecordChangeSetCreate", mock.Anything, true, int64(1)).Once()
-
-	mockOps.On("ApplyChangeSet", mock.Anything, int32(1), ingestionLog, int32(10), cs).
-		Return(errors.New("apply failed")).Once()
-	mockMetrics.On("RecordChangeSetApply", mock.Anything, false, int64(0)).Once()
-
-	cfg := reconciler.Config{AutoApplyChangesets: true}
-	p := reconciler.NewIngestionLogProcessor(newIngestionLogProcessorTestLogger(), cfg, repo, mockOps, mockMetrics, nil)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	done := make(chan error, 1)
-	go func() { done <- p.Start(ctx) }()
-
-	<-claimed
-	time.Sleep(200 * time.Millisecond)
-	cancel()
-	<-done
-
-	mockOps.AssertExpectations(t)
-	mockMetrics.AssertExpectations(t)
-}
-
-func TestIngestionLogProcessor_SkipsApplyWhenDisabled(t *testing.T) {
-	repo := mocks.NewRepository(t)
-	mockOps := mocks.NewIngestionProcessorOps(t)
-	mockMetrics := mocks.NewMetrics(t)
-
-	ingestionLog := newTestIngestionLog()
-	batch := []ops.QueuedIngestionLog{{ID: 1, IngestionLog: ingestionLog}}
-	csID := int32Ptr(10)
-	cs := &changeset.ChangeSet{
-		Changes: []changeset.Change{{ChangeType: "create"}},
-	}
-
-	claimed := make(chan struct{}, 1)
-	repo.On("ClaimQueuedIngestionLogs", mock.Anything, int32(100)).
-		Return(batch, nil).Once().Run(func(_ mock.Arguments) {
-		select {
-		case claimed <- struct{}{}:
-		default:
-		}
-	})
-	repo.On("ClaimQueuedIngestionLogs", mock.Anything, int32(100)).
-		Return([]ops.QueuedIngestionLog{}, nil).Maybe()
-
-	mockOps.On("DefaultBranch", mock.Anything).Return(nil, nil).Maybe()
-	mockOps.On("BulkGenerateChangeSets", mock.Anything, batch, "").Return([]ops.BulkGenerateChangeSetResult{
-		{IngestionLogID: 1, ChangeSetID: csID, ChangeSet: cs},
-	}).Once()
-	mockMetrics.On("RecordChangeSetCreate", mock.Anything, true, int64(1)).Once()
-
-	cfg := reconciler.Config{AutoApplyChangesets: false}
-	p := reconciler.NewIngestionLogProcessor(newIngestionLogProcessorTestLogger(), cfg, repo, mockOps, mockMetrics, nil)
-
-	ctx, cancel := context.WithCancel(context.Background())
-	done := make(chan error, 1)
-	go func() { done <- p.Start(ctx) }()
-
-	<-claimed
-	time.Sleep(200 * time.Millisecond)
-	cancel()
-	<-done
-
-	mockOps.AssertNotCalled(t, "ApplyChangeSet", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything)
-	mockMetrics.AssertNotCalled(t, "RecordChangeSetApply", mock.Anything, mock.Anything, mock.Anything)
-}
 
 func TestIngestionLogProcessor_BackpressureSkipsProcessing(t *testing.T) {
 	repo := mocks.NewRepository(t)

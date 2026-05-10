@@ -22,8 +22,8 @@ const (
 // Postgres contention (e.g., during heavy Redis stream drain).
 type BackpressureFunc func(ctx context.Context) bool
 
-// IngestionLogProcessor polls ingestion_logs for QUEUED rows and processes them
-// through GenerateChangeSet and (optionally) ApplyChangeSet.
+// IngestionLogProcessor polls ingestion_logs for QUEUED rows and generates change sets.
+// Applying change sets is handled by a separate ApplyProcessor.
 type IngestionLogProcessor struct {
 	config       Config
 	logger       *slog.Logger
@@ -174,19 +174,5 @@ func (p *IngestionLogProcessor) processBatch(ctx context.Context, batch []ops.Qu
 		if result.ChangeSet != nil {
 			p.metrics.RecordChangeSetCreate(metricsCtx, true, int64(len(result.ChangeSet.Changes)))
 		}
-
-		if !p.config.AutoApplyChangesets {
-			continue
-		}
-		if result.ChangeSet == nil || len(result.ChangeSet.Changes) == 0 || result.ChangeSetID == nil {
-			continue
-		}
-
-		if err := p.ops.ApplyChangeSet(ctx, item.ID, item.IngestionLog, *result.ChangeSetID, result.ChangeSet); err != nil {
-			p.logger.Error("error applying changeset", "error", err, "ingestionLogID", item.ID)
-			p.metrics.RecordChangeSetApply(metricsCtx, false, 0)
-			continue
-		}
-		p.metrics.RecordChangeSetApply(metricsCtx, true, int64(len(result.ChangeSet.Changes)))
 	}
 }
