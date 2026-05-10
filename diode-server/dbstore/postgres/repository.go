@@ -801,11 +801,11 @@ func (r *Repository) loadLatestChangeSets(ctx context.Context, ingestionLogIDs [
 	}
 
 	type csRow struct {
-		id              int32
-		externalID      string
-		ingestionLogID  int32
-		branchID        *string
-		deviationName   *string
+		id             int32
+		externalID     string
+		ingestionLogID int32
+		branchID       *string
+		deviationName  *string
 	}
 
 	var csRows []csRow

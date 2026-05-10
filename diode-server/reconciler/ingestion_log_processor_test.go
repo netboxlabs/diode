@@ -188,7 +188,6 @@ func TestIngestionLogProcessor_GenerateChangeSetError(t *testing.T) {
 	mockMetrics.AssertExpectations(t)
 }
 
-
 func TestIngestionLogProcessor_BackpressureSkipsProcessing(t *testing.T) {
 	repo := mocks.NewRepository(t)
 	mockOps := mocks.NewIngestionProcessorOps(t)
