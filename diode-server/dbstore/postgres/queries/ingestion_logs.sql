@@ -118,3 +118,20 @@ WHERE id IN (
     FOR UPDATE SKIP LOCKED
 )
 RETURNING *;
+
+-- name: ClaimOpenIngestionLogs :many
+UPDATE ingestion_logs
+SET state = 8
+WHERE id IN (
+    SELECT id FROM ingestion_logs
+    WHERE state = 2
+    ORDER BY id
+    LIMIT sqlc.arg('batch_size')
+    FOR UPDATE SKIP LOCKED
+)
+RETURNING *;
+
+-- name: ResetApplyingIngestionLogs :exec
+UPDATE ingestion_logs
+SET state = 2
+WHERE state = 8;

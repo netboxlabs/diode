@@ -46,3 +46,24 @@ type BulkPersistResult struct {
 	ChangeSetID    *int32
 }
 
+// BulkApplyItem groups the data needed to apply a single change set within a bulk apply call.
+type BulkApplyItem struct {
+	IngestionLogID int32
+	IngestionLog   *reconcilerpb.IngestionLog
+	ChangeSetID    int32
+	ChangeSet      *changeset.ChangeSet
+}
+
+// BulkApplyResult holds the outcome of applying one change set within a bulk operation.
+type BulkApplyResult struct {
+	IngestionLogID int32
+	Err            error
+}
+
+// OpenIngestionLog represents an ingestion log in OPEN state with its latest changeset loaded from the DB.
+type OpenIngestionLog struct {
+	ID           int32
+	IngestionLog *reconcilerpb.IngestionLog
+	ChangeSetID  int32
+	ChangeSet    *changeset.ChangeSet
+}

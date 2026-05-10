@@ -738,3 +738,166 @@ func (r *Repository) ClaimQueuedIngestionLogs(ctx context.Context, batchSize int
 	}
 	return result, nil
 }
+
+// ClaimOpenIngestionLogs claims a batch of OPEN ingestion logs for applying and
+// loads the latest changeset with its changes for each claimed row.
+func (r *Repository) ClaimOpenIngestionLogs(ctx context.Context, batchSize int32) ([]ops.OpenIngestionLog, error) {
+	dbLogs, err := r.queries.ClaimOpenIngestionLogs(ctx, batchSize)
+	if err != nil {
+		return nil, fmt.Errorf("failed to claim open ingestion logs: %w", err)
+	}
+	if len(dbLogs) == 0 {
+		return nil, nil
+	}
+
+	ids := make([]int32, len(dbLogs))
+	logByID := make(map[int32]*reconcilerpb.IngestionLog, len(dbLogs))
+	for i, dbLog := range dbLogs {
+		ids[i] = dbLog.ID
+		proto, err := dbLog.ToProto()
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert ingestion log %d to proto: %w", dbLog.ID, err)
+		}
+		logByID[dbLog.ID] = proto
+	}
+
+	changeSets, err := r.loadLatestChangeSets(ctx, ids)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load change sets: %w", err)
+	}
+
+	result := make([]ops.OpenIngestionLog, 0, len(dbLogs))
+	for _, dbLog := range dbLogs {
+		cs, ok := changeSets[dbLog.ID]
+		if !ok {
+			continue
+		}
+		result = append(result, ops.OpenIngestionLog{
+			ID:           dbLog.ID,
+			IngestionLog: logByID[dbLog.ID],
+			ChangeSetID:  cs.dbID,
+			ChangeSet:    &cs.changeSet,
+		})
+	}
+	return result, nil
+}
+
+type loadedChangeSet struct {
+	dbID      int32
+	changeSet changeset.ChangeSet
+}
+
+// loadLatestChangeSets loads the most recent changeset and its changes for each ingestion log ID.
+func (r *Repository) loadLatestChangeSets(ctx context.Context, ingestionLogIDs []int32) (map[int32]loadedChangeSet, error) {
+	rows, err := r.pool.Query(ctx, `
+		SELECT DISTINCT ON (cs.ingestion_log_id)
+			cs.id, cs.external_id, cs.ingestion_log_id, cs.branch_id, cs.deviation_name
+		FROM change_sets cs
+		WHERE cs.ingestion_log_id = ANY($1)
+		ORDER BY cs.ingestion_log_id, cs.id DESC
+	`, ingestionLogIDs)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query change sets: %w", err)
+	}
+
+	type csRow struct {
+		id              int32
+		externalID      string
+		ingestionLogID  int32
+		branchID        *string
+		deviationName   *string
+	}
+
+	var csRows []csRow
+	csIDToIngLogID := make(map[int32]int32)
+	var csIDs []int32
+	for rows.Next() {
+		var r csRow
+		var branchID, devName pgtype.Text
+		if err := rows.Scan(&r.id, &r.externalID, &r.ingestionLogID, &branchID, &devName); err != nil {
+			rows.Close()
+			return nil, fmt.Errorf("failed to scan change set row: %w", err)
+		}
+		if branchID.Valid {
+			r.branchID = &branchID.String
+		}
+		if devName.Valid {
+			r.deviationName = &devName.String
+		}
+		csRows = append(csRows, r)
+		csIDToIngLogID[r.id] = r.ingestionLogID
+		csIDs = append(csIDs, r.id)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("failed to iterate change set rows: %w", err)
+	}
+
+	if len(csIDs) == 0 {
+		return nil, nil
+	}
+
+	changeRows, err := r.pool.Query(ctx, `
+		SELECT change_set_id, external_id, change_type, object_type, object_primary_value,
+			   object_id, ref_id, object_version, before, after, new_refs, sequence_number
+		FROM changes
+		WHERE change_set_id = ANY($1) AND change_type != 'noop'
+		ORDER BY change_set_id, sequence_number
+	`, csIDs)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query changes: %w", err)
+	}
+	defer changeRows.Close()
+
+	changesByCSID := make(map[int32][]changeset.Change)
+	for changeRows.Next() {
+		var csID int32
+		var c changeset.Change
+		var objectID, objectVersion pgtype.Int4
+		var refID pgtype.Text
+		var newRefs []string
+		var seqNum pgtype.Int4
+
+		if err := changeRows.Scan(
+			&csID, &c.ID, &c.ChangeType, &c.ObjectType, &c.ObjectPrimaryValue,
+			&objectID, &refID, &objectVersion, &c.Before, &c.After, &newRefs, &seqNum,
+		); err != nil {
+			return nil, fmt.Errorf("failed to scan change row: %w", err)
+		}
+		if objectID.Valid {
+			v := int(objectID.Int32)
+			c.ObjectID = &v
+		}
+		if refID.Valid {
+			c.RefID = &refID.String
+		}
+		if objectVersion.Valid {
+			v := int(objectVersion.Int32)
+			c.ObjectVersion = &v
+		}
+		c.NewRefs = newRefs
+		changesByCSID[csID] = append(changesByCSID[csID], c)
+	}
+	if err := changeRows.Err(); err != nil {
+		return nil, fmt.Errorf("failed to iterate change rows: %w", err)
+	}
+
+	result := make(map[int32]loadedChangeSet, len(csRows))
+	for _, cs := range csRows {
+		result[cs.ingestionLogID] = loadedChangeSet{
+			dbID: cs.id,
+			changeSet: changeset.ChangeSet{
+				ID:            cs.externalID,
+				Changes:       changesByCSID[cs.id],
+				BranchID:      cs.branchID,
+				DeviationName: cs.deviationName,
+			},
+		}
+	}
+	return result, nil
+}
+
+// ResetApplyingIngestionLogs resets any ingestion logs stuck in APPLYING state back to OPEN.
+func (r *Repository) ResetApplyingIngestionLogs(ctx context.Context) error {
+	return r.queries.ResetApplyingIngestionLogs(ctx)
+}

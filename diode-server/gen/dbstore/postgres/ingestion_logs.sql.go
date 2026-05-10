@@ -62,6 +62,59 @@ func (q *Queries) BulkUpdateIngestionLogStates(ctx context.Context, arg BulkUpda
 	return err
 }
 
+const claimOpenIngestionLogs = `-- name: ClaimOpenIngestionLogs :many
+UPDATE ingestion_logs
+SET state = 8
+WHERE id IN (
+    SELECT id FROM ingestion_logs
+    WHERE state = 2
+    ORDER BY id
+    LIMIT $1
+    FOR UPDATE SKIP LOCKED
+)
+RETURNING id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count
+`
+
+func (q *Queries) ClaimOpenIngestionLogs(ctx context.Context, batchSize int32) ([]IngestionLog, error) {
+	rows, err := q.db.Query(ctx, claimOpenIngestionLogs, batchSize)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []IngestionLog
+	for rows.Next() {
+		var i IngestionLog
+		if err := rows.Scan(
+			&i.ID,
+			&i.ExternalID,
+			&i.ObjectType,
+			&i.State,
+			&i.RequestID,
+			&i.IngestionTs,
+			&i.SourceTs,
+			&i.ProducerAppName,
+			&i.ProducerAppVersion,
+			&i.SdkName,
+			&i.SdkVersion,
+			&i.Entity,
+			&i.Error,
+			&i.SourceMetadata,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.EntityHash,
+			&i.LastSeen,
+			&i.DuplicateCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const claimQueuedIngestionLogs = `-- name: ClaimQueuedIngestionLogs :many
 UPDATE ingestion_logs
 SET state = 2
@@ -360,6 +413,17 @@ WHERE id = $1
 
 func (q *Queries) IncrementDuplicateCount(ctx context.Context, id int32) error {
 	_, err := q.db.Exec(ctx, incrementDuplicateCount, id)
+	return err
+}
+
+const resetApplyingIngestionLogs = `-- name: ResetApplyingIngestionLogs :exec
+UPDATE ingestion_logs
+SET state = 2
+WHERE state = 8
+`
+
+func (q *Queries) ResetApplyingIngestionLogs(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, resetApplyingIngestionLogs)
 	return err
 }
 
