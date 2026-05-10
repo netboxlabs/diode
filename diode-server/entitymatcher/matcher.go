@@ -75,7 +75,7 @@ func getEntityTypeName(entity *diodepb.Entity) string {
 
 	// Extract the inner value from the Entity oneof
 	innerValue := reflect.ValueOf(entity.Entity)
-	if innerValue.Kind() == reflect.Ptr || innerValue.Kind() == reflect.Interface {
+	if innerValue.Kind() == reflect.Pointer || innerValue.Kind() == reflect.Interface {
 		innerValue = innerValue.Elem()
 	}
 
@@ -144,7 +144,7 @@ func extractFieldValue(data any, fieldPath string) (any, error) {
 		default:
 			// Use reflection for struct field access
 			val := reflect.ValueOf(current)
-			if val.Kind() == reflect.Ptr {
+			if val.Kind() == reflect.Pointer {
 				if val.IsNil() {
 					return nil, nil
 				}
