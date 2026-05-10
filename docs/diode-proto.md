@@ -5181,6 +5181,7 @@ The response from the retrieve ingestion logs request
 | NO_CHANGES | 5 |  |
 | IGNORED | 6 |  |
 | ERRORED | 7 |  |
+| APPLYING | 8 |  |
 
 
  

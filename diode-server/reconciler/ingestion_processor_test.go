@@ -26,7 +26,6 @@ import (
 	reconops "github.com/netboxlabs/diode/diode-server/reconciler/ops"
 )
 
-
 func int32Ptr(i int32) *int32 { return &i }
 
 func testCompressBrotli(t *testing.T, data []byte) []byte {
