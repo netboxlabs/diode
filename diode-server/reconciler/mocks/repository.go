@@ -28,22 +28,24 @@ func (_m *Repository) EXPECT() *Repository_Expecter {
 }
 
 // BulkCreateIngestionLogs provides a mock function with given fields: ctx, logs, sourceMetadata, entityHashes
-func (_m *Repository) BulkCreateIngestionLogs(ctx context.Context, logs []*reconcilerpb.IngestionLog, sourceMetadata [][]byte, entityHashes []string) (int64, error) {
+func (_m *Repository) BulkCreateIngestionLogs(ctx context.Context, logs []*reconcilerpb.IngestionLog, sourceMetadata [][]byte, entityHashes []string) (map[string]int32, error) {
 	ret := _m.Called(ctx, logs, sourceMetadata, entityHashes)
 
 	if len(ret) == 0 {
 		panic("no return value specified for BulkCreateIngestionLogs")
 	}
 
-	var r0 int64
+	var r0 map[string]int32
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, []*reconcilerpb.IngestionLog, [][]byte, []string) (int64, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, []*reconcilerpb.IngestionLog, [][]byte, []string) (map[string]int32, error)); ok {
 		return rf(ctx, logs, sourceMetadata, entityHashes)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, []*reconcilerpb.IngestionLog, [][]byte, []string) int64); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, []*reconcilerpb.IngestionLog, [][]byte, []string) map[string]int32); ok {
 		r0 = rf(ctx, logs, sourceMetadata, entityHashes)
 	} else {
-		r0 = ret.Get(0).(int64)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string]int32)
+		}
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, []*reconcilerpb.IngestionLog, [][]byte, []string) error); ok {
@@ -76,12 +78,12 @@ func (_c *Repository_BulkCreateIngestionLogs_Call) Run(run func(ctx context.Cont
 	return _c
 }
 
-func (_c *Repository_BulkCreateIngestionLogs_Call) Return(_a0 int64, _a1 error) *Repository_BulkCreateIngestionLogs_Call {
+func (_c *Repository_BulkCreateIngestionLogs_Call) Return(_a0 map[string]int32, _a1 error) *Repository_BulkCreateIngestionLogs_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Repository_BulkCreateIngestionLogs_Call) RunAndReturn(run func(context.Context, []*reconcilerpb.IngestionLog, [][]byte, []string) (int64, error)) *Repository_BulkCreateIngestionLogs_Call {
+func (_c *Repository_BulkCreateIngestionLogs_Call) RunAndReturn(run func(context.Context, []*reconcilerpb.IngestionLog, [][]byte, []string) (map[string]int32, error)) *Repository_BulkCreateIngestionLogs_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -129,6 +131,65 @@ func (_c *Repository_BulkIncrementDuplicateCounts_Call) Return(_a0 error) *Repos
 }
 
 func (_c *Repository_BulkIncrementDuplicateCounts_Call) RunAndReturn(run func(context.Context, []int32) error) *Repository_BulkIncrementDuplicateCounts_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ClaimQueuedIngestionLogs provides a mock function with given fields: ctx, batchSize
+func (_m *Repository) ClaimQueuedIngestionLogs(ctx context.Context, batchSize int32) ([]ops.QueuedIngestionLog, error) {
+	ret := _m.Called(ctx, batchSize)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ClaimQueuedIngestionLogs")
+	}
+
+	var r0 []ops.QueuedIngestionLog
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, int32) ([]ops.QueuedIngestionLog, error)); ok {
+		return rf(ctx, batchSize)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, int32) []ops.QueuedIngestionLog); ok {
+		r0 = rf(ctx, batchSize)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]ops.QueuedIngestionLog)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, int32) error); ok {
+		r1 = rf(ctx, batchSize)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Repository_ClaimQueuedIngestionLogs_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ClaimQueuedIngestionLogs'
+type Repository_ClaimQueuedIngestionLogs_Call struct {
+	*mock.Call
+}
+
+// ClaimQueuedIngestionLogs is a helper method to define mock.On call
+//   - ctx context.Context
+//   - batchSize int32
+func (_e *Repository_Expecter) ClaimQueuedIngestionLogs(ctx interface{}, batchSize interface{}) *Repository_ClaimQueuedIngestionLogs_Call {
+	return &Repository_ClaimQueuedIngestionLogs_Call{Call: _e.mock.On("ClaimQueuedIngestionLogs", ctx, batchSize)}
+}
+
+func (_c *Repository_ClaimQueuedIngestionLogs_Call) Run(run func(ctx context.Context, batchSize int32)) *Repository_ClaimQueuedIngestionLogs_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(int32))
+	})
+	return _c
+}
+
+func (_c *Repository_ClaimQueuedIngestionLogs_Call) Return(_a0 []ops.QueuedIngestionLog, _a1 error) *Repository_ClaimQueuedIngestionLogs_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Repository_ClaimQueuedIngestionLogs_Call) RunAndReturn(run func(context.Context, int32) ([]ops.QueuedIngestionLog, error)) *Repository_ClaimQueuedIngestionLogs_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -308,65 +369,6 @@ func (_c *Repository_CreateIngestionLog_Call) Return(_a0 *int32, _a1 error) *Rep
 }
 
 func (_c *Repository_CreateIngestionLog_Call) RunAndReturn(run func(context.Context, *reconcilerpb.IngestionLog, []byte, string) (*int32, error)) *Repository_CreateIngestionLog_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// FindIngestionLogIDsByExternalIDs provides a mock function with given fields: ctx, externalIDs
-func (_m *Repository) FindIngestionLogIDsByExternalIDs(ctx context.Context, externalIDs []string) (map[string]int32, error) {
-	ret := _m.Called(ctx, externalIDs)
-
-	if len(ret) == 0 {
-		panic("no return value specified for FindIngestionLogIDsByExternalIDs")
-	}
-
-	var r0 map[string]int32
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, []string) (map[string]int32, error)); ok {
-		return rf(ctx, externalIDs)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, []string) map[string]int32); ok {
-		r0 = rf(ctx, externalIDs)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[string]int32)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, []string) error); ok {
-		r1 = rf(ctx, externalIDs)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// Repository_FindIngestionLogIDsByExternalIDs_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FindIngestionLogIDsByExternalIDs'
-type Repository_FindIngestionLogIDsByExternalIDs_Call struct {
-	*mock.Call
-}
-
-// FindIngestionLogIDsByExternalIDs is a helper method to define mock.On call
-//   - ctx context.Context
-//   - externalIDs []string
-func (_e *Repository_Expecter) FindIngestionLogIDsByExternalIDs(ctx interface{}, externalIDs interface{}) *Repository_FindIngestionLogIDsByExternalIDs_Call {
-	return &Repository_FindIngestionLogIDsByExternalIDs_Call{Call: _e.mock.On("FindIngestionLogIDsByExternalIDs", ctx, externalIDs)}
-}
-
-func (_c *Repository_FindIngestionLogIDsByExternalIDs_Call) Run(run func(ctx context.Context, externalIDs []string)) *Repository_FindIngestionLogIDsByExternalIDs_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].([]string))
-	})
-	return _c
-}
-
-func (_c *Repository_FindIngestionLogIDsByExternalIDs_Call) Return(_a0 map[string]int32, _a1 error) *Repository_FindIngestionLogIDsByExternalIDs_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *Repository_FindIngestionLogIDsByExternalIDs_Call) RunAndReturn(run func(context.Context, []string) (map[string]int32, error)) *Repository_FindIngestionLogIDsByExternalIDs_Call {
 	_c.Call.Return(run)
 	return _c
 }

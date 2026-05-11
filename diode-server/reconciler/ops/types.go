@@ -15,3 +15,9 @@ type PriorIngestionLog struct {
 	ID           int32
 	IngestionLog *reconcilerpb.IngestionLog
 }
+
+// QueuedIngestionLog represents an ingestion log in QUEUED state ready for processing
+type QueuedIngestionLog struct {
+	ID           int32
+	IngestionLog *reconcilerpb.IngestionLog
+}

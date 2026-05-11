@@ -289,12 +289,11 @@ func TestIngestionProcessorStart(t *testing.T) {
 	time.Sleep(50 * time.Millisecond)
 
 	mockRepository.On("FindPriorIngestionLogsByEntityHashes", mock.Anything, mock.Anything, mock.Anything).Return(map[string]*reconops.PriorIngestionLog{}, nil)
-	mockRepository.On("BulkCreateIngestionLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(int64(1), nil)
-	mockRepository.On("FindIngestionLogIDsByExternalIDs", mock.Anything, mock.Anything).Return(
-		func(_ context.Context, externalIDs []string) map[string]int32 {
-			result := make(map[string]int32, len(externalIDs))
-			for i, id := range externalIDs {
-				result[id] = int32(i + 1)
+	mockRepository.On("BulkCreateIngestionLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
+		func(_ context.Context, logs []*reconcilerpb.IngestionLog, _ [][]byte, _ []string) map[string]int32 {
+			result := make(map[string]int32, len(logs))
+			for i, log := range logs {
+				result[log.Id] = int32(i + 1)
 			}
 			return result
 		}, nil)

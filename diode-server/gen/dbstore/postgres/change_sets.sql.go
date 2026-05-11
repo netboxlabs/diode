@@ -12,6 +12,21 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type BulkCreateChangesParams struct {
+	ExternalID         string          `json:"external_id"`
+	ChangeSetID        int32           `json:"change_set_id"`
+	ChangeType         string          `json:"change_type"`
+	ObjectType         string          `json:"object_type"`
+	ObjectPrimaryValue string          `json:"object_primary_value"`
+	ObjectID           pgtype.Int4     `json:"object_id"`
+	RefID              pgtype.Text     `json:"ref_id"`
+	ObjectVersion      pgtype.Int4     `json:"object_version"`
+	Before             json.RawMessage `json:"before"`
+	After              json.RawMessage `json:"after"`
+	NewRefs            []string        `json:"new_refs"`
+	SequenceNumber     pgtype.Int4     `json:"sequence_number"`
+}
+
 const createChange = `-- name: CreateChange :one
 
 INSERT INTO changes (external_id, change_set_id, change_type, object_type, object_primary_value, object_id,

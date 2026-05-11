@@ -9,6 +9,49 @@ import (
 	"context"
 )
 
+// iteratorForBulkCreateChanges implements pgx.CopyFromSource.
+type iteratorForBulkCreateChanges struct {
+	rows                 []BulkCreateChangesParams
+	skippedFirstNextCall bool
+}
+
+func (r *iteratorForBulkCreateChanges) Next() bool {
+	if len(r.rows) == 0 {
+		return false
+	}
+	if !r.skippedFirstNextCall {
+		r.skippedFirstNextCall = true
+		return true
+	}
+	r.rows = r.rows[1:]
+	return len(r.rows) > 0
+}
+
+func (r iteratorForBulkCreateChanges) Values() ([]interface{}, error) {
+	return []interface{}{
+		r.rows[0].ExternalID,
+		r.rows[0].ChangeSetID,
+		r.rows[0].ChangeType,
+		r.rows[0].ObjectType,
+		r.rows[0].ObjectPrimaryValue,
+		r.rows[0].ObjectID,
+		r.rows[0].RefID,
+		r.rows[0].ObjectVersion,
+		r.rows[0].Before,
+		r.rows[0].After,
+		r.rows[0].NewRefs,
+		r.rows[0].SequenceNumber,
+	}, nil
+}
+
+func (r iteratorForBulkCreateChanges) Err() error {
+	return nil
+}
+
+func (q *Queries) BulkCreateChanges(ctx context.Context, arg []BulkCreateChangesParams) (int64, error) {
+	return q.db.CopyFrom(ctx, []string{"changes"}, []string{"external_id", "change_set_id", "change_type", "object_type", "object_primary_value", "object_id", "ref_id", "object_version", "before", "after", "new_refs", "sequence_number"}, &iteratorForBulkCreateChanges{rows: arg})
+}
+
 // iteratorForBulkCreateIngestionLogs implements pgx.CopyFromSource.
 type iteratorForBulkCreateIngestionLogs struct {
 	rows                 []BulkCreateIngestionLogsParams
@@ -29,6 +72,7 @@ func (r *iteratorForBulkCreateIngestionLogs) Next() bool {
 
 func (r iteratorForBulkCreateIngestionLogs) Values() ([]interface{}, error) {
 	return []interface{}{
+		r.rows[0].ID,
 		r.rows[0].ExternalID,
 		r.rows[0].ObjectType,
 		r.rows[0].State,
@@ -50,5 +94,5 @@ func (r iteratorForBulkCreateIngestionLogs) Err() error {
 }
 
 func (q *Queries) BulkCreateIngestionLogs(ctx context.Context, arg []BulkCreateIngestionLogsParams) (int64, error) {
-	return q.db.CopyFrom(ctx, []string{"ingestion_logs"}, []string{"external_id", "object_type", "state", "request_id", "ingestion_ts", "source_ts", "producer_app_name", "producer_app_version", "sdk_name", "sdk_version", "entity", "source_metadata", "entity_hash"}, &iteratorForBulkCreateIngestionLogs{rows: arg})
+	return q.db.CopyFrom(ctx, []string{"ingestion_logs"}, []string{"id", "external_id", "object_type", "state", "request_id", "ingestion_ts", "source_ts", "producer_app_name", "producer_app_version", "sdk_name", "sdk_version", "entity", "source_metadata", "entity_hash"}, &iteratorForBulkCreateIngestionLogs{rows: arg})
 }

@@ -25,7 +25,9 @@ type Repository interface {
 
 	// Bulk operations
 	FindPriorIngestionLogsByEntityHashes(ctx context.Context, entityHashes []string, currentBranch *string) (map[string]*ops.PriorIngestionLog, error)
-	BulkCreateIngestionLogs(ctx context.Context, logs []*reconcilerpb.IngestionLog, sourceMetadata [][]byte, entityHashes []string) (int64, error)
-	FindIngestionLogIDsByExternalIDs(ctx context.Context, externalIDs []string) (map[string]int32, error)
+	BulkCreateIngestionLogs(ctx context.Context, logs []*reconcilerpb.IngestionLog, sourceMetadata [][]byte, entityHashes []string) (map[string]int32, error)
 	BulkIncrementDuplicateCounts(ctx context.Context, ids []int32) error
+
+	// Inbox processing
+	ClaimQueuedIngestionLogs(ctx context.Context, batchSize int32) ([]ops.QueuedIngestionLog, error)
 }
