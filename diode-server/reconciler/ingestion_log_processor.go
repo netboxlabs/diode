@@ -84,7 +84,8 @@ func (p *IngestionLogProcessor) pollLoop(ctx context.Context) error {
 	concurrency := max(p.config.IngestionLogProcessorConcurrency, 1)
 
 	if concurrency == 1 {
-		return p.pollWorker(ctx)
+		p.pollWorker(ctx)
+		return nil
 	}
 
 	var wg sync.WaitGroup
@@ -92,26 +93,26 @@ func (p *IngestionLogProcessor) pollLoop(ctx context.Context) error {
 	for range concurrency {
 		go func() {
 			defer wg.Done()
-			_ = p.pollWorker(ctx)
+			p.pollWorker(ctx)
 		}()
 	}
 	wg.Wait()
 	return nil
 }
 
-func (p *IngestionLogProcessor) pollWorker(ctx context.Context) error {
+func (p *IngestionLogProcessor) pollWorker(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
 			p.logger.Debug("ingestion log processor exiting poll loop on request")
-			return nil
+			return
 		default:
 		}
 
 		if p.backpressure != nil && p.backpressure(ctx) {
 			select {
 			case <-ctx.Done():
-				return nil
+				return
 			case <-time.After(defaultIngestionLogIdleInterval):
 				continue
 			}
@@ -122,7 +123,7 @@ func (p *IngestionLogProcessor) pollWorker(ctx context.Context) error {
 			p.logger.Error("failed to claim queued ingestion logs", "error", err)
 			select {
 			case <-ctx.Done():
-				return nil
+				return
 			case <-time.After(defaultIngestionLogIdleInterval):
 				continue
 			}
@@ -131,7 +132,7 @@ func (p *IngestionLogProcessor) pollWorker(ctx context.Context) error {
 		if len(batch) == 0 {
 			select {
 			case <-ctx.Done():
-				return nil
+				return
 			case <-time.After(defaultIngestionLogIdleInterval):
 				continue
 			}
@@ -142,7 +143,7 @@ func (p *IngestionLogProcessor) pollWorker(ctx context.Context) error {
 		if len(batch) < int(p.batchSize) {
 			select {
 			case <-ctx.Done():
-				return nil
+				return
 			case <-time.After(defaultIngestionLogPollInterval):
 			}
 		}

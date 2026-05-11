@@ -72,7 +72,8 @@ func (p *ApplyProcessor) pollLoop(ctx context.Context) error {
 	concurrency := max(p.config.ApplyProcessorConcurrency, 1)
 
 	if concurrency == 1 {
-		return p.pollWorker(ctx)
+		p.pollWorker(ctx)
+		return nil
 	}
 
 	var wg sync.WaitGroup
@@ -80,19 +81,19 @@ func (p *ApplyProcessor) pollLoop(ctx context.Context) error {
 	for range concurrency {
 		go func() {
 			defer wg.Done()
-			_ = p.pollWorker(ctx)
+			p.pollWorker(ctx)
 		}()
 	}
 	wg.Wait()
 	return nil
 }
 
-func (p *ApplyProcessor) pollWorker(ctx context.Context) error {
+func (p *ApplyProcessor) pollWorker(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
 			p.logger.Debug("apply processor exiting poll loop on request")
-			return nil
+			return
 		default:
 		}
 
@@ -101,7 +102,7 @@ func (p *ApplyProcessor) pollWorker(ctx context.Context) error {
 			p.logger.Error("failed to claim open ingestion logs", "error", err)
 			select {
 			case <-ctx.Done():
-				return nil
+				return
 			case <-time.After(defaultIngestionLogIdleInterval):
 				continue
 			}
@@ -110,7 +111,7 @@ func (p *ApplyProcessor) pollWorker(ctx context.Context) error {
 		if len(batch) == 0 {
 			select {
 			case <-ctx.Done():
-				return nil
+				return
 			case <-time.After(defaultIngestionLogIdleInterval):
 				continue
 			}
@@ -121,7 +122,7 @@ func (p *ApplyProcessor) pollWorker(ctx context.Context) error {
 		if len(batch) < int(p.batchSize) {
 			select {
 			case <-ctx.Done():
-				return nil
+				return
 			case <-time.After(defaultIngestionLogPollInterval):
 			}
 		}
