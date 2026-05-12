@@ -26,29 +26,34 @@ import (
 // On crash mid-batch, rows stuck in APPLYING are reset to QUEUED at startup by
 // ResetApplyingIngestionLogs so the next worker iteration picks them up.
 type AutoApplyProcessor struct {
-	config    Config
-	logger    *slog.Logger
-	ops       IngestionProcessorOps
-	repo      Repository
-	metrics   Metrics
-	cancel    context.CancelFunc
-	mx        sync.Mutex
-	batchSize int32
+	config       Config
+	logger       *slog.Logger
+	ops          IngestionProcessorOps
+	repo         Repository
+	metrics      Metrics
+	backpressure BackpressureFunc
+	cancel       context.CancelFunc
+	mx           sync.Mutex
+	batchSize    int32
 }
 
-// NewAutoApplyProcessor creates a new auto-apply processor.
-func NewAutoApplyProcessor(logger *slog.Logger, cfg Config, repo Repository, ops IngestionProcessorOps, metrics Metrics) *AutoApplyProcessor {
+// NewAutoApplyProcessor creates a new auto-apply processor. backpressure may be
+// nil; when supplied it yields the poll loop (sleeps one idle interval) while
+// the caller-defined condition holds — typically used to let the Redis consume
+// loop catch up before AutoApply starts taking NetBox capacity.
+func NewAutoApplyProcessor(logger *slog.Logger, cfg Config, repo Repository, ops IngestionProcessorOps, metrics Metrics, backpressure BackpressureFunc) *AutoApplyProcessor {
 	batchSize := cfg.AutoApplyProcessorBatchSize
 	if batchSize <= 0 {
 		batchSize = defaultIngestionLogBatchSize
 	}
 	return &AutoApplyProcessor{
-		config:    cfg,
-		logger:    logger,
-		ops:       ops,
-		repo:      repo,
-		metrics:   metrics,
-		batchSize: batchSize,
+		config:       cfg,
+		logger:       logger,
+		ops:          ops,
+		repo:         repo,
+		metrics:      metrics,
+		backpressure: backpressure,
+		batchSize:    batchSize,
 	}
 }
 
@@ -106,6 +111,19 @@ func (p *AutoApplyProcessor) pollWorker(ctx context.Context) {
 			p.logger.Debug("auto-apply processor exiting poll loop on request")
 			return
 		default:
+		}
+
+		// Yield to the Redis consume loop when it's behind on draining.
+		// AutoApply both writes to NetBox and reads Postgres heavily, so
+		// during burst ingest we want consume loop to clear the stream
+		// before AutoApply contends for the same resources.
+		if p.backpressure != nil && p.backpressure(ctx) {
+			select {
+			case <-ctx.Done():
+				return
+			case <-time.After(defaultIngestionLogIdleInterval):
+				continue
+			}
 		}
 
 		batch, err := p.repo.ClaimQueuedForAutoApply(ctx, p.batchSize)

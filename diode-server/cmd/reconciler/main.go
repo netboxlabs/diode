@@ -229,24 +229,28 @@ func main() {
 	//   - true:  AutoApplyProcessor combines plan + apply in one /bulk-plan-apply round-trip,
 	//            never producing intermediate OPEN rows. ResetApplyingIngestionLogs at startup
 	//            recovers rows stuck in APPLYING from a previous crash.
+	//
+	// Both processors take a backpressure function so they yield to the Redis
+	// consume loop when the ingest stream is backed up — avoids competing for
+	// Postgres + NetBox capacity while the consume loop is still draining.
+	backpressure := func(ctx context.Context) bool {
+		xlen, err := redisStreamClient.XLen(ctx, reconciler.DefaultRedisStreamID).Result()
+		if err != nil {
+			return false
+		}
+		return xlen > cfg.IngestionLogProcessorBackpressureThreshold
+	}
 	if cfg.AutoApplyChangesets {
 		if err := repository.ResetApplyingIngestionLogs(ctx); err != nil {
 			s.Logger().Error("failed to reset applying ingestion logs", "error", err)
 		}
-		autoApplyProcessor := reconciler.NewAutoApplyProcessor(s.Logger(), cfg, repository, ops, metricRecorder)
+		autoApplyProcessor := reconciler.NewAutoApplyProcessor(s.Logger(), cfg, repository, ops, metricRecorder, backpressure)
 		if err := s.RegisterComponent(autoApplyProcessor); err != nil {
 			s.Logger().Error("failed to register auto-apply processor", "error", err)
 			metricRecorder.RecordServiceStartupAttempt(ctx, false)
 			os.Exit(1)
 		}
 	} else {
-		backpressure := func(ctx context.Context) bool {
-			xlen, err := redisStreamClient.XLen(ctx, reconciler.DefaultRedisStreamID).Result()
-			if err != nil {
-				return false
-			}
-			return xlen > cfg.IngestionLogProcessorBackpressureThreshold
-		}
 		ingestionLogProcessor := reconciler.NewIngestionLogProcessor(s.Logger(), cfg, repository, ops, metricRecorder, backpressure)
 		if err := s.RegisterComponent(ingestionLogProcessor); err != nil {
 			s.Logger().Error("failed to register ingestion log processor", "error", err)
