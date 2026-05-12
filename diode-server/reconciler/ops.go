@@ -591,7 +591,7 @@ func (o *Ops) BulkPlanApply(ctx context.Context, items []ops.QueuedIngestionLog,
 	})
 	if err != nil {
 		for i, item := range items {
-			results[i] = o.handlePlanApplyBatchFailure(ctx, item, err)
+			results[i] = o.persistPlanApplyFailurePlaceholder(ctx, item, branchID, err)
 		}
 		return results
 	}
@@ -608,7 +608,7 @@ func (o *Ops) BulkPlanApply(ctx context.Context, items []ops.QueuedIngestionLog,
 		entityID := fmt.Sprintf("%d", item.ID)
 		planApplyResult, found := resultByID[entityID]
 		if !found {
-			results[i] = o.handlePlanApplyBatchFailure(ctx, item, fmt.Errorf("no result returned for ingestion log %d", item.ID))
+			results[i] = o.persistPlanApplyFailurePlaceholder(ctx, item, branchID, fmt.Errorf("no result returned for ingestion log %d", item.ID))
 			continue
 		}
 
@@ -620,11 +620,10 @@ func (o *Ops) BulkPlanApply(ctx context.Context, items []ops.QueuedIngestionLog,
 		results[i].ApplyErr = applyErr
 
 		if planErr != nil {
-			// Plan failed — record state FAILED with error, no change_set to persist.
-			changeSetErr := handleChangeSetError(planErr)
-			if err2 := o.repository.UpdateIngestionLogStateWithError(ctx, item.ID, reconcilerpb.State_FAILED, changeSetErr); err2 != nil {
-				results[i].PlanErr = errors.Join(planErr, err2)
-			}
+			// Plan failed — record state FAILED with error, and persist a
+			// failure-placeholder change_set so audit/deviation-type tooling
+			// has something to associate against (matches BulkGenerateChangeSets).
+			results[i] = o.persistPlanApplyFailurePlaceholder(ctx, item, branchID, planErr)
 			continue
 		}
 
@@ -678,16 +677,36 @@ func (o *Ops) BulkPlanApply(ctx context.Context, items []ops.QueuedIngestionLog,
 	return results
 }
 
-func (o *Ops) handlePlanApplyBatchFailure(ctx context.Context, item ops.QueuedIngestionLog, err error) ops.BulkPlanApplyResult {
-	tags := map[string]string{"request_id": item.IngestionLog.GetRequestId()}
-	contextMap := map[string]any{"request_id": item.IngestionLog.GetRequestId(), "object_type": item.IngestionLog.GetObjectType()}
-	sentry.CaptureError(err, tags, "BulkPlanApply", contextMap)
-
-	changeSetErr := handleChangeSetError(err)
-	if err2 := o.repository.UpdateIngestionLogStateWithError(ctx, item.ID, reconcilerpb.State_FAILED, changeSetErr); err2 != nil {
-		err = errors.Join(err, err2)
+// persistPlanApplyFailurePlaceholder records a plan-phase failure as a
+// failure-placeholder change_set + ingestion log state=FAILED with the error
+// detail. Mirrors handleGenerateChangeSetFailure in the plan-only flow so
+// downstream consumers (deviation type association, audit) have a change_set
+// ID to attach to. Returns a fully populated BulkPlanApplyResult.
+func (o *Ops) persistPlanApplyFailurePlaceholder(ctx context.Context, item ops.QueuedIngestionLog, branchID string, planErr error) ops.BulkPlanApplyResult {
+	ingestEntity := differ.IngestEntity{
+		RequestID:  item.IngestionLog.GetRequestId(),
+		ObjectType: item.IngestionLog.GetObjectType(),
+		Entity:     item.IngestionLog.GetEntity(),
+		State:      int(item.IngestionLog.GetState()),
 	}
-	return ops.BulkPlanApplyResult{IngestionLogID: item.ID, PlanErr: err}
+
+	tags := map[string]string{"request_id": ingestEntity.RequestID}
+	contextMap := map[string]any{"request_id": ingestEntity.RequestID, "object_type": ingestEntity.ObjectType}
+	sentry.CaptureError(planErr, tags, "BulkPlanApply", contextMap)
+
+	changeSetErr := handleChangeSetError(planErr)
+	if err2 := o.repository.UpdateIngestionLogStateWithError(ctx, item.ID, reconcilerpb.State_FAILED, changeSetErr); err2 != nil {
+		planErr = errors.Join(planErr, err2)
+	}
+
+	cs := differ.FailedDiffChangeSet(ingestEntity, branchID)
+	id, err1 := o.repository.CreateChangeSet(ctx, *cs, item.ID)
+	if err1 != nil {
+		o.logger.Error("error creating failure placeholder change set", "ingestionLogID", item.ID, "error", err1)
+		return ops.BulkPlanApplyResult{IngestionLogID: item.ID, PlanErr: errors.Join(planErr, err1)}
+	}
+
+	return ops.BulkPlanApplyResult{IngestionLogID: item.ID, ChangeSetID: id, ChangeSet: cs, PlanErr: planErr}
 }
 
 func handleChangeSetError(err error) error {
