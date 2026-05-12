@@ -46,24 +46,14 @@ type BulkPersistResult struct {
 	ChangeSetID    *int32
 }
 
-// BulkApplyItem groups the data needed to apply a single change set within a bulk apply call.
-type BulkApplyItem struct {
+// BulkPlanApplyResult holds the outcome of one entity in a /bulk-plan-apply call.
+// ChangeSet is populated when the plan phase produced one (regardless of apply outcome).
+// PlanErr and ApplyErr are split so callers can attribute the failure phase; both nil
+// means the entity was planned and applied successfully.
+type BulkPlanApplyResult struct {
 	IngestionLogID int32
-	IngestionLog   *reconcilerpb.IngestionLog
-	ChangeSetID    int32
+	ChangeSetID    *int32
 	ChangeSet      *changeset.ChangeSet
-}
-
-// BulkApplyResult holds the outcome of applying one change set within a bulk operation.
-type BulkApplyResult struct {
-	IngestionLogID int32
-	Err            error
-}
-
-// OpenIngestionLog represents an ingestion log in OPEN state with its latest changeset loaded from the DB.
-type OpenIngestionLog struct {
-	ID           int32
-	IngestionLog *reconcilerpb.IngestionLog
-	ChangeSetID  int32
-	ChangeSet    *changeset.ChangeSet
+	PlanErr        error
+	ApplyErr       error
 }

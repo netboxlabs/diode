@@ -33,6 +33,6 @@ type Repository interface {
 
 	// Inbox processing
 	ClaimQueuedIngestionLogs(ctx context.Context, batchSize int32) ([]ops.QueuedIngestionLog, error)
-	ClaimOpenIngestionLogs(ctx context.Context, batchSize int32) ([]ops.OpenIngestionLog, error)
+	ClaimQueuedForAutoApply(ctx context.Context, batchSize int32) ([]ops.QueuedIngestionLog, error)
 	ResetApplyingIngestionLogs(ctx context.Context) error
 }

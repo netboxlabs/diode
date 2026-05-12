@@ -39,8 +39,8 @@ type Config struct {
 	IngestionLogProcessorConcurrency           int   `envconfig:"INGESTION_LOG_PROCESSOR_CONCURRENCY" default:"1"`
 	IngestionLogProcessorBackpressureThreshold int64 `envconfig:"INGESTION_LOG_PROCESSOR_BACKPRESSURE_THRESHOLD" default:"100"`
 
-	ApplyProcessorBatchSize   int32 `envconfig:"APPLY_PROCESSOR_BATCH_SIZE" default:"100"`
-	ApplyProcessorConcurrency int   `envconfig:"APPLY_PROCESSOR_CONCURRENCY" default:"1"`
+	AutoApplyProcessorBatchSize   int32 `envconfig:"AUTO_APPLY_PROCESSOR_BATCH_SIZE" default:"100"`
+	AutoApplyProcessorConcurrency int   `envconfig:"AUTO_APPLY_PROCESSOR_CONCURRENCY" default:"1"`
 
 	BulkOperationsEnabled bool `envconfig:"BULK_OPERATIONS_ENABLED" default:"false"`
 

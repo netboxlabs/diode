@@ -195,24 +195,24 @@ func (_c *Repository_BulkPersistChangeSets_Call) RunAndReturn(run func(context.C
 	return _c
 }
 
-// ClaimOpenIngestionLogs provides a mock function with given fields: ctx, batchSize
-func (_m *Repository) ClaimOpenIngestionLogs(ctx context.Context, batchSize int32) ([]ops.OpenIngestionLog, error) {
+// ClaimQueuedForAutoApply provides a mock function with given fields: ctx, batchSize
+func (_m *Repository) ClaimQueuedForAutoApply(ctx context.Context, batchSize int32) ([]ops.QueuedIngestionLog, error) {
 	ret := _m.Called(ctx, batchSize)
 
 	if len(ret) == 0 {
-		panic("no return value specified for ClaimOpenIngestionLogs")
+		panic("no return value specified for ClaimQueuedForAutoApply")
 	}
 
-	var r0 []ops.OpenIngestionLog
+	var r0 []ops.QueuedIngestionLog
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, int32) ([]ops.OpenIngestionLog, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, int32) ([]ops.QueuedIngestionLog, error)); ok {
 		return rf(ctx, batchSize)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, int32) []ops.OpenIngestionLog); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, int32) []ops.QueuedIngestionLog); ok {
 		r0 = rf(ctx, batchSize)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]ops.OpenIngestionLog)
+			r0 = ret.Get(0).([]ops.QueuedIngestionLog)
 		}
 	}
 
@@ -225,31 +225,31 @@ func (_m *Repository) ClaimOpenIngestionLogs(ctx context.Context, batchSize int3
 	return r0, r1
 }
 
-// Repository_ClaimOpenIngestionLogs_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ClaimOpenIngestionLogs'
-type Repository_ClaimOpenIngestionLogs_Call struct {
+// Repository_ClaimQueuedForAutoApply_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ClaimQueuedForAutoApply'
+type Repository_ClaimQueuedForAutoApply_Call struct {
 	*mock.Call
 }
 
-// ClaimOpenIngestionLogs is a helper method to define mock.On call
+// ClaimQueuedForAutoApply is a helper method to define mock.On call
 //   - ctx context.Context
 //   - batchSize int32
-func (_e *Repository_Expecter) ClaimOpenIngestionLogs(ctx interface{}, batchSize interface{}) *Repository_ClaimOpenIngestionLogs_Call {
-	return &Repository_ClaimOpenIngestionLogs_Call{Call: _e.mock.On("ClaimOpenIngestionLogs", ctx, batchSize)}
+func (_e *Repository_Expecter) ClaimQueuedForAutoApply(ctx interface{}, batchSize interface{}) *Repository_ClaimQueuedForAutoApply_Call {
+	return &Repository_ClaimQueuedForAutoApply_Call{Call: _e.mock.On("ClaimQueuedForAutoApply", ctx, batchSize)}
 }
 
-func (_c *Repository_ClaimOpenIngestionLogs_Call) Run(run func(ctx context.Context, batchSize int32)) *Repository_ClaimOpenIngestionLogs_Call {
+func (_c *Repository_ClaimQueuedForAutoApply_Call) Run(run func(ctx context.Context, batchSize int32)) *Repository_ClaimQueuedForAutoApply_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(int32))
 	})
 	return _c
 }
 
-func (_c *Repository_ClaimOpenIngestionLogs_Call) Return(_a0 []ops.OpenIngestionLog, _a1 error) *Repository_ClaimOpenIngestionLogs_Call {
+func (_c *Repository_ClaimQueuedForAutoApply_Call) Return(_a0 []ops.QueuedIngestionLog, _a1 error) *Repository_ClaimQueuedForAutoApply_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Repository_ClaimOpenIngestionLogs_Call) RunAndReturn(run func(context.Context, int32) ([]ops.OpenIngestionLog, error)) *Repository_ClaimOpenIngestionLogs_Call {
+func (_c *Repository_ClaimQueuedForAutoApply_Call) RunAndReturn(run func(context.Context, int32) ([]ops.QueuedIngestionLog, error)) *Repository_ClaimQueuedForAutoApply_Call {
 	_c.Call.Return(run)
 	return _c
 }

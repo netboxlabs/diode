@@ -99,6 +99,56 @@ func ConvertBulkPlanResult(result netboxdiodeplugin.BulkPlanResult, objectType s
 	return cs, nil
 }
 
+// ConvertBulkPlanApplyResult converts a /bulk-plan-apply per-entity result into a
+// ChangeSet plus separate plan/apply errors. ChangeSet is returned whenever the plan
+// phase produced one (regardless of apply outcome) so the reconciler can persist it
+// for audit/retry. A nil plan error means plan succeeded; planErr non-nil means the
+// returned ChangeSet is nil. applyErr is set independently when the apply phase
+// reported failures on a successfully-planned change_set.
+func ConvertBulkPlanApplyResult(result netboxdiodeplugin.BulkPlanApplyResult, objectType string) (*changeset.ChangeSet, error, error) {
+	var planErr, applyErr error
+	if result.Errors != nil {
+		if len(result.Errors.Plan) > 0 && string(result.Errors.Plan) != "null" {
+			planErr = fmt.Errorf("plan error for entity %s: %s", result.ID, string(result.Errors.Plan))
+		}
+		if len(result.Errors.Apply) > 0 && string(result.Errors.Apply) != "null" {
+			applyErr = fmt.Errorf("apply error for entity %s: %s", result.ID, string(result.Errors.Apply))
+		}
+	}
+
+	if planErr != nil {
+		return nil, planErr, applyErr
+	}
+
+	if result.ChangeSet == nil {
+		return nil, fmt.Errorf("no change set returned for entity %s", result.ID), applyErr
+	}
+
+	changes := make([]changeset.Change, 0, len(result.ChangeSet.Changes))
+	for _, change := range result.ChangeSet.Changes {
+		changes = append(changes, changeset.Change{
+			ID:                 change.ID,
+			ChangeType:         change.ChangeType,
+			ObjectType:         change.ObjectType,
+			ObjectID:           change.ObjectID,
+			ObjectVersion:      change.ObjectVersion,
+			RefID:              change.RefID,
+			ObjectPrimaryValue: change.ObjectPrimaryValue,
+			After:              change.Data,
+			Before:             change.Before,
+			NewRefs:            change.NewRefs,
+		})
+	}
+
+	deviationName := genDeviationName(changes, objectType)
+	cs := &changeset.ChangeSet{ID: result.ChangeSet.ID, Changes: changes, DeviationName: deviationName}
+	if result.ChangeSet.Branch != nil {
+		branchID := fmt.Sprintf("%s (%s)", result.ChangeSet.Branch.Name, result.ChangeSet.Branch.ID)
+		cs.BranchID = &branchID
+	}
+	return cs, nil, applyErr
+}
+
 // FindPrimaryChange attempts to find the earliest change that refers to the primary object.
 func FindPrimaryChange(changes []changeset.Change, objectType string) *changeset.Change {
 	// The main complexity is that there is no identifier that binds the entities to the

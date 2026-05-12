@@ -564,42 +564,130 @@ func (o *Ops) ApplyChangeSet(ctx context.Context, ingestionLogID int32, ingestio
 	return nil
 }
 
-// BulkApplyChangeSets applies multiple change sets in a single HTTP call and updates ingestion log states.
-func (o *Ops) BulkApplyChangeSets(ctx context.Context, items []ops.BulkApplyItem, branchID string) []ops.BulkApplyResult {
-	results := make([]ops.BulkApplyResult, len(items))
+// BulkPlanApply runs combined plan + apply for a batch of QUEUED ingestion logs
+// via a single /bulk-plan-apply HTTP call. Per-entity outcomes:
+//   - plan failed                 -> state FAILED, no change_set persisted
+//   - plan ok, no changes         -> state NO_CHANGES, no change_set persisted
+//   - plan ok, apply ok           -> state APPLIED, change_set persisted
+//   - plan ok, apply failed       -> state FAILED, change_set persisted (audit/retry)
+//
+// On a whole-batch transport error, every entity is marked FAILED with that error.
+// Returns one BulkPlanApplyResult per input item, in order.
+func (o *Ops) BulkPlanApply(ctx context.Context, items []ops.QueuedIngestionLog, branchID string) []ops.BulkPlanApplyResult {
+	results := make([]ops.BulkPlanApplyResult, len(items))
 
-	changeSets := make([]changeset.ChangeSet, len(items))
+	entities := make([]netboxdiodeplugin.BulkPlanEntity, len(items))
 	for i, item := range items {
-		changeSets[i] = *item.ChangeSet
+		entities[i] = netboxdiodeplugin.BulkPlanEntity{
+			ID:         fmt.Sprintf("%d", item.ID),
+			ObjectType: item.IngestionLog.GetObjectType(),
+			Entity:     item.IngestionLog.GetEntity(),
+		}
 	}
 
-	applyResults := applier.BulkApplyChangeSets(ctx, o.logger, changeSets, branchID, o.nbClient)
+	resp, err := o.nbClient.BulkPlanApply(ctx, netboxdiodeplugin.BulkPlanApplyRequest{
+		Entities: entities,
+		BranchID: branchID,
+	})
+	if err != nil {
+		for i, item := range items {
+			results[i] = o.handlePlanApplyBatchFailure(ctx, item, err)
+		}
+		return results
+	}
 
-	for i, ar := range applyResults {
-		item := items[i]
-		results[i].IngestionLogID = item.IngestionLogID
+	resultByID := make(map[string]netboxdiodeplugin.BulkPlanApplyResult, len(resp.Results))
+	for _, r := range resp.Results {
+		resultByID[r.ID] = r
+	}
 
-		if ar.Err != nil {
-			o.logger.Debug("failed to apply change set", "changeSetID", item.ChangeSetID, "externalID", item.ChangeSet.ID, "ingestionLogID", item.IngestionLogID, "error", ar.Err)
+	var persistItems []ops.BulkPersistItem
+	var persistIndex []int
 
-			changeSetErr := handleChangeSetError(ar.Err)
-			if err2 := o.repository.UpdateIngestionLogStateWithError(ctx, item.IngestionLogID, reconcilerpb.State_FAILED, changeSetErr); err2 != nil {
-				results[i].Err = errors.Join(ar.Err, err2)
-			} else {
-				results[i].Err = ar.Err
+	for i, item := range items {
+		entityID := fmt.Sprintf("%d", item.ID)
+		planApplyResult, found := resultByID[entityID]
+		if !found {
+			results[i] = o.handlePlanApplyBatchFailure(ctx, item, fmt.Errorf("no result returned for ingestion log %d", item.ID))
+			continue
+		}
+
+		cs, planErr, applyErr := differ.ConvertBulkPlanApplyResult(planApplyResult, item.IngestionLog.GetObjectType())
+
+		results[i].IngestionLogID = item.ID
+		results[i].ChangeSet = cs
+		results[i].PlanErr = planErr
+		results[i].ApplyErr = applyErr
+
+		if planErr != nil {
+			// Plan failed — record state FAILED with error, no change_set to persist.
+			changeSetErr := handleChangeSetError(planErr)
+			if err2 := o.repository.UpdateIngestionLogStateWithError(ctx, item.ID, reconcilerpb.State_FAILED, changeSetErr); err2 != nil {
+				results[i].PlanErr = errors.Join(planErr, err2)
 			}
 			continue
 		}
 
-		item.IngestionLog.State = reconcilerpb.State_APPLIED
-		if err := o.repository.UpdateIngestionLogStateWithError(ctx, item.IngestionLogID, reconcilerpb.State_APPLIED, nil); err != nil {
-			o.logger.Warn("failed to update ingestion log state (error ignored)", "ingestionLogID", item.IngestionLogID, "error", err)
+		// Plan succeeded — collect for bulk persist with the right terminal state.
+		stripNoopOnlyChanges(cs)
+		newState := reconcilerpb.State_APPLIED
+		switch {
+		case len(cs.Changes) == 0:
+			newState = reconcilerpb.State_NO_CHANGES
+		case applyErr != nil:
+			newState = reconcilerpb.State_FAILED
 		}
 
-		o.logger.Debug("change set applied", "changeSetID", item.ChangeSetID, "externalID", item.ChangeSet.ID, "ingestionLogID", item.IngestionLogID)
+		persistItems = append(persistItems, ops.BulkPersistItem{
+			IngestionLogID: item.ID,
+			ChangeSet:      *cs,
+			NewState:       newState,
+		})
+		persistIndex = append(persistIndex, i)
+	}
+
+	if len(persistItems) > 0 {
+		persistResults, err := o.repository.BulkPersistChangeSets(ctx, persistItems, o.limits.MaxChangeSetsPerIngestionLog())
+		if err != nil {
+			o.logger.Error("bulk persist failed during bulk-plan-apply", "error", err)
+			for _, idx := range persistIndex {
+				if results[idx].PlanErr == nil && results[idx].ApplyErr == nil {
+					results[idx].ApplyErr = err
+				}
+			}
+		} else {
+			for j, pr := range persistResults {
+				idx := persistIndex[j]
+				results[idx].ChangeSetID = pr.ChangeSetID
+			}
+		}
+	}
+
+	// For entities whose apply phase failed, attach the apply error message to the
+	// ingestion log row. BulkPersistChangeSets clears the error column when it sets
+	// the state, so this second pass annotates the FAILED rows with their reason.
+	for _, idx := range persistIndex {
+		if results[idx].ApplyErr != nil {
+			changeSetErr := handleChangeSetError(results[idx].ApplyErr)
+			if err := o.repository.UpdateIngestionLogStateWithError(ctx, results[idx].IngestionLogID, reconcilerpb.State_FAILED, changeSetErr); err != nil {
+				o.logger.Warn("failed to annotate apply failure", "ingestionLogID", results[idx].IngestionLogID, "error", err)
+			}
+		}
 	}
 
 	return results
+}
+
+func (o *Ops) handlePlanApplyBatchFailure(ctx context.Context, item ops.QueuedIngestionLog, err error) ops.BulkPlanApplyResult {
+	tags := map[string]string{"request_id": item.IngestionLog.GetRequestId()}
+	contextMap := map[string]any{"request_id": item.IngestionLog.GetRequestId(), "object_type": item.IngestionLog.GetObjectType()}
+	sentry.CaptureError(err, tags, "BulkPlanApply", contextMap)
+
+	changeSetErr := handleChangeSetError(err)
+	if err2 := o.repository.UpdateIngestionLogStateWithError(ctx, item.ID, reconcilerpb.State_FAILED, changeSetErr); err2 != nil {
+		err = errors.Join(err, err2)
+	}
+	return ops.BulkPlanApplyResult{IngestionLogID: item.ID, PlanErr: err}
 }
 
 func handleChangeSetError(err error) error {

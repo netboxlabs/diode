@@ -62,12 +62,12 @@ func (q *Queries) BulkUpdateIngestionLogStates(ctx context.Context, arg BulkUpda
 	return err
 }
 
-const claimOpenIngestionLogs = `-- name: ClaimOpenIngestionLogs :many
+const claimQueuedForAutoApply = `-- name: ClaimQueuedForAutoApply :many
 UPDATE ingestion_logs
 SET state = 8
 WHERE id IN (
     SELECT id FROM ingestion_logs
-    WHERE state = 2
+    WHERE state = 1
     ORDER BY id
     LIMIT $1
     FOR UPDATE SKIP LOCKED
@@ -75,8 +75,12 @@ WHERE id IN (
 RETURNING id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count
 `
 
-func (q *Queries) ClaimOpenIngestionLogs(ctx context.Context, batchSize int32) ([]IngestionLog, error) {
-	rows, err := q.db.Query(ctx, claimOpenIngestionLogs, batchSize)
+// Claim a batch of QUEUED ingestion logs for the AutoApplyProcessor (combined
+// plan+apply via /bulk-plan-apply). Transitions QUEUED (1) -> APPLYING (8).
+// A row stays in APPLYING for the duration of the NetBox round-trip and is
+// reset back to QUEUED on reconciler startup via ResetApplyingIngestionLogs.
+func (q *Queries) ClaimQueuedForAutoApply(ctx context.Context, batchSize int32) ([]IngestionLog, error) {
+	rows, err := q.db.Query(ctx, claimQueuedForAutoApply, batchSize)
 	if err != nil {
 		return nil, err
 	}
@@ -418,10 +422,12 @@ func (q *Queries) IncrementDuplicateCount(ctx context.Context, id int32) error {
 
 const resetApplyingIngestionLogs = `-- name: ResetApplyingIngestionLogs :exec
 UPDATE ingestion_logs
-SET state = 2
+SET state = 1
 WHERE state = 8
 `
 
+// Reset rows stuck in APPLYING (worker died mid-batch) back to QUEUED so the
+// AutoApplyProcessor reclaims them. Idempotent — safe to run on every startup.
 func (q *Queries) ResetApplyingIngestionLogs(ctx context.Context) error {
 	_, err := q.db.Exec(ctx, resetApplyingIngestionLogs)
 	return err

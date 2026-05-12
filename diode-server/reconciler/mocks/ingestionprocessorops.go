@@ -79,56 +79,6 @@ func (_c *IngestionProcessorOps_ApplyChangeSet_Call) RunAndReturn(run func(conte
 	return _c
 }
 
-// BulkApplyChangeSets provides a mock function with given fields: ctx, items, branchID
-func (_m *IngestionProcessorOps) BulkApplyChangeSets(ctx context.Context, items []ops.BulkApplyItem, branchID string) []ops.BulkApplyResult {
-	ret := _m.Called(ctx, items, branchID)
-
-	if len(ret) == 0 {
-		panic("no return value specified for BulkApplyChangeSets")
-	}
-
-	var r0 []ops.BulkApplyResult
-	if rf, ok := ret.Get(0).(func(context.Context, []ops.BulkApplyItem, string) []ops.BulkApplyResult); ok {
-		r0 = rf(ctx, items, branchID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]ops.BulkApplyResult)
-		}
-	}
-
-	return r0
-}
-
-// IngestionProcessorOps_BulkApplyChangeSets_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BulkApplyChangeSets'
-type IngestionProcessorOps_BulkApplyChangeSets_Call struct {
-	*mock.Call
-}
-
-// BulkApplyChangeSets is a helper method to define mock.On call
-//   - ctx context.Context
-//   - items []ops.BulkApplyItem
-//   - branchID string
-func (_e *IngestionProcessorOps_Expecter) BulkApplyChangeSets(ctx interface{}, items interface{}, branchID interface{}) *IngestionProcessorOps_BulkApplyChangeSets_Call {
-	return &IngestionProcessorOps_BulkApplyChangeSets_Call{Call: _e.mock.On("BulkApplyChangeSets", ctx, items, branchID)}
-}
-
-func (_c *IngestionProcessorOps_BulkApplyChangeSets_Call) Run(run func(ctx context.Context, items []ops.BulkApplyItem, branchID string)) *IngestionProcessorOps_BulkApplyChangeSets_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].([]ops.BulkApplyItem), args[2].(string))
-	})
-	return _c
-}
-
-func (_c *IngestionProcessorOps_BulkApplyChangeSets_Call) Return(_a0 []ops.BulkApplyResult) *IngestionProcessorOps_BulkApplyChangeSets_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *IngestionProcessorOps_BulkApplyChangeSets_Call) RunAndReturn(run func(context.Context, []ops.BulkApplyItem, string) []ops.BulkApplyResult) *IngestionProcessorOps_BulkApplyChangeSets_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // BulkCreateIngestionLogs provides a mock function with given fields: ctx, ingestionLogs, sourceMetadata, entityHashes
 func (_m *IngestionProcessorOps) BulkCreateIngestionLogs(ctx context.Context, ingestionLogs []*reconcilerpb.IngestionLog, sourceMetadata [][]byte, entityHashes []string) ([]*ops.CreateIngestionLogResult, error) {
 	ret := _m.Called(ctx, ingestionLogs, sourceMetadata, entityHashes)
@@ -236,6 +186,56 @@ func (_c *IngestionProcessorOps_BulkGenerateChangeSets_Call) Return(_a0 []ops.Bu
 }
 
 func (_c *IngestionProcessorOps_BulkGenerateChangeSets_Call) RunAndReturn(run func(context.Context, []ops.QueuedIngestionLog, string) []ops.BulkGenerateChangeSetResult) *IngestionProcessorOps_BulkGenerateChangeSets_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// BulkPlanApply provides a mock function with given fields: ctx, items, branchID
+func (_m *IngestionProcessorOps) BulkPlanApply(ctx context.Context, items []ops.QueuedIngestionLog, branchID string) []ops.BulkPlanApplyResult {
+	ret := _m.Called(ctx, items, branchID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for BulkPlanApply")
+	}
+
+	var r0 []ops.BulkPlanApplyResult
+	if rf, ok := ret.Get(0).(func(context.Context, []ops.QueuedIngestionLog, string) []ops.BulkPlanApplyResult); ok {
+		r0 = rf(ctx, items, branchID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]ops.BulkPlanApplyResult)
+		}
+	}
+
+	return r0
+}
+
+// IngestionProcessorOps_BulkPlanApply_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BulkPlanApply'
+type IngestionProcessorOps_BulkPlanApply_Call struct {
+	*mock.Call
+}
+
+// BulkPlanApply is a helper method to define mock.On call
+//   - ctx context.Context
+//   - items []ops.QueuedIngestionLog
+//   - branchID string
+func (_e *IngestionProcessorOps_Expecter) BulkPlanApply(ctx interface{}, items interface{}, branchID interface{}) *IngestionProcessorOps_BulkPlanApply_Call {
+	return &IngestionProcessorOps_BulkPlanApply_Call{Call: _e.mock.On("BulkPlanApply", ctx, items, branchID)}
+}
+
+func (_c *IngestionProcessorOps_BulkPlanApply_Call) Run(run func(ctx context.Context, items []ops.QueuedIngestionLog, branchID string)) *IngestionProcessorOps_BulkPlanApply_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].([]ops.QueuedIngestionLog), args[2].(string))
+	})
+	return _c
+}
+
+func (_c *IngestionProcessorOps_BulkPlanApply_Call) Return(_a0 []ops.BulkPlanApplyResult) *IngestionProcessorOps_BulkPlanApply_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *IngestionProcessorOps_BulkPlanApply_Call) RunAndReturn(run func(context.Context, []ops.QueuedIngestionLog, string) []ops.BulkPlanApplyResult) *IngestionProcessorOps_BulkPlanApply_Call {
 	_c.Call.Return(run)
 	return _c
 }
