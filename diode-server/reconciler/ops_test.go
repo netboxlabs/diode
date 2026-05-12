@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -304,8 +305,11 @@ func TestOpsCreateIngestionLog(t *testing.T) {
 			mockNetBoxClient := pluginmocks.NewNetBoxAPI(t)
 			opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil, false)
 
-			// Mock GetDefaultBranch to return nil (no default branch)
-			mockNetBoxClient.EXPECT().GetDefaultBranch(mock.Anything).Return((*netboxdiodeplugin.Branch)(nil), nil)
+			// GetDefaultBranch is only called by the background refresher
+			// (started via ops.Start). This test does not start the refresher,
+			// so DefaultBranch reads a cold cache and returns (nil, nil) —
+			// matching the previous "nil branch" expectation here without
+			// needing a mock call.
 
 			mockRepository.EXPECT().FindPriorIngestionLogByEntityHash(mock.Anything, mock.AnythingOfType("string"), (*string)(nil)).
 				Return(tt.mockFindPriorIngestionLogID, tt.mockFindPriorIngestionLog, tt.mockFindPriorIngestionLogError)
@@ -340,224 +344,117 @@ func TestOpsCreateIngestionLog(t *testing.T) {
 	}
 }
 
-func TestOpsRefreshDefaultBranch(t *testing.T) {
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
-	ctx := context.Background()
-
-	tests := []struct {
-		name              string
-		initialBranch     *netboxdiodeplugin.Branch
-		initialError      error
-		refreshedBranch   *netboxdiodeplugin.Branch
-		refreshedError    error
-		expectInitialCall bool
-		expectRefreshCall bool
-		expectCachedAfter bool
-	}{
-		{
-			name: "refresh invalidates cache and fetches new data",
-			initialBranch: &netboxdiodeplugin.Branch{
-				ID:   "initial-branch",
-				Name: "Initial Branch",
-			},
-			initialError: nil,
-			refreshedBranch: &netboxdiodeplugin.Branch{
-				ID:   "refreshed-branch",
-				Name: "Refreshed Branch",
-			},
-			refreshedError:    nil,
-			expectInitialCall: true,
-			expectRefreshCall: true,
-			expectCachedAfter: true,
-		},
-		{
-			name:          "refresh clears 404 cached nil and retries",
-			initialBranch: nil,
-			initialError:  netboxdiodeplugin.ErrDefaultBranchNotFound,
-			refreshedBranch: &netboxdiodeplugin.Branch{
-				ID:   "new-branch",
-				Name: "New Branch",
-			},
-			refreshedError:    nil,
-			expectInitialCall: true,
-			expectRefreshCall: true,
-			expectCachedAfter: true,
-		},
-		{
-			name: "refresh handles errors gracefully",
-			initialBranch: &netboxdiodeplugin.Branch{
-				ID:   "initial-branch",
-				Name: "Initial Branch",
-			},
-			initialError:      nil,
-			refreshedBranch:   nil,
-			refreshedError:    fmt.Errorf("temporary network error"),
-			expectInitialCall: true,
-			expectRefreshCall: true,
-			expectCachedAfter: false,
-		},
+// waitForBranch polls DefaultBranch until predicate returns true or timeout
+// fires. Returns the last value seen. Used so tests don't depend on the
+// refresher goroutine's exact scheduling.
+func waitForBranch(t *testing.T, ops *reconciler.Ops, predicate func(*netboxdiodeplugin.Branch) bool) *netboxdiodeplugin.Branch {
+	t.Helper()
+	deadline := time.Now().Add(2 * time.Second)
+	for time.Now().Before(deadline) {
+		b, _ := ops.DefaultBranch(context.Background())
+		if predicate(b) {
+			return b
+		}
+		time.Sleep(10 * time.Millisecond)
 	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mockRepository := mocks.NewRepository(t)
-			mockNetBoxClient := pluginmocks.NewNetBoxAPI(t)
-			opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil, false)
-
-			// Initial call - populate cache
-			if tt.expectInitialCall {
-				mockNetBoxClient.EXPECT().GetDefaultBranch(ctx).Return(tt.initialBranch, tt.initialError).Once()
-			}
-
-			// Call DefaultBranch to populate cache
-			initialBranch, initialErr := opsInstance.DefaultBranch(ctx)
-			if tt.initialError == netboxdiodeplugin.ErrDefaultBranchNotFound {
-				require.NoError(t, initialErr)
-				require.Nil(t, initialBranch)
-			} else if tt.initialError != nil {
-				require.Error(t, initialErr)
-			} else {
-				require.NoError(t, initialErr)
-				require.Equal(t, tt.initialBranch, initialBranch)
-			}
-
-			// Refresh call - should invalidate cache and fetch new data
-			if tt.expectRefreshCall {
-				mockNetBoxClient.EXPECT().GetDefaultBranch(ctx).Return(tt.refreshedBranch, tt.refreshedError).Once()
-			}
-
-			refreshedBranch, refreshErr := opsInstance.RefreshDefaultBranch(ctx)
-			if tt.refreshedError != nil && tt.refreshedError != netboxdiodeplugin.ErrDefaultBranchNotFound {
-				require.Error(t, refreshErr)
-			} else {
-				require.NoError(t, refreshErr)
-				if tt.refreshedBranch != nil {
-					require.Equal(t, tt.refreshedBranch, refreshedBranch)
-				}
-			}
-
-			// Verify cache after refresh - should use cached value on next call
-			if tt.expectCachedAfter && tt.refreshedError == nil {
-				// This call should NOT hit the API (using cache)
-				cachedBranch, cachedErr := opsInstance.DefaultBranch(ctx)
-				require.NoError(t, cachedErr)
-				require.Equal(t, refreshedBranch, cachedBranch)
-			}
-
-			mockNetBoxClient.AssertExpectations(t)
-		})
-	}
+	b, _ := ops.DefaultBranch(context.Background())
+	return b
 }
 
-func TestOpsDefaultBranch404Caching(t *testing.T) {
+func TestOpsDefaultBranchColdCache(t *testing.T) {
+	// Without Start, the refresher never runs; DefaultBranch returns (nil, nil).
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
-	ctx := context.Background()
+	mockRepository := mocks.NewRepository(t)
+	mockNetBoxClient := pluginmocks.NewNetBoxAPI(t)
+	opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil, false)
 
-	tests := []struct {
-		name                string
-		firstCallError      error
-		secondCallError     error
-		expectedFirstCall   bool
-		expectedSecondCall  bool
-		expectBranchNil     bool
-		expectErrorOnSecond bool
-	}{
-		{
-			name:                "404 error is cached - prevents repeated calls",
-			firstCallError:      netboxdiodeplugin.ErrDefaultBranchNotFound,
-			secondCallError:     nil, // Should not be called
-			expectedFirstCall:   true,
-			expectedSecondCall:  false, // Should use cache
-			expectBranchNil:     true,
-			expectErrorOnSecond: false,
-		},
-		{
-			name:                "non-404 error is not cached - retries on second call",
-			firstCallError:      fmt.Errorf("get default branch failed with status 500: Internal Server Error"),
-			secondCallError:     fmt.Errorf("get default branch failed with status 500: Internal Server Error"),
-			expectedFirstCall:   true,
-			expectedSecondCall:  true, // Should retry
-			expectBranchNil:     true,
-			expectErrorOnSecond: false, // Error is logged as warning, operation continues
-		},
-		{
-			name:                "successful response is cached",
-			firstCallError:      nil,
-			secondCallError:     nil,
-			expectedFirstCall:   true,
-			expectedSecondCall:  false, // Should use cache
-			expectBranchNil:     false,
-			expectErrorOnSecond: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mockRepository := mocks.NewRepository(t)
-			mockNetBoxClient := pluginmocks.NewNetBoxAPI(t)
-			opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil, false)
-
-			var firstBranch *netboxdiodeplugin.Branch
-			if tt.firstCallError == nil {
-				firstBranch = &netboxdiodeplugin.Branch{
-					ID:   "test-branch-id",
-					Name: "test-branch",
-				}
-			}
-
-			// Mock repository methods for CreateIngestionLog
-			mockRepository.EXPECT().FindPriorIngestionLogByEntityHash(mock.Anything, mock.AnythingOfType("string"), mock.Anything).
-				Return(nil, nil, sql.ErrNoRows).Maybe()
-			mockRepository.EXPECT().CreateIngestionLog(mock.Anything, mock.Anything, mock.Anything, mock.AnythingOfType("string")).
-				Return(func() *int32 { id := int32(1); return &id }(), nil).Maybe()
-
-			// Mock first call
-			firstCall := mockNetBoxClient.EXPECT().GetDefaultBranch(mock.Anything).Return(firstBranch, tt.firstCallError).Once()
-
-			// Mock second call only if expected
-			if tt.expectedSecondCall {
-				mockNetBoxClient.EXPECT().GetDefaultBranch(mock.Anything).Return(firstBranch, tt.secondCallError).Once().NotBefore(firstCall)
-			}
-
-			// First call - should always hit the API
-			branch1, err1 := opsInstance.CreateIngestionLog(ctx, &pb.IngestionLog{
-				Id:         "test-log-1",
-				ObjectType: "dcim.site",
-				Entity: &diodepb.Entity{
-					Entity: &diodepb.Entity_Site{
-						Site: &diodepb.Site{Name: "test-site-1"},
-					},
-				},
-			}, nil)
-
-			// Second call - behavior depends on caching
-			branch2, err2 := opsInstance.CreateIngestionLog(ctx, &pb.IngestionLog{
-				Id:         "test-log-2",
-				ObjectType: "dcim.site",
-				Entity: &diodepb.Entity{
-					Entity: &diodepb.Entity_Site{
-						Site: &diodepb.Site{Name: "test-site-2"},
-					},
-				},
-			}, nil)
-
-			// Verify results - all calls should succeed (errors are gracefully handled)
-			require.NoError(t, err1)
-			require.NoError(t, err2)
-			require.NotNil(t, branch1)
-			require.NotNil(t, branch2)
-
-			// Verify branch caching worked correctly
-			if tt.expectBranchNil {
-				require.Empty(t, branch1.BranchID)
-				require.Empty(t, branch2.BranchID)
-			} else {
-				require.Equal(t, "test-branch-id", branch1.BranchID)
-				require.Equal(t, "test-branch-id", branch2.BranchID)
-			}
-
-			// Mock assertions verify the expected number of calls were made
-			mockNetBoxClient.AssertExpectations(t)
-		})
-	}
+	branch, err := opsInstance.DefaultBranch(context.Background())
+	require.NoError(t, err)
+	require.Nil(t, branch)
+	require.False(t, opsInstance.HasBranchLoaded())
 }
+
+func TestOpsBranchRefresherSeedsCache(t *testing.T) {
+	// After Start, the refresher fetches once and DefaultBranch returns the
+	// fetched value without doing HTTP itself.
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+	mockRepository := mocks.NewRepository(t)
+	mockNetBoxClient := pluginmocks.NewNetBoxAPI(t)
+	opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil, false)
+
+	want := &netboxdiodeplugin.Branch{ID: "branch-1", Name: "Branch One"}
+	mockNetBoxClient.EXPECT().GetDefaultBranch(mock.Anything).Return(want, nil)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	opsInstance.Start(ctx)
+
+	got := waitForBranch(t, opsInstance, func(b *netboxdiodeplugin.Branch) bool { return b != nil })
+	require.Equal(t, want, got)
+	require.True(t, opsInstance.HasBranchLoaded())
+}
+
+func TestOpsBranchRefresher404IsRecorded(t *testing.T) {
+	// ErrDefaultBranchNotFound resolves the cache to nil (known-absent) — not
+	// a transient error, so we record it instead of leaving the cache cold.
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+	mockRepository := mocks.NewRepository(t)
+	mockNetBoxClient := pluginmocks.NewNetBoxAPI(t)
+	opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil, false)
+
+	mockNetBoxClient.EXPECT().GetDefaultBranch(mock.Anything).Return((*netboxdiodeplugin.Branch)(nil), netboxdiodeplugin.ErrDefaultBranchNotFound)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	opsInstance.Start(ctx)
+
+	// Wait until the refresher has recorded ANY result.
+	deadline := time.Now().Add(2 * time.Second)
+	for time.Now().Before(deadline) && !opsInstance.HasBranchLoaded() {
+		time.Sleep(10 * time.Millisecond)
+	}
+	require.True(t, opsInstance.HasBranchLoaded())
+
+	branch, err := opsInstance.DefaultBranch(context.Background())
+	require.NoError(t, err)
+	require.Nil(t, branch)
+}
+
+func TestOpsBranchRefresherKeepsLastOnError(t *testing.T) {
+	// A transient error during refresh leaves the previous successful value
+	// in place — the whole point of decoupling consume loop from NetBox auth.
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+	mockRepository := mocks.NewRepository(t)
+	mockNetBoxClient := pluginmocks.NewNetBoxAPI(t)
+	opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil, false)
+
+	good := &netboxdiodeplugin.Branch{ID: "branch-1", Name: "Branch One"}
+	// First call (refresher start): success.
+	firstCall := mockNetBoxClient.EXPECT().GetDefaultBranch(mock.Anything).Return(good, nil).Once()
+	// Second call (triggered via RefreshDefaultBranch): error.
+	mockNetBoxClient.EXPECT().GetDefaultBranch(mock.Anything).Return((*netboxdiodeplugin.Branch)(nil), fmt.Errorf("transient network error")).Maybe().NotBefore(firstCall)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	opsInstance.Start(ctx)
+
+	got := waitForBranch(t, opsInstance, func(b *netboxdiodeplugin.Branch) bool { return b != nil })
+	require.Equal(t, good, got)
+
+	// Signal the refresher to attempt again; the second mock call returns an
+	// error. The cache should retain the prior good value.
+	_, err := opsInstance.RefreshDefaultBranch(context.Background())
+	require.NoError(t, err)
+
+	// Give the refresher a moment to run.
+	time.Sleep(50 * time.Millisecond)
+
+	branch, err := opsInstance.DefaultBranch(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, good, branch, "should retain last-known-good value on transient error")
+}
+
+// TestOpsDefaultBranch404Caching previously tested cache-on-fetch semantics
+// of DefaultBranch. After the refresher refactor, DefaultBranch no longer
+// performs HTTP itself — TestOpsBranchRefresher{SeedsCache,404IsRecorded,
+// KeepsLastOnError} above cover the equivalent behaviour.

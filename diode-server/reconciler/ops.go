@@ -6,9 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"sync"
 	"time"
-
-	"github.com/hashicorp/golang-lru/v2/expirable"
 
 	"github.com/netboxlabs/diode/diode-server/entityhash"
 	diodeErrors "github.com/netboxlabs/diode/diode-server/errors"
@@ -22,8 +21,15 @@ import (
 )
 
 const (
-	// DefaultBranchCacheTTL is the default TTL for caching the default branch
-	DefaultBranchCacheTTL = 60 * time.Second
+	// DefaultBranchRefreshInterval is how often the background refresher
+	// re-fetches the default branch from the NetBox plugin. Picked short
+	// enough to pick up a UI-side default-branch change within ~a minute,
+	// long enough to be invisible to NetBox load.
+	DefaultBranchRefreshInterval = 60 * time.Second
+
+	// DefaultBranchFetchTimeout bounds each individual refresh attempt.
+	// Kept short so a stuck NetBox/Hydra doesn't extend cycle time.
+	DefaultBranchFetchTimeout = 5 * time.Second
 )
 
 // Limits is an interface that provides limits for the reconciler operations to enforce
@@ -39,7 +45,12 @@ func (l *DefaultLimits) MaxChangeSetsPerIngestionLog() int32 {
 	return 5
 }
 
-// Ops high level operations performed during ingestion processing
+// Ops high level operations performed during ingestion processing.
+//
+// DefaultBranch lookups are served exclusively from an in-memory cache that
+// a background goroutine (Start) keeps current. Hot-path callers (consume
+// loop, AutoApply) never do synchronous NetBox HTTP via DefaultBranch — so
+// a NetBox/Hydra outage cannot block Redis→inbox draining.
 type Ops struct {
 	repository            Repository
 	nbClient              netboxdiodeplugin.NetBoxAPI
@@ -47,18 +58,20 @@ type Ops struct {
 	limits                Limits
 	bulkOperationsEnabled bool
 
-	// Cache for default branch (5 minute TTL, size 1 since we only cache one value)
-	branchCache *expirable.LRU[string, *netboxdiodeplugin.Branch]
+	// Default-branch state. Updated only by the background refresher.
+	branchMu     sync.RWMutex
+	branch       *netboxdiodeplugin.Branch
+	branchLoaded bool          // true once we've recorded ANY result (success, nil, or known-absent)
+	refreshSig   chan struct{} // signal channel for on-demand refresh; buffered=1
 }
 
-// NewOps creates a new Ops
+// NewOps creates a new Ops. The background DefaultBranch refresher is NOT
+// started until Start(ctx) is called; until then DefaultBranch() returns
+// (nil, nil) and callers degrade to "no branch context".
 func NewOps(repository Repository, nbClient netboxdiodeplugin.NetBoxAPI, logger *slog.Logger, limits Limits, bulkOperationsEnabled bool) *Ops {
 	if limits == nil {
 		limits = &DefaultLimits{}
 	}
-
-	// Create LRU cache with size 1 (we only cache one default branch)
-	branchCache := expirable.NewLRU[string, *netboxdiodeplugin.Branch](1, nil, DefaultBranchCacheTTL)
 
 	return &Ops{
 		repository:            repository,
@@ -66,45 +79,95 @@ func NewOps(repository Repository, nbClient netboxdiodeplugin.NetBoxAPI, logger 
 		logger:                logger,
 		limits:                limits,
 		bulkOperationsEnabled: bulkOperationsEnabled,
-		branchCache:           branchCache,
+		refreshSig:            make(chan struct{}, 1),
 	}
 }
 
-// DefaultBranch fetches the default branch from the NetBox plugin with caching
-func (o *Ops) DefaultBranch(ctx context.Context) (*netboxdiodeplugin.Branch, error) {
-	const cacheKey = "default_branch"
+// Start launches the background default-branch refresher. It fetches once
+// immediately (fire-and-forget) and then on a fixed interval, stopping when
+// ctx is cancelled. Safe to call once per Ops; subsequent calls are no-ops.
+func (o *Ops) Start(ctx context.Context) {
+	go o.runBranchRefresher(ctx)
+}
 
-	// Check cache first
-	if cachedBranch, ok := o.branchCache.Get(cacheKey); ok {
-		o.logger.Debug("using cached default branch", "branch", cachedBranch)
-		return cachedBranch, nil
-	}
+func (o *Ops) runBranchRefresher(ctx context.Context) {
+	o.fetchAndStoreBranch(ctx)
 
-	// Cache miss - fetch from NetBox plugin
-	o.logger.Debug("cache miss - fetching default branch from NetBox plugin")
-	branch, err := o.nbClient.GetDefaultBranch(ctx)
-	if err != nil {
-		// Cache nil result for 404s (endpoint doesn't exist on older plugin versions)
-		// This prevents hammering the NetBox plugin with requests that will always fail
-		if errors.Is(err, netboxdiodeplugin.ErrDefaultBranchNotFound) {
-			o.logger.Debug("default-branch endpoint not found (older plugin version), caching nil result", "ttl", "5m")
-			o.branchCache.Add(cacheKey, nil)
-			return nil, nil // Return nil branch without error (gracefully handle missing endpoint)
+	ticker := time.NewTicker(DefaultBranchRefreshInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			o.fetchAndStoreBranch(ctx)
+		case <-o.refreshSig:
+			o.fetchAndStoreBranch(ctx)
 		}
-		return nil, err
 	}
-
-	// Store in cache (automatically expires after 5 minutes)
-	o.branchCache.Add(cacheKey, branch)
-	o.logger.Debug("fetched and cached default branch", "branch", branch)
-
-	return branch, nil
 }
 
-// RefreshDefaultBranch forces a refresh of the default branch cache from NetBox
+func (o *Ops) fetchAndStoreBranch(ctx context.Context) {
+	fetchCtx, cancel := context.WithTimeout(ctx, DefaultBranchFetchTimeout)
+	defer cancel()
+
+	branch, err := o.nbClient.GetDefaultBranch(fetchCtx)
+	if err != nil {
+		if errors.Is(err, netboxdiodeplugin.ErrDefaultBranchNotFound) {
+			// Older plugin version — there is no default-branch endpoint.
+			// Remember nil so we don't keep retrying frivolously.
+			o.setBranch(nil)
+			return
+		}
+		// Transient failure (auth, network, NetBox down). Leave the
+		// last-known value in place; consume loop and AutoApply keep
+		// reading the previous successful result.
+		o.logger.Warn("default branch refresh failed; serving last-known value",
+			"error", err,
+			"have_value", o.HasBranchLoaded(),
+		)
+		return
+	}
+	o.setBranch(branch)
+}
+
+func (o *Ops) setBranch(b *netboxdiodeplugin.Branch) {
+	o.branchMu.Lock()
+	defer o.branchMu.Unlock()
+	o.branch = b
+	o.branchLoaded = true
+}
+
+// HasBranchLoaded reports whether the refresher has successfully recorded
+// any result (a real branch, nil-known-absent, or a 404-on-older-plugin).
+// False means the cache is cold and DefaultBranch will return (nil, nil).
+func (o *Ops) HasBranchLoaded() bool {
+	o.branchMu.RLock()
+	defer o.branchMu.RUnlock()
+	return o.branchLoaded
+}
+
+// DefaultBranch returns the cached default branch. It never makes a network
+// call — the background refresher (started via Start) owns NetBox HTTP for
+// this value. Returns (nil, nil) if the cache is still cold; callers must
+// tolerate that and degrade gracefully (e.g., no branch filter on lookups).
+func (o *Ops) DefaultBranch(_ context.Context) (*netboxdiodeplugin.Branch, error) {
+	o.branchMu.RLock()
+	defer o.branchMu.RUnlock()
+	return o.branch, nil
+}
+
+// RefreshDefaultBranch signals the background refresher to refetch ASAP.
+// Non-blocking — returns the current cached value immediately. The actual
+// refresh happens asynchronously; callers that need the freshly-fetched
+// value should poll DefaultBranch after a short delay.
 func (o *Ops) RefreshDefaultBranch(ctx context.Context) (*netboxdiodeplugin.Branch, error) {
-	const cacheKey = "default_branch"
-	o.branchCache.Remove(cacheKey)
+	select {
+	case o.refreshSig <- struct{}{}:
+	default:
+		// Refresh already pending; nothing to do.
+	}
 	return o.DefaultBranch(ctx)
 }
 

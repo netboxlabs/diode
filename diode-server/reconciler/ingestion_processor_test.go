@@ -295,7 +295,9 @@ func TestIngestionProcessorStart(t *testing.T) {
 			}
 			return result
 		}, nil)
-	mockNetBoxClient.On("GetDefaultBranch", mock.Anything).Return((*netboxdiodeplugin.Branch)(nil), nil)
+	// GetDefaultBranch is only called by Ops's background refresher (started
+	// via ops.Start). This test does not start the refresher, so the consume
+	// loop reads from a cold cache and never hits the mock.
 
 	mockMetrics.On("RecordHandleMessage", mock.Anything, mock.Anything).Return()
 	mockMetrics.On("RecordIngestionLogCreate", mock.Anything, mock.Anything).Return()

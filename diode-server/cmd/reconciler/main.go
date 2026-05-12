@@ -204,6 +204,7 @@ func main() {
 	}
 
 	ops := reconciler.NewOps(repository, nbClient, s.Logger(), nil, cfg.BulkOperationsEnabled)
+	ops.Start(ctx)
 
 	// Build processor options
 	var processorOpts []reconciler.ProcessorOption
