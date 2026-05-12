@@ -63,6 +63,7 @@ type Ops struct {
 	branch       *netboxdiodeplugin.Branch
 	branchLoaded bool          // true once we've recorded ANY result (success, nil, or known-absent)
 	refreshSig   chan struct{} // signal channel for on-demand refresh; buffered=1
+	startOnce    sync.Once     // guards the refresher goroutine
 }
 
 // NewOps creates a new Ops. The background DefaultBranch refresher is NOT
@@ -85,9 +86,12 @@ func NewOps(repository Repository, nbClient netboxdiodeplugin.NetBoxAPI, logger 
 
 // Start launches the background default-branch refresher. It fetches once
 // immediately (fire-and-forget) and then on a fixed interval, stopping when
-// ctx is cancelled. Safe to call once per Ops; subsequent calls are no-ops.
+// ctx is cancelled. Subsequent calls after the first are no-ops; the ctx
+// from the first call governs the refresher's lifetime.
 func (o *Ops) Start(ctx context.Context) {
-	go o.runBranchRefresher(ctx)
+	o.startOnce.Do(func() {
+		go o.runBranchRefresher(ctx)
+	})
 }
 
 func (o *Ops) runBranchRefresher(ctx context.Context) {
