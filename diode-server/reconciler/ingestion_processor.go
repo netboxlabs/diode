@@ -284,8 +284,10 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq *diodepb.IngestRequest, ingestionTs int) []error {
 	errs := make([]error, 0)
 
-	// Ensure the current default branch is retrieved
-	_, _ = p.ops.RefreshDefaultBranch(ctx)
+	// Resolve the default branch via the 60s LRU cache. A short staleness
+	// window on a value that changes rarely is acceptable, and avoids a
+	// per-batch NetBox hit that thrashes plugin workers under burst ingest.
+	_, _ = p.ops.DefaultBranch(ctx)
 
 	// Phase 1: Pre-validate entities, build ingestion log protos, and generate entity hashes
 	fingerprinter := entityhash.NewEntityFingerprinter()
