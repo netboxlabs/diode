@@ -199,6 +199,65 @@ func (_c *NetBoxAPI_BulkPlan_Call) RunAndReturn(run func(context.Context, netbox
 	return _c
 }
 
+// BulkPlanApply provides a mock function with given fields: _a0, _a1
+func (_m *NetBoxAPI) BulkPlanApply(_a0 context.Context, _a1 netboxdiodeplugin.BulkPlanApplyRequest) (*netboxdiodeplugin.BulkPlanApplyResponse, error) {
+	ret := _m.Called(_a0, _a1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for BulkPlanApply")
+	}
+
+	var r0 *netboxdiodeplugin.BulkPlanApplyResponse
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, netboxdiodeplugin.BulkPlanApplyRequest) (*netboxdiodeplugin.BulkPlanApplyResponse, error)); ok {
+		return rf(_a0, _a1)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, netboxdiodeplugin.BulkPlanApplyRequest) *netboxdiodeplugin.BulkPlanApplyResponse); ok {
+		r0 = rf(_a0, _a1)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*netboxdiodeplugin.BulkPlanApplyResponse)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, netboxdiodeplugin.BulkPlanApplyRequest) error); ok {
+		r1 = rf(_a0, _a1)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// NetBoxAPI_BulkPlanApply_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BulkPlanApply'
+type NetBoxAPI_BulkPlanApply_Call struct {
+	*mock.Call
+}
+
+// BulkPlanApply is a helper method to define mock.On call
+//   - _a0 context.Context
+//   - _a1 netboxdiodeplugin.BulkPlanApplyRequest
+func (_e *NetBoxAPI_Expecter) BulkPlanApply(_a0 interface{}, _a1 interface{}) *NetBoxAPI_BulkPlanApply_Call {
+	return &NetBoxAPI_BulkPlanApply_Call{Call: _e.mock.On("BulkPlanApply", _a0, _a1)}
+}
+
+func (_c *NetBoxAPI_BulkPlanApply_Call) Run(run func(_a0 context.Context, _a1 netboxdiodeplugin.BulkPlanApplyRequest)) *NetBoxAPI_BulkPlanApply_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(netboxdiodeplugin.BulkPlanApplyRequest))
+	})
+	return _c
+}
+
+func (_c *NetBoxAPI_BulkPlanApply_Call) Return(_a0 *netboxdiodeplugin.BulkPlanApplyResponse, _a1 error) *NetBoxAPI_BulkPlanApply_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *NetBoxAPI_BulkPlanApply_Call) RunAndReturn(run func(context.Context, netboxdiodeplugin.BulkPlanApplyRequest) (*netboxdiodeplugin.BulkPlanApplyResponse, error)) *NetBoxAPI_BulkPlanApply_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GenerateDiff provides a mock function with given fields: _a0, _a1
 func (_m *NetBoxAPI) GenerateDiff(_a0 context.Context, _a1 netboxdiodeplugin.GenerateDiffRequest) (*netboxdiodeplugin.ChangeSetResult, error) {
 	ret := _m.Called(_a0, _a1)

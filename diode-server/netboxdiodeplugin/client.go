@@ -275,6 +275,9 @@ type NetBoxAPI interface {
 	// BulkApply applies multiple change sets in a single request
 	BulkApply(context.Context, BulkApplyRequest) (*BulkApplyResponse, error)
 
+	// BulkPlanApply combines plan + apply for a batch of entities in a single request
+	BulkPlanApply(context.Context, BulkPlanApplyRequest) (*BulkPlanApplyResponse, error)
+
 	// GetDefaultBranch gets the default branch from NetBox plugin settings
 	GetDefaultBranch(context.Context) (*Branch, error)
 }
@@ -584,6 +587,100 @@ func (c *Client) BulkApply(ctx context.Context, payload BulkApplyRequest) (*Bulk
 	}
 
 	return &bulkApplyResponse, nil
+}
+
+// BulkPlanApplyRequest is the payload for /bulk-plan-apply. Mirrors BulkPlanRequest.
+type BulkPlanApplyRequest struct {
+	Entities []BulkPlanEntity `json:"entities"`
+	BranchID string           `json:"-"`
+}
+
+// BulkPlanApplyErrors holds per-phase errors for a single entity in a /bulk-plan-apply response.
+// The plan and apply phases are reported separately so callers can attribute failures.
+type BulkPlanApplyErrors struct {
+	Plan  json.RawMessage `json:"plan,omitempty"`
+	Apply json.RawMessage `json:"apply,omitempty"`
+}
+
+// BulkPlanApplyResult is the per-entity result in a /bulk-plan-apply response.
+// ChangeSet is always populated when the plan phase succeeded, regardless of apply outcome,
+// so the caller can persist it for audit/retry.
+type BulkPlanApplyResult struct {
+	ID        string               `json:"id"`
+	ChangeSet *ChangeSet           `json:"change_set"`
+	Errors    *BulkPlanApplyErrors `json:"errors"`
+}
+
+// BulkPlanApplyResponse is the envelope returned from /bulk-plan-apply.
+type BulkPlanApplyResponse struct {
+	Results []BulkPlanApplyResult `json:"results"`
+}
+
+// BulkPlanApply runs plan + apply for a batch of entities in a single request.
+// HTTP 200 means every entity succeeded both phases; HTTP 207 means at least one
+// entity had a plan or apply error (per-result errors describe which). Both are
+// treated as a successful HTTP call here — the caller inspects per-result Errors.
+func (c *Client) BulkPlanApply(ctx context.Context, payload BulkPlanApplyRequest) (*BulkPlanApplyResponse, error) {
+	endpointURL, err := url.Parse(fmt.Sprintf("%s/bulk-plan-apply/", c.baseURL.String()))
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range payload.Entities {
+		if payload.Entities[i].Entity != nil {
+			payload.Entities[i].EntityJSON, err = protoToJSON(payload.Entities[i].Entity)
+			if err != nil {
+				return nil, fmt.Errorf("marshaling entity %s: %w", payload.Entities[i].ID, err)
+			}
+		}
+	}
+
+	reqBody, err := json.Marshal(payload)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := c.limiter.Wait(ctx); err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpointURL.String(), bytes.NewBuffer(reqBody))
+	if err != nil {
+		return nil, err
+	}
+
+	branchID := strings.TrimSpace(payload.BranchID)
+	if branchID != "" {
+		req.Header.Set(NetBoxBranchHeader, branchID)
+	}
+
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			c.logger.Warn("failed to close response body", "error", closeErr)
+		}
+	}()
+
+	respBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	c.logger.Debug("bulk plan-apply", "statusCode", resp.StatusCode, "response", string(respBytes))
+
+	if resp.StatusCode >= http.StatusBadRequest {
+		return nil, changeset.NewError("bulk plan-apply failed", diodeErrors.ErrCodeOpsApplyChangeSet, respBytes)
+	}
+
+	var bulkPlanApplyResponse BulkPlanApplyResponse
+	if err = json.Unmarshal(respBytes, &bulkPlanApplyResponse); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response body: %w", err)
+	}
+
+	return &bulkPlanApplyResponse, nil
 }
 
 // GetDefaultBranchResponse represents the response from the default-branch endpoint
