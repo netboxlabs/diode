@@ -7,6 +7,9 @@ import (
 	"log/slog"
 	"net"
 	"os"
+	"strconv"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/andybalholm/brotli"
@@ -25,6 +28,19 @@ import (
 	"github.com/netboxlabs/diode/diode-server/telemetry"
 )
 
+// defaultRedisMemoryCheckInterval is used when Config.RedisMemoryCheckInterval
+// is zero or negative. The watermark check is only as fresh as this interval;
+// bursts within it are admitted on the previously-cached value.
+const defaultRedisMemoryCheckInterval = 500 * time.Millisecond
+
+// defaultRedisInfoTimeout is used when Config.RedisMemoryCheckTimeout is
+// zero or negative. The mutex is held across the INFO I/O, so a hung Redis
+// would otherwise stall every concurrent Ingest for the duration of the
+// redis-client ReadTimeout. INFO is a tiny command — if it hasn't returned
+// within the configured timeout, prefer to fail-open on this tick and try
+// again next interval rather than convoy the request path.
+const defaultRedisInfoTimeout = 250 * time.Millisecond
+
 // Component asynchronously ingests data from the distributor
 type Component struct {
 	diodepb.UnimplementedIngesterServiceServer
@@ -38,6 +54,11 @@ type Component struct {
 	redisStreamClient *redis.Client
 	metrics           Metrics
 	streamRouter      StreamRouter
+
+	memCheckMu   sync.Mutex
+	memUsedBytes int64
+	memMaxBytes  int64
+	memCheckedAt time.Time
 }
 
 // StreamRouter is an interface for determining the stream ID to add ingested data into
@@ -138,6 +159,11 @@ func (c *Component) Ingest(ctx context.Context, in *diodepb.IngestRequest) (*dio
 		return nil, err
 	}
 
+	if err := c.checkRedisMemoryWatermark(ctx); err != nil {
+		c.metrics.RecordIngestRequest(ctx, false)
+		return nil, err
+	}
+
 	errs := make([]string, 0)
 
 	encodedRequest, err := proto.Marshal(in)
@@ -188,6 +214,17 @@ func (c *Component) Ingest(ctx context.Context, in *diodepb.IngestRequest) (*dio
 	}).Err()
 	if err != nil {
 		c.metrics.RecordIngestRequest(ctx, false)
+		// Defense in depth: if a burst crossed the threshold between
+		// watermark polls, or fail-open admitted under INFO error, Redis
+		// itself may reject with OOM (only when configured with
+		// maxmemory + maxmemory-policy noeviction). Surface that as
+		// ResourceExhausted so SDK callers see a consistent backoff
+		// signal rather than Internal.
+		if isRedisOOMErr(err) {
+			c.metrics.RecordRedisRejection(ctx, "redis_oom")
+			c.logger.Warn("rejecting ingest: redis returned OOM on XAdd", "error", err, "streamID", streamID)
+			return nil, status.Error(codes.ResourceExhausted, "redis at maxmemory; retry with backoff")
+		}
 		c.logger.Error("failed to add element to the stream", "error", err, "streamID", streamID, "value", msg)
 		return nil, status.Error(codes.Internal, "")
 	}
@@ -225,6 +262,133 @@ func validateRequest(in *diodepb.IngestRequest) error {
 	}
 
 	return nil
+}
+
+// checkRedisMemoryWatermark returns codes.ResourceExhausted when Redis
+// used_memory is at or above the configured percentage of maxmemory.
+// Disabled when the threshold is <= 0.
+//
+// The check is global on used_memory (not per-tenant/per-stream). The
+// goal is to leave headroom on a Redis that may be shared with other
+// workloads, so Diode's total share against the Redis pool is the
+// relevant budget.
+//
+// INFO is called at most once per RedisMemoryCheckInterval and bounded
+// by RedisMemoryCheckTimeout. On INFO failure or timeout the previous
+// reading is retained, so a struggling Redis does not suddenly admit a
+// flood. With no successful reading yet (cold start) or when Redis
+// maxmemory is 0 (unlimited), the request is admitted.
+func (c *Component) checkRedisMemoryWatermark(ctx context.Context) error {
+	pct := c.config.RedisMemoryHighWatermarkPct
+	if pct <= 0 {
+		return nil
+	}
+
+	c.memCheckMu.Lock()
+	defer c.memCheckMu.Unlock()
+
+	interval := c.config.RedisMemoryCheckInterval
+	if interval <= 0 {
+		interval = defaultRedisMemoryCheckInterval
+	}
+
+	if time.Since(c.memCheckedAt) >= interval {
+		timeout := c.config.RedisMemoryCheckTimeout
+		if timeout <= 0 {
+			timeout = defaultRedisInfoTimeout
+		}
+		infoCtx, cancel := context.WithTimeout(ctx, timeout)
+		usedBytes, maxBytes, err := readRedisMemory(infoCtx, c.redisStreamClient)
+		cancel()
+		if err != nil {
+			// Retain the previous reading rather than zeroing it: if Redis
+			// is struggling, INFO is exactly when we want to keep enforcing
+			// the last-known state, not suddenly admit a flood. memCheckedAt
+			// is still bumped so we don't hammer a struggling Redis with
+			// retries every Ingest call.
+			c.logger.Warn("failed to read Redis memory; retaining previous reading",
+				"error", err,
+				"used_bytes", c.memUsedBytes,
+				"max_bytes", c.memMaxBytes)
+			c.memCheckedAt = time.Now()
+		} else {
+			c.memUsedBytes = usedBytes
+			c.memMaxBytes = maxBytes
+			c.memCheckedAt = time.Now()
+			if maxBytes > 0 {
+				c.metrics.SetRedisMemoryRatioBPS(ctx, usedBytes*10000/maxBytes)
+			} else {
+				// Logged once per refresh tick (not per Ingest request).
+				c.logger.Warn("Redis maxmemory is 0 (unlimited); high-watermark check has no effect")
+			}
+		}
+	}
+
+	if c.memMaxBytes <= 0 {
+		return nil
+	}
+
+	// Integer compare: used/max >= pct/100  <=>  used*100 >= max*pct
+	if c.memUsedBytes*100 >= c.memMaxBytes*int64(pct) {
+		c.metrics.RecordRedisRejection(ctx, "watermark")
+		c.logger.Warn("rejecting ingest: Redis memory above high-watermark",
+			"used_bytes", c.memUsedBytes, "max_bytes", c.memMaxBytes, "threshold_pct", pct)
+		return status.Errorf(codes.ResourceExhausted,
+			"redis memory above high-watermark (%d/%d bytes >= %d%%)",
+			c.memUsedBytes, c.memMaxBytes, pct)
+	}
+	return nil
+}
+
+// isRedisOOMErr reports whether err is the Redis "OOM command not allowed
+// when used memory > 'maxmemory'" error, which is only returned when Redis
+// is configured with maxmemory and a noeviction policy. Redis sends this
+// as a RESP error reply with the literal "OOM " prefix; go-redis surfaces
+// the message verbatim.
+func isRedisOOMErr(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.HasPrefix(err.Error(), "OOM ")
+}
+
+// readRedisMemory issues INFO memory and parses the used_memory and maxmemory lines.
+func readRedisMemory(ctx context.Context, client *redis.Client) (usedBytes, maxBytes int64, err error) {
+	out, err := client.Info(ctx, "memory").Result()
+	if err != nil {
+		return 0, 0, err
+	}
+	return parseMemory(out)
+}
+
+// parseMemory extracts used_memory and maxmemory from Redis INFO output.
+// Returns an error if used_memory is missing; maxmemory defaults to 0 if
+// absent (Redis omits it when no limit is configured).
+func parseMemory(info string) (usedBytes, maxBytes int64, err error) {
+	usedFound := false
+	for _, line := range strings.Split(info, "\n") {
+		line = strings.TrimSpace(line)
+		if rest, ok := strings.CutPrefix(line, "used_memory:"); ok {
+			v, parseErr := strconv.ParseInt(strings.TrimSpace(rest), 10, 64)
+			if parseErr != nil {
+				return 0, 0, parseErr
+			}
+			usedBytes = v
+			usedFound = true
+			continue
+		}
+		if rest, ok := strings.CutPrefix(line, "maxmemory:"); ok {
+			v, parseErr := strconv.ParseInt(strings.TrimSpace(rest), 10, 64)
+			if parseErr != nil {
+				return 0, 0, parseErr
+			}
+			maxBytes = v
+		}
+	}
+	if !usedFound {
+		return 0, 0, fmt.Errorf("used_memory not found in INFO output")
+	}
+	return usedBytes, maxBytes, nil
 }
 
 func compressBrotli(data []byte) ([]byte, error) {

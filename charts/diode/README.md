@@ -207,7 +207,7 @@ helm show values diode/diode
 | https://charts.bitnami.com/bitnami | postgresql | 16.6.3 |
 | https://charts.bitnami.com/bitnami | redis | 20.11.5 |
 | https://charts.jetstack.io | cert-manager | v1.12.0 |
-| https://k8s.ory.sh/helm/charts | hydra | 0.60.0 |
+| https://k8s.ory.sh/helm/charts | hydra | 0.61.0 |
 | https://kubernetes.github.io/ingress-nginx | ingress-nginx | 4.12.1 |
 
 ## Values
@@ -258,6 +258,9 @@ helm show values diode/diode
 | diodeAuthBootstrap.job.extraVolumes | string or list | `[]` | additional volumes to define for the container (may contain templating instructions) |
 | diodeIngester.annotations | object | `{}` | annotations to add to the ingester deployment |
 | diodeIngester.config.loggingLevel | string | `"INFO"` | logging level |
+| diodeIngester.config.redisMemoryCheckInterval | string | `"500ms"` | minimum interval between Redis INFO memory polls when the high-watermark check is enabled (Go duration) |
+| diodeIngester.config.redisMemoryCheckTimeout | string | `"250ms"` | per-call timeout for the Redis INFO memory poll (Go duration) |
+| diodeIngester.config.redisMemoryHighWatermarkPct | int | `0` | redis used_memory / maxmemory percentage at which the ingester rejects Ingest requests with ResourceExhausted; 0 disables the check |
 | diodeIngester.config.redisStreamDb | int | `1` | redis stream db |
 | diodeIngester.config.sentryDsn | string | `""` | sentry DSN |
 | diodeIngester.config.telemetryEnvironment | string | `"dev"` | telemetry environment |
