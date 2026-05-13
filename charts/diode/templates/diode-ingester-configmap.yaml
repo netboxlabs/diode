@@ -26,6 +26,9 @@ data:
   REDIS_TLS_CLIENT_CERT_PATH: {{ .Values.externalRedis.tls.clientCertPath | default "" | quote }}
   {{- end }}
   REDIS_STREAM_DB: {{ $config.redisStreamDb | default "1" | quote }}
+  REDIS_MEMORY_HIGH_WATERMARK_PCT: {{ $config.redisMemoryHighWatermarkPct | default 0 | quote }}
+  REDIS_MEMORY_CHECK_INTERVAL: {{ $config.redisMemoryCheckInterval | default "500ms" | quote }}
+  REDIS_MEMORY_CHECK_TIMEOUT: {{ $config.redisMemoryCheckTimeout | default "250ms" | quote }}
   TELEMETRY_METRICS_EXPORTER: {{ $config.telemetryMetricsExporter | quote }}
   TELEMETRY_TRACES_EXPORTER: {{ $config.telemetryTracesExporter | default "none" | quote }}
   TELEMETRY_ENVIRONMENT: {{ $config.telemetryEnvironment | default .Values.diode.environment | quote }}
