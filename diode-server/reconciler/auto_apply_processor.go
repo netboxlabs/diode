@@ -106,13 +106,6 @@ func (p *AutoApplyProcessor) pollLoop(ctx context.Context) error {
 
 func (p *AutoApplyProcessor) pollWorker(ctx context.Context) {
 	for {
-		select {
-		case <-ctx.Done():
-			p.logger.Debug("auto-apply processor exiting poll loop on request")
-			return
-		default:
-		}
-
 		// Yield to the Redis consume loop when it's behind on draining.
 		// AutoApply both writes to NetBox and reads Postgres heavily, so
 		// during burst ingest we want consume loop to clear the stream

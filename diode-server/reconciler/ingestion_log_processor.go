@@ -102,13 +102,6 @@ func (p *IngestionLogProcessor) pollLoop(ctx context.Context) error {
 
 func (p *IngestionLogProcessor) pollWorker(ctx context.Context) {
 	for {
-		select {
-		case <-ctx.Done():
-			p.logger.Debug("ingestion log processor exiting poll loop on request")
-			return
-		default:
-		}
-
 		if p.backpressure != nil && p.backpressure(ctx) {
 			select {
 			case <-ctx.Done():
