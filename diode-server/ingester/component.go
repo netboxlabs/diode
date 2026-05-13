@@ -23,6 +23,7 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
+	"github.com/netboxlabs/diode/diode-server/grpckeepalive"
 	"github.com/netboxlabs/diode/diode-server/reconciler"
 	"github.com/netboxlabs/diode/diode-server/sentry"
 	"github.com/netboxlabs/diode/diode-server/telemetry"
@@ -87,10 +88,10 @@ func New(ctx context.Context, logger *slog.Logger, cfg Config, redisStreamClient
 		return nil, fmt.Errorf("failed to get hostname: %v", err)
 	}
 
-	grpcServer := grpc.NewServer(
+	grpcServer := grpc.NewServer(append(grpckeepalive.ServerOptions(),
 		grpc.ChainUnaryInterceptor(serverInterceptors...),
 		grpc.StatsHandler(otelgrpc.NewServerHandler()),
-	)
+	)...)
 
 	component := &Component{
 		ctx:               ctx,

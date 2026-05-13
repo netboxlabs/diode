@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc/reflection"
 
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
+	"github.com/netboxlabs/diode/diode-server/grpckeepalive"
 )
 
 // Server is a reconciler Server
@@ -59,10 +60,10 @@ func NewServer(ctx context.Context, logger *slog.Logger, repository Repository, 
 		return nil, fmt.Errorf("failed to listen on port %d: %v", cfg.GRPCPort, err)
 	}
 
-	grpcServer := grpc.NewServer(
+	grpcServer := grpc.NewServer(append(grpckeepalive.ServerOptions(),
 		grpc.ChainUnaryInterceptor(serverInterceptors...),
 		grpc.StatsHandler(otelgrpc.NewServerHandler()),
-	)
+	)...)
 
 	component := &Server{
 		config:       cfg,
