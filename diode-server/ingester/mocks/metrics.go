@@ -89,6 +89,40 @@ func (_c *Metrics_RecordIngestRequest_Call) RunAndReturn(run func(context.Contex
 	return _c
 }
 
+// RecordRedisRejection provides a mock function with given fields: ctx, reason
+func (_m *Metrics) RecordRedisRejection(ctx context.Context, reason string) {
+	_m.Called(ctx, reason)
+}
+
+// Metrics_RecordRedisRejection_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RecordRedisRejection'
+type Metrics_RecordRedisRejection_Call struct {
+	*mock.Call
+}
+
+// RecordRedisRejection is a helper method to define mock.On call
+//   - ctx context.Context
+//   - reason string
+func (_e *Metrics_Expecter) RecordRedisRejection(ctx interface{}, reason interface{}) *Metrics_RecordRedisRejection_Call {
+	return &Metrics_RecordRedisRejection_Call{Call: _e.mock.On("RecordRedisRejection", ctx, reason)}
+}
+
+func (_c *Metrics_RecordRedisRejection_Call) Run(run func(ctx context.Context, reason string)) *Metrics_RecordRedisRejection_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *Metrics_RecordRedisRejection_Call) Return() *Metrics_RecordRedisRejection_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Metrics_RecordRedisRejection_Call) RunAndReturn(run func(context.Context, string)) *Metrics_RecordRedisRejection_Call {
+	_c.Run(run)
+	return _c
+}
+
 // RecordServiceStartupAttempt provides a mock function with given fields: ctx, success
 func (_m *Metrics) RecordServiceStartupAttempt(ctx context.Context, success bool) {
 	_m.Called(ctx, success)
@@ -119,6 +153,40 @@ func (_c *Metrics_RecordServiceStartupAttempt_Call) Return() *Metrics_RecordServ
 }
 
 func (_c *Metrics_RecordServiceStartupAttempt_Call) RunAndReturn(run func(context.Context, bool)) *Metrics_RecordServiceStartupAttempt_Call {
+	_c.Run(run)
+	return _c
+}
+
+// SetRedisMemoryRatioBPS provides a mock function with given fields: ctx, ratioBPS
+func (_m *Metrics) SetRedisMemoryRatioBPS(ctx context.Context, ratioBPS int64) {
+	_m.Called(ctx, ratioBPS)
+}
+
+// Metrics_SetRedisMemoryRatioBPS_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetRedisMemoryRatioBPS'
+type Metrics_SetRedisMemoryRatioBPS_Call struct {
+	*mock.Call
+}
+
+// SetRedisMemoryRatioBPS is a helper method to define mock.On call
+//   - ctx context.Context
+//   - ratioBPS int64
+func (_e *Metrics_Expecter) SetRedisMemoryRatioBPS(ctx interface{}, ratioBPS interface{}) *Metrics_SetRedisMemoryRatioBPS_Call {
+	return &Metrics_SetRedisMemoryRatioBPS_Call{Call: _e.mock.On("SetRedisMemoryRatioBPS", ctx, ratioBPS)}
+}
+
+func (_c *Metrics_SetRedisMemoryRatioBPS_Call) Run(run func(ctx context.Context, ratioBPS int64)) *Metrics_SetRedisMemoryRatioBPS_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(int64))
+	})
+	return _c
+}
+
+func (_c *Metrics_SetRedisMemoryRatioBPS_Call) Return() *Metrics_SetRedisMemoryRatioBPS_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Metrics_SetRedisMemoryRatioBPS_Call) RunAndReturn(run func(context.Context, int64)) *Metrics_SetRedisMemoryRatioBPS_Call {
 	_c.Run(run)
 	return _c
 }
