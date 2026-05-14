@@ -269,6 +269,7 @@ func (r *Repository) CreateChangeSet(ctx context.Context, changeSet changeset.Ch
 		return nil, fmt.Errorf("failed to create change set: %w", err)
 	}
 
+	bulkParams := make([]postgres.BulkCreateChangesParams, 0, len(changeSet.Changes))
 	for i, change := range changeSet.Changes {
 		beforeJSON, err := json.Marshal(change.Before)
 		if err != nil {
@@ -282,7 +283,7 @@ func (r *Repository) CreateChangeSet(ctx context.Context, changeSet changeset.Ch
 			return nil, fmt.Errorf("failed to marshal after state: %w", err)
 		}
 
-		changeParams := postgres.CreateChangeParams{
+		p := postgres.BulkCreateChangesParams{
 			ExternalID:         change.ID,
 			ChangeSetID:        cs.ID,
 			ChangeType:         change.ChangeType,
@@ -294,19 +295,20 @@ func (r *Repository) CreateChangeSet(ctx context.Context, changeSet changeset.Ch
 			SequenceNumber:     pgtype.Int4{Int32: int32(i), Valid: true},
 		}
 		if change.ObjectID != nil {
-			changeParams.ObjectID = pgtype.Int4{Int32: int32(*change.ObjectID), Valid: true}
+			p.ObjectID = pgtype.Int4{Int32: int32(*change.ObjectID), Valid: true}
 		}
 		if change.ObjectVersion != nil {
-			changeParams.ObjectVersion = pgtype.Int4{Int32: int32(*change.ObjectVersion), Valid: true}
+			p.ObjectVersion = pgtype.Int4{Int32: int32(*change.ObjectVersion), Valid: true}
 		}
 		if change.RefID != nil {
-			changeParams.RefID = pgtype.Text{String: *change.RefID, Valid: true}
+			p.RefID = pgtype.Text{String: *change.RefID, Valid: true}
 		}
+		bulkParams = append(bulkParams, p)
+	}
 
-		if _, err = qtx.CreateChange(ctx, changeParams); err != nil {
-			rollback()
-			return nil, fmt.Errorf("failed to create change: %w", err)
-		}
+	if _, err = qtx.BulkCreateChanges(ctx, bulkParams); err != nil {
+		rollback()
+		return nil, fmt.Errorf("failed to bulk create changes: %w", err)
 	}
 
 	if err := tx.Commit(ctx); err != nil {
@@ -503,16 +505,23 @@ func (r *Repository) FindPriorIngestionLogsByEntityHashes(ctx context.Context, e
 }
 
 // BulkCreateIngestionLogs bulk inserts ingestion logs using the COPY protocol.
-func (r *Repository) BulkCreateIngestionLogs(ctx context.Context, logs []*reconcilerpb.IngestionLog, sourceMetadata [][]byte, entityHashes []string) (int64, error) {
+// It pre-allocates sequence IDs and returns a map of external_id → id.
+func (r *Repository) BulkCreateIngestionLogs(ctx context.Context, logs []*reconcilerpb.IngestionLog, sourceMetadata [][]byte, entityHashes []string) (map[string]int32, error) {
+	ids, err := r.allocateIngestionLogIDs(ctx, len(logs))
+	if err != nil {
+		return nil, fmt.Errorf("failed to allocate IDs: %w", err)
+	}
+
 	marshaler := protojson.MarshalOptions{
 		UseProtoNames: true,
 	}
 
 	params := make([]postgres.BulkCreateIngestionLogsParams, 0, len(logs))
+	idMap := make(map[string]int32, len(logs))
 	for i, log := range logs {
 		entityJSON, err := marshaler.Marshal(log.Entity)
 		if err != nil {
-			return 0, fmt.Errorf("failed to marshal entity at index %d: %w", i, err)
+			return nil, fmt.Errorf("failed to marshal entity at index %d: %w", i, err)
 		}
 
 		var sm []byte
@@ -521,6 +530,7 @@ func (r *Repository) BulkCreateIngestionLogs(ctx context.Context, logs []*reconc
 		}
 
 		params = append(params, postgres.BulkCreateIngestionLogsParams{
+			ID:                 ids[i],
 			ExternalID:         log.Id,
 			ObjectType:         pgtype.Text{String: log.ObjectType, Valid: true},
 			State:              pgtype.Int4{Int32: int32(log.State), Valid: true},
@@ -535,26 +545,55 @@ func (r *Repository) BulkCreateIngestionLogs(ctx context.Context, logs []*reconc
 			SourceMetadata:     sm,
 			EntityHash:         pgtype.Text{String: entityHashes[i], Valid: true},
 		})
+		idMap[log.Id] = ids[i]
 	}
 
-	return r.queries.BulkCreateIngestionLogs(ctx, params)
+	if _, err := r.queries.BulkCreateIngestionLogs(ctx, params); err != nil {
+		return nil, err
+	}
+	return idMap, nil
 }
 
-// FindIngestionLogIDsByExternalIDs returns a map of external_id → id for the given external IDs.
-func (r *Repository) FindIngestionLogIDsByExternalIDs(ctx context.Context, externalIDs []string) (map[string]int32, error) {
-	rows, err := r.queries.FindIngestionLogIDsByExternalIDs(ctx, externalIDs)
+func (r *Repository) allocateIngestionLogIDs(ctx context.Context, n int) ([]int32, error) {
+	rows, err := r.pool.Query(ctx, "SELECT nextval('ingestion_logs_id_seq')::int4 FROM generate_series(1, $1)", n)
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
-	result := make(map[string]int32, len(rows))
-	for _, row := range rows {
-		result[row.ExternalID] = row.ID
+	ids := make([]int32, 0, n)
+	for rows.Next() {
+		var id int32
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
 	}
-	return result, nil
+	return ids, rows.Err()
 }
 
 // BulkIncrementDuplicateCounts increments the duplicate count for multiple ingestion logs.
 func (r *Repository) BulkIncrementDuplicateCounts(ctx context.Context, ids []int32) error {
 	return r.queries.BulkIncrementDuplicateCounts(ctx, ids)
+}
+
+// ClaimQueuedIngestionLogs returns a batch of ingestion logs in QUEUED state for processing.
+func (r *Repository) ClaimQueuedIngestionLogs(ctx context.Context, batchSize int32) ([]ops.QueuedIngestionLog, error) {
+	dbLogs, err := r.queries.ClaimQueuedIngestionLogs(ctx, batchSize)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]ops.QueuedIngestionLog, 0, len(dbLogs))
+	for _, dbLog := range dbLogs {
+		log, err := dbLog.ToProto()
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert to proto: %w", err)
+		}
+		result = append(result, ops.QueuedIngestionLog{
+			ID:           dbLog.ID,
+			IngestionLog: log,
+		})
+	}
+	return result, nil
 }

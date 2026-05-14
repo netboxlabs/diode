@@ -169,6 +169,38 @@ func TestMetricRecorder_WithAttributeFromContext(t *testing.T) {
 	mockRecorder.RecordCounter(ctx, "ingest.requests", 1, allAttrs...)
 }
 
+func TestMetricRecorder_RecordRedisRejection(t *testing.T) {
+	for _, reason := range []string{"watermark", "redis_oom"} {
+		t.Run(reason, func(t *testing.T) {
+			ctx := context.Background()
+			meter := noop.NewMeterProvider().Meter("test")
+
+			recorder, err := ingester.NewMetricRecorder(meter, "test")
+			require.NoError(t, err)
+			require.NotNil(t, recorder)
+
+			// Should not panic or error
+			recorder.RecordRedisRejection(ctx, reason)
+		})
+	}
+}
+
+func TestMetricRecorder_SetRedisMemoryRatioBPS(t *testing.T) {
+	for _, ratio := range []int64{0, 5000, 10000} {
+		t.Run("ratio", func(t *testing.T) {
+			ctx := context.Background()
+			meter := noop.NewMeterProvider().Meter("test")
+
+			recorder, err := ingester.NewMetricRecorder(meter, "test")
+			require.NoError(t, err)
+			require.NotNil(t, recorder)
+
+			// Should not panic or error
+			recorder.SetRedisMemoryRatioBPS(ctx, ratio)
+		})
+	}
+}
+
 func TestMetricRecorder_RecordServiceStartupAttempt(t *testing.T) {
 	tests := []struct {
 		name    string

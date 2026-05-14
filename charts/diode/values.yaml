@@ -198,6 +198,12 @@ diodeIngester:
     sentryDsn: ""
     # -- redis stream db
     redisStreamDb: 1
+    # -- redis used_memory / maxmemory percentage at which the ingester rejects Ingest requests with ResourceExhausted; 0 disables the check
+    redisMemoryHighWatermarkPct: 0
+    # -- minimum interval between Redis INFO memory polls when the high-watermark check is enabled (Go duration)
+    redisMemoryCheckInterval: 500ms
+    # -- per-call timeout for the Redis INFO memory poll (Go duration)
+    redisMemoryCheckTimeout: 250ms
     # -- telemetry metrics exporter
     telemetryMetricsExporter: prometheus
     # -- telemetry traces exporter

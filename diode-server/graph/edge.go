@@ -40,7 +40,7 @@ func (s *Service) extractEdgesRecursively(ctx context.Context, entity *diodepb.E
 
 	// Get the actual entity from the wrapper (e.g., Device from Entity_Device)
 	wrapperValue := reflect.ValueOf(entity.GetEntity())
-	if wrapperValue.Kind() == reflect.Ptr {
+	if wrapperValue.Kind() == reflect.Pointer {
 		wrapperValue = wrapperValue.Elem()
 	}
 
@@ -56,7 +56,7 @@ func (s *Service) extractEdgesRecursively(ctx context.Context, entity *diodepb.E
 	}
 
 	entityValue := actualEntityField
-	if entityValue.Kind() == reflect.Ptr {
+	if entityValue.Kind() == reflect.Pointer {
 		entityValue = entityValue.Elem()
 	}
 
@@ -73,7 +73,7 @@ func (s *Service) extractEdgesRecursively(ctx context.Context, entity *diodepb.E
 		}
 
 		// Process single entity field
-		if field.Kind() == reflect.Ptr && !field.IsNil() {
+		if field.Kind() == reflect.Pointer && !field.IsNil() {
 			fieldEdges, err := s.processFieldRecursively(ctx, sourceNode, field, fieldName)
 			if err != nil {
 				s.logger.Warn("failed to process field recursively", "field", fieldName, "error", err)
@@ -98,7 +98,7 @@ func (s *Service) extractEdgesRecursively(ctx context.Context, entity *diodepb.E
 		if field.Kind() == reflect.Interface && !field.IsNil() {
 			// Unwrap the interface to get the concrete value
 			concreteValue := reflect.ValueOf(field.Interface())
-			if concreteValue.IsValid() && concreteValue.Kind() == reflect.Ptr && !concreteValue.IsNil() {
+			if concreteValue.IsValid() && concreteValue.Kind() == reflect.Pointer && !concreteValue.IsNil() {
 				fieldEdges, err := s.processFieldRecursively(ctx, sourceNode, concreteValue, fieldName)
 				if err != nil {
 					s.logger.Warn("failed to process oneof field recursively", "field", fieldName, "error", err)
@@ -144,7 +144,7 @@ func (s *Service) extractEdgeProperties(fieldValue any) json.RawMessage {
 	// Use reflection to extract the configured fields
 	properties := make(map[string]any)
 	val := reflect.ValueOf(fieldValue)
-	if val.Kind() == reflect.Ptr {
+	if val.Kind() == reflect.Pointer {
 		val = val.Elem()
 	}
 
@@ -181,7 +181,7 @@ func getEntityTypeNameFromValue(fieldValue any) string {
 	}
 
 	// Handle pointer types
-	if typ.Kind() == reflect.Ptr {
+	if typ.Kind() == reflect.Pointer {
 		typ = typ.Elem()
 	}
 
@@ -321,7 +321,7 @@ func (s *Service) upsertEdge(ctx context.Context, edge *Edge) error {
 // Calling IsNil on other types (string, int, struct, etc.) will panic.
 func canBeNil(v reflect.Value) bool {
 	switch v.Kind() {
-	case reflect.Ptr, reflect.Map, reflect.Slice, reflect.Chan, reflect.Func, reflect.Interface:
+	case reflect.Pointer, reflect.Map, reflect.Slice, reflect.Chan, reflect.Func, reflect.Interface:
 		return true
 	}
 	return false
