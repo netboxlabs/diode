@@ -149,7 +149,7 @@ func (p *IngestionLogProcessor) processBatch(ctx context.Context, batch []ops.Qu
 		branchID = branch.ID
 	}
 
-	results := p.ops.BulkGenerateChangeSets(ctx, batch, branchID)
+	results := p.ops.BulkPlan(ctx, batch, branchID)
 
 	for i, result := range results {
 		item := batch[i]

@@ -116,7 +116,7 @@ func TestIngestionLogProcessor_ProcessesItems(t *testing.T) {
 		Return([]ops.QueuedIngestionLog{}, nil).Maybe()
 
 	mockOps.On("DefaultBranch", mock.Anything).Return(nil, nil).Maybe()
-	mockOps.On("BulkGenerateChangeSets", mock.Anything, batch, "").Return([]ops.BulkGenerateChangeSetResult{
+	mockOps.On("BulkPlan", mock.Anything, batch, "").Return([]ops.BulkGenerateChangeSetResult{
 		{IngestionLogID: 1, ChangeSetID: csID, ChangeSet: cs},
 		{IngestionLogID: 2, ChangeSetID: csID, ChangeSet: cs},
 	}).Once()
@@ -168,7 +168,7 @@ func TestIngestionLogProcessor_GenerateChangeSetError(t *testing.T) {
 		Return([]ops.QueuedIngestionLog{}, nil).Maybe()
 
 	mockOps.On("DefaultBranch", mock.Anything).Return(nil, nil).Maybe()
-	mockOps.On("BulkGenerateChangeSets", mock.Anything, batch, "").Return([]ops.BulkGenerateChangeSetResult{
+	mockOps.On("BulkPlan", mock.Anything, batch, "").Return([]ops.BulkGenerateChangeSetResult{
 		{IngestionLogID: 1, Err: errors.New("netbox error")},
 	}).Once()
 	mockMetrics.On("RecordChangeSetCreate", mock.Anything, false, int64(0)).Once()
@@ -238,7 +238,7 @@ func TestIngestionLogProcessor_BackpressureReleasedResumesProcessing(t *testing.
 		Return([]ops.QueuedIngestionLog{}, nil).Maybe()
 
 	mockOps.On("DefaultBranch", mock.Anything).Return(nil, nil).Maybe()
-	mockOps.On("BulkGenerateChangeSets", mock.Anything, batch, "").Return([]ops.BulkGenerateChangeSetResult{
+	mockOps.On("BulkPlan", mock.Anything, batch, "").Return([]ops.BulkGenerateChangeSetResult{
 		{IngestionLogID: 1},
 	}).Once()
 

@@ -5,11 +5,8 @@ package mocks
 import (
 	context "context"
 
-	changeset "github.com/netboxlabs/diode/diode-server/reconciler/changeset"
-
-	mock "github.com/stretchr/testify/mock"
-
 	netboxdiodeplugin "github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
+	mock "github.com/stretchr/testify/mock"
 
 	ops "github.com/netboxlabs/diode/diode-server/reconciler/ops"
 
@@ -27,56 +24,6 @@ type IngestionProcessorOps_Expecter struct {
 
 func (_m *IngestionProcessorOps) EXPECT() *IngestionProcessorOps_Expecter {
 	return &IngestionProcessorOps_Expecter{mock: &_m.Mock}
-}
-
-// ApplyChangeSet provides a mock function with given fields: ctx, ingestionLogID, ingestionLog, changeSetID, changeSet
-func (_m *IngestionProcessorOps) ApplyChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, changeSetID int32, changeSet *changeset.ChangeSet) error {
-	ret := _m.Called(ctx, ingestionLogID, ingestionLog, changeSetID, changeSet)
-
-	if len(ret) == 0 {
-		panic("no return value specified for ApplyChangeSet")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, int32, *reconcilerpb.IngestionLog, int32, *changeset.ChangeSet) error); ok {
-		r0 = rf(ctx, ingestionLogID, ingestionLog, changeSetID, changeSet)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// IngestionProcessorOps_ApplyChangeSet_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ApplyChangeSet'
-type IngestionProcessorOps_ApplyChangeSet_Call struct {
-	*mock.Call
-}
-
-// ApplyChangeSet is a helper method to define mock.On call
-//   - ctx context.Context
-//   - ingestionLogID int32
-//   - ingestionLog *reconcilerpb.IngestionLog
-//   - changeSetID int32
-//   - changeSet *changeset.ChangeSet
-func (_e *IngestionProcessorOps_Expecter) ApplyChangeSet(ctx interface{}, ingestionLogID interface{}, ingestionLog interface{}, changeSetID interface{}, changeSet interface{}) *IngestionProcessorOps_ApplyChangeSet_Call {
-	return &IngestionProcessorOps_ApplyChangeSet_Call{Call: _e.mock.On("ApplyChangeSet", ctx, ingestionLogID, ingestionLog, changeSetID, changeSet)}
-}
-
-func (_c *IngestionProcessorOps_ApplyChangeSet_Call) Run(run func(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, changeSetID int32, changeSet *changeset.ChangeSet)) *IngestionProcessorOps_ApplyChangeSet_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(int32), args[2].(*reconcilerpb.IngestionLog), args[3].(int32), args[4].(*changeset.ChangeSet))
-	})
-	return _c
-}
-
-func (_c *IngestionProcessorOps_ApplyChangeSet_Call) Return(_a0 error) *IngestionProcessorOps_ApplyChangeSet_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *IngestionProcessorOps_ApplyChangeSet_Call) RunAndReturn(run func(context.Context, int32, *reconcilerpb.IngestionLog, int32, *changeset.ChangeSet) error) *IngestionProcessorOps_ApplyChangeSet_Call {
-	_c.Call.Return(run)
-	return _c
 }
 
 // BulkCreateIngestionLogs provides a mock function with given fields: ctx, ingestionLogs, sourceMetadata, entityHashes
@@ -140,12 +87,12 @@ func (_c *IngestionProcessorOps_BulkCreateIngestionLogs_Call) RunAndReturn(run f
 	return _c
 }
 
-// BulkGenerateChangeSets provides a mock function with given fields: ctx, items, branchID
-func (_m *IngestionProcessorOps) BulkGenerateChangeSets(ctx context.Context, items []ops.QueuedIngestionLog, branchID string) []ops.BulkGenerateChangeSetResult {
+// BulkPlan provides a mock function with given fields: ctx, items, branchID
+func (_m *IngestionProcessorOps) BulkPlan(ctx context.Context, items []ops.QueuedIngestionLog, branchID string) []ops.BulkGenerateChangeSetResult {
 	ret := _m.Called(ctx, items, branchID)
 
 	if len(ret) == 0 {
-		panic("no return value specified for BulkGenerateChangeSets")
+		panic("no return value specified for BulkPlan")
 	}
 
 	var r0 []ops.BulkGenerateChangeSetResult
@@ -160,32 +107,32 @@ func (_m *IngestionProcessorOps) BulkGenerateChangeSets(ctx context.Context, ite
 	return r0
 }
 
-// IngestionProcessorOps_BulkGenerateChangeSets_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BulkGenerateChangeSets'
-type IngestionProcessorOps_BulkGenerateChangeSets_Call struct {
+// IngestionProcessorOps_BulkPlan_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BulkPlan'
+type IngestionProcessorOps_BulkPlan_Call struct {
 	*mock.Call
 }
 
-// BulkGenerateChangeSets is a helper method to define mock.On call
+// BulkPlan is a helper method to define mock.On call
 //   - ctx context.Context
 //   - items []ops.QueuedIngestionLog
 //   - branchID string
-func (_e *IngestionProcessorOps_Expecter) BulkGenerateChangeSets(ctx interface{}, items interface{}, branchID interface{}) *IngestionProcessorOps_BulkGenerateChangeSets_Call {
-	return &IngestionProcessorOps_BulkGenerateChangeSets_Call{Call: _e.mock.On("BulkGenerateChangeSets", ctx, items, branchID)}
+func (_e *IngestionProcessorOps_Expecter) BulkPlan(ctx interface{}, items interface{}, branchID interface{}) *IngestionProcessorOps_BulkPlan_Call {
+	return &IngestionProcessorOps_BulkPlan_Call{Call: _e.mock.On("BulkPlan", ctx, items, branchID)}
 }
 
-func (_c *IngestionProcessorOps_BulkGenerateChangeSets_Call) Run(run func(ctx context.Context, items []ops.QueuedIngestionLog, branchID string)) *IngestionProcessorOps_BulkGenerateChangeSets_Call {
+func (_c *IngestionProcessorOps_BulkPlan_Call) Run(run func(ctx context.Context, items []ops.QueuedIngestionLog, branchID string)) *IngestionProcessorOps_BulkPlan_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].([]ops.QueuedIngestionLog), args[2].(string))
 	})
 	return _c
 }
 
-func (_c *IngestionProcessorOps_BulkGenerateChangeSets_Call) Return(_a0 []ops.BulkGenerateChangeSetResult) *IngestionProcessorOps_BulkGenerateChangeSets_Call {
+func (_c *IngestionProcessorOps_BulkPlan_Call) Return(_a0 []ops.BulkGenerateChangeSetResult) *IngestionProcessorOps_BulkPlan_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *IngestionProcessorOps_BulkGenerateChangeSets_Call) RunAndReturn(run func(context.Context, []ops.QueuedIngestionLog, string) []ops.BulkGenerateChangeSetResult) *IngestionProcessorOps_BulkGenerateChangeSets_Call {
+func (_c *IngestionProcessorOps_BulkPlan_Call) RunAndReturn(run func(context.Context, []ops.QueuedIngestionLog, string) []ops.BulkGenerateChangeSetResult) *IngestionProcessorOps_BulkPlan_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -354,76 +301,6 @@ func (_c *IngestionProcessorOps_DefaultBranch_Call) Return(_a0 *netboxdiodeplugi
 }
 
 func (_c *IngestionProcessorOps_DefaultBranch_Call) RunAndReturn(run func(context.Context) (*netboxdiodeplugin.Branch, error)) *IngestionProcessorOps_DefaultBranch_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// GenerateChangeSet provides a mock function with given fields: ctx, ingestionLogID, ingestionLog, branchID
-func (_m *IngestionProcessorOps) GenerateChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, branchID string) (*int32, *changeset.ChangeSet, error) {
-	ret := _m.Called(ctx, ingestionLogID, ingestionLog, branchID)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GenerateChangeSet")
-	}
-
-	var r0 *int32
-	var r1 *changeset.ChangeSet
-	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context, int32, *reconcilerpb.IngestionLog, string) (*int32, *changeset.ChangeSet, error)); ok {
-		return rf(ctx, ingestionLogID, ingestionLog, branchID)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, int32, *reconcilerpb.IngestionLog, string) *int32); ok {
-		r0 = rf(ctx, ingestionLogID, ingestionLog, branchID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*int32)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, int32, *reconcilerpb.IngestionLog, string) *changeset.ChangeSet); ok {
-		r1 = rf(ctx, ingestionLogID, ingestionLog, branchID)
-	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*changeset.ChangeSet)
-		}
-	}
-
-	if rf, ok := ret.Get(2).(func(context.Context, int32, *reconcilerpb.IngestionLog, string) error); ok {
-		r2 = rf(ctx, ingestionLogID, ingestionLog, branchID)
-	} else {
-		r2 = ret.Error(2)
-	}
-
-	return r0, r1, r2
-}
-
-// IngestionProcessorOps_GenerateChangeSet_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GenerateChangeSet'
-type IngestionProcessorOps_GenerateChangeSet_Call struct {
-	*mock.Call
-}
-
-// GenerateChangeSet is a helper method to define mock.On call
-//   - ctx context.Context
-//   - ingestionLogID int32
-//   - ingestionLog *reconcilerpb.IngestionLog
-//   - branchID string
-func (_e *IngestionProcessorOps_Expecter) GenerateChangeSet(ctx interface{}, ingestionLogID interface{}, ingestionLog interface{}, branchID interface{}) *IngestionProcessorOps_GenerateChangeSet_Call {
-	return &IngestionProcessorOps_GenerateChangeSet_Call{Call: _e.mock.On("GenerateChangeSet", ctx, ingestionLogID, ingestionLog, branchID)}
-}
-
-func (_c *IngestionProcessorOps_GenerateChangeSet_Call) Run(run func(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, branchID string)) *IngestionProcessorOps_GenerateChangeSet_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(int32), args[2].(*reconcilerpb.IngestionLog), args[3].(string))
-	})
-	return _c
-}
-
-func (_c *IngestionProcessorOps_GenerateChangeSet_Call) Return(_a0 *int32, _a1 *changeset.ChangeSet, _a2 error) *IngestionProcessorOps_GenerateChangeSet_Call {
-	_c.Call.Return(_a0, _a1, _a2)
-	return _c
-}
-
-func (_c *IngestionProcessorOps_GenerateChangeSet_Call) RunAndReturn(run func(context.Context, int32, *reconcilerpb.IngestionLog, string) (*int32, *changeset.ChangeSet, error)) *IngestionProcessorOps_GenerateChangeSet_Call {
 	_c.Call.Return(run)
 	return _c
 }

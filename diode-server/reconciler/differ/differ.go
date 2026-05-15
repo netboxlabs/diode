@@ -1,7 +1,6 @@
 package differ
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/google/uuid"
@@ -19,48 +18,6 @@ type IngestEntity struct {
 	ObjectType string        `json:"object_type"`
 	Entity     proto.Message `json:"entity"`
 	State      int           `json:"state"`
-}
-
-// Diff compares ingested entity with the intended state in NetBox and returns a change set
-func Diff(ctx context.Context, entity IngestEntity, branchID string, netboxAPI netboxdiodeplugin.NetBoxAPI) (*changeset.ChangeSet, error) {
-	req := netboxdiodeplugin.GenerateDiffRequest{
-		ObjectType: entity.ObjectType,
-		BranchID:   branchID,
-		Entity:     entity.Entity,
-	}
-
-	res, err := netboxAPI.GenerateDiff(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-
-	if res.ChangeSet == nil {
-		return nil, fmt.Errorf("no change set returned")
-	}
-
-	changes := make([]changeset.Change, 0)
-	for _, change := range res.ChangeSet.Changes {
-		changes = append(changes, changeset.Change{
-			ID:                 change.ID,
-			ChangeType:         change.ChangeType,
-			ObjectType:         change.ObjectType,
-			ObjectID:           change.ObjectID,
-			ObjectVersion:      change.ObjectVersion,
-			RefID:              change.RefID,
-			ObjectPrimaryValue: change.ObjectPrimaryValue,
-			After:              change.Data,
-			Before:             change.Before,
-			NewRefs:            change.NewRefs,
-		})
-	}
-
-	deviationName := genDeviationName(changes, entity.ObjectType)
-	cs := &changeset.ChangeSet{ID: res.ID, Changes: changes, DeviationName: deviationName}
-	if res.ChangeSet.Branch != nil {
-		branchID := fmt.Sprintf("%s (%s)", res.ChangeSet.Branch.Name, res.ChangeSet.Branch.ID)
-		cs.BranchID = &branchID
-	}
-	return cs, nil
 }
 
 // ConvertBulkPlanResult converts a single BulkPlanResult to a changeset.ChangeSet.

@@ -13,7 +13,6 @@ import (
 	diodeErrors "github.com/netboxlabs/diode/diode-server/errors"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
-	"github.com/netboxlabs/diode/diode-server/reconciler/applier"
 	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
 	"github.com/netboxlabs/diode/diode-server/reconciler/differ"
 	"github.com/netboxlabs/diode/diode-server/reconciler/ops"
@@ -324,90 +323,9 @@ func (o *Ops) BulkCreateIngestionLogs(ctx context.Context, ingestionLogs []*reco
 	return results, nil
 }
 
-// GenerateChangeSet creates a change set based on current NetBox state with optional branch
-func (o *Ops) GenerateChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, branchID string) (*int32, *changeset.ChangeSet, error) {
-	ingestEntity := differ.IngestEntity{
-		RequestID:  ingestionLog.GetRequestId(),
-		ObjectType: ingestionLog.GetObjectType(),
-		Entity:     ingestionLog.GetEntity(),
-		State:      int(ingestionLog.GetState()),
-	}
-
-	changeSet, err := differ.Diff(ctx, ingestEntity, branchID, o.nbClient)
-	if err != nil {
-		tags := map[string]string{
-			"request_id": ingestEntity.RequestID,
-		}
-		contextMap := map[string]any{
-			"request_id":  ingestEntity.RequestID,
-			"object_type": ingestEntity.ObjectType,
-		}
-		sentry.CaptureError(err, tags, "Ingest Entity", contextMap)
-
-		ingestionLog.State = reconcilerpb.State_FAILED
-
-		changeSetErr := handleChangeSetError(err)
-		if err2 := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, reconcilerpb.State_FAILED, changeSetErr); err2 != nil {
-			err = errors.Join(err, err2)
-		}
-
-		cs := differ.FailedDiffChangeSet(ingestEntity, branchID)
-		id, err1 := o.repository.CreateChangeSet(ctx, *cs, ingestionLogID)
-		if err1 != nil {
-			o.logger.Error("error generating diff failure placeholder change set")
-			return nil, nil, errors.Join(err, err1)
-		}
-
-		return id, cs, err
-	}
-
-	// if the change set has no changes and the ingestion log is already in the no changes or applied state,
-	// we don't record another changeset in the database, we just bump the updated at time.
-	if len(changeSet.Changes) == 0 && (ingestionLog.State == reconcilerpb.State_NO_CHANGES || ingestionLog.State == reconcilerpb.State_APPLIED) {
-		if err := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, ingestionLog.State, nil); err != nil {
-			o.logger.Error("failed to update ingestion log state (error ignored)", "ingestionLogID", ingestionLogID, "error", err)
-		}
-		return nil, changeSet, nil
-	}
-
-	// TODO: At this point if the prior ingestion log is in the applied state, and we have
-	// a new set of changes, we could "clone" the ingestion log to open a new "deviation"
-	// and leave the prior one as applied. This would be more historically accurate /
-	// less surprising.  For now we just re-open the previously applied change set.
-	//
-	// If we did create a new one, we would need to communicate that back to the rest
-	// of the pipeline and also this operation's name would be a bit of misnomer.
-	// Possibly some refactoring/renaming of the operations (which are meant to
-	// keep rpc and pipeline behavior in sync) would be warranted.
-
-	changeSetID, err := o.repository.CreateChangeSet(ctx, *changeSet, ingestionLogID)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	maxChangeSets := o.limits.MaxChangeSetsPerIngestionLog()
-	if maxChangeSets > 0 {
-		if err := o.repository.TruncateChangeSets(ctx, ingestionLogID, maxChangeSets); err != nil {
-			o.logger.Error("failed to truncate change sets (error ignored)", "ingestionLogID", ingestionLogID, "error", err)
-		}
-	}
-
-	if len(changeSet.Changes) > 0 {
-		ingestionLog.State = reconcilerpb.State_OPEN
-	} else {
-		ingestionLog.State = reconcilerpb.State_NO_CHANGES
-	}
-	if err := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, ingestionLog.State, nil); err != nil {
-		o.logger.Error("failed to update ingestion log state (error ignored)", "ingestionLogID", ingestionLogID, "error", err)
-	}
-
-	o.logger.Debug("change set generated", "id", changeSetID, "externalID", changeSet.ID, "ingestionLogID", ingestionLogID)
-	return changeSetID, changeSet, nil
-}
-
-// BulkGenerateChangeSets generates change sets for a batch of ingestion logs
-// via a single /bulk-plan HTTP call against the diode-netbox-plugin.
-func (o *Ops) BulkGenerateChangeSets(ctx context.Context, items []ops.QueuedIngestionLog, branchID string) []ops.BulkGenerateChangeSetResult {
+// BulkPlan generates change sets for a batch of ingestion logs via a single
+// /bulk-plan HTTP call against the diode-netbox-plugin.
+func (o *Ops) BulkPlan(ctx context.Context, items []ops.QueuedIngestionLog, branchID string) []ops.BulkGenerateChangeSetResult {
 	results := make([]ops.BulkGenerateChangeSetResult, len(items))
 
 	entities := make([]netboxdiodeplugin.BulkPlanEntity, len(items))
@@ -564,30 +482,6 @@ func (o *Ops) persistChangeSet(ctx context.Context, ingestionLogID int32, ingest
 
 	o.logger.Debug("change set generated", "id", changeSetID, "externalID", cs.ID, "ingestionLogID", ingestionLogID)
 	return ops.BulkGenerateChangeSetResult{IngestionLogID: ingestionLogID, ChangeSetID: changeSetID, ChangeSet: cs}
-}
-
-// ApplyChangeSet applies change set to NetBox and updates related states
-func (o *Ops) ApplyChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, changeSetID int32, changeSet *changeset.ChangeSet) error {
-	if err := applier.ApplyChangeSet(ctx, o.logger, *changeSet, o.nbClient); err != nil {
-		o.logger.Debug("failed to apply change set", "id", changeSetID, "externalID", changeSet.ID, "ingestionLogID", ingestionLogID, "error", err)
-
-		changeSetErr := handleChangeSetError(err)
-
-		if err2 := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, reconcilerpb.State_FAILED, changeSetErr); err2 != nil {
-			err = errors.Join(err, err2)
-		}
-		return err
-	}
-
-	ingestionLog.State = reconcilerpb.State_APPLIED
-	if err := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, reconcilerpb.State_APPLIED, nil); err != nil {
-		o.logger.Warn("failed to update ingestion log state (error ignored)", "ingestionLogID", ingestionLogID, "error", err)
-		// TODO(ltucker): This should be in a transaction.  Can leave an inconsistent state marked on the ingestion log.
-		// return nil, err
-	}
-
-	o.logger.Debug("change set applied", "id", changeSetID, "externalID", changeSet.ID, "ingestionLogID", ingestionLogID)
-	return nil
 }
 
 // BulkPlanApply runs combined plan + apply for a batch of QUEUED ingestion logs
