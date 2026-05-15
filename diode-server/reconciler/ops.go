@@ -52,11 +52,10 @@ func (l *DefaultLimits) MaxChangeSetsPerIngestionLog() int32 {
 // loop, AutoApply) never do synchronous NetBox HTTP via DefaultBranch — so
 // a NetBox/Hydra outage cannot block Redis→inbox draining.
 type Ops struct {
-	repository            Repository
-	nbClient              netboxdiodeplugin.NetBoxAPI
-	logger                *slog.Logger
-	limits                Limits
-	bulkOperationsEnabled bool
+	repository Repository
+	nbClient   netboxdiodeplugin.NetBoxAPI
+	logger     *slog.Logger
+	limits     Limits
 
 	// Default-branch state. Updated only by the background refresher.
 	branchMu     sync.RWMutex
@@ -69,18 +68,17 @@ type Ops struct {
 // NewOps creates a new Ops. The background DefaultBranch refresher is NOT
 // started until Start(ctx) is called; until then DefaultBranch() returns
 // (nil, nil) and callers degrade to "no branch context".
-func NewOps(repository Repository, nbClient netboxdiodeplugin.NetBoxAPI, logger *slog.Logger, limits Limits, bulkOperationsEnabled bool) *Ops {
+func NewOps(repository Repository, nbClient netboxdiodeplugin.NetBoxAPI, logger *slog.Logger, limits Limits) *Ops {
 	if limits == nil {
 		limits = &DefaultLimits{}
 	}
 
 	return &Ops{
-		repository:            repository,
-		nbClient:              nbClient,
-		logger:                logger,
-		limits:                limits,
-		bulkOperationsEnabled: bulkOperationsEnabled,
-		refreshSig:            make(chan struct{}, 1),
+		repository: repository,
+		nbClient:   nbClient,
+		logger:     logger,
+		limits:     limits,
+		refreshSig: make(chan struct{}, 1),
 	}
 }
 
@@ -407,19 +405,54 @@ func (o *Ops) GenerateChangeSet(ctx context.Context, ingestionLogID int32, inges
 	return changeSetID, changeSet, nil
 }
 
-// BulkGenerateChangeSets generates change sets for a batch of ingestion logs.
-// When bulk operations are enabled, it uses a single BulkPlan HTTP call.
-// Otherwise, it falls back to per-item differ.Diff calls.
+// BulkGenerateChangeSets generates change sets for a batch of ingestion logs
+// via a single /bulk-plan HTTP call against the diode-netbox-plugin.
 func (o *Ops) BulkGenerateChangeSets(ctx context.Context, items []ops.QueuedIngestionLog, branchID string) []ops.BulkGenerateChangeSetResult {
 	results := make([]ops.BulkGenerateChangeSetResult, len(items))
 
-	var persistItems []ops.BulkPersistItem
-	var persistIndex []int
+	entities := make([]netboxdiodeplugin.BulkPlanEntity, len(items))
+	for i, item := range items {
+		entities[i] = netboxdiodeplugin.BulkPlanEntity{
+			ID:         fmt.Sprintf("%d", item.ID),
+			ObjectType: item.IngestionLog.GetObjectType(),
+			Entity:     item.IngestionLog.GetEntity(),
+		}
+	}
 
-	if o.bulkOperationsEnabled {
-		persistItems, persistIndex = o.bulkPlanDiff(ctx, items, branchID, results)
-	} else {
-		persistItems, persistIndex = o.perItemDiff(ctx, items, branchID, results)
+	bulkResp, err := o.nbClient.BulkPlan(ctx, netboxdiodeplugin.BulkPlanRequest{
+		Entities: entities,
+		BranchID: branchID,
+	})
+	if err != nil {
+		for i, item := range items {
+			results[i] = o.handleGenerateChangeSetFailure(ctx, item, branchID, err)
+		}
+		return results
+	}
+
+	resultByID := make(map[string]netboxdiodeplugin.BulkPlanResult, len(bulkResp.Results))
+	for _, r := range bulkResp.Results {
+		resultByID[r.ID] = r
+	}
+
+	persistItems := make([]ops.BulkPersistItem, 0, len(items))
+	persistIndex := make([]int, 0, len(items))
+
+	for i, item := range items {
+		entityID := fmt.Sprintf("%d", item.ID)
+		planResult, found := resultByID[entityID]
+		if !found {
+			results[i] = o.handleGenerateChangeSetFailure(ctx, item, branchID, fmt.Errorf("no result returned for ingestion log %d", item.ID))
+			continue
+		}
+
+		cs, err := differ.ConvertBulkPlanResult(planResult, item.IngestionLog.GetObjectType())
+		if err != nil {
+			results[i] = o.handleGenerateChangeSetFailure(ctx, item, branchID, err)
+			continue
+		}
+
+		persistItems, persistIndex = collectPersistItem(persistItems, persistIndex, results, i, item, cs)
 	}
 
 	if len(persistItems) > 0 {
@@ -439,80 +472,6 @@ func (o *Ops) BulkGenerateChangeSets(ctx context.Context, items []ops.QueuedInge
 	}
 
 	return results
-}
-
-func (o *Ops) bulkPlanDiff(ctx context.Context, items []ops.QueuedIngestionLog, branchID string, results []ops.BulkGenerateChangeSetResult) ([]ops.BulkPersistItem, []int) {
-	entities := make([]netboxdiodeplugin.BulkPlanEntity, len(items))
-	for i, item := range items {
-		entities[i] = netboxdiodeplugin.BulkPlanEntity{
-			ID:         fmt.Sprintf("%d", item.ID),
-			ObjectType: item.IngestionLog.GetObjectType(),
-			Entity:     item.IngestionLog.GetEntity(),
-		}
-	}
-
-	bulkResp, bulkErr := o.nbClient.BulkPlan(ctx, netboxdiodeplugin.BulkPlanRequest{
-		Entities: entities,
-		BranchID: branchID,
-	})
-
-	if bulkErr != nil {
-		for i, item := range items {
-			results[i] = o.handleGenerateChangeSetFailure(ctx, item, branchID, bulkErr)
-		}
-		return nil, nil
-	}
-
-	resultByID := make(map[string]netboxdiodeplugin.BulkPlanResult, len(bulkResp.Results))
-	for _, r := range bulkResp.Results {
-		resultByID[r.ID] = r
-	}
-
-	var persistItems []ops.BulkPersistItem
-	var persistIndex []int
-
-	for i, item := range items {
-		entityID := fmt.Sprintf("%d", item.ID)
-		planResult, found := resultByID[entityID]
-		if !found {
-			results[i] = o.handleGenerateChangeSetFailure(ctx, item, branchID, fmt.Errorf("no result returned for ingestion log %d", item.ID))
-			continue
-		}
-
-		cs, err := differ.ConvertBulkPlanResult(planResult, item.IngestionLog.GetObjectType())
-		if err != nil {
-			results[i] = o.handleGenerateChangeSetFailure(ctx, item, branchID, err)
-			continue
-		}
-
-		persistItems, persistIndex = collectPersistItem(persistItems, persistIndex, results, i, item, cs)
-	}
-
-	return persistItems, persistIndex
-}
-
-func (o *Ops) perItemDiff(ctx context.Context, items []ops.QueuedIngestionLog, branchID string, results []ops.BulkGenerateChangeSetResult) ([]ops.BulkPersistItem, []int) {
-	var persistItems []ops.BulkPersistItem
-	var persistIndex []int
-
-	for i, item := range items {
-		ingestEntity := differ.IngestEntity{
-			RequestID:  item.IngestionLog.GetRequestId(),
-			ObjectType: item.IngestionLog.GetObjectType(),
-			Entity:     item.IngestionLog.GetEntity(),
-			State:      int(item.IngestionLog.GetState()),
-		}
-
-		cs, err := differ.Diff(ctx, ingestEntity, branchID, o.nbClient)
-		if err != nil {
-			results[i] = o.handleGenerateChangeSetFailure(ctx, item, branchID, err)
-			continue
-		}
-
-		persistItems, persistIndex = collectPersistItem(persistItems, persistIndex, results, i, item, cs)
-	}
-
-	return persistItems, persistIndex
 }
 
 func collectPersistItem(persistItems []ops.BulkPersistItem, persistIndex []int, results []ops.BulkGenerateChangeSetResult, i int, item ops.QueuedIngestionLog, cs *changeset.ChangeSet) ([]ops.BulkPersistItem, []int) {

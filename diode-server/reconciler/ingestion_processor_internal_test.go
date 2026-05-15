@@ -96,7 +96,7 @@ func TestHandleStreamMessage(t *testing.T) {
 				redisStreamClient: mockRedisStreamClient,
 				logger:            logger,
 				Config:            Config{},
-				ops:               NewOps(mockRepository, mockNbClient, logger, nil, false),
+				ops:               NewOps(mockRepository, mockNbClient, logger, nil),
 				metrics:           mockMetrics,
 			}
 
@@ -251,7 +251,7 @@ func TestHandleStreamMessageLegacyUncompressed(t *testing.T) {
 		redisStreamClient: mockRedisStreamClient,
 		logger:            logger,
 		Config:            Config{},
-		ops:               NewOps(mockRepository, mockNbClient, logger, nil, false),
+		ops:               NewOps(mockRepository, mockNbClient, logger, nil),
 		metrics:           mockMetrics,
 	}
 

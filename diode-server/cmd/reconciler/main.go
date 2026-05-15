@@ -203,7 +203,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	ops := reconciler.NewOps(repository, nbClient, s.Logger(), nil, cfg.BulkOperationsEnabled)
+	ops := reconciler.NewOps(repository, nbClient, s.Logger(), nil)
 	ops.Start(ctx)
 
 	// Build processor options

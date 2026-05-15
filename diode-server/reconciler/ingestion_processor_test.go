@@ -70,7 +70,7 @@ func TestNewIngestionProcessor(t *testing.T) {
 		_ = redisStreamClient.Close()
 	}()
 
-	ops := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil, false)
+	ops := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil)
 	processor, err := reconciler.NewIngestionProcessor(ctx, logger, cfg, redisClient, redisStreamClient, reconciler.DefaultRedisStreamID, reconciler.DefaultRedisConsumerGroup, ops, mockMetrics)
 	require.NoError(t, err)
 	require.NotNil(t, processor)
@@ -112,7 +112,7 @@ func TestIngestionProcessorStart(t *testing.T) {
 		_ = redisStreamClient.Close()
 	}()
 
-	ops := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil, false)
+	ops := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil)
 	processor, err := reconciler.NewIngestionProcessor(ctx, logger, cfg, redisClient, redisStreamClient, reconciler.DefaultRedisStreamID, reconciler.DefaultRedisConsumerGroup, ops, mockMetrics)
 	require.NoError(t, err)
 	require.NotNil(t, processor)

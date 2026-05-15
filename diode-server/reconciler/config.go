@@ -42,8 +42,6 @@ type Config struct {
 	AutoApplyProcessorBatchSize   int32 `envconfig:"AUTO_APPLY_PROCESSOR_BATCH_SIZE" default:"100"`
 	AutoApplyProcessorConcurrency int   `envconfig:"AUTO_APPLY_PROCESSOR_CONCURRENCY" default:"1"`
 
-	BulkOperationsEnabled bool `envconfig:"BULK_OPERATIONS_ENABLED" default:"false"`
-
 	// Experimental
 	EnableGraphDB bool `envconfig:"ENABLE_GRAPH_DB" default:"false"`
 

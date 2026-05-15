@@ -140,7 +140,7 @@ func TestOpsGenerateChangeSet(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepository := mocks.NewRepository(t)
 			mockNetBoxClient := pluginmocks.NewNetBoxAPI(t)
-			ops := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil, false)
+			ops := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil)
 
 			for _, m := range tt.generateDiff {
 				if m.err == nil {
@@ -303,7 +303,7 @@ func TestOpsCreateIngestionLog(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mockRepository := mocks.NewRepository(t)
 			mockNetBoxClient := pluginmocks.NewNetBoxAPI(t)
-			opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil, false)
+			opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil)
 
 			// GetDefaultBranch is only called by the background refresher
 			// (started via ops.Start). This test does not start the refresher,
@@ -366,7 +366,7 @@ func TestOpsDefaultBranchColdCache(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
 	mockRepository := mocks.NewRepository(t)
 	mockNetBoxClient := pluginmocks.NewNetBoxAPI(t)
-	opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil, false)
+	opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil)
 
 	branch, err := opsInstance.DefaultBranch(context.Background())
 	require.NoError(t, err)
@@ -380,7 +380,7 @@ func TestOpsBranchRefresherSeedsCache(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
 	mockRepository := mocks.NewRepository(t)
 	mockNetBoxClient := pluginmocks.NewNetBoxAPI(t)
-	opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil, false)
+	opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil)
 
 	want := &netboxdiodeplugin.Branch{ID: "branch-1", Name: "Branch One"}
 	mockNetBoxClient.EXPECT().GetDefaultBranch(mock.Anything).Return(want, nil)
@@ -400,7 +400,7 @@ func TestOpsBranchRefresher404IsRecorded(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
 	mockRepository := mocks.NewRepository(t)
 	mockNetBoxClient := pluginmocks.NewNetBoxAPI(t)
-	opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil, false)
+	opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil)
 
 	mockNetBoxClient.EXPECT().GetDefaultBranch(mock.Anything).Return((*netboxdiodeplugin.Branch)(nil), netboxdiodeplugin.ErrDefaultBranchNotFound)
 
@@ -426,7 +426,7 @@ func TestOpsBranchRefresherKeepsLastOnError(t *testing.T) {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
 	mockRepository := mocks.NewRepository(t)
 	mockNetBoxClient := pluginmocks.NewNetBoxAPI(t)
-	opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil, false)
+	opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil)
 
 	good := &netboxdiodeplugin.Branch{ID: "branch-1", Name: "Branch One"}
 	// First call (refresher start): success.
