@@ -227,7 +227,6 @@ func TestNewClient(t *testing.T) {
 	}
 }
 
-
 func TestGetDefaultBranch(t *testing.T) {
 	tests := []struct {
 		name                      string

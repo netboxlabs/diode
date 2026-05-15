@@ -21,17 +21,6 @@ import (
 	"github.com/netboxlabs/diode/diode-server/reconciler/mocks"
 )
 
-
-func strPtrEq(a *string, b *string) bool {
-	if a == nil && b == nil {
-		return true
-	}
-	if a == nil || b == nil {
-		return false
-	}
-	return *a == *b
-}
-
 func strPtr(s string) *string {
 	return &s
 }
