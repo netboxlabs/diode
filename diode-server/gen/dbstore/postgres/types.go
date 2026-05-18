@@ -90,25 +90,28 @@ type GraphNodeSnapshotMetadatum struct {
 }
 
 type IngestionLog struct {
-	ID                 int32              `json:"id"`
-	ExternalID         string             `json:"external_id"`
-	ObjectType         pgtype.Text        `json:"object_type"`
-	State              pgtype.Int4        `json:"state"`
-	RequestID          pgtype.Text        `json:"request_id"`
-	IngestionTs        pgtype.Int8        `json:"ingestion_ts"`
-	SourceTs           pgtype.Int8        `json:"source_ts"`
-	ProducerAppName    pgtype.Text        `json:"producer_app_name"`
-	ProducerAppVersion pgtype.Text        `json:"producer_app_version"`
-	SdkName            pgtype.Text        `json:"sdk_name"`
-	SdkVersion         pgtype.Text        `json:"sdk_version"`
-	Entity             []byte             `json:"entity"`
-	Error              json.RawMessage    `json:"error"`
-	SourceMetadata     []byte             `json:"source_metadata"`
-	CreatedAt          pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
-	EntityHash         pgtype.Text        `json:"entity_hash"`
-	LastSeen           pgtype.Timestamptz `json:"last_seen"`
-	DuplicateCount     int32              `json:"duplicate_count"`
+	ID                   int32              `json:"id"`
+	ExternalID           string             `json:"external_id"`
+	ObjectType           pgtype.Text        `json:"object_type"`
+	State                pgtype.Int4        `json:"state"`
+	RequestID            pgtype.Text        `json:"request_id"`
+	IngestionTs          pgtype.Int8        `json:"ingestion_ts"`
+	SourceTs             pgtype.Int8        `json:"source_ts"`
+	ProducerAppName      pgtype.Text        `json:"producer_app_name"`
+	ProducerAppVersion   pgtype.Text        `json:"producer_app_version"`
+	SdkName              pgtype.Text        `json:"sdk_name"`
+	SdkVersion           pgtype.Text        `json:"sdk_version"`
+	Entity               []byte             `json:"entity"`
+	Error                json.RawMessage    `json:"error"`
+	SourceMetadata       []byte             `json:"source_metadata"`
+	CreatedAt            pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt            pgtype.Timestamptz `json:"updated_at"`
+	EntityHash           pgtype.Text        `json:"entity_hash"`
+	LastSeen             pgtype.Timestamptz `json:"last_seen"`
+	DuplicateCount       int32              `json:"duplicate_count"`
+	GraphUpsertedAt      pgtype.Timestamptz `json:"graph_upserted_at"`
+	GraphUpsertAttempts  int32              `json:"graph_upsert_attempts"`
+	GraphUpsertClaimedAt pgtype.Timestamptz `json:"graph_upsert_claimed_at"`
 }
 
 type VDeviation struct {

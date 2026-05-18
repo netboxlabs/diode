@@ -3,6 +3,7 @@ package reconciler
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -24,7 +25,6 @@ import (
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 	"github.com/netboxlabs/diode/diode-server/gen/netbox"
-	"github.com/netboxlabs/diode/diode-server/graph"
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
 	"github.com/netboxlabs/diode/diode-server/reconciler/ops"
 	"github.com/netboxlabs/diode/diode-server/sentry"
@@ -72,7 +72,6 @@ type IngestionProcessor struct {
 	metrics            Metrics
 	cancel             context.CancelFunc
 	mx                 sync.Mutex
-	graphService       *graph.Service // nil when ENABLE_GRAPH_DB is false
 }
 
 // IngestionProcessorOps represents the basic operations that the ingestion processor performs
@@ -85,26 +84,14 @@ type IngestionProcessorOps interface {
 	RefreshDefaultBranch(ctx context.Context) (*netboxdiodeplugin.Branch, error)
 }
 
-// ProcessorOption is a functional option for configuring IngestionProcessor
-type ProcessorOption func(*IngestionProcessor)
-
-// WithGraphService sets the graph.Service for graph-based entity extraction.
-// When set, entities are also stored in the graph database for relationship tracking.
-// Pass nil to disable graph extraction.
-func WithGraphService(svc *graph.Service) ProcessorOption {
-	return func(p *IngestionProcessor) {
-		p.graphService = svc
-	}
-}
-
 // NewIngestionProcessor creates a new ingestion processor
-func NewIngestionProcessor(_ context.Context, logger *slog.Logger, cfg Config, redisClient, redisStreamClient RedisClient, redisStreamID string, redisConsumerGroup string, ops IngestionProcessorOps, metrics Metrics, opts ...ProcessorOption) (*IngestionProcessor, error) {
+func NewIngestionProcessor(_ context.Context, logger *slog.Logger, cfg Config, redisClient, redisStreamClient RedisClient, redisStreamID string, redisConsumerGroup string, ops IngestionProcessorOps, metrics Metrics) (*IngestionProcessor, error) {
 	hostname, err := os.Hostname()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get hostname: %v", err)
 	}
 
-	component := &IngestionProcessor{
+	return &IngestionProcessor{
 		Config:             cfg,
 		logger:             logger,
 		hostname:           hostname,
@@ -114,14 +101,7 @@ func NewIngestionProcessor(_ context.Context, logger *slog.Logger, cfg Config, r
 		redisConsumerGroup: redisConsumerGroup,
 		ops:                ops,
 		metrics:            metrics,
-	}
-
-	// Apply functional options
-	for _, opt := range opts {
-		opt(component)
-	}
-
-	return component, nil
+	}, nil
 }
 
 // Name returns the name of the component
@@ -286,6 +266,21 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 	// per-batch NetBox hit that thrashes plugin workers under burst ingest.
 	_, _ = p.ops.DefaultBranch(ctx)
 
+	// Stash request-level metadata once per request — every row produced by
+	// this request shares the same blob. The GraphUpsertProcessor reads it
+	// back to merge run_id (and friends) into graph snapshots; if marshaling
+	// fails we degrade to no request metadata rather than failing ingest.
+	var requestMetadata []byte
+	if md := ingestReq.GetMetadata(); md != nil {
+		if asMap := md.AsMap(); len(asMap) > 0 {
+			if b, err := json.Marshal(asMap); err == nil {
+				requestMetadata = b
+			} else {
+				p.logger.Warn("failed to marshal IngestRequest metadata; ingesting without it", "error", err)
+			}
+		}
+	}
+
 	// Phase 1: Pre-validate entities, build ingestion log protos, and generate entity hashes
 	fingerprinter := entityhash.NewEntityFingerprinter()
 
@@ -293,8 +288,6 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 		index        int
 		ingestionLog *reconcilerpb.IngestionLog
 		entityHash   string
-		entity       *diodepb.Entity
-		objectType   string
 	}
 
 	var valid []validEntity
@@ -336,8 +329,6 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 			index:        i,
 			ingestionLog: ingestionLog,
 			entityHash:   hash,
-			entity:       v,
-			objectType:   objectType,
 		})
 	}
 
@@ -351,7 +342,7 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 	entityHashes := make([]string, len(valid))
 	for i, v := range valid {
 		logs[i] = v.ingestionLog
-		sourceMetadata[i] = nil
+		sourceMetadata[i] = requestMetadata
 		entityHashes[i] = v.entityHash
 	}
 
@@ -362,13 +353,14 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 		return errs
 	}
 
-	// Phase 5: Post-processing — metrics, graph upserts, send to channel
-	for i, result := range results {
+	// Phase 5: Post-processing — metrics only. Graph upsert runs on a
+	// separate processor fed from ingestion_logs so the consume loop stays
+	// at COPY speed regardless of graph-DB latency.
+	for _, result := range results {
 		if result == nil {
 			continue
 		}
 
-		v := valid[i]
 		ingestionLog := result.IngestionLog
 		id := result.ID
 
@@ -383,27 +375,6 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 		}
 		metricsCtx := telemetry.ContextWithMetricAttributes(ctx, attrs...)
 		p.metrics.RecordIngestionLogCreate(metricsCtx, true)
-
-		// Upsert entity into graph if graph DB is enabled (non-blocking, errors logged but not fatal)
-		if p.graphService != nil {
-			start := time.Now()
-			// Pass request-level metadata (e.g. run_id) for graph storage
-			var reqMeta map[string]any
-			if md := ingestReq.GetMetadata(); md != nil {
-				reqMeta = md.AsMap()
-			}
-			_, graphErr := p.graphService.UpsertEntity(ctx, v.entity, reqMeta)
-			duration := time.Since(start).Seconds()
-			if graphErr != nil {
-				p.logger.Warn("graph upsert entity failed",
-					"error", graphErr,
-					"ingestion_log_id", id,
-					"entity_type", v.objectType)
-				p.metrics.RecordGraphUpsert(ctx, false, v.objectType, duration)
-			} else {
-				p.metrics.RecordGraphUpsert(ctx, true, v.objectType, duration)
-			}
-		}
 
 		if result.WasDuplicate && result.IngestionLog.State == reconcilerpb.State_IGNORED {
 			p.logger.Debug("skipping ingestion log because it is a duplicate of an ignored ingestion log", "id", id, "externalID", ingestionLog.GetId())

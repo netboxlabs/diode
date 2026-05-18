@@ -35,4 +35,10 @@ type Repository interface {
 	ClaimQueuedIngestionLogs(ctx context.Context, batchSize int32) ([]ops.QueuedIngestionLog, error)
 	ClaimQueuedForAutoApply(ctx context.Context, batchSize int32) ([]ops.QueuedIngestionLog, error)
 	ResetApplyingIngestionLogs(ctx context.Context) error
+
+	// Graph-upsert processing (independent of the ingestion state machine)
+	ClaimGraphUpsertCandidates(ctx context.Context, batchSize, maxAttempts int32) ([]ops.QueuedIngestionLog, error)
+	MarkGraphUpserted(ctx context.Context, ids []int32) error
+	ReleaseGraphUpsertClaims(ctx context.Context, ids []int32) error
+	ResetClaimedGraphUpserts(ctx context.Context) error
 }

@@ -141,3 +141,45 @@ RETURNING *;
 UPDATE ingestion_logs
 SET state = 1
 WHERE state = 8;
+
+-- name: ClaimGraphUpsertCandidates :many
+-- Claim a batch of ingestion logs that have not yet been upserted into the
+-- graph DB, marking them as claimed by setting graph_upsert_claimed_at and
+-- incrementing graph_upsert_attempts. Rows past max_attempts are skipped and
+-- left in their terminal-failed state.
+UPDATE ingestion_logs
+SET graph_upsert_claimed_at = CURRENT_TIMESTAMP,
+    graph_upsert_attempts   = graph_upsert_attempts + 1
+WHERE id IN (
+    SELECT id FROM ingestion_logs
+    WHERE graph_upserted_at IS NULL
+      AND graph_upsert_claimed_at IS NULL
+      AND graph_upsert_attempts < sqlc.arg('max_attempts')::int4
+    ORDER BY id
+    LIMIT sqlc.arg('batch_size')
+    FOR UPDATE SKIP LOCKED
+)
+RETURNING *;
+
+-- name: MarkGraphUpserted :exec
+-- Mark a batch of ingestion logs as successfully upserted into the graph DB.
+UPDATE ingestion_logs
+SET graph_upserted_at      = CURRENT_TIMESTAMP,
+    graph_upsert_claimed_at = NULL
+WHERE id = ANY(@ids::int4[]);
+
+-- name: ReleaseGraphUpsertClaims :exec
+-- Release graph-upsert claims for a batch of ingestion logs without marking
+-- them as upserted. Used when an attempt fails but more retries are still
+-- allowed by max_attempts.
+UPDATE ingestion_logs
+SET graph_upsert_claimed_at = NULL
+WHERE id = ANY(@ids::int4[]);
+
+-- name: ResetClaimedGraphUpserts :exec
+-- Clear stale graph-upsert claims on startup so rows held by a crashed
+-- worker are re-claimable. Idempotent — safe to run on every startup.
+UPDATE ingestion_logs
+SET graph_upsert_claimed_at = NULL
+WHERE graph_upsert_claimed_at IS NOT NULL
+  AND graph_upserted_at IS NULL;
