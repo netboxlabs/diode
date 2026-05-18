@@ -272,10 +272,18 @@ diodeReconciler:
     diodeToNetboxRateLimiterRps: 20
     # -- diode to netbox rate limiter burst
     diodeToNetboxRateLimiterBurst: 1
-    # -- generate changeset concurrency
-    generateChangesetConcurrency: 4
-    # -- apply changeset concurrency
-    applyChangesetConcurrency: 4
+    # -- ingestion log processor concurrency
+    ingestionLogProcessorConcurrency: 4
+    # -- ingestion log processor batch size
+    ingestionLogProcessorBatchSize: 400
+    # -- ingestion log processor redis-stream-length backpressure threshold; 0 disables
+    ingestionLogProcessorBackpressureThreshold: 100
+    # -- auto apply processor concurrency
+    autoApplyProcessorConcurrency: 1
+    # -- auto apply processor batch size
+    autoApplyProcessorBatchSize: 50
+    # -- NetBox diode plugin HTTP client timeout (seconds)
+    netboxDiodePluginApiTimeoutSeconds: 5
     # -- postgres db name
     postgresDbName: diode
     # -- postgres user
