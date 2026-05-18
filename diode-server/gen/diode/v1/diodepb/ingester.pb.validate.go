@@ -4037,6 +4037,170 @@ func (m *Entity) validate(all bool) error {
 			}
 		}
 
+	case *Entity_CableBundle:
+		if v == nil {
+			err := EntityValidationError{
+				field:  "Entity",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetCableBundle()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "CableBundle",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "CableBundle",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetCableBundle()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return EntityValidationError{
+					field:  "CableBundle",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *Entity_RackGroup:
+		if v == nil {
+			err := EntityValidationError{
+				field:  "Entity",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetRackGroup()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "RackGroup",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "RackGroup",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetRackGroup()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return EntityValidationError{
+					field:  "RackGroup",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *Entity_ScriptModule:
+		if v == nil {
+			err := EntityValidationError{
+				field:  "Entity",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetScriptModule()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "ScriptModule",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "ScriptModule",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetScriptModule()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return EntityValidationError{
+					field:  "ScriptModule",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *Entity_VirtualMachineType:
+		if v == nil {
+			err := EntityValidationError{
+				field:  "Entity",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetVirtualMachineType()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "VirtualMachineType",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "VirtualMachineType",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetVirtualMachineType()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return EntityValidationError{
+					field:  "VirtualMachineType",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	default:
 		_ = v // ensures v is used
 	}
@@ -4734,6 +4898,39 @@ func (m *ASN) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return ASNValidationError{
 					field:  "Owner",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if m.Role != nil {
+
+		if all {
+			switch v := interface{}(m.GetRole()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ASNValidationError{
+						field:  "Role",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ASNValidationError{
+						field:  "Role",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetRole()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ASNValidationError{
+					field:  "Role",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -5785,7 +5982,7 @@ func (m *Cable) validate(all bool) error {
 		if _, ok := _Cable_Profile_InLookup[m.GetProfile()]; !ok {
 			err := CableValidationError{
 				field:  "Profile",
-				reason: "value must be in list [breakout-1c4p-4c1p breakout-1c6p-6c1p breakout-2c4p-8c1p-shuffle single-1c12p single-1c16p single-1c1p single-1c2p single-1c4p single-1c6p single-1c8p trunk-2c12p trunk-2c1p trunk-2c2p trunk-2c4p trunk-2c4p-shuffle trunk-2c6p trunk-2c8p trunk-4c1p trunk-4c2p trunk-4c4p trunk-4c4p-shuffle trunk-4c6p trunk-4c8p trunk-8c4p]",
+				reason: "value must be in list [breakout-1c2p-2c1p breakout-1c4p-4c1p breakout-1c6p-6c1p breakout-2c4p-8c1p-shuffle single-1c12p single-1c16p single-1c1p single-1c2p single-1c4p single-1c6p single-1c8p trunk-2c12p trunk-2c1p trunk-2c2p trunk-2c4p trunk-2c4p-shuffle trunk-2c6p trunk-2c8p trunk-4c1p trunk-4c2p trunk-4c4p trunk-4c4p-shuffle trunk-4c6p trunk-4c8p trunk-8c4p]",
 			}
 			if !all {
 				return err
@@ -5820,6 +6017,39 @@ func (m *Cable) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return CableValidationError{
 					field:  "Owner",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if m.Bundle != nil {
+
+		if all {
+			switch v := interface{}(m.GetBundle()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, CableValidationError{
+						field:  "Bundle",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, CableValidationError{
+						field:  "Bundle",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetBundle()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return CableValidationError{
+					field:  "Bundle",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -5957,6 +6187,7 @@ var _Cable_LengthUnit_InLookup = map[string]struct{}{
 }
 
 var _Cable_Profile_InLookup = map[string]struct{}{
+	"breakout-1c2p-2c1p":         {},
 	"breakout-1c4p-4c1p":         {},
 	"breakout-1c6p-6c1p":         {},
 	"breakout-2c4p-8c1p-shuffle": {},
@@ -14726,6 +14957,170 @@ func (m *ContactAssignment) validate(all bool) error {
 			}
 		}
 
+	case *ContactAssignment_ObjectCableBundle:
+		if v == nil {
+			err := ContactAssignmentValidationError{
+				field:  "Object",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetObjectCableBundle()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ContactAssignmentValidationError{
+						field:  "ObjectCableBundle",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ContactAssignmentValidationError{
+						field:  "ObjectCableBundle",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetObjectCableBundle()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ContactAssignmentValidationError{
+					field:  "ObjectCableBundle",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *ContactAssignment_ObjectRackGroup:
+		if v == nil {
+			err := ContactAssignmentValidationError{
+				field:  "Object",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetObjectRackGroup()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ContactAssignmentValidationError{
+						field:  "ObjectRackGroup",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ContactAssignmentValidationError{
+						field:  "ObjectRackGroup",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetObjectRackGroup()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ContactAssignmentValidationError{
+					field:  "ObjectRackGroup",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *ContactAssignment_ObjectScriptModule:
+		if v == nil {
+			err := ContactAssignmentValidationError{
+				field:  "Object",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetObjectScriptModule()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ContactAssignmentValidationError{
+						field:  "ObjectScriptModule",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ContactAssignmentValidationError{
+						field:  "ObjectScriptModule",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetObjectScriptModule()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ContactAssignmentValidationError{
+					field:  "ObjectScriptModule",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *ContactAssignment_ObjectVirtualMachineType:
+		if v == nil {
+			err := ContactAssignmentValidationError{
+				field:  "Object",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetObjectVirtualMachineType()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ContactAssignmentValidationError{
+						field:  "ObjectVirtualMachineType",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ContactAssignmentValidationError{
+						field:  "ObjectVirtualMachineType",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetObjectVirtualMachineType()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ContactAssignmentValidationError{
+					field:  "ObjectVirtualMachineType",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	default:
 		_ = v // ensures v is used
 	}
@@ -19322,6 +19717,170 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 			}
 		}
 
+	case *CustomFieldObjectReference_CableBundle:
+		if v == nil {
+			err := CustomFieldObjectReferenceValidationError{
+				field:  "Object",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetCableBundle()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "CableBundle",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "CableBundle",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetCableBundle()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return CustomFieldObjectReferenceValidationError{
+					field:  "CableBundle",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *CustomFieldObjectReference_RackGroup:
+		if v == nil {
+			err := CustomFieldObjectReferenceValidationError{
+				field:  "Object",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetRackGroup()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "RackGroup",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "RackGroup",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetRackGroup()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return CustomFieldObjectReferenceValidationError{
+					field:  "RackGroup",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *CustomFieldObjectReference_ScriptModule:
+		if v == nil {
+			err := CustomFieldObjectReferenceValidationError{
+				field:  "Object",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetScriptModule()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "ScriptModule",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "ScriptModule",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetScriptModule()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return CustomFieldObjectReferenceValidationError{
+					field:  "ScriptModule",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *CustomFieldObjectReference_VirtualMachineType:
+		if v == nil {
+			err := CustomFieldObjectReferenceValidationError{
+				field:  "Object",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetVirtualMachineType()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "VirtualMachineType",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "VirtualMachineType",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetVirtualMachineType()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return CustomFieldObjectReferenceValidationError{
+					field:  "VirtualMachineType",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	default:
 		_ = v // ensures v is used
 	}
@@ -20768,6 +21327,10 @@ func (m *DeviceBay) validate(all bool) error {
 			}
 		}
 
+	}
+
+	if m.Enabled != nil {
+		// no validation rules for Enabled
 	}
 
 	if len(errors) > 0 {
@@ -25824,6 +26387,170 @@ func (m *FHRPGroupAssignment) validate(all bool) error {
 			}
 		}
 
+	case *FHRPGroupAssignment_InterfaceCableBundle:
+		if v == nil {
+			err := FHRPGroupAssignmentValidationError{
+				field:  "Interface",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetInterfaceCableBundle()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, FHRPGroupAssignmentValidationError{
+						field:  "InterfaceCableBundle",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, FHRPGroupAssignmentValidationError{
+						field:  "InterfaceCableBundle",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetInterfaceCableBundle()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return FHRPGroupAssignmentValidationError{
+					field:  "InterfaceCableBundle",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *FHRPGroupAssignment_InterfaceRackGroup:
+		if v == nil {
+			err := FHRPGroupAssignmentValidationError{
+				field:  "Interface",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetInterfaceRackGroup()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, FHRPGroupAssignmentValidationError{
+						field:  "InterfaceRackGroup",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, FHRPGroupAssignmentValidationError{
+						field:  "InterfaceRackGroup",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetInterfaceRackGroup()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return FHRPGroupAssignmentValidationError{
+					field:  "InterfaceRackGroup",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *FHRPGroupAssignment_InterfaceScriptModule:
+		if v == nil {
+			err := FHRPGroupAssignmentValidationError{
+				field:  "Interface",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetInterfaceScriptModule()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, FHRPGroupAssignmentValidationError{
+						field:  "InterfaceScriptModule",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, FHRPGroupAssignmentValidationError{
+						field:  "InterfaceScriptModule",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetInterfaceScriptModule()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return FHRPGroupAssignmentValidationError{
+					field:  "InterfaceScriptModule",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *FHRPGroupAssignment_InterfaceVirtualMachineType:
+		if v == nil {
+			err := FHRPGroupAssignmentValidationError{
+				field:  "Interface",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetInterfaceVirtualMachineType()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, FHRPGroupAssignmentValidationError{
+						field:  "InterfaceVirtualMachineType",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, FHRPGroupAssignmentValidationError{
+						field:  "InterfaceVirtualMachineType",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetInterfaceVirtualMachineType()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return FHRPGroupAssignmentValidationError{
+					field:  "InterfaceVirtualMachineType",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	default:
 		_ = v // ensures v is used
 	}
@@ -30256,6 +30983,170 @@ func (m *GenericObject) validate(all bool) error {
 			}
 		}
 
+	case *GenericObject_ObjectCableBundle:
+		if v == nil {
+			err := GenericObjectValidationError{
+				field:  "Object",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetObjectCableBundle()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, GenericObjectValidationError{
+						field:  "ObjectCableBundle",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, GenericObjectValidationError{
+						field:  "ObjectCableBundle",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetObjectCableBundle()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return GenericObjectValidationError{
+					field:  "ObjectCableBundle",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *GenericObject_ObjectRackGroup:
+		if v == nil {
+			err := GenericObjectValidationError{
+				field:  "Object",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetObjectRackGroup()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, GenericObjectValidationError{
+						field:  "ObjectRackGroup",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, GenericObjectValidationError{
+						field:  "ObjectRackGroup",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetObjectRackGroup()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return GenericObjectValidationError{
+					field:  "ObjectRackGroup",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *GenericObject_ObjectScriptModule:
+		if v == nil {
+			err := GenericObjectValidationError{
+				field:  "Object",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetObjectScriptModule()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, GenericObjectValidationError{
+						field:  "ObjectScriptModule",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, GenericObjectValidationError{
+						field:  "ObjectScriptModule",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetObjectScriptModule()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return GenericObjectValidationError{
+					field:  "ObjectScriptModule",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *GenericObject_ObjectVirtualMachineType:
+		if v == nil {
+			err := GenericObjectValidationError{
+				field:  "Object",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetObjectVirtualMachineType()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, GenericObjectValidationError{
+						field:  "ObjectVirtualMachineType",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, GenericObjectValidationError{
+						field:  "ObjectVirtualMachineType",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetObjectVirtualMachineType()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return GenericObjectValidationError{
+					field:  "ObjectVirtualMachineType",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	default:
 		_ = v // ensures v is used
 	}
@@ -32947,7 +33838,7 @@ func (m *Interface) validate(all bool) error {
 	if _, ok := _Interface_Type_InLookup[m.GetType()]; !ok {
 		err := InterfaceValidationError{
 			field:  "Type",
-			reason: "value must be in list [1000base-bx10-d 1000base-bx10-u 1000base-cwdm 1000base-cx 1000base-dwdm 1000base-ex 1000base-kx 1000base-lsx 1000base-lx 1000base-lx10 1000base-sx 1000base-t 1000base-tx 1000base-x-gbic 1000base-x-sfp 1000base-zx 100base-fx 100base-lfx 100base-t1 100base-tx 100base-x-sfp 100gbase-cr1 100gbase-cr10 100gbase-cr2 100gbase-cr4 100gbase-cwdm4 100gbase-dr 100gbase-er4 100gbase-fr1 100gbase-kp4 100gbase-kr2 100gbase-kr4 100gbase-lr1 100gbase-lr4 100gbase-sr1 100gbase-sr1.2 100gbase-sr10 100gbase-sr2 100gbase-sr4 100gbase-x-cfp 100gbase-x-cfp2 100gbase-x-cfp4 100gbase-x-cpak 100gbase-x-cxp 100gbase-x-dsfp 100gbase-x-qsfp28 100gbase-x-qsfpdd 100gbase-x-sfpdd 100gbase-zr 10g-epon 10gbase-br-d 10gbase-br-u 10gbase-cx4 10gbase-er 10gbase-kr 10gbase-kx4 10gbase-lr 10gbase-lrm 10gbase-lx4 10gbase-sr 10gbase-t 10gbase-x-sfpp 10gbase-x-x2 10gbase-x-xenpak 10gbase-x-xfp 10gbase-zr 128gfc-qsfp28 16gfc-sfpp 1gfc-sfp 2.5gbase-kx 2.5gbase-t 200gbase-cr2 200gbase-cr4 200gbase-dr4 200gbase-er4 200gbase-fr4 200gbase-lr4 200gbase-sr2 200gbase-sr4 200gbase-vr2 200gbase-x-cfp2 200gbase-x-qsfp56 200gbase-x-qsfpdd 25g-pon 25gbase-cr 25gbase-er 25gbase-kr 25gbase-lr 25gbase-sr 25gbase-t 25gbase-x-sfp28 2gfc-sfp 32gfc-sfp28 32gfc-sfpp 400gbase-cr4 400gbase-dr4 400gbase-er8 400gbase-fr4 400gbase-fr8 400gbase-lr4 400gbase-lr8 400gbase-sr16 400gbase-sr4 400gbase-sr4_2 400gbase-sr8 400gbase-vr4 400gbase-x-cdfp 400gbase-x-cfp2 400gbase-x-cfp8 400gbase-x-osfp 400gbase-x-osfp-rhs 400gbase-x-qsfp112 400gbase-x-qsfpdd 400gbase-zr 40gbase-cr4 40gbase-er4 40gbase-fr4 40gbase-kr4 40gbase-lr4 40gbase-sr4 40gbase-x-qsfpp 4g 4gfc-sfp 50g-pon 50gbase-cr 50gbase-er 50gbase-fr 50gbase-kr 50gbase-lr 50gbase-sr 50gbase-x-sfp28 50gbase-x-sfp56 5g 5gbase-kr 5gbase-t 64gfc-qsfpp 64gfc-sfpdd 64gfc-sfpp 800gbase-cr8 800gbase-dr8 800gbase-sr8 800gbase-vr8 800gbase-x-osfp 800gbase-x-qsfpdd 8gfc-sfpp bpon bridge cdma cisco-flexstack cisco-flexstack-plus cisco-stackwise cisco-stackwise-160 cisco-stackwise-1t cisco-stackwise-320 cisco-stackwise-480 cisco-stackwise-80 cisco-stackwise-plus docsis e1 e3 epon extreme-summitstack extreme-summitstack-128 extreme-summitstack-256 extreme-summitstack-512 gpon gsm ieee802.11a ieee802.11ac ieee802.11ad ieee802.11ax ieee802.11ay ieee802.11be ieee802.11g ieee802.11n ieee802.15.1 ieee802.15.4 infiniband-ddr infiniband-edr infiniband-fdr infiniband-fdr10 infiniband-hdr infiniband-ndr infiniband-qdr infiniband-sdr infiniband-xdr juniper-vcp lag lte moca ng-pon2 other other-wireless sonet-oc12 sonet-oc192 sonet-oc1920 sonet-oc3 sonet-oc3840 sonet-oc48 sonet-oc768 t1 t3 virtual xdsl xg-pon xgs-pon]",
+			reason: "value must be in list [1.6tbase-cr8 1.6tbase-dr8 1.6tbase-dr8-2 1.6tbase-kr8 1.6tbase-x-osfp1600 1.6tbase-x-osfp1600-rhs 1.6tbase-x-qsfpdd1600 1000base-bx10-d 1000base-bx10-u 1000base-cwdm 1000base-cx 1000base-dwdm 1000base-ex 1000base-kx 1000base-lsx 1000base-lx 1000base-lx10 1000base-sx 1000base-t 1000base-tx 1000base-x-gbic 1000base-x-sfp 1000base-zx 100base-fx 100base-lfx 100base-t1 100base-tx 100base-x-sfp 100gbase-cr1 100gbase-cr10 100gbase-cr2 100gbase-cr4 100gbase-cwdm4 100gbase-dr 100gbase-er4 100gbase-fr1 100gbase-kp4 100gbase-kr2 100gbase-kr4 100gbase-lr1 100gbase-lr4 100gbase-sr1 100gbase-sr1.2 100gbase-sr10 100gbase-sr2 100gbase-sr4 100gbase-x-cfp 100gbase-x-cfp2 100gbase-x-cfp4 100gbase-x-cpak 100gbase-x-cxp 100gbase-x-dsfp 100gbase-x-qsfp28 100gbase-x-qsfpdd 100gbase-x-sfpdd 100gbase-zr 10g-epon 10gbase-br-d 10gbase-br-u 10gbase-cu 10gbase-cx4 10gbase-er 10gbase-kr 10gbase-kx4 10gbase-lr 10gbase-lrm 10gbase-lx4 10gbase-sr 10gbase-t 10gbase-x-sfpp 10gbase-x-x2 10gbase-x-xenpak 10gbase-x-xfp 10gbase-zr 128gfc-qsfp28 16gfc-sfpp 1gfc-sfp 2.5gbase-kx 2.5gbase-t 2.5gbase-x-sfp 200gbase-cr2 200gbase-cr4 200gbase-dr4 200gbase-er4 200gbase-fr4 200gbase-lr4 200gbase-sr2 200gbase-sr4 200gbase-vr2 200gbase-x-cfp2 200gbase-x-qsfp56 200gbase-x-qsfpdd 25g-pon 25gbase-cr 25gbase-er 25gbase-kr 25gbase-lr 25gbase-sr 25gbase-t 25gbase-x-sfp28 2gfc-sfp 32gfc-sfp28 32gfc-sfpp 400gbase-cr4 400gbase-dr4 400gbase-er8 400gbase-fr4 400gbase-fr8 400gbase-lr4 400gbase-lr8 400gbase-sr16 400gbase-sr4 400gbase-sr4_2 400gbase-sr8 400gbase-vr4 400gbase-x-cdfp 400gbase-x-cfp2 400gbase-x-cfp8 400gbase-x-osfp 400gbase-x-osfp-rhs 400gbase-x-qsfp112 400gbase-x-qsfpdd 400gbase-zr 40gbase-cr4 40gbase-er4 40gbase-fr4 40gbase-kr4 40gbase-lr4 40gbase-sr4 40gbase-sr4-bd 40gbase-x-qsfpp 4g 4gfc-sfp 50g-pon 50gbase-cr 50gbase-er 50gbase-fr 50gbase-kr 50gbase-lr 50gbase-sr 50gbase-x-sfp28 50gbase-x-sfp56 5g 5gbase-kr 5gbase-t 64gfc-qsfpp 64gfc-sfpdd 64gfc-sfpp 800gbase-cr8 800gbase-dr8 800gbase-sr8 800gbase-vr8 800gbase-x-osfp 800gbase-x-qsfpdd 8gfc-sfpp bpon bridge cdma cisco-flexstack cisco-flexstack-plus cisco-stackwise cisco-stackwise-160 cisco-stackwise-1t cisco-stackwise-320 cisco-stackwise-480 cisco-stackwise-80 cisco-stackwise-plus docsis e1 e3 epon extreme-summitstack extreme-summitstack-128 extreme-summitstack-256 extreme-summitstack-512 gpon gsm ieee802.11a ieee802.11ac ieee802.11ad ieee802.11ax ieee802.11ay ieee802.11be ieee802.11g ieee802.11n ieee802.15.1 ieee802.15.4 infiniband-ddr infiniband-edr infiniband-fdr infiniband-fdr10 infiniband-hdr infiniband-ndr infiniband-qdr infiniband-sdr infiniband-xdr juniper-vcp lag lte moca ng-pon2 other other-wireless sonet-oc12 sonet-oc192 sonet-oc1920 sonet-oc3 sonet-oc3840 sonet-oc48 sonet-oc768 t1 t3 virtual xdsl xg-pon xgs-pon]",
 		}
 		if !all {
 			return err
@@ -33708,6 +34599,13 @@ var _ interface {
 } = InterfaceValidationError{}
 
 var _Interface_Type_InLookup = map[string]struct{}{
+	"1.6tbase-cr8":            {},
+	"1.6tbase-dr8":            {},
+	"1.6tbase-dr8-2":          {},
+	"1.6tbase-kr8":            {},
+	"1.6tbase-x-osfp1600":     {},
+	"1.6tbase-x-osfp1600-rhs": {},
+	"1.6tbase-x-qsfpdd1600":   {},
 	"1000base-bx10-d":         {},
 	"1000base-bx10-u":         {},
 	"1000base-cwdm":           {},
@@ -33760,6 +34658,7 @@ var _Interface_Type_InLookup = map[string]struct{}{
 	"10g-epon":                {},
 	"10gbase-br-d":            {},
 	"10gbase-br-u":            {},
+	"10gbase-cu":              {},
 	"10gbase-cx4":             {},
 	"10gbase-er":              {},
 	"10gbase-kr":              {},
@@ -33779,6 +34678,7 @@ var _Interface_Type_InLookup = map[string]struct{}{
 	"1gfc-sfp":                {},
 	"2.5gbase-kx":             {},
 	"2.5gbase-t":              {},
+	"2.5gbase-x-sfp":          {},
 	"200gbase-cr2":            {},
 	"200gbase-cr4":            {},
 	"200gbase-dr4":            {},
@@ -33828,6 +34728,7 @@ var _Interface_Type_InLookup = map[string]struct{}{
 	"40gbase-kr4":             {},
 	"40gbase-lr4":             {},
 	"40gbase-sr4":             {},
+	"40gbase-sr4-bd":          {},
 	"40gbase-x-qsfpp":         {},
 	"4g":                      {},
 	"4gfc-sfp":                {},
@@ -39588,6 +40489,170 @@ func (m *L2VPNTermination) validate(all bool) error {
 			}
 		}
 
+	case *L2VPNTermination_AssignedObjectCableBundle:
+		if v == nil {
+			err := L2VPNTerminationValidationError{
+				field:  "AssignedObject",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetAssignedObjectCableBundle()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, L2VPNTerminationValidationError{
+						field:  "AssignedObjectCableBundle",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, L2VPNTerminationValidationError{
+						field:  "AssignedObjectCableBundle",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetAssignedObjectCableBundle()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return L2VPNTerminationValidationError{
+					field:  "AssignedObjectCableBundle",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *L2VPNTermination_AssignedObjectRackGroup:
+		if v == nil {
+			err := L2VPNTerminationValidationError{
+				field:  "AssignedObject",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetAssignedObjectRackGroup()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, L2VPNTerminationValidationError{
+						field:  "AssignedObjectRackGroup",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, L2VPNTerminationValidationError{
+						field:  "AssignedObjectRackGroup",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetAssignedObjectRackGroup()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return L2VPNTerminationValidationError{
+					field:  "AssignedObjectRackGroup",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *L2VPNTermination_AssignedObjectScriptModule:
+		if v == nil {
+			err := L2VPNTerminationValidationError{
+				field:  "AssignedObject",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetAssignedObjectScriptModule()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, L2VPNTerminationValidationError{
+						field:  "AssignedObjectScriptModule",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, L2VPNTerminationValidationError{
+						field:  "AssignedObjectScriptModule",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetAssignedObjectScriptModule()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return L2VPNTerminationValidationError{
+					field:  "AssignedObjectScriptModule",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *L2VPNTermination_AssignedObjectVirtualMachineType:
+		if v == nil {
+			err := L2VPNTerminationValidationError{
+				field:  "AssignedObject",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetAssignedObjectVirtualMachineType()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, L2VPNTerminationValidationError{
+						field:  "AssignedObjectVirtualMachineType",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, L2VPNTerminationValidationError{
+						field:  "AssignedObjectVirtualMachineType",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetAssignedObjectVirtualMachineType()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return L2VPNTerminationValidationError{
+					field:  "AssignedObjectVirtualMachineType",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	default:
 		_ = v // ensures v is used
 	}
@@ -40917,6 +41982,14 @@ func (m *Module) validate(all bool) error {
 
 	}
 
+	if m.ReplicateComponents != nil {
+		// no validation rules for ReplicateComponents
+	}
+
+	if m.AdoptComponents != nil {
+		// no validation rules for AdoptComponents
+	}
+
 	if len(errors) > 0 {
 		return ModuleMultiError(errors)
 	}
@@ -41274,6 +42347,10 @@ func (m *ModuleBay) validate(all bool) error {
 			}
 		}
 
+	}
+
+	if m.Enabled != nil {
+		// no validation rules for Enabled
 	}
 
 	if len(errors) > 0 {
@@ -45963,6 +47040,39 @@ func (m *Rack) validate(all bool) error {
 
 	}
 
+	if m.Group != nil {
+
+		if all {
+			switch v := interface{}(m.GetGroup()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, RackValidationError{
+						field:  "Group",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, RackValidationError{
+						field:  "Group",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetGroup()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return RackValidationError{
+					field:  "Group",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
 	if len(errors) > 0 {
 		return RackMultiError(errors)
 	}
@@ -49547,7 +50657,7 @@ func (m *Tag) validate(all bool) error {
 		if _, ok := _Tag_ObjectTypes_InLookup[item]; !ok {
 			err := TagValidationError{
 				field:  fmt.Sprintf("ObjectTypes[%v]", idx),
-				reason: "value must be in list [circuits.circuit circuits.circuitgroup circuits.circuitgroupassignment circuits.circuittermination circuits.circuittype circuits.provider circuits.provideraccount circuits.providernetwork circuits.virtualcircuit circuits.virtualcircuittermination circuits.virtualcircuittype dcim.cable dcim.consoleport dcim.consoleserverport dcim.device dcim.devicebay dcim.devicerole dcim.devicetype dcim.frontport dcim.interface dcim.inventoryitem dcim.inventoryitemrole dcim.location dcim.macaddress dcim.manufacturer dcim.module dcim.modulebay dcim.moduletype dcim.moduletypeprofile dcim.platform dcim.powerfeed dcim.poweroutlet dcim.powerpanel dcim.powerport dcim.rack dcim.rackreservation dcim.rackrole dcim.racktype dcim.rearport dcim.region dcim.site dcim.sitegroup dcim.virtualchassis dcim.virtualdevicecontext extras.journalentry ipam.aggregate ipam.asn ipam.asnrange ipam.fhrpgroup ipam.ipaddress ipam.iprange ipam.prefix ipam.rir ipam.role ipam.routetarget ipam.service ipam.vlan ipam.vlangroup ipam.vlantranslationpolicy ipam.vlantranslationrule ipam.vrf tenancy.contact tenancy.contactassignment tenancy.contactgroup tenancy.contactrole tenancy.tenant tenancy.tenantgroup virtualization.cluster virtualization.clustergroup virtualization.clustertype virtualization.virtualdisk virtualization.virtualmachine virtualization.vminterface vpn.ikepolicy vpn.ikeproposal vpn.ipsecpolicy vpn.ipsecprofile vpn.ipsecproposal vpn.l2vpn vpn.l2vpntermination vpn.tunnel vpn.tunnelgroup vpn.tunneltermination wireless.wirelesslan wireless.wirelesslangroup wireless.wirelesslink]",
+				reason: "value must be in list [circuits.circuit circuits.circuitgroup circuits.circuitgroupassignment circuits.circuittermination circuits.circuittype circuits.provider circuits.provideraccount circuits.providernetwork circuits.virtualcircuit circuits.virtualcircuittermination circuits.virtualcircuittype dcim.cable dcim.cablebundle dcim.consoleport dcim.consoleserverport dcim.device dcim.devicebay dcim.devicerole dcim.devicetype dcim.frontport dcim.interface dcim.inventoryitem dcim.inventoryitemrole dcim.location dcim.macaddress dcim.manufacturer dcim.module dcim.modulebay dcim.moduletype dcim.moduletypeprofile dcim.platform dcim.powerfeed dcim.poweroutlet dcim.powerpanel dcim.powerport dcim.rack dcim.rackgroup dcim.rackreservation dcim.rackrole dcim.racktype dcim.rearport dcim.region dcim.site dcim.sitegroup dcim.virtualchassis dcim.virtualdevicecontext extras.journalentry ipam.aggregate ipam.asn ipam.asnrange ipam.fhrpgroup ipam.ipaddress ipam.iprange ipam.prefix ipam.rir ipam.role ipam.routetarget ipam.service ipam.vlan ipam.vlangroup ipam.vlantranslationpolicy ipam.vlantranslationrule ipam.vrf tenancy.contact tenancy.contactassignment tenancy.contactgroup tenancy.contactrole tenancy.tenant tenancy.tenantgroup virtualization.cluster virtualization.clustergroup virtualization.clustertype virtualization.virtualdisk virtualization.virtualmachine virtualization.virtualmachinetype virtualization.vminterface vpn.ikepolicy vpn.ikeproposal vpn.ipsecpolicy vpn.ipsecprofile vpn.ipsecproposal vpn.l2vpn vpn.l2vpntermination vpn.tunnel vpn.tunnelgroup vpn.tunneltermination wireless.wirelesslan wireless.wirelesslangroup wireless.wirelesslink]",
 			}
 			if !all {
 				return err
@@ -49688,6 +50798,7 @@ var _Tag_ObjectTypes_InLookup = map[string]struct{}{
 	"circuits.virtualcircuittermination": {},
 	"circuits.virtualcircuittype":        {},
 	"dcim.cable":                         {},
+	"dcim.cablebundle":                   {},
 	"dcim.consoleport":                   {},
 	"dcim.consoleserverport":             {},
 	"dcim.device":                        {},
@@ -49711,6 +50822,7 @@ var _Tag_ObjectTypes_InLookup = map[string]struct{}{
 	"dcim.powerpanel":                    {},
 	"dcim.powerport":                     {},
 	"dcim.rack":                          {},
+	"dcim.rackgroup":                     {},
 	"dcim.rackreservation":               {},
 	"dcim.rackrole":                      {},
 	"dcim.racktype":                      {},
@@ -49748,6 +50860,7 @@ var _Tag_ObjectTypes_InLookup = map[string]struct{}{
 	"virtualization.clustertype":         {},
 	"virtualization.virtualdisk":         {},
 	"virtualization.virtualmachine":      {},
+	"virtualization.virtualmachinetype":  {},
 	"virtualization.vminterface":         {},
 	"vpn.ikepolicy":                      {},
 	"vpn.ikeproposal":                    {},
@@ -55047,6 +56160,170 @@ func (m *TunnelTermination) validate(all bool) error {
 			}
 		}
 
+	case *TunnelTermination_TerminationCableBundle:
+		if v == nil {
+			err := TunnelTerminationValidationError{
+				field:  "Termination",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetTerminationCableBundle()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, TunnelTerminationValidationError{
+						field:  "TerminationCableBundle",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, TunnelTerminationValidationError{
+						field:  "TerminationCableBundle",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetTerminationCableBundle()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return TunnelTerminationValidationError{
+					field:  "TerminationCableBundle",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *TunnelTermination_TerminationRackGroup:
+		if v == nil {
+			err := TunnelTerminationValidationError{
+				field:  "Termination",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetTerminationRackGroup()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, TunnelTerminationValidationError{
+						field:  "TerminationRackGroup",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, TunnelTerminationValidationError{
+						field:  "TerminationRackGroup",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetTerminationRackGroup()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return TunnelTerminationValidationError{
+					field:  "TerminationRackGroup",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *TunnelTermination_TerminationScriptModule:
+		if v == nil {
+			err := TunnelTerminationValidationError{
+				field:  "Termination",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetTerminationScriptModule()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, TunnelTerminationValidationError{
+						field:  "TerminationScriptModule",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, TunnelTerminationValidationError{
+						field:  "TerminationScriptModule",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetTerminationScriptModule()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return TunnelTerminationValidationError{
+					field:  "TerminationScriptModule",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *TunnelTermination_TerminationVirtualMachineType:
+		if v == nil {
+			err := TunnelTerminationValidationError{
+				field:  "Termination",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetTerminationVirtualMachineType()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, TunnelTerminationValidationError{
+						field:  "TerminationVirtualMachineType",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, TunnelTerminationValidationError{
+						field:  "TerminationVirtualMachineType",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetTerminationVirtualMachineType()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return TunnelTerminationValidationError{
+					field:  "TerminationVirtualMachineType",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	default:
 		_ = v // ensures v is used
 	}
@@ -56045,6 +57322,47 @@ func (m *VLANGroup) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return VLANGroupValidationError{
 					field:  "ScopeSiteGroup",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *VLANGroup_ScopeRackGroup:
+		if v == nil {
+			err := VLANGroupValidationError{
+				field:  "Scope",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetScopeRackGroup()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, VLANGroupValidationError{
+						field:  "ScopeRackGroup",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, VLANGroupValidationError{
+						field:  "ScopeRackGroup",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetScopeRackGroup()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return VLANGroupValidationError{
+					field:  "ScopeRackGroup",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -59886,6 +61204,39 @@ func (m *VirtualMachine) validate(all bool) error {
 
 	}
 
+	if m.VirtualMachineType != nil {
+
+		if all {
+			switch v := interface{}(m.GetVirtualMachineType()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, VirtualMachineValidationError{
+						field:  "VirtualMachineType",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, VirtualMachineValidationError{
+						field:  "VirtualMachineType",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetVirtualMachineType()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return VirtualMachineValidationError{
+					field:  "VirtualMachineType",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
 	if len(errors) > 0 {
 		return VirtualMachineMultiError(errors)
 	}
@@ -61334,7 +62685,7 @@ func (m *CustomField) validate(all bool) error {
 		if _, ok := _CustomField_ObjectTypes_InLookup[item]; !ok {
 			err := CustomFieldValidationError{
 				field:  fmt.Sprintf("ObjectTypes[%v]", idx),
-				reason: "value must be in list [circuits.circuit circuits.circuitgroup circuits.circuitgroupassignment circuits.circuittermination circuits.circuittype circuits.provider circuits.provideraccount circuits.providernetwork circuits.virtualcircuit circuits.virtualcircuittermination circuits.virtualcircuittype dcim.cable dcim.consoleport dcim.consoleserverport dcim.device dcim.devicebay dcim.devicerole dcim.devicetype dcim.frontport dcim.interface dcim.inventoryitem dcim.inventoryitemrole dcim.location dcim.macaddress dcim.manufacturer dcim.module dcim.modulebay dcim.moduletype dcim.moduletypeprofile dcim.platform dcim.powerfeed dcim.poweroutlet dcim.powerpanel dcim.powerport dcim.rack dcim.rackreservation dcim.rackrole dcim.racktype dcim.rearport dcim.region dcim.site dcim.sitegroup dcim.virtualchassis dcim.virtualdevicecontext extras.journalentry ipam.aggregate ipam.asn ipam.asnrange ipam.fhrpgroup ipam.ipaddress ipam.iprange ipam.prefix ipam.rir ipam.role ipam.routetarget ipam.service ipam.vlan ipam.vlangroup ipam.vlantranslationpolicy ipam.vlantranslationrule ipam.vrf tenancy.contact tenancy.contactassignment tenancy.contactgroup tenancy.contactrole tenancy.tenant tenancy.tenantgroup virtualization.cluster virtualization.clustergroup virtualization.clustertype virtualization.virtualdisk virtualization.virtualmachine virtualization.vminterface vpn.ikepolicy vpn.ikeproposal vpn.ipsecpolicy vpn.ipsecprofile vpn.ipsecproposal vpn.l2vpn vpn.l2vpntermination vpn.tunnel vpn.tunnelgroup vpn.tunneltermination wireless.wirelesslan wireless.wirelesslangroup wireless.wirelesslink]",
+				reason: "value must be in list [circuits.circuit circuits.circuitgroup circuits.circuitgroupassignment circuits.circuittermination circuits.circuittype circuits.provider circuits.provideraccount circuits.providernetwork circuits.virtualcircuit circuits.virtualcircuittermination circuits.virtualcircuittype dcim.cable dcim.cablebundle dcim.consoleport dcim.consoleserverport dcim.device dcim.devicebay dcim.devicerole dcim.devicetype dcim.frontport dcim.interface dcim.inventoryitem dcim.inventoryitemrole dcim.location dcim.macaddress dcim.manufacturer dcim.module dcim.modulebay dcim.moduletype dcim.moduletypeprofile dcim.platform dcim.powerfeed dcim.poweroutlet dcim.powerpanel dcim.powerport dcim.rack dcim.rackgroup dcim.rackreservation dcim.rackrole dcim.racktype dcim.rearport dcim.region dcim.site dcim.sitegroup dcim.virtualchassis dcim.virtualdevicecontext extras.journalentry ipam.aggregate ipam.asn ipam.asnrange ipam.fhrpgroup ipam.ipaddress ipam.iprange ipam.prefix ipam.rir ipam.role ipam.routetarget ipam.service ipam.vlan ipam.vlangroup ipam.vlantranslationpolicy ipam.vlantranslationrule ipam.vrf tenancy.contact tenancy.contactassignment tenancy.contactgroup tenancy.contactrole tenancy.tenant tenancy.tenantgroup virtualization.cluster virtualization.clustergroup virtualization.clustertype virtualization.virtualdisk virtualization.virtualmachine virtualization.virtualmachinetype virtualization.vminterface vpn.ikepolicy vpn.ikeproposal vpn.ipsecpolicy vpn.ipsecprofile vpn.ipsecproposal vpn.l2vpn vpn.l2vpntermination vpn.tunnel vpn.tunnelgroup vpn.tunneltermination wireless.wirelesslan wireless.wirelesslangroup wireless.wirelesslink]",
 			}
 			if !all {
 				return err
@@ -61378,7 +62729,7 @@ func (m *CustomField) validate(all bool) error {
 		if _, ok := _CustomField_RelatedObjectType_InLookup[m.GetRelatedObjectType()]; !ok {
 			err := CustomFieldValidationError{
 				field:  "RelatedObjectType",
-				reason: "value must be in list [circuits.circuit circuits.circuitgroup circuits.circuitgroupassignment circuits.circuittermination circuits.circuittype circuits.provider circuits.provideraccount circuits.providernetwork circuits.virtualcircuit circuits.virtualcircuittermination circuits.virtualcircuittype dcim.cable dcim.cablepath dcim.cabletermination dcim.consoleport dcim.consoleserverport dcim.device dcim.devicebay dcim.devicerole dcim.devicetype dcim.frontport dcim.interface dcim.inventoryitem dcim.inventoryitemrole dcim.location dcim.macaddress dcim.manufacturer dcim.module dcim.modulebay dcim.moduletype dcim.moduletypeprofile dcim.platform dcim.powerfeed dcim.poweroutlet dcim.powerpanel dcim.powerport dcim.rack dcim.rackreservation dcim.rackrole dcim.racktype dcim.rearport dcim.region dcim.site dcim.sitegroup dcim.virtualchassis dcim.virtualdevicecontext extras.customfield extras.customfieldchoiceset extras.customlink extras.journalentry extras.tag ipam.aggregate ipam.asn ipam.asnrange ipam.fhrpgroup ipam.fhrpgroupassignment ipam.ipaddress ipam.iprange ipam.prefix ipam.rir ipam.role ipam.routetarget ipam.service ipam.vlan ipam.vlangroup ipam.vlantranslationpolicy ipam.vlantranslationrule ipam.vrf tenancy.contact tenancy.contactassignment tenancy.contactgroup tenancy.contactrole tenancy.tenant tenancy.tenantgroup users.owner users.ownergroup virtualization.cluster virtualization.clustergroup virtualization.clustertype virtualization.virtualdisk virtualization.virtualmachine virtualization.vminterface vpn.ikepolicy vpn.ikeproposal vpn.ipsecpolicy vpn.ipsecprofile vpn.ipsecproposal vpn.l2vpn vpn.l2vpntermination vpn.tunnel vpn.tunnelgroup vpn.tunneltermination wireless.wirelesslan wireless.wirelesslangroup wireless.wirelesslink]",
+				reason: "value must be in list [circuits.circuit circuits.circuitgroup circuits.circuitgroupassignment circuits.circuittermination circuits.circuittype circuits.provider circuits.provideraccount circuits.providernetwork circuits.virtualcircuit circuits.virtualcircuittermination circuits.virtualcircuittype core.managedfile dcim.cable dcim.cablebundle dcim.cablepath dcim.consoleport dcim.consoleserverport dcim.device dcim.devicebay dcim.devicerole dcim.devicetype dcim.frontport dcim.interface dcim.inventoryitem dcim.inventoryitemrole dcim.location dcim.macaddress dcim.manufacturer dcim.module dcim.modulebay dcim.moduletype dcim.moduletypeprofile dcim.platform dcim.powerfeed dcim.poweroutlet dcim.powerpanel dcim.powerport dcim.rack dcim.rackgroup dcim.rackreservation dcim.rackrole dcim.racktype dcim.rearport dcim.region dcim.site dcim.sitegroup dcim.virtualchassis dcim.virtualdevicecontext extras.customfield extras.customfieldchoiceset extras.customlink extras.journalentry extras.tag ipam.aggregate ipam.asn ipam.asnrange ipam.fhrpgroup ipam.fhrpgroupassignment ipam.ipaddress ipam.iprange ipam.prefix ipam.rir ipam.role ipam.routetarget ipam.service ipam.vlan ipam.vlangroup ipam.vlantranslationpolicy ipam.vlantranslationrule ipam.vrf tenancy.contact tenancy.contactassignment tenancy.contactgroup tenancy.contactrole tenancy.tenant tenancy.tenantgroup users.owner users.ownergroup virtualization.cluster virtualization.clustergroup virtualization.clustertype virtualization.virtualdisk virtualization.virtualmachine virtualization.virtualmachinetype virtualization.vminterface vpn.ikepolicy vpn.ikeproposal vpn.ipsecpolicy vpn.ipsecprofile vpn.ipsecproposal vpn.l2vpn vpn.l2vpntermination vpn.tunnel vpn.tunnelgroup vpn.tunneltermination wireless.wirelesslan wireless.wirelesslangroup wireless.wirelesslink]",
 			}
 			if !all {
 				return err
@@ -61555,6 +62906,10 @@ func (m *CustomField) validate(all bool) error {
 
 	}
 
+	if m.ValidationSchema != nil {
+		// no validation rules for ValidationSchema
+	}
+
 	if len(errors) > 0 {
 		return CustomFieldMultiError(errors)
 	}
@@ -61660,9 +63015,10 @@ var _CustomField_RelatedObjectType_InLookup = map[string]struct{}{
 	"circuits.virtualcircuit":            {},
 	"circuits.virtualcircuittermination": {},
 	"circuits.virtualcircuittype":        {},
+	"core.managedfile":                   {},
 	"dcim.cable":                         {},
+	"dcim.cablebundle":                   {},
 	"dcim.cablepath":                     {},
-	"dcim.cabletermination":              {},
 	"dcim.consoleport":                   {},
 	"dcim.consoleserverport":             {},
 	"dcim.device":                        {},
@@ -61686,6 +63042,7 @@ var _CustomField_RelatedObjectType_InLookup = map[string]struct{}{
 	"dcim.powerpanel":                    {},
 	"dcim.powerport":                     {},
 	"dcim.rack":                          {},
+	"dcim.rackgroup":                     {},
 	"dcim.rackreservation":               {},
 	"dcim.rackrole":                      {},
 	"dcim.racktype":                      {},
@@ -61730,6 +63087,7 @@ var _CustomField_RelatedObjectType_InLookup = map[string]struct{}{
 	"virtualization.clustertype":         {},
 	"virtualization.virtualdisk":         {},
 	"virtualization.virtualmachine":      {},
+	"virtualization.virtualmachinetype":  {},
 	"virtualization.vminterface":         {},
 	"vpn.ikepolicy":                      {},
 	"vpn.ikeproposal":                    {},
@@ -61777,6 +63135,7 @@ var _CustomField_ObjectTypes_InLookup = map[string]struct{}{
 	"circuits.virtualcircuittermination": {},
 	"circuits.virtualcircuittype":        {},
 	"dcim.cable":                         {},
+	"dcim.cablebundle":                   {},
 	"dcim.consoleport":                   {},
 	"dcim.consoleserverport":             {},
 	"dcim.device":                        {},
@@ -61800,6 +63159,7 @@ var _CustomField_ObjectTypes_InLookup = map[string]struct{}{
 	"dcim.powerpanel":                    {},
 	"dcim.powerport":                     {},
 	"dcim.rack":                          {},
+	"dcim.rackgroup":                     {},
 	"dcim.rackreservation":               {},
 	"dcim.rackrole":                      {},
 	"dcim.racktype":                      {},
@@ -61837,6 +63197,7 @@ var _CustomField_ObjectTypes_InLookup = map[string]struct{}{
 	"virtualization.clustertype":         {},
 	"virtualization.virtualdisk":         {},
 	"virtualization.virtualmachine":      {},
+	"virtualization.virtualmachinetype":  {},
 	"virtualization.vminterface":         {},
 	"vpn.ikepolicy":                      {},
 	"vpn.ikeproposal":                    {},
@@ -61960,6 +63321,10 @@ func (m *CustomFieldChoiceSet) validate(all bool) error {
 			}
 		}
 
+	}
+
+	if m.ChoiceColors != nil {
+		// no validation rules for ChoiceColors
 	}
 
 	if len(errors) > 0 {
@@ -66077,6 +67442,170 @@ func (m *JournalEntry) validate(all bool) error {
 			}
 		}
 
+	case *JournalEntry_AssignedObjectCableBundle:
+		if v == nil {
+			err := JournalEntryValidationError{
+				field:  "AssignedObject",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetAssignedObjectCableBundle()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, JournalEntryValidationError{
+						field:  "AssignedObjectCableBundle",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, JournalEntryValidationError{
+						field:  "AssignedObjectCableBundle",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetAssignedObjectCableBundle()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return JournalEntryValidationError{
+					field:  "AssignedObjectCableBundle",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *JournalEntry_AssignedObjectRackGroup:
+		if v == nil {
+			err := JournalEntryValidationError{
+				field:  "AssignedObject",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetAssignedObjectRackGroup()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, JournalEntryValidationError{
+						field:  "AssignedObjectRackGroup",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, JournalEntryValidationError{
+						field:  "AssignedObjectRackGroup",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetAssignedObjectRackGroup()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return JournalEntryValidationError{
+					field:  "AssignedObjectRackGroup",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *JournalEntry_AssignedObjectScriptModule:
+		if v == nil {
+			err := JournalEntryValidationError{
+				field:  "AssignedObject",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetAssignedObjectScriptModule()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, JournalEntryValidationError{
+						field:  "AssignedObjectScriptModule",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, JournalEntryValidationError{
+						field:  "AssignedObjectScriptModule",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetAssignedObjectScriptModule()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return JournalEntryValidationError{
+					field:  "AssignedObjectScriptModule",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *JournalEntry_AssignedObjectVirtualMachineType:
+		if v == nil {
+			err := JournalEntryValidationError{
+				field:  "AssignedObject",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetAssignedObjectVirtualMachineType()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, JournalEntryValidationError{
+						field:  "AssignedObjectVirtualMachineType",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, JournalEntryValidationError{
+						field:  "AssignedObjectVirtualMachineType",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetAssignedObjectVirtualMachineType()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return JournalEntryValidationError{
+					field:  "AssignedObjectVirtualMachineType",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	default:
 		_ = v // ensures v is used
 	}
@@ -66472,7 +68001,7 @@ func (m *CustomLink) validate(all bool) error {
 		if _, ok := _CustomLink_ObjectTypes_InLookup[item]; !ok {
 			err := CustomLinkValidationError{
 				field:  fmt.Sprintf("ObjectTypes[%v]", idx),
-				reason: "value must be in list [circuits.circuit circuits.circuitgroup circuits.circuittermination circuits.circuittype circuits.provider circuits.provideraccount circuits.providernetwork circuits.virtualcircuit circuits.virtualcircuittermination circuits.virtualcircuittype dcim.cable dcim.consoleport dcim.consoleserverport dcim.device dcim.devicebay dcim.devicerole dcim.devicetype dcim.frontport dcim.interface dcim.inventoryitem dcim.inventoryitemrole dcim.location dcim.macaddress dcim.manufacturer dcim.module dcim.modulebay dcim.moduletype dcim.moduletypeprofile dcim.platform dcim.powerfeed dcim.poweroutlet dcim.powerpanel dcim.powerport dcim.rack dcim.rackreservation dcim.rackrole dcim.racktype dcim.rearport dcim.region dcim.site dcim.sitegroup dcim.virtualchassis dcim.virtualdevicecontext extras.journalentry ipam.aggregate ipam.asn ipam.asnrange ipam.fhrpgroup ipam.ipaddress ipam.iprange ipam.prefix ipam.rir ipam.role ipam.routetarget ipam.service ipam.vlan ipam.vlangroup ipam.vlantranslationpolicy ipam.vlantranslationrule ipam.vrf tenancy.contact tenancy.contactgroup tenancy.contactrole tenancy.tenant tenancy.tenantgroup users.owner users.ownergroup virtualization.cluster virtualization.clustergroup virtualization.clustertype virtualization.virtualdisk virtualization.virtualmachine virtualization.vminterface vpn.ikepolicy vpn.ikeproposal vpn.ipsecpolicy vpn.ipsecprofile vpn.ipsecproposal vpn.l2vpn vpn.l2vpntermination vpn.tunnel vpn.tunnelgroup vpn.tunneltermination wireless.wirelesslan wireless.wirelesslangroup wireless.wirelesslink]",
+				reason: "value must be in list [circuits.circuit circuits.circuitgroup circuits.circuittermination circuits.circuittype circuits.provider circuits.provideraccount circuits.providernetwork circuits.virtualcircuit circuits.virtualcircuittermination circuits.virtualcircuittype dcim.cable dcim.cablebundle dcim.consoleport dcim.consoleserverport dcim.device dcim.devicebay dcim.devicerole dcim.devicetype dcim.frontport dcim.interface dcim.inventoryitem dcim.inventoryitemrole dcim.location dcim.macaddress dcim.manufacturer dcim.module dcim.modulebay dcim.moduletype dcim.moduletypeprofile dcim.platform dcim.powerfeed dcim.poweroutlet dcim.powerpanel dcim.powerport dcim.rack dcim.rackgroup dcim.rackreservation dcim.rackrole dcim.racktype dcim.rearport dcim.region dcim.site dcim.sitegroup dcim.virtualchassis dcim.virtualdevicecontext extras.journalentry ipam.aggregate ipam.asn ipam.asnrange ipam.fhrpgroup ipam.ipaddress ipam.iprange ipam.prefix ipam.rir ipam.role ipam.routetarget ipam.service ipam.vlan ipam.vlangroup ipam.vlantranslationpolicy ipam.vlantranslationrule ipam.vrf tenancy.contact tenancy.contactgroup tenancy.contactrole tenancy.tenant tenancy.tenantgroup users.owner users.ownergroup virtualization.cluster virtualization.clustergroup virtualization.clustertype virtualization.virtualdisk virtualization.virtualmachine virtualization.virtualmachinetype virtualization.vminterface vpn.ikepolicy vpn.ikeproposal vpn.ipsecpolicy vpn.ipsecprofile vpn.ipsecproposal vpn.l2vpn vpn.l2vpntermination vpn.tunnel vpn.tunnelgroup vpn.tunneltermination wireless.wirelesslan wireless.wirelesslangroup wireless.wirelesslink]",
 			}
 			if !all {
 				return err
@@ -66682,6 +68211,7 @@ var _CustomLink_ObjectTypes_InLookup = map[string]struct{}{
 	"circuits.virtualcircuittermination": {},
 	"circuits.virtualcircuittype":        {},
 	"dcim.cable":                         {},
+	"dcim.cablebundle":                   {},
 	"dcim.consoleport":                   {},
 	"dcim.consoleserverport":             {},
 	"dcim.device":                        {},
@@ -66705,6 +68235,7 @@ var _CustomLink_ObjectTypes_InLookup = map[string]struct{}{
 	"dcim.powerpanel":                    {},
 	"dcim.powerport":                     {},
 	"dcim.rack":                          {},
+	"dcim.rackgroup":                     {},
 	"dcim.rackreservation":               {},
 	"dcim.rackrole":                      {},
 	"dcim.racktype":                      {},
@@ -66743,6 +68274,7 @@ var _CustomLink_ObjectTypes_InLookup = map[string]struct{}{
 	"virtualization.clustertype":         {},
 	"virtualization.virtualdisk":         {},
 	"virtualization.virtualmachine":      {},
+	"virtualization.virtualmachinetype":  {},
 	"virtualization.vminterface":         {},
 	"vpn.ikepolicy":                      {},
 	"vpn.ikeproposal":                    {},
@@ -67188,3 +68720,934 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = DeviceConfigValidationError{}
+
+// Validate checks the field values on CableBundle with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *CableBundle) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on CableBundle with the rules defined in
+// the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in CableBundleMultiError, or
+// nil if none found.
+func (m *CableBundle) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *CableBundle) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Name
+
+	for idx, item := range m.GetTags() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, CableBundleValidationError{
+						field:  fmt.Sprintf("Tags[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, CableBundleValidationError{
+						field:  fmt.Sprintf("Tags[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return CableBundleValidationError{
+					field:  fmt.Sprintf("Tags[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	{
+		sorted_keys := make([]string, len(m.GetCustomFields()))
+		i := 0
+		for key := range m.GetCustomFields() {
+			sorted_keys[i] = key
+			i++
+		}
+		sort.Slice(sorted_keys, func(i, j int) bool { return sorted_keys[i] < sorted_keys[j] })
+		for _, key := range sorted_keys {
+			val := m.GetCustomFields()[key]
+			_ = val
+
+			// no validation rules for CustomFields[key]
+
+			if all {
+				switch v := interface{}(val).(type) {
+				case interface{ ValidateAll() error }:
+					if err := v.ValidateAll(); err != nil {
+						errors = append(errors, CableBundleValidationError{
+							field:  fmt.Sprintf("CustomFields[%v]", key),
+							reason: "embedded message failed validation",
+							cause:  err,
+						})
+					}
+				case interface{ Validate() error }:
+					if err := v.Validate(); err != nil {
+						errors = append(errors, CableBundleValidationError{
+							field:  fmt.Sprintf("CustomFields[%v]", key),
+							reason: "embedded message failed validation",
+							cause:  err,
+						})
+					}
+				}
+			} else if v, ok := interface{}(val).(interface{ Validate() error }); ok {
+				if err := v.Validate(); err != nil {
+					return CableBundleValidationError{
+						field:  fmt.Sprintf("CustomFields[%v]", key),
+						reason: "embedded message failed validation",
+						cause:  err,
+					}
+				}
+			}
+
+		}
+	}
+
+	if all {
+		switch v := interface{}(m.GetMetadata()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, CableBundleValidationError{
+					field:  "Metadata",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, CableBundleValidationError{
+					field:  "Metadata",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetMetadata()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return CableBundleValidationError{
+				field:  "Metadata",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if m.Description != nil {
+		// no validation rules for Description
+	}
+
+	if m.Owner != nil {
+
+		if all {
+			switch v := interface{}(m.GetOwner()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, CableBundleValidationError{
+						field:  "Owner",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, CableBundleValidationError{
+						field:  "Owner",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetOwner()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return CableBundleValidationError{
+					field:  "Owner",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if m.Comments != nil {
+		// no validation rules for Comments
+	}
+
+	if len(errors) > 0 {
+		return CableBundleMultiError(errors)
+	}
+
+	return nil
+}
+
+// CableBundleMultiError is an error wrapping multiple validation errors
+// returned by CableBundle.ValidateAll() if the designated constraints aren't met.
+type CableBundleMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m CableBundleMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m CableBundleMultiError) AllErrors() []error { return m }
+
+// CableBundleValidationError is the validation error returned by
+// CableBundle.Validate if the designated constraints aren't met.
+type CableBundleValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e CableBundleValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e CableBundleValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e CableBundleValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e CableBundleValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e CableBundleValidationError) ErrorName() string { return "CableBundleValidationError" }
+
+// Error satisfies the builtin error interface
+func (e CableBundleValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sCableBundle.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = CableBundleValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = CableBundleValidationError{}
+
+// Validate checks the field values on RackGroup with the rules defined in the
+// proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *RackGroup) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on RackGroup with the rules defined in
+// the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in RackGroupMultiError, or nil
+// if none found.
+func (m *RackGroup) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *RackGroup) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Name
+
+	// no validation rules for Slug
+
+	for idx, item := range m.GetTags() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, RackGroupValidationError{
+						field:  fmt.Sprintf("Tags[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, RackGroupValidationError{
+						field:  fmt.Sprintf("Tags[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return RackGroupValidationError{
+					field:  fmt.Sprintf("Tags[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	{
+		sorted_keys := make([]string, len(m.GetCustomFields()))
+		i := 0
+		for key := range m.GetCustomFields() {
+			sorted_keys[i] = key
+			i++
+		}
+		sort.Slice(sorted_keys, func(i, j int) bool { return sorted_keys[i] < sorted_keys[j] })
+		for _, key := range sorted_keys {
+			val := m.GetCustomFields()[key]
+			_ = val
+
+			// no validation rules for CustomFields[key]
+
+			if all {
+				switch v := interface{}(val).(type) {
+				case interface{ ValidateAll() error }:
+					if err := v.ValidateAll(); err != nil {
+						errors = append(errors, RackGroupValidationError{
+							field:  fmt.Sprintf("CustomFields[%v]", key),
+							reason: "embedded message failed validation",
+							cause:  err,
+						})
+					}
+				case interface{ Validate() error }:
+					if err := v.Validate(); err != nil {
+						errors = append(errors, RackGroupValidationError{
+							field:  fmt.Sprintf("CustomFields[%v]", key),
+							reason: "embedded message failed validation",
+							cause:  err,
+						})
+					}
+				}
+			} else if v, ok := interface{}(val).(interface{ Validate() error }); ok {
+				if err := v.Validate(); err != nil {
+					return RackGroupValidationError{
+						field:  fmt.Sprintf("CustomFields[%v]", key),
+						reason: "embedded message failed validation",
+						cause:  err,
+					}
+				}
+			}
+
+		}
+	}
+
+	if all {
+		switch v := interface{}(m.GetMetadata()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, RackGroupValidationError{
+					field:  "Metadata",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, RackGroupValidationError{
+					field:  "Metadata",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetMetadata()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return RackGroupValidationError{
+				field:  "Metadata",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if m.Description != nil {
+		// no validation rules for Description
+	}
+
+	if m.Owner != nil {
+
+		if all {
+			switch v := interface{}(m.GetOwner()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, RackGroupValidationError{
+						field:  "Owner",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, RackGroupValidationError{
+						field:  "Owner",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetOwner()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return RackGroupValidationError{
+					field:  "Owner",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if m.Comments != nil {
+		// no validation rules for Comments
+	}
+
+	if len(errors) > 0 {
+		return RackGroupMultiError(errors)
+	}
+
+	return nil
+}
+
+// RackGroupMultiError is an error wrapping multiple validation errors returned
+// by RackGroup.ValidateAll() if the designated constraints aren't met.
+type RackGroupMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m RackGroupMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m RackGroupMultiError) AllErrors() []error { return m }
+
+// RackGroupValidationError is the validation error returned by
+// RackGroup.Validate if the designated constraints aren't met.
+type RackGroupValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e RackGroupValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e RackGroupValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e RackGroupValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e RackGroupValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e RackGroupValidationError) ErrorName() string { return "RackGroupValidationError" }
+
+// Error satisfies the builtin error interface
+func (e RackGroupValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sRackGroup.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = RackGroupValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = RackGroupValidationError{}
+
+// Validate checks the field values on ScriptModule with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *ScriptModule) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ScriptModule with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in ScriptModuleMultiError, or
+// nil if none found.
+func (m *ScriptModule) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ScriptModule) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for File
+
+	if all {
+		switch v := interface{}(m.GetMetadata()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, ScriptModuleValidationError{
+					field:  "Metadata",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, ScriptModuleValidationError{
+					field:  "Metadata",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetMetadata()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return ScriptModuleValidationError{
+				field:  "Metadata",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if len(errors) > 0 {
+		return ScriptModuleMultiError(errors)
+	}
+
+	return nil
+}
+
+// ScriptModuleMultiError is an error wrapping multiple validation errors
+// returned by ScriptModule.ValidateAll() if the designated constraints aren't met.
+type ScriptModuleMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ScriptModuleMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ScriptModuleMultiError) AllErrors() []error { return m }
+
+// ScriptModuleValidationError is the validation error returned by
+// ScriptModule.Validate if the designated constraints aren't met.
+type ScriptModuleValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ScriptModuleValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ScriptModuleValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ScriptModuleValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ScriptModuleValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ScriptModuleValidationError) ErrorName() string { return "ScriptModuleValidationError" }
+
+// Error satisfies the builtin error interface
+func (e ScriptModuleValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sScriptModule.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ScriptModuleValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ScriptModuleValidationError{}
+
+// Validate checks the field values on VirtualMachineType with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the first error encountered is returned, or nil if there are no violations.
+func (m *VirtualMachineType) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on VirtualMachineType with the rules
+// defined in the proto definition for this message. If any rules are
+// violated, the result is a list of violation errors wrapped in
+// VirtualMachineTypeMultiError, or nil if none found.
+func (m *VirtualMachineType) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *VirtualMachineType) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Name
+
+	// no validation rules for Slug
+
+	for idx, item := range m.GetTags() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, VirtualMachineTypeValidationError{
+						field:  fmt.Sprintf("Tags[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, VirtualMachineTypeValidationError{
+						field:  fmt.Sprintf("Tags[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return VirtualMachineTypeValidationError{
+					field:  fmt.Sprintf("Tags[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	{
+		sorted_keys := make([]string, len(m.GetCustomFields()))
+		i := 0
+		for key := range m.GetCustomFields() {
+			sorted_keys[i] = key
+			i++
+		}
+		sort.Slice(sorted_keys, func(i, j int) bool { return sorted_keys[i] < sorted_keys[j] })
+		for _, key := range sorted_keys {
+			val := m.GetCustomFields()[key]
+			_ = val
+
+			// no validation rules for CustomFields[key]
+
+			if all {
+				switch v := interface{}(val).(type) {
+				case interface{ ValidateAll() error }:
+					if err := v.ValidateAll(); err != nil {
+						errors = append(errors, VirtualMachineTypeValidationError{
+							field:  fmt.Sprintf("CustomFields[%v]", key),
+							reason: "embedded message failed validation",
+							cause:  err,
+						})
+					}
+				case interface{ Validate() error }:
+					if err := v.Validate(); err != nil {
+						errors = append(errors, VirtualMachineTypeValidationError{
+							field:  fmt.Sprintf("CustomFields[%v]", key),
+							reason: "embedded message failed validation",
+							cause:  err,
+						})
+					}
+				}
+			} else if v, ok := interface{}(val).(interface{ Validate() error }); ok {
+				if err := v.Validate(); err != nil {
+					return VirtualMachineTypeValidationError{
+						field:  fmt.Sprintf("CustomFields[%v]", key),
+						reason: "embedded message failed validation",
+						cause:  err,
+					}
+				}
+			}
+
+		}
+	}
+
+	if all {
+		switch v := interface{}(m.GetMetadata()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, VirtualMachineTypeValidationError{
+					field:  "Metadata",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, VirtualMachineTypeValidationError{
+					field:  "Metadata",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetMetadata()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return VirtualMachineTypeValidationError{
+				field:  "Metadata",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if m.DefaultPlatform != nil {
+
+		if all {
+			switch v := interface{}(m.GetDefaultPlatform()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, VirtualMachineTypeValidationError{
+						field:  "DefaultPlatform",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, VirtualMachineTypeValidationError{
+						field:  "DefaultPlatform",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetDefaultPlatform()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return VirtualMachineTypeValidationError{
+					field:  "DefaultPlatform",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if m.DefaultVcpus != nil {
+		// no validation rules for DefaultVcpus
+	}
+
+	if m.DefaultMemory != nil {
+		// no validation rules for DefaultMemory
+	}
+
+	if m.Description != nil {
+		// no validation rules for Description
+	}
+
+	if m.Owner != nil {
+
+		if all {
+			switch v := interface{}(m.GetOwner()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, VirtualMachineTypeValidationError{
+						field:  "Owner",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, VirtualMachineTypeValidationError{
+						field:  "Owner",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetOwner()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return VirtualMachineTypeValidationError{
+					field:  "Owner",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if m.Comments != nil {
+		// no validation rules for Comments
+	}
+
+	if len(errors) > 0 {
+		return VirtualMachineTypeMultiError(errors)
+	}
+
+	return nil
+}
+
+// VirtualMachineTypeMultiError is an error wrapping multiple validation errors
+// returned by VirtualMachineType.ValidateAll() if the designated constraints
+// aren't met.
+type VirtualMachineTypeMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m VirtualMachineTypeMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m VirtualMachineTypeMultiError) AllErrors() []error { return m }
+
+// VirtualMachineTypeValidationError is the validation error returned by
+// VirtualMachineType.Validate if the designated constraints aren't met.
+type VirtualMachineTypeValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e VirtualMachineTypeValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e VirtualMachineTypeValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e VirtualMachineTypeValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e VirtualMachineTypeValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e VirtualMachineTypeValidationError) ErrorName() string {
+	return "VirtualMachineTypeValidationError"
+}
+
+// Error satisfies the builtin error interface
+func (e VirtualMachineTypeValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sVirtualMachineType.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = VirtualMachineTypeValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = VirtualMachineTypeValidationError{}

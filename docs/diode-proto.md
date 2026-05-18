@@ -12,6 +12,8 @@
     - [Aggregate.CustomFieldsEntry](#diode-v1-Aggregate-CustomFieldsEntry)
     - [Cable](#diode-v1-Cable)
     - [Cable.CustomFieldsEntry](#diode-v1-Cable-CustomFieldsEntry)
+    - [CableBundle](#diode-v1-CableBundle)
+    - [CableBundle.CustomFieldsEntry](#diode-v1-CableBundle-CustomFieldsEntry)
     - [CablePath](#diode-v1-CablePath)
     - [CableTermination](#diode-v1-CableTermination)
     - [Circuit](#diode-v1-Circuit)
@@ -128,6 +130,8 @@
     - [RIR.CustomFieldsEntry](#diode-v1-RIR-CustomFieldsEntry)
     - [Rack](#diode-v1-Rack)
     - [Rack.CustomFieldsEntry](#diode-v1-Rack-CustomFieldsEntry)
+    - [RackGroup](#diode-v1-RackGroup)
+    - [RackGroup.CustomFieldsEntry](#diode-v1-RackGroup-CustomFieldsEntry)
     - [RackReservation](#diode-v1-RackReservation)
     - [RackReservation.CustomFieldsEntry](#diode-v1-RackReservation-CustomFieldsEntry)
     - [RackRole](#diode-v1-RackRole)
@@ -142,6 +146,7 @@
     - [Role.CustomFieldsEntry](#diode-v1-Role-CustomFieldsEntry)
     - [RouteTarget](#diode-v1-RouteTarget)
     - [RouteTarget.CustomFieldsEntry](#diode-v1-RouteTarget-CustomFieldsEntry)
+    - [ScriptModule](#diode-v1-ScriptModule)
     - [Service](#diode-v1-Service)
     - [Service.CustomFieldsEntry](#diode-v1-Service-CustomFieldsEntry)
     - [Site](#diode-v1-Site)
@@ -183,6 +188,8 @@
     - [VirtualDisk.CustomFieldsEntry](#diode-v1-VirtualDisk-CustomFieldsEntry)
     - [VirtualMachine](#diode-v1-VirtualMachine)
     - [VirtualMachine.CustomFieldsEntry](#diode-v1-VirtualMachine-CustomFieldsEntry)
+    - [VirtualMachineType](#diode-v1-VirtualMachineType)
+    - [VirtualMachineType.CustomFieldsEntry](#diode-v1-VirtualMachineType-CustomFieldsEntry)
     - [WirelessLAN](#diode-v1-WirelessLAN)
     - [WirelessLAN.CustomFieldsEntry](#diode-v1-WirelessLAN-CustomFieldsEntry)
     - [WirelessLANGroup](#diode-v1-WirelessLANGroup)
@@ -241,6 +248,7 @@
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
 | owner | [Owner](#diode-v1-Owner) | optional |  |
 | sites | [Site](#diode-v1-Site) | repeated |  |
+| role | [Role](#diode-v1-Role) | optional |  |
 
 
 
@@ -369,6 +377,7 @@
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
 | profile | [string](#string) | optional |  |
 | owner | [Owner](#diode-v1-Owner) | optional |  |
+| bundle | [CableBundle](#diode-v1-CableBundle) | optional |  |
 
 
 
@@ -378,6 +387,43 @@
 <a name="diode-v1-Cable-CustomFieldsEntry"></a>
 
 ### Cable.CustomFieldsEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  |  |
+| value | [CustomFieldValue](#diode-v1-CustomFieldValue) |  |  |
+
+
+
+
+
+
+<a name="diode-v1-CableBundle"></a>
+
+### CableBundle
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [string](#string) |  |  |
+| description | [string](#string) | optional |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
+| comments | [string](#string) | optional |  |
+| tags | [Tag](#diode-v1-Tag) | repeated |  |
+| custom_fields | [CableBundle.CustomFieldsEntry](#diode-v1-CableBundle-CustomFieldsEntry) | repeated |  |
+| metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+
+
+
+
+
+
+<a name="diode-v1-CableBundle-CustomFieldsEntry"></a>
+
+### CableBundle.CustomFieldsEntry
 
 
 
@@ -889,7 +935,7 @@
 | object_aggregate | [Aggregate](#diode-v1-Aggregate) |  |  |
 | object_cable | [Cable](#diode-v1-Cable) |  |  |
 | object_cable_path | [CablePath](#diode-v1-CablePath) |  |  |
-| object_cable_termination | [CableTermination](#diode-v1-CableTermination) |  |  |
+| object_cable_termination | [CableTermination](#diode-v1-CableTermination) |  | **Deprecated.**  |
 | object_circuit | [Circuit](#diode-v1-Circuit) |  |  |
 | object_circuit_group | [CircuitGroup](#diode-v1-CircuitGroup) |  |  |
 | object_circuit_group_assignment | [CircuitGroupAssignment](#diode-v1-CircuitGroupAssignment) |  |  |
@@ -979,6 +1025,10 @@
 | object_custom_link | [CustomLink](#diode-v1-CustomLink) |  |  |
 | object_owner | [Owner](#diode-v1-Owner) |  |  |
 | object_owner_group | [OwnerGroup](#diode-v1-OwnerGroup) |  |  |
+| object_cable_bundle | [CableBundle](#diode-v1-CableBundle) |  |  |
+| object_rack_group | [RackGroup](#diode-v1-RackGroup) |  |  |
+| object_script_module | [ScriptModule](#diode-v1-ScriptModule) |  |  |
+| object_virtual_machine_type | [VirtualMachineType](#diode-v1-VirtualMachineType) |  |  |
 | contact | [Contact](#diode-v1-Contact) |  |  |
 | role | [ContactRole](#diode-v1-ContactRole) | optional |  |
 | priority | [string](#string) | optional |  |
@@ -1116,6 +1166,7 @@
 | object_types | [string](#string) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
 | owner | [Owner](#diode-v1-Owner) | optional |  |
+| validation_schema | [string](#string) | optional |  |
 
 
 
@@ -1137,6 +1188,7 @@
 | extra_choices | [string](#string) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
 | owner | [Owner](#diode-v1-Owner) | optional |  |
+| choice_colors | [string](#string) | optional |  |
 
 
 
@@ -1246,6 +1298,10 @@
 | custom_link | [CustomLink](#diode-v1-CustomLink) |  |  |
 | owner | [Owner](#diode-v1-Owner) |  |  |
 | owner_group | [OwnerGroup](#diode-v1-OwnerGroup) |  |  |
+| cable_bundle | [CableBundle](#diode-v1-CableBundle) |  |  |
+| rack_group | [RackGroup](#diode-v1-RackGroup) |  |  |
+| script_module | [ScriptModule](#diode-v1-ScriptModule) |  |  |
+| virtual_machine_type | [VirtualMachineType](#diode-v1-VirtualMachineType) |  |  |
 
 
 
@@ -1381,6 +1437,7 @@
 | custom_fields | [DeviceBay.CustomFieldsEntry](#diode-v1-DeviceBay-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
 | owner | [Owner](#diode-v1-Owner) | optional |  |
+| enabled | [bool](#bool) | optional |  |
 
 
 
@@ -1615,6 +1672,10 @@
 | owner | [Owner](#diode-v1-Owner) |  |  |
 | owner_group | [OwnerGroup](#diode-v1-OwnerGroup) |  |  |
 | device_config | [DeviceConfig](#diode-v1-DeviceConfig) |  |  |
+| cable_bundle | [CableBundle](#diode-v1-CableBundle) |  |  |
+| rack_group | [RackGroup](#diode-v1-RackGroup) |  |  |
+| script_module | [ScriptModule](#diode-v1-ScriptModule) |  |  |
+| virtual_machine_type | [VirtualMachineType](#diode-v1-VirtualMachineType) |  |  |
 
 
 
@@ -1676,7 +1737,7 @@
 | interface_aggregate | [Aggregate](#diode-v1-Aggregate) |  |  |
 | interface_cable | [Cable](#diode-v1-Cable) |  |  |
 | interface_cable_path | [CablePath](#diode-v1-CablePath) |  |  |
-| interface_cable_termination | [CableTermination](#diode-v1-CableTermination) |  |  |
+| interface_cable_termination | [CableTermination](#diode-v1-CableTermination) |  | **Deprecated.**  |
 | interface_circuit | [Circuit](#diode-v1-Circuit) |  |  |
 | interface_circuit_group | [CircuitGroup](#diode-v1-CircuitGroup) |  |  |
 | interface_circuit_group_assignment | [CircuitGroupAssignment](#diode-v1-CircuitGroupAssignment) |  |  |
@@ -1766,6 +1827,10 @@
 | interface_custom_link | [CustomLink](#diode-v1-CustomLink) |  |  |
 | interface_owner | [Owner](#diode-v1-Owner) |  |  |
 | interface_owner_group | [OwnerGroup](#diode-v1-OwnerGroup) |  |  |
+| interface_cable_bundle | [CableBundle](#diode-v1-CableBundle) |  |  |
+| interface_rack_group | [RackGroup](#diode-v1-RackGroup) |  |  |
+| interface_script_module | [ScriptModule](#diode-v1-ScriptModule) |  |  |
+| interface_virtual_machine_type | [VirtualMachineType](#diode-v1-VirtualMachineType) |  |  |
 | priority | [int64](#int64) |  |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
 
@@ -1832,7 +1897,7 @@
 | object_aggregate | [Aggregate](#diode-v1-Aggregate) |  |  |
 | object_cable | [Cable](#diode-v1-Cable) |  |  |
 | object_cable_path | [CablePath](#diode-v1-CablePath) |  |  |
-| object_cable_termination | [CableTermination](#diode-v1-CableTermination) |  |  |
+| object_cable_termination | [CableTermination](#diode-v1-CableTermination) |  | **Deprecated.**  |
 | object_circuit | [Circuit](#diode-v1-Circuit) |  |  |
 | object_circuit_group | [CircuitGroup](#diode-v1-CircuitGroup) |  |  |
 | object_circuit_group_assignment | [CircuitGroupAssignment](#diode-v1-CircuitGroupAssignment) |  |  |
@@ -1922,6 +1987,10 @@
 | object_custom_link | [CustomLink](#diode-v1-CustomLink) |  |  |
 | object_owner | [Owner](#diode-v1-Owner) |  |  |
 | object_owner_group | [OwnerGroup](#diode-v1-OwnerGroup) |  |  |
+| object_cable_bundle | [CableBundle](#diode-v1-CableBundle) |  |  |
+| object_rack_group | [RackGroup](#diode-v1-RackGroup) |  |  |
+| object_script_module | [ScriptModule](#diode-v1-ScriptModule) |  |  |
+| object_virtual_machine_type | [VirtualMachineType](#diode-v1-VirtualMachineType) |  |  |
 
 
 
@@ -2429,7 +2498,7 @@
 | assigned_object_aggregate | [Aggregate](#diode-v1-Aggregate) |  |  |
 | assigned_object_cable | [Cable](#diode-v1-Cable) |  |  |
 | assigned_object_cable_path | [CablePath](#diode-v1-CablePath) |  |  |
-| assigned_object_cable_termination | [CableTermination](#diode-v1-CableTermination) |  |  |
+| assigned_object_cable_termination | [CableTermination](#diode-v1-CableTermination) |  | **Deprecated.**  |
 | assigned_object_circuit | [Circuit](#diode-v1-Circuit) |  |  |
 | assigned_object_circuit_group | [CircuitGroup](#diode-v1-CircuitGroup) |  |  |
 | assigned_object_circuit_group_assignment | [CircuitGroupAssignment](#diode-v1-CircuitGroupAssignment) |  |  |
@@ -2519,6 +2588,10 @@
 | assigned_object_custom_link | [CustomLink](#diode-v1-CustomLink) |  |  |
 | assigned_object_owner | [Owner](#diode-v1-Owner) |  |  |
 | assigned_object_owner_group | [OwnerGroup](#diode-v1-OwnerGroup) |  |  |
+| assigned_object_cable_bundle | [CableBundle](#diode-v1-CableBundle) |  |  |
+| assigned_object_rack_group | [RackGroup](#diode-v1-RackGroup) |  |  |
+| assigned_object_script_module | [ScriptModule](#diode-v1-ScriptModule) |  |  |
+| assigned_object_virtual_machine_type | [VirtualMachineType](#diode-v1-VirtualMachineType) |  |  |
 | kind | [string](#string) | optional |  |
 | comments | [string](#string) |  |  |
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
@@ -2607,7 +2680,7 @@
 | assigned_object_aggregate | [Aggregate](#diode-v1-Aggregate) |  |  |
 | assigned_object_cable | [Cable](#diode-v1-Cable) |  |  |
 | assigned_object_cable_path | [CablePath](#diode-v1-CablePath) |  |  |
-| assigned_object_cable_termination | [CableTermination](#diode-v1-CableTermination) |  |  |
+| assigned_object_cable_termination | [CableTermination](#diode-v1-CableTermination) |  | **Deprecated.**  |
 | assigned_object_circuit | [Circuit](#diode-v1-Circuit) |  |  |
 | assigned_object_circuit_group | [CircuitGroup](#diode-v1-CircuitGroup) |  |  |
 | assigned_object_circuit_group_assignment | [CircuitGroupAssignment](#diode-v1-CircuitGroupAssignment) |  |  |
@@ -2694,6 +2767,10 @@
 | assigned_object_custom_link | [CustomLink](#diode-v1-CustomLink) |  |  |
 | assigned_object_owner | [Owner](#diode-v1-Owner) |  |  |
 | assigned_object_owner_group | [OwnerGroup](#diode-v1-OwnerGroup) |  |  |
+| assigned_object_cable_bundle | [CableBundle](#diode-v1-CableBundle) |  |  |
+| assigned_object_rack_group | [RackGroup](#diode-v1-RackGroup) |  |  |
+| assigned_object_script_module | [ScriptModule](#diode-v1-ScriptModule) |  |  |
+| assigned_object_virtual_machine_type | [VirtualMachineType](#diode-v1-VirtualMachineType) |  |  |
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [L2VPNTermination.CustomFieldsEntry](#diode-v1-L2VPNTermination-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
@@ -2859,6 +2936,8 @@
 | custom_fields | [Module.CustomFieldsEntry](#diode-v1-Module-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
 | owner | [Owner](#diode-v1-Owner) | optional |  |
+| replicate_components | [bool](#bool) | optional |  |
+| adopt_components | [bool](#bool) | optional |  |
 
 
 
@@ -2900,6 +2979,7 @@
 | custom_fields | [ModuleBay.CustomFieldsEntry](#diode-v1-ModuleBay-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
 | owner | [Owner](#diode-v1-Owner) | optional |  |
+| enabled | [bool](#bool) | optional |  |
 
 
 
@@ -3497,6 +3577,7 @@
 | outer_height | [int64](#int64) | optional |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
 | owner | [Owner](#diode-v1-Owner) | optional |  |
+| group | [RackGroup](#diode-v1-RackGroup) | optional |  |
 
 
 
@@ -3506,6 +3587,44 @@
 <a name="diode-v1-Rack-CustomFieldsEntry"></a>
 
 ### Rack.CustomFieldsEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  |  |
+| value | [CustomFieldValue](#diode-v1-CustomFieldValue) |  |  |
+
+
+
+
+
+
+<a name="diode-v1-RackGroup"></a>
+
+### RackGroup
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [string](#string) |  |  |
+| slug | [string](#string) |  |  |
+| description | [string](#string) | optional |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
+| comments | [string](#string) | optional |  |
+| tags | [Tag](#diode-v1-Tag) | repeated |  |
+| custom_fields | [RackGroup.CustomFieldsEntry](#diode-v1-RackGroup-CustomFieldsEntry) | repeated |  |
+| metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+
+
+
+
+
+
+<a name="diode-v1-RackGroup-CustomFieldsEntry"></a>
+
+### RackGroup.CustomFieldsEntry
 
 
 
@@ -3803,6 +3922,22 @@
 | ----- | ---- | ----- | ----------- |
 | key | [string](#string) |  |  |
 | value | [CustomFieldValue](#diode-v1-CustomFieldValue) |  |  |
+
+
+
+
+
+
+<a name="diode-v1-ScriptModule"></a>
+
+### ScriptModule
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| file | [string](#string) |  |  |
+| metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
 
 
 
@@ -4137,7 +4272,7 @@
 | termination_aggregate | [Aggregate](#diode-v1-Aggregate) |  |  |
 | termination_cable | [Cable](#diode-v1-Cable) |  |  |
 | termination_cable_path | [CablePath](#diode-v1-CablePath) |  |  |
-| termination_cable_termination | [CableTermination](#diode-v1-CableTermination) |  |  |
+| termination_cable_termination | [CableTermination](#diode-v1-CableTermination) |  | **Deprecated.**  |
 | termination_circuit | [Circuit](#diode-v1-Circuit) |  |  |
 | termination_circuit_group | [CircuitGroup](#diode-v1-CircuitGroup) |  |  |
 | termination_circuit_group_assignment | [CircuitGroupAssignment](#diode-v1-CircuitGroupAssignment) |  |  |
@@ -4227,6 +4362,10 @@
 | termination_custom_link | [CustomLink](#diode-v1-CustomLink) |  |  |
 | termination_owner | [Owner](#diode-v1-Owner) |  |  |
 | termination_owner_group | [OwnerGroup](#diode-v1-OwnerGroup) |  |  |
+| termination_cable_bundle | [CableBundle](#diode-v1-CableBundle) |  |  |
+| termination_rack_group | [RackGroup](#diode-v1-RackGroup) |  |  |
+| termination_script_module | [ScriptModule](#diode-v1-ScriptModule) |  |  |
+| termination_virtual_machine_type | [VirtualMachineType](#diode-v1-VirtualMachineType) |  |  |
 | outside_ip | [IPAddress](#diode-v1-IPAddress) | optional |  |
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [TunnelTermination.CustomFieldsEntry](#diode-v1-TunnelTermination-CustomFieldsEntry) | repeated |  |
@@ -4315,6 +4454,7 @@
 | scope_region | [Region](#diode-v1-Region) |  |  |
 | scope_site | [Site](#diode-v1-Site) |  |  |
 | scope_site_group | [SiteGroup](#diode-v1-SiteGroup) |  |  |
+| scope_rack_group | [RackGroup](#diode-v1-RackGroup) |  |  |
 | vid_ranges | [int64](#int64) | repeated |  |
 | description | [string](#string) | optional |  |
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
@@ -4740,6 +4880,7 @@
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
 | start_on_boot | [string](#string) | optional |  |
 | owner | [Owner](#diode-v1-Owner) | optional |  |
+| virtual_machine_type | [VirtualMachineType](#diode-v1-VirtualMachineType) | optional |  |
 
 
 
@@ -4749,6 +4890,47 @@
 <a name="diode-v1-VirtualMachine-CustomFieldsEntry"></a>
 
 ### VirtualMachine.CustomFieldsEntry
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| key | [string](#string) |  |  |
+| value | [CustomFieldValue](#diode-v1-CustomFieldValue) |  |  |
+
+
+
+
+
+
+<a name="diode-v1-VirtualMachineType"></a>
+
+### VirtualMachineType
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [string](#string) |  |  |
+| slug | [string](#string) |  |  |
+| default_platform | [Platform](#diode-v1-Platform) | optional |  |
+| default_vcpus | [double](#double) | optional |  |
+| default_memory | [int64](#int64) | optional |  |
+| description | [string](#string) | optional |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
+| comments | [string](#string) | optional |  |
+| tags | [Tag](#diode-v1-Tag) | repeated |  |
+| custom_fields | [VirtualMachineType.CustomFieldsEntry](#diode-v1-VirtualMachineType-CustomFieldsEntry) | repeated |  |
+| metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+
+
+
+
+
+
+<a name="diode-v1-VirtualMachineType-CustomFieldsEntry"></a>
+
+### VirtualMachineType.CustomFieldsEntry
 
 
 
