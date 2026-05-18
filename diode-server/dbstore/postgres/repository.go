@@ -3,8 +3,12 @@ package postgres
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"log/slog"
+	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -15,6 +19,11 @@ import (
 	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
 	"github.com/netboxlabs/diode/diode-server/reconciler/ops"
 )
+
+// rollbackTimeout bounds how long we wait for a rollback during shutdown.
+// The parent context may already be canceled, so rollback uses a detached
+// context with this timeout to ensure cleanup completes.
+const rollbackTimeout = 5 * time.Second
 
 // Repository is an interface for interacting with ingestion logs and change sets.
 type Repository struct {
@@ -246,8 +255,17 @@ func (r *Repository) CreateChangeSet(ctx context.Context, changeSet changeset.Ch
 	}
 
 	rollback := func() {
-		if err := tx.Rollback(ctx); err != nil {
-			panic(fmt.Errorf("failed to rollback transaction: %w", err))
+		// Detached context so the rollback can complete even when the
+		// caller's context is already canceled (pod shutdown, parent
+		// timeout). pgx5 otherwise fails to DEALLOCATE prepared statements
+		// and returns an error here. Panicking on that would crash the
+		// reconciler over what is at worst a logged warning - the
+		// transaction is cleaned up when the connection returns to the
+		// pool either way.
+		rollbackCtx, cancel := context.WithTimeout(context.Background(), rollbackTimeout)
+		defer cancel()
+		if err := tx.Rollback(rollbackCtx); err != nil && !errors.Is(err, pgx.ErrTxClosed) {
+			slog.WarnContext(ctx, "failed to rollback transaction", "error", err)
 		}
 	}
 
