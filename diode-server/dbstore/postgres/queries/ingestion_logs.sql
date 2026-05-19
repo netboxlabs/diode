@@ -97,6 +97,16 @@ SET duplicate_count = duplicate_count + 1,
     last_seen = CURRENT_TIMESTAMP
 WHERE id = ANY(@ids::int4[]);
 
+-- name: BulkUpdateIngestionLogStates :exec
+UPDATE ingestion_logs il
+SET state = bulk.new_state,
+    error = NULL
+FROM (
+    SELECT unnest(@ids::int4[]) AS id,
+           unnest(@states::int4[]) AS new_state
+) bulk
+WHERE il.id = bulk.id;
+
 -- name: ClaimQueuedIngestionLogs :many
 UPDATE ingestion_logs
 SET state = 2
@@ -108,3 +118,26 @@ WHERE id IN (
     FOR UPDATE SKIP LOCKED
 )
 RETURNING *;
+
+-- name: ClaimQueuedForAutoApply :many
+-- Claim a batch of QUEUED ingestion logs for the AutoApplyProcessor (combined
+-- plan+apply via /bulk-plan-apply). Transitions QUEUED (1) -> APPLYING (8).
+-- A row stays in APPLYING for the duration of the NetBox round-trip and is
+-- reset back to QUEUED on reconciler startup via ResetApplyingIngestionLogs.
+UPDATE ingestion_logs
+SET state = 8
+WHERE id IN (
+    SELECT id FROM ingestion_logs
+    WHERE state = 1
+    ORDER BY id
+    LIMIT sqlc.arg('batch_size')
+    FOR UPDATE SKIP LOCKED
+)
+RETURNING *;
+
+-- name: ResetApplyingIngestionLogs :exec
+-- Reset rows stuck in APPLYING (worker died mid-batch) back to QUEUED so the
+-- AutoApplyProcessor reclaims them. Idempotent — safe to run on every startup.
+UPDATE ingestion_logs
+SET state = 1
+WHERE state = 8;

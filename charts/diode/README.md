@@ -2,7 +2,7 @@
 
 A Helm chart for Diode
 
-![Version: 1.13.1](https://img.shields.io/badge/Version-1.13.1-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.5.0](https://img.shields.io/badge/AppVersion-1.5.0-informational?style=flat-square)
+![Version: 1.14.0](https://img.shields.io/badge/Version-1.14.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.5.0](https://img.shields.io/badge/AppVersion-1.5.0-informational?style=flat-square)
 
 ## Prerequisites
 
@@ -282,15 +282,19 @@ helm show values diode/diode
 | diodeIngester.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
 | diodeIngester.serviceAccount.create | bool | `true` | create service account |
 | diodeReconciler.annotations | object | `{}` | annotations to add to the reconciler deployment |
-| diodeReconciler.config.applyChangesetConcurrency | int | `4` | apply changeset concurrency |
 | diodeReconciler.config.autoApplyChangesets | string | `"true"` | auto apply changesets |
+| diodeReconciler.config.autoApplyProcessorBatchSize | int | `50` | auto apply processor batch size |
+| diodeReconciler.config.autoApplyProcessorConcurrency | int | `1` | auto apply processor concurrency |
 | diodeReconciler.config.diodeToNetBoxClientId | string | `"diode-to-netbox"` | diode to netbox client id |
 | diodeReconciler.config.diodeToNetboxRateLimiterBurst | int | `1` | diode to netbox rate limiter burst |
 | diodeReconciler.config.diodeToNetboxRateLimiterRps | int | `20` | diode to netbox rate limiter rps |
-| diodeReconciler.config.generateChangesetConcurrency | int | `4` | generate changeset concurrency |
+| diodeReconciler.config.ingestionLogProcessorBackpressureThreshold | int | `100` | ingestion log processor redis-stream-length backpressure threshold; 0 disables |
+| diodeReconciler.config.ingestionLogProcessorBatchSize | int | `400` | ingestion log processor batch size |
+| diodeReconciler.config.ingestionLogProcessorConcurrency | int | `4` | ingestion log processor concurrency |
 | diodeReconciler.config.loggingLevel | string | `"INFO"` | logging level |
 | diodeReconciler.config.migrationEnabled | string | `"true"` | migration enabled |
 | diodeReconciler.config.netboxDiodePluginApiBaseUrl | string | `"http://localhost:8000/netbox/api/plugins/diode"` | netbox diode plugin api base url |
+| diodeReconciler.config.netboxDiodePluginApiTimeoutSeconds | int | `5` | NetBox diode plugin HTTP client timeout (seconds) |
 | diodeReconciler.config.netboxDiodePluginSkipTlsVerify | bool | `false` | netbox diode plugin skip tls verify |
 | diodeReconciler.config.postgresDbName | string | `"diode"` | postgres db name |
 | diodeReconciler.config.postgresUser | string | `"diode"` | postgres user |

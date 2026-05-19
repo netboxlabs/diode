@@ -12,6 +12,14 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type BulkCreateChangeSetsParams struct {
+	ID             int32       `json:"id"`
+	ExternalID     string      `json:"external_id"`
+	IngestionLogID int32       `json:"ingestion_log_id"`
+	BranchID       pgtype.Text `json:"branch_id"`
+	DeviationName  pgtype.Text `json:"deviation_name"`
+}
+
 type BulkCreateChangesParams struct {
 	ExternalID         string          `json:"external_id"`
 	ChangeSetID        int32           `json:"change_set_id"`
@@ -25,6 +33,32 @@ type BulkCreateChangesParams struct {
 	After              json.RawMessage `json:"after"`
 	NewRefs            []string        `json:"new_refs"`
 	SequenceNumber     pgtype.Int4     `json:"sequence_number"`
+}
+
+const bulkTruncateChangeSets = `-- name: BulkTruncateChangeSets :exec
+DELETE FROM change_sets
+WHERE change_sets.id IN (
+    SELECT change_sets.id
+    FROM change_sets
+    WHERE change_sets.ingestion_log_id = ANY($1::int4[])
+      AND change_sets.id NOT IN (
+          SELECT cs2.id
+          FROM change_sets cs2
+          WHERE cs2.ingestion_log_id = change_sets.ingestion_log_id
+          ORDER BY cs2.id DESC
+          LIMIT $2
+      )
+)
+`
+
+type BulkTruncateChangeSetsParams struct {
+	IngestionLogIds []int32 `json:"ingestion_log_ids"`
+	KeepCount       int32   `json:"keep_count"`
+}
+
+func (q *Queries) BulkTruncateChangeSets(ctx context.Context, arg BulkTruncateChangeSetsParams) error {
+	_, err := q.db.Exec(ctx, bulkTruncateChangeSets, arg.IngestionLogIds, arg.KeepCount)
+	return err
 }
 
 const createChange = `-- name: CreateChange :one

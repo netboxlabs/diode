@@ -34,6 +34,7 @@ const (
 	State_NO_CHANGES        State = 5
 	State_IGNORED           State = 6
 	State_ERRORED           State = 7
+	State_APPLYING          State = 8
 )
 
 // Enum value maps for State.
@@ -47,6 +48,7 @@ var (
 		5: "NO_CHANGES",
 		6: "IGNORED",
 		7: "ERRORED",
+		8: "APPLYING",
 	}
 	State_value = map[string]int32{
 		"STATE_UNSPECIFIED": 0,
@@ -57,6 +59,7 @@ var (
 		"NO_CHANGES":        5,
 		"IGNORED":           6,
 		"ERRORED":           7,
+		"APPLYING":          8,
 	}
 )
 
@@ -1183,7 +1186,7 @@ const file_diode_v1_reconciler_proto_rawDesc = "" +
 	"\x1cRetrieveDeviationByIDRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"R\n" +
 	"\x1dRetrieveDeviationByIDResponse\x121\n" +
-	"\tdeviation\x18\x01 \x01(\v2\x13.diode.v1.DeviationR\tdeviation*w\n" +
+	"\tdeviation\x18\x01 \x01(\v2\x13.diode.v1.DeviationR\tdeviation*\x85\x01\n" +
 	"\x05State\x12\x15\n" +
 	"\x11STATE_UNSPECIFIED\x10\x00\x12\n" +
 	"\n" +
@@ -1195,7 +1198,8 @@ const file_diode_v1_reconciler_proto_rawDesc = "" +
 	"\n" +
 	"NO_CHANGES\x10\x05\x12\v\n" +
 	"\aIGNORED\x10\x06\x12\v\n" +
-	"\aERRORED\x10\a2\xcd\x02\n" +
+	"\aERRORED\x10\a\x12\f\n" +
+	"\bAPPLYING\x10\b2\xcd\x02\n" +
 	"\x11ReconcilerService\x12m\n" +
 	"\x15RetrieveIngestionLogs\x12&.diode.v1.RetrieveIngestionLogsRequest\x1a'.diode.v1.RetrieveIngestionLogsResponse\"\x03\x88\x02\x01\x12_\n" +
 	"\x12RetrieveDeviations\x12#.diode.v1.RetrieveDeviationsRequest\x1a$.diode.v1.RetrieveDeviationsResponse\x12h\n" +

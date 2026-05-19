@@ -35,8 +35,12 @@ type Config struct {
 	RedisTLS  tls.Config       `envconfig:"REDIS_TLS"`
 	Telemetry telemetry.Config `envconfig:"TELEMETRY"`
 
-	GenerateChangeSetConcurrency int `envconfig:"GENERATE_CHANGESET_CONCURRENCY" default:"4"`
-	ApplyChangeSetConcurrency    int `envconfig:"APPLY_CHANGESET_CONCURRENCY" default:"4"`
+	IngestionLogProcessorBatchSize             int32 `envconfig:"INGESTION_LOG_PROCESSOR_BATCH_SIZE" default:"100"`
+	IngestionLogProcessorConcurrency           int   `envconfig:"INGESTION_LOG_PROCESSOR_CONCURRENCY" default:"1"`
+	IngestionLogProcessorBackpressureThreshold int64 `envconfig:"INGESTION_LOG_PROCESSOR_BACKPRESSURE_THRESHOLD" default:"100"`
+
+	AutoApplyProcessorBatchSize   int32 `envconfig:"AUTO_APPLY_PROCESSOR_BATCH_SIZE" default:"100"`
+	AutoApplyProcessorConcurrency int   `envconfig:"AUTO_APPLY_PROCESSOR_CONCURRENCY" default:"1"`
 
 	// Experimental
 	EnableGraphDB bool `envconfig:"ENABLE_GRAPH_DB" default:"false"`

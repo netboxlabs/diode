@@ -59,13 +59,6 @@ var ErrInvalidTimeout = errors.New("invalid timeout value")
 // ErrDefaultBranchNotFound is returned when the default branch is not found (e.g. no endpoint available in older plugin versions)
 var ErrDefaultBranchNotFound = errors.New("default branch not found")
 
-// ChangeSetResult represents a change set result
-type ChangeSetResult struct {
-	ID        string          `json:"id"`
-	ChangeSet *ChangeSet      `json:"change_set"`
-	Errors    json.RawMessage `json:"errors"`
-}
-
 // ChangeSet represents a change set
 type ChangeSet struct {
 	ID      string   `json:"id"`
@@ -263,22 +256,14 @@ func httpTimeout() (time.Duration, error) {
 
 // NetBoxAPI is the interface for the NetBox Diode plugin API
 type NetBoxAPI interface {
-	// GenerateDiff generates diff between ingested entity and NetBox object state
-	GenerateDiff(context.Context, GenerateDiffRequest) (*ChangeSetResult, error)
+	// BulkPlan generates diffs for multiple entities in a single request
+	BulkPlan(context.Context, BulkPlanRequest) (*BulkPlanResponse, error)
 
-	// ApplyChangeSet applies a change set
-	ApplyChangeSet(context.Context, ApplyChangeSetRequest) (*ChangeSetResult, error)
+	// BulkPlanApply combines plan + apply for a batch of entities in a single request
+	BulkPlanApply(context.Context, BulkPlanApplyRequest) (*BulkPlanApplyResponse, error)
 
 	// GetDefaultBranch gets the default branch from NetBox plugin settings
 	GetDefaultBranch(context.Context) (*Branch, error)
-}
-
-// GenerateDiffRequest represents a generate diff request
-type GenerateDiffRequest struct {
-	ObjectType string          `json:"object_type"`
-	BranchID   string          `json:"-"` // Supplied as header
-	Entity     proto.Message   `json:"-"`
-	EntityJSON json.RawMessage `json:"entity"` // Variable structure based on object type
 }
 
 func protoToJSON(proto proto.Message) (json.RawMessage, error) {
@@ -292,17 +277,46 @@ func protoToJSON(proto proto.Message) (json.RawMessage, error) {
 	return json.RawMessage(jsonBytes), nil
 }
 
-// GenerateDiff generates a diff between an ingested entity and NetBox object state
-func (c *Client) GenerateDiff(ctx context.Context, payload GenerateDiffRequest) (*ChangeSetResult, error) {
-	endpointURL, err := url.Parse(fmt.Sprintf("%s/generate-diff/", c.baseURL.String()))
+// BulkPlanEntity represents a single entity in a bulk plan request
+type BulkPlanEntity struct {
+	ID         string          `json:"id"`
+	ObjectType string          `json:"object_type"`
+	BranchID   string          `json:"-"`
+	Entity     proto.Message   `json:"-"`
+	EntityJSON json.RawMessage `json:"entity"`
+}
+
+// BulkPlanRequest represents a bulk plan request
+type BulkPlanRequest struct {
+	Entities []BulkPlanEntity `json:"entities"`
+	BranchID string           `json:"-"`
+}
+
+// BulkPlanResult represents a single entity result in a bulk plan response
+type BulkPlanResult struct {
+	ID        string          `json:"id"`
+	ChangeSet *ChangeSet      `json:"change_set"`
+	Errors    json.RawMessage `json:"errors"`
+}
+
+// BulkPlanResponse represents the response from the bulk plan endpoint
+type BulkPlanResponse struct {
+	Results []BulkPlanResult `json:"results"`
+}
+
+// BulkPlan generates diffs for multiple entities in a single request
+func (c *Client) BulkPlan(ctx context.Context, payload BulkPlanRequest) (*BulkPlanResponse, error) {
+	endpointURL, err := url.Parse(fmt.Sprintf("%s/bulk-plan/", c.baseURL.String()))
 	if err != nil {
 		return nil, err
 	}
 
-	if payload.Entity != nil {
-		payload.EntityJSON, err = protoToJSON(payload.Entity)
-		if err != nil {
-			return nil, err
+	for i := range payload.Entities {
+		if payload.Entities[i].Entity != nil {
+			payload.Entities[i].EntityJSON, err = protoToJSON(payload.Entities[i].Entity)
+			if err != nil {
+				return nil, fmt.Errorf("marshaling entity %s: %w", payload.Entities[i].ID, err)
+			}
 		}
 	}
 
@@ -337,37 +351,67 @@ func (c *Client) GenerateDiff(ctx context.Context, payload GenerateDiffRequest) 
 
 	respBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read response body %w", err)
+		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	c.logger.Debug("generate diff", "statusCode", resp.StatusCode, "response", string(respBytes))
+	c.logger.Debug("bulk plan", "statusCode", resp.StatusCode, "response", string(respBytes))
 
-	var changeSetResult ChangeSetResult
-	if err = json.Unmarshal(respBytes, &changeSetResult); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal response body %w", err)
-	}
-
-	// return errors with 4xx status code
 	if resp.StatusCode >= http.StatusBadRequest {
-		return nil, changeset.NewError("generate diff failed", diodeErrors.ErrCodeOpsGenerateDiff, respBytes)
+		return nil, changeset.NewError("bulk plan failed", diodeErrors.ErrCodeOpsGenerateDiff, respBytes)
 	}
 
-	return &changeSetResult, nil
+	var bulkPlanResponse BulkPlanResponse
+	if err = json.Unmarshal(respBytes, &bulkPlanResponse); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response body: %w", err)
+	}
+
+	return &bulkPlanResponse, nil
 }
 
-// ApplyChangeSetRequest represents a apply change set request
-// type ChangeSetRequest changeset.ChangeSet
-type ApplyChangeSetRequest struct {
-	ID       string   `json:"id"`
-	Changes  []Change `json:"changes"`
-	BranchID string   `json:"-"` // Supplied as header
+// BulkPlanApplyRequest is the payload for /bulk-plan-apply. Mirrors BulkPlanRequest.
+type BulkPlanApplyRequest struct {
+	Entities []BulkPlanEntity `json:"entities"`
+	BranchID string           `json:"-"`
 }
 
-// ApplyChangeSet applies a change set
-func (c *Client) ApplyChangeSet(ctx context.Context, payload ApplyChangeSetRequest) (*ChangeSetResult, error) {
-	endpointURL, err := url.Parse(fmt.Sprintf("%s/apply-change-set/", c.baseURL.String()))
+// BulkPlanApplyErrors holds per-phase errors for a single entity in a /bulk-plan-apply response.
+// The plan and apply phases are reported separately so callers can attribute failures.
+type BulkPlanApplyErrors struct {
+	Plan  json.RawMessage `json:"plan,omitempty"`
+	Apply json.RawMessage `json:"apply,omitempty"`
+}
+
+// BulkPlanApplyResult is the per-entity result in a /bulk-plan-apply response.
+// ChangeSet is always populated when the plan phase succeeded, regardless of apply outcome,
+// so the caller can persist it for audit/retry.
+type BulkPlanApplyResult struct {
+	ID        string               `json:"id"`
+	ChangeSet *ChangeSet           `json:"change_set"`
+	Errors    *BulkPlanApplyErrors `json:"errors"`
+}
+
+// BulkPlanApplyResponse is the envelope returned from /bulk-plan-apply.
+type BulkPlanApplyResponse struct {
+	Results []BulkPlanApplyResult `json:"results"`
+}
+
+// BulkPlanApply runs plan + apply for a batch of entities in a single request.
+// HTTP 200 means every entity succeeded both phases; HTTP 207 means at least one
+// entity had a plan or apply error (per-result errors describe which). Both are
+// treated as a successful HTTP call here — the caller inspects per-result Errors.
+func (c *Client) BulkPlanApply(ctx context.Context, payload BulkPlanApplyRequest) (*BulkPlanApplyResponse, error) {
+	endpointURL, err := url.Parse(fmt.Sprintf("%s/bulk-plan-apply/", c.baseURL.String()))
 	if err != nil {
 		return nil, err
+	}
+
+	for i := range payload.Entities {
+		if payload.Entities[i].Entity != nil {
+			payload.Entities[i].EntityJSON, err = protoToJSON(payload.Entities[i].Entity)
+			if err != nil {
+				return nil, fmt.Errorf("marshaling entity %s: %w", payload.Entities[i].ID, err)
+			}
+		}
 	}
 
 	reqBody, err := json.Marshal(payload)
@@ -378,8 +422,6 @@ func (c *Client) ApplyChangeSet(ctx context.Context, payload ApplyChangeSetReque
 	if err := c.limiter.Wait(ctx); err != nil {
 		return nil, err
 	}
-
-	c.logger.Debug("apply change set", "payload", string(reqBody))
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpointURL.String(), bytes.NewBuffer(reqBody))
 	if err != nil {
@@ -403,22 +445,21 @@ func (c *Client) ApplyChangeSet(ctx context.Context, payload ApplyChangeSetReque
 
 	respBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read response body %w", err)
+		return nil, fmt.Errorf("failed to read response body: %w", err)
 	}
 
-	c.logger.Debug("apply change set", "response", string(respBytes))
+	c.logger.Debug("bulk plan-apply", "statusCode", resp.StatusCode, "response", string(respBytes))
 
-	var changeSetResult ChangeSetResult
-	if err = json.Unmarshal(respBytes, &changeSetResult); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal response body %w", err)
-	}
-
-	// return errors with 4xx status code
 	if resp.StatusCode >= http.StatusBadRequest {
-		return nil, changeset.NewError("apply change set failed", diodeErrors.ErrCodeOpsApplyChangeSet, respBytes)
+		return nil, changeset.NewError("bulk plan-apply failed", diodeErrors.ErrCodeOpsApplyChangeSet, respBytes)
 	}
 
-	return &changeSetResult, nil
+	var bulkPlanApplyResponse BulkPlanApplyResponse
+	if err = json.Unmarshal(respBytes, &bulkPlanApplyResponse); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response body: %w", err)
+	}
+
+	return &bulkPlanApplyResponse, nil
 }
 
 // GetDefaultBranchResponse represents the response from the default-branch endpoint

@@ -22,13 +22,11 @@ import (
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
 	pluginmocks "github.com/netboxlabs/diode/diode-server/netboxdiodeplugin/mocks"
 	"github.com/netboxlabs/diode/diode-server/reconciler"
-	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
 	"github.com/netboxlabs/diode/diode-server/reconciler/mocks"
 	reconops "github.com/netboxlabs/diode/diode-server/reconciler/ops"
 )
 
 func int32Ptr(i int32) *int32 { return &i }
-func intPtr(i int) *int       { return &i }
 
 func testCompressBrotli(t *testing.T, data []byte) []byte {
 	t.Helper()
@@ -297,36 +295,12 @@ func TestIngestionProcessorStart(t *testing.T) {
 			}
 			return result
 		}, nil)
-	mockRepository.On("UpdateIngestionLogStateWithError", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mockRepository.On("CreateChangeSet", mock.Anything, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
-	mockRepository.On("TruncateChangeSets", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-	// Mock GetDefaultBranch to return nil (no default branch)
-	mockNetBoxClient.On("GetDefaultBranch", mock.Anything).Return((*netboxdiodeplugin.Branch)(nil), nil)
-
-	mockNetBoxClient.On("GenerateDiff", mock.Anything, mock.Anything).Return(&netboxdiodeplugin.ChangeSetResult{
-		ChangeSet: &netboxdiodeplugin.ChangeSet{
-			ID: "test-changeset-id",
-			Changes: []netboxdiodeplugin.Change{
-				{
-					ID:         "change-1",
-					ChangeType: "create",
-					ObjectType: "manufacturer",
-					ObjectID:   intPtr(1),
-				},
-			},
-		},
-	}, nil)
-	mockNetBoxClient.On("ApplyChangeSet", mock.Anything, mock.Anything).Return(&netboxdiodeplugin.ChangeSetResult{
-		ChangeSet: &netboxdiodeplugin.ChangeSet{
-			ID: "test-changeset-id",
-		},
-	}, nil)
+	// GetDefaultBranch is only called by Ops's background refresher (started
+	// via ops.Start). This test does not start the refresher, so the consume
+	// loop reads from a cold cache and never hits the mock.
 
 	mockMetrics.On("RecordHandleMessage", mock.Anything, mock.Anything).Return()
 	mockMetrics.On("RecordIngestionLogCreate", mock.Anything, mock.Anything).Return()
-	mockMetrics.On("RecordChangeSetCreate", mock.Anything, mock.Anything, mock.Anything).Return()
-	mockMetrics.On("RecordChangeSetApply", mock.Anything, mock.Anything, mock.Anything).Return()
 
 	// Add a compressed message to the Redis stream
 	streamID := reconciler.DefaultRedisStreamID
@@ -365,74 +339,32 @@ func TestIngestionProcessorStart(t *testing.T) {
 
 func TestIngestionProcessor_DuplicateHandling(t *testing.T) {
 	tests := []struct {
-		name                 string
-		existingLogState     reconcilerpb.State
-		stateAfterChangeset  reconcilerpb.State
-		makePrimary          bool
-		expectSkipProcessing bool
-		changeSetHasChanges  bool
-		createsChangeSet     bool
+		name             string
+		existingLogState reconcilerpb.State
 	}{
 		{
-			name:                 "duplicate of IGNORED - skip processing",
-			existingLogState:     reconcilerpb.State_IGNORED,
-			expectSkipProcessing: true,
+			name:             "duplicate of IGNORED",
+			existingLogState: reconcilerpb.State_IGNORED,
 		},
 		{
-			name:                 "duplicate of QUEUED - reprocess existing",
-			existingLogState:     reconcilerpb.State_QUEUED,
-			stateAfterChangeset:  reconcilerpb.State_OPEN,
-			expectSkipProcessing: false,
-			changeSetHasChanges:  true,
-			createsChangeSet:     true,
+			name:             "duplicate of QUEUED",
+			existingLogState: reconcilerpb.State_QUEUED,
 		},
 		{
-			name:                 "duplicate of OPEN - reprocess existing",
-			existingLogState:     reconcilerpb.State_OPEN,
-			stateAfterChangeset:  reconcilerpb.State_OPEN,
-			expectSkipProcessing: false,
-			changeSetHasChanges:  true,
-			createsChangeSet:     true,
+			name:             "duplicate of OPEN",
+			existingLogState: reconcilerpb.State_OPEN,
 		},
 		{
-			name:                 "duplicate of FAILED - reprocess existing",
-			existingLogState:     reconcilerpb.State_FAILED,
-			stateAfterChangeset:  reconcilerpb.State_OPEN,
-			expectSkipProcessing: false,
-			changeSetHasChanges:  true,
-			createsChangeSet:     true,
+			name:             "duplicate of FAILED",
+			existingLogState: reconcilerpb.State_FAILED,
 		},
 		{
-			name:                 "duplicate of APPLIED with changes - reprocess existing",
-			existingLogState:     reconcilerpb.State_APPLIED,
-			stateAfterChangeset:  reconcilerpb.State_OPEN,
-			expectSkipProcessing: false,
-			changeSetHasChanges:  true,
-			createsChangeSet:     true,
+			name:             "duplicate of APPLIED",
+			existingLogState: reconcilerpb.State_APPLIED,
 		},
 		{
-			name:                 "duplicate of APPLIED without changes - no reprocessing",
-			existingLogState:     reconcilerpb.State_APPLIED,
-			stateAfterChangeset:  reconcilerpb.State_APPLIED,
-			expectSkipProcessing: false,
-			changeSetHasChanges:  false,
-			createsChangeSet:     false,
-		},
-		{
-			name:                 "duplicate of NO_CHANGES with changes - reprocess existing",
-			existingLogState:     reconcilerpb.State_NO_CHANGES,
-			stateAfterChangeset:  reconcilerpb.State_OPEN,
-			expectSkipProcessing: false,
-			changeSetHasChanges:  true,
-			createsChangeSet:     true,
-		},
-		{
-			name:                 "duplicate of NO_CHANGES without changes - no reprocessing",
-			existingLogState:     reconcilerpb.State_NO_CHANGES,
-			stateAfterChangeset:  reconcilerpb.State_NO_CHANGES,
-			expectSkipProcessing: false,
-			changeSetHasChanges:  false,
-			createsChangeSet:     false,
+			name:             "duplicate of NO_CHANGES",
+			existingLogState: reconcilerpb.State_NO_CHANGES,
 		},
 	}
 
@@ -485,38 +417,8 @@ func TestIngestionProcessor_DuplicateHandling(t *testing.T) {
 				WasDuplicate: true,
 			}
 
-			mockOps.On("RefreshDefaultBranch", mock.Anything).Return((*netboxdiodeplugin.Branch)(nil), nil)
+			mockOps.On("DefaultBranch", mock.Anything).Return((*netboxdiodeplugin.Branch)(nil), nil)
 			mockOps.On("BulkCreateIngestionLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return([]*reconops.CreateIngestionLogResult{duplicateResult}, nil)
-
-			if !tt.expectSkipProcessing {
-				changeSetLogID := existingLogID
-				ingestionLogForChangeset := duplicateResult.IngestionLog
-
-				changes := []changeset.Change{}
-				if tt.changeSetHasChanges {
-					changes = append(changes, changeset.Change{
-						ID:         "test-change",
-						ChangeType: "create",
-						ObjectType: "dcim.site",
-					})
-				}
-
-				mockChangeSet := &changeset.ChangeSet{
-					ID:      "changeset-id",
-					Changes: changes,
-				}
-
-				mockOps.On("GenerateChangeSet", mock.Anything, changeSetLogID, ingestionLogForChangeset, "").Run(func(_ mock.Arguments) {
-					ingestionLogForChangeset.State = tt.stateAfterChangeset
-				}).Return(int32Ptr(1), mockChangeSet, nil)
-
-				mockMetrics.On("RecordChangeSetCreate", mock.Anything, mock.Anything, mock.Anything).Return()
-
-				if tt.stateAfterChangeset == reconcilerpb.State_OPEN {
-					mockOps.On("ApplyChangeSet", mock.Anything, changeSetLogID, ingestionLogForChangeset, int32(1), mockChangeSet).Return(nil)
-					mockMetrics.On("RecordChangeSetApply", mock.Anything, mock.Anything, mock.Anything).Return()
-				}
-			}
 
 			mockMetrics.On("RecordHandleMessage", mock.Anything, mock.Anything).Return()
 			mockMetrics.On("RecordIngestionLogCreate", mock.Anything, mock.Anything).Return()
