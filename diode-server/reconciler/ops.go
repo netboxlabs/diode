@@ -20,15 +20,11 @@ import (
 )
 
 const (
-	// DefaultBranchRefreshInterval is how often the background refresher
-	// re-fetches the default branch from the NetBox plugin. Picked short
-	// enough to pick up a UI-side default-branch change within ~a minute,
-	// long enough to be invisible to NetBox load.
-	DefaultBranchRefreshInterval = 60 * time.Second
+	// DefaultBranchRefreshInterval is how often the background refresher re-fetches the default branch.
+	DefaultBranchRefreshInterval = 5 * time.Minute
 
-	// DefaultBranchFetchTimeout bounds each individual refresh attempt.
-	// Kept short so a stuck NetBox/Hydra doesn't extend cycle time.
-	DefaultBranchFetchTimeout = 5 * time.Second
+	// DefaultBranchFetchTimeout bounds each refresh attempt; matches the bulk-plan-apply client timeout.
+	DefaultBranchFetchTimeout = 30 * time.Second
 )
 
 // Limits is an interface that provides limits for the reconciler operations to enforce
