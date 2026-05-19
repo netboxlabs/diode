@@ -14,7 +14,7 @@ import (
 
 // AutoApplyProcessor polls ingestion_logs for QUEUED rows belonging to auto-apply
 // tenants and drives them through plan + apply in a single /bulk-plan-apply call.
-// It is mutually exclusive with IngestionLogProcessor per tenant — the orchestrator
+// It is mutually exclusive with IngestionLogProcessor per tenant - the orchestrator
 // starts one or the other based on AUTO_APPLY_CHANGESETS, never both.
 //
 // State machine per claimed entity:
@@ -25,6 +25,11 @@ import (
 //
 // On crash mid-batch, rows stuck in APPLYING are reset to QUEUED at startup by
 // ResetApplyingIngestionLogs so the next worker iteration picks them up.
+//
+// Shutdown is graceful: see IngestionLogProcessor for the workCtx/pollCtx split
+// and defaultProcessorGracefulShutdownTimeout. The drain window is what keeps
+// in-flight /bulk-plan-apply calls from leaving rows orphaned in APPLYING on a
+// tenant-config restart.
 type AutoApplyProcessor struct {
 	config       Config
 	logger       *slog.Logger
@@ -32,14 +37,20 @@ type AutoApplyProcessor struct {
 	repo         Repository
 	metrics      Metrics
 	backpressure BackpressureFunc
-	cancel       context.CancelFunc
-	mx           sync.Mutex
-	batchSize    int32
+
+	// mx protects the lifecycle fields below: workCancel, pollCancel, done.
+	// Set by Start, read by Stop/shutdown/watchParent.
+	mx         sync.Mutex
+	workCancel context.CancelFunc
+	pollCancel context.CancelFunc
+	done       chan struct{}
+
+	batchSize int32
 }
 
 // NewAutoApplyProcessor creates a new auto-apply processor. backpressure may be
 // nil; when supplied it yields the poll loop (sleeps one idle interval) while
-// the caller-defined condition holds — typically used to let the Redis consume
+// the caller-defined condition holds - typically used to let the Redis consume
 // loop catch up before AutoApply starts taking NetBox capacity.
 func NewAutoApplyProcessor(logger *slog.Logger, cfg Config, repo Repository, ops IngestionProcessorOps, metrics Metrics, backpressure BackpressureFunc) *AutoApplyProcessor {
 	batchSize := cfg.AutoApplyProcessorBatchSize
@@ -65,30 +76,77 @@ func (p *AutoApplyProcessor) Name() string {
 // Start begins polling for QUEUED ingestion logs and processing them with combined plan + apply.
 func (p *AutoApplyProcessor) Start(ctx context.Context) error {
 	p.logger.Info("starting component", "name", p.Name())
+
+	workCtx, workCancel := context.WithCancel(context.WithoutCancel(ctx))
+	pollCtx, pollCancel := context.WithCancel(workCtx)
+	done := make(chan struct{})
+
 	p.mx.Lock()
-	ctx, cancel := context.WithCancel(ctx)
-	p.cancel = cancel
+	p.workCancel = workCancel
+	p.pollCancel = pollCancel
+	p.done = done
 	p.mx.Unlock()
-	return p.pollLoop(ctx)
+
+	var watchWG sync.WaitGroup
+	watchWG.Add(1)
+	go func() {
+		defer watchWG.Done()
+		p.watchParent(ctx, done)
+	}()
+
+	err := p.pollLoop(pollCtx, workCtx)
+	workCancel()
+	close(done)
+	watchWG.Wait()
+	return err
 }
 
-// Stop stops the auto-apply processor.
+// Stop stops the auto-apply processor. Waits up to
+// defaultProcessorGracefulShutdownTimeout for in-flight /bulk-plan-apply calls
+// to drain (so APPLYING rows reach a terminal state), then force-cancels.
 func (p *AutoApplyProcessor) Stop() error {
 	p.logger.Info("stopping component", "name", p.Name())
-	p.mx.Lock()
-	if p.cancel != nil {
-		p.cancel()
-		p.cancel = nil
-	}
-	p.mx.Unlock()
+	p.shutdown()
 	return nil
 }
 
-func (p *AutoApplyProcessor) pollLoop(ctx context.Context) error {
+func (p *AutoApplyProcessor) shutdown() {
+	p.mx.Lock()
+	pollCancel := p.pollCancel
+	workCancel := p.workCancel
+	done := p.done
+	p.mx.Unlock()
+
+	if pollCancel == nil || done == nil {
+		return
+	}
+	pollCancel()
+
+	select {
+	case <-done:
+	case <-time.After(defaultProcessorGracefulShutdownTimeout):
+		p.logger.Warn("auto-apply processor did not drain within timeout, forcing cancel",
+			"name", p.Name(), "timeout", defaultProcessorGracefulShutdownTimeout)
+		if workCancel != nil {
+			workCancel()
+		}
+		<-done
+	}
+}
+
+func (p *AutoApplyProcessor) watchParent(parentCtx context.Context, done <-chan struct{}) {
+	select {
+	case <-parentCtx.Done():
+		p.shutdown()
+	case <-done:
+	}
+}
+
+func (p *AutoApplyProcessor) pollLoop(pollCtx, workCtx context.Context) error {
 	concurrency := max(p.config.AutoApplyProcessorConcurrency, 1)
 
 	if concurrency == 1 {
-		p.pollWorker(ctx)
+		p.pollWorker(pollCtx, workCtx)
 		return nil
 	}
 
@@ -97,33 +155,43 @@ func (p *AutoApplyProcessor) pollLoop(ctx context.Context) error {
 	for range concurrency {
 		go func() {
 			defer wg.Done()
-			p.pollWorker(ctx)
+			p.pollWorker(pollCtx, workCtx)
 		}()
 	}
 	wg.Wait()
 	return nil
 }
 
-func (p *AutoApplyProcessor) pollWorker(ctx context.Context) {
+func (p *AutoApplyProcessor) pollWorker(pollCtx, workCtx context.Context) {
 	for {
+		// Exit between batches if graceful shutdown has been signaled.
+		select {
+		case <-pollCtx.Done():
+			return
+		default:
+		}
+
 		// Yield to the Redis consume loop when it's behind on draining.
 		// AutoApply both writes to NetBox and reads Postgres heavily, so
 		// during burst ingest we want consume loop to clear the stream
 		// before AutoApply contends for the same resources.
-		if p.backpressure != nil && p.backpressure(ctx) {
+		if p.backpressure != nil && p.backpressure(pollCtx) {
 			select {
-			case <-ctx.Done():
+			case <-pollCtx.Done():
 				return
 			case <-time.After(defaultIngestionLogIdleInterval):
 				continue
 			}
 		}
 
-		batch, err := p.repo.ClaimQueuedForAutoApply(ctx, p.batchSize)
+		// Claim + process run on workCtx so they survive pollCtx cancel.
+		// Only force-cancellation of workCtx (after drain timeout) aborts
+		// them, which is what prevents APPLYING orphans on tenant restart.
+		batch, err := p.repo.ClaimQueuedForAutoApply(workCtx, p.batchSize)
 		if err != nil {
 			p.logger.Error("failed to claim queued ingestion logs for auto-apply", "error", err)
 			select {
-			case <-ctx.Done():
+			case <-pollCtx.Done():
 				return
 			case <-time.After(defaultIngestionLogIdleInterval):
 				continue
@@ -132,18 +200,18 @@ func (p *AutoApplyProcessor) pollWorker(ctx context.Context) {
 
 		if len(batch) == 0 {
 			select {
-			case <-ctx.Done():
+			case <-pollCtx.Done():
 				return
 			case <-time.After(defaultIngestionLogIdleInterval):
 				continue
 			}
 		}
 
-		p.processBatch(ctx, batch)
+		p.processBatch(workCtx, batch)
 
 		if len(batch) < int(p.batchSize) {
 			select {
-			case <-ctx.Done():
+			case <-pollCtx.Done():
 				return
 			case <-time.After(defaultIngestionLogPollInterval):
 			}
