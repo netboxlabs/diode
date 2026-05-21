@@ -10,6 +10,8 @@ import (
 
 	ops "github.com/netboxlabs/diode/diode-server/reconciler/ops"
 
+	changeset "github.com/netboxlabs/diode/diode-server/reconciler/changeset"
+
 	reconcilerpb "github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 )
 
@@ -359,6 +361,55 @@ func (_c *IngestionProcessorOps_RefreshDefaultBranch_Call) Return(_a0 *netboxdio
 }
 
 func (_c *IngestionProcessorOps_RefreshDefaultBranch_Call) RunAndReturn(run func(context.Context) (*netboxdiodeplugin.Branch, error)) *IngestionProcessorOps_RefreshDefaultBranch_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ApplyChangeSetForLog provides a mock function with given fields: ctx, item, cs, branchID
+func (_m *IngestionProcessorOps) ApplyChangeSetForLog(ctx context.Context, item ops.QueuedIngestionLog, cs *changeset.ChangeSet, branchID string) error {
+	ret := _m.Called(ctx, item, cs, branchID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ApplyChangeSetForLog")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, ops.QueuedIngestionLog, *changeset.ChangeSet, string) error); ok {
+		r0 = rf(ctx, item, cs, branchID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// IngestionProcessorOps_ApplyChangeSetForLog_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ApplyChangeSetForLog'
+type IngestionProcessorOps_ApplyChangeSetForLog_Call struct {
+	*mock.Call
+}
+
+// ApplyChangeSetForLog is a helper method to define mock.On call
+//   - ctx context.Context
+//   - item ops.QueuedIngestionLog
+//   - cs *changeset.ChangeSet
+//   - branchID string
+func (_e *IngestionProcessorOps_Expecter) ApplyChangeSetForLog(ctx interface{}, item interface{}, cs interface{}, branchID interface{}) *IngestionProcessorOps_ApplyChangeSetForLog_Call {
+	return &IngestionProcessorOps_ApplyChangeSetForLog_Call{Call: _e.mock.On("ApplyChangeSetForLog", ctx, item, cs, branchID)}
+}
+
+func (_c *IngestionProcessorOps_ApplyChangeSetForLog_Call) Run(run func(ctx context.Context, item ops.QueuedIngestionLog, cs *changeset.ChangeSet, branchID string)) *IngestionProcessorOps_ApplyChangeSetForLog_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(ops.QueuedIngestionLog), args[2].(*changeset.ChangeSet), args[3].(string))
+	})
+	return _c
+}
+
+func (_c *IngestionProcessorOps_ApplyChangeSetForLog_Call) Return(_a0 error) *IngestionProcessorOps_ApplyChangeSetForLog_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *IngestionProcessorOps_ApplyChangeSetForLog_Call) RunAndReturn(run func(context.Context, ops.QueuedIngestionLog, *changeset.ChangeSet, string) error) *IngestionProcessorOps_ApplyChangeSetForLog_Call {
 	_c.Call.Return(run)
 	return _c
 }
