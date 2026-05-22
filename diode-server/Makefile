@@ -1,6 +1,7 @@
 UTILITIES        = authmanager
+GENERATORS       = protograph
 BUILD_UTILITIES  = $(addprefix build-,$(UTILITIES))
-SERVICES         := $(filter-out $(UTILITIES),$(shell find ./cmd/* -type d -exec basename {} \;))
+SERVICES         := $(filter-out $(UTILITIES) $(GENERATORS),$(shell find ./cmd/* -type d -exec basename {} \;))
 BUILD_SERVICES   = $(addprefix build-,$(SERVICES))
 DOCKER_SERVICES  = $(addprefix docker-,$(SERVICES))
 BUILD_DIR        ?= ./build
@@ -137,6 +138,10 @@ gen-mocks:
 .PHONY: gen-dbstore
 gen-dbstore:
 	sqlc generate
+
+.PHONY: gen-entity-mappings
+gen-entity-mappings:
+	go run ./cmd/protograph -proto=../diode-proto/diode/v1/ingester.proto -output=gen/protograph/entity_mappings.go -package=protograph
 
 .PHONY: create-migration
 # Call using `make create-migration name=you_migration_name`

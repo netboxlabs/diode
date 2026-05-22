@@ -32,7 +32,7 @@ func TestHydraClientManager(t *testing.T) {
 	ctx := context.Background()
 
 	req := testcontainers.ContainerRequest{
-		Image:        "oryd/hydra:v25.4.0",
+		Image:        "oryd/hydra:v26.2.0",
 		ExposedPorts: []string{"4445/tcp"},
 		WaitingFor:   wait.ForLog("Setting up http server on 0.0.0.0:4445"),
 		Cmd:          []string{"serve", "all", "--dev"},

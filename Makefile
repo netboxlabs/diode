@@ -18,3 +18,31 @@ gen-diode-server-go:
 .PHONY: detect-breaking-changes
 detect-breaking-changes:
 	@cd diode-proto/ && buf breaking --against '../.git#subdir=diode-proto'
+
+.PHONY: ruff-check
+ruff-check:
+	@echo "🔍 Running ruff check on tests directory..."
+	@test -d tests/.venv || python3 -m venv tests/.venv
+	@. tests/.venv/bin/activate && \
+		pip install -q -r tests/requirements.txt && \
+		ruff check tests/ --exclude "*_pb2*.py"
+	@echo "✅ Ruff check completed"
+
+.PHONY: ruff-format-check
+ruff-format-check:
+	@echo "🔍 Running ruff format check on tests directory..."
+	@test -d tests/.venv || python3 -m venv tests/.venv
+	@. tests/.venv/bin/activate && \
+		pip install -q -r tests/requirements.txt && \
+		ruff format --check tests/ --exclude "*_pb2*.py"
+	@echo "✅ Ruff format check completed"
+
+.PHONY: ruff-fix
+ruff-fix:
+	@echo "🔧 Running ruff fix on tests directory..."
+	@test -d tests/.venv || python3 -m venv tests/.venv
+	@. tests/.venv/bin/activate && \
+		pip install -q -r tests/requirements.txt && \
+		ruff check --fix tests/ --exclude "*_pb2*.py" && \
+		ruff format tests/ --exclude "*_pb2*.py"
+	@echo "✅ Ruff fix completed"

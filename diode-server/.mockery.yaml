@@ -3,6 +3,7 @@ filename: "{{.InterfaceName | lower }}.go"
 with-expecter: true
 issue-845-fix: true
 resolve-type-alias: False
+disable-func-mocks: true
 packages:
   github.com/netboxlabs/diode/diode-server/netboxdiodeplugin:
     config:
@@ -15,6 +16,16 @@ packages:
       dir: "{{.InterfaceDir}}/mocks"
       outpkg: mocks
   github.com/netboxlabs/diode/diode-server/reconciler:
+    config:
+      all: true
+      dir: "{{.InterfaceDir}}/mocks"
+      outpkg: mocks
+  github.com/netboxlabs/diode/diode-server/graph:
+    config:
+      all: true
+      dir: "{{.InterfaceDir}}/mocks"
+      outpkg: mocks
+  github.com/netboxlabs/diode/diode-server/entitymatcher:
     config:
       all: true
       dir: "{{.InterfaceDir}}/mocks"

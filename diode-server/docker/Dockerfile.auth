@@ -4,7 +4,7 @@ RUN apk add --no-cache jq
 
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
-COPY --chown=appuser:appgroup --from=oryd/hydra:v25.4.0 /usr/bin/hydra /usr/bin/hydra
+COPY --chown=appuser:appgroup --from=oryd/hydra:v26.2.0@sha256:ff67c7fb5f95074fa53374d41151713554960504b340cd3f95b09e65deaea2a9 /usr/bin/hydra /usr/bin/hydra
 
 ARG SVC
 

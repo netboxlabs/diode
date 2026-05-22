@@ -198,6 +198,12 @@ diodeIngester:
     sentryDsn: ""
     # -- redis stream db
     redisStreamDb: 1
+    # -- redis used_memory / maxmemory percentage at which the ingester rejects Ingest requests with ResourceExhausted; 0 disables the check
+    redisMemoryHighWatermarkPct: 0
+    # -- minimum interval between Redis INFO memory polls when the high-watermark check is enabled (Go duration)
+    redisMemoryCheckInterval: 500ms
+    # -- per-call timeout for the Redis INFO memory poll (Go duration)
+    redisMemoryCheckTimeout: 250ms
     # -- telemetry metrics exporter
     telemetryMetricsExporter: prometheus
     # -- telemetry traces exporter
@@ -262,14 +268,22 @@ diodeReconciler:
     migrationEnabled: "true"
     # -- auto apply changesets
     autoApplyChangesets: "true"
-    # -- reconciler rate limiter rps
-    reconcilerRateLimiterRps: 20
-    # -- reconciler rate limiter burst
-    reconcilerRateLimiterBurst: 1
     # -- diode to netbox rate limiter rps
     diodeToNetboxRateLimiterRps: 20
     # -- diode to netbox rate limiter burst
     diodeToNetboxRateLimiterBurst: 1
+    # -- ingestion log processor concurrency
+    ingestionLogProcessorConcurrency: 4
+    # -- ingestion log processor batch size
+    ingestionLogProcessorBatchSize: 400
+    # -- ingestion log processor redis-stream-length backpressure threshold; 0 disables
+    ingestionLogProcessorBackpressureThreshold: 100
+    # -- auto apply processor concurrency
+    autoApplyProcessorConcurrency: 1
+    # -- auto apply processor batch size
+    autoApplyProcessorBatchSize: 50
+    # -- NetBox diode plugin HTTP client timeout (seconds)
+    netboxDiodePluginApiTimeoutSeconds: 5
     # -- postgres db name
     postgresDbName: diode
     # -- postgres user

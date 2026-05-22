@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc/reflection"
 
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
+	"github.com/netboxlabs/diode/diode-server/grpckeepalive"
 )
 
 // Server is a reconciler Server
@@ -39,12 +40,14 @@ func NewServer(ctx context.Context, logger *slog.Logger, repository Repository, 
 
 	redisOptions := redis.Options{
 		Addr:      fmt.Sprintf("%s:%s", cfg.RedisHost, cfg.RedisPort),
-		Password:  cfg.RedisPassword,
 		DB:        cfg.RedisDB,
 		TLSConfig: redisTLSConfig,
 	}
 	if cfg.RedisUsername != "" {
 		redisOptions.Username = cfg.RedisUsername
+	}
+	if cfg.RedisPassword != "" {
+		redisOptions.Password = cfg.RedisPassword
 	}
 	redisClient := redis.NewClient(&redisOptions)
 
@@ -57,10 +60,10 @@ func NewServer(ctx context.Context, logger *slog.Logger, repository Repository, 
 		return nil, fmt.Errorf("failed to listen on port %d: %v", cfg.GRPCPort, err)
 	}
 
-	grpcServer := grpc.NewServer(
+	grpcServer := grpc.NewServer(append(grpckeepalive.ServerOptions(),
 		grpc.ChainUnaryInterceptor(serverInterceptors...),
 		grpc.StatsHandler(otelgrpc.NewServerHandler()),
-	)
+	)...)
 
 	component := &Server{
 		config:       cfg,

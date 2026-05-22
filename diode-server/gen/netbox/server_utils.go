@@ -1,5 +1,6 @@
 // Generated code. DO NOT EDIT.
-// Timestamp: 2026-01-12 17:44:14Z
+// Source: NetBox v4.6.0
+// Timestamp: 2026-05-14 20:30:15Z
 package netbox
 
 import (
@@ -20,8 +21,6 @@ const (
 	CableObjectTypeName                     = "Cable"
 	CablePathObjectType                     = "dcim.cablepath"
 	CablePathObjectTypeName                 = "Cable Path"
-	CableTerminationObjectType              = "dcim.cabletermination"
-	CableTerminationObjectTypeName          = "Cable Termination"
 	CircuitObjectType                       = "circuits.circuit"
 	CircuitObjectTypeName                   = "Circuit"
 	CircuitGroupObjectType                  = "circuits.circuitgroup"
@@ -200,6 +199,16 @@ const (
 	OwnerObjectTypeName                     = "Owner"
 	OwnerGroupObjectType                    = "users.ownergroup"
 	OwnerGroupObjectTypeName                = "Owner Group"
+	CableBundleObjectType                   = "dcim.cablebundle"
+	CableBundleObjectTypeName               = "Cable Bundle"
+	RackGroupObjectType                     = "dcim.rackgroup"
+	RackGroupObjectTypeName                 = "Rack Group"
+	ScriptModuleObjectType                  = "core.managedfile"
+	ScriptModuleObjectTypeName              = "Script Module"
+	VirtualMachineTypeObjectType            = "virtualization.virtualmachinetype"
+	VirtualMachineTypeObjectTypeName        = "Virtual Machine Type"
+	DeviceConfigObjectType                  = "dcim.deviceconfig"
+	DeviceConfigObjectTypeName              = "Device Config"
 )
 
 // entityTypeMap provides O(1) lookup vs O(n) linear switch evaluation
@@ -209,7 +218,6 @@ var entityTypeMap = map[reflect.Type]string{
 	reflect.TypeOf((*pb.Entity_Aggregate)(nil)):                 AggregateObjectType,
 	reflect.TypeOf((*pb.Entity_Cable)(nil)):                     CableObjectType,
 	reflect.TypeOf((*pb.Entity_CablePath)(nil)):                 CablePathObjectType,
-	reflect.TypeOf((*pb.Entity_CableTermination)(nil)):          CableTerminationObjectType,
 	reflect.TypeOf((*pb.Entity_Circuit)(nil)):                   CircuitObjectType,
 	reflect.TypeOf((*pb.Entity_CircuitGroup)(nil)):              CircuitGroupObjectType,
 	reflect.TypeOf((*pb.Entity_CircuitGroupAssignment)(nil)):    CircuitGroupAssignmentObjectType,
@@ -299,6 +307,10 @@ var entityTypeMap = map[reflect.Type]string{
 	reflect.TypeOf((*pb.Entity_CustomLink)(nil)):                CustomLinkObjectType,
 	reflect.TypeOf((*pb.Entity_Owner)(nil)):                     OwnerObjectType,
 	reflect.TypeOf((*pb.Entity_OwnerGroup)(nil)):                OwnerGroupObjectType,
+	reflect.TypeOf((*pb.Entity_CableBundle)(nil)):               CableBundleObjectType,
+	reflect.TypeOf((*pb.Entity_RackGroup)(nil)):                 RackGroupObjectType,
+	reflect.TypeOf((*pb.Entity_ScriptModule)(nil)):              ScriptModuleObjectType,
+	reflect.TypeOf((*pb.Entity_VirtualMachineType)(nil)):        VirtualMachineTypeObjectType,
 }
 
 func GetObjectType(entity *pb.Entity) (string, error) {
@@ -321,8 +333,6 @@ func GetObjectTypeName(objectType string) (string, error) {
 		return CableObjectTypeName, nil
 	case CablePathObjectType:
 		return CablePathObjectTypeName, nil
-	case CableTerminationObjectType:
-		return CableTerminationObjectTypeName, nil
 	case CircuitObjectType:
 		return CircuitObjectTypeName, nil
 	case CircuitGroupObjectType:
@@ -501,6 +511,16 @@ func GetObjectTypeName(objectType string) (string, error) {
 		return OwnerObjectTypeName, nil
 	case OwnerGroupObjectType:
 		return OwnerGroupObjectTypeName, nil
+	case CableBundleObjectType:
+		return CableBundleObjectTypeName, nil
+	case RackGroupObjectType:
+		return RackGroupObjectTypeName, nil
+	case ScriptModuleObjectType:
+		return ScriptModuleObjectTypeName, nil
+	case VirtualMachineTypeObjectType:
+		return VirtualMachineTypeObjectTypeName, nil
+	case DeviceConfigObjectType:
+		return DeviceConfigObjectTypeName, nil
 	default:
 		return "", fmt.Errorf("unknown object type: %v", objectType)
 	}
@@ -512,6 +532,8 @@ func GetPrimaryValue(entity *pb.Entity) (string, error) {
 		return fmt.Sprintf("%v", e.Asn.Asn), nil
 	case *pb.Entity_AsnRange:
 		return fmt.Sprintf("%v", e.AsnRange.Name), nil
+	case *pb.Entity_CableBundle:
+		return fmt.Sprintf("%v", e.CableBundle.Name), nil
 	case *pb.Entity_Circuit:
 		return fmt.Sprintf("%v", e.Circuit.Cid), nil
 	case *pb.Entity_CircuitGroup:
@@ -610,6 +632,8 @@ func GetPrimaryValue(entity *pb.Entity) (string, error) {
 		return fmt.Sprintf("%v", e.Rir.Name), nil
 	case *pb.Entity_Rack:
 		return fmt.Sprintf("%v", e.Rack.Name), nil
+	case *pb.Entity_RackGroup:
+		return fmt.Sprintf("%v", e.RackGroup.Name), nil
 	case *pb.Entity_RackRole:
 		return fmt.Sprintf("%v", e.RackRole.Name), nil
 	case *pb.Entity_RackType:
@@ -660,6 +684,8 @@ func GetPrimaryValue(entity *pb.Entity) (string, error) {
 		return fmt.Sprintf("%v", e.VirtualDisk.Name), nil
 	case *pb.Entity_VirtualMachine:
 		return fmt.Sprintf("%v", e.VirtualMachine.Name), nil
+	case *pb.Entity_VirtualMachineType:
+		return fmt.Sprintf("%v", e.VirtualMachineType.Name), nil
 	case *pb.Entity_WirelessLan:
 		return fmt.Sprintf("%v", e.WirelessLan.Ssid), nil
 	case *pb.Entity_WirelessLanGroup:

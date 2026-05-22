@@ -1,14 +1,15 @@
 package reconciler_test
 
 import (
+	"bytes"
 	"context"
-	"database/sql"
 	"log/slog"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/alicebob/miniredis/v2"
+	"github.com/andybalholm/brotli"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
@@ -21,13 +22,21 @@ import (
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
 	pluginmocks "github.com/netboxlabs/diode/diode-server/netboxdiodeplugin/mocks"
 	"github.com/netboxlabs/diode/diode-server/reconciler"
-	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
 	"github.com/netboxlabs/diode/diode-server/reconciler/mocks"
-	"github.com/netboxlabs/diode/diode-server/reconciler/ops"
+	reconops "github.com/netboxlabs/diode/diode-server/reconciler/ops"
 )
 
 func int32Ptr(i int32) *int32 { return &i }
-func intPtr(i int) *int       { return &i }
+
+func testCompressBrotli(t *testing.T, data []byte) []byte {
+	t.Helper()
+	var buf bytes.Buffer
+	w := brotli.NewWriterLevel(&buf, 1)
+	_, err := w.Write(data)
+	require.NoError(t, err)
+	require.NoError(t, w.Close())
+	return buf.Bytes()
+}
 
 func TestNewIngestionProcessor(t *testing.T) {
 	ctx := context.Background()
@@ -267,6 +276,7 @@ func TestIngestionProcessorStart(t *testing.T) {
 	}
 	reqBytes, err := proto.Marshal(ingestReq)
 	assert.NoError(t, err)
+	compressedReq := testCompressBrotli(t, reqBytes)
 
 	// Start processor in a separate goroutine
 	go func() {
@@ -276,48 +286,31 @@ func TestIngestionProcessorStart(t *testing.T) {
 	// Wait server
 	time.Sleep(50 * time.Millisecond)
 
-	mockRepository.On("CreateIngestionLog", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
-	mockRepository.On("FindPriorIngestionLogByEntityHash", mock.Anything, mock.Anything, mock.Anything).Return(nil, nil, sql.ErrNoRows)
-	mockRepository.On("UpdateIngestionLogStateWithError", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(nil)
-	mockRepository.On("CreateChangeSet", mock.Anything, mock.Anything, mock.Anything).Return(int32Ptr(1), nil)
-	mockRepository.On("TruncateChangeSets", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-	// Mock GetDefaultBranch to return nil (no default branch)
-	mockNetBoxClient.On("GetDefaultBranch", mock.Anything).Return((*netboxdiodeplugin.Branch)(nil), nil)
-
-	mockNetBoxClient.On("GenerateDiff", mock.Anything, mock.Anything).Return(&netboxdiodeplugin.ChangeSetResult{
-		ChangeSet: &netboxdiodeplugin.ChangeSet{
-			ID: "test-changeset-id",
-			Changes: []netboxdiodeplugin.Change{
-				{
-					ID:         "change-1",
-					ChangeType: "create",
-					ObjectType: "manufacturer",
-					ObjectID:   intPtr(1),
-				},
-			},
-		},
-	}, nil)
-	mockNetBoxClient.On("ApplyChangeSet", mock.Anything, mock.Anything).Return(&netboxdiodeplugin.ChangeSetResult{
-		ChangeSet: &netboxdiodeplugin.ChangeSet{
-			ID: "test-changeset-id",
-		},
-	}, nil)
+	mockRepository.On("FindPriorIngestionLogsByEntityHashes", mock.Anything, mock.Anything, mock.Anything).Return(map[string]*reconops.PriorIngestionLog{}, nil)
+	mockRepository.On("BulkCreateIngestionLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
+		func(_ context.Context, logs []*reconcilerpb.IngestionLog, _ [][]byte, _ []string) map[string]int32 {
+			result := make(map[string]int32, len(logs))
+			for i, log := range logs {
+				result[log.Id] = int32(i + 1)
+			}
+			return result
+		}, nil)
+	// GetDefaultBranch is only called by Ops's background refresher (started
+	// via ops.Start). This test does not start the refresher, so the consume
+	// loop reads from a cold cache and never hits the mock.
 
 	mockMetrics.On("RecordHandleMessage", mock.Anything, mock.Anything).Return()
 	mockMetrics.On("RecordIngestionLogCreate", mock.Anything, mock.Anything).Return()
-	mockMetrics.On("RecordChangeSetCreate", mock.Anything, mock.Anything, mock.Anything).Return()
-	mockMetrics.On("RecordChangeSetApply", mock.Anything, mock.Anything, mock.Anything).Return()
 
-	// Add a message to the Redis stream
-	metadata := []string{
-		"request", string(reqBytes),
-		"ingestion_ts", "1720425600",
-	}
+	// Add a compressed message to the Redis stream
 	streamID := reconciler.DefaultRedisStreamID
 	err = redisStreamClient.XAdd(context.Background(), &redis.XAddArgs{
 		Stream: streamID,
-		Values: metadata,
+		Values: map[string]interface{}{
+			"request":      string(compressedReq),
+			"encoding":     "br",
+			"ingestion_ts": "1720425600",
+		},
 	}).Err()
 	assert.NoError(t, err)
 
@@ -346,74 +339,32 @@ func TestIngestionProcessorStart(t *testing.T) {
 
 func TestIngestionProcessor_DuplicateHandling(t *testing.T) {
 	tests := []struct {
-		name                 string
-		existingLogState     reconcilerpb.State
-		stateAfterChangeset  reconcilerpb.State
-		makePrimary          bool
-		expectSkipProcessing bool
-		changeSetHasChanges  bool
-		createsChangeSet     bool
+		name             string
+		existingLogState reconcilerpb.State
 	}{
 		{
-			name:                 "duplicate of IGNORED - skip processing",
-			existingLogState:     reconcilerpb.State_IGNORED,
-			expectSkipProcessing: true,
+			name:             "duplicate of IGNORED",
+			existingLogState: reconcilerpb.State_IGNORED,
 		},
 		{
-			name:                 "duplicate of QUEUED - reprocess existing",
-			existingLogState:     reconcilerpb.State_QUEUED,
-			stateAfterChangeset:  reconcilerpb.State_OPEN,
-			expectSkipProcessing: false,
-			changeSetHasChanges:  true,
-			createsChangeSet:     true,
+			name:             "duplicate of QUEUED",
+			existingLogState: reconcilerpb.State_QUEUED,
 		},
 		{
-			name:                 "duplicate of OPEN - reprocess existing",
-			existingLogState:     reconcilerpb.State_OPEN,
-			stateAfterChangeset:  reconcilerpb.State_OPEN,
-			expectSkipProcessing: false,
-			changeSetHasChanges:  true,
-			createsChangeSet:     true,
+			name:             "duplicate of OPEN",
+			existingLogState: reconcilerpb.State_OPEN,
 		},
 		{
-			name:                 "duplicate of FAILED - reprocess existing",
-			existingLogState:     reconcilerpb.State_FAILED,
-			stateAfterChangeset:  reconcilerpb.State_OPEN,
-			expectSkipProcessing: false,
-			changeSetHasChanges:  true,
-			createsChangeSet:     true,
+			name:             "duplicate of FAILED",
+			existingLogState: reconcilerpb.State_FAILED,
 		},
 		{
-			name:                 "duplicate of APPLIED with changes - reprocess existing",
-			existingLogState:     reconcilerpb.State_APPLIED,
-			stateAfterChangeset:  reconcilerpb.State_OPEN,
-			expectSkipProcessing: false,
-			changeSetHasChanges:  true,
-			createsChangeSet:     true,
+			name:             "duplicate of APPLIED",
+			existingLogState: reconcilerpb.State_APPLIED,
 		},
 		{
-			name:                 "duplicate of APPLIED without changes - no reprocessing",
-			existingLogState:     reconcilerpb.State_APPLIED,
-			stateAfterChangeset:  reconcilerpb.State_APPLIED,
-			expectSkipProcessing: false,
-			changeSetHasChanges:  false,
-			createsChangeSet:     false,
-		},
-		{
-			name:                 "duplicate of NO_CHANGES with changes - reprocess existing",
-			existingLogState:     reconcilerpb.State_NO_CHANGES,
-			stateAfterChangeset:  reconcilerpb.State_OPEN,
-			expectSkipProcessing: false,
-			changeSetHasChanges:  true,
-			createsChangeSet:     true,
-		},
-		{
-			name:                 "duplicate of NO_CHANGES without changes - no reprocessing",
-			existingLogState:     reconcilerpb.State_NO_CHANGES,
-			stateAfterChangeset:  reconcilerpb.State_NO_CHANGES,
-			expectSkipProcessing: false,
-			changeSetHasChanges:  false,
-			createsChangeSet:     false,
+			name:             "duplicate of NO_CHANGES",
+			existingLogState: reconcilerpb.State_NO_CHANGES,
 		},
 	}
 
@@ -460,44 +411,14 @@ func TestIngestionProcessor_DuplicateHandling(t *testing.T) {
 				Entity:     testEntity,
 			}
 
-			duplicateResult := &ops.CreateIngestionLogResult{
+			duplicateResult := &reconops.CreateIngestionLogResult{
 				ID:           existingLogID,
 				IngestionLog: existingLog,
 				WasDuplicate: true,
 			}
 
-			mockOps.On("RefreshDefaultBranch", mock.Anything).Return((*netboxdiodeplugin.Branch)(nil), nil)
-			mockOps.On("CreateIngestionLog", mock.Anything, mock.Anything, mock.Anything).Return(duplicateResult, nil)
-
-			if !tt.expectSkipProcessing {
-				changeSetLogID := existingLogID
-				ingestionLogForChangeset := duplicateResult.IngestionLog
-
-				changes := []changeset.Change{}
-				if tt.changeSetHasChanges {
-					changes = append(changes, changeset.Change{
-						ID:         "test-change",
-						ChangeType: "create",
-						ObjectType: "dcim.site",
-					})
-				}
-
-				mockChangeSet := &changeset.ChangeSet{
-					ID:      "changeset-id",
-					Changes: changes,
-				}
-
-				mockOps.On("GenerateChangeSet", mock.Anything, changeSetLogID, ingestionLogForChangeset, "").Run(func(_ mock.Arguments) {
-					ingestionLogForChangeset.State = tt.stateAfterChangeset
-				}).Return(int32Ptr(1), mockChangeSet, nil)
-
-				mockMetrics.On("RecordChangeSetCreate", mock.Anything, mock.Anything, mock.Anything).Return()
-
-				if tt.stateAfterChangeset == reconcilerpb.State_OPEN {
-					mockOps.On("ApplyChangeSet", mock.Anything, changeSetLogID, ingestionLogForChangeset, int32(1), mockChangeSet).Return(nil)
-					mockMetrics.On("RecordChangeSetApply", mock.Anything, mock.Anything, mock.Anything).Return()
-				}
-			}
+			mockOps.On("DefaultBranch", mock.Anything).Return((*netboxdiodeplugin.Branch)(nil), nil)
+			mockOps.On("BulkCreateIngestionLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return([]*reconops.CreateIngestionLogResult{duplicateResult}, nil)
 
 			mockMetrics.On("RecordHandleMessage", mock.Anything, mock.Anything).Return()
 			mockMetrics.On("RecordIngestionLogCreate", mock.Anything, mock.Anything).Return()
@@ -520,13 +441,15 @@ func TestIngestionProcessor_DuplicateHandling(t *testing.T) {
 			}
 			reqBytes, err := proto.Marshal(ingestReq)
 			require.NoError(t, err)
+			compressedReq := testCompressBrotli(t, reqBytes)
 
 			streamID := reconciler.DefaultRedisStreamID
 			err = redisStreamClient.XAdd(ctx, &redis.XAddArgs{
 				Stream: streamID,
-				Values: []string{
-					"request", string(reqBytes),
-					"ingestion_ts", "1720425600",
+				Values: map[string]interface{}{
+					"request":      string(compressedReq),
+					"encoding":     "br",
+					"ingestion_ts": "1720425600",
 				},
 			}).Err()
 			require.NoError(t, err)

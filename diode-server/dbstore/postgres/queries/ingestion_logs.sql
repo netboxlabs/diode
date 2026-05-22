@@ -63,3 +63,81 @@ UPDATE ingestion_logs
 SET duplicate_count = duplicate_count + 1,
     last_seen = CURRENT_TIMESTAMP
 WHERE id = $1;
+
+-- name: FindPriorIngestionLogsByEntityHashes :many
+SELECT il.*
+FROM unnest(@entity_hashes::text[]) AS h(entity_hash)
+CROSS JOIN LATERAL (
+    SELECT il2.*
+    FROM ingestion_logs il2
+    WHERE il2.entity_hash = h.entity_hash
+      AND (
+          SELECT cs.branch_id
+          FROM change_sets cs
+          WHERE cs.ingestion_log_id = il2.id
+          ORDER BY cs.id DESC
+          LIMIT 1
+      ) IS NOT DISTINCT FROM sqlc.narg('branch_id')::text
+    ORDER BY il2.created_at DESC
+    LIMIT 1
+) il;
+
+-- name: BulkCreateIngestionLogs :copyfrom
+INSERT INTO ingestion_logs (id, external_id, object_type, state, request_id, ingestion_ts, source_ts,
+                            producer_app_name, producer_app_version, sdk_name, sdk_version,
+                            entity, source_metadata, entity_hash)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14);
+
+-- name: FindIngestionLogIDsByExternalIDs :many
+SELECT id, external_id FROM ingestion_logs WHERE external_id = ANY(@external_ids::text[]);
+
+-- name: BulkIncrementDuplicateCounts :exec
+UPDATE ingestion_logs
+SET duplicate_count = duplicate_count + 1,
+    last_seen = CURRENT_TIMESTAMP
+WHERE id = ANY(@ids::int4[]);
+
+-- name: BulkUpdateIngestionLogStates :exec
+UPDATE ingestion_logs il
+SET state = bulk.new_state,
+    error = NULL
+FROM (
+    SELECT unnest(@ids::int4[]) AS id,
+           unnest(@states::int4[]) AS new_state
+) bulk
+WHERE il.id = bulk.id;
+
+-- name: ClaimQueuedIngestionLogs :many
+UPDATE ingestion_logs
+SET state = 2
+WHERE id IN (
+    SELECT id FROM ingestion_logs
+    WHERE state = 1
+    ORDER BY id
+    LIMIT sqlc.arg('batch_size')
+    FOR UPDATE SKIP LOCKED
+)
+RETURNING *;
+
+-- name: ClaimQueuedForAutoApply :many
+-- Claim a batch of QUEUED ingestion logs for the AutoApplyProcessor (combined
+-- plan+apply via /bulk-plan-apply). Transitions QUEUED (1) -> APPLYING (8).
+-- A row stays in APPLYING for the duration of the NetBox round-trip and is
+-- reset back to QUEUED on reconciler startup via ResetApplyingIngestionLogs.
+UPDATE ingestion_logs
+SET state = 8
+WHERE id IN (
+    SELECT id FROM ingestion_logs
+    WHERE state = 1
+    ORDER BY id
+    LIMIT sqlc.arg('batch_size')
+    FOR UPDATE SKIP LOCKED
+)
+RETURNING *;
+
+-- name: ResetApplyingIngestionLogs :exec
+-- Reset rows stuck in APPLYING (worker died mid-batch) back to QUEUED so the
+-- AutoApplyProcessor reclaims them. Idempotent — safe to run on every startup.
+UPDATE ingestion_logs
+SET state = 1
+WHERE state = 8;

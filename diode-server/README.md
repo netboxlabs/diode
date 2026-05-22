@@ -87,12 +87,12 @@ Edit the `.env` file to adjust Diode server settings as needed:
 | Variable | Description | Default |
 |:---|:---|:---|
 | `DIODE_NGINX_PORT` | Port for the Nginx HTTP service. | `8080` |
-| `RECONCILER_RATE_LIMITER_RPS` | Rate limit (requests per second) for reconciler change set generation. | `20` |
-| `RECONCILER_RATE_LIMITER_BURST` | Burst limit for reconciler operations. | `1` |
 | `DIODE_TO_NETBOX_RATE_LIMITER_RPC` | Rate limit for RPC calls to NetBox. | `20` |
 | `DIODE_TO_NETBOX_RATE_LIMITER_BURST` | Burst limit for RPC calls to NetBox. | `1` |
 | `LOGGING_LEVEL` | Log verbosity: `DEBUG`, `INFO`, `WARN`, `ERROR`. | `INFO` |
 | `LOGGING_FORMAT` | Log output format: `json` or `text`. | `json` |
+
+Note that pprof profiling endpoints can be enabled for the reconciler, ingester, and auth services via the environnment variable `PPROF_ADDR` (using host:port addresses)
 
 ---
 
