@@ -55,6 +55,9 @@ LEFT JOIN LATERAL (
 ) lcs ON true
 WHERE il.entity_hash = sqlc.arg('entity_hash')
   AND lcs.branch_id IS NOT DISTINCT FROM sqlc.narg('branch_id')::text
+  -- Exclude terminal ERRORED (7) so a re-ingest after the system gives up
+  -- re-queues instead of deduping against the dead row.
+  AND il.state IS DISTINCT FROM 7
 ORDER BY il.created_at DESC
 LIMIT 1;
 
@@ -78,6 +81,9 @@ CROSS JOIN LATERAL (
           ORDER BY cs.id DESC
           LIMIT 1
       ) IS NOT DISTINCT FROM sqlc.narg('branch_id')::text
+      -- Exclude terminal ERRORED (7): see FindPriorIngestionLogByEntityHash.
+      -- Re-ingest after the retrier gives up must re-queue, not dedupe.
+      AND il2.state IS DISTINCT FROM 7
     ORDER BY il2.created_at DESC
     LIMIT 1
 ) il;
@@ -120,15 +126,16 @@ WHERE id IN (
 RETURNING *;
 
 -- name: ClaimQueuedForAutoApply :many
--- Claim a batch of QUEUED ingestion logs for the AutoApplyProcessor (combined
--- plan+apply via /bulk-plan-apply). Transitions QUEUED (1) -> APPLYING (8).
--- A row stays in APPLYING for the duration of the NetBox round-trip and is
--- reset back to QUEUED on reconciler startup via ResetApplyingIngestionLogs.
+-- Claim a batch for the AutoApplyProcessor: fresh QUEUED (1) plus retry-eligible
+-- PENDING_RETRY (9) rows whose backoff has elapsed, transitioned to APPLYING (8).
+-- Ordered by id (not fresh-first) so a due retry is processed in line rather than
+-- starved behind fresh work when the queue never empties.
 UPDATE ingestion_logs
 SET state = 8
 WHERE id IN (
     SELECT id FROM ingestion_logs
     WHERE state = 1
+       OR (state = 9 AND (next_retry_at IS NULL OR next_retry_at <= NOW()))
     ORDER BY id
     LIMIT sqlc.arg('batch_size')
     FOR UPDATE SKIP LOCKED
@@ -141,3 +148,26 @@ RETURNING *;
 UPDATE ingestion_logs
 SET state = 1
 WHERE state = 8;
+
+-- name: MarkIngestionLogRetry :exec
+-- Record a failed apply: increment retry_count and either re-arm as PENDING_RETRY
+-- (9) with a jittered exponential backoff (base*2^n capped at max, ×random[0.5,1)
+-- to spread retry herds), or retire to terminal ERRORED (7) once the budget is
+-- spent. SET expressions read the pre-update retry_count.
+UPDATE ingestion_logs
+SET retry_count = retry_count + 1,
+    state = CASE
+        WHEN retry_count + 1 >= sqlc.arg('max_retries')::int THEN 7
+        ELSE 9
+    END,
+    next_retry_at = CASE
+        WHEN retry_count + 1 >= sqlc.arg('max_retries')::int THEN NULL
+        ELSE NOW() + make_interval(secs => GREATEST(1, (
+            LEAST(
+                sqlc.arg('base_backoff_secs')::bigint * (1::bigint << LEAST(retry_count, 30)),
+                sqlc.arg('max_backoff_secs')::bigint
+            )::double precision * (0.5 + random() * 0.5)
+        )::int))
+    END,
+    error = sqlc.arg('error')
+WHERE id = sqlc.arg('id');

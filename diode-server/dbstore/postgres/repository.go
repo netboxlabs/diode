@@ -785,3 +785,27 @@ func (r *Repository) ClaimQueuedForAutoApply(ctx context.Context, batchSize int3
 func (r *Repository) ResetApplyingIngestionLogs(ctx context.Context) error {
 	return r.queries.ResetApplyingIngestionLogs(ctx)
 }
+
+// MarkIngestionLogRetry records a failed bulk-plan-apply attempt for retry
+// accounting. It increments retry_count and either re-arms the row as
+// PENDING_RETRY with a jittered exponential backoff, or — once the budget is
+// spent — retires it to terminal ERRORED. The terminal-vs-retry decision and the
+// backoff schedule are computed atomically in SQL (see the MarkIngestionLogRetry
+// query).
+func (r *Repository) MarkIngestionLogRetry(ctx context.Context, id int32, maxRetries int32, baseBackoffSecs int64, maxBackoffSecs int64, err error) error {
+	params := postgres.MarkIngestionLogRetryParams{
+		ID:              id,
+		MaxRetries:      maxRetries,
+		BaseBackoffSecs: baseBackoffSecs,
+		MaxBackoffSecs:  maxBackoffSecs,
+	}
+
+	if err != nil {
+		errJSON, marshalErr := json.Marshal(err)
+		if marshalErr != nil {
+			return fmt.Errorf("failed to marshal error: %w", marshalErr)
+		}
+		params.Error = errJSON
+	}
+	return r.queries.MarkIngestionLogRetry(ctx, params)
+}

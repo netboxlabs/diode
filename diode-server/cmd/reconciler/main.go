@@ -203,7 +203,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	ops := reconciler.NewOps(repository, nbClient, s.Logger(), nil)
+	ops := reconciler.NewOps(repository, nbClient, s.Logger(), nil, reconciler.WithRetryPolicy(cfg.RetryPolicy()))
 	ops.Start(ctx)
 
 	// Build processor options
@@ -245,6 +245,8 @@ func main() {
 		if err := repository.ResetApplyingIngestionLogs(ctx); err != nil {
 			s.Logger().Error("failed to reset applying ingestion logs", "error", err)
 		}
+		// AutoApplyProcessor also re-drives due PENDING_RETRY rows (gated by
+		// ENABLE_FAILED_RETRY via the RetryPolicy on ops); inert when retry is off.
 		autoApplyProcessor := reconciler.NewAutoApplyProcessor(s.Logger(), cfg, repository, ops, metricRecorder, backpressure)
 		if err := s.RegisterComponent(autoApplyProcessor); err != nil {
 			s.Logger().Error("failed to register auto-apply processor", "error", err)

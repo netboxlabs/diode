@@ -5364,6 +5364,7 @@ The response from the retrieve ingestion logs request
 | IGNORED | 6 |  |
 | ERRORED | 7 |  |
 | APPLYING | 8 |  |
+| PENDING_RETRY | 9 | failed but eligible for automatic retry; reclaimed by the auto-apply processor once backoff elapses |
 
 
  

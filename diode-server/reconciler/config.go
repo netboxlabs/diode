@@ -1,6 +1,8 @@
 package reconciler
 
 import (
+	"time"
+
 	"github.com/netboxlabs/diode/diode-server/telemetry"
 	"github.com/netboxlabs/diode/diode-server/tls"
 )
@@ -42,10 +44,26 @@ type Config struct {
 	AutoApplyProcessorBatchSize   int32 `envconfig:"AUTO_APPLY_PROCESSOR_BATCH_SIZE" default:"100"`
 	AutoApplyProcessorConcurrency int   `envconfig:"AUTO_APPLY_PROCESSOR_CONCURRENCY" default:"1"`
 
+	// Automatic retry of failed applies (auto-apply mode only); see RetryPolicy.
+	EnableFailedRetry             bool  `envconfig:"ENABLE_FAILED_RETRY" default:"false"`
+	FailedRetryMaxRetries         int32 `envconfig:"FAILED_RETRY_MAX_RETRIES" default:"5"`
+	FailedRetryBaseBackoffSeconds int   `envconfig:"FAILED_RETRY_BASE_BACKOFF_SECONDS" default:"30"`
+	FailedRetryMaxBackoffSeconds  int   `envconfig:"FAILED_RETRY_MAX_BACKOFF_SECONDS" default:"3600"`
+
 	// Experimental
 	EnableGraphDB bool `envconfig:"ENABLE_GRAPH_DB" default:"false"`
 
 	// Entity matching configuration file path (only used when graph DB is enabled)
 	// If empty, default matching rules are used
 	EntityMatchingConfigPath string `envconfig:"ENTITY_MATCHING_CONFIG_PATH" default:""`
+}
+
+// RetryPolicy builds the retry policy from config; it is wired into Ops.
+func (c Config) RetryPolicy() RetryPolicy {
+	return RetryPolicy{
+		Enabled:     c.EnableFailedRetry,
+		MaxRetries:  c.FailedRetryMaxRetries,
+		BaseBackoff: time.Duration(c.FailedRetryBaseBackoffSeconds) * time.Second,
+		MaxBackoff:  time.Duration(c.FailedRetryMaxBackoffSeconds) * time.Second,
+	}
 }

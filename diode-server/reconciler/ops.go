@@ -40,6 +40,35 @@ func (l *DefaultLimits) MaxChangeSetsPerIngestionLog() int32 {
 	return 5
 }
 
+// RetryPolicy governs automatic retry of failed applies. When Enabled, a failure
+// is parked in PENDING_RETRY and re-claimed by the AutoApplyProcessor after a
+// jittered exponential backoff (BaseBackoff*2^attempt, capped at MaxBackoff), up
+// to MaxRetries attempts before retiring to terminal ERRORED. When disabled,
+// failures stay terminal FAILED.
+type RetryPolicy struct {
+	Enabled     bool
+	MaxRetries  int32
+	BaseBackoff time.Duration
+	MaxBackoff  time.Duration
+}
+
+// DefaultRetryPolicy applies when WithRetryPolicy is not supplied. Retry is off
+// by default; the reconciler enables it via ENABLE_FAILED_RETRY.
+var DefaultRetryPolicy = RetryPolicy{
+	Enabled:     false,
+	MaxRetries:  5,
+	BaseBackoff: 30 * time.Second,
+	MaxBackoff:  60 * time.Minute,
+}
+
+// OpsOption configures an Ops.
+type OpsOption func(*Ops)
+
+// WithRetryPolicy overrides the default failed-apply retry policy.
+func WithRetryPolicy(p RetryPolicy) OpsOption {
+	return func(o *Ops) { o.retryPolicy = p }
+}
+
 // Ops high level operations performed during ingestion processing.
 //
 // DefaultBranch lookups are served exclusively from an in-memory cache that
@@ -47,10 +76,11 @@ func (l *DefaultLimits) MaxChangeSetsPerIngestionLog() int32 {
 // loop, AutoApply) never do synchronous NetBox HTTP via DefaultBranch — so
 // a NetBox/Hydra outage cannot block Redis→inbox draining.
 type Ops struct {
-	repository Repository
-	nbClient   netboxdiodeplugin.NetBoxAPI
-	logger     *slog.Logger
-	limits     Limits
+	repository  Repository
+	nbClient    netboxdiodeplugin.NetBoxAPI
+	logger      *slog.Logger
+	limits      Limits
+	retryPolicy RetryPolicy
 
 	// Default-branch state. Updated only by the background refresher.
 	branchMu     sync.RWMutex
@@ -63,18 +93,23 @@ type Ops struct {
 // NewOps creates a new Ops. The background DefaultBranch refresher is NOT
 // started until Start(ctx) is called; until then DefaultBranch() returns
 // (nil, nil) and callers degrade to "no branch context".
-func NewOps(repository Repository, nbClient netboxdiodeplugin.NetBoxAPI, logger *slog.Logger, limits Limits) *Ops {
+func NewOps(repository Repository, nbClient netboxdiodeplugin.NetBoxAPI, logger *slog.Logger, limits Limits, opts ...OpsOption) *Ops {
 	if limits == nil {
 		limits = &DefaultLimits{}
 	}
 
-	return &Ops{
-		repository: repository,
-		nbClient:   nbClient,
-		logger:     logger,
-		limits:     limits,
-		refreshSig: make(chan struct{}, 1),
+	o := &Ops{
+		repository:  repository,
+		nbClient:    nbClient,
+		logger:      logger,
+		limits:      limits,
+		retryPolicy: DefaultRetryPolicy,
+		refreshSig:  make(chan struct{}, 1),
 	}
+	for _, opt := range opts {
+		opt(o)
+	}
+	return o
 }
 
 // Start launches the background default-branch refresher. It fetches once
@@ -578,14 +613,12 @@ func (o *Ops) BulkPlanApply(ctx context.Context, items []ops.QueuedIngestionLog,
 		}
 	}
 
-	// For entities whose apply phase failed, attach the apply error message to the
-	// ingestion log row. BulkPersistChangeSets clears the error column when it sets
-	// the state, so this second pass annotates the FAILED rows with their reason.
+	// Apply failed: BulkPersistChangeSets cleared the error column when it set
+	// the state, so re-record the reason and advance retry accounting.
 	for _, idx := range persistIndex {
 		if results[idx].ApplyErr != nil {
-			changeSetErr := handleChangeSetError(results[idx].ApplyErr)
-			if err := o.repository.UpdateIngestionLogStateWithError(ctx, results[idx].IngestionLogID, reconcilerpb.State_FAILED, changeSetErr); err != nil {
-				o.logger.Warn("failed to annotate apply failure", "ingestionLogID", results[idx].IngestionLogID, "error", err)
+			if err := o.markForRetry(ctx, results[idx].IngestionLogID, results[idx].ApplyErr); err != nil {
+				o.logger.Warn("failed to record apply failure for retry", "ingestionLogID", results[idx].IngestionLogID, "error", err)
 			}
 		}
 	}
@@ -610,8 +643,7 @@ func (o *Ops) persistPlanApplyFailurePlaceholder(ctx context.Context, item ops.Q
 	contextMap := map[string]any{"request_id": ingestEntity.RequestID, "object_type": ingestEntity.ObjectType}
 	sentry.CaptureError(planErr, tags, "BulkPlanApply", contextMap)
 
-	changeSetErr := handleChangeSetError(planErr)
-	if err2 := o.repository.UpdateIngestionLogStateWithError(ctx, item.ID, reconcilerpb.State_FAILED, changeSetErr); err2 != nil {
+	if err2 := o.markForRetry(ctx, item.ID, planErr); err2 != nil {
 		planErr = errors.Join(planErr, err2)
 	}
 
@@ -623,6 +655,23 @@ func (o *Ops) persistPlanApplyFailurePlaceholder(ctx context.Context, item ops.Q
 	}
 
 	return ops.BulkPlanApplyResult{IngestionLogID: item.ID, ChangeSetID: id, ChangeSet: cs, PlanErr: planErr}
+}
+
+// markForRetry records a failed apply per the RetryPolicy: PENDING_RETRY with
+// backoff when enabled, else terminal FAILED. All failure paths route through it.
+func (o *Ops) markForRetry(ctx context.Context, id int32, cause error) error {
+	changeSetErr := handleChangeSetError(cause)
+	if !o.retryPolicy.Enabled {
+		return o.repository.UpdateIngestionLogStateWithError(ctx, id, reconcilerpb.State_FAILED, changeSetErr)
+	}
+	return o.repository.MarkIngestionLogRetry(
+		ctx,
+		id,
+		o.retryPolicy.MaxRetries,
+		int64(o.retryPolicy.BaseBackoff.Seconds()),
+		int64(o.retryPolicy.MaxBackoff.Seconds()),
+		changeSetErr,
+	)
 }
 
 func handleChangeSetError(err error) error {
