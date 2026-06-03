@@ -35,8 +35,8 @@ func newAutoApplyTestLogger() *slog.Logger {
 
 // TestIngestionLogProcessor_AutoApplyPolicyMatch_AppliesItem verifies that
 // when WithAutoApplyPolicy is set and the policy returns true for a record,
-// the processor calls ApplyChangeSetForLog and records a successful apply
-// metric — bypassing the OPEN review queue.
+// the processor calls BulkPlanApply for that item and records a successful
+// apply metric — bypassing the OPEN review queue.
 func TestIngestionLogProcessor_AutoApplyPolicyMatch_AppliesItem(t *testing.T) {
 	repo := mocks.NewRepository(t)
 	mockOps := mocks.NewIngestionProcessorOps(t)
@@ -63,7 +63,8 @@ func TestIngestionLogProcessor_AutoApplyPolicyMatch_AppliesItem(t *testing.T) {
 	mockOps.On("BulkPlan", mock.Anything, batch, "").Return([]ops.BulkGenerateChangeSetResult{
 		{IngestionLogID: 1, ChangeSetID: int32Ptr(10), ChangeSet: cs},
 	}).Once()
-	mockOps.On("ApplyChangeSetForLog", mock.Anything, batch[0], cs, "").Return(nil).Once()
+	mockOps.On("BulkPlanApply", mock.Anything, []ops.QueuedIngestionLog{batch[0]}, "").
+		Return([]ops.BulkPlanApplyResult{{IngestionLogID: 1, ChangeSet: cs}}).Once()
 
 	mockMetrics.On("RecordChangeSetCreate", mock.Anything, true, int64(1)).Once()
 	mockMetrics.On("RecordChangeSetApply", mock.Anything, true, int64(1)).Once()
@@ -105,8 +106,8 @@ func TestIngestionLogProcessor_AutoApplyPolicyMatch_AppliesItem(t *testing.T) {
 
 // TestIngestionLogProcessor_AutoApplyPolicyNoMatch_DoesNotApply verifies that
 // when the policy returns false for a record, the processor does NOT call
-// ApplyChangeSetForLog — leaving the row in OPEN for review, as it would
-// without any policy.
+// BulkPlanApply — leaving the row in OPEN for review, as it would without
+// any policy.
 func TestIngestionLogProcessor_AutoApplyPolicyNoMatch_DoesNotApply(t *testing.T) {
 	repo := mocks.NewRepository(t)
 	mockOps := mocks.NewIngestionProcessorOps(t)
@@ -170,5 +171,5 @@ func TestIngestionLogProcessor_AutoApplyPolicyNoMatch_DoesNotApply(t *testing.T)
 		t.Fatal("processor did not exit")
 	}
 
-	mockOps.AssertNotCalled(t, "ApplyChangeSetForLog")
+	mockOps.AssertNotCalled(t, "BulkPlanApply")
 }

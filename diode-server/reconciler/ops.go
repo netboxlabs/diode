@@ -593,28 +593,6 @@ func (o *Ops) BulkPlanApply(ctx context.Context, items []ops.QueuedIngestionLog,
 	return results
 }
 
-// ApplyChangeSetForLog applies a single already-planned ingestion log,
-// transitioning it OPEN -> APPLIED.
-//
-// Delegates to BulkPlanApply with a single-item batch, which re-plans before
-// applying — one wasted HTTP round-trip per matched record. Acceptable for
-// current volume; a dedicated apply-only NetBox endpoint can replace the
-// re-plan later. The cs parameter is ignored as a result.
-func (o *Ops) ApplyChangeSetForLog(ctx context.Context, item ops.QueuedIngestionLog, _ *changeset.ChangeSet, branchID string) error {
-	results := o.BulkPlanApply(ctx, []ops.QueuedIngestionLog{item}, branchID)
-	if len(results) == 0 {
-		return fmt.Errorf("no result returned for ingestion log %d", item.ID)
-	}
-	r := results[0]
-	if r.PlanErr != nil {
-		return r.PlanErr
-	}
-	if r.ApplyErr != nil {
-		return r.ApplyErr
-	}
-	return nil
-}
-
 // persistPlanApplyFailurePlaceholder records a plan-phase failure as a
 // failure-placeholder change_set + ingestion log state=FAILED with the error
 // detail. Mirrors handleGenerateChangeSetFailure in the plan-only flow so

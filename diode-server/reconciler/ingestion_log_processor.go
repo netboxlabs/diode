@@ -290,13 +290,24 @@ func (p *IngestionLogProcessor) processBatch(ctx context.Context, batch []ops.Qu
 
 		if p.autoApplyPolicy != nil && result.ChangeSet != nil &&
 			p.autoApplyPolicy(item.IngestionLog, result.ChangeSet) {
-			changes := int64(len(result.ChangeSet.Changes))
-			if err := p.ops.ApplyChangeSetForLog(ctx, item, result.ChangeSet, branchID); err != nil {
-				p.logger.Error("auto-apply policy matched but apply failed",
-					"error", err, "ingestionLogID", item.ID)
+			applyResults := p.ops.BulkPlanApply(ctx, []ops.QueuedIngestionLog{item}, branchID)
+			if len(applyResults) == 0 {
+				p.logger.Error("auto-apply policy matched but no result returned", "ingestionLogID", item.ID)
 				p.metrics.RecordChangeSetApply(metricsCtx, false, 0)
-			} else {
-				p.metrics.RecordChangeSetApply(metricsCtx, true, changes)
+				continue
+			}
+			applyResult := applyResults[0]
+			switch {
+			case applyResult.PlanErr != nil:
+				p.logger.Error("auto-apply policy matched but re-plan failed",
+					"error", applyResult.PlanErr, "ingestionLogID", item.ID)
+				p.metrics.RecordChangeSetApply(metricsCtx, false, 0)
+			case applyResult.ApplyErr != nil:
+				p.logger.Error("auto-apply policy matched but apply failed",
+					"error", applyResult.ApplyErr, "ingestionLogID", item.ID)
+				p.metrics.RecordChangeSetApply(metricsCtx, false, 0)
+			case applyResult.ChangeSet != nil && len(applyResult.ChangeSet.Changes) > 0:
+				p.metrics.RecordChangeSetApply(metricsCtx, true, int64(len(applyResult.ChangeSet.Changes)))
 			}
 		}
 	}
