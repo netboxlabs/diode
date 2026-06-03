@@ -48,14 +48,8 @@ func TestIngestionLogProcessor_AutoApplyPolicyMatch_AppliesItem(t *testing.T) {
 		Changes: []changeset.Change{{ChangeType: changeset.ChangeTypeCreate, ObjectType: "extras.customfield"}},
 	}
 
-	claimed := make(chan struct{}, 1)
 	repo.On("ClaimQueuedIngestionLogs", mock.Anything, int32(100)).
-		Return(batch, nil).Once().Run(func(_ mock.Arguments) {
-		select {
-		case claimed <- struct{}{}:
-		default:
-		}
-	})
+		Return(batch, nil).Once()
 	repo.On("ClaimQueuedIngestionLogs", mock.Anything, int32(100)).
 		Return([]ops.QueuedIngestionLog{}, nil).Maybe()
 
@@ -66,8 +60,10 @@ func TestIngestionLogProcessor_AutoApplyPolicyMatch_AppliesItem(t *testing.T) {
 	mockOps.On("BulkPlanApply", mock.Anything, []ops.QueuedIngestionLog{batch[0]}, "").
 		Return([]ops.BulkPlanApplyResult{{IngestionLogID: 1, ChangeSet: cs}}).Once()
 
+	applied := make(chan struct{})
 	mockMetrics.On("RecordChangeSetCreate", mock.Anything, true, int64(1)).Once()
-	mockMetrics.On("RecordChangeSetApply", mock.Anything, true, int64(1)).Once()
+	mockMetrics.On("RecordChangeSetApply", mock.Anything, true, int64(1)).Once().
+		Run(func(_ mock.Arguments) { close(applied) })
 
 	policy := reconciler.AutoApplyPolicy(func(_ *reconcilerpb.IngestionLog, _ *changeset.ChangeSet) bool {
 		return true
@@ -88,12 +84,10 @@ func TestIngestionLogProcessor_AutoApplyPolicyMatch_AppliesItem(t *testing.T) {
 	go func() { done <- p.Start(ctx) }()
 
 	select {
-	case <-claimed:
+	case <-applied:
 	case <-time.After(5 * time.Second):
-		t.Fatal("batch was never claimed")
+		t.Fatal("apply metric was never recorded")
 	}
-
-	time.Sleep(200 * time.Millisecond)
 	cancel()
 
 	select {
@@ -119,14 +113,8 @@ func TestIngestionLogProcessor_AutoApplyPolicyNoMatch_DoesNotApply(t *testing.T)
 		Changes: []changeset.Change{{ChangeType: changeset.ChangeTypeUpdate, ObjectType: "extras.customfield"}},
 	}
 
-	claimed := make(chan struct{}, 1)
 	repo.On("ClaimQueuedIngestionLogs", mock.Anything, int32(100)).
-		Return(batch, nil).Once().Run(func(_ mock.Arguments) {
-		select {
-		case claimed <- struct{}{}:
-		default:
-		}
-	})
+		Return(batch, nil).Once()
 	repo.On("ClaimQueuedIngestionLogs", mock.Anything, int32(100)).
 		Return([]ops.QueuedIngestionLog{}, nil).Maybe()
 
@@ -135,7 +123,9 @@ func TestIngestionLogProcessor_AutoApplyPolicyNoMatch_DoesNotApply(t *testing.T)
 		{IngestionLogID: 1, ChangeSetID: int32Ptr(10), ChangeSet: cs},
 	}).Once()
 
-	mockMetrics.On("RecordChangeSetCreate", mock.Anything, true, int64(1)).Once()
+	planned := make(chan struct{})
+	mockMetrics.On("RecordChangeSetCreate", mock.Anything, true, int64(1)).Once().
+		Run(func(_ mock.Arguments) { close(planned) })
 
 	policy := reconciler.AutoApplyPolicy(func(_ *reconcilerpb.IngestionLog, _ *changeset.ChangeSet) bool {
 		return false
@@ -156,12 +146,10 @@ func TestIngestionLogProcessor_AutoApplyPolicyNoMatch_DoesNotApply(t *testing.T)
 	go func() { done <- p.Start(ctx) }()
 
 	select {
-	case <-claimed:
+	case <-planned:
 	case <-time.After(5 * time.Second):
-		t.Fatal("batch was never claimed")
+		t.Fatal("create metric was never recorded")
 	}
-
-	time.Sleep(200 * time.Millisecond)
 	cancel()
 
 	select {
