@@ -270,14 +270,10 @@ func (p *IngestionLogProcessor) processBatch(ctx context.Context, batch []ops.Qu
 
 	results := p.ops.BulkPlan(ctx, batch, branchID)
 
+	var matched []ops.QueuedIngestionLog
 	for i, result := range results {
 		item := batch[i]
-
-		attrs := []attribute.KeyValue{
-			attribute.String(telemetry.AttributeSDKName, item.IngestionLog.GetSdkName()),
-			attribute.String(telemetry.AttributeProducerAppName, item.IngestionLog.GetProducerAppName()),
-		}
-		metricsCtx := telemetry.ContextWithMetricAttributes(ctx, attrs...)
+		metricsCtx := p.metricsContext(ctx, item)
 
 		if result.Err != nil {
 			p.logger.Error("error generating changeset", "error", result.Err, "ingestionLogID", item.ID)
@@ -290,25 +286,42 @@ func (p *IngestionLogProcessor) processBatch(ctx context.Context, batch []ops.Qu
 
 		if p.autoApplyPolicy != nil && result.ChangeSet != nil &&
 			p.autoApplyPolicy(item.IngestionLog, result.ChangeSet) {
-			applyResults := p.ops.BulkPlanApply(ctx, []ops.QueuedIngestionLog{item}, branchID)
-			if len(applyResults) == 0 {
-				p.logger.Error("auto-apply policy matched but no result returned", "ingestionLogID", item.ID)
-				p.metrics.RecordChangeSetApply(metricsCtx, false, 0)
-				continue
-			}
-			applyResult := applyResults[0]
-			switch {
-			case applyResult.PlanErr != nil:
-				p.logger.Error("auto-apply policy matched but re-plan failed",
-					"error", applyResult.PlanErr, "ingestionLogID", item.ID)
-				p.metrics.RecordChangeSetApply(metricsCtx, false, 0)
-			case applyResult.ApplyErr != nil:
-				p.logger.Error("auto-apply policy matched but apply failed",
-					"error", applyResult.ApplyErr, "ingestionLogID", item.ID)
-				p.metrics.RecordChangeSetApply(metricsCtx, false, 0)
-			case applyResult.ChangeSet != nil && len(applyResult.ChangeSet.Changes) > 0:
-				p.metrics.RecordChangeSetApply(metricsCtx, true, int64(len(applyResult.ChangeSet.Changes)))
-			}
+			matched = append(matched, item)
 		}
 	}
+
+	if len(matched) == 0 {
+		return
+	}
+
+	// Interim limitation: the policy above was evaluated against the BulkPlan
+	// change sets, but BulkPlanApply re-plans server-side and applies the
+	// fresh sets in one call — a divergent re-plan can apply changes the
+	// policy never approved. Accepted until an apply-only endpoint (no
+	// re-plan) exists in the netbox plugin.
+	applyResults := p.ops.BulkPlanApply(ctx, matched, branchID)
+	for i, applyResult := range applyResults {
+		item := matched[i]
+		metricsCtx := p.metricsContext(ctx, item)
+		switch {
+		case applyResult.PlanErr != nil:
+			p.logger.Error("auto-apply policy matched but re-plan failed",
+				"error", applyResult.PlanErr, "ingestionLogID", item.ID)
+			p.metrics.RecordChangeSetApply(metricsCtx, false, 0)
+		case applyResult.ApplyErr != nil:
+			p.logger.Error("auto-apply policy matched but apply failed",
+				"error", applyResult.ApplyErr, "ingestionLogID", item.ID)
+			p.metrics.RecordChangeSetApply(metricsCtx, false, 0)
+		case applyResult.ChangeSet != nil && len(applyResult.ChangeSet.Changes) > 0:
+			p.metrics.RecordChangeSetApply(metricsCtx, true, int64(len(applyResult.ChangeSet.Changes)))
+		}
+	}
+}
+
+// metricsContext returns ctx annotated with the per-record metric attributes.
+func (p *IngestionLogProcessor) metricsContext(ctx context.Context, item ops.QueuedIngestionLog) context.Context {
+	return telemetry.ContextWithMetricAttributes(ctx,
+		attribute.String(telemetry.AttributeSDKName, item.IngestionLog.GetSdkName()),
+		attribute.String(telemetry.AttributeProducerAppName, item.IngestionLog.GetProducerAppName()),
+	)
 }
