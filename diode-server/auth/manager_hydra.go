@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	hydra "github.com/ory/hydra-client-go/v25"
+	hydra "github.com/ory/hydra-client-go/v26"
 )
 
 const (

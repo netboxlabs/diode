@@ -1,6 +1,6 @@
 FROM alpine:3.22
 
-RUN apk add --no-cache jq
+RUN apk upgrade --no-cache && apk add --no-cache jq
 
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 

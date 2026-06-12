@@ -1,6 +1,6 @@
 module github.com/netboxlabs/diode/diode-server
 
-go 1.26.1
+go 1.26.4
 
 require (
 	github.com/MicahParks/keyfunc/v3 v3.3.11
@@ -16,7 +16,7 @@ require (
 	github.com/jackc/pgx/v5 v5.9.2
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/oklog/run v1.1.0
-	github.com/ory/hydra-client-go/v25 v25.4.0
+	github.com/ory/hydra-client-go/v26 v26.2.0
 	github.com/pressly/goose/v3 v3.24.3
 	github.com/prometheus/client_golang v1.22.0
 	github.com/redis/go-redis/v9 v9.8.0
@@ -33,7 +33,7 @@ require (
 	go.opentelemetry.io/otel/metric v1.43.0
 	go.opentelemetry.io/otel/sdk v1.43.0
 	go.opentelemetry.io/otel/sdk/metric v1.43.0
-	golang.org/x/oauth2 v0.34.0
+	golang.org/x/oauth2 v0.36.0
 	golang.org/x/text v0.34.0
 	golang.org/x/time v0.11.0
 	google.golang.org/grpc v1.79.3
