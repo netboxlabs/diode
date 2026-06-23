@@ -19,4 +19,10 @@ const (
 	AttributeState = "state"
 	// AttributeDuplicate is a boolean attribute that indicates if an ingestion log was a duplicate
 	AttributeDuplicate = "duplicate"
+	// AttributeRequestID is the integrator ingest request identifier.
+	AttributeRequestID = "request_id"
+	// AttributeEntityCount is the number of entities in a batch.
+	AttributeEntityCount = "entity_count"
+	// AttributeStreamLag is queue wait in seconds (consume time minus ingestion_ts).
+	AttributeStreamLag = "stream_lag"
 )
