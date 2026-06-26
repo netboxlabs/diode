@@ -62,6 +62,74 @@ func (q *Queries) BulkUpdateIngestionLogStates(ctx context.Context, arg BulkUpda
 	return err
 }
 
+const claimGraphUpsertCandidates = `-- name: ClaimGraphUpsertCandidates :many
+UPDATE ingestion_logs
+SET graph_upsert_claimed_at = CURRENT_TIMESTAMP,
+    graph_upsert_attempts   = graph_upsert_attempts + 1
+WHERE id IN (
+    SELECT id FROM ingestion_logs
+    WHERE graph_upserted_at IS NULL
+      AND graph_upsert_claimed_at IS NULL
+      AND graph_upsert_attempts < $1::int4
+    ORDER BY id
+    LIMIT $2
+    FOR UPDATE SKIP LOCKED
+)
+RETURNING id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count, graph_upserted_at, graph_upsert_attempts, graph_upsert_claimed_at
+`
+
+type ClaimGraphUpsertCandidatesParams struct {
+	MaxAttempts int32 `json:"max_attempts"`
+	BatchSize   int32 `json:"batch_size"`
+}
+
+// Claim a batch of ingestion logs that have not yet been upserted into the
+// graph DB, marking them as claimed by setting graph_upsert_claimed_at and
+// incrementing graph_upsert_attempts. Rows past max_attempts are skipped and
+// left in their terminal-failed state.
+func (q *Queries) ClaimGraphUpsertCandidates(ctx context.Context, arg ClaimGraphUpsertCandidatesParams) ([]IngestionLog, error) {
+	rows, err := q.db.Query(ctx, claimGraphUpsertCandidates, arg.MaxAttempts, arg.BatchSize)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []IngestionLog
+	for rows.Next() {
+		var i IngestionLog
+		if err := rows.Scan(
+			&i.ID,
+			&i.ExternalID,
+			&i.ObjectType,
+			&i.State,
+			&i.RequestID,
+			&i.IngestionTs,
+			&i.SourceTs,
+			&i.ProducerAppName,
+			&i.ProducerAppVersion,
+			&i.SdkName,
+			&i.SdkVersion,
+			&i.Entity,
+			&i.Error,
+			&i.SourceMetadata,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.EntityHash,
+			&i.LastSeen,
+			&i.DuplicateCount,
+			&i.GraphUpsertedAt,
+			&i.GraphUpsertAttempts,
+			&i.GraphUpsertClaimedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const claimQueuedForAutoApply = `-- name: ClaimQueuedForAutoApply :many
 UPDATE ingestion_logs
 SET state = 8
@@ -72,7 +140,7 @@ WHERE id IN (
     LIMIT $1
     FOR UPDATE SKIP LOCKED
 )
-RETURNING id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count
+RETURNING id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count, graph_upserted_at, graph_upsert_attempts, graph_upsert_claimed_at
 `
 
 // Claim a batch of QUEUED ingestion logs for the AutoApplyProcessor (combined
@@ -108,6 +176,9 @@ func (q *Queries) ClaimQueuedForAutoApply(ctx context.Context, batchSize int32) 
 			&i.EntityHash,
 			&i.LastSeen,
 			&i.DuplicateCount,
+			&i.GraphUpsertedAt,
+			&i.GraphUpsertAttempts,
+			&i.GraphUpsertClaimedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -129,7 +200,7 @@ WHERE id IN (
     LIMIT $1
     FOR UPDATE SKIP LOCKED
 )
-RETURNING id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count
+RETURNING id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count, graph_upserted_at, graph_upsert_attempts, graph_upsert_claimed_at
 `
 
 func (q *Queries) ClaimQueuedIngestionLogs(ctx context.Context, batchSize int32) ([]IngestionLog, error) {
@@ -161,6 +232,9 @@ func (q *Queries) ClaimQueuedIngestionLogs(ctx context.Context, batchSize int32)
 			&i.EntityHash,
 			&i.LastSeen,
 			&i.DuplicateCount,
+			&i.GraphUpsertedAt,
+			&i.GraphUpsertAttempts,
+			&i.GraphUpsertClaimedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -207,7 +281,7 @@ const createIngestionLog = `-- name: CreateIngestionLog :one
 INSERT INTO ingestion_logs (external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name,
                             producer_app_version, sdk_name, sdk_version, entity, source_metadata, entity_hash)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-RETURNING id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count
+RETURNING id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count, graph_upserted_at, graph_upsert_attempts, graph_upsert_claimed_at
 `
 
 type CreateIngestionLogParams struct {
@@ -263,6 +337,9 @@ func (q *Queries) CreateIngestionLog(ctx context.Context, arg CreateIngestionLog
 		&i.EntityHash,
 		&i.LastSeen,
 		&i.DuplicateCount,
+		&i.GraphUpsertedAt,
+		&i.GraphUpsertAttempts,
+		&i.GraphUpsertClaimedAt,
 	)
 	return i, err
 }
@@ -297,7 +374,7 @@ func (q *Queries) FindIngestionLogIDsByExternalIDs(ctx context.Context, external
 }
 
 const findPriorIngestionLogByEntityHash = `-- name: FindPriorIngestionLogByEntityHash :one
-SELECT il.id, il.external_id, il.object_type, il.state, il.request_id, il.ingestion_ts, il.source_ts, il.producer_app_name, il.producer_app_version, il.sdk_name, il.sdk_version, il.entity, il.error, il.source_metadata, il.created_at, il.updated_at, il.entity_hash, il.last_seen, il.duplicate_count
+SELECT il.id, il.external_id, il.object_type, il.state, il.request_id, il.ingestion_ts, il.source_ts, il.producer_app_name, il.producer_app_version, il.sdk_name, il.sdk_version, il.entity, il.error, il.source_metadata, il.created_at, il.updated_at, il.entity_hash, il.last_seen, il.duplicate_count, il.graph_upserted_at, il.graph_upsert_attempts, il.graph_upsert_claimed_at
 FROM ingestion_logs il
 LEFT JOIN LATERAL (
     SELECT branch_id
@@ -340,15 +417,18 @@ func (q *Queries) FindPriorIngestionLogByEntityHash(ctx context.Context, arg Fin
 		&i.EntityHash,
 		&i.LastSeen,
 		&i.DuplicateCount,
+		&i.GraphUpsertedAt,
+		&i.GraphUpsertAttempts,
+		&i.GraphUpsertClaimedAt,
 	)
 	return i, err
 }
 
 const findPriorIngestionLogsByEntityHashes = `-- name: FindPriorIngestionLogsByEntityHashes :many
-SELECT il.id, il.external_id, il.object_type, il.state, il.request_id, il.ingestion_ts, il.source_ts, il.producer_app_name, il.producer_app_version, il.sdk_name, il.sdk_version, il.entity, il.error, il.source_metadata, il.created_at, il.updated_at, il.entity_hash, il.last_seen, il.duplicate_count
+SELECT il.id, il.external_id, il.object_type, il.state, il.request_id, il.ingestion_ts, il.source_ts, il.producer_app_name, il.producer_app_version, il.sdk_name, il.sdk_version, il.entity, il.error, il.source_metadata, il.created_at, il.updated_at, il.entity_hash, il.last_seen, il.duplicate_count, il.graph_upserted_at, il.graph_upsert_attempts, il.graph_upsert_claimed_at
 FROM unnest($1::text[]) AS h(entity_hash)
 CROSS JOIN LATERAL (
-    SELECT il2.id, il2.external_id, il2.object_type, il2.state, il2.request_id, il2.ingestion_ts, il2.source_ts, il2.producer_app_name, il2.producer_app_version, il2.sdk_name, il2.sdk_version, il2.entity, il2.error, il2.source_metadata, il2.created_at, il2.updated_at, il2.entity_hash, il2.last_seen, il2.duplicate_count
+    SELECT il2.id, il2.external_id, il2.object_type, il2.state, il2.request_id, il2.ingestion_ts, il2.source_ts, il2.producer_app_name, il2.producer_app_version, il2.sdk_name, il2.sdk_version, il2.entity, il2.error, il2.source_metadata, il2.created_at, il2.updated_at, il2.entity_hash, il2.last_seen, il2.duplicate_count, il2.graph_upserted_at, il2.graph_upsert_attempts, il2.graph_upsert_claimed_at
     FROM ingestion_logs il2
     WHERE il2.entity_hash = h.entity_hash
       AND (
@@ -397,6 +477,9 @@ func (q *Queries) FindPriorIngestionLogsByEntityHashes(ctx context.Context, arg 
 			&i.EntityHash,
 			&i.LastSeen,
 			&i.DuplicateCount,
+			&i.GraphUpsertedAt,
+			&i.GraphUpsertAttempts,
+			&i.GraphUpsertClaimedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -420,6 +503,33 @@ func (q *Queries) IncrementDuplicateCount(ctx context.Context, id int32) error {
 	return err
 }
 
+const markGraphUpserted = `-- name: MarkGraphUpserted :exec
+UPDATE ingestion_logs
+SET graph_upserted_at      = CURRENT_TIMESTAMP,
+    graph_upsert_claimed_at = NULL
+WHERE id = ANY($1::int4[])
+`
+
+// Mark a batch of ingestion logs as successfully upserted into the graph DB.
+func (q *Queries) MarkGraphUpserted(ctx context.Context, ids []int32) error {
+	_, err := q.db.Exec(ctx, markGraphUpserted, ids)
+	return err
+}
+
+const releaseGraphUpsertClaims = `-- name: ReleaseGraphUpsertClaims :exec
+UPDATE ingestion_logs
+SET graph_upsert_claimed_at = NULL
+WHERE id = ANY($1::int4[])
+`
+
+// Release graph-upsert claims for a batch of ingestion logs without marking
+// them as upserted. Used when an attempt fails but more retries are still
+// allowed by max_attempts.
+func (q *Queries) ReleaseGraphUpsertClaims(ctx context.Context, ids []int32) error {
+	_, err := q.db.Exec(ctx, releaseGraphUpsertClaims, ids)
+	return err
+}
+
 const resetApplyingIngestionLogs = `-- name: ResetApplyingIngestionLogs :exec
 UPDATE ingestion_logs
 SET state = 1
@@ -433,8 +543,22 @@ func (q *Queries) ResetApplyingIngestionLogs(ctx context.Context) error {
 	return err
 }
 
+const resetClaimedGraphUpserts = `-- name: ResetClaimedGraphUpserts :exec
+UPDATE ingestion_logs
+SET graph_upsert_claimed_at = NULL
+WHERE graph_upsert_claimed_at IS NOT NULL
+  AND graph_upserted_at IS NULL
+`
+
+// Clear stale graph-upsert claims on startup so rows held by a crashed
+// worker are re-claimable. Idempotent — safe to run on every startup.
+func (q *Queries) ResetClaimedGraphUpserts(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, resetClaimedGraphUpserts)
+	return err
+}
+
 const retrieveIngestionLogByExternalID = `-- name: RetrieveIngestionLogByExternalID :one
-SELECT id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count
+SELECT id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count, graph_upserted_at, graph_upsert_attempts, graph_upsert_claimed_at
 FROM ingestion_logs
 WHERE external_id = $1
 `
@@ -462,12 +586,15 @@ func (q *Queries) RetrieveIngestionLogByExternalID(ctx context.Context, external
 		&i.EntityHash,
 		&i.LastSeen,
 		&i.DuplicateCount,
+		&i.GraphUpsertedAt,
+		&i.GraphUpsertAttempts,
+		&i.GraphUpsertClaimedAt,
 	)
 	return i, err
 }
 
 const retrieveIngestionLogs = `-- name: RetrieveIngestionLogs :many
-SELECT id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count
+SELECT id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count, graph_upserted_at, graph_upsert_attempts, graph_upsert_claimed_at
 FROM ingestion_logs
 WHERE (state = $1 OR $1 IS NULL)
   AND (object_type = $2 OR $2 IS NULL)
@@ -522,6 +649,9 @@ func (q *Queries) RetrieveIngestionLogs(ctx context.Context, arg RetrieveIngesti
 			&i.EntityHash,
 			&i.LastSeen,
 			&i.DuplicateCount,
+			&i.GraphUpsertedAt,
+			&i.GraphUpsertAttempts,
+			&i.GraphUpsertClaimedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -606,7 +736,7 @@ UPDATE ingestion_logs
 SET state = $2,
     error = $3
 WHERE id = $1
-RETURNING id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count
+RETURNING id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count, graph_upserted_at, graph_upsert_attempts, graph_upsert_claimed_at
 `
 
 type UpdateIngestionLogStateWithErrorParams struct {

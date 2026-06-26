@@ -12,9 +12,11 @@ import (
 
 	"github.com/andybalholm/brotli"
 	"github.com/redis/go-redis/v9"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
@@ -294,6 +296,120 @@ func TestHandleStreamMessageLegacyUncompressed(t *testing.T) {
 	require.NoError(t, err)
 
 	mockRepository.AssertExpectations(t)
+}
+
+// TestCreateIngestionLogs_StashesRequestMetadata verifies that
+// IngestRequest.metadata is marshaled into the source_metadata column for
+// every row in the batch, so the GraphUpsertProcessor can read it back when
+// merging run_id (and friends) into graph snapshots.
+func TestCreateIngestionLogs_StashesRequestMetadata(t *testing.T) {
+	ctx := context.Background()
+	mockNbClient := new(mnp.NetBoxAPI)
+	mockRepository := new(mr.Repository)
+	mockMetrics := mr.NewMetrics(t)
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+
+	p := &IngestionProcessor{
+		logger:  logger,
+		Config:  Config{},
+		ops:     NewOps(mockRepository, mockNbClient, logger, nil),
+		metrics: mockMetrics,
+	}
+
+	mdStruct, err := structpb.NewStruct(map[string]any{
+		"run_id":  "run-7",
+		"source":  "observability-pipeline",
+		"version": 42,
+	})
+	require.NoError(t, err)
+
+	ingestReq := &diodepb.IngestRequest{
+		Id: "req-meta",
+		Entities: []*diodepb.Entity{
+			{Entity: &diodepb.Entity_Site{Site: &diodepb.Site{Name: "alpha"}}},
+			{Entity: &diodepb.Entity_Site{Site: &diodepb.Site{Name: "beta"}}},
+		},
+		Metadata: mdStruct,
+	}
+
+	mockNbClient.On("GetDefaultBranch", mock.Anything).Return((*netboxdiodeplugin.Branch)(nil), nil)
+	mockRepository.On("FindPriorIngestionLogsByEntityHashes", mock.Anything, mock.Anything, mock.Anything).
+		Return(map[string]*ops.PriorIngestionLog{}, nil)
+
+	var capturedSourceMetadata [][]byte
+	mockRepository.On("BulkCreateIngestionLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
+		func(_ context.Context, logs []*reconcilerpb.IngestionLog, sourceMetadata [][]byte, _ []string) map[string]int32 {
+			capturedSourceMetadata = sourceMetadata
+			result := make(map[string]int32, len(logs))
+			for i, log := range logs {
+				result[log.Id] = int32(i + 1)
+			}
+			return result
+		}, nil)
+	mockMetrics.On("RecordIngestionLogCreate", mock.Anything, mock.Anything).Return()
+
+	errs := p.CreateIngestionLogs(ctx, ingestReq, 1720425600)
+	require.Empty(t, errs)
+
+	require.Len(t, capturedSourceMetadata, 2, "every row in the batch should carry the request metadata")
+	for i, raw := range capturedSourceMetadata {
+		require.NotEmpty(t, raw, "row %d source_metadata is empty", i)
+		var got map[string]any
+		require.NoError(t, json.Unmarshal(raw, &got))
+		assert.Equal(t, "run-7", got["run_id"])
+		assert.Equal(t, "observability-pipeline", got["source"])
+		// structpb encodes ints as float64 in google.protobuf.Struct.
+		assert.Equal(t, float64(42), got["version"])
+	}
+
+	mockRepository.AssertExpectations(t)
+}
+
+// TestCreateIngestionLogs_NilMetadataLeavesSourceMetadataEmpty confirms the
+// non-graph path is unaffected: when no IngestRequest.metadata is supplied,
+// each row's source_metadata stays nil so the COPY stream stays compact.
+func TestCreateIngestionLogs_NilMetadataLeavesSourceMetadataEmpty(t *testing.T) {
+	ctx := context.Background()
+	mockNbClient := new(mnp.NetBoxAPI)
+	mockRepository := new(mr.Repository)
+	mockMetrics := mr.NewMetrics(t)
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+
+	p := &IngestionProcessor{
+		logger:  logger,
+		Config:  Config{},
+		ops:     NewOps(mockRepository, mockNbClient, logger, nil),
+		metrics: mockMetrics,
+	}
+
+	ingestReq := &diodepb.IngestRequest{
+		Id: "req-nometa",
+		Entities: []*diodepb.Entity{
+			{Entity: &diodepb.Entity_Site{Site: &diodepb.Site{Name: "lone"}}},
+		},
+	}
+
+	mockNbClient.On("GetDefaultBranch", mock.Anything).Return((*netboxdiodeplugin.Branch)(nil), nil)
+	mockRepository.On("FindPriorIngestionLogsByEntityHashes", mock.Anything, mock.Anything, mock.Anything).
+		Return(map[string]*ops.PriorIngestionLog{}, nil)
+
+	var captured [][]byte
+	mockRepository.On("BulkCreateIngestionLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
+		func(_ context.Context, logs []*reconcilerpb.IngestionLog, sourceMetadata [][]byte, _ []string) map[string]int32 {
+			captured = sourceMetadata
+			out := make(map[string]int32, len(logs))
+			for _, log := range logs {
+				out[log.Id] = 1
+			}
+			return out
+		}, nil)
+	mockMetrics.On("RecordIngestionLogCreate", mock.Anything, mock.Anything).Return()
+
+	errs := p.CreateIngestionLogs(ctx, ingestReq, 1720425600)
+	require.Empty(t, errs)
+
+	require.Len(t, captured, 1)
+	assert.Nil(t, captured[0], "no IngestRequest.metadata means no source_metadata blob")
 }
 
 func TestCompressChangeSet(t *testing.T) {

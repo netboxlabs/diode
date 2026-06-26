@@ -195,6 +195,66 @@ func (_c *Repository_BulkPersistChangeSets_Call) RunAndReturn(run func(context.C
 	return _c
 }
 
+// ClaimGraphUpsertCandidates provides a mock function with given fields: ctx, batchSize, maxAttempts
+func (_m *Repository) ClaimGraphUpsertCandidates(ctx context.Context, batchSize int32, maxAttempts int32) ([]ops.QueuedIngestionLog, error) {
+	ret := _m.Called(ctx, batchSize, maxAttempts)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ClaimGraphUpsertCandidates")
+	}
+
+	var r0 []ops.QueuedIngestionLog
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, int32, int32) ([]ops.QueuedIngestionLog, error)); ok {
+		return rf(ctx, batchSize, maxAttempts)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, int32, int32) []ops.QueuedIngestionLog); ok {
+		r0 = rf(ctx, batchSize, maxAttempts)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]ops.QueuedIngestionLog)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, int32, int32) error); ok {
+		r1 = rf(ctx, batchSize, maxAttempts)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Repository_ClaimGraphUpsertCandidates_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ClaimGraphUpsertCandidates'
+type Repository_ClaimGraphUpsertCandidates_Call struct {
+	*mock.Call
+}
+
+// ClaimGraphUpsertCandidates is a helper method to define mock.On call
+//   - ctx context.Context
+//   - batchSize int32
+//   - maxAttempts int32
+func (_e *Repository_Expecter) ClaimGraphUpsertCandidates(ctx interface{}, batchSize interface{}, maxAttempts interface{}) *Repository_ClaimGraphUpsertCandidates_Call {
+	return &Repository_ClaimGraphUpsertCandidates_Call{Call: _e.mock.On("ClaimGraphUpsertCandidates", ctx, batchSize, maxAttempts)}
+}
+
+func (_c *Repository_ClaimGraphUpsertCandidates_Call) Run(run func(ctx context.Context, batchSize int32, maxAttempts int32)) *Repository_ClaimGraphUpsertCandidates_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(int32), args[2].(int32))
+	})
+	return _c
+}
+
+func (_c *Repository_ClaimGraphUpsertCandidates_Call) Return(_a0 []ops.QueuedIngestionLog, _a1 error) *Repository_ClaimGraphUpsertCandidates_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Repository_ClaimGraphUpsertCandidates_Call) RunAndReturn(run func(context.Context, int32, int32) ([]ops.QueuedIngestionLog, error)) *Repository_ClaimGraphUpsertCandidates_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ClaimQueuedForAutoApply provides a mock function with given fields: ctx, batchSize
 func (_m *Repository) ClaimQueuedForAutoApply(ctx context.Context, batchSize int32) ([]ops.QueuedIngestionLog, error) {
 	ret := _m.Called(ctx, batchSize)
@@ -668,6 +728,100 @@ func (_c *Repository_IncrementDuplicateCount_Call) RunAndReturn(run func(context
 	return _c
 }
 
+// MarkGraphUpserted provides a mock function with given fields: ctx, ids
+func (_m *Repository) MarkGraphUpserted(ctx context.Context, ids []int32) error {
+	ret := _m.Called(ctx, ids)
+
+	if len(ret) == 0 {
+		panic("no return value specified for MarkGraphUpserted")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, []int32) error); ok {
+		r0 = rf(ctx, ids)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Repository_MarkGraphUpserted_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'MarkGraphUpserted'
+type Repository_MarkGraphUpserted_Call struct {
+	*mock.Call
+}
+
+// MarkGraphUpserted is a helper method to define mock.On call
+//   - ctx context.Context
+//   - ids []int32
+func (_e *Repository_Expecter) MarkGraphUpserted(ctx interface{}, ids interface{}) *Repository_MarkGraphUpserted_Call {
+	return &Repository_MarkGraphUpserted_Call{Call: _e.mock.On("MarkGraphUpserted", ctx, ids)}
+}
+
+func (_c *Repository_MarkGraphUpserted_Call) Run(run func(ctx context.Context, ids []int32)) *Repository_MarkGraphUpserted_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].([]int32))
+	})
+	return _c
+}
+
+func (_c *Repository_MarkGraphUpserted_Call) Return(_a0 error) *Repository_MarkGraphUpserted_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Repository_MarkGraphUpserted_Call) RunAndReturn(run func(context.Context, []int32) error) *Repository_MarkGraphUpserted_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ReleaseGraphUpsertClaims provides a mock function with given fields: ctx, ids
+func (_m *Repository) ReleaseGraphUpsertClaims(ctx context.Context, ids []int32) error {
+	ret := _m.Called(ctx, ids)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ReleaseGraphUpsertClaims")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, []int32) error); ok {
+		r0 = rf(ctx, ids)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Repository_ReleaseGraphUpsertClaims_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ReleaseGraphUpsertClaims'
+type Repository_ReleaseGraphUpsertClaims_Call struct {
+	*mock.Call
+}
+
+// ReleaseGraphUpsertClaims is a helper method to define mock.On call
+//   - ctx context.Context
+//   - ids []int32
+func (_e *Repository_Expecter) ReleaseGraphUpsertClaims(ctx interface{}, ids interface{}) *Repository_ReleaseGraphUpsertClaims_Call {
+	return &Repository_ReleaseGraphUpsertClaims_Call{Call: _e.mock.On("ReleaseGraphUpsertClaims", ctx, ids)}
+}
+
+func (_c *Repository_ReleaseGraphUpsertClaims_Call) Run(run func(ctx context.Context, ids []int32)) *Repository_ReleaseGraphUpsertClaims_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].([]int32))
+	})
+	return _c
+}
+
+func (_c *Repository_ReleaseGraphUpsertClaims_Call) Return(_a0 error) *Repository_ReleaseGraphUpsertClaims_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Repository_ReleaseGraphUpsertClaims_Call) RunAndReturn(run func(context.Context, []int32) error) *Repository_ReleaseGraphUpsertClaims_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ResetApplyingIngestionLogs provides a mock function with given fields: ctx
 func (_m *Repository) ResetApplyingIngestionLogs(ctx context.Context) error {
 	ret := _m.Called(ctx)
@@ -710,6 +864,52 @@ func (_c *Repository_ResetApplyingIngestionLogs_Call) Return(_a0 error) *Reposit
 }
 
 func (_c *Repository_ResetApplyingIngestionLogs_Call) RunAndReturn(run func(context.Context) error) *Repository_ResetApplyingIngestionLogs_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// ResetClaimedGraphUpserts provides a mock function with given fields: ctx
+func (_m *Repository) ResetClaimedGraphUpserts(ctx context.Context) error {
+	ret := _m.Called(ctx)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ResetClaimedGraphUpserts")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Repository_ResetClaimedGraphUpserts_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ResetClaimedGraphUpserts'
+type Repository_ResetClaimedGraphUpserts_Call struct {
+	*mock.Call
+}
+
+// ResetClaimedGraphUpserts is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *Repository_Expecter) ResetClaimedGraphUpserts(ctx interface{}) *Repository_ResetClaimedGraphUpserts_Call {
+	return &Repository_ResetClaimedGraphUpserts_Call{Call: _e.mock.On("ResetClaimedGraphUpserts", ctx)}
+}
+
+func (_c *Repository_ResetClaimedGraphUpserts_Call) Run(run func(ctx context.Context)) *Repository_ResetClaimedGraphUpserts_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *Repository_ResetClaimedGraphUpserts_Call) Return(_a0 error) *Repository_ResetClaimedGraphUpserts_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Repository_ResetClaimedGraphUpserts_Call) RunAndReturn(run func(context.Context) error) *Repository_ResetClaimedGraphUpserts_Call {
 	_c.Call.Return(run)
 	return _c
 }

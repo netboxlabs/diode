@@ -19,10 +19,16 @@ type PriorIngestionLog struct {
 	IngestionLog *reconcilerpb.IngestionLog
 }
 
-// QueuedIngestionLog represents an ingestion log in QUEUED state ready for processing
+// QueuedIngestionLog represents an ingestion log claimed for processing.
+// SourceMetadata holds the raw JSONB blob stashed at ingest time (currently
+// the IngestRequest.metadata struct) and is populated only by claim paths
+// that need it — e.g. the GraphUpsertProcessor reads it back to merge
+// request-level metadata into graph snapshots. Other claim paths leave it
+// nil.
 type QueuedIngestionLog struct {
-	ID           int32
-	IngestionLog *reconcilerpb.IngestionLog
+	ID             int32
+	IngestionLog   *reconcilerpb.IngestionLog
+	SourceMetadata []byte
 }
 
 // BulkGenerateChangeSetResult holds the result of generating a change set for a single item in a bulk operation.

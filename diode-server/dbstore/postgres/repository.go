@@ -785,3 +785,62 @@ func (r *Repository) ClaimQueuedForAutoApply(ctx context.Context, batchSize int3
 func (r *Repository) ResetApplyingIngestionLogs(ctx context.Context) error {
 	return r.queries.ResetApplyingIngestionLogs(ctx)
 }
+
+// ClaimGraphUpsertCandidates claims a batch of ingestion logs that have not
+// yet been upserted into the graph DB. Each claimed row has its claim
+// timestamp set and its attempt counter incremented; the caller is then
+// responsible for finalizing each claim via MarkGraphUpserted or
+// ReleaseGraphUpsertClaims.
+//
+// SourceMetadata is populated on each returned QueuedIngestionLog so the
+// graph upsert path can recover the original IngestRequest.metadata blob
+// that was stashed at ingest time.
+func (r *Repository) ClaimGraphUpsertCandidates(ctx context.Context, batchSize, maxAttempts int32) ([]ops.QueuedIngestionLog, error) {
+	dbLogs, err := r.queries.ClaimGraphUpsertCandidates(ctx, postgres.ClaimGraphUpsertCandidatesParams{
+		MaxAttempts: maxAttempts,
+		BatchSize:   batchSize,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to claim graph-upsert candidates: %w", err)
+	}
+
+	result := make([]ops.QueuedIngestionLog, 0, len(dbLogs))
+	for _, dbLog := range dbLogs {
+		log, err := dbLog.ToProto()
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert ingestion log %d to proto: %w", dbLog.ID, err)
+		}
+		result = append(result, ops.QueuedIngestionLog{
+			ID:             dbLog.ID,
+			IngestionLog:   log,
+			SourceMetadata: dbLog.SourceMetadata,
+		})
+	}
+	return result, nil
+}
+
+// MarkGraphUpserted marks the given ingestion logs as successfully upserted
+// into the graph DB and releases their claims.
+func (r *Repository) MarkGraphUpserted(ctx context.Context, ids []int32) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	return r.queries.MarkGraphUpserted(ctx, ids)
+}
+
+// ReleaseGraphUpsertClaims clears the claim on a batch of ingestion logs
+// without marking them as upserted, so they can be re-claimed on the next
+// polling cycle (subject to max-attempts).
+func (r *Repository) ReleaseGraphUpsertClaims(ctx context.Context, ids []int32) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	return r.queries.ReleaseGraphUpsertClaims(ctx, ids)
+}
+
+// ResetClaimedGraphUpserts clears stale graph-upsert claims held by workers
+// that died between claiming and finalizing. Idempotent — safe to run on
+// every startup.
+func (r *Repository) ResetClaimedGraphUpserts(ctx context.Context) error {
+	return r.queries.ResetClaimedGraphUpserts(ctx)
+}

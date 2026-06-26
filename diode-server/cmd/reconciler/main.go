@@ -140,12 +140,14 @@ func main() {
 
 	repository := postgres.NewRepository(dbPool)
 
-	// Initialize graph Service if graph DB feature is enabled
-	var graphServiceOpt reconciler.ProcessorOption
+	// Build a fresh graph.Service per call when the graph DB feature is
+	// enabled. The processor invokes this once per worker goroutine because
+	// graph.Service holds per-call mutable state on its receiver and is
+	// documented as not safe for concurrent use.
+	var graphServiceFactory reconciler.GraphServiceFactory
 	if cfg.EnableGraphDB {
-		s.Logger().Info("graph DB feature enabled, initializing graph Service")
+		s.Logger().Info("graph DB feature enabled, initializing graph Service factory")
 
-		// Load matching configuration if provided
 		var matchingConfig *matching.Config
 		if cfg.EntityMatchingConfigPath != "" {
 			var err error
@@ -160,28 +162,24 @@ func main() {
 			}
 		}
 
-		// Create graph repository adapter
 		graphRepo := postgres.NewGraphRepository(dbPool)
+		graphServiceFactory = func() reconciler.GraphEntityUpserter {
+			var opts []graph.Option
+			if matchingConfig != nil {
+				opts = append(opts, graph.WithMatchingConfig(matchingConfig))
 
-		// Create graph Service with repository
-		var opts []graph.Option
-		if matchingConfig != nil {
-			opts = append(opts, graph.WithMatchingConfig(matchingConfig))
-
-			// Create entity matcher for confidence-based matching
-			matcherConfig := &matching.EntityMatchingConfig{
-				Rules:          matchingConfig.GetFinalRules(),
-				GlobalMinConf:  matching.MatchConfidence(matchingConfig.GlobalSettings.DefaultMinConfidence),
-				EnableFallback: true,
-				CacheResults:   true,
-				MaxCacheSize:   1000,
+				matcherConfig := &matching.EntityMatchingConfig{
+					Rules:          matchingConfig.GetFinalRules(),
+					GlobalMinConf:  matching.MatchConfidence(matchingConfig.GlobalSettings.DefaultMinConfidence),
+					EnableFallback: true,
+					CacheResults:   true,
+					MaxCacheSize:   1000,
+				}
+				entityMatcher := entitymatcher.NewMatcher(graphRepo, matcherConfig, s.Logger())
+				opts = append(opts, graph.WithEntityMatcher(entityMatcher))
 			}
-			entityMatcher := entitymatcher.NewMatcher(graphRepo, matcherConfig, s.Logger())
-			opts = append(opts, graph.WithEntityMatcher(entityMatcher))
+			return graph.NewService(graphRepo, s.Logger(), opts...)
 		}
-		graphService := graph.NewService(graphRepo, s.Logger(), opts...)
-
-		graphServiceOpt = reconciler.WithGraphService(graphService)
 	}
 
 	diodeToNetBoxMaxRetries := 3
@@ -206,13 +204,7 @@ func main() {
 	ops := reconciler.NewOps(repository, nbClient, s.Logger(), nil)
 	ops.Start(ctx)
 
-	// Build processor options
-	var processorOpts []reconciler.ProcessorOption
-	if graphServiceOpt != nil {
-		processorOpts = append(processorOpts, graphServiceOpt)
-	}
-
-	ingestionProcessor, err := reconciler.NewIngestionProcessor(ctx, s.Logger(), cfg, redisClient, redisStreamClient, reconciler.DefaultRedisStreamID, reconciler.DefaultRedisConsumerGroup, ops, metricRecorder, processorOpts...)
+	ingestionProcessor, err := reconciler.NewIngestionProcessor(ctx, s.Logger(), cfg, redisClient, redisStreamClient, reconciler.DefaultRedisStreamID, reconciler.DefaultRedisConsumerGroup, ops, metricRecorder)
 	if err != nil {
 		s.Logger().Error("failed to instantiate ingestion processor", "error", err)
 		metricRecorder.RecordServiceStartupAttempt(ctx, false)
@@ -255,6 +247,22 @@ func main() {
 		ingestionLogProcessor := reconciler.NewIngestionLogProcessor(s.Logger(), cfg, repository, ops, metricRecorder, backpressure)
 		if err := s.RegisterComponent(ingestionLogProcessor); err != nil {
 			s.Logger().Error("failed to register ingestion log processor", "error", err)
+			metricRecorder.RecordServiceStartupAttempt(ctx, false)
+			os.Exit(1)
+		}
+	}
+
+	// Graph-upsert runs as an independent processor when the feature is
+	// enabled — it polls ingestion_logs for rows that haven't been mirrored
+	// into the graph DB yet and drains them at its own pace, so a graph-DB
+	// outage cannot block plan/apply or the consume loop.
+	if graphServiceFactory != nil {
+		if err := repository.ResetClaimedGraphUpserts(ctx); err != nil {
+			s.Logger().Error("failed to reset stale graph-upsert claims", "error", err)
+		}
+		graphUpsertProcessor := reconciler.NewGraphUpsertProcessor(s.Logger(), cfg, repository, metricRecorder, graphServiceFactory, backpressure)
+		if err := s.RegisterComponent(graphUpsertProcessor); err != nil {
+			s.Logger().Error("failed to register graph upsert processor", "error", err)
 			metricRecorder.RecordServiceStartupAttempt(ctx, false)
 			os.Exit(1)
 		}
