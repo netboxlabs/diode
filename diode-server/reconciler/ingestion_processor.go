@@ -250,7 +250,7 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 	if err != nil {
 		errs = append(errs, fmt.Errorf("failed to convert ingestion timestamp: %v", err))
 	} else {
-		streamLag := time.Now().Unix() - int64(ingestionTs)
+		streamLag := int64(time.Since(time.Unix(0, int64(ingestionTs))).Seconds())
 		span.SetAttributes(attribute.Int64(telemetry.AttributeStreamLag, streamLag))
 	}
 

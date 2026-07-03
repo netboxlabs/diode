@@ -256,8 +256,8 @@ func httpTimeout() (time.Duration, error) {
 }
 
 func (c *Client) waitForRateLimit(ctx context.Context) (err error) {
-	ctx, span := telemetry.StartSpan(ctx, telemetry.SpanRateLimiterWait)
-	defer telemetry.End(span, err)
+	_, span := telemetry.StartSpan(ctx, telemetry.SpanRateLimiterWait)
+	defer func() { telemetry.End(span, err) }()
 	return c.limiter.Wait(ctx)
 }
 
