@@ -28,6 +28,7 @@ import (
 	"github.com/netboxlabs/diode/diode-server/authutil"
 	diodeErrors "github.com/netboxlabs/diode/diode-server/errors"
 	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
+	"github.com/netboxlabs/diode/diode-server/telemetry"
 )
 
 const (
@@ -254,6 +255,12 @@ func httpTimeout() (time.Duration, error) {
 	return time.Duration(timeout) * time.Second, nil
 }
 
+func (c *Client) waitForRateLimit(ctx context.Context) (err error) {
+	_, span := telemetry.StartSpan(ctx, telemetry.SpanRateLimiterWait)
+	defer func() { telemetry.End(span, err) }()
+	return c.limiter.Wait(ctx)
+}
+
 // NetBoxAPI is the interface for the NetBox Diode plugin API
 type NetBoxAPI interface {
 	// BulkPlan generates diffs for multiple entities in a single request
@@ -325,7 +332,7 @@ func (c *Client) BulkPlan(ctx context.Context, payload BulkPlanRequest) (*BulkPl
 		return nil, err
 	}
 
-	if err := c.limiter.Wait(ctx); err != nil {
+	if err := c.waitForRateLimit(ctx); err != nil {
 		return nil, err
 	}
 
@@ -419,7 +426,7 @@ func (c *Client) BulkPlanApply(ctx context.Context, payload BulkPlanApplyRequest
 		return nil, err
 	}
 
-	if err := c.limiter.Wait(ctx); err != nil {
+	if err := c.waitForRateLimit(ctx); err != nil {
 		return nil, err
 	}
 
@@ -474,7 +481,7 @@ func (c *Client) GetDefaultBranch(ctx context.Context) (*Branch, error) {
 		return nil, err
 	}
 
-	if err := c.limiter.Wait(ctx); err != nil {
+	if err := c.waitForRateLimit(ctx); err != nil {
 		return nil, err
 	}
 

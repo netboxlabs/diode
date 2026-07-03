@@ -209,7 +209,12 @@ func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, redisSt
 	}
 }
 
-func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.XMessage) error {
+func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.XMessage) (err error) {
+	ctx, span := telemetry.StartSpan(ctx, telemetry.SpanIngestionHandleStreamMessage,
+		attribute.String(telemetry.AttributeHostname, p.hostname),
+	)
+	defer func() { telemetry.End(span, err) }()
+
 	attrs := []attribute.KeyValue{
 		attribute.String(telemetry.AttributeHostname, p.hostname),
 	}
@@ -244,7 +249,15 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 	ingestionTs, err := strconv.Atoi(msg.Values["ingestion_ts"].(string))
 	if err != nil {
 		errs = append(errs, fmt.Errorf("failed to convert ingestion timestamp: %v", err))
+	} else {
+		streamLag := int64(time.Since(time.Unix(0, int64(ingestionTs))).Seconds())
+		span.SetAttributes(attribute.Int64(telemetry.AttributeStreamLag, streamLag))
 	}
+
+	span.SetAttributes(
+		attribute.String(telemetry.AttributeRequestID, ingestReq.GetId()),
+		attribute.Int(telemetry.AttributeEntityCount, len(ingestReq.GetEntities())),
+	)
 
 	p.logger.Debug("handling ingest request", "request", ingestReq)
 
@@ -278,8 +291,20 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 }
 
 // CreateIngestionLogs creates ingestion logs for an ingest request using bulk operations
-func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq *diodepb.IngestRequest, ingestionTs int) []error {
-	errs := make([]error, 0)
+func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq *diodepb.IngestRequest, ingestionTs int) (errs []error) {
+	ctx, span := telemetry.StartSpan(ctx, telemetry.SpanIngestionCreateIngestionLogs,
+		attribute.String(telemetry.AttributeRequestID, ingestReq.GetId()),
+		attribute.Int(telemetry.AttributeEntityCount, len(ingestReq.GetEntities())),
+	)
+	defer func() {
+		if len(errs) > 0 {
+			telemetry.End(span, errors.Join(errs...))
+		} else {
+			telemetry.End(span, nil)
+		}
+	}()
+
+	errs = make([]error, 0)
 
 	// Resolve the default branch via the 60s LRU cache. A short staleness
 	// window on a value that changes rarely is acceptable, and avoids a
