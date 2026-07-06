@@ -58,12 +58,6 @@ WHERE il.entity_hash = sqlc.arg('entity_hash')
 ORDER BY il.created_at DESC
 LIMIT 1;
 
--- name: IncrementDuplicateCount :exec
-UPDATE ingestion_logs
-SET duplicate_count = duplicate_count + 1,
-    last_seen = CURRENT_TIMESTAMP
-WHERE id = $1;
-
 -- name: FindPriorIngestionLogsByEntityHashes :many
 SELECT il.*
 FROM unnest(@entity_hashes::text[]) AS h(entity_hash)
@@ -91,11 +85,34 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14);
 -- name: FindIngestionLogIDsByExternalIDs :many
 SELECT id, external_id FROM ingestion_logs WHERE external_id = ANY(@external_ids::text[]);
 
--- name: BulkIncrementDuplicateCounts :exec
-UPDATE ingestion_logs
-SET duplicate_count = duplicate_count + 1,
-    last_seen = CURRENT_TIMESTAMP
-WHERE id = ANY(@ids::int4[]);
+-- name: BulkMarkDuplicates :many
+-- Increment duplicate_count/last_seen for prior ingestion logs of
+-- deduplicated entities and atomically requeue rows whose NetBox state may
+-- have drifted: APPLIED (3), FAILED (4), NO_CHANGES (5) -> QUEUED (1) so the
+-- pollers re-plan (and re-apply under auto-apply). QUEUED (1) is already
+-- pending, OPEN (2) may be claimed or awaiting review, IGNORED (6) is a user
+-- opt-out, APPLYING (8) is in flight -- those keep their state and only get
+-- the duplicate bookkeeping.
+--
+-- The inner SELECT ... ORDER BY id FOR UPDATE acquires row locks in the same
+-- global order as ClaimQueuedIngestionLogs/ClaimQueuedForAutoApply to avoid
+-- deadlocks with concurrent claim/persist updates. The state guard is
+-- evaluated on the locked row version, so a concurrent claim (1->2 / 1->8)
+-- committed before we acquire the lock is correctly skipped.
+UPDATE ingestion_logs il
+SET duplicate_count = il.duplicate_count + 1,
+    last_seen = CURRENT_TIMESTAMP,
+    state = CASE WHEN locked.prev_state IN (3, 4, 5) THEN 1 ELSE il.state END,
+    error = CASE WHEN locked.prev_state IN (3, 4, 5) THEN NULL ELSE il.error END
+FROM (
+    SELECT id, state AS prev_state
+    FROM ingestion_logs
+    WHERE id = ANY(@ids::int4[])
+    ORDER BY id
+    FOR UPDATE
+) locked
+WHERE il.id = locked.id
+RETURNING il.id, (locked.prev_state IN (3, 4, 5))::bool AS requeued;
 
 -- name: BulkUpdateIngestionLogStates :exec
 UPDATE ingestion_logs il

@@ -481,9 +481,19 @@ func (r *Repository) FindPriorIngestionLogByEntityHash(ctx context.Context, enti
 	return &dbLog.ID, log, nil
 }
 
-// IncrementDuplicateCount increments the duplicate count for an ingestion log
-func (r *Repository) IncrementDuplicateCount(ctx context.Context, id int32) error {
-	return r.queries.IncrementDuplicateCount(ctx, id)
+// BulkMarkDuplicates increments duplicate bookkeeping for the given prior
+// ingestion logs and requeues drift-eligible ones (APPLIED/FAILED/NO_CHANGES
+// -> QUEUED). Returns requeued flag by ingestion log ID.
+func (r *Repository) BulkMarkDuplicates(ctx context.Context, ids []int32) (map[int32]bool, error) {
+	rows, err := r.queries.BulkMarkDuplicates(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	requeued := make(map[int32]bool, len(rows))
+	for _, row := range rows {
+		requeued[row.ID] = row.Requeued
+	}
+	return requeued, nil
 }
 
 // TruncateChangeSets truncates change sets for an ingestion log to the given limit (keeps latest n)
@@ -588,11 +598,6 @@ func (r *Repository) allocateIngestionLogIDs(ctx context.Context, n int) ([]int3
 		ids = append(ids, id)
 	}
 	return ids, rows.Err()
-}
-
-// BulkIncrementDuplicateCounts increments the duplicate count for multiple ingestion logs.
-func (r *Repository) BulkIncrementDuplicateCounts(ctx context.Context, ids []int32) error {
-	return r.queries.BulkIncrementDuplicateCounts(ctx, ids)
 }
 
 // BulkPersistChangeSets persists multiple changesets and their changes in a

@@ -111,6 +111,12 @@ type IngestionLog struct {
 	DuplicateCount     int32              `json:"duplicate_count"`
 }
 
+type IngestionLogStateObjectTypeCount struct {
+	State      int32  `json:"state"`
+	ObjectType string `json:"object_type"`
+	N          int64  `json:"n"`
+}
+
 type VDeviation struct {
 	ID                 int32              `json:"id"`
 	ExternalID         string             `json:"external_id"`

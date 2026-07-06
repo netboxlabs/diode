@@ -10,6 +10,7 @@ type CreateIngestionLogResult struct {
 	ID           int32
 	IngestionLog *reconcilerpb.IngestionLog
 	WasDuplicate bool   // true if the ingestion log was a duplicate, in this case the prior ingestion log is returned
+	Requeued     bool   // true if a duplicate's prior ingestion log was requeued to re-check NetBox state drift
 	BranchID     string // the branch ID used for this ingestion log (empty string means main branch)
 }
 

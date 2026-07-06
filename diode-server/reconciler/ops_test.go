@@ -19,6 +19,7 @@ import (
 	pluginmocks "github.com/netboxlabs/diode/diode-server/netboxdiodeplugin/mocks"
 	"github.com/netboxlabs/diode/diode-server/reconciler"
 	"github.com/netboxlabs/diode/diode-server/reconciler/mocks"
+	reconops "github.com/netboxlabs/diode/diode-server/reconciler/ops"
 )
 
 func strPtr(s string) *string {
@@ -64,9 +65,11 @@ func TestOpsCreateIngestionLog(t *testing.T) {
 		mockFindPriorIngestionLogID    *int32
 		mockFindPriorIngestionLog      *pb.IngestionLog
 		mockFindPriorIngestionLogError error
+		mockRequeued                   bool
 
 		expectedError      string
 		expectWasDuplicate bool
+		expectRequeued     bool
 	}{
 		{
 			name:           "no duplicate found - successful creation",
@@ -93,6 +96,26 @@ func TestOpsCreateIngestionLog(t *testing.T) {
 
 			expectedError:      "",
 			expectWasDuplicate: true,
+		},
+		{
+			name:           "duplicate found - prior requeued for re-plan",
+			ingestionLog:   testIngestionLog,
+			sourceMetadata: testSourceMetadata,
+
+			mockFindPriorIngestionLogID: int32Ptr(5678),
+			mockFindPriorIngestionLog: &pb.IngestionLog{
+				Id:         "8a8ae517-85b9-466e-890c-aadb0771cc9e",
+				ObjectType: netbox.SiteObjectType,
+				State:      pb.State_APPLIED,
+				RequestId:  "1abf059c-496f-4037-83c2-0e9b1d021e85",
+				Entity:     testEntity,
+			},
+			mockFindPriorIngestionLogError: nil,
+			mockRequeued:                   true,
+
+			expectedError:      "",
+			expectWasDuplicate: true,
+			expectRequeued:     true,
 		},
 		{
 			name:           "create ingestion log fails",
@@ -139,7 +162,8 @@ func TestOpsCreateIngestionLog(t *testing.T) {
 			}
 
 			if tt.expectWasDuplicate {
-				mockRepository.EXPECT().IncrementDuplicateCount(mock.Anything, *tt.mockFindPriorIngestionLogID).Return(nil)
+				mockRepository.EXPECT().BulkMarkDuplicates(mock.Anything, []int32{*tt.mockFindPriorIngestionLogID}).
+					Return(map[int32]bool{*tt.mockFindPriorIngestionLogID: tt.mockRequeued}, nil)
 			}
 
 			result, err := opsInstance.CreateIngestionLog(ctx, tt.ingestionLog, tt.sourceMetadata)
@@ -156,8 +180,16 @@ func TestOpsCreateIngestionLog(t *testing.T) {
 			if tt.mockCreateIngestionLog != nil {
 				require.Equal(t, *tt.mockCreateIngestionLog.id, result.ID)
 			}
-			require.Equal(t, tt.ingestionLog, result.IngestionLog)
+			if tt.expectWasDuplicate {
+				require.Equal(t, tt.mockFindPriorIngestionLog, result.IngestionLog)
+			} else {
+				require.Equal(t, tt.ingestionLog, result.IngestionLog)
+			}
 			require.Equal(t, tt.expectWasDuplicate, result.WasDuplicate)
+			require.Equal(t, tt.expectRequeued, result.Requeued)
+			if tt.expectRequeued {
+				require.Equal(t, pb.State_QUEUED, result.IngestionLog.State)
+			}
 		})
 	}
 }
@@ -177,6 +209,94 @@ func waitForBranch(t *testing.T, ops *reconciler.Ops, predicate func(*netboxdiod
 	}
 	b, _ := ops.DefaultBranch(context.Background())
 	return b
+}
+
+func TestOpsBulkCreateIngestionLogsDuplicateRequeue(t *testing.T) {
+	ctx := context.Background()
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+
+	testEntity := &diodepb.Entity{
+		Entity: &diodepb.Entity_Site{
+			Site: &diodepb.Site{Name: "test-site-1"},
+		},
+	}
+
+	newLog := &pb.IngestionLog{Id: "new-log", ObjectType: netbox.SiteObjectType, State: pb.State_QUEUED, Entity: testEntity}
+	dupOfApplied := &pb.IngestionLog{Id: "dup-of-applied", ObjectType: netbox.SiteObjectType, State: pb.State_QUEUED, Entity: testEntity}
+	dupOfOpen := &pb.IngestionLog{Id: "dup-of-open", ObjectType: netbox.SiteObjectType, State: pb.State_QUEUED, Entity: testEntity}
+
+	priorApplied := &reconops.PriorIngestionLog{ID: 10, IngestionLog: &pb.IngestionLog{Id: "prior-applied", State: pb.State_APPLIED, Entity: testEntity}}
+	priorOpen := &reconops.PriorIngestionLog{ID: 11, IngestionLog: &pb.IngestionLog{Id: "prior-open", State: pb.State_OPEN, Entity: testEntity}}
+
+	mockRepository := mocks.NewRepository(t)
+	mockNetBoxClient := pluginmocks.NewNetBoxAPI(t)
+	opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil)
+
+	// Ops dedupes hashes via a map, so the argument order is nondeterministic
+	mockRepository.EXPECT().FindPriorIngestionLogsByEntityHashes(mock.Anything, mock.MatchedBy(func(hashes []string) bool {
+		want := map[string]struct{}{"hash-new": {}, "hash-applied": {}, "hash-open": {}}
+		if len(hashes) != len(want) {
+			return false
+		}
+		for _, h := range hashes {
+			if _, ok := want[h]; !ok {
+				return false
+			}
+		}
+		return true
+	}), (*string)(nil)).
+		Return(map[string]*reconops.PriorIngestionLog{"hash-applied": priorApplied, "hash-open": priorOpen}, nil)
+	mockRepository.EXPECT().BulkMarkDuplicates(mock.Anything, []int32{10, 11}).
+		Return(map[int32]bool{10: true, 11: false}, nil)
+	mockRepository.EXPECT().BulkCreateIngestionLogs(mock.Anything, []*pb.IngestionLog{newLog}, mock.Anything, []string{"hash-new"}).
+		Return(map[string]int32{"new-log": 1}, nil)
+
+	results, err := opsInstance.BulkCreateIngestionLogs(ctx,
+		[]*pb.IngestionLog{newLog, dupOfApplied, dupOfOpen},
+		[][]byte{nil, nil, nil},
+		[]string{"hash-new", "hash-applied", "hash-open"})
+	require.NoError(t, err)
+	require.Len(t, results, 3)
+
+	require.False(t, results[0].WasDuplicate)
+	require.False(t, results[0].Requeued)
+	require.Equal(t, int32(1), results[0].ID)
+
+	require.True(t, results[1].WasDuplicate)
+	require.True(t, results[1].Requeued)
+	require.Equal(t, int32(10), results[1].ID)
+	require.Equal(t, pb.State_QUEUED, results[1].IngestionLog.State)
+
+	require.True(t, results[2].WasDuplicate)
+	require.False(t, results[2].Requeued)
+	require.Equal(t, int32(11), results[2].ID)
+	require.Equal(t, pb.State_OPEN, results[2].IngestionLog.State)
+}
+
+func TestOpsBulkCreateIngestionLogsMarkDuplicatesError(t *testing.T) {
+	ctx := context.Background()
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+
+	testEntity := &diodepb.Entity{
+		Entity: &diodepb.Entity_Site{
+			Site: &diodepb.Site{Name: "test-site-1"},
+		},
+	}
+	dupLog := &pb.IngestionLog{Id: "dup-log", ObjectType: netbox.SiteObjectType, State: pb.State_QUEUED, Entity: testEntity}
+	prior := &reconops.PriorIngestionLog{ID: 10, IngestionLog: &pb.IngestionLog{Id: "prior", State: pb.State_APPLIED, Entity: testEntity}}
+
+	mockRepository := mocks.NewRepository(t)
+	mockNetBoxClient := pluginmocks.NewNetBoxAPI(t)
+	opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil)
+
+	mockRepository.EXPECT().FindPriorIngestionLogsByEntityHashes(mock.Anything, []string{"hash-dup"}, (*string)(nil)).
+		Return(map[string]*reconops.PriorIngestionLog{"hash-dup": prior}, nil)
+	mockRepository.EXPECT().BulkMarkDuplicates(mock.Anything, []int32{10}).
+		Return(nil, fmt.Errorf("database error"))
+
+	_, err := opsInstance.BulkCreateIngestionLogs(ctx, []*pb.IngestionLog{dupLog}, [][]byte{nil}, []string{"hash-dup"})
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "failed to bulk mark duplicates")
 }
 
 func TestOpsDefaultBranchColdCache(t *testing.T) {

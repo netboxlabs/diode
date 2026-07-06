@@ -29,16 +29,59 @@ type BulkCreateIngestionLogsParams struct {
 	EntityHash         pgtype.Text `json:"entity_hash"`
 }
 
-const bulkIncrementDuplicateCounts = `-- name: BulkIncrementDuplicateCounts :exec
-UPDATE ingestion_logs
-SET duplicate_count = duplicate_count + 1,
-    last_seen = CURRENT_TIMESTAMP
-WHERE id = ANY($1::int4[])
+const bulkMarkDuplicates = `-- name: BulkMarkDuplicates :many
+UPDATE ingestion_logs il
+SET duplicate_count = il.duplicate_count + 1,
+    last_seen = CURRENT_TIMESTAMP,
+    state = CASE WHEN locked.prev_state IN (3, 4, 5) THEN 1 ELSE il.state END,
+    error = CASE WHEN locked.prev_state IN (3, 4, 5) THEN NULL ELSE il.error END
+FROM (
+    SELECT id, state AS prev_state
+    FROM ingestion_logs
+    WHERE id = ANY($1::int4[])
+    ORDER BY id
+    FOR UPDATE
+) locked
+WHERE il.id = locked.id
+RETURNING il.id, (locked.prev_state IN (3, 4, 5))::bool AS requeued
 `
 
-func (q *Queries) BulkIncrementDuplicateCounts(ctx context.Context, ids []int32) error {
-	_, err := q.db.Exec(ctx, bulkIncrementDuplicateCounts, ids)
-	return err
+type BulkMarkDuplicatesRow struct {
+	ID       int32 `json:"id"`
+	Requeued bool  `json:"requeued"`
+}
+
+// Increment duplicate_count/last_seen for prior ingestion logs of
+// deduplicated entities and atomically requeue rows whose NetBox state may
+// have drifted: APPLIED (3), FAILED (4), NO_CHANGES (5) -> QUEUED (1) so the
+// pollers re-plan (and re-apply under auto-apply). QUEUED (1) is already
+// pending, OPEN (2) may be claimed or awaiting review, IGNORED (6) is a user
+// opt-out, APPLYING (8) is in flight -- those keep their state and only get
+// the duplicate bookkeeping.
+//
+// The inner SELECT ... ORDER BY id FOR UPDATE acquires row locks in the same
+// global order as ClaimQueuedIngestionLogs/ClaimQueuedForAutoApply to avoid
+// deadlocks with concurrent claim/persist updates. The state guard is
+// evaluated on the locked row version, so a concurrent claim (1->2 / 1->8)
+// committed before we acquire the lock is correctly skipped.
+func (q *Queries) BulkMarkDuplicates(ctx context.Context, ids []int32) ([]BulkMarkDuplicatesRow, error) {
+	rows, err := q.db.Query(ctx, bulkMarkDuplicates, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []BulkMarkDuplicatesRow
+	for rows.Next() {
+		var i BulkMarkDuplicatesRow
+		if err := rows.Scan(&i.ID, &i.Requeued); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const bulkUpdateIngestionLogStates = `-- name: BulkUpdateIngestionLogStates :exec
@@ -406,18 +449,6 @@ func (q *Queries) FindPriorIngestionLogsByEntityHashes(ctx context.Context, arg 
 		return nil, err
 	}
 	return items, nil
-}
-
-const incrementDuplicateCount = `-- name: IncrementDuplicateCount :exec
-UPDATE ingestion_logs
-SET duplicate_count = duplicate_count + 1,
-    last_seen = CURRENT_TIMESTAMP
-WHERE id = $1
-`
-
-func (q *Queries) IncrementDuplicateCount(ctx context.Context, id int32) error {
-	_, err := q.db.Exec(ctx, incrementDuplicateCount, id)
-	return err
 }
 
 const resetApplyingIngestionLogs = `-- name: ResetApplyingIngestionLogs :exec

@@ -88,49 +88,61 @@ func (_c *Repository_BulkCreateIngestionLogs_Call) RunAndReturn(run func(context
 	return _c
 }
 
-// BulkIncrementDuplicateCounts provides a mock function with given fields: ctx, ids
-func (_m *Repository) BulkIncrementDuplicateCounts(ctx context.Context, ids []int32) error {
+// BulkMarkDuplicates provides a mock function with given fields: ctx, ids
+func (_m *Repository) BulkMarkDuplicates(ctx context.Context, ids []int32) (map[int32]bool, error) {
 	ret := _m.Called(ctx, ids)
 
 	if len(ret) == 0 {
-		panic("no return value specified for BulkIncrementDuplicateCounts")
+		panic("no return value specified for BulkMarkDuplicates")
 	}
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, []int32) error); ok {
+	var r0 map[int32]bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []int32) (map[int32]bool, error)); ok {
+		return rf(ctx, ids)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, []int32) map[int32]bool); ok {
 		r0 = rf(ctx, ids)
 	} else {
-		r0 = ret.Error(0)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[int32]bool)
+		}
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(context.Context, []int32) error); ok {
+		r1 = rf(ctx, ids)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
-// Repository_BulkIncrementDuplicateCounts_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BulkIncrementDuplicateCounts'
-type Repository_BulkIncrementDuplicateCounts_Call struct {
+// Repository_BulkMarkDuplicates_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BulkMarkDuplicates'
+type Repository_BulkMarkDuplicates_Call struct {
 	*mock.Call
 }
 
-// BulkIncrementDuplicateCounts is a helper method to define mock.On call
+// BulkMarkDuplicates is a helper method to define mock.On call
 //   - ctx context.Context
 //   - ids []int32
-func (_e *Repository_Expecter) BulkIncrementDuplicateCounts(ctx interface{}, ids interface{}) *Repository_BulkIncrementDuplicateCounts_Call {
-	return &Repository_BulkIncrementDuplicateCounts_Call{Call: _e.mock.On("BulkIncrementDuplicateCounts", ctx, ids)}
+func (_e *Repository_Expecter) BulkMarkDuplicates(ctx interface{}, ids interface{}) *Repository_BulkMarkDuplicates_Call {
+	return &Repository_BulkMarkDuplicates_Call{Call: _e.mock.On("BulkMarkDuplicates", ctx, ids)}
 }
 
-func (_c *Repository_BulkIncrementDuplicateCounts_Call) Run(run func(ctx context.Context, ids []int32)) *Repository_BulkIncrementDuplicateCounts_Call {
+func (_c *Repository_BulkMarkDuplicates_Call) Run(run func(ctx context.Context, ids []int32)) *Repository_BulkMarkDuplicates_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].([]int32))
 	})
 	return _c
 }
 
-func (_c *Repository_BulkIncrementDuplicateCounts_Call) Return(_a0 error) *Repository_BulkIncrementDuplicateCounts_Call {
-	_c.Call.Return(_a0)
+func (_c *Repository_BulkMarkDuplicates_Call) Return(_a0 map[int32]bool, _a1 error) *Repository_BulkMarkDuplicates_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *Repository_BulkIncrementDuplicateCounts_Call) RunAndReturn(run func(context.Context, []int32) error) *Repository_BulkIncrementDuplicateCounts_Call {
+func (_c *Repository_BulkMarkDuplicates_Call) RunAndReturn(run func(context.Context, []int32) (map[int32]bool, error)) *Repository_BulkMarkDuplicates_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -617,53 +629,6 @@ func (_c *Repository_FindPriorIngestionLogsByEntityHashes_Call) Return(_a0 map[s
 }
 
 func (_c *Repository_FindPriorIngestionLogsByEntityHashes_Call) RunAndReturn(run func(context.Context, []string, *string) (map[string]*ops.PriorIngestionLog, error)) *Repository_FindPriorIngestionLogsByEntityHashes_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// IncrementDuplicateCount provides a mock function with given fields: ctx, id
-func (_m *Repository) IncrementDuplicateCount(ctx context.Context, id int32) error {
-	ret := _m.Called(ctx, id)
-
-	if len(ret) == 0 {
-		panic("no return value specified for IncrementDuplicateCount")
-	}
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, int32) error); ok {
-		r0 = rf(ctx, id)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// Repository_IncrementDuplicateCount_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'IncrementDuplicateCount'
-type Repository_IncrementDuplicateCount_Call struct {
-	*mock.Call
-}
-
-// IncrementDuplicateCount is a helper method to define mock.On call
-//   - ctx context.Context
-//   - id int32
-func (_e *Repository_Expecter) IncrementDuplicateCount(ctx interface{}, id interface{}) *Repository_IncrementDuplicateCount_Call {
-	return &Repository_IncrementDuplicateCount_Call{Call: _e.mock.On("IncrementDuplicateCount", ctx, id)}
-}
-
-func (_c *Repository_IncrementDuplicateCount_Call) Run(run func(ctx context.Context, id int32)) *Repository_IncrementDuplicateCount_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(int32))
-	})
-	return _c
-}
-
-func (_c *Repository_IncrementDuplicateCount_Call) Return(_a0 error) *Repository_IncrementDuplicateCount_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *Repository_IncrementDuplicateCount_Call) RunAndReturn(run func(context.Context, int32) error) *Repository_IncrementDuplicateCount_Call {
 	_c.Call.Return(run)
 	return _c
 }

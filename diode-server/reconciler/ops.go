@@ -210,8 +210,10 @@ func (o *Ops) CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb
 		return result, nil
 	}
 
-	// It was a duplicate, increment the duplicate count and return the prior ingestion log
-	if err := o.repository.IncrementDuplicateCount(ctx, *existingID); err != nil {
+	// It was a duplicate: increment the duplicate count, requeue the prior
+	// ingestion log if its NetBox state may have drifted, and return it
+	requeued, err := o.repository.BulkMarkDuplicates(ctx, []int32{*existingID})
+	if err != nil {
 		return nil, fmt.Errorf("failed to mark record as duplicate: %w", err)
 	}
 
@@ -219,7 +221,11 @@ func (o *Ops) CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb
 		ID:           *existingID,
 		IngestionLog: existingLog,
 		WasDuplicate: true,
+		Requeued:     requeued[*existingID],
 		BranchID:     branchIDForResult,
+	}
+	if result.Requeued {
+		result.IngestionLog.State = reconcilerpb.State_QUEUED
 	}
 
 	return result, nil
@@ -287,10 +293,20 @@ func (o *Ops) BulkCreateIngestionLogs(ctx context.Context, ingestionLogs []*reco
 		}
 	}
 
-	// Bulk increment duplicate counts
+	// Bulk mark duplicates: increment duplicate counts and requeue prior
+	// ingestion logs whose NetBox state may have drifted since last plan/apply
 	if len(duplicateIDs) > 0 {
-		if err := o.repository.BulkIncrementDuplicateCounts(ctx, duplicateIDs); err != nil {
-			return nil, fmt.Errorf("failed to bulk increment duplicate counts: %w", err)
+		requeued, err := o.repository.BulkMarkDuplicates(ctx, duplicateIDs)
+		if err != nil {
+			return nil, fmt.Errorf("failed to bulk mark duplicates: %w", err)
+		}
+		// Results with the same entity hash share one prior *IngestionLog;
+		// writing the same QUEUED value into it repeatedly is idempotent.
+		for _, res := range results {
+			if res != nil && res.WasDuplicate && requeued[res.ID] {
+				res.Requeued = true
+				res.IngestionLog.State = reconcilerpb.State_QUEUED
+			}
 		}
 	}
 
