@@ -155,6 +155,44 @@ func (q *Queries) CreateChangeSet(ctx context.Context, arg CreateChangeSetParams
 	return i, err
 }
 
+const latestChangeSetsHaveChanges = `-- name: LatestChangeSetsHaveChanges :many
+SELECT DISTINCT ON (cs.ingestion_log_id)
+    cs.ingestion_log_id,
+    EXISTS (SELECT 1 FROM changes c WHERE c.change_set_id = cs.id)::bool AS has_changes
+FROM change_sets cs
+WHERE cs.ingestion_log_id = ANY($1::int4[])
+ORDER BY cs.ingestion_log_id, cs.id DESC
+`
+
+type LatestChangeSetsHaveChangesRow struct {
+	IngestionLogID int32 `json:"ingestion_log_id"`
+	HasChanges     bool  `json:"has_changes"`
+}
+
+// For each ingestion log, report whether its latest (highest id) change set
+// still contains changes. Used to decide whether a NO_CHANGES re-plan should
+// persist an empty "unchanged" change set so the latest change set agrees
+// with the ingestion log state. Logs without any change set are omitted.
+func (q *Queries) LatestChangeSetsHaveChanges(ctx context.Context, ingestionLogIds []int32) ([]LatestChangeSetsHaveChangesRow, error) {
+	rows, err := q.db.Query(ctx, latestChangeSetsHaveChanges, ingestionLogIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []LatestChangeSetsHaveChangesRow
+	for rows.Next() {
+		var i LatestChangeSetsHaveChangesRow
+		if err := rows.Scan(&i.IngestionLogID, &i.HasChanges); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const truncateChangeSets = `-- name: TruncateChangeSets :exec
 DELETE FROM change_sets cs1
 WHERE cs1.ingestion_log_id = $1

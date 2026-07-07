@@ -299,6 +299,95 @@ func TestOpsBulkCreateIngestionLogsMarkDuplicatesError(t *testing.T) {
 	require.Contains(t, err.Error(), "failed to bulk mark duplicates")
 }
 
+func TestOpsBulkPlanUnchangedMarker(t *testing.T) {
+	ctx := context.Background()
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+
+	testEntity := &diodepb.Entity{
+		Entity: &diodepb.Entity_Site{
+			Site: &diodepb.Site{Name: "test-site-1"},
+		},
+	}
+
+	// Two requeued logs re-plan to an empty diff: log 1 has an applied change
+	// set with changes (expect an "unchanged" marker), log 2 has none (first
+	// plan; expect state update only).
+	items := []reconops.QueuedIngestionLog{
+		{ID: 1, IngestionLog: &pb.IngestionLog{Id: "log-1", ObjectType: netbox.SiteObjectType, Entity: testEntity}},
+		{ID: 2, IngestionLog: &pb.IngestionLog{Id: "log-2", ObjectType: netbox.SiteObjectType, Entity: testEntity}},
+	}
+
+	mockRepository := mocks.NewRepository(t)
+	mockNetBoxClient := pluginmocks.NewNetBoxAPI(t)
+	opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil)
+
+	mockNetBoxClient.EXPECT().BulkPlan(mock.Anything, mock.Anything).Return(&netboxdiodeplugin.BulkPlanResponse{
+		Results: []netboxdiodeplugin.BulkPlanResult{
+			{ID: "1", ChangeSet: &netboxdiodeplugin.ChangeSet{ID: "cs-1"}},
+			{ID: "2", ChangeSet: &netboxdiodeplugin.ChangeSet{ID: "cs-2"}},
+		},
+	}, nil)
+	mockRepository.EXPECT().LatestChangeSetsHaveChanges(mock.Anything, []int32{1, 2}).
+		Return(map[int32]bool{1: true}, nil)
+
+	csID1, csID2 := int32(101), int32(102)
+	mockRepository.EXPECT().BulkPersistChangeSets(mock.Anything, mock.MatchedBy(func(persistItems []reconops.BulkPersistItem) bool {
+		if len(persistItems) != 2 {
+			return false
+		}
+		markerOK := persistItems[0].PersistEmptyChangeSet &&
+			persistItems[0].NewState == pb.State_NO_CHANGES &&
+			persistItems[0].ChangeSet.DeviationName != nil &&
+			*persistItems[0].ChangeSet.DeviationName == "Site unchanged"
+		noMarkerOK := !persistItems[1].PersistEmptyChangeSet &&
+			persistItems[1].NewState == pb.State_NO_CHANGES
+		return markerOK && noMarkerOK
+	}), mock.Anything).Return([]reconops.BulkPersistResult{
+		{IngestionLogID: 1, ChangeSetID: &csID1},
+		{IngestionLogID: 2, ChangeSetID: &csID2},
+	}, nil)
+
+	results := opsInstance.BulkPlan(ctx, items, "")
+	require.Len(t, results, 2)
+	require.NoError(t, results[0].Err)
+	require.NoError(t, results[1].Err)
+}
+
+func TestOpsBulkPlanUnchangedMarkerLookupFailure(t *testing.T) {
+	ctx := context.Background()
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+
+	testEntity := &diodepb.Entity{
+		Entity: &diodepb.Entity_Site{
+			Site: &diodepb.Site{Name: "test-site-1"},
+		},
+	}
+	items := []reconops.QueuedIngestionLog{
+		{ID: 1, IngestionLog: &pb.IngestionLog{Id: "log-1", ObjectType: netbox.SiteObjectType, Entity: testEntity}},
+	}
+
+	mockRepository := mocks.NewRepository(t)
+	mockNetBoxClient := pluginmocks.NewNetBoxAPI(t)
+	opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil)
+
+	mockNetBoxClient.EXPECT().BulkPlan(mock.Anything, mock.Anything).Return(&netboxdiodeplugin.BulkPlanResponse{
+		Results: []netboxdiodeplugin.BulkPlanResult{
+			{ID: "1", ChangeSet: &netboxdiodeplugin.ChangeSet{ID: "cs-1"}},
+		},
+	}, nil)
+	mockRepository.EXPECT().LatestChangeSetsHaveChanges(mock.Anything, []int32{1}).
+		Return(nil, fmt.Errorf("database error"))
+
+	// Marker is skipped on lookup failure; plan still persists the state.
+	mockRepository.EXPECT().BulkPersistChangeSets(mock.Anything, mock.MatchedBy(func(persistItems []reconops.BulkPersistItem) bool {
+		return len(persistItems) == 1 && !persistItems[0].PersistEmptyChangeSet && persistItems[0].NewState == pb.State_NO_CHANGES
+	}), mock.Anything).Return([]reconops.BulkPersistResult{{IngestionLogID: 1}}, nil)
+
+	results := opsInstance.BulkPlan(ctx, items, "")
+	require.Len(t, results, 1)
+	require.NoError(t, results[0].Err)
+}
+
 func TestOpsDefaultBranchColdCache(t *testing.T) {
 	// Without Start, the refresher never runs; DefaultBranch returns (nil, nil).
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))

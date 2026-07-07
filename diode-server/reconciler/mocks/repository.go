@@ -633,6 +633,65 @@ func (_c *Repository_FindPriorIngestionLogsByEntityHashes_Call) RunAndReturn(run
 	return _c
 }
 
+// LatestChangeSetsHaveChanges provides a mock function with given fields: ctx, ingestionLogIDs
+func (_m *Repository) LatestChangeSetsHaveChanges(ctx context.Context, ingestionLogIDs []int32) (map[int32]bool, error) {
+	ret := _m.Called(ctx, ingestionLogIDs)
+
+	if len(ret) == 0 {
+		panic("no return value specified for LatestChangeSetsHaveChanges")
+	}
+
+	var r0 map[int32]bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []int32) (map[int32]bool, error)); ok {
+		return rf(ctx, ingestionLogIDs)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, []int32) map[int32]bool); ok {
+		r0 = rf(ctx, ingestionLogIDs)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[int32]bool)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, []int32) error); ok {
+		r1 = rf(ctx, ingestionLogIDs)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Repository_LatestChangeSetsHaveChanges_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'LatestChangeSetsHaveChanges'
+type Repository_LatestChangeSetsHaveChanges_Call struct {
+	*mock.Call
+}
+
+// LatestChangeSetsHaveChanges is a helper method to define mock.On call
+//   - ctx context.Context
+//   - ingestionLogIDs []int32
+func (_e *Repository_Expecter) LatestChangeSetsHaveChanges(ctx interface{}, ingestionLogIDs interface{}) *Repository_LatestChangeSetsHaveChanges_Call {
+	return &Repository_LatestChangeSetsHaveChanges_Call{Call: _e.mock.On("LatestChangeSetsHaveChanges", ctx, ingestionLogIDs)}
+}
+
+func (_c *Repository_LatestChangeSetsHaveChanges_Call) Run(run func(ctx context.Context, ingestionLogIDs []int32)) *Repository_LatestChangeSetsHaveChanges_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].([]int32))
+	})
+	return _c
+}
+
+func (_c *Repository_LatestChangeSetsHaveChanges_Call) Return(_a0 map[int32]bool, _a1 error) *Repository_LatestChangeSetsHaveChanges_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Repository_LatestChangeSetsHaveChanges_Call) RunAndReturn(run func(context.Context, []int32) (map[int32]bool, error)) *Repository_LatestChangeSetsHaveChanges_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ResetApplyingIngestionLogs provides a mock function with given fields: ctx
 func (_m *Repository) ResetApplyingIngestionLogs(ctx context.Context) error {
 	ret := _m.Called(ctx)

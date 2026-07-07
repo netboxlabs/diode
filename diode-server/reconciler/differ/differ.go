@@ -136,6 +136,16 @@ func FindPrimaryChange(changes []changeset.Change, objectType string) *changeset
 	return nil
 }
 
+// UnchangedDeviationName returns the deviation name for a change set that
+// produced no changes for the given object type.
+func UnchangedDeviationName(objectType string) string {
+	typeName, err := netbox.GetObjectTypeName(objectType)
+	if err != nil {
+		typeName = objectType
+	}
+	return typeName + " unchanged"
+}
+
 func genDeviationName(changes []changeset.Change, objectType string) *string {
 	typeName, err := netbox.GetObjectTypeName(objectType)
 	if err != nil {
@@ -144,7 +154,7 @@ func genDeviationName(changes []changeset.Change, objectType string) *string {
 
 	primaryChange := FindPrimaryChange(changes, objectType)
 	if primaryChange == nil {
-		deviationName := fmt.Sprintf("%s unchanged", typeName)
+		deviationName := UnchangedDeviationName(objectType)
 		return &deviationName
 	}
 

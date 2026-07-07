@@ -32,6 +32,10 @@ type Repository interface {
 
 	// Bulk changeset persistence
 	BulkPersistChangeSets(ctx context.Context, items []ops.BulkPersistItem, maxChangeSetsPerLog int32) ([]ops.BulkPersistResult, error)
+	// LatestChangeSetsHaveChanges reports, per ingestion log ID, whether the
+	// latest persisted change set still contains changes. Logs without any
+	// change set are absent from the result.
+	LatestChangeSetsHaveChanges(ctx context.Context, ingestionLogIDs []int32) (map[int32]bool, error)
 
 	// Inbox processing
 	ClaimQueuedIngestionLogs(ctx context.Context, batchSize int32) ([]ops.QueuedIngestionLog, error)
