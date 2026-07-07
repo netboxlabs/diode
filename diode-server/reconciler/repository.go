@@ -32,6 +32,11 @@ type Repository interface {
 
 	// Bulk changeset persistence
 	BulkPersistChangeSets(ctx context.Context, items []ops.BulkPersistItem, maxChangeSetsPerLog int32) ([]ops.BulkPersistResult, error)
+	// BulkCreateDriftDeviations creates, in one transaction, a new ingestion
+	// log per item (clone of the prior with a fresh external ID) carrying the
+	// drift change set, and restores each prior log to APPLIED so its history
+	// stays intact.
+	BulkCreateDriftDeviations(ctx context.Context, items []ops.DriftDeviationItem) ([]ops.DriftDeviationResult, error)
 
 	// Inbox processing
 	ClaimQueuedIngestionLogs(ctx context.Context, batchSize int32) ([]ops.QueuedIngestionLog, error)

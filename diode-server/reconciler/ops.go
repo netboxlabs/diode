@@ -9,6 +9,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/netboxlabs/diode/diode-server/entityhash"
 	diodeErrors "github.com/netboxlabs/diode/diode-server/errors"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
@@ -367,6 +369,8 @@ func (o *Ops) BulkPlan(ctx context.Context, items []ops.QueuedIngestionLog, bran
 
 	persistItems := make([]ops.BulkPersistItem, 0, len(items))
 	persistIndex := make([]int, 0, len(items))
+	var driftItems []ops.DriftDeviationItem
+	var driftIndex []int
 
 	for i, item := range items {
 		entityID := fmt.Sprintf("%d", item.ID)
@@ -379,6 +383,22 @@ func (o *Ops) BulkPlan(ctx context.Context, items []ops.QueuedIngestionLog, bran
 		cs, err := differ.ConvertBulkPlanResult(planResult, item.IngestionLog.GetObjectType())
 		if err != nil {
 			results[i] = o.handleGenerateChangeSetFailure(ctx, item, branchID, err)
+			continue
+		}
+
+		stripNoopOnlyChanges(cs)
+
+		// NetBox drifted since this entity was applied: the applied deviation
+		// stays APPLIED and the drift becomes a new deviation of its own.
+		if item.RequeuedFromState == reconcilerpb.State_APPLIED && len(cs.Changes) > 0 {
+			driftItems = append(driftItems, ops.DriftDeviationItem{
+				PriorIngestionLogID: item.ID,
+				NewExternalID:       uuid.NewString(),
+				NewState:            reconcilerpb.State_OPEN,
+				ChangeSet:           *cs,
+			})
+			driftIndex = append(driftIndex, i)
+			results[i] = ops.BulkGenerateChangeSetResult{IngestionLogID: item.ID, ChangeSet: cs}
 			continue
 		}
 
@@ -401,7 +421,34 @@ func (o *Ops) BulkPlan(ctx context.Context, items []ops.QueuedIngestionLog, bran
 		}
 	}
 
+	if len(driftItems) > 0 {
+		driftResults, err := o.repository.BulkCreateDriftDeviations(ctx, driftItems)
+		if err != nil {
+			o.logger.Error("failed to create drift deviations", "error", err)
+			for _, idx := range driftIndex {
+				// Restore the prior so it does not linger in the claimed
+				// state; the drift is re-detected on the next observation.
+				o.restoreRequeuedPrior(ctx, items[idx].ID)
+				results[idx].Err = err
+			}
+		} else {
+			for j, dr := range driftResults {
+				idx := driftIndex[j]
+				results[idx].IngestionLogID = dr.NewIngestionLogID
+				results[idx].ChangeSetID = dr.ChangeSetID
+			}
+		}
+	}
+
 	return results
+}
+
+// restoreRequeuedPrior returns a drift-recheck prior to APPLIED (clearing its
+// requeue marker) after a failure that must not destroy its applied record.
+func (o *Ops) restoreRequeuedPrior(ctx context.Context, ingestionLogID int32) {
+	if err := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, reconcilerpb.State_APPLIED, nil); err != nil {
+		o.logger.Error("failed to restore requeued prior to APPLIED", "ingestionLogID", ingestionLogID, "error", err)
+	}
 }
 
 func collectPersistItem(persistItems []ops.BulkPersistItem, persistIndex []int, results []ops.BulkGenerateChangeSetResult, i int, item ops.QueuedIngestionLog, cs *changeset.ChangeSet) ([]ops.BulkPersistItem, []int) {
@@ -410,6 +457,11 @@ func collectPersistItem(persistItems []ops.BulkPersistItem, persistIndex []int, 
 	newState := reconcilerpb.State_OPEN
 	if len(cs.Changes) == 0 {
 		newState = reconcilerpb.State_NO_CHANGES
+		if item.RequeuedFromState == reconcilerpb.State_APPLIED {
+			// Drift re-check of an applied entity found NetBox still in sync:
+			// keep the applied fact instead of degrading it to NO_CHANGES.
+			newState = reconcilerpb.State_APPLIED
+		}
 	}
 
 	persistItems = append(persistItems, ops.BulkPersistItem{
@@ -446,6 +498,14 @@ func (o *Ops) handleGenerateChangeSetFailure(ctx context.Context, item ops.Queue
 	tags := map[string]string{"request_id": ingestEntity.RequestID}
 	contextMap := map[string]any{"request_id": ingestEntity.RequestID, "object_type": ingestEntity.ObjectType}
 	sentry.CaptureError(err, tags, "Ingest Entity", contextMap)
+
+	// A plan failure on a drift re-check must not destroy the prior APPLIED
+	// record: restore it and surface the error via Sentry/logs only. The
+	// check retries on the next duplicate observation.
+	if item.RequeuedFromState == reconcilerpb.State_APPLIED {
+		o.restoreRequeuedPrior(ctx, item.ID)
+		return ops.BulkGenerateChangeSetResult{IngestionLogID: item.ID, Err: err}
+	}
 
 	item.IngestionLog.State = reconcilerpb.State_FAILED
 	changeSetErr := handleChangeSetError(err)
@@ -535,6 +595,8 @@ func (o *Ops) BulkPlanApply(ctx context.Context, items []ops.QueuedIngestionLog,
 
 	var persistItems []ops.BulkPersistItem
 	var persistIndex []int
+	var driftItems []ops.DriftDeviationItem
+	var driftIndex []int
 
 	for i, item := range items {
 		entityID := fmt.Sprintf("%d", item.ID)
@@ -561,10 +623,34 @@ func (o *Ops) BulkPlanApply(ctx context.Context, items []ops.QueuedIngestionLog,
 
 		// Plan succeeded — collect for bulk persist with the right terminal state.
 		stripNoopOnlyChanges(cs)
+
+		// NetBox drifted since this entity was applied: the applied deviation
+		// stays APPLIED and the drift becomes a new deviation of its own,
+		// APPLIED on success or FAILED when the apply phase reported errors.
+		if item.RequeuedFromState == reconcilerpb.State_APPLIED && len(cs.Changes) > 0 {
+			newState := reconcilerpb.State_APPLIED
+			if applyErr != nil {
+				newState = reconcilerpb.State_FAILED
+			}
+			driftItems = append(driftItems, ops.DriftDeviationItem{
+				PriorIngestionLogID: item.ID,
+				NewExternalID:       uuid.NewString(),
+				NewState:            newState,
+				ChangeSet:           *cs,
+			})
+			driftIndex = append(driftIndex, i)
+			continue
+		}
+
 		newState := reconcilerpb.State_APPLIED
 		switch {
 		case len(cs.Changes) == 0:
 			newState = reconcilerpb.State_NO_CHANGES
+			if item.RequeuedFromState == reconcilerpb.State_APPLIED {
+				// Drift re-check found NetBox still in sync: keep the applied
+				// fact instead of degrading it to NO_CHANGES.
+				newState = reconcilerpb.State_APPLIED
+			}
 		case applyErr != nil:
 			newState = reconcilerpb.State_FAILED
 		}
@@ -590,6 +676,35 @@ func (o *Ops) BulkPlanApply(ctx context.Context, items []ops.QueuedIngestionLog,
 			for j, pr := range persistResults {
 				idx := persistIndex[j]
 				results[idx].ChangeSetID = pr.ChangeSetID
+			}
+		}
+	}
+
+	if len(driftItems) > 0 {
+		driftResults, err := o.repository.BulkCreateDriftDeviations(ctx, driftItems)
+		if err != nil {
+			o.logger.Error("failed to create drift deviations during bulk-plan-apply", "error", err)
+			for _, idx := range driftIndex {
+				// Restore the prior so it does not linger in APPLYING; the
+				// drift is re-detected on the next observation.
+				o.restoreRequeuedPrior(ctx, items[idx].ID)
+				if results[idx].ApplyErr == nil {
+					results[idx].ApplyErr = err
+				}
+			}
+		} else {
+			for j, dr := range driftResults {
+				idx := driftIndex[j]
+				results[idx].IngestionLogID = dr.NewIngestionLogID
+				results[idx].ChangeSetID = dr.ChangeSetID
+				// The new deviation was created in FAILED state when the apply
+				// phase reported errors; annotate it with the reason.
+				if results[idx].ApplyErr != nil {
+					changeSetErr := handleChangeSetError(results[idx].ApplyErr)
+					if err := o.repository.UpdateIngestionLogStateWithError(ctx, dr.NewIngestionLogID, reconcilerpb.State_FAILED, changeSetErr); err != nil {
+						o.logger.Warn("failed to annotate apply failure", "ingestionLogID", dr.NewIngestionLogID, "error", err)
+					}
+				}
 			}
 		}
 	}
@@ -625,6 +740,14 @@ func (o *Ops) persistPlanApplyFailurePlaceholder(ctx context.Context, item ops.Q
 	tags := map[string]string{"request_id": ingestEntity.RequestID}
 	contextMap := map[string]any{"request_id": ingestEntity.RequestID, "object_type": ingestEntity.ObjectType}
 	sentry.CaptureError(planErr, tags, "BulkPlanApply", contextMap)
+
+	// A plan failure on a drift re-check must not destroy the prior APPLIED
+	// record: restore it and surface the error via Sentry/logs only. The
+	// check retries on the next duplicate observation.
+	if item.RequeuedFromState == reconcilerpb.State_APPLIED {
+		o.restoreRequeuedPrior(ctx, item.ID)
+		return ops.BulkPlanApplyResult{IngestionLogID: item.ID, PlanErr: planErr}
+	}
 
 	changeSetErr := handleChangeSetError(planErr)
 	if err2 := o.repository.UpdateIngestionLogStateWithError(ctx, item.ID, reconcilerpb.State_FAILED, changeSetErr); err2 != nil {

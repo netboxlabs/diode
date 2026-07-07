@@ -24,6 +24,27 @@ type PriorIngestionLog struct {
 type QueuedIngestionLog struct {
 	ID           int32
 	IngestionLog *reconcilerpb.IngestionLog
+	// RequeuedFromState is the terminal state the log was in when a duplicate
+	// observation requeued it for re-plan (STATE_UNSPECIFIED when the log is a
+	// first-time plan). A log requeued from APPLIED spawns a new deviation on
+	// drift and is restored to APPLIED, preserving its history.
+	RequeuedFromState reconcilerpb.State
+}
+
+// DriftDeviationItem describes a new deviation to create for an entity whose
+// NetBox state drifted since its prior ingestion log was applied.
+type DriftDeviationItem struct {
+	PriorIngestionLogID int32
+	NewExternalID       string
+	NewState            reconcilerpb.State
+	ChangeSet           changeset.ChangeSet
+}
+
+// DriftDeviationResult holds the outcome of creating one drift deviation.
+type DriftDeviationResult struct {
+	PriorIngestionLogID int32
+	NewIngestionLogID   int32
+	ChangeSetID         *int32
 }
 
 // BulkGenerateChangeSetResult holds the result of generating a change set for a single item in a bulk operation.

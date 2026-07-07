@@ -635,51 +635,13 @@ func (r *Repository) BulkPersistChangeSets(ctx context.Context, items []ops.Bulk
 			csID := csIDs[j]
 			results[idx].ChangeSetID = &csID
 
-			p := postgres.BulkCreateChangeSetsParams{
-				ID:             csID,
-				ExternalID:     item.ChangeSet.ID,
-				IngestionLogID: item.IngestionLogID,
-			}
-			if item.ChangeSet.BranchID != nil {
-				p.BranchID = pgtype.Text{String: *item.ChangeSet.BranchID, Valid: true}
-			}
-			if item.ChangeSet.DeviationName != nil {
-				p.DeviationName = pgtype.Text{String: *item.ChangeSet.DeviationName, Valid: true}
-			}
-			csParams = append(csParams, p)
+			csParams = append(csParams, buildChangeSetParams(csID, item.IngestionLogID, item.ChangeSet))
 
-			for seq, change := range item.ChangeSet.Changes {
-				beforeJSON, err := json.Marshal(change.Before)
-				if err != nil {
-					return nil, fmt.Errorf("failed to marshal before state: %w", err)
-				}
-				afterJSON, err := json.Marshal(change.After)
-				if err != nil {
-					return nil, fmt.Errorf("failed to marshal after state: %w", err)
-				}
-
-				cp := postgres.BulkCreateChangesParams{
-					ExternalID:         change.ID,
-					ChangeSetID:        csID,
-					ChangeType:         change.ChangeType,
-					ObjectType:         change.ObjectType,
-					ObjectPrimaryValue: change.ObjectPrimaryValue,
-					Before:             beforeJSON,
-					After:              afterJSON,
-					NewRefs:            change.NewRefs,
-					SequenceNumber:     pgtype.Int4{Int32: int32(seq), Valid: true},
-				}
-				if change.ObjectID != nil {
-					cp.ObjectID = pgtype.Int4{Int32: int32(*change.ObjectID), Valid: true}
-				}
-				if change.ObjectVersion != nil {
-					cp.ObjectVersion = pgtype.Int4{Int32: int32(*change.ObjectVersion), Valid: true}
-				}
-				if change.RefID != nil {
-					cp.RefID = pgtype.Text{String: *change.RefID, Valid: true}
-				}
-				allChangeParams = append(allChangeParams, cp)
+			changeParams, err := buildChangeParams(csID, item.ChangeSet)
+			if err != nil {
+				return nil, err
 			}
+			allChangeParams = append(allChangeParams, changeParams...)
 		}
 
 		if _, err := qtx.BulkCreateChangeSets(ctx, csParams); err != nil {
@@ -723,6 +685,135 @@ func (r *Repository) BulkPersistChangeSets(ctx context.Context, items []ops.Bulk
 	return results, nil
 }
 
+func buildChangeSetParams(csID int32, ingestionLogID int32, cs changeset.ChangeSet) postgres.BulkCreateChangeSetsParams {
+	p := postgres.BulkCreateChangeSetsParams{
+		ID:             csID,
+		ExternalID:     cs.ID,
+		IngestionLogID: ingestionLogID,
+	}
+	if cs.BranchID != nil {
+		p.BranchID = pgtype.Text{String: *cs.BranchID, Valid: true}
+	}
+	if cs.DeviationName != nil {
+		p.DeviationName = pgtype.Text{String: *cs.DeviationName, Valid: true}
+	}
+	return p
+}
+
+func buildChangeParams(csID int32, cs changeset.ChangeSet) ([]postgres.BulkCreateChangesParams, error) {
+	params := make([]postgres.BulkCreateChangesParams, 0, len(cs.Changes))
+	for seq, change := range cs.Changes {
+		beforeJSON, err := json.Marshal(change.Before)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal before state: %w", err)
+		}
+		afterJSON, err := json.Marshal(change.After)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal after state: %w", err)
+		}
+
+		cp := postgres.BulkCreateChangesParams{
+			ExternalID:         change.ID,
+			ChangeSetID:        csID,
+			ChangeType:         change.ChangeType,
+			ObjectType:         change.ObjectType,
+			ObjectPrimaryValue: change.ObjectPrimaryValue,
+			Before:             beforeJSON,
+			After:              afterJSON,
+			NewRefs:            change.NewRefs,
+			SequenceNumber:     pgtype.Int4{Int32: int32(seq), Valid: true},
+		}
+		if change.ObjectID != nil {
+			cp.ObjectID = pgtype.Int4{Int32: int32(*change.ObjectID), Valid: true}
+		}
+		if change.ObjectVersion != nil {
+			cp.ObjectVersion = pgtype.Int4{Int32: int32(*change.ObjectVersion), Valid: true}
+		}
+		if change.RefID != nil {
+			cp.RefID = pgtype.Text{String: *change.RefID, Valid: true}
+		}
+		params = append(params, cp)
+	}
+	return params, nil
+}
+
+// BulkCreateDriftDeviations creates, in one transaction, a new ingestion log
+// per item (clone of the prior with a fresh external ID) carrying the drift
+// change set, and restores each prior log to APPLIED so its history stays
+// intact.
+func (r *Repository) BulkCreateDriftDeviations(ctx context.Context, items []ops.DriftDeviationItem) ([]ops.DriftDeviationResult, error) {
+	results := make([]ops.DriftDeviationResult, len(items))
+
+	csIDs, err := r.allocateChangeSetIDs(ctx, len(items))
+	if err != nil {
+		return nil, fmt.Errorf("failed to allocate change set IDs: %w", err)
+	}
+
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to start transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	qtx := r.queries.WithTx(tx)
+	ingestionTs := time.Now().UnixNano()
+
+	csParams := make([]postgres.BulkCreateChangeSetsParams, 0, len(items))
+	var allChangeParams []postgres.BulkCreateChangesParams
+	priorIDs := make([]int32, len(items))
+	priorStates := make([]int32, len(items))
+
+	for i, item := range items {
+		newLogID, err := qtx.CloneIngestionLogForDrift(ctx, postgres.CloneIngestionLogForDriftParams{
+			NewExternalID: item.NewExternalID,
+			NewState:      int32(item.NewState),
+			IngestionTs:   ingestionTs,
+			PriorID:       item.PriorIngestionLogID,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to clone ingestion log %d: %w", item.PriorIngestionLogID, err)
+		}
+
+		csID := csIDs[i]
+		results[i] = ops.DriftDeviationResult{
+			PriorIngestionLogID: item.PriorIngestionLogID,
+			NewIngestionLogID:   newLogID,
+			ChangeSetID:         &csID,
+		}
+
+		csParams = append(csParams, buildChangeSetParams(csID, newLogID, item.ChangeSet))
+		changeParams, err := buildChangeParams(csID, item.ChangeSet)
+		if err != nil {
+			return nil, err
+		}
+		allChangeParams = append(allChangeParams, changeParams...)
+
+		priorIDs[i] = item.PriorIngestionLogID
+		priorStates[i] = int32(reconcilerpb.State_APPLIED)
+	}
+
+	if _, err := qtx.BulkCreateChangeSets(ctx, csParams); err != nil {
+		return nil, fmt.Errorf("failed to bulk create change sets: %w", err)
+	}
+	if _, err := qtx.BulkCreateChanges(ctx, allChangeParams); err != nil {
+		return nil, fmt.Errorf("failed to bulk create changes: %w", err)
+	}
+
+	// Restore priors to APPLIED; also clears error and requeued_from_state.
+	if err := qtx.BulkUpdateIngestionLogStates(ctx, postgres.BulkUpdateIngestionLogStatesParams{
+		Ids:    priorIDs,
+		States: priorStates,
+	}); err != nil {
+		return nil, fmt.Errorf("failed to restore prior ingestion log states: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return results, nil
+}
+
 func (r *Repository) allocateChangeSetIDs(ctx context.Context, n int) ([]int32, error) {
 	rows, err := r.pool.Query(ctx, "SELECT nextval('change_sets_id_seq')::int4 FROM generate_series(1, $1)", n)
 	if err != nil {
@@ -755,8 +846,9 @@ func (r *Repository) ClaimQueuedIngestionLogs(ctx context.Context, batchSize int
 			return nil, fmt.Errorf("failed to convert to proto: %w", err)
 		}
 		result = append(result, ops.QueuedIngestionLog{
-			ID:           dbLog.ID,
-			IngestionLog: log,
+			ID:                dbLog.ID,
+			IngestionLog:      log,
+			RequeuedFromState: reconcilerpb.State(dbLog.RequeuedFromState.Int32),
 		})
 	}
 	return result, nil
@@ -779,8 +871,9 @@ func (r *Repository) ClaimQueuedForAutoApply(ctx context.Context, batchSize int3
 			return nil, fmt.Errorf("failed to convert ingestion log %d to proto: %w", dbLog.ID, err)
 		}
 		result = append(result, ops.QueuedIngestionLog{
-			ID:           dbLog.ID,
-			IngestionLog: log,
+			ID:                dbLog.ID,
+			IngestionLog:      log,
+			RequeuedFromState: reconcilerpb.State(dbLog.RequeuedFromState.Int32),
 		})
 	}
 	return result, nil

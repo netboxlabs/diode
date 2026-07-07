@@ -27,6 +27,65 @@ func (_m *Repository) EXPECT() *Repository_Expecter {
 	return &Repository_Expecter{mock: &_m.Mock}
 }
 
+// BulkCreateDriftDeviations provides a mock function with given fields: ctx, items
+func (_m *Repository) BulkCreateDriftDeviations(ctx context.Context, items []ops.DriftDeviationItem) ([]ops.DriftDeviationResult, error) {
+	ret := _m.Called(ctx, items)
+
+	if len(ret) == 0 {
+		panic("no return value specified for BulkCreateDriftDeviations")
+	}
+
+	var r0 []ops.DriftDeviationResult
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []ops.DriftDeviationItem) ([]ops.DriftDeviationResult, error)); ok {
+		return rf(ctx, items)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, []ops.DriftDeviationItem) []ops.DriftDeviationResult); ok {
+		r0 = rf(ctx, items)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]ops.DriftDeviationResult)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, []ops.DriftDeviationItem) error); ok {
+		r1 = rf(ctx, items)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// Repository_BulkCreateDriftDeviations_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'BulkCreateDriftDeviations'
+type Repository_BulkCreateDriftDeviations_Call struct {
+	*mock.Call
+}
+
+// BulkCreateDriftDeviations is a helper method to define mock.On call
+//   - ctx context.Context
+//   - items []ops.DriftDeviationItem
+func (_e *Repository_Expecter) BulkCreateDriftDeviations(ctx interface{}, items interface{}) *Repository_BulkCreateDriftDeviations_Call {
+	return &Repository_BulkCreateDriftDeviations_Call{Call: _e.mock.On("BulkCreateDriftDeviations", ctx, items)}
+}
+
+func (_c *Repository_BulkCreateDriftDeviations_Call) Run(run func(ctx context.Context, items []ops.DriftDeviationItem)) *Repository_BulkCreateDriftDeviations_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].([]ops.DriftDeviationItem))
+	})
+	return _c
+}
+
+func (_c *Repository_BulkCreateDriftDeviations_Call) Return(_a0 []ops.DriftDeviationResult, _a1 error) *Repository_BulkCreateDriftDeviations_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *Repository_BulkCreateDriftDeviations_Call) RunAndReturn(run func(context.Context, []ops.DriftDeviationItem) ([]ops.DriftDeviationResult, error)) *Repository_BulkCreateDriftDeviations_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // BulkCreateIngestionLogs provides a mock function with given fields: ctx, logs, sourceMetadata, entityHashes
 func (_m *Repository) BulkCreateIngestionLogs(ctx context.Context, logs []*reconcilerpb.IngestionLog, sourceMetadata [][]byte, entityHashes []string) (map[string]int32, error) {
 	ret := _m.Called(ctx, logs, sourceMetadata, entityHashes)

@@ -299,6 +299,156 @@ func TestOpsBulkCreateIngestionLogsMarkDuplicatesError(t *testing.T) {
 	require.Contains(t, err.Error(), "failed to bulk mark duplicates")
 }
 
+func TestOpsBulkPlanDriftDeviation(t *testing.T) {
+	ctx := context.Background()
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+
+	testEntity := &diodepb.Entity{
+		Entity: &diodepb.Entity_Site{
+			Site: &diodepb.Site{Name: "test-site-1"},
+		},
+	}
+
+	// Both logs were requeued from APPLIED by a duplicate observation.
+	// Log 1 re-plans with drift -> new deviation; log 2 re-plans clean ->
+	// restored to APPLIED, nothing persisted.
+	items := []reconops.QueuedIngestionLog{
+		{ID: 1, IngestionLog: &pb.IngestionLog{Id: "log-1", ObjectType: netbox.SiteObjectType, Entity: testEntity}, RequeuedFromState: pb.State_APPLIED},
+		{ID: 2, IngestionLog: &pb.IngestionLog{Id: "log-2", ObjectType: netbox.SiteObjectType, Entity: testEntity}, RequeuedFromState: pb.State_APPLIED},
+	}
+
+	mockRepository := mocks.NewRepository(t)
+	mockNetBoxClient := pluginmocks.NewNetBoxAPI(t)
+	opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil)
+
+	mockNetBoxClient.EXPECT().BulkPlan(mock.Anything, mock.Anything).Return(&netboxdiodeplugin.BulkPlanResponse{
+		Results: []netboxdiodeplugin.BulkPlanResult{
+			{ID: "1", ChangeSet: &netboxdiodeplugin.ChangeSet{ID: "cs-1", Changes: []netboxdiodeplugin.Change{
+				{ID: "ch-1", ChangeType: "update", ObjectType: netbox.SiteObjectType, ObjectPrimaryValue: "test-site-1"},
+			}}},
+			{ID: "2", ChangeSet: &netboxdiodeplugin.ChangeSet{ID: "cs-2"}},
+		},
+	}, nil)
+
+	newCSID := int32(201)
+	mockRepository.EXPECT().BulkCreateDriftDeviations(mock.Anything, mock.MatchedBy(func(driftItems []reconops.DriftDeviationItem) bool {
+		return len(driftItems) == 1 &&
+			driftItems[0].PriorIngestionLogID == 1 &&
+			driftItems[0].NewExternalID != "" &&
+			driftItems[0].NewState == pb.State_OPEN &&
+			len(driftItems[0].ChangeSet.Changes) == 1
+	})).Return([]reconops.DriftDeviationResult{
+		{PriorIngestionLogID: 1, NewIngestionLogID: 42, ChangeSetID: &newCSID},
+	}, nil)
+
+	mockRepository.EXPECT().BulkPersistChangeSets(mock.Anything, mock.MatchedBy(func(persistItems []reconops.BulkPersistItem) bool {
+		return len(persistItems) == 1 &&
+			persistItems[0].IngestionLogID == 2 &&
+			persistItems[0].NewState == pb.State_APPLIED &&
+			len(persistItems[0].ChangeSet.Changes) == 0
+	}), mock.Anything).Return([]reconops.BulkPersistResult{{IngestionLogID: 2}}, nil)
+
+	results := opsInstance.BulkPlan(ctx, items, "")
+	require.Len(t, results, 2)
+
+	require.NoError(t, results[0].Err)
+	require.Equal(t, int32(42), results[0].IngestionLogID)
+	require.Equal(t, &newCSID, results[0].ChangeSetID)
+
+	require.NoError(t, results[1].Err)
+	require.Equal(t, int32(2), results[1].IngestionLogID)
+}
+
+func TestOpsBulkPlanDriftPlanFailureRestoresPrior(t *testing.T) {
+	ctx := context.Background()
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+
+	testEntity := &diodepb.Entity{
+		Entity: &diodepb.Entity_Site{
+			Site: &diodepb.Site{Name: "test-site-1"},
+		},
+	}
+	items := []reconops.QueuedIngestionLog{
+		{ID: 1, IngestionLog: &pb.IngestionLog{Id: "log-1", ObjectType: netbox.SiteObjectType, Entity: testEntity}, RequeuedFromState: pb.State_APPLIED},
+	}
+
+	mockRepository := mocks.NewRepository(t)
+	mockNetBoxClient := pluginmocks.NewNetBoxAPI(t)
+	opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil)
+
+	mockNetBoxClient.EXPECT().BulkPlan(mock.Anything, mock.Anything).Return(&netboxdiodeplugin.BulkPlanResponse{
+		Results: []netboxdiodeplugin.BulkPlanResult{
+			{ID: "1", Errors: []byte(`["boom"]`)},
+		},
+	}, nil)
+
+	// The prior is restored to APPLIED; no FAILED state, no placeholder change set.
+	mockRepository.EXPECT().UpdateIngestionLogStateWithError(mock.Anything, int32(1), pb.State_APPLIED, nil).Return(nil)
+
+	results := opsInstance.BulkPlan(ctx, items, "")
+	require.Len(t, results, 1)
+	require.Error(t, results[0].Err)
+	require.Equal(t, int32(1), results[0].IngestionLogID)
+}
+
+func TestOpsBulkPlanApplyDriftDeviation(t *testing.T) {
+	ctx := context.Background()
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+
+	testEntity := &diodepb.Entity{
+		Entity: &diodepb.Entity_Site{
+			Site: &diodepb.Site{Name: "test-site-1"},
+		},
+	}
+
+	// Both requeued from APPLIED with drift: log 1 applies cleanly -> new
+	// APPLIED deviation; log 2 fails apply -> new FAILED deviation annotated
+	// with the apply error.
+	items := []reconops.QueuedIngestionLog{
+		{ID: 1, IngestionLog: &pb.IngestionLog{Id: "log-1", ObjectType: netbox.SiteObjectType, Entity: testEntity}, RequeuedFromState: pb.State_APPLIED},
+		{ID: 2, IngestionLog: &pb.IngestionLog{Id: "log-2", ObjectType: netbox.SiteObjectType, Entity: testEntity}, RequeuedFromState: pb.State_APPLIED},
+	}
+
+	mockRepository := mocks.NewRepository(t)
+	mockNetBoxClient := pluginmocks.NewNetBoxAPI(t)
+	opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil)
+
+	change := netboxdiodeplugin.Change{ID: "ch-1", ChangeType: "update", ObjectType: netbox.SiteObjectType, ObjectPrimaryValue: "test-site-1"}
+	mockNetBoxClient.EXPECT().BulkPlanApply(mock.Anything, mock.Anything).Return(&netboxdiodeplugin.BulkPlanApplyResponse{
+		Results: []netboxdiodeplugin.BulkPlanApplyResult{
+			{ID: "1", ChangeSet: &netboxdiodeplugin.ChangeSet{ID: "cs-1", Changes: []netboxdiodeplugin.Change{change}}},
+			{
+				ID: "2", ChangeSet: &netboxdiodeplugin.ChangeSet{ID: "cs-2", Changes: []netboxdiodeplugin.Change{change}},
+				Errors: &netboxdiodeplugin.BulkPlanApplyErrors{Apply: []byte(`["apply boom"]`)},
+			},
+		},
+	}, nil)
+
+	cs1, cs2 := int32(201), int32(202)
+	mockRepository.EXPECT().BulkCreateDriftDeviations(mock.Anything, mock.MatchedBy(func(driftItems []reconops.DriftDeviationItem) bool {
+		return len(driftItems) == 2 &&
+			driftItems[0].PriorIngestionLogID == 1 && driftItems[0].NewState == pb.State_APPLIED &&
+			driftItems[1].PriorIngestionLogID == 2 && driftItems[1].NewState == pb.State_FAILED
+	})).Return([]reconops.DriftDeviationResult{
+		{PriorIngestionLogID: 1, NewIngestionLogID: 41, ChangeSetID: &cs1},
+		{PriorIngestionLogID: 2, NewIngestionLogID: 42, ChangeSetID: &cs2},
+	}, nil)
+
+	// Apply-error annotation targets the new deviation, not the restored prior.
+	mockRepository.EXPECT().UpdateIngestionLogStateWithError(mock.Anything, int32(42), pb.State_FAILED, mock.Anything).Return(nil)
+
+	results := opsInstance.BulkPlanApply(ctx, items, "")
+	require.Len(t, results, 2)
+
+	require.NoError(t, results[0].PlanErr)
+	require.NoError(t, results[0].ApplyErr)
+	require.Equal(t, int32(41), results[0].IngestionLogID)
+
+	require.NoError(t, results[1].PlanErr)
+	require.Error(t, results[1].ApplyErr)
+	require.Equal(t, int32(42), results[1].IngestionLogID)
+}
+
 func TestOpsDefaultBranchColdCache(t *testing.T) {
 	// Without Start, the refresher never runs; DefaultBranch returns (nil, nil).
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))

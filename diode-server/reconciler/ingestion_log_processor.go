@@ -286,7 +286,11 @@ func (p *IngestionLogProcessor) processBatch(ctx context.Context, batch []ops.Qu
 
 		if p.autoApplyPolicy != nil && result.ChangeSet != nil &&
 			p.autoApplyPolicy(item.IngestionLog, result.ChangeSet) {
-			matched = append(matched, item)
+			// Re-drive the log the change set was persisted on: for a drift
+			// re-check that is the freshly spawned deviation, not the restored
+			// prior (RequeuedFromState deliberately left zero so BulkPlanApply
+			// treats it as a regular log).
+			matched = append(matched, ops.QueuedIngestionLog{ID: result.IngestionLogID, IngestionLog: item.IngestionLog})
 		}
 	}
 

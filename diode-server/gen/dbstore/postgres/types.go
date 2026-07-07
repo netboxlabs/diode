@@ -109,6 +109,7 @@ type IngestionLog struct {
 	EntityHash         pgtype.Text        `json:"entity_hash"`
 	LastSeen           pgtype.Timestamptz `json:"last_seen"`
 	DuplicateCount     int32              `json:"duplicate_count"`
+	RequeuedFromState  pgtype.Int4        `json:"requeued_from_state"`
 }
 
 type IngestionLogStateObjectTypeCount struct {

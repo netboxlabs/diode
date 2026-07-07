@@ -7,7 +7,8 @@ RETURNING *;
 -- name: UpdateIngestionLogStateWithError :exec
 UPDATE ingestion_logs
 SET state = $2,
-    error = $3
+    error = $3,
+    requeued_from_state = NULL
 WHERE id = $1
 RETURNING *;
 
@@ -103,7 +104,8 @@ UPDATE ingestion_logs il
 SET duplicate_count = il.duplicate_count + 1,
     last_seen = CURRENT_TIMESTAMP,
     state = CASE WHEN locked.prev_state IN (3, 4, 5) THEN 1 ELSE il.state END,
-    error = CASE WHEN locked.prev_state IN (3, 4, 5) THEN NULL ELSE il.error END
+    error = CASE WHEN locked.prev_state IN (3, 4, 5) THEN NULL ELSE il.error END,
+    requeued_from_state = CASE WHEN locked.prev_state IN (3, 4, 5) THEN locked.prev_state ELSE il.requeued_from_state END
 FROM (
     SELECT id, state AS prev_state
     FROM ingestion_logs
@@ -114,10 +116,27 @@ FROM (
 WHERE il.id = locked.id
 RETURNING il.id, (locked.prev_state IN (3, 4, 5))::bool AS requeued;
 
+-- name: CloneIngestionLogForDrift :one
+-- Clone a prior ingestion log into a new row representing a freshly detected
+-- deviation (NetBox state drifted since the prior was applied). Entity data,
+-- hash and source fields are copied; the new row gets its own external ID,
+-- terminal state and ingestion timestamp. Dedup lookups pick the newest row
+-- per entity hash, so subsequent duplicates track the new deviation.
+INSERT INTO ingestion_logs (external_id, object_type, state, request_id, ingestion_ts, source_ts,
+                            producer_app_name, producer_app_version, sdk_name, sdk_version,
+                            entity, source_metadata, entity_hash)
+SELECT @new_external_id, object_type, @new_state::int4, request_id, @ingestion_ts::bigint, source_ts,
+       producer_app_name, producer_app_version, sdk_name, sdk_version,
+       entity, source_metadata, entity_hash
+FROM ingestion_logs AS prior
+WHERE prior.id = @prior_id
+RETURNING ingestion_logs.id;
+
 -- name: BulkUpdateIngestionLogStates :exec
 UPDATE ingestion_logs il
 SET state = bulk.new_state,
-    error = NULL
+    error = NULL,
+    requeued_from_state = NULL
 FROM (
     SELECT unnest(@ids::int4[]) AS id,
            unnest(@states::int4[]) AS new_state
