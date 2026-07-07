@@ -17,6 +17,7 @@ enum State {
   IGNORED = 6;
   ERRORED = 7;
   APPLYING = 8;
+  PENDING_RETRY = 9;
 }
 
 // Ingestion metrics

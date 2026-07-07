@@ -68,17 +68,18 @@ SET state = 8
 WHERE id IN (
     SELECT id FROM ingestion_logs
     WHERE state = 1
+       OR (state = 9 AND (next_retry_at IS NULL OR next_retry_at <= NOW()))
     ORDER BY id
     LIMIT $1
     FOR UPDATE SKIP LOCKED
 )
-RETURNING id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count
+RETURNING id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count, retry_count, next_retry_at
 `
 
-// Claim a batch of QUEUED ingestion logs for the AutoApplyProcessor (combined
-// plan+apply via /bulk-plan-apply). Transitions QUEUED (1) -> APPLYING (8).
-// A row stays in APPLYING for the duration of the NetBox round-trip and is
-// reset back to QUEUED on reconciler startup via ResetApplyingIngestionLogs.
+// Claim a batch for the AutoApplyProcessor: fresh QUEUED (1) plus retry-eligible
+// PENDING_RETRY (9) rows whose backoff has elapsed, transitioned to APPLYING (8).
+// Ordered by id (not fresh-first) so a due retry is processed in line rather than
+// starved behind fresh work when the queue never empties.
 func (q *Queries) ClaimQueuedForAutoApply(ctx context.Context, batchSize int32) ([]IngestionLog, error) {
 	rows, err := q.db.Query(ctx, claimQueuedForAutoApply, batchSize)
 	if err != nil {
@@ -108,6 +109,8 @@ func (q *Queries) ClaimQueuedForAutoApply(ctx context.Context, batchSize int32) 
 			&i.EntityHash,
 			&i.LastSeen,
 			&i.DuplicateCount,
+			&i.RetryCount,
+			&i.NextRetryAt,
 		); err != nil {
 			return nil, err
 		}
@@ -129,7 +132,7 @@ WHERE id IN (
     LIMIT $1
     FOR UPDATE SKIP LOCKED
 )
-RETURNING id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count
+RETURNING id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count, retry_count, next_retry_at
 `
 
 func (q *Queries) ClaimQueuedIngestionLogs(ctx context.Context, batchSize int32) ([]IngestionLog, error) {
@@ -161,6 +164,8 @@ func (q *Queries) ClaimQueuedIngestionLogs(ctx context.Context, batchSize int32)
 			&i.EntityHash,
 			&i.LastSeen,
 			&i.DuplicateCount,
+			&i.RetryCount,
+			&i.NextRetryAt,
 		); err != nil {
 			return nil, err
 		}
@@ -207,7 +212,7 @@ const createIngestionLog = `-- name: CreateIngestionLog :one
 INSERT INTO ingestion_logs (external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name,
                             producer_app_version, sdk_name, sdk_version, entity, source_metadata, entity_hash)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-RETURNING id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count
+RETURNING id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count, retry_count, next_retry_at
 `
 
 type CreateIngestionLogParams struct {
@@ -263,6 +268,8 @@ func (q *Queries) CreateIngestionLog(ctx context.Context, arg CreateIngestionLog
 		&i.EntityHash,
 		&i.LastSeen,
 		&i.DuplicateCount,
+		&i.RetryCount,
+		&i.NextRetryAt,
 	)
 	return i, err
 }
@@ -297,7 +304,7 @@ func (q *Queries) FindIngestionLogIDsByExternalIDs(ctx context.Context, external
 }
 
 const findPriorIngestionLogByEntityHash = `-- name: FindPriorIngestionLogByEntityHash :one
-SELECT il.id, il.external_id, il.object_type, il.state, il.request_id, il.ingestion_ts, il.source_ts, il.producer_app_name, il.producer_app_version, il.sdk_name, il.sdk_version, il.entity, il.error, il.source_metadata, il.created_at, il.updated_at, il.entity_hash, il.last_seen, il.duplicate_count
+SELECT il.id, il.external_id, il.object_type, il.state, il.request_id, il.ingestion_ts, il.source_ts, il.producer_app_name, il.producer_app_version, il.sdk_name, il.sdk_version, il.entity, il.error, il.source_metadata, il.created_at, il.updated_at, il.entity_hash, il.last_seen, il.duplicate_count, il.retry_count, il.next_retry_at
 FROM ingestion_logs il
 LEFT JOIN LATERAL (
     SELECT branch_id
@@ -308,6 +315,9 @@ LEFT JOIN LATERAL (
 ) lcs ON true
 WHERE il.entity_hash = $1
   AND lcs.branch_id IS NOT DISTINCT FROM $2::text
+  -- Exclude terminal ERRORED (7) so a re-ingest after the system gives up
+  -- re-queues instead of deduping against the dead row.
+  AND il.state IS DISTINCT FROM 7
 ORDER BY il.created_at DESC
 LIMIT 1
 `
@@ -340,15 +350,17 @@ func (q *Queries) FindPriorIngestionLogByEntityHash(ctx context.Context, arg Fin
 		&i.EntityHash,
 		&i.LastSeen,
 		&i.DuplicateCount,
+		&i.RetryCount,
+		&i.NextRetryAt,
 	)
 	return i, err
 }
 
 const findPriorIngestionLogsByEntityHashes = `-- name: FindPriorIngestionLogsByEntityHashes :many
-SELECT il.id, il.external_id, il.object_type, il.state, il.request_id, il.ingestion_ts, il.source_ts, il.producer_app_name, il.producer_app_version, il.sdk_name, il.sdk_version, il.entity, il.error, il.source_metadata, il.created_at, il.updated_at, il.entity_hash, il.last_seen, il.duplicate_count
+SELECT il.id, il.external_id, il.object_type, il.state, il.request_id, il.ingestion_ts, il.source_ts, il.producer_app_name, il.producer_app_version, il.sdk_name, il.sdk_version, il.entity, il.error, il.source_metadata, il.created_at, il.updated_at, il.entity_hash, il.last_seen, il.duplicate_count, il.retry_count, il.next_retry_at
 FROM unnest($1::text[]) AS h(entity_hash)
 CROSS JOIN LATERAL (
-    SELECT il2.id, il2.external_id, il2.object_type, il2.state, il2.request_id, il2.ingestion_ts, il2.source_ts, il2.producer_app_name, il2.producer_app_version, il2.sdk_name, il2.sdk_version, il2.entity, il2.error, il2.source_metadata, il2.created_at, il2.updated_at, il2.entity_hash, il2.last_seen, il2.duplicate_count
+    SELECT il2.id, il2.external_id, il2.object_type, il2.state, il2.request_id, il2.ingestion_ts, il2.source_ts, il2.producer_app_name, il2.producer_app_version, il2.sdk_name, il2.sdk_version, il2.entity, il2.error, il2.source_metadata, il2.created_at, il2.updated_at, il2.entity_hash, il2.last_seen, il2.duplicate_count, il2.retry_count, il2.next_retry_at
     FROM ingestion_logs il2
     WHERE il2.entity_hash = h.entity_hash
       AND (
@@ -358,6 +370,9 @@ CROSS JOIN LATERAL (
           ORDER BY cs.id DESC
           LIMIT 1
       ) IS NOT DISTINCT FROM $2::text
+      -- Exclude terminal ERRORED (7): see FindPriorIngestionLogByEntityHash.
+      -- Re-ingest after the retrier gives up must re-queue, not dedupe.
+      AND il2.state IS DISTINCT FROM 7
     ORDER BY il2.created_at DESC
     LIMIT 1
 ) il
@@ -397,6 +412,8 @@ func (q *Queries) FindPriorIngestionLogsByEntityHashes(ctx context.Context, arg 
 			&i.EntityHash,
 			&i.LastSeen,
 			&i.DuplicateCount,
+			&i.RetryCount,
+			&i.NextRetryAt,
 		); err != nil {
 			return nil, err
 		}
@@ -420,6 +437,49 @@ func (q *Queries) IncrementDuplicateCount(ctx context.Context, id int32) error {
 	return err
 }
 
+const markIngestionLogRetry = `-- name: MarkIngestionLogRetry :exec
+UPDATE ingestion_logs
+SET retry_count = retry_count + 1,
+    state = CASE
+        WHEN retry_count + 1 >= $1::int THEN 7
+        ELSE 9
+    END,
+    next_retry_at = CASE
+        WHEN retry_count + 1 >= $1::int THEN NULL
+        ELSE NOW() + make_interval(secs => GREATEST(1, (
+            LEAST(
+                $2::bigint * (1::bigint << LEAST(retry_count, 30)),
+                $3::bigint
+            )::double precision * (0.5 + random() * 0.5)
+        )::int))
+    END,
+    error = $4
+WHERE id = $5
+`
+
+type MarkIngestionLogRetryParams struct {
+	MaxRetries      int32           `json:"max_retries"`
+	BaseBackoffSecs int64           `json:"base_backoff_secs"`
+	MaxBackoffSecs  int64           `json:"max_backoff_secs"`
+	Error           json.RawMessage `json:"error"`
+	ID              int32           `json:"id"`
+}
+
+// Record a failed apply: increment retry_count and either re-arm as PENDING_RETRY
+// (9) with a jittered exponential backoff (base*2^n capped at max, ×random[0.5,1)
+// to spread retry herds), or retire to terminal ERRORED (7) once the budget is
+// spent. SET expressions read the pre-update retry_count.
+func (q *Queries) MarkIngestionLogRetry(ctx context.Context, arg MarkIngestionLogRetryParams) error {
+	_, err := q.db.Exec(ctx, markIngestionLogRetry,
+		arg.MaxRetries,
+		arg.BaseBackoffSecs,
+		arg.MaxBackoffSecs,
+		arg.Error,
+		arg.ID,
+	)
+	return err
+}
+
 const resetApplyingIngestionLogs = `-- name: ResetApplyingIngestionLogs :exec
 UPDATE ingestion_logs
 SET state = 1
@@ -434,7 +494,7 @@ func (q *Queries) ResetApplyingIngestionLogs(ctx context.Context) error {
 }
 
 const retrieveIngestionLogByExternalID = `-- name: RetrieveIngestionLogByExternalID :one
-SELECT id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count
+SELECT id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count, retry_count, next_retry_at
 FROM ingestion_logs
 WHERE external_id = $1
 `
@@ -462,12 +522,14 @@ func (q *Queries) RetrieveIngestionLogByExternalID(ctx context.Context, external
 		&i.EntityHash,
 		&i.LastSeen,
 		&i.DuplicateCount,
+		&i.RetryCount,
+		&i.NextRetryAt,
 	)
 	return i, err
 }
 
 const retrieveIngestionLogs = `-- name: RetrieveIngestionLogs :many
-SELECT id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count
+SELECT id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count, retry_count, next_retry_at
 FROM ingestion_logs
 WHERE (state = $1 OR $1 IS NULL)
   AND (object_type = $2 OR $2 IS NULL)
@@ -522,6 +584,8 @@ func (q *Queries) RetrieveIngestionLogs(ctx context.Context, arg RetrieveIngesti
 			&i.EntityHash,
 			&i.LastSeen,
 			&i.DuplicateCount,
+			&i.RetryCount,
+			&i.NextRetryAt,
 		); err != nil {
 			return nil, err
 		}
@@ -606,7 +670,7 @@ UPDATE ingestion_logs
 SET state = $2,
     error = $3
 WHERE id = $1
-RETURNING id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count
+RETURNING id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count, retry_count, next_retry_at
 `
 
 type UpdateIngestionLogStateWithErrorParams struct {

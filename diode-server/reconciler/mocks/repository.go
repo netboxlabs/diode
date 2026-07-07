@@ -668,6 +668,57 @@ func (_c *Repository_IncrementDuplicateCount_Call) RunAndReturn(run func(context
 	return _c
 }
 
+// MarkIngestionLogRetry provides a mock function with given fields: ctx, id, maxRetries, baseBackoffSecs, maxBackoffSecs, err
+func (_m *Repository) MarkIngestionLogRetry(ctx context.Context, id int32, maxRetries int32, baseBackoffSecs int64, maxBackoffSecs int64, err error) error {
+	ret := _m.Called(ctx, id, maxRetries, baseBackoffSecs, maxBackoffSecs, err)
+
+	if len(ret) == 0 {
+		panic("no return value specified for MarkIngestionLogRetry")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, int32, int32, int64, int64, error) error); ok {
+		r0 = rf(ctx, id, maxRetries, baseBackoffSecs, maxBackoffSecs, err)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Repository_MarkIngestionLogRetry_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'MarkIngestionLogRetry'
+type Repository_MarkIngestionLogRetry_Call struct {
+	*mock.Call
+}
+
+// MarkIngestionLogRetry is a helper method to define mock.On call
+//   - ctx context.Context
+//   - id int32
+//   - maxRetries int32
+//   - baseBackoffSecs int64
+//   - maxBackoffSecs int64
+//   - err error
+func (_e *Repository_Expecter) MarkIngestionLogRetry(ctx interface{}, id interface{}, maxRetries interface{}, baseBackoffSecs interface{}, maxBackoffSecs interface{}, err interface{}) *Repository_MarkIngestionLogRetry_Call {
+	return &Repository_MarkIngestionLogRetry_Call{Call: _e.mock.On("MarkIngestionLogRetry", ctx, id, maxRetries, baseBackoffSecs, maxBackoffSecs, err)}
+}
+
+func (_c *Repository_MarkIngestionLogRetry_Call) Run(run func(ctx context.Context, id int32, maxRetries int32, baseBackoffSecs int64, maxBackoffSecs int64, err error)) *Repository_MarkIngestionLogRetry_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(int32), args[2].(int32), args[3].(int64), args[4].(int64), args[5].(error))
+	})
+	return _c
+}
+
+func (_c *Repository_MarkIngestionLogRetry_Call) Return(_a0 error) *Repository_MarkIngestionLogRetry_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Repository_MarkIngestionLogRetry_Call) RunAndReturn(run func(context.Context, int32, int32, int64, int64, error) error) *Repository_MarkIngestionLogRetry_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ResetApplyingIngestionLogs provides a mock function with given fields: ctx
 func (_m *Repository) ResetApplyingIngestionLogs(ctx context.Context) error {
 	ret := _m.Called(ctx)

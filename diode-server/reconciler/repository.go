@@ -35,4 +35,8 @@ type Repository interface {
 	ClaimQueuedIngestionLogs(ctx context.Context, batchSize int32) ([]ops.QueuedIngestionLog, error)
 	ClaimQueuedForAutoApply(ctx context.Context, batchSize int32) ([]ops.QueuedIngestionLog, error)
 	ResetApplyingIngestionLogs(ctx context.Context) error
+
+	// MarkIngestionLogRetry records a failed apply (PENDING_RETRY + backoff, or
+	// ERRORED once the budget is exhausted); see reconciler.RetryPolicy.
+	MarkIngestionLogRetry(ctx context.Context, id int32, maxRetries int32, baseBackoffSecs int64, maxBackoffSecs int64, err error) error
 }
