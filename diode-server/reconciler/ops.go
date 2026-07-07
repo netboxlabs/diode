@@ -386,7 +386,6 @@ func (o *Ops) BulkPlan(ctx context.Context, items []ops.QueuedIngestionLog, bran
 	}
 
 	if len(persistItems) > 0 {
-		o.flagUnchangedMarkers(ctx, persistItems, objectTypesByLogID(items))
 		persistResults, err := o.repository.BulkPersistChangeSets(ctx, persistItems, o.limits.MaxChangeSetsPerIngestionLog())
 		if err != nil {
 			o.logger.Error("bulk persist failed, falling back to per-item persist", "error", err)
@@ -425,50 +424,6 @@ func collectPersistItem(persistItems []ops.BulkPersistItem, persistIndex []int, 
 	}
 
 	return persistItems, persistIndex
-}
-
-func objectTypesByLogID(items []ops.QueuedIngestionLog) map[int32]string {
-	objectTypes := make(map[int32]string, len(items))
-	for _, item := range items {
-		objectTypes[item.ID] = item.IngestionLog.GetObjectType()
-	}
-	return objectTypes
-}
-
-// flagUnchangedMarkers marks NO_CHANGES persist items whose ingestion log's
-// latest persisted change set still contains changes. For those, an empty
-// "unchanged" change set is persisted so the latest change set agrees with
-// the NO_CHANGES state (otherwise a requeued duplicate that re-plans clean
-// would keep showing its previously applied create/update changes as the
-// current deviation). Items whose latest change set is already empty — or
-// that never had one (first plan) — are left alone, so markers don't
-// accumulate on every re-plan cycle and never evict the applied change set
-// from retention. The marker is presentation consistency only: on lookup
-// failure it is skipped rather than failing the plan.
-func (o *Ops) flagUnchangedMarkers(ctx context.Context, persistItems []ops.BulkPersistItem, objectTypes map[int32]string) {
-	var candidates []int32
-	for i := range persistItems {
-		if persistItems[i].NewState == reconcilerpb.State_NO_CHANGES {
-			candidates = append(candidates, persistItems[i].IngestionLogID)
-		}
-	}
-	if len(candidates) == 0 {
-		return
-	}
-
-	hasChanges, err := o.repository.LatestChangeSetsHaveChanges(ctx, candidates)
-	if err != nil {
-		o.logger.Warn("failed to check latest change sets; skipping unchanged markers", "error", err)
-		return
-	}
-
-	for i := range persistItems {
-		if persistItems[i].NewState == reconcilerpb.State_NO_CHANGES && hasChanges[persistItems[i].IngestionLogID] {
-			persistItems[i].PersistEmptyChangeSet = true
-			deviationName := differ.UnchangedDeviationName(objectTypes[persistItems[i].IngestionLogID])
-			persistItems[i].ChangeSet.DeviationName = &deviationName
-		}
-	}
 }
 
 func stripNoopOnlyChanges(cs *changeset.ChangeSet) {
@@ -544,8 +499,7 @@ func (o *Ops) persistChangeSet(ctx context.Context, ingestionLogID int32, ingest
 // BulkPlanApply runs combined plan + apply for a batch of QUEUED ingestion logs
 // via a single /bulk-plan-apply HTTP call. Per-entity outcomes:
 //   - plan failed                 -> state FAILED, no change_set persisted
-//   - plan ok, no changes         -> state NO_CHANGES; an empty "unchanged" change_set
-//     is persisted only when the latest change_set still contains changes
+//   - plan ok, no changes         -> state NO_CHANGES, no change_set persisted
 //   - plan ok, apply ok           -> state APPLIED, change_set persisted
 //   - plan ok, apply failed       -> state FAILED, change_set persisted (audit/retry)
 //
@@ -624,7 +578,6 @@ func (o *Ops) BulkPlanApply(ctx context.Context, items []ops.QueuedIngestionLog,
 	}
 
 	if len(persistItems) > 0 {
-		o.flagUnchangedMarkers(ctx, persistItems, objectTypesByLogID(items))
 		persistResults, err := o.repository.BulkPersistChangeSets(ctx, persistItems, o.limits.MaxChangeSetsPerIngestionLog())
 		if err != nil {
 			o.logger.Error("bulk persist failed during bulk-plan-apply", "error", err)

@@ -33,18 +33,6 @@ WHERE cs1.ingestion_log_id = $1
 INSERT INTO change_sets (id, external_id, ingestion_log_id, branch_id, deviation_name)
 VALUES ($1, $2, $3, $4, $5);
 
--- name: LatestChangeSetsHaveChanges :many
--- For each ingestion log, report whether its latest (highest id) change set
--- still contains changes. Used to decide whether a NO_CHANGES re-plan should
--- persist an empty "unchanged" change set so the latest change set agrees
--- with the ingestion log state. Logs without any change set are omitted.
-SELECT DISTINCT ON (cs.ingestion_log_id)
-    cs.ingestion_log_id,
-    EXISTS (SELECT 1 FROM changes c WHERE c.change_set_id = cs.id)::bool AS has_changes
-FROM change_sets cs
-WHERE cs.ingestion_log_id = ANY(@ingestion_log_ids::int4[])
-ORDER BY cs.ingestion_log_id, cs.id DESC;
-
 -- name: BulkTruncateChangeSets :exec
 DELETE FROM change_sets
 WHERE change_sets.id IN (

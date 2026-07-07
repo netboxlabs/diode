@@ -39,10 +39,6 @@ type BulkPersistItem struct {
 	IngestionLogID int32
 	ChangeSet      changeset.ChangeSet
 	NewState       reconcilerpb.State
-	// PersistEmptyChangeSet persists the change set row even when it has no
-	// changes ("unchanged" marker), so the latest change set of a re-planned
-	// ingestion log agrees with its NO_CHANGES state.
-	PersistEmptyChangeSet bool
 }
 
 // BulkPersistResult holds the outcome of persisting one changeset.

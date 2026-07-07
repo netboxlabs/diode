@@ -608,7 +608,7 @@ func (r *Repository) BulkPersistChangeSets(ctx context.Context, items []ops.Bulk
 	var withChanges []int
 	for i, item := range items {
 		results[i].IngestionLogID = item.IngestionLogID
-		if len(item.ChangeSet.Changes) > 0 || item.PersistEmptyChangeSet {
+		if len(item.ChangeSet.Changes) > 0 {
 			withChanges = append(withChanges, i)
 		}
 	}
@@ -685,10 +685,8 @@ func (r *Repository) BulkPersistChangeSets(ctx context.Context, items []ops.Bulk
 		if _, err := qtx.BulkCreateChangeSets(ctx, csParams); err != nil {
 			return nil, fmt.Errorf("failed to bulk create change sets: %w", err)
 		}
-		if len(allChangeParams) > 0 {
-			if _, err := qtx.BulkCreateChanges(ctx, allChangeParams); err != nil {
-				return nil, fmt.Errorf("failed to bulk create changes: %w", err)
-			}
+		if _, err := qtx.BulkCreateChanges(ctx, allChangeParams); err != nil {
+			return nil, fmt.Errorf("failed to bulk create changes: %w", err)
 		}
 	}
 
@@ -723,21 +721,6 @@ func (r *Repository) BulkPersistChangeSets(ctx context.Context, items []ops.Bulk
 	}
 
 	return results, nil
-}
-
-// LatestChangeSetsHaveChanges reports, per ingestion log ID, whether the
-// latest persisted change set still contains changes. Logs without any
-// change set are absent from the result.
-func (r *Repository) LatestChangeSetsHaveChanges(ctx context.Context, ingestionLogIDs []int32) (map[int32]bool, error) {
-	rows, err := r.queries.LatestChangeSetsHaveChanges(ctx, ingestionLogIDs)
-	if err != nil {
-		return nil, err
-	}
-	hasChanges := make(map[int32]bool, len(rows))
-	for _, row := range rows {
-		hasChanges[row.IngestionLogID] = row.HasChanges
-	}
-	return hasChanges, nil
 }
 
 func (r *Repository) allocateChangeSetIDs(ctx context.Context, n int) ([]int32, error) {
