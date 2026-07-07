@@ -391,6 +391,41 @@ func TestOpsBulkPlanDriftPlanFailureRestoresPrior(t *testing.T) {
 	require.Equal(t, int32(1), results[0].IngestionLogID)
 }
 
+func TestOpsBulkPlanFallbackPreservesAppliedState(t *testing.T) {
+	ctx := context.Background()
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+
+	testEntity := &diodepb.Entity{
+		Entity: &diodepb.Entity_Site{
+			Site: &diodepb.Site{Name: "test-site-1"},
+		},
+	}
+	// Requeued from APPLIED, re-plans clean; bulk persist fails, so the
+	// per-item fallback must restore APPLIED (not derive NO_CHANGES) and must
+	// not write a change set.
+	items := []reconops.QueuedIngestionLog{
+		{ID: 1, IngestionLog: &pb.IngestionLog{Id: "log-1", ObjectType: netbox.SiteObjectType, State: pb.State_OPEN, Entity: testEntity}, RequeuedFromState: pb.State_APPLIED},
+	}
+
+	mockRepository := mocks.NewRepository(t)
+	mockNetBoxClient := pluginmocks.NewNetBoxAPI(t)
+	opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil)
+
+	mockNetBoxClient.EXPECT().BulkPlan(mock.Anything, mock.Anything).Return(&netboxdiodeplugin.BulkPlanResponse{
+		Results: []netboxdiodeplugin.BulkPlanResult{
+			{ID: "1", ChangeSet: &netboxdiodeplugin.ChangeSet{ID: "cs-1"}},
+		},
+	}, nil)
+	mockRepository.EXPECT().BulkPersistChangeSets(mock.Anything, mock.Anything, mock.Anything).
+		Return(nil, fmt.Errorf("database error"))
+	mockRepository.EXPECT().UpdateIngestionLogStateWithError(mock.Anything, int32(1), pb.State_APPLIED, nil).Return(nil)
+
+	results := opsInstance.BulkPlan(ctx, items, "")
+	require.Len(t, results, 1)
+	require.NoError(t, results[0].Err)
+	require.Nil(t, results[0].ChangeSetID)
+}
+
 func TestOpsBulkPlanApplyDriftDeviation(t *testing.T) {
 	ctx := context.Background()
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))

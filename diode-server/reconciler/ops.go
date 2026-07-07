@@ -411,7 +411,7 @@ func (o *Ops) BulkPlan(ctx context.Context, items []ops.QueuedIngestionLog, bran
 			o.logger.Error("bulk persist failed, falling back to per-item persist", "error", err)
 			for j, idx := range persistIndex {
 				item := items[idx]
-				results[idx] = o.persistChangeSet(ctx, item.ID, item.IngestionLog, &persistItems[j].ChangeSet)
+				results[idx] = o.persistChangeSet(ctx, item.ID, item.IngestionLog, &persistItems[j].ChangeSet, persistItems[j].NewState)
 			}
 		} else {
 			for j, pr := range persistResults {
@@ -451,9 +451,9 @@ func (o *Ops) restoreRequeuedPrior(ctx context.Context, ingestionLogID int32) {
 	}
 }
 
+// collectPersistItem appends a persist item for cs, whose noop-only changes
+// the caller has already stripped.
 func collectPersistItem(persistItems []ops.BulkPersistItem, persistIndex []int, results []ops.BulkGenerateChangeSetResult, i int, item ops.QueuedIngestionLog, cs *changeset.ChangeSet) ([]ops.BulkPersistItem, []int) {
-	stripNoopOnlyChanges(cs)
-
 	newState := reconcilerpb.State_OPEN
 	if len(cs.Changes) == 0 {
 		newState = reconcilerpb.State_NO_CHANGES
@@ -523,9 +523,13 @@ func (o *Ops) handleGenerateChangeSetFailure(ctx context.Context, item ops.Queue
 	return ops.BulkGenerateChangeSetResult{IngestionLogID: item.ID, ChangeSetID: id, ChangeSet: cs, Err: err}
 }
 
-func (o *Ops) persistChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, cs *changeset.ChangeSet) ops.BulkGenerateChangeSetResult {
-	if len(cs.Changes) == 0 && (ingestionLog.State == reconcilerpb.State_NO_CHANGES || ingestionLog.State == reconcilerpb.State_APPLIED) {
-		if err := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, ingestionLog.State, nil); err != nil {
+// persistChangeSet is the per-item fallback when bulk persist fails. newState
+// is the state the bulk path already decided for this item; re-deriving it
+// here would demote a drift re-check restored to APPLIED back to NO_CHANGES.
+func (o *Ops) persistChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, cs *changeset.ChangeSet, newState reconcilerpb.State) ops.BulkGenerateChangeSetResult {
+	if len(cs.Changes) == 0 {
+		ingestionLog.State = newState
+		if err := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, newState, nil); err != nil {
 			o.logger.Error("failed to update ingestion log state (error ignored)", "ingestionLogID", ingestionLogID, "error", err)
 		}
 		return ops.BulkGenerateChangeSetResult{IngestionLogID: ingestionLogID, ChangeSet: cs}
@@ -543,12 +547,8 @@ func (o *Ops) persistChangeSet(ctx context.Context, ingestionLogID int32, ingest
 		}
 	}
 
-	if len(cs.Changes) > 0 {
-		ingestionLog.State = reconcilerpb.State_OPEN
-	} else {
-		ingestionLog.State = reconcilerpb.State_NO_CHANGES
-	}
-	if err := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, ingestionLog.State, nil); err != nil {
+	ingestionLog.State = newState
+	if err := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, newState, nil); err != nil {
 		o.logger.Error("failed to update ingestion log state (error ignored)", "ingestionLogID", ingestionLogID, "error", err)
 	}
 
