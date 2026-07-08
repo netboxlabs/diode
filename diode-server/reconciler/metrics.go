@@ -26,6 +26,13 @@ var ReconcilerMetricDefinitions = map[string]otel.MetricDefinition{
 		Description: "Total number of ingestion logs created",
 		Attributes:  []string{"success"},
 	},
+	"ingestionlog.requeue": {
+		Name:        "ingestion_log_requeue_total",
+		Type:        otel.Counter,
+		Unit:        otel.Dimensionless,
+		Description: "Total number of duplicate ingestion logs requeued for re-plan due to possible NetBox state drift",
+		Attributes:  []string{},
+	},
 	"changeset.create": {
 		Name:        "change_set_create_total",
 		Type:        otel.Counter,
@@ -74,6 +81,8 @@ type Metrics interface {
 	RecordHandleMessage(ctx context.Context, success bool)
 	// RecordIngestionLogCreate records the creation of an ingestion log
 	RecordIngestionLogCreate(ctx context.Context, success bool)
+	// RecordIngestionLogRequeue records the requeue of a duplicate ingestion log for re-plan
+	RecordIngestionLogRequeue(ctx context.Context)
 	// RecordChangeSetCreate records the creation of a change set
 	RecordChangeSetCreate(ctx context.Context, success bool, changes int64)
 	// RecordChangeSetApply records the application of a change set
@@ -127,6 +136,13 @@ func (r *MetricRecorder) RecordIngestionLogCreate(ctx context.Context, success b
 	}, telemetry.GetAttributesFromContext(ctx, r.contextAttributeKeys...)...)
 
 	r.mr.RecordCounter(ctx, "ingestionlog.create", 1, attrs...)
+}
+
+// RecordIngestionLogRequeue records the requeue of a duplicate ingestion log for re-plan
+func (r *MetricRecorder) RecordIngestionLogRequeue(ctx context.Context) {
+	attrs := telemetry.GetAttributesFromContext(ctx, r.contextAttributeKeys...)
+
+	r.mr.RecordCounter(ctx, "ingestionlog.requeue", 1, attrs...)
 }
 
 // RecordChangeSetCreate records the creation of a change set

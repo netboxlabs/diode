@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"
 
+	diodeErrors "github.com/netboxlabs/diode/diode-server/errors"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/gen/netbox"
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
@@ -24,7 +25,7 @@ type IngestEntity struct {
 // Returns nil changeset if the result contains errors.
 func ConvertBulkPlanResult(result netboxdiodeplugin.BulkPlanResult, objectType string) (*changeset.ChangeSet, error) {
 	if len(result.Errors) > 0 && string(result.Errors) != "null" {
-		return nil, fmt.Errorf("bulk plan error for entity %s: %s", result.ID, string(result.Errors))
+		return nil, changeset.NewError("failed to determine deviation", diodeErrors.ErrCodeOpsGenerateDiff, result.Errors)
 	}
 
 	if result.ChangeSet == nil {
@@ -66,10 +67,10 @@ func ConvertBulkPlanApplyResult(result netboxdiodeplugin.BulkPlanApplyResult, ob
 	var planErr, applyErr error
 	if result.Errors != nil {
 		if len(result.Errors.Plan) > 0 && string(result.Errors.Plan) != "null" {
-			planErr = fmt.Errorf("plan error for entity %s: %s", result.ID, string(result.Errors.Plan))
+			planErr = changeset.NewError("failed to determine deviation", diodeErrors.ErrCodeOpsGenerateDiff, result.Errors.Plan)
 		}
 		if len(result.Errors.Apply) > 0 && string(result.Errors.Apply) != "null" {
-			applyErr = fmt.Errorf("apply error for entity %s: %s", result.ID, string(result.Errors.Apply))
+			applyErr = changeset.NewError("failed to apply deviation to NetBox", diodeErrors.ErrCodeOpsApplyChangeSet, result.Errors.Apply)
 		}
 	}
 

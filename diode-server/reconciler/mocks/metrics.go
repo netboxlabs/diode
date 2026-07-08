@@ -195,6 +195,39 @@ func (_c *Metrics_RecordIngestionLogCreate_Call) RunAndReturn(run func(context.C
 	return _c
 }
 
+// RecordIngestionLogRequeue provides a mock function with given fields: ctx
+func (_m *Metrics) RecordIngestionLogRequeue(ctx context.Context) {
+	_m.Called(ctx)
+}
+
+// Metrics_RecordIngestionLogRequeue_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RecordIngestionLogRequeue'
+type Metrics_RecordIngestionLogRequeue_Call struct {
+	*mock.Call
+}
+
+// RecordIngestionLogRequeue is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *Metrics_Expecter) RecordIngestionLogRequeue(ctx interface{}) *Metrics_RecordIngestionLogRequeue_Call {
+	return &Metrics_RecordIngestionLogRequeue_Call{Call: _e.mock.On("RecordIngestionLogRequeue", ctx)}
+}
+
+func (_c *Metrics_RecordIngestionLogRequeue_Call) Run(run func(ctx context.Context)) *Metrics_RecordIngestionLogRequeue_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *Metrics_RecordIngestionLogRequeue_Call) Return() *Metrics_RecordIngestionLogRequeue_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Metrics_RecordIngestionLogRequeue_Call) RunAndReturn(run func(context.Context)) *Metrics_RecordIngestionLogRequeue_Call {
+	_c.Run(run)
+	return _c
+}
+
 // RecordServiceStartupAttempt provides a mock function with given fields: ctx, success
 func (_m *Metrics) RecordServiceStartupAttempt(ctx context.Context, success bool) {
 	_m.Called(ctx, success)

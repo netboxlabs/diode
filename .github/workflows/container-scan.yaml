@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  GO_VERSION: '1.25'
+  GO_VERSION: '1.26'
 
 jobs:
   build-and-scan:
@@ -61,6 +61,7 @@ jobs:
           cache-to: type=gha,scope=${{ matrix.app }},mode=max
           build-args: |
             SVC=${{ matrix.app }}
+            GO_VERSION=${{ env.GO_VERSION }}
           tags: diode-${{ matrix.app }}:scan
 
       - name: Scan image for vulnerabilities

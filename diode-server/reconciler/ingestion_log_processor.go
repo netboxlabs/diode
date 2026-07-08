@@ -8,9 +8,32 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
+	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
 	"github.com/netboxlabs/diode/diode-server/reconciler/ops"
 	"github.com/netboxlabs/diode/diode-server/telemetry"
 )
+
+// AutoApplyPolicy decides per-record whether an already-planned change set
+// should bypass the OPEN review queue and be applied immediately. Returns
+// true to apply, false to leave the row in OPEN for manual review.
+type AutoApplyPolicy func(log *reconcilerpb.IngestionLog, cs *changeset.ChangeSet) bool
+
+// IngestionLogProcessorOption is a functional option for IngestionLogProcessor.
+type IngestionLogProcessorOption func(*IngestionLogProcessor)
+
+// WithAutoApplyPolicy attaches a per-record auto-apply policy. When set,
+// matching records are applied immediately rather than left in OPEN.
+//
+// Layers on top of the cfg.AutoApplyChangesets default: it only widens
+// auto-apply for matching records, never restricts. The boot-time decision
+// between IngestionLogProcessor (plan-only) and AutoApplyProcessor (plan +
+// apply) is unchanged.
+func WithAutoApplyPolicy(policy AutoApplyPolicy) IngestionLogProcessorOption {
+	return func(p *IngestionLogProcessor) {
+		p.autoApplyPolicy = policy
+	}
+}
 
 const (
 	defaultIngestionLogPollInterval = 100 * time.Millisecond
@@ -55,6 +78,8 @@ type IngestionLogProcessor struct {
 	metrics      Metrics
 	backpressure BackpressureFunc
 
+	autoApplyPolicy AutoApplyPolicy
+
 	// mx protects the lifecycle fields below: workCancel, pollCancel, done.
 	// Set by Start, read by Stop/shutdown/watchParent.
 	mx         sync.Mutex
@@ -66,12 +91,12 @@ type IngestionLogProcessor struct {
 }
 
 // NewIngestionLogProcessor creates a new ingestion log processor.
-func NewIngestionLogProcessor(logger *slog.Logger, cfg Config, repo Repository, ops IngestionProcessorOps, metrics Metrics, backpressure BackpressureFunc) *IngestionLogProcessor {
+func NewIngestionLogProcessor(logger *slog.Logger, cfg Config, repo Repository, ops IngestionProcessorOps, metrics Metrics, backpressure BackpressureFunc, opts ...IngestionLogProcessorOption) *IngestionLogProcessor {
 	batchSize := cfg.IngestionLogProcessorBatchSize
 	if batchSize <= 0 {
 		batchSize = defaultIngestionLogBatchSize
 	}
-	return &IngestionLogProcessor{
+	p := &IngestionLogProcessor{
 		config:       cfg,
 		logger:       logger,
 		ops:          ops,
@@ -80,6 +105,10 @@ func NewIngestionLogProcessor(logger *slog.Logger, cfg Config, repo Repository, 
 		backpressure: backpressure,
 		batchSize:    batchSize,
 	}
+	for _, opt := range opts {
+		opt(p)
+	}
+	return p
 }
 
 // Name returns the name of the component.
@@ -241,14 +270,10 @@ func (p *IngestionLogProcessor) processBatch(ctx context.Context, batch []ops.Qu
 
 	results := p.ops.BulkPlan(ctx, batch, branchID)
 
+	var matched []ops.QueuedIngestionLog
 	for i, result := range results {
 		item := batch[i]
-
-		attrs := []attribute.KeyValue{
-			attribute.String(telemetry.AttributeSDKName, item.IngestionLog.GetSdkName()),
-			attribute.String(telemetry.AttributeProducerAppName, item.IngestionLog.GetProducerAppName()),
-		}
-		metricsCtx := telemetry.ContextWithMetricAttributes(ctx, attrs...)
+		metricsCtx := p.metricsContext(ctx, item)
 
 		if result.Err != nil {
 			p.logger.Error("error generating changeset", "error", result.Err, "ingestionLogID", item.ID)
@@ -258,5 +283,49 @@ func (p *IngestionLogProcessor) processBatch(ctx context.Context, batch []ops.Qu
 		if result.ChangeSet != nil {
 			p.metrics.RecordChangeSetCreate(metricsCtx, true, int64(len(result.ChangeSet.Changes)))
 		}
+
+		if p.autoApplyPolicy != nil && result.ChangeSet != nil &&
+			p.autoApplyPolicy(item.IngestionLog, result.ChangeSet) {
+			// Re-drive the log the change set was persisted on: for a drift
+			// re-check that is the freshly spawned deviation, not the restored
+			// prior (RequeuedFromState deliberately left zero so BulkPlanApply
+			// treats it as a regular log).
+			matched = append(matched, ops.QueuedIngestionLog{ID: result.IngestionLogID, IngestionLog: item.IngestionLog})
+		}
 	}
+
+	if len(matched) == 0 {
+		return
+	}
+
+	// Interim limitation: the policy above was evaluated against the BulkPlan
+	// change sets, but BulkPlanApply re-plans server-side and applies the
+	// fresh sets in one call — a divergent re-plan can apply changes the
+	// policy never approved. Accepted until an apply-only endpoint (no
+	// re-plan) exists in the netbox plugin.
+	applyResults := p.ops.BulkPlanApply(ctx, matched, branchID)
+	for i, applyResult := range applyResults {
+		item := matched[i]
+		metricsCtx := p.metricsContext(ctx, item)
+		switch {
+		case applyResult.PlanErr != nil:
+			p.logger.Error("auto-apply policy matched but re-plan failed",
+				"error", applyResult.PlanErr, "ingestionLogID", item.ID)
+			p.metrics.RecordChangeSetApply(metricsCtx, false, 0)
+		case applyResult.ApplyErr != nil:
+			p.logger.Error("auto-apply policy matched but apply failed",
+				"error", applyResult.ApplyErr, "ingestionLogID", item.ID)
+			p.metrics.RecordChangeSetApply(metricsCtx, false, 0)
+		case applyResult.ChangeSet != nil && len(applyResult.ChangeSet.Changes) > 0:
+			p.metrics.RecordChangeSetApply(metricsCtx, true, int64(len(applyResult.ChangeSet.Changes)))
+		}
+	}
+}
+
+// metricsContext returns ctx annotated with the per-record metric attributes.
+func (p *IngestionLogProcessor) metricsContext(ctx context.Context, item ops.QueuedIngestionLog) context.Context {
+	return telemetry.ContextWithMetricAttributes(ctx,
+		attribute.String(telemetry.AttributeSDKName, item.IngestionLog.GetSdkName()),
+		attribute.String(telemetry.AttributeProducerAppName, item.IngestionLog.GetProducerAppName()),
+	)
 }

@@ -7,7 +7,8 @@ RETURNING *;
 -- name: UpdateIngestionLogStateWithError :exec
 UPDATE ingestion_logs
 SET state = $2,
-    error = $3
+    error = $3,
+    requeued_from_state = NULL
 WHERE id = $1
 RETURNING *;
 
@@ -58,12 +59,6 @@ WHERE il.entity_hash = sqlc.arg('entity_hash')
 ORDER BY il.created_at DESC
 LIMIT 1;
 
--- name: IncrementDuplicateCount :exec
-UPDATE ingestion_logs
-SET duplicate_count = duplicate_count + 1,
-    last_seen = CURRENT_TIMESTAMP
-WHERE id = $1;
-
 -- name: FindPriorIngestionLogsByEntityHashes :many
 SELECT il.*
 FROM unnest(@entity_hashes::text[]) AS h(entity_hash)
@@ -91,16 +86,57 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14);
 -- name: FindIngestionLogIDsByExternalIDs :many
 SELECT id, external_id FROM ingestion_logs WHERE external_id = ANY(@external_ids::text[]);
 
--- name: BulkIncrementDuplicateCounts :exec
-UPDATE ingestion_logs
-SET duplicate_count = duplicate_count + 1,
-    last_seen = CURRENT_TIMESTAMP
-WHERE id = ANY(@ids::int4[]);
+-- name: BulkMarkDuplicates :many
+-- Increment duplicate_count/last_seen for prior ingestion logs of
+-- deduplicated entities and atomically requeue rows whose NetBox state may
+-- have drifted: APPLIED (3), FAILED (4), NO_CHANGES (5) -> QUEUED (1) so the
+-- pollers re-plan (and re-apply under auto-apply). QUEUED (1) is already
+-- pending, OPEN (2) may be claimed or awaiting review, IGNORED (6) is a user
+-- opt-out, APPLYING (8) is in flight -- those keep their state and only get
+-- the duplicate bookkeeping.
+--
+-- The inner SELECT ... ORDER BY id FOR UPDATE acquires row locks in the same
+-- global order as ClaimQueuedIngestionLogs/ClaimQueuedForAutoApply to avoid
+-- deadlocks with concurrent claim/persist updates. The state guard is
+-- evaluated on the locked row version, so a concurrent claim (1->2 / 1->8)
+-- committed before we acquire the lock is correctly skipped.
+UPDATE ingestion_logs il
+SET duplicate_count = il.duplicate_count + 1,
+    last_seen = CURRENT_TIMESTAMP,
+    state = CASE WHEN locked.prev_state IN (3, 4, 5) THEN 1 ELSE il.state END,
+    error = CASE WHEN locked.prev_state IN (3, 4, 5) THEN NULL ELSE il.error END,
+    requeued_from_state = CASE WHEN locked.prev_state IN (3, 4, 5) THEN locked.prev_state ELSE il.requeued_from_state END
+FROM (
+    SELECT id, state AS prev_state
+    FROM ingestion_logs
+    WHERE id = ANY(@ids::int4[])
+    ORDER BY id
+    FOR UPDATE
+) locked
+WHERE il.id = locked.id
+RETURNING il.id, (locked.prev_state IN (3, 4, 5))::bool AS requeued;
+
+-- name: CloneIngestionLogForDrift :one
+-- Clone a prior ingestion log into a new row representing a freshly detected
+-- deviation (NetBox state drifted since the prior was applied). Entity data,
+-- hash and source fields are copied; the new row gets its own external ID,
+-- terminal state and ingestion timestamp. Dedup lookups pick the newest row
+-- per entity hash, so subsequent duplicates track the new deviation.
+INSERT INTO ingestion_logs (external_id, object_type, state, request_id, ingestion_ts, source_ts,
+                            producer_app_name, producer_app_version, sdk_name, sdk_version,
+                            entity, source_metadata, entity_hash)
+SELECT @new_external_id, object_type, @new_state::int4, request_id, @ingestion_ts::bigint, source_ts,
+       producer_app_name, producer_app_version, sdk_name, sdk_version,
+       entity, source_metadata, entity_hash
+FROM ingestion_logs AS prior
+WHERE prior.id = @prior_id
+RETURNING ingestion_logs.id;
 
 -- name: BulkUpdateIngestionLogStates :exec
 UPDATE ingestion_logs il
 SET state = bulk.new_state,
-    error = NULL
+    error = NULL,
+    requeued_from_state = NULL
 FROM (
     SELECT unnest(@ids::int4[]) AS id,
            unnest(@states::int4[]) AS new_state
