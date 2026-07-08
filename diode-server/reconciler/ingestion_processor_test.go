@@ -341,6 +341,7 @@ func TestIngestionProcessor_DuplicateHandling(t *testing.T) {
 	tests := []struct {
 		name             string
 		existingLogState reconcilerpb.State
+		expectRequeued   bool
 	}{
 		{
 			name:             "duplicate of IGNORED",
@@ -357,14 +358,17 @@ func TestIngestionProcessor_DuplicateHandling(t *testing.T) {
 		{
 			name:             "duplicate of FAILED",
 			existingLogState: reconcilerpb.State_FAILED,
+			expectRequeued:   true,
 		},
 		{
 			name:             "duplicate of APPLIED",
 			existingLogState: reconcilerpb.State_APPLIED,
+			expectRequeued:   true,
 		},
 		{
 			name:             "duplicate of NO_CHANGES",
 			existingLogState: reconcilerpb.State_NO_CHANGES,
+			expectRequeued:   true,
 		},
 	}
 
@@ -411,10 +415,15 @@ func TestIngestionProcessor_DuplicateHandling(t *testing.T) {
 				Entity:     testEntity,
 			}
 
+			if tt.expectRequeued {
+				existingLog.State = reconcilerpb.State_QUEUED
+			}
+
 			duplicateResult := &reconops.CreateIngestionLogResult{
 				ID:           existingLogID,
 				IngestionLog: existingLog,
 				WasDuplicate: true,
+				Requeued:     tt.expectRequeued,
 			}
 
 			mockOps.On("DefaultBranch", mock.Anything).Return((*netboxdiodeplugin.Branch)(nil), nil)
@@ -422,6 +431,9 @@ func TestIngestionProcessor_DuplicateHandling(t *testing.T) {
 
 			mockMetrics.On("RecordHandleMessage", mock.Anything, mock.Anything).Return()
 			mockMetrics.On("RecordIngestionLogCreate", mock.Anything, mock.Anything).Return()
+			if tt.expectRequeued {
+				mockMetrics.On("RecordIngestionLogRequeue", mock.Anything).Return()
+			}
 
 			processor, err := reconciler.NewIngestionProcessor(
 				ctx, logger, cfg, redisClient, redisStreamClient,

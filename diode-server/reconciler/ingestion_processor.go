@@ -403,6 +403,11 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 			p.logger.Debug("ingested duplicate ingestion log", "id", id, "externalID", ingestionLog.GetId())
 		}
 
+		if result.Requeued {
+			p.logger.Debug("requeued duplicate ingestion log for re-plan", "id", id, "externalID", ingestionLog.GetId())
+			p.metrics.RecordIngestionLogRequeue(ctx)
+		}
+
 		attrs := []attribute.KeyValue{
 			attribute.Bool(telemetry.AttributeDuplicate, result.WasDuplicate),
 		}

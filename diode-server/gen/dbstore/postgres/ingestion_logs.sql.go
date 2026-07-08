@@ -29,22 +29,67 @@ type BulkCreateIngestionLogsParams struct {
 	EntityHash         pgtype.Text `json:"entity_hash"`
 }
 
-const bulkIncrementDuplicateCounts = `-- name: BulkIncrementDuplicateCounts :exec
-UPDATE ingestion_logs
-SET duplicate_count = duplicate_count + 1,
-    last_seen = CURRENT_TIMESTAMP
-WHERE id = ANY($1::int4[])
+const bulkMarkDuplicates = `-- name: BulkMarkDuplicates :many
+UPDATE ingestion_logs il
+SET duplicate_count = il.duplicate_count + 1,
+    last_seen = CURRENT_TIMESTAMP,
+    state = CASE WHEN locked.prev_state IN (3, 4, 5) THEN 1 ELSE il.state END,
+    error = CASE WHEN locked.prev_state IN (3, 4, 5) THEN NULL ELSE il.error END,
+    requeued_from_state = CASE WHEN locked.prev_state IN (3, 4, 5) THEN locked.prev_state ELSE il.requeued_from_state END
+FROM (
+    SELECT id, state AS prev_state
+    FROM ingestion_logs
+    WHERE id = ANY($1::int4[])
+    ORDER BY id
+    FOR UPDATE
+) locked
+WHERE il.id = locked.id
+RETURNING il.id, (locked.prev_state IN (3, 4, 5))::bool AS requeued
 `
 
-func (q *Queries) BulkIncrementDuplicateCounts(ctx context.Context, ids []int32) error {
-	_, err := q.db.Exec(ctx, bulkIncrementDuplicateCounts, ids)
-	return err
+type BulkMarkDuplicatesRow struct {
+	ID       int32 `json:"id"`
+	Requeued bool  `json:"requeued"`
+}
+
+// Increment duplicate_count/last_seen for prior ingestion logs of
+// deduplicated entities and atomically requeue rows whose NetBox state may
+// have drifted: APPLIED (3), FAILED (4), NO_CHANGES (5) -> QUEUED (1) so the
+// pollers re-plan (and re-apply under auto-apply). QUEUED (1) is already
+// pending, OPEN (2) may be claimed or awaiting review, IGNORED (6) is a user
+// opt-out, APPLYING (8) is in flight -- those keep their state and only get
+// the duplicate bookkeeping.
+//
+// The inner SELECT ... ORDER BY id FOR UPDATE acquires row locks in the same
+// global order as ClaimQueuedIngestionLogs/ClaimQueuedForAutoApply to avoid
+// deadlocks with concurrent claim/persist updates. The state guard is
+// evaluated on the locked row version, so a concurrent claim (1->2 / 1->8)
+// committed before we acquire the lock is correctly skipped.
+func (q *Queries) BulkMarkDuplicates(ctx context.Context, ids []int32) ([]BulkMarkDuplicatesRow, error) {
+	rows, err := q.db.Query(ctx, bulkMarkDuplicates, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []BulkMarkDuplicatesRow
+	for rows.Next() {
+		var i BulkMarkDuplicatesRow
+		if err := rows.Scan(&i.ID, &i.Requeued); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const bulkUpdateIngestionLogStates = `-- name: BulkUpdateIngestionLogStates :exec
 UPDATE ingestion_logs il
 SET state = bulk.new_state,
-    error = NULL
+    error = NULL,
+    requeued_from_state = NULL
 FROM (
     SELECT unnest($1::int4[]) AS id,
            unnest($2::int4[]) AS new_state
@@ -72,7 +117,7 @@ WHERE id IN (
     LIMIT $1
     FOR UPDATE SKIP LOCKED
 )
-RETURNING id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count
+RETURNING id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count, requeued_from_state
 `
 
 // Claim a batch of QUEUED ingestion logs for the AutoApplyProcessor (combined
@@ -108,6 +153,7 @@ func (q *Queries) ClaimQueuedForAutoApply(ctx context.Context, batchSize int32) 
 			&i.EntityHash,
 			&i.LastSeen,
 			&i.DuplicateCount,
+			&i.RequeuedFromState,
 		); err != nil {
 			return nil, err
 		}
@@ -129,7 +175,7 @@ WHERE id IN (
     LIMIT $1
     FOR UPDATE SKIP LOCKED
 )
-RETURNING id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count
+RETURNING id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count, requeued_from_state
 `
 
 func (q *Queries) ClaimQueuedIngestionLogs(ctx context.Context, batchSize int32) ([]IngestionLog, error) {
@@ -161,6 +207,7 @@ func (q *Queries) ClaimQueuedIngestionLogs(ctx context.Context, batchSize int32)
 			&i.EntityHash,
 			&i.LastSeen,
 			&i.DuplicateCount,
+			&i.RequeuedFromState,
 		); err != nil {
 			return nil, err
 		}
@@ -170,6 +217,42 @@ func (q *Queries) ClaimQueuedIngestionLogs(ctx context.Context, batchSize int32)
 		return nil, err
 	}
 	return items, nil
+}
+
+const cloneIngestionLogForDrift = `-- name: CloneIngestionLogForDrift :one
+INSERT INTO ingestion_logs (external_id, object_type, state, request_id, ingestion_ts, source_ts,
+                            producer_app_name, producer_app_version, sdk_name, sdk_version,
+                            entity, source_metadata, entity_hash)
+SELECT $1, object_type, $2::int4, request_id, $3::bigint, source_ts,
+       producer_app_name, producer_app_version, sdk_name, sdk_version,
+       entity, source_metadata, entity_hash
+FROM ingestion_logs AS prior
+WHERE prior.id = $4
+RETURNING ingestion_logs.id
+`
+
+type CloneIngestionLogForDriftParams struct {
+	NewExternalID string `json:"new_external_id"`
+	NewState      int32  `json:"new_state"`
+	IngestionTs   int64  `json:"ingestion_ts"`
+	PriorID       int32  `json:"prior_id"`
+}
+
+// Clone a prior ingestion log into a new row representing a freshly detected
+// deviation (NetBox state drifted since the prior was applied). Entity data,
+// hash and source fields are copied; the new row gets its own external ID,
+// terminal state and ingestion timestamp. Dedup lookups pick the newest row
+// per entity hash, so subsequent duplicates track the new deviation.
+func (q *Queries) CloneIngestionLogForDrift(ctx context.Context, arg CloneIngestionLogForDriftParams) (int32, error) {
+	row := q.db.QueryRow(ctx, cloneIngestionLogForDrift,
+		arg.NewExternalID,
+		arg.NewState,
+		arg.IngestionTs,
+		arg.PriorID,
+	)
+	var id int32
+	err := row.Scan(&id)
+	return id, err
 }
 
 const countIngestionLogsPerState = `-- name: CountIngestionLogsPerState :many
@@ -207,7 +290,7 @@ const createIngestionLog = `-- name: CreateIngestionLog :one
 INSERT INTO ingestion_logs (external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name,
                             producer_app_version, sdk_name, sdk_version, entity, source_metadata, entity_hash)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-RETURNING id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count
+RETURNING id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count, requeued_from_state
 `
 
 type CreateIngestionLogParams struct {
@@ -263,6 +346,7 @@ func (q *Queries) CreateIngestionLog(ctx context.Context, arg CreateIngestionLog
 		&i.EntityHash,
 		&i.LastSeen,
 		&i.DuplicateCount,
+		&i.RequeuedFromState,
 	)
 	return i, err
 }
@@ -297,7 +381,7 @@ func (q *Queries) FindIngestionLogIDsByExternalIDs(ctx context.Context, external
 }
 
 const findPriorIngestionLogByEntityHash = `-- name: FindPriorIngestionLogByEntityHash :one
-SELECT il.id, il.external_id, il.object_type, il.state, il.request_id, il.ingestion_ts, il.source_ts, il.producer_app_name, il.producer_app_version, il.sdk_name, il.sdk_version, il.entity, il.error, il.source_metadata, il.created_at, il.updated_at, il.entity_hash, il.last_seen, il.duplicate_count
+SELECT il.id, il.external_id, il.object_type, il.state, il.request_id, il.ingestion_ts, il.source_ts, il.producer_app_name, il.producer_app_version, il.sdk_name, il.sdk_version, il.entity, il.error, il.source_metadata, il.created_at, il.updated_at, il.entity_hash, il.last_seen, il.duplicate_count, il.requeued_from_state
 FROM ingestion_logs il
 LEFT JOIN LATERAL (
     SELECT branch_id
@@ -340,15 +424,16 @@ func (q *Queries) FindPriorIngestionLogByEntityHash(ctx context.Context, arg Fin
 		&i.EntityHash,
 		&i.LastSeen,
 		&i.DuplicateCount,
+		&i.RequeuedFromState,
 	)
 	return i, err
 }
 
 const findPriorIngestionLogsByEntityHashes = `-- name: FindPriorIngestionLogsByEntityHashes :many
-SELECT il.id, il.external_id, il.object_type, il.state, il.request_id, il.ingestion_ts, il.source_ts, il.producer_app_name, il.producer_app_version, il.sdk_name, il.sdk_version, il.entity, il.error, il.source_metadata, il.created_at, il.updated_at, il.entity_hash, il.last_seen, il.duplicate_count
+SELECT il.id, il.external_id, il.object_type, il.state, il.request_id, il.ingestion_ts, il.source_ts, il.producer_app_name, il.producer_app_version, il.sdk_name, il.sdk_version, il.entity, il.error, il.source_metadata, il.created_at, il.updated_at, il.entity_hash, il.last_seen, il.duplicate_count, il.requeued_from_state
 FROM unnest($1::text[]) AS h(entity_hash)
 CROSS JOIN LATERAL (
-    SELECT il2.id, il2.external_id, il2.object_type, il2.state, il2.request_id, il2.ingestion_ts, il2.source_ts, il2.producer_app_name, il2.producer_app_version, il2.sdk_name, il2.sdk_version, il2.entity, il2.error, il2.source_metadata, il2.created_at, il2.updated_at, il2.entity_hash, il2.last_seen, il2.duplicate_count
+    SELECT il2.id, il2.external_id, il2.object_type, il2.state, il2.request_id, il2.ingestion_ts, il2.source_ts, il2.producer_app_name, il2.producer_app_version, il2.sdk_name, il2.sdk_version, il2.entity, il2.error, il2.source_metadata, il2.created_at, il2.updated_at, il2.entity_hash, il2.last_seen, il2.duplicate_count, il2.requeued_from_state
     FROM ingestion_logs il2
     WHERE il2.entity_hash = h.entity_hash
       AND (
@@ -397,6 +482,7 @@ func (q *Queries) FindPriorIngestionLogsByEntityHashes(ctx context.Context, arg 
 			&i.EntityHash,
 			&i.LastSeen,
 			&i.DuplicateCount,
+			&i.RequeuedFromState,
 		); err != nil {
 			return nil, err
 		}
@@ -406,18 +492,6 @@ func (q *Queries) FindPriorIngestionLogsByEntityHashes(ctx context.Context, arg 
 		return nil, err
 	}
 	return items, nil
-}
-
-const incrementDuplicateCount = `-- name: IncrementDuplicateCount :exec
-UPDATE ingestion_logs
-SET duplicate_count = duplicate_count + 1,
-    last_seen = CURRENT_TIMESTAMP
-WHERE id = $1
-`
-
-func (q *Queries) IncrementDuplicateCount(ctx context.Context, id int32) error {
-	_, err := q.db.Exec(ctx, incrementDuplicateCount, id)
-	return err
 }
 
 const resetApplyingIngestionLogs = `-- name: ResetApplyingIngestionLogs :exec
@@ -434,7 +508,7 @@ func (q *Queries) ResetApplyingIngestionLogs(ctx context.Context) error {
 }
 
 const retrieveIngestionLogByExternalID = `-- name: RetrieveIngestionLogByExternalID :one
-SELECT id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count
+SELECT id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count, requeued_from_state
 FROM ingestion_logs
 WHERE external_id = $1
 `
@@ -462,12 +536,13 @@ func (q *Queries) RetrieveIngestionLogByExternalID(ctx context.Context, external
 		&i.EntityHash,
 		&i.LastSeen,
 		&i.DuplicateCount,
+		&i.RequeuedFromState,
 	)
 	return i, err
 }
 
 const retrieveIngestionLogs = `-- name: RetrieveIngestionLogs :many
-SELECT id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count
+SELECT id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count, requeued_from_state
 FROM ingestion_logs
 WHERE (state = $1 OR $1 IS NULL)
   AND (object_type = $2 OR $2 IS NULL)
@@ -522,6 +597,7 @@ func (q *Queries) RetrieveIngestionLogs(ctx context.Context, arg RetrieveIngesti
 			&i.EntityHash,
 			&i.LastSeen,
 			&i.DuplicateCount,
+			&i.RequeuedFromState,
 		); err != nil {
 			return nil, err
 		}
@@ -604,9 +680,10 @@ func (q *Queries) RetrieveIngestionLogsWithChangeSets(ctx context.Context, arg R
 const updateIngestionLogStateWithError = `-- name: UpdateIngestionLogStateWithError :exec
 UPDATE ingestion_logs
 SET state = $2,
-    error = $3
+    error = $3,
+    requeued_from_state = NULL
 WHERE id = $1
-RETURNING id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count
+RETURNING id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count, requeued_from_state
 `
 
 type UpdateIngestionLogStateWithErrorParams struct {
