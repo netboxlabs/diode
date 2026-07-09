@@ -164,6 +164,7 @@
     - [TunnelGroup.CustomFieldsEntry](#diode-v1-TunnelGroup-CustomFieldsEntry)
     - [TunnelTermination](#diode-v1-TunnelTermination)
     - [TunnelTermination.CustomFieldsEntry](#diode-v1-TunnelTermination-CustomFieldsEntry)
+    - [User](#diode-v1-User)
     - [VLAN](#diode-v1-VLAN)
     - [VLAN.CustomFieldsEntry](#diode-v1-VLAN-CustomFieldsEntry)
     - [VLANGroup](#diode-v1-VLANGroup)
@@ -1029,6 +1030,7 @@
 | object_rack_group | [RackGroup](#diode-v1-RackGroup) |  |  |
 | object_script_module | [ScriptModule](#diode-v1-ScriptModule) |  |  |
 | object_virtual_machine_type | [VirtualMachineType](#diode-v1-VirtualMachineType) |  |  |
+| object_user | [User](#diode-v1-User) |  |  |
 | contact | [Contact](#diode-v1-Contact) |  |  |
 | role | [ContactRole](#diode-v1-ContactRole) | optional |  |
 | priority | [string](#string) | optional |  |
@@ -1302,6 +1304,7 @@
 | rack_group | [RackGroup](#diode-v1-RackGroup) |  |  |
 | script_module | [ScriptModule](#diode-v1-ScriptModule) |  |  |
 | virtual_machine_type | [VirtualMachineType](#diode-v1-VirtualMachineType) |  |  |
+| user | [User](#diode-v1-User) |  |  |
 
 
 
@@ -1676,6 +1679,7 @@
 | rack_group | [RackGroup](#diode-v1-RackGroup) |  |  |
 | script_module | [ScriptModule](#diode-v1-ScriptModule) |  |  |
 | virtual_machine_type | [VirtualMachineType](#diode-v1-VirtualMachineType) |  |  |
+| user | [User](#diode-v1-User) |  |  |
 
 
 
@@ -1831,6 +1835,7 @@
 | interface_rack_group | [RackGroup](#diode-v1-RackGroup) |  |  |
 | interface_script_module | [ScriptModule](#diode-v1-ScriptModule) |  |  |
 | interface_virtual_machine_type | [VirtualMachineType](#diode-v1-VirtualMachineType) |  |  |
+| interface_user | [User](#diode-v1-User) |  |  |
 | priority | [int64](#int64) |  |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
 
@@ -1991,6 +1996,7 @@
 | object_rack_group | [RackGroup](#diode-v1-RackGroup) |  |  |
 | object_script_module | [ScriptModule](#diode-v1-ScriptModule) |  |  |
 | object_virtual_machine_type | [VirtualMachineType](#diode-v1-VirtualMachineType) |  |  |
+| object_user | [User](#diode-v1-User) |  |  |
 
 
 
@@ -2592,11 +2598,13 @@
 | assigned_object_rack_group | [RackGroup](#diode-v1-RackGroup) |  |  |
 | assigned_object_script_module | [ScriptModule](#diode-v1-ScriptModule) |  |  |
 | assigned_object_virtual_machine_type | [VirtualMachineType](#diode-v1-VirtualMachineType) |  |  |
+| assigned_object_user | [User](#diode-v1-User) |  |  |
 | kind | [string](#string) | optional |  |
 | comments | [string](#string) |  |  |
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [JournalEntry.CustomFieldsEntry](#diode-v1-JournalEntry-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| created_by | [User](#diode-v1-User) | optional |  |
 
 
 
@@ -2771,6 +2779,7 @@
 | assigned_object_rack_group | [RackGroup](#diode-v1-RackGroup) |  |  |
 | assigned_object_script_module | [ScriptModule](#diode-v1-ScriptModule) |  |  |
 | assigned_object_virtual_machine_type | [VirtualMachineType](#diode-v1-VirtualMachineType) |  |  |
+| assigned_object_user | [User](#diode-v1-User) |  |  |
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [L2VPNTermination.CustomFieldsEntry](#diode-v1-L2VPNTermination-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
@@ -3096,6 +3105,7 @@
 | group | [OwnerGroup](#diode-v1-OwnerGroup) |  |  |
 | description | [string](#string) | optional |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+| users | [User](#diode-v1-User) | repeated |  |
 
 
 
@@ -3656,6 +3666,7 @@
 | status | [string](#string) | optional |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
 | owner | [Owner](#diode-v1-Owner) | optional |  |
+| user | [User](#diode-v1-User) |  |  |
 
 
 
@@ -4366,6 +4377,7 @@
 | termination_rack_group | [RackGroup](#diode-v1-RackGroup) |  |  |
 | termination_script_module | [ScriptModule](#diode-v1-ScriptModule) |  |  |
 | termination_virtual_machine_type | [VirtualMachineType](#diode-v1-VirtualMachineType) |  |  |
+| termination_user | [User](#diode-v1-User) |  |  |
 | outside_ip | [IPAddress](#diode-v1-IPAddress) | optional |  |
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [TunnelTermination.CustomFieldsEntry](#diode-v1-TunnelTermination-CustomFieldsEntry) | repeated |  |
@@ -4386,6 +4398,22 @@
 | ----- | ---- | ----- | ----------- |
 | key | [string](#string) |  |  |
 | value | [CustomFieldValue](#diode-v1-CustomFieldValue) |  |  |
+
+
+
+
+
+
+<a name="diode-v1-User"></a>
+
+### User
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| username | [string](#string) |  |  |
+| metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
 
 
 

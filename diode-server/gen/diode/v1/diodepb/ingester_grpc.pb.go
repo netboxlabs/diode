@@ -6,7 +6,7 @@
 
 // Generated Code. DO NOT EDIT.
 // Source: NetBox v4.6.0
-// Timestamp: 2026-05-14 20:30:13Z
+// Timestamp: 2026-07-08 14:57:55Z
 
 package diodepb
 
