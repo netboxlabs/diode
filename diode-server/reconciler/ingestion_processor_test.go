@@ -286,6 +286,10 @@ func TestIngestionProcessorStart(t *testing.T) {
 	// Wait server
 	time.Sleep(50 * time.Millisecond)
 
+	mockRepository.EXPECT().WithDedupLocks(mock.Anything, mock.Anything, mock.Anything).
+		RunAndReturn(func(_ context.Context, _ []string, fn func(reconops.DedupRepository) error) error {
+			return fn(mockRepository)
+		})
 	mockRepository.On("FindPriorIngestionLogsByEntityHashes", mock.Anything, mock.Anything, mock.Anything).Return(map[string]*reconops.PriorIngestionLog{}, nil)
 	mockRepository.On("BulkCreateIngestionLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
 		func(_ context.Context, logs []*reconcilerpb.IngestionLog, _ [][]byte, _ []string) map[string]int32 {
