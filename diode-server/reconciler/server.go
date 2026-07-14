@@ -43,7 +43,7 @@ func NewServer(ctx context.Context, logger *slog.Logger, repository Repository, 
 		TLS:      &cfg.RedisTLS,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to create Redis options: %v", err)
+		return nil, fmt.Errorf("failed to create Redis options: %w", err)
 	}
 	redisClient := redis.NewClient(&redisOptions)
 
