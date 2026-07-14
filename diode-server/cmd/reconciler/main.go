@@ -107,19 +107,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	redisStreamOptions, err := diodetls.NewRedisOptions(diodetls.RedisParams{
-		Host:     cfg.RedisHost,
-		Port:     cfg.RedisPort,
-		Username: cfg.RedisUsername,
-		Password: cfg.RedisPassword,
-		DB:       cfg.RedisStreamDB,
-		TLS:      &cfg.RedisTLS,
-	})
-	if err != nil {
-		s.Logger().Error("failed to create Redis stream options", "error", err)
-		metricRecorder.RecordServiceStartupAttempt(ctx, false)
-		os.Exit(1)
-	}
+	// The stream client shares the same connection settings; only the DB
+	// differs, so copy the options rather than rebuilding the TLS config.
+	redisStreamOptions := redisOptions
+	redisStreamOptions.DB = cfg.RedisStreamDB
 	redisStreamClient := redis.NewClient(&redisStreamOptions)
 
 	if _, err := redisStreamClient.Ping(ctx).Result(); err != nil {
