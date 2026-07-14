@@ -86,7 +86,14 @@ func main() {
 		}
 	}
 
-	redisOptions, err := diodetls.NewRedisOptions(cfg.RedisHost, cfg.RedisPort, cfg.RedisUsername, cfg.RedisPassword, cfg.RedisDB, &cfg.RedisTLS)
+	redisOptions, err := diodetls.NewRedisOptions(diodetls.RedisParams{
+		Host:     cfg.RedisHost,
+		Port:     cfg.RedisPort,
+		Username: cfg.RedisUsername,
+		Password: cfg.RedisPassword,
+		DB:       cfg.RedisDB,
+		TLS:      &cfg.RedisTLS,
+	})
 	if err != nil {
 		s.Logger().Error("failed to create Redis options", "error", err)
 		metricRecorder.RecordServiceStartupAttempt(ctx, false)
@@ -100,7 +107,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	redisStreamOptions, err := diodetls.NewRedisOptions(cfg.RedisHost, cfg.RedisPort, cfg.RedisUsername, cfg.RedisPassword, cfg.RedisStreamDB, &cfg.RedisTLS)
+	redisStreamOptions, err := diodetls.NewRedisOptions(diodetls.RedisParams{
+		Host:     cfg.RedisHost,
+		Port:     cfg.RedisPort,
+		Username: cfg.RedisUsername,
+		Password: cfg.RedisPassword,
+		DB:       cfg.RedisStreamDB,
+		TLS:      &cfg.RedisTLS,
+	})
 	if err != nil {
 		s.Logger().Error("failed to create Redis stream options", "error", err)
 		metricRecorder.RecordServiceStartupAttempt(ctx, false)

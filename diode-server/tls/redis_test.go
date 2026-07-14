@@ -24,7 +24,10 @@ func TestNewRedisOptions(t *testing.T) {
 		wantErr  bool
 	}{
 		{
-			name:     "basic options without TLS",
+			// Core fix: an empty username must leave Username empty rather than
+			// being set to "". go-redis treats an empty Username as "use the
+			// default Redis user", which is correct when no ACL user is set.
+			name:     "empty username is not set",
 			host:     "localhost",
 			port:     "6379",
 			username: "",
@@ -38,6 +41,9 @@ func TestNewRedisOptions(t *testing.T) {
 			wantTLS:  false,
 		},
 		{
+			// Core fix: a provided username MUST propagate to Username, else
+			// go-redis authenticates as the "default" user and hits WRONGPASS
+			// when that user is disabled or has a different password.
 			name:     "with ACL username",
 			host:     "redis.example.com",
 			port:     "6380",
@@ -66,20 +72,6 @@ func TestNewRedisOptions(t *testing.T) {
 			wantTLS:  true,
 		},
 		{
-			name:     "empty username is not set",
-			host:     "localhost",
-			port:     "6379",
-			username: "",
-			password: "secret",
-			db:       0,
-			tlsCfg:   &Config{Enabled: false},
-			wantAddr: "localhost:6379",
-			wantUser: "",
-			wantPass: "secret",
-			wantDB:   0,
-			wantTLS:  false,
-		},
-		{
 			name:     "nil TLS config returns error",
 			host:     "localhost",
 			port:     "6379",
@@ -103,7 +95,14 @@ func TestNewRedisOptions(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			opts, err := NewRedisOptions(tt.host, tt.port, tt.username, tt.password, tt.db, tt.tlsCfg)
+			opts, err := NewRedisOptions(RedisParams{
+				Host:     tt.host,
+				Port:     tt.port,
+				Username: tt.username,
+				Password: tt.password,
+				DB:       tt.db,
+				TLS:      tt.tlsCfg,
+			})
 			if tt.wantErr {
 				require.Error(t, err)
 				return
@@ -122,26 +121,4 @@ func TestNewRedisOptions(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestNewRedisOptionsUsernameNotSetWhenEmpty(t *testing.T) {
-	// This test specifically verifies the core fix: when username is empty,
-	// the Username field on redis.Options must remain empty ("") rather than
-	// being set to "". go-redis treats an empty Username as "use the default
-	// Redis user", which is the correct behavior when no ACL username is
-	// configured.
-	opts, err := NewRedisOptions("localhost", "6379", "", "pass", 0, &Config{})
-	require.NoError(t, err)
-	assert.Empty(t, opts.Username)
-}
-
-func TestNewRedisOptionsUsernameSetWhenProvided(t *testing.T) {
-	// This test verifies the core fix: when a username IS provided, it MUST
-	// be propagated to redis.Options.Username. Missing this causes go-redis
-	// to authenticate as the "default" Redis user instead of the intended
-	// ACL user, resulting in WRONGPASS errors when the default user is
-	// disabled or has a different password.
-	opts, err := NewRedisOptions("localhost", "6379", "my-acl-user", "pass", 0, &Config{})
-	require.NoError(t, err)
-	assert.Equal(t, "my-acl-user", opts.Username)
 }

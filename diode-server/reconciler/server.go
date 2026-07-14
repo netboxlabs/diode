@@ -34,7 +34,14 @@ func NewServer(ctx context.Context, logger *slog.Logger, repository Repository, 
 	var cfg Config
 	envconfig.MustProcess("", &cfg)
 
-	redisOptions, err := diodetls.NewRedisOptions(cfg.RedisHost, cfg.RedisPort, cfg.RedisUsername, cfg.RedisPassword, cfg.RedisDB, &cfg.RedisTLS)
+	redisOptions, err := diodetls.NewRedisOptions(diodetls.RedisParams{
+		Host:     cfg.RedisHost,
+		Port:     cfg.RedisPort,
+		Username: cfg.RedisUsername,
+		Password: cfg.RedisPassword,
+		DB:       cfg.RedisDB,
+		TLS:      &cfg.RedisTLS,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Redis options: %v", err)
 	}
