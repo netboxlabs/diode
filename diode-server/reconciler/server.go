@@ -14,6 +14,7 @@ import (
 
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 	"github.com/netboxlabs/diode/diode-server/grpckeepalive"
+	diodetls "github.com/netboxlabs/diode/diode-server/tls"
 )
 
 // Server is a reconciler Server
@@ -33,21 +34,16 @@ func NewServer(ctx context.Context, logger *slog.Logger, repository Repository, 
 	var cfg Config
 	envconfig.MustProcess("", &cfg)
 
-	redisTLSConfig, err := cfg.RedisTLS.ToTLSConfig()
+	redisOptions, err := diodetls.NewRedisOptions(diodetls.RedisParams{
+		Host:     cfg.RedisHost,
+		Port:     cfg.RedisPort,
+		Username: cfg.RedisUsername,
+		Password: cfg.RedisPassword,
+		DB:       cfg.RedisDB,
+		TLS:      &cfg.RedisTLS,
+	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to create TLS config for Redis: %v", err)
-	}
-
-	redisOptions := redis.Options{
-		Addr:      fmt.Sprintf("%s:%s", cfg.RedisHost, cfg.RedisPort),
-		DB:        cfg.RedisDB,
-		TLSConfig: redisTLSConfig,
-	}
-	if cfg.RedisUsername != "" {
-		redisOptions.Username = cfg.RedisUsername
-	}
-	if cfg.RedisPassword != "" {
-		redisOptions.Password = cfg.RedisPassword
+		return nil, fmt.Errorf("failed to create Redis options: %w", err)
 	}
 	redisClient := redis.NewClient(&redisOptions)
 

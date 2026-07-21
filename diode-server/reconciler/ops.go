@@ -172,8 +172,6 @@ func (o *Ops) RefreshDefaultBranch(ctx context.Context) (*netboxdiodeplugin.Bran
 
 // CreateIngestionLog creates a record for a newly received ingestion log
 func (o *Ops) CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb.IngestionLog, sourceMetadata []byte) (*ops.CreateIngestionLogResult, error) {
-	// TODO: this should be in a transaction.
-
 	fingerprinter := entityhash.NewEntityFingerprinter()
 	entityHash, err := fingerprinter.GenerateEntityHash(ingestionLog.Entity)
 	if err != nil {
@@ -193,41 +191,48 @@ func (o *Ops) CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb
 		o.logger.Debug("using default branch for ingestion log deduplication", "branch", branch.Name, "branchID", branch.ID)
 	}
 
-	existingID, existingLog, err := o.repository.FindPriorIngestionLogByEntityHash(ctx, entityHash, defaultBranchID)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		return nil, fmt.Errorf("failed to search for prior deviation: %w", err)
-	}
-
-	if existingID == nil {
-		id, err := o.repository.CreateIngestionLog(ctx, ingestionLog, sourceMetadata, entityHash)
-		if err != nil {
-			return nil, err
+	var result *ops.CreateIngestionLogResult
+	err = o.repository.WithDedupLocks(ctx, []string{entityHash}, func(repo ops.DedupRepository) error {
+		existingID, existingLog, err := repo.FindPriorIngestionLogByEntityHash(ctx, entityHash, defaultBranchID)
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			return fmt.Errorf("failed to search for prior deviation: %w", err)
 		}
 
-		result := &ops.CreateIngestionLogResult{
-			ID:           *id,
-			IngestionLog: ingestionLog,
+		if existingID == nil {
+			id, err := repo.CreateIngestionLog(ctx, ingestionLog, sourceMetadata, entityHash)
+			if err != nil {
+				return err
+			}
+
+			result = &ops.CreateIngestionLogResult{
+				ID:           *id,
+				IngestionLog: ingestionLog,
+				BranchID:     branchIDForResult,
+			}
+			return nil
+		}
+
+		// It was a duplicate: increment the duplicate count, requeue the prior
+		// ingestion log if its NetBox state may have drifted, and return it
+		requeued, err := repo.BulkMarkDuplicates(ctx, map[int32]int32{*existingID: 1})
+		if err != nil {
+			return fmt.Errorf("failed to mark record as duplicate: %w", err)
+		}
+
+		result = &ops.CreateIngestionLogResult{
+			ID:           *existingID,
+			IngestionLog: existingLog,
+			WasDuplicate: true,
+			Requeued:     requeued[*existingID],
 			BranchID:     branchIDForResult,
 		}
-		return result, nil
-	}
-
-	// It was a duplicate: increment the duplicate count, requeue the prior
-	// ingestion log if its NetBox state may have drifted, and return it
-	requeued, err := o.repository.BulkMarkDuplicates(ctx, []int32{*existingID})
+		if result.Requeued {
+			result.IngestionLog.State = reconcilerpb.State_QUEUED
+		}
+		return nil
+	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to mark record as duplicate: %w", err)
-	}
-
-	result := &ops.CreateIngestionLogResult{
-		ID:           *existingID,
-		IngestionLog: existingLog,
-		WasDuplicate: true,
-		Requeued:     requeued[*existingID],
-		BranchID:     branchIDForResult,
-	}
-	if result.Requeued {
-		result.IngestionLog.State = reconcilerpb.State_QUEUED
+		return nil, err
 	}
 
 	return result, nil
@@ -257,25 +262,51 @@ func (o *Ops) BulkCreateIngestionLogs(ctx context.Context, ingestionLogs []*reco
 		hashSlice = append(hashSlice, h)
 	}
 
-	// Batch find priors
-	priors, err := o.repository.FindPriorIngestionLogsByEntityHashes(ctx, hashSlice, defaultBranchID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to batch find prior ingestion logs: %w", err)
-	}
-
-	// Partition into new and duplicate
-	var newLogs []*reconcilerpb.IngestionLog
-	var newSourceMetadata [][]byte
-	var newEntityHashes []string
-	var newIndices []int // original indices for correlation
-
-	var duplicateIDs []int32
 	results := make([]*ops.CreateIngestionLogResult, len(ingestionLogs))
 
-	for i, log := range ingestionLogs {
-		hash := entityHashes[i]
-		prior, found := priors[hash]
-		if !found {
+	// The find-prior -> insert window runs in one transaction holding
+	// per-entity-hash advisory locks, so a concurrent batch carrying the same
+	// entity waits and then dedups against our committed rows instead of
+	// inserting its own.
+	err := o.repository.WithDedupLocks(ctx, hashSlice, func(repo ops.DedupRepository) error {
+		// Batch find priors
+		priors, err := repo.FindPriorIngestionLogsByEntityHashes(ctx, hashSlice, defaultBranchID)
+		if err != nil {
+			return fmt.Errorf("failed to batch find prior ingestion logs: %w", err)
+		}
+
+		// Partition into new, duplicate-of-prior, and duplicate-within-batch.
+		// A batch can carry many copies of the same entity; only the first
+		// occurrence of a hash with no DB prior is inserted, the rest are
+		// counted as duplicates of that new row.
+		var newLogs []*reconcilerpb.IngestionLog
+		var newSourceMetadata [][]byte
+		var newEntityHashes []string
+		var newIndices []int // original indices for correlation
+
+		firstSeenAt := make(map[string]int)     // hash -> original index of first in-batch occurrence
+		inBatchDups := make(map[int]int)        // original index -> first occurrence's original index
+		increments := make(map[int32]int32)     // ingestion log ID -> duplicate observations in this batch
+		inBatchExtras := make(map[string]int32) // hash -> in-batch copies collapsed into the new row
+
+		for i, log := range ingestionLogs {
+			hash := entityHashes[i]
+			if prior, found := priors[hash]; found {
+				increments[prior.ID]++
+				results[i] = &ops.CreateIngestionLogResult{
+					ID:           prior.ID,
+					IngestionLog: prior.IngestionLog,
+					WasDuplicate: true,
+					BranchID:     branchIDForResult,
+				}
+				continue
+			}
+			if firstIdx, seen := firstSeenAt[hash]; seen {
+				inBatchDups[i] = firstIdx
+				inBatchExtras[hash]++
+				continue
+			}
+			firstSeenAt[hash] = i
 			newLogs = append(newLogs, log)
 			var sm []byte
 			if i < len(sourceMetadata) {
@@ -284,54 +315,68 @@ func (o *Ops) BulkCreateIngestionLogs(ctx context.Context, ingestionLogs []*reco
 			newSourceMetadata = append(newSourceMetadata, sm)
 			newEntityHashes = append(newEntityHashes, hash)
 			newIndices = append(newIndices, i)
-		} else {
-			duplicateIDs = append(duplicateIDs, prior.ID)
-			results[i] = &ops.CreateIngestionLogResult{
-				ID:           prior.ID,
-				IngestionLog: prior.IngestionLog,
+		}
+
+		// Bulk insert new logs first so in-batch duplicate counts can target
+		// the freshly created rows.
+		if len(newLogs) > 0 {
+			idMap, err := repo.BulkCreateIngestionLogs(ctx, newLogs, newSourceMetadata, newEntityHashes)
+			if err != nil {
+				return fmt.Errorf("failed to bulk create ingestion logs: %w", err)
+			}
+
+			for j, log := range newLogs {
+				origIdx := newIndices[j]
+				id, ok := idMap[log.Id]
+				if !ok {
+					return fmt.Errorf("inserted ingestion log ID not found for external_id %s", log.Id)
+				}
+				results[origIdx] = &ops.CreateIngestionLogResult{
+					ID:           id,
+					IngestionLog: log,
+					WasDuplicate: false,
+					BranchID:     branchIDForResult,
+				}
+				if extra := inBatchExtras[newEntityHashes[j]]; extra > 0 {
+					increments[id] += extra
+				}
+			}
+		}
+
+		// In-batch duplicates resolve to their first occurrence's new row.
+		for origIdx, firstIdx := range inBatchDups {
+			first := results[firstIdx]
+			results[origIdx] = &ops.CreateIngestionLogResult{
+				ID:           first.ID,
+				IngestionLog: first.IngestionLog,
 				WasDuplicate: true,
 				BranchID:     branchIDForResult,
 			}
 		}
-	}
 
-	// Bulk mark duplicates: increment duplicate counts and requeue prior
-	// ingestion logs whose NetBox state may have drifted since last plan/apply
-	if len(duplicateIDs) > 0 {
-		requeued, err := o.repository.BulkMarkDuplicates(ctx, duplicateIDs)
-		if err != nil {
-			return nil, fmt.Errorf("failed to bulk mark duplicates: %w", err)
-		}
-		// Results with the same entity hash share one prior *IngestionLog;
-		// writing the same QUEUED value into it repeatedly is idempotent.
-		for _, res := range results {
-			if res != nil && res.WasDuplicate && requeued[res.ID] {
-				res.Requeued = true
-				res.IngestionLog.State = reconcilerpb.State_QUEUED
+		// Bulk mark duplicates: increment duplicate counts (per-ID amounts
+		// cover batches with many copies of one entity) and requeue prior
+		// ingestion logs whose NetBox state may have drifted since last
+		// plan/apply. Freshly inserted rows are QUEUED, so they only get the
+		// bookkeeping, never a requeue.
+		if len(increments) > 0 {
+			requeued, err := repo.BulkMarkDuplicates(ctx, increments)
+			if err != nil {
+				return fmt.Errorf("failed to bulk mark duplicates: %w", err)
+			}
+			// Results with the same entity hash share one prior *IngestionLog;
+			// writing the same QUEUED value into it repeatedly is idempotent.
+			for _, res := range results {
+				if res != nil && res.WasDuplicate && requeued[res.ID] {
+					res.Requeued = true
+					res.IngestionLog.State = reconcilerpb.State_QUEUED
+				}
 			}
 		}
-	}
-
-	// Bulk insert new logs
-	if len(newLogs) > 0 {
-		idMap, err := o.repository.BulkCreateIngestionLogs(ctx, newLogs, newSourceMetadata, newEntityHashes)
-		if err != nil {
-			return nil, fmt.Errorf("failed to bulk create ingestion logs: %w", err)
-		}
-
-		for j, log := range newLogs {
-			origIdx := newIndices[j]
-			id, ok := idMap[log.Id]
-			if !ok {
-				return nil, fmt.Errorf("inserted ingestion log ID not found for external_id %s", log.Id)
-			}
-			results[origIdx] = &ops.CreateIngestionLogResult{
-				ID:           id,
-				IngestionLog: log,
-				WasDuplicate: false,
-				BranchID:     branchIDForResult,
-			}
-		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	return results, nil

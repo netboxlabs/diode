@@ -12,6 +12,23 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const acquireEntityHashLocks = `-- name: AcquireEntityHashLocks :exec
+SELECT pg_advisory_xact_lock(hashtextextended(h, 0))
+FROM (SELECT unnest($1::text[]) AS h ORDER BY 1) AS hashes
+`
+
+// Take transaction-scoped advisory locks on each entity hash, in sorted order
+// to avoid lock-order deadlocks between concurrent dedup transactions. Held
+// until commit/rollback, these serialize the find-prior -> insert window per
+// entity hash so two concurrent batches of the same entity cannot both miss
+// the prior lookup and insert their own rows. Locks on distinct hashes do not
+// contend (modulo 64-bit hashtextextended collisions, which only cost a
+// harmless extra serialization).
+func (q *Queries) AcquireEntityHashLocks(ctx context.Context, entityHashes []string) error {
+	_, err := q.db.Exec(ctx, acquireEntityHashLocks, entityHashes)
+	return err
+}
+
 type BulkCreateIngestionLogsParams struct {
 	ID                 int32       `json:"id"`
 	ExternalID         string      `json:"external_id"`
@@ -31,7 +48,7 @@ type BulkCreateIngestionLogsParams struct {
 
 const bulkMarkDuplicates = `-- name: BulkMarkDuplicates :many
 UPDATE ingestion_logs il
-SET duplicate_count = il.duplicate_count + 1,
+SET duplicate_count = il.duplicate_count + bulk.increment,
     last_seen = CURRENT_TIMESTAMP,
     state = CASE WHEN locked.prev_state IN (3, 4, 5) THEN 1 ELSE il.state END,
     error = CASE WHEN locked.prev_state IN (3, 4, 5) THEN NULL ELSE il.error END,
@@ -43,9 +60,18 @@ FROM (
     ORDER BY id
     FOR UPDATE
 ) locked
+JOIN (
+    SELECT unnest($1::int4[]) AS id,
+           unnest($2::int4[]) AS increment
+) bulk ON bulk.id = locked.id
 WHERE il.id = locked.id
 RETURNING il.id, (locked.prev_state IN (3, 4, 5))::bool AS requeued
 `
+
+type BulkMarkDuplicatesParams struct {
+	Ids        []int32 `json:"ids"`
+	Increments []int32 `json:"increments"`
+}
 
 type BulkMarkDuplicatesRow struct {
 	ID       int32 `json:"id"`
@@ -60,13 +86,17 @@ type BulkMarkDuplicatesRow struct {
 // opt-out, APPLYING (8) is in flight -- those keep their state and only get
 // the duplicate bookkeeping.
 //
+// @ids and @increments are parallel arrays (ids unique): a batch carrying n
+// copies of the same entity increments its row's duplicate_count by n in one
+// statement instead of n round-trips.
+//
 // The inner SELECT ... ORDER BY id FOR UPDATE acquires row locks in the same
 // global order as ClaimQueuedIngestionLogs/ClaimQueuedForAutoApply to avoid
 // deadlocks with concurrent claim/persist updates. The state guard is
 // evaluated on the locked row version, so a concurrent claim (1->2 / 1->8)
 // committed before we acquire the lock is correctly skipped.
-func (q *Queries) BulkMarkDuplicates(ctx context.Context, ids []int32) ([]BulkMarkDuplicatesRow, error) {
-	rows, err := q.db.Query(ctx, bulkMarkDuplicates, ids)
+func (q *Queries) BulkMarkDuplicates(ctx context.Context, arg BulkMarkDuplicatesParams) ([]BulkMarkDuplicatesRow, error) {
+	rows, err := q.db.Query(ctx, bulkMarkDuplicates, arg.Ids, arg.Increments)
 	if err != nil {
 		return nil, err
 	}
@@ -392,7 +422,7 @@ LEFT JOIN LATERAL (
 ) lcs ON true
 WHERE il.entity_hash = $1
   AND lcs.branch_id IS NOT DISTINCT FROM $2::text
-ORDER BY il.created_at DESC
+ORDER BY il.created_at DESC, il.id DESC
 LIMIT 1
 `
 
@@ -443,7 +473,7 @@ CROSS JOIN LATERAL (
           ORDER BY cs.id DESC
           LIMIT 1
       ) IS NOT DISTINCT FROM $2::text
-    ORDER BY il2.created_at DESC
+    ORDER BY il2.created_at DESC, il2.id DESC
     LIMIT 1
 ) il
 `

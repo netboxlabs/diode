@@ -26,9 +26,15 @@ type Repository interface {
 	FindPriorIngestionLogsByEntityHashes(ctx context.Context, entityHashes []string, currentBranch *string) (map[string]*ops.PriorIngestionLog, error)
 	BulkCreateIngestionLogs(ctx context.Context, logs []*reconcilerpb.IngestionLog, sourceMetadata [][]byte, entityHashes []string) (map[string]int32, error)
 	// BulkMarkDuplicates increments duplicate bookkeeping for the given prior
-	// ingestion logs and requeues drift-eligible ones (APPLIED/FAILED/NO_CHANGES
-	// -> QUEUED) so they get re-planned. Returns requeued flag by ingestion log ID.
-	BulkMarkDuplicates(ctx context.Context, ids []int32) (map[int32]bool, error)
+	// ingestion logs by the per-ID amount and requeues drift-eligible ones
+	// (APPLIED/FAILED/NO_CHANGES -> QUEUED) so they get re-planned. Returns
+	// requeued flag by ingestion log ID.
+	BulkMarkDuplicates(ctx context.Context, increments map[int32]int32) (map[int32]bool, error)
+	// WithDedupLocks runs fn within one transaction holding per-entity-hash
+	// advisory locks, serializing concurrent dedup of the same entity so the
+	// find-prior -> insert window cannot race across batches or replicas. An
+	// error from fn rolls the transaction back.
+	WithDedupLocks(ctx context.Context, entityHashes []string, fn func(ops.DedupRepository) error) error
 
 	// Bulk changeset persistence
 	BulkPersistChangeSets(ctx context.Context, items []ops.BulkPersistItem, maxChangeSetsPerLog int32) ([]ops.BulkPersistResult, error)

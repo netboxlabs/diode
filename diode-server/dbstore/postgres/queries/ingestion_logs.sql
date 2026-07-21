@@ -56,7 +56,7 @@ LEFT JOIN LATERAL (
 ) lcs ON true
 WHERE il.entity_hash = sqlc.arg('entity_hash')
   AND lcs.branch_id IS NOT DISTINCT FROM sqlc.narg('branch_id')::text
-ORDER BY il.created_at DESC
+ORDER BY il.created_at DESC, il.id DESC
 LIMIT 1;
 
 -- name: FindPriorIngestionLogsByEntityHashes :many
@@ -73,7 +73,7 @@ CROSS JOIN LATERAL (
           ORDER BY cs.id DESC
           LIMIT 1
       ) IS NOT DISTINCT FROM sqlc.narg('branch_id')::text
-    ORDER BY il2.created_at DESC
+    ORDER BY il2.created_at DESC, il2.id DESC
     LIMIT 1
 ) il;
 
@@ -95,13 +95,17 @@ SELECT id, external_id FROM ingestion_logs WHERE external_id = ANY(@external_ids
 -- opt-out, APPLYING (8) is in flight -- those keep their state and only get
 -- the duplicate bookkeeping.
 --
+-- @ids and @increments are parallel arrays (ids unique): a batch carrying n
+-- copies of the same entity increments its row's duplicate_count by n in one
+-- statement instead of n round-trips.
+--
 -- The inner SELECT ... ORDER BY id FOR UPDATE acquires row locks in the same
 -- global order as ClaimQueuedIngestionLogs/ClaimQueuedForAutoApply to avoid
 -- deadlocks with concurrent claim/persist updates. The state guard is
 -- evaluated on the locked row version, so a concurrent claim (1->2 / 1->8)
 -- committed before we acquire the lock is correctly skipped.
 UPDATE ingestion_logs il
-SET duplicate_count = il.duplicate_count + 1,
+SET duplicate_count = il.duplicate_count + bulk.increment,
     last_seen = CURRENT_TIMESTAMP,
     state = CASE WHEN locked.prev_state IN (3, 4, 5) THEN 1 ELSE il.state END,
     error = CASE WHEN locked.prev_state IN (3, 4, 5) THEN NULL ELSE il.error END,
@@ -113,8 +117,23 @@ FROM (
     ORDER BY id
     FOR UPDATE
 ) locked
+JOIN (
+    SELECT unnest(@ids::int4[]) AS id,
+           unnest(@increments::int4[]) AS increment
+) bulk ON bulk.id = locked.id
 WHERE il.id = locked.id
 RETURNING il.id, (locked.prev_state IN (3, 4, 5))::bool AS requeued;
+
+-- name: AcquireEntityHashLocks :exec
+-- Take transaction-scoped advisory locks on each entity hash, in sorted order
+-- to avoid lock-order deadlocks between concurrent dedup transactions. Held
+-- until commit/rollback, these serialize the find-prior -> insert window per
+-- entity hash so two concurrent batches of the same entity cannot both miss
+-- the prior lookup and insert their own rows. Locks on distinct hashes do not
+-- contend (modulo 64-bit hashtextextended collisions, which only cost a
+-- harmless extra serialization).
+SELECT pg_advisory_xact_lock(hashtextextended(h, 0))
+FROM (SELECT unnest(@entity_hashes::text[]) AS h ORDER BY 1) AS hashes;
 
 -- name: CloneIngestionLogForDrift :one
 -- Clone a prior ingestion log into a new row representing a freshly detected
