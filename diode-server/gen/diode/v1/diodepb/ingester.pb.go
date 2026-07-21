@@ -6,7 +6,7 @@
 
 // Generated Code. DO NOT EDIT.
 // Source: NetBox v4.6.0
-// Timestamp: 2026-05-14 20:30:13Z
+// Timestamp: 2026-07-08 14:57:55Z
 
 package diodepb
 
@@ -134,6 +134,7 @@ type Entity struct {
 	//	*Entity_RackGroup
 	//	*Entity_ScriptModule
 	//	*Entity_VirtualMachineType
+	//	*Entity_User
 	Entity        isEntity_Entity `protobuf_oneof:"entity"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1084,6 +1085,15 @@ func (x *Entity) GetVirtualMachineType() *VirtualMachineType {
 	return nil
 }
 
+func (x *Entity) GetUser() *User {
+	if x != nil {
+		if x, ok := x.Entity.(*Entity_User); ok {
+			return x.User
+		}
+	}
+	return nil
+}
+
 type isEntity_Entity interface {
 	isEntity_Entity()
 }
@@ -1489,6 +1499,10 @@ type Entity_VirtualMachineType struct {
 	VirtualMachineType *VirtualMachineType `protobuf:"bytes,101,opt,name=virtual_machine_type,json=virtualMachineType,proto3,oneof"`
 }
 
+type Entity_User struct {
+	User *User `protobuf:"bytes,102,opt,name=user,proto3,oneof"`
+}
+
 func (*Entity_Asn) isEntity_Entity() {}
 
 func (*Entity_AsnRange) isEntity_Entity() {}
@@ -1688,6 +1702,8 @@ func (*Entity_RackGroup) isEntity_Entity() {}
 func (*Entity_ScriptModule) isEntity_Entity() {}
 
 func (*Entity_VirtualMachineType) isEntity_Entity() {}
+
+func (*Entity_User) isEntity_Entity() {}
 
 type IngestRequest struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
@@ -4310,6 +4326,7 @@ type ContactAssignment struct {
 	//	*ContactAssignment_ObjectRackGroup
 	//	*ContactAssignment_ObjectScriptModule
 	//	*ContactAssignment_ObjectVirtualMachineType
+	//	*ContactAssignment_ObjectUser
 	Object        isContactAssignment_Object   `protobuf_oneof:"object"`
 	Contact       *Contact                     `protobuf:"bytes,89,opt,name=contact,proto3" json:"contact,omitempty"`
 	Role          *ContactRole                 `protobuf:"bytes,90,opt,name=role,proto3,oneof" json:"role,omitempty"`
@@ -5250,6 +5267,15 @@ func (x *ContactAssignment) GetObjectVirtualMachineType() *VirtualMachineType {
 	return nil
 }
 
+func (x *ContactAssignment) GetObjectUser() *User {
+	if x != nil {
+		if x, ok := x.Object.(*ContactAssignment_ObjectUser); ok {
+			return x.ObjectUser
+		}
+	}
+	return nil
+}
+
 func (x *ContactAssignment) GetContact() *Contact {
 	if x != nil {
 		return x.Contact
@@ -5693,6 +5719,10 @@ type ContactAssignment_ObjectVirtualMachineType struct {
 	ObjectVirtualMachineType *VirtualMachineType `protobuf:"bytes,105,opt,name=object_virtual_machine_type,json=objectVirtualMachineType,proto3,oneof"`
 }
 
+type ContactAssignment_ObjectUser struct {
+	ObjectUser *User `protobuf:"bytes,106,opt,name=object_user,json=objectUser,proto3,oneof"`
+}
+
 func (*ContactAssignment_ObjectAsn) isContactAssignment_Object() {}
 
 func (*ContactAssignment_ObjectAsnRange) isContactAssignment_Object() {}
@@ -5890,6 +5920,8 @@ func (*ContactAssignment_ObjectRackGroup) isContactAssignment_Object() {}
 func (*ContactAssignment_ObjectScriptModule) isContactAssignment_Object() {}
 
 func (*ContactAssignment_ObjectVirtualMachineType) isContactAssignment_Object() {}
+
+func (*ContactAssignment_ObjectUser) isContactAssignment_Object() {}
 
 type ContactGroup struct {
 	state         protoimpl.MessageState       `protogen:"open.v1"`
@@ -6202,6 +6234,7 @@ type CustomFieldObjectReference struct {
 	//	*CustomFieldObjectReference_RackGroup
 	//	*CustomFieldObjectReference_ScriptModule
 	//	*CustomFieldObjectReference_VirtualMachineType
+	//	*CustomFieldObjectReference_User
 	Object        isCustomFieldObjectReference_Object `protobuf_oneof:"object"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -7136,6 +7169,15 @@ func (x *CustomFieldObjectReference) GetVirtualMachineType() *VirtualMachineType
 	return nil
 }
 
+func (x *CustomFieldObjectReference) GetUser() *User {
+	if x != nil {
+		if x, ok := x.Object.(*CustomFieldObjectReference_User); ok {
+			return x.User
+		}
+	}
+	return nil
+}
+
 type isCustomFieldObjectReference_Object interface {
 	isCustomFieldObjectReference_Object()
 }
@@ -7537,6 +7579,10 @@ type CustomFieldObjectReference_VirtualMachineType struct {
 	VirtualMachineType *VirtualMachineType `protobuf:"bytes,99,opt,name=virtual_machine_type,json=virtualMachineType,proto3,oneof"`
 }
 
+type CustomFieldObjectReference_User struct {
+	User *User `protobuf:"bytes,100,opt,name=user,proto3,oneof"`
+}
+
 func (*CustomFieldObjectReference_Asn) isCustomFieldObjectReference_Object() {}
 
 func (*CustomFieldObjectReference_AsnRange) isCustomFieldObjectReference_Object() {}
@@ -7734,6 +7780,8 @@ func (*CustomFieldObjectReference_RackGroup) isCustomFieldObjectReference_Object
 func (*CustomFieldObjectReference_ScriptModule) isCustomFieldObjectReference_Object() {}
 
 func (*CustomFieldObjectReference_VirtualMachineType) isCustomFieldObjectReference_Object() {}
+
+func (*CustomFieldObjectReference_User) isCustomFieldObjectReference_Object() {}
 
 type CustomFieldValue struct {
 	state             protoimpl.MessageState        `protogen:"open.v1"`
@@ -8901,6 +8949,7 @@ type FHRPGroupAssignment struct {
 	//	*FHRPGroupAssignment_InterfaceRackGroup
 	//	*FHRPGroupAssignment_InterfaceScriptModule
 	//	*FHRPGroupAssignment_InterfaceVirtualMachineType
+	//	*FHRPGroupAssignment_InterfaceUser
 	Interface     isFHRPGroupAssignment_Interface `protobuf_oneof:"interface"`
 	Priority      int64                           `protobuf:"varint,90,opt,name=priority,proto3" json:"priority,omitempty"`
 	Metadata      *structpb.Struct                `protobuf:"bytes,96,opt,name=metadata,proto3" json:"metadata,omitempty"`
@@ -9844,6 +9893,15 @@ func (x *FHRPGroupAssignment) GetInterfaceVirtualMachineType() *VirtualMachineTy
 	return nil
 }
 
+func (x *FHRPGroupAssignment) GetInterfaceUser() *User {
+	if x != nil {
+		if x, ok := x.Interface.(*FHRPGroupAssignment_InterfaceUser); ok {
+			return x.InterfaceUser
+		}
+	}
+	return nil
+}
+
 func (x *FHRPGroupAssignment) GetPriority() int64 {
 	if x != nil {
 		return x.Priority
@@ -10259,6 +10317,10 @@ type FHRPGroupAssignment_InterfaceVirtualMachineType struct {
 	InterfaceVirtualMachineType *VirtualMachineType `protobuf:"bytes,102,opt,name=interface_virtual_machine_type,json=interfaceVirtualMachineType,proto3,oneof"`
 }
 
+type FHRPGroupAssignment_InterfaceUser struct {
+	InterfaceUser *User `protobuf:"bytes,103,opt,name=interface_user,json=interfaceUser,proto3,oneof"`
+}
+
 func (*FHRPGroupAssignment_InterfaceAsn) isFHRPGroupAssignment_Interface() {}
 
 func (*FHRPGroupAssignment_InterfaceAsnRange) isFHRPGroupAssignment_Interface() {}
@@ -10456,6 +10518,8 @@ func (*FHRPGroupAssignment_InterfaceRackGroup) isFHRPGroupAssignment_Interface()
 func (*FHRPGroupAssignment_InterfaceScriptModule) isFHRPGroupAssignment_Interface() {}
 
 func (*FHRPGroupAssignment_InterfaceVirtualMachineType) isFHRPGroupAssignment_Interface() {}
+
+func (*FHRPGroupAssignment_InterfaceUser) isFHRPGroupAssignment_Interface() {}
 
 type FrontPort struct {
 	state  protoimpl.MessageState `protogen:"open.v1"`
@@ -10720,6 +10784,7 @@ type GenericObject struct {
 	//	*GenericObject_ObjectRackGroup
 	//	*GenericObject_ObjectScriptModule
 	//	*GenericObject_ObjectVirtualMachineType
+	//	*GenericObject_ObjectUser
 	Object        isGenericObject_Object `protobuf_oneof:"object"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -11654,6 +11719,15 @@ func (x *GenericObject) GetObjectVirtualMachineType() *VirtualMachineType {
 	return nil
 }
 
+func (x *GenericObject) GetObjectUser() *User {
+	if x != nil {
+		if x, ok := x.Object.(*GenericObject_ObjectUser); ok {
+			return x.ObjectUser
+		}
+	}
+	return nil
+}
+
 type isGenericObject_Object interface {
 	isGenericObject_Object()
 }
@@ -12055,6 +12129,10 @@ type GenericObject_ObjectVirtualMachineType struct {
 	ObjectVirtualMachineType *VirtualMachineType `protobuf:"bytes,99,opt,name=object_virtual_machine_type,json=objectVirtualMachineType,proto3,oneof"`
 }
 
+type GenericObject_ObjectUser struct {
+	ObjectUser *User `protobuf:"bytes,100,opt,name=object_user,json=objectUser,proto3,oneof"`
+}
+
 func (*GenericObject_ObjectAsn) isGenericObject_Object() {}
 
 func (*GenericObject_ObjectAsnRange) isGenericObject_Object() {}
@@ -12252,6 +12330,8 @@ func (*GenericObject_ObjectRackGroup) isGenericObject_Object() {}
 func (*GenericObject_ObjectScriptModule) isGenericObject_Object() {}
 
 func (*GenericObject_ObjectVirtualMachineType) isGenericObject_Object() {}
+
+func (*GenericObject_ObjectUser) isGenericObject_Object() {}
 
 type IKEPolicy struct {
 	state         protoimpl.MessageState       `protogen:"open.v1"`
@@ -14181,6 +14261,7 @@ type L2VPNTermination struct {
 	//	*L2VPNTermination_AssignedObjectRackGroup
 	//	*L2VPNTermination_AssignedObjectScriptModule
 	//	*L2VPNTermination_AssignedObjectVirtualMachineType
+	//	*L2VPNTermination_AssignedObjectUser
 	AssignedObject isL2VPNTermination_AssignedObject `protobuf_oneof:"assigned_object"`
 	Tags           []*Tag                            `protobuf:"bytes,5,rep,name=tags,proto3" json:"tags,omitempty"`
 	CustomFields   map[string]*CustomFieldValue      `protobuf:"bytes,6,rep,name=custom_fields,json=customFields,proto3" json:"custom_fields,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
@@ -15125,6 +15206,15 @@ func (x *L2VPNTermination) GetAssignedObjectVirtualMachineType() *VirtualMachine
 	return nil
 }
 
+func (x *L2VPNTermination) GetAssignedObjectUser() *User {
+	if x != nil {
+		if x, ok := x.AssignedObject.(*L2VPNTermination_AssignedObjectUser); ok {
+			return x.AssignedObjectUser
+		}
+	}
+	return nil
+}
+
 func (x *L2VPNTermination) GetTags() []*Tag {
 	if x != nil {
 		return x.Tags
@@ -15547,6 +15637,10 @@ type L2VPNTermination_AssignedObjectVirtualMachineType struct {
 	AssignedObjectVirtualMachineType *VirtualMachineType `protobuf:"bytes,103,opt,name=assigned_object_virtual_machine_type,json=assignedObjectVirtualMachineType,proto3,oneof"`
 }
 
+type L2VPNTermination_AssignedObjectUser struct {
+	AssignedObjectUser *User `protobuf:"bytes,104,opt,name=assigned_object_user,json=assignedObjectUser,proto3,oneof"`
+}
+
 func (*L2VPNTermination_AssignedObjectInterface) isL2VPNTermination_AssignedObject() {}
 
 func (*L2VPNTermination_AssignedObjectVlan) isL2VPNTermination_AssignedObject() {}
@@ -15745,6 +15839,8 @@ func (*L2VPNTermination_AssignedObjectRackGroup) isL2VPNTermination_AssignedObje
 func (*L2VPNTermination_AssignedObjectScriptModule) isL2VPNTermination_AssignedObject() {}
 
 func (*L2VPNTermination_AssignedObjectVirtualMachineType) isL2VPNTermination_AssignedObject() {}
+
+func (*L2VPNTermination_AssignedObjectUser) isL2VPNTermination_AssignedObject() {}
 
 type Location struct {
 	state         protoimpl.MessageState       `protogen:"open.v1"`
@@ -18214,6 +18310,7 @@ type RackReservation struct {
 	Status        *string                      `protobuf:"bytes,8,opt,name=status,proto3,oneof" json:"status,omitempty"`
 	Metadata      *structpb.Struct             `protobuf:"bytes,9,opt,name=metadata,proto3" json:"metadata,omitempty"`
 	Owner         *Owner                       `protobuf:"bytes,10,opt,name=owner,proto3,oneof" json:"owner,omitempty"`
+	User          *User                        `protobuf:"bytes,11,opt,name=user,proto3" json:"user,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -18314,6 +18411,13 @@ func (x *RackReservation) GetMetadata() *structpb.Struct {
 func (x *RackReservation) GetOwner() *Owner {
 	if x != nil {
 		return x.Owner
+	}
+	return nil
+}
+
+func (x *RackReservation) GetUser() *User {
+	if x != nil {
+		return x.User
 	}
 	return nil
 }
@@ -20241,6 +20345,7 @@ type TunnelTermination struct {
 	//	*TunnelTermination_TerminationRackGroup
 	//	*TunnelTermination_TerminationScriptModule
 	//	*TunnelTermination_TerminationVirtualMachineType
+	//	*TunnelTermination_TerminationUser
 	Termination   isTunnelTermination_Termination `protobuf_oneof:"termination"`
 	OutsideIp     *IPAddress                      `protobuf:"bytes,91,opt,name=outside_ip,json=outsideIp,proto3,oneof" json:"outside_ip,omitempty"`
 	Tags          []*Tag                          `protobuf:"bytes,92,rep,name=tags,proto3" json:"tags,omitempty"`
@@ -21193,6 +21298,15 @@ func (x *TunnelTermination) GetTerminationVirtualMachineType() *VirtualMachineTy
 	return nil
 }
 
+func (x *TunnelTermination) GetTerminationUser() *User {
+	if x != nil {
+		if x, ok := x.Termination.(*TunnelTermination_TerminationUser); ok {
+			return x.TerminationUser
+		}
+	}
+	return nil
+}
+
 func (x *TunnelTermination) GetOutsideIp() *IPAddress {
 	if x != nil {
 		return x.OutsideIp
@@ -21622,6 +21736,10 @@ type TunnelTermination_TerminationVirtualMachineType struct {
 	TerminationVirtualMachineType *VirtualMachineType `protobuf:"bytes,105,opt,name=termination_virtual_machine_type,json=terminationVirtualMachineType,proto3,oneof"`
 }
 
+type TunnelTermination_TerminationUser struct {
+	TerminationUser *User `protobuf:"bytes,106,opt,name=termination_user,json=terminationUser,proto3,oneof"`
+}
+
 func (*TunnelTermination_TerminationAsn) isTunnelTermination_Termination() {}
 
 func (*TunnelTermination_TerminationAsnRange) isTunnelTermination_Termination() {}
@@ -21819,6 +21937,8 @@ func (*TunnelTermination_TerminationRackGroup) isTunnelTermination_Termination()
 func (*TunnelTermination_TerminationScriptModule) isTunnelTermination_Termination() {}
 
 func (*TunnelTermination_TerminationVirtualMachineType) isTunnelTermination_Termination() {}
+
+func (*TunnelTermination_TerminationUser) isTunnelTermination_Termination() {}
 
 type VLAN struct {
 	state         protoimpl.MessageState       `protogen:"open.v1"`
@@ -24527,12 +24647,14 @@ type JournalEntry struct {
 	//	*JournalEntry_AssignedObjectRackGroup
 	//	*JournalEntry_AssignedObjectScriptModule
 	//	*JournalEntry_AssignedObjectVirtualMachineType
+	//	*JournalEntry_AssignedObjectUser
 	AssignedObject isJournalEntry_AssignedObject `protobuf_oneof:"assigned_object"`
 	Kind           *string                       `protobuf:"bytes,93,opt,name=kind,proto3,oneof" json:"kind,omitempty"`
 	Comments       string                        `protobuf:"bytes,94,opt,name=comments,proto3" json:"comments,omitempty"`
 	Tags           []*Tag                        `protobuf:"bytes,95,rep,name=tags,proto3" json:"tags,omitempty"`
 	CustomFields   map[string]*CustomFieldValue  `protobuf:"bytes,96,rep,name=custom_fields,json=customFields,proto3" json:"custom_fields,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	Metadata       *structpb.Struct              `protobuf:"bytes,98,opt,name=metadata,proto3" json:"metadata,omitempty"`
+	CreatedBy      *User                         `protobuf:"bytes,106,opt,name=created_by,json=createdBy,proto3,oneof" json:"created_by,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -25466,6 +25588,15 @@ func (x *JournalEntry) GetAssignedObjectVirtualMachineType() *VirtualMachineType
 	return nil
 }
 
+func (x *JournalEntry) GetAssignedObjectUser() *User {
+	if x != nil {
+		if x, ok := x.AssignedObject.(*JournalEntry_AssignedObjectUser); ok {
+			return x.AssignedObjectUser
+		}
+	}
+	return nil
+}
+
 func (x *JournalEntry) GetKind() string {
 	if x != nil && x.Kind != nil {
 		return *x.Kind
@@ -25497,6 +25628,13 @@ func (x *JournalEntry) GetCustomFields() map[string]*CustomFieldValue {
 func (x *JournalEntry) GetMetadata() *structpb.Struct {
 	if x != nil {
 		return x.Metadata
+	}
+	return nil
+}
+
+func (x *JournalEntry) GetCreatedBy() *User {
+	if x != nil {
+		return x.CreatedBy
 	}
 	return nil
 }
@@ -25902,6 +26040,10 @@ type JournalEntry_AssignedObjectVirtualMachineType struct {
 	AssignedObjectVirtualMachineType *VirtualMachineType `protobuf:"bytes,104,opt,name=assigned_object_virtual_machine_type,json=assignedObjectVirtualMachineType,proto3,oneof"`
 }
 
+type JournalEntry_AssignedObjectUser struct {
+	AssignedObjectUser *User `protobuf:"bytes,105,opt,name=assigned_object_user,json=assignedObjectUser,proto3,oneof"`
+}
+
 func (*JournalEntry_AssignedObjectAsn) isJournalEntry_AssignedObject() {}
 
 func (*JournalEntry_AssignedObjectAsnRange) isJournalEntry_AssignedObject() {}
@@ -26099,6 +26241,8 @@ func (*JournalEntry_AssignedObjectRackGroup) isJournalEntry_AssignedObject() {}
 func (*JournalEntry_AssignedObjectScriptModule) isJournalEntry_AssignedObject() {}
 
 func (*JournalEntry_AssignedObjectVirtualMachineType) isJournalEntry_AssignedObject() {}
+
+func (*JournalEntry_AssignedObjectUser) isJournalEntry_AssignedObject() {}
 
 type ModuleTypeProfile struct {
 	state         protoimpl.MessageState       `protogen:"open.v1"`
@@ -26330,6 +26474,7 @@ type Owner struct {
 	Group         *OwnerGroup            `protobuf:"bytes,2,opt,name=group,proto3" json:"group,omitempty"`
 	Description   *string                `protobuf:"bytes,3,opt,name=description,proto3,oneof" json:"description,omitempty"`
 	Metadata      *structpb.Struct       `protobuf:"bytes,4,opt,name=metadata,proto3" json:"metadata,omitempty"`
+	Users         []*User                `protobuf:"bytes,5,rep,name=users,proto3" json:"users,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -26388,6 +26533,13 @@ func (x *Owner) GetDescription() string {
 func (x *Owner) GetMetadata() *structpb.Struct {
 	if x != nil {
 		return x.Metadata
+	}
+	return nil
+}
+
+func (x *Owner) GetUsers() []*User {
+	if x != nil {
+		return x.Users
 	}
 	return nil
 }
@@ -26888,6 +27040,58 @@ func (x *VirtualMachineType) GetMetadata() *structpb.Struct {
 	return nil
 }
 
+type User struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Username      string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
+	Metadata      *structpb.Struct       `protobuf:"bytes,2,opt,name=metadata,proto3" json:"metadata,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *User) Reset() {
+	*x = User{}
+	mi := &file_diode_v1_ingester_proto_msgTypes[106]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *User) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*User) ProtoMessage() {}
+
+func (x *User) ProtoReflect() protoreflect.Message {
+	mi := &file_diode_v1_ingester_proto_msgTypes[106]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use User.ProtoReflect.Descriptor instead.
+func (*User) Descriptor() ([]byte, []int) {
+	return file_diode_v1_ingester_proto_rawDescGZIP(), []int{106}
+}
+
+func (x *User) GetUsername() string {
+	if x != nil {
+		return x.Username
+	}
+	return ""
+}
+
+func (x *User) GetMetadata() *structpb.Struct {
+	if x != nil {
+		return x.Metadata
+	}
+	return nil
+}
+
 var file_diode_v1_ingester_proto_extTypes = []protoimpl.ExtensionInfo{
 	{
 		ExtendedType:  (*descriptorpb.FieldOptions)(nil),
@@ -26909,7 +27113,7 @@ var File_diode_v1_ingester_proto protoreflect.FileDescriptor
 
 const file_diode_v1_ingester_proto_rawDesc = "" +
 	"\n" +
-	"\x17diode/v1/ingester.proto\x12\bdiode.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a google/protobuf/descriptor.proto\x1a\x1cgoogle/protobuf/struct.proto\x1a\x17validate/validate.proto\"\x9b/\n" +
+	"\x17diode/v1/ingester.proto\x12\bdiode.v1\x1a\x1fgoogle/protobuf/timestamp.proto\x1a google/protobuf/descriptor.proto\x1a\x1cgoogle/protobuf/struct.proto\x1a\x17validate/validate.proto\"\xc1/\n" +
 	"\x06Entity\x12D\n" +
 	"\ttimestamp\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampB\n" +
 	"\xfaB\a\xb2\x01\x04\b\x018\x01R\ttimestamp\x12!\n" +
@@ -27032,7 +27236,8 @@ const file_diode_v1_ingester_proto_rawDesc = "" +
 	"\n" +
 	"rack_group\x18c \x01(\v2\x13.diode.v1.RackGroupH\x00R\trackGroup\x12=\n" +
 	"\rscript_module\x18d \x01(\v2\x16.diode.v1.ScriptModuleH\x00R\fscriptModule\x12P\n" +
-	"\x14virtual_machine_type\x18e \x01(\v2\x1c.diode.v1.VirtualMachineTypeH\x00R\x12virtualMachineTypeB\b\n" +
+	"\x14virtual_machine_type\x18e \x01(\v2\x1c.diode.v1.VirtualMachineTypeH\x00R\x12virtualMachineType\x12$\n" +
+	"\x04user\x18f \x01(\v2\x0e.diode.v1.UserH\x00R\x04userB\b\n" +
 	"\x06entity\"\x99\x03\n" +
 	"\rIngestRequest\x12\"\n" +
 	"\x06stream\x18\x01 \x01(\tB\n" +
@@ -27438,7 +27643,7 @@ const file_diode_v1_ingester_proto_rawDesc = "" +
 	"\x05_linkB\x0e\n" +
 	"\f_descriptionB\v\n" +
 	"\t_commentsB\b\n" +
-	"\x06_owner\"\xf4;\n" +
+	"\x06_owner\"\xa7<\n" +
 	"\x11ContactAssignment\x12.\n" +
 	"\n" +
 	"object_asn\x18\x01 \x01(\v2\r.diode.v1.ASNH\x00R\tobjectAsn\x12>\n" +
@@ -27547,7 +27752,9 @@ const file_diode_v1_ingester_proto_rawDesc = "" +
 	"\x13object_cable_bundle\x18f \x01(\v2\x15.diode.v1.CableBundleH\x00R\x11objectCableBundle\x12A\n" +
 	"\x11object_rack_group\x18g \x01(\v2\x13.diode.v1.RackGroupH\x00R\x0fobjectRackGroup\x12J\n" +
 	"\x14object_script_module\x18h \x01(\v2\x16.diode.v1.ScriptModuleH\x00R\x12objectScriptModule\x12]\n" +
-	"\x1bobject_virtual_machine_type\x18i \x01(\v2\x1c.diode.v1.VirtualMachineTypeH\x00R\x18objectVirtualMachineType\x12+\n" +
+	"\x1bobject_virtual_machine_type\x18i \x01(\v2\x1c.diode.v1.VirtualMachineTypeH\x00R\x18objectVirtualMachineType\x121\n" +
+	"\vobject_user\x18j \x01(\v2\x0e.diode.v1.UserH\x00R\n" +
+	"objectUser\x12+\n" +
 	"\acontact\x18Y \x01(\v2\x11.diode.v1.ContactR\acontact\x12.\n" +
 	"\x04role\x18Z \x01(\v2\x15.diode.v1.ContactRoleH\x01R\x04role\x88\x01\x01\x12N\n" +
 	"\bpriority\x18[ \x01(\tB-\xfaB*r(R\binactiveR\aprimaryR\tsecondaryR\btertiaryH\x02R\bpriority\x88\x01\x01\x12!\n" +
@@ -27591,7 +27798,7 @@ const file_diode_v1_ingester_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\v2\x1a.diode.v1.CustomFieldValueR\x05value:\x028\x01B\x0e\n" +
 	"\f_descriptionB\b\n" +
 	"\x06_ownerB\v\n" +
-	"\t_comments\"\xa4.\n" +
+	"\t_comments\"\xca.\n" +
 	"\x1aCustomFieldObjectReference\x12!\n" +
 	"\x03asn\x18\x01 \x01(\v2\r.diode.v1.ASNH\x00R\x03asn\x121\n" +
 	"\tasn_range\x18\x02 \x01(\v2\x12.diode.v1.ASNRangeH\x00R\basnRange\x123\n" +
@@ -27711,7 +27918,8 @@ const file_diode_v1_ingester_proto_rawDesc = "" +
 	"\n" +
 	"rack_group\x18a \x01(\v2\x13.diode.v1.RackGroupH\x00R\trackGroup\x12=\n" +
 	"\rscript_module\x18b \x01(\v2\x16.diode.v1.ScriptModuleH\x00R\fscriptModule\x12P\n" +
-	"\x14virtual_machine_type\x18c \x01(\v2\x1c.diode.v1.VirtualMachineTypeH\x00R\x12virtualMachineTypeB\b\n" +
+	"\x14virtual_machine_type\x18c \x01(\v2\x1c.diode.v1.VirtualMachineTypeH\x00R\x12virtualMachineType\x12$\n" +
+	"\x04user\x18d \x01(\v2\x0e.diode.v1.UserH\x00R\x04userB\b\n" +
 	"\x06object\"\x9a\x04\n" +
 	"\x10CustomFieldValue\x12-\n" +
 	"\x12multiple_selection\x18\x01 \x03(\tR\x11multipleSelection\x12O\n" +
@@ -27905,7 +28113,7 @@ const file_diode_v1_ingester_proto_rawDesc = "" +
 	"\t_auth_keyB\x0e\n" +
 	"\f_descriptionB\v\n" +
 	"\t_commentsB\b\n" +
-	"\x06_owner\"\xfb=\n" +
+	"\x06_owner\"\xb4>\n" +
 	"\x13FHRPGroupAssignment\x12)\n" +
 	"\x05group\x18\x01 \x01(\v2\x13.diode.v1.FHRPGroupR\x05group\x124\n" +
 	"\rinterface_asn\x18\x02 \x01(\v2\r.diode.v1.ASNH\x00R\finterfaceAsn\x12D\n" +
@@ -28007,7 +28215,8 @@ const file_diode_v1_ingester_proto_rawDesc = "" +
 	"\x16interface_cable_bundle\x18c \x01(\v2\x15.diode.v1.CableBundleH\x00R\x14interfaceCableBundle\x12G\n" +
 	"\x14interface_rack_group\x18d \x01(\v2\x13.diode.v1.RackGroupH\x00R\x12interfaceRackGroup\x12P\n" +
 	"\x17interface_script_module\x18e \x01(\v2\x16.diode.v1.ScriptModuleH\x00R\x15interfaceScriptModule\x12c\n" +
-	"\x1einterface_virtual_machine_type\x18f \x01(\v2\x1c.diode.v1.VirtualMachineTypeH\x00R\x1binterfaceVirtualMachineType\x12\x1a\n" +
+	"\x1einterface_virtual_machine_type\x18f \x01(\v2\x1c.diode.v1.VirtualMachineTypeH\x00R\x1binterfaceVirtualMachineType\x127\n" +
+	"\x0einterface_user\x18g \x01(\v2\x0e.diode.v1.UserH\x00R\rinterfaceUser\x12\x1a\n" +
 	"\bpriority\x18Z \x01(\x03R\bpriority\x129\n" +
 	"\bmetadata\x18` \x01(\v2\x17.google.protobuf.StructB\x04\x88\xb5\x18\x00R\bmetadataB\v\n" +
 	"\tinterface\"\xfb\t\n" +
@@ -28041,7 +28250,7 @@ const file_diode_v1_ingester_proto_rawDesc = "" +
 	"\x0f_mark_connectedB\f\n" +
 	"\n" +
 	"_positionsB\b\n" +
-	"\x06_owner\"\x9e8\n" +
+	"\x06_owner\"\xd18\n" +
 	"\rGenericObject\x12.\n" +
 	"\n" +
 	"object_asn\x18\x01 \x01(\v2\r.diode.v1.ASNH\x00R\tobjectAsn\x12>\n" +
@@ -28150,7 +28359,9 @@ const file_diode_v1_ingester_proto_rawDesc = "" +
 	"\x13object_cable_bundle\x18` \x01(\v2\x15.diode.v1.CableBundleH\x00R\x11objectCableBundle\x12A\n" +
 	"\x11object_rack_group\x18a \x01(\v2\x13.diode.v1.RackGroupH\x00R\x0fobjectRackGroup\x12J\n" +
 	"\x14object_script_module\x18b \x01(\v2\x16.diode.v1.ScriptModuleH\x00R\x12objectScriptModule\x12]\n" +
-	"\x1bobject_virtual_machine_type\x18c \x01(\v2\x1c.diode.v1.VirtualMachineTypeH\x00R\x18objectVirtualMachineTypeB\b\n" +
+	"\x1bobject_virtual_machine_type\x18c \x01(\v2\x1c.diode.v1.VirtualMachineTypeH\x00R\x18objectVirtualMachineType\x121\n" +
+	"\vobject_user\x18d \x01(\v2\x0e.diode.v1.UserH\x00R\n" +
+	"objectUserB\b\n" +
 	"\x06object\"\x92\x05\n" +
 	"\tIKEPolicy\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12%\n" +
@@ -28512,7 +28723,7 @@ const file_diode_v1_ingester_proto_rawDesc = "" +
 	"\t_commentsB\t\n" +
 	"\a_tenantB\t\n" +
 	"\a_statusB\b\n" +
-	"\x06_owner\"\xf3G\n" +
+	"\x06_owner\"\xb7H\n" +
 	"\x10L2VPNTermination\x12%\n" +
 	"\x05l2vpn\x18\x01 \x01(\v2\x0f.diode.v1.L2VPNR\x05l2vpn\x12Q\n" +
 	"\x19assigned_object_interface\x18\x02 \x01(\v2\x13.diode.v1.InterfaceH\x00R\x17assignedObjectInterface\x12B\n" +
@@ -28614,7 +28825,8 @@ const file_diode_v1_ingester_proto_rawDesc = "" +
 	"\x1cassigned_object_cable_bundle\x18d \x01(\v2\x15.diode.v1.CableBundleH\x00R\x19assignedObjectCableBundle\x12R\n" +
 	"\x1aassigned_object_rack_group\x18e \x01(\v2\x13.diode.v1.RackGroupH\x00R\x17assignedObjectRackGroup\x12[\n" +
 	"\x1dassigned_object_script_module\x18f \x01(\v2\x16.diode.v1.ScriptModuleH\x00R\x1aassignedObjectScriptModule\x12n\n" +
-	"$assigned_object_virtual_machine_type\x18g \x01(\v2\x1c.diode.v1.VirtualMachineTypeH\x00R assignedObjectVirtualMachineType\x12!\n" +
+	"$assigned_object_virtual_machine_type\x18g \x01(\v2\x1c.diode.v1.VirtualMachineTypeH\x00R assignedObjectVirtualMachineType\x12B\n" +
+	"\x14assigned_object_user\x18h \x01(\v2\x0e.diode.v1.UserH\x00R\x12assignedObjectUser\x12!\n" +
 	"\x04tags\x18\x05 \x03(\v2\r.diode.v1.TagR\x04tags\x12Q\n" +
 	"\rcustom_fields\x18\x06 \x03(\v2,.diode.v1.L2VPNTermination.CustomFieldsEntryR\fcustomFields\x129\n" +
 	"\bmetadata\x18a \x01(\v2\x17.google.protobuf.StructB\x04\x88\xb5\x18\x00R\bmetadata\x1a[\n" +
@@ -29119,7 +29331,7 @@ const file_diode_v1_ingester_proto_rawDesc = "" +
 	"\t_commentsB\x0f\n" +
 	"\r_outer_heightB\b\n" +
 	"\x06_ownerB\b\n" +
-	"\x06_group\"\xdf\x04\n" +
+	"\x06_group\"\x83\x05\n" +
 	"\x0fRackReservation\x12\"\n" +
 	"\x04rack\x18\x01 \x01(\v2\x0e.diode.v1.RackR\x04rack\x12\x14\n" +
 	"\x05units\x18\x02 \x03(\x03R\x05units\x12-\n" +
@@ -29131,7 +29343,8 @@ const file_diode_v1_ingester_proto_rawDesc = "" +
 	"\x06status\x18\b \x01(\tB\x1d\xfaB\x1ar\x18R\x06activeR\apendingR\x05staleH\x02R\x06status\x88\x01\x01\x129\n" +
 	"\bmetadata\x18\t \x01(\v2\x17.google.protobuf.StructB\x04\x88\xb5\x18\x00R\bmetadata\x12*\n" +
 	"\x05owner\x18\n" +
-	" \x01(\v2\x0f.diode.v1.OwnerH\x03R\x05owner\x88\x01\x01\x1a[\n" +
+	" \x01(\v2\x0f.diode.v1.OwnerH\x03R\x05owner\x88\x01\x01\x12\"\n" +
+	"\x04user\x18\v \x01(\v2\x0e.diode.v1.UserR\x04user\x1a[\n" +
 	"\x11CustomFieldsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x120\n" +
 	"\x05value\x18\x02 \x01(\v2\x1a.diode.v1.CustomFieldValueR\x05value:\x028\x01B\t\n" +
@@ -29461,7 +29674,7 @@ const file_diode_v1_ingester_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\v2\x1a.diode.v1.CustomFieldValueR\x05value:\x028\x01B\x0e\n" +
 	"\f_descriptionB\b\n" +
 	"\x06_ownerB\v\n" +
-	"\t_comments\"\xb3C\n" +
+	"\t_comments\"\xf0C\n" +
 	"\x11TunnelTermination\x12(\n" +
 	"\x06tunnel\x18\x01 \x01(\v2\x10.diode.v1.TunnelR\x06tunnel\x12+\n" +
 	"\x04role\x18\x02 \x01(\tB\x17\xfaB\x14r\x12R\x03hubR\x04peerR\x05spokeR\x04role\x128\n" +
@@ -29564,7 +29777,8 @@ const file_diode_v1_ingester_proto_rawDesc = "" +
 	"\x18termination_cable_bundle\x18f \x01(\v2\x15.diode.v1.CableBundleH\x00R\x16terminationCableBundle\x12K\n" +
 	"\x16termination_rack_group\x18g \x01(\v2\x13.diode.v1.RackGroupH\x00R\x14terminationRackGroup\x12T\n" +
 	"\x19termination_script_module\x18h \x01(\v2\x16.diode.v1.ScriptModuleH\x00R\x17terminationScriptModule\x12g\n" +
-	" termination_virtual_machine_type\x18i \x01(\v2\x1c.diode.v1.VirtualMachineTypeH\x00R\x1dterminationVirtualMachineType\x127\n" +
+	" termination_virtual_machine_type\x18i \x01(\v2\x1c.diode.v1.VirtualMachineTypeH\x00R\x1dterminationVirtualMachineType\x12;\n" +
+	"\x10termination_user\x18j \x01(\v2\x0e.diode.v1.UserH\x00R\x0fterminationUser\x127\n" +
 	"\n" +
 	"outside_ip\x18[ \x01(\v2\x13.diode.v1.IPAddressH\x01R\toutsideIp\x88\x01\x01\x12!\n" +
 	"\x04tags\x18\\ \x03(\v2\r.diode.v1.TagR\x04tags\x12R\n" +
@@ -29973,12 +30187,13 @@ const file_diode_v1_ingester_proto_rawDesc = "" +
 	"\x0e_distance_unitB\x0e\n" +
 	"\f_descriptionB\v\n" +
 	"\t_commentsB\b\n" +
-	"\x06_owner\"\xdc(\n" +
+	"\x06_owner\"\xe8(\n" +
 	"\vCustomField\x12\x89\x01\n" +
-	"\x04type\x18\x01 \x01(\tBu\xfaBrrpR\abooleanR\x04dateR\bdatetimeR\adecimalR\aintegerR\x04jsonR\blongtextR\vmultiobjectR\vmultiselectR\x06objectR\x06selectR\x04textR\x03urlR\x04type\x12\x9d\x0f\n" +
-	"\x13related_object_type\x18\x02 \x01(\tB\xe7\x0e\xfaB\xe3\x0er\xe0\x0eR\x10circuits.circuitR\x15circuits.circuitgroupR\x1fcircuits.circuitgroupassignmentR\x1bcircuits.circuitterminationR\x14circuits.circuittypeR\x11circuits.providerR\x18circuits.provideraccountR\x18circuits.providernetworkR\x17circuits.virtualcircuitR\"circuits.virtualcircuitterminationR\x1bcircuits.virtualcircuittypeR\x10core.managedfileR\n" +
+	"\x04type\x18\x01 \x01(\tBu\xfaBrrpR\abooleanR\x04dateR\bdatetimeR\adecimalR\aintegerR\x04jsonR\blongtextR\vmultiobjectR\vmultiselectR\x06objectR\x06selectR\x04textR\x03urlR\x04type\x12\xa9\x0f\n" +
+	"\x13related_object_type\x18\x02 \x01(\tB\xf3\x0e\xfaB\xef\x0er\xec\x0eR\x10circuits.circuitR\x15circuits.circuitgroupR\x1fcircuits.circuitgroupassignmentR\x1bcircuits.circuitterminationR\x14circuits.circuittypeR\x11circuits.providerR\x18circuits.provideraccountR\x18circuits.providernetworkR\x17circuits.virtualcircuitR\"circuits.virtualcircuitterminationR\x1bcircuits.virtualcircuittypeR\x10core.managedfileR\n" +
 	"dcim.cableR\x10dcim.cablebundleR\x0edcim.cablepathR\x10dcim.consoleportR\x16dcim.consoleserverportR\vdcim.deviceR\x0edcim.devicebayR\x0fdcim.deviceroleR\x0fdcim.devicetypeR\x0edcim.frontportR\x0edcim.interfaceR\x12dcim.inventoryitemR\x16dcim.inventoryitemroleR\rdcim.locationR\x0fdcim.macaddressR\x11dcim.manufacturerR\vdcim.moduleR\x0edcim.modulebayR\x0fdcim.moduletypeR\x16dcim.moduletypeprofileR\rdcim.platformR\x0edcim.powerfeedR\x10dcim.poweroutletR\x0fdcim.powerpanelR\x0edcim.powerportR\tdcim.rackR\x0edcim.rackgroupR\x14dcim.rackreservationR\rdcim.rackroleR\rdcim.racktypeR\rdcim.rearportR\vdcim.regionR\tdcim.siteR\x0edcim.sitegroupR\x13dcim.virtualchassisR\x19dcim.virtualdevicecontextR\x12extras.customfieldR\x1bextras.customfieldchoicesetR\x11extras.customlinkR\x13extras.journalentryR\n" +
-	"extras.tagR\x0eipam.aggregateR\bipam.asnR\ripam.asnrangeR\x0eipam.fhrpgroupR\x18ipam.fhrpgroupassignmentR\x0eipam.ipaddressR\fipam.iprangeR\vipam.prefixR\bipam.rirR\tipam.roleR\x10ipam.routetargetR\fipam.serviceR\tipam.vlanR\x0eipam.vlangroupR\x1aipam.vlantranslationpolicyR\x18ipam.vlantranslationruleR\bipam.vrfR\x0ftenancy.contactR\x19tenancy.contactassignmentR\x14tenancy.contactgroupR\x13tenancy.contactroleR\x0etenancy.tenantR\x13tenancy.tenantgroupR\vusers.ownerR\x10users.ownergroupR\x16virtualization.clusterR\x1bvirtualization.clustergroupR\x1avirtualization.clustertypeR\x1avirtualization.virtualdiskR\x1dvirtualization.virtualmachineR!virtualization.virtualmachinetypeR\x1avirtualization.vminterfaceR\rvpn.ikepolicyR\x0fvpn.ikeproposalR\x0fvpn.ipsecpolicyR\x10vpn.ipsecprofileR\x11vpn.ipsecproposalR\tvpn.l2vpnR\x14vpn.l2vpnterminationR\n" +
+	"extras.tagR\x0eipam.aggregateR\bipam.asnR\ripam.asnrangeR\x0eipam.fhrpgroupR\x18ipam.fhrpgroupassignmentR\x0eipam.ipaddressR\fipam.iprangeR\vipam.prefixR\bipam.rirR\tipam.roleR\x10ipam.routetargetR\fipam.serviceR\tipam.vlanR\x0eipam.vlangroupR\x1aipam.vlantranslationpolicyR\x18ipam.vlantranslationruleR\bipam.vrfR\x0ftenancy.contactR\x19tenancy.contactassignmentR\x14tenancy.contactgroupR\x13tenancy.contactroleR\x0etenancy.tenantR\x13tenancy.tenantgroupR\vusers.ownerR\x10users.ownergroupR\n" +
+	"users.userR\x16virtualization.clusterR\x1bvirtualization.clustergroupR\x1avirtualization.clustertypeR\x1avirtualization.virtualdiskR\x1dvirtualization.virtualmachineR!virtualization.virtualmachinetypeR\x1avirtualization.vminterfaceR\rvpn.ikepolicyR\x0fvpn.ikeproposalR\x0fvpn.ipsecpolicyR\x10vpn.ipsecprofileR\x11vpn.ipsecproposalR\tvpn.l2vpnR\x14vpn.l2vpnterminationR\n" +
 	"vpn.tunnelR\x0fvpn.tunnelgroupR\x15vpn.tunnelterminationR\x14wireless.wirelesslanR\x19wireless.wirelesslangroupR\x15wireless.wirelesslinkH\x00R\x11relatedObjectType\x88\x01\x01\x12\x12\n" +
 	"\x04name\x18\x03 \x01(\tR\x04name\x12\x19\n" +
 	"\x05label\x18\x04 \x01(\tH\x01R\x05label\x88\x01\x01\x12\"\n" +
@@ -30046,7 +30261,7 @@ const file_diode_v1_ingester_proto_rawDesc = "" +
 	"\r_base_choicesB\x17\n" +
 	"\x15_order_alphabeticallyB\b\n" +
 	"\x06_ownerB\x10\n" +
-	"\x0e_choice_colors\"\xa9H\n" +
+	"\x0e_choice_colors\"\xb0I\n" +
 	"\fJournalEntry\x12?\n" +
 	"\x13assigned_object_asn\x18\x01 \x01(\v2\r.diode.v1.ASNH\x00R\x11assignedObjectAsn\x12O\n" +
 	"\x19assigned_object_asn_range\x18\x02 \x01(\v2\x12.diode.v1.ASNRangeH\x00R\x16assignedObjectAsnRange\x12Q\n" +
@@ -30147,17 +30362,21 @@ const file_diode_v1_ingester_proto_rawDesc = "" +
 	"\x1cassigned_object_cable_bundle\x18e \x01(\v2\x15.diode.v1.CableBundleH\x00R\x19assignedObjectCableBundle\x12R\n" +
 	"\x1aassigned_object_rack_group\x18f \x01(\v2\x13.diode.v1.RackGroupH\x00R\x17assignedObjectRackGroup\x12[\n" +
 	"\x1dassigned_object_script_module\x18g \x01(\v2\x16.diode.v1.ScriptModuleH\x00R\x1aassignedObjectScriptModule\x12n\n" +
-	"$assigned_object_virtual_machine_type\x18h \x01(\v2\x1c.diode.v1.VirtualMachineTypeH\x00R assignedObjectVirtualMachineType\x12>\n" +
+	"$assigned_object_virtual_machine_type\x18h \x01(\v2\x1c.diode.v1.VirtualMachineTypeH\x00R assignedObjectVirtualMachineType\x12B\n" +
+	"\x14assigned_object_user\x18i \x01(\v2\x0e.diode.v1.UserH\x00R\x12assignedObjectUser\x12>\n" +
 	"\x04kind\x18] \x01(\tB%\xfaB\"r R\x06dangerR\x04infoR\asuccessR\awarningH\x01R\x04kind\x88\x01\x01\x12\x1a\n" +
 	"\bcomments\x18^ \x01(\tR\bcomments\x12!\n" +
 	"\x04tags\x18_ \x03(\v2\r.diode.v1.TagR\x04tags\x12M\n" +
 	"\rcustom_fields\x18` \x03(\v2(.diode.v1.JournalEntry.CustomFieldsEntryR\fcustomFields\x129\n" +
-	"\bmetadata\x18b \x01(\v2\x17.google.protobuf.StructB\x04\x88\xb5\x18\x00R\bmetadata\x1a[\n" +
+	"\bmetadata\x18b \x01(\v2\x17.google.protobuf.StructB\x04\x88\xb5\x18\x00R\bmetadata\x122\n" +
+	"\n" +
+	"created_by\x18j \x01(\v2\x0e.diode.v1.UserH\x02R\tcreatedBy\x88\x01\x01\x1a[\n" +
 	"\x11CustomFieldsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x120\n" +
 	"\x05value\x18\x02 \x01(\v2\x1a.diode.v1.CustomFieldValueR\x05value:\x028\x01B\x11\n" +
 	"\x0fassigned_objectB\a\n" +
-	"\x05_kind\"\xf9\x03\n" +
+	"\x05_kindB\r\n" +
+	"\v_created_by\"\xf9\x03\n" +
 	"\x11ModuleTypeProfile\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12%\n" +
 	"\vdescription\x18\x02 \x01(\tH\x00R\vdescription\x88\x01\x01\x12\x1b\n" +
@@ -30199,12 +30418,13 @@ const file_diode_v1_ingester_proto_rawDesc = "" +
 	"\v_group_nameB\x0f\n" +
 	"\r_button_classB\r\n" +
 	"\v_new_windowB\b\n" +
-	"\x06_owner\"\xb9\x01\n" +
+	"\x06_owner\"\xdf\x01\n" +
 	"\x05Owner\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12*\n" +
 	"\x05group\x18\x02 \x01(\v2\x14.diode.v1.OwnerGroupR\x05group\x12%\n" +
 	"\vdescription\x18\x03 \x01(\tH\x00R\vdescription\x88\x01\x01\x129\n" +
-	"\bmetadata\x18\x04 \x01(\v2\x17.google.protobuf.StructB\x04\x88\xb5\x18\x00R\bmetadataB\x0e\n" +
+	"\bmetadata\x18\x04 \x01(\v2\x17.google.protobuf.StructB\x04\x88\xb5\x18\x00R\bmetadata\x12$\n" +
+	"\x05users\x18\x05 \x03(\v2\x0e.diode.v1.UserR\x05usersB\x0e\n" +
 	"\f_description\"\x92\x01\n" +
 	"\n" +
 	"OwnerGroup\x12\x12\n" +
@@ -30270,7 +30490,10 @@ const file_diode_v1_ingester_proto_rawDesc = "" +
 	"\x0f_default_memoryB\x0e\n" +
 	"\f_descriptionB\b\n" +
 	"\x06_ownerB\v\n" +
-	"\t_comments2N\n" +
+	"\t_comments\"]\n" +
+	"\x04User\x12\x1a\n" +
+	"\busername\x18\x01 \x01(\tR\busername\x129\n" +
+	"\bmetadata\x18\x02 \x01(\v2\x17.google.protobuf.StructB\x04\x88\xb5\x18\x00R\bmetadata2N\n" +
 	"\x0fIngesterService\x12;\n" +
 	"\x06Ingest\x12\x17.diode.v1.IngestRequest\x1a\x18.diode.v1.IngestResponse:J\n" +
 	"\x10netbox_supported\x12\x1d.google.protobuf.FieldOptions\x18ц\x03 \x01(\bR\x0fnetboxSupportedB\x9d\x01\n" +
@@ -30288,7 +30511,7 @@ func file_diode_v1_ingester_proto_rawDescGZIP() []byte {
 	return file_diode_v1_ingester_proto_rawDescData
 }
 
-var file_diode_v1_ingester_proto_msgTypes = make([]protoimpl.MessageInfo, 192)
+var file_diode_v1_ingester_proto_msgTypes = make([]protoimpl.MessageInfo, 193)
 var file_diode_v1_ingester_proto_goTypes = []any{
 	(*Entity)(nil),                     // 0: diode.v1.Entity
 	(*IngestRequest)(nil),              // 1: diode.v1.IngestRequest
@@ -30396,98 +30619,99 @@ var file_diode_v1_ingester_proto_goTypes = []any{
 	(*RackGroup)(nil),                  // 103: diode.v1.RackGroup
 	(*ScriptModule)(nil),               // 104: diode.v1.ScriptModule
 	(*VirtualMachineType)(nil),         // 105: diode.v1.VirtualMachineType
-	nil,                                // 106: diode.v1.ASN.CustomFieldsEntry
-	nil,                                // 107: diode.v1.ASNRange.CustomFieldsEntry
-	nil,                                // 108: diode.v1.Aggregate.CustomFieldsEntry
-	nil,                                // 109: diode.v1.Cable.CustomFieldsEntry
-	nil,                                // 110: diode.v1.Circuit.CustomFieldsEntry
-	nil,                                // 111: diode.v1.CircuitGroup.CustomFieldsEntry
-	nil,                                // 112: diode.v1.CircuitTermination.CustomFieldsEntry
-	nil,                                // 113: diode.v1.CircuitType.CustomFieldsEntry
-	nil,                                // 114: diode.v1.Cluster.CustomFieldsEntry
-	nil,                                // 115: diode.v1.ClusterGroup.CustomFieldsEntry
-	nil,                                // 116: diode.v1.ClusterType.CustomFieldsEntry
-	nil,                                // 117: diode.v1.ConsolePort.CustomFieldsEntry
-	nil,                                // 118: diode.v1.ConsoleServerPort.CustomFieldsEntry
-	nil,                                // 119: diode.v1.Contact.CustomFieldsEntry
-	nil,                                // 120: diode.v1.ContactAssignment.CustomFieldsEntry
-	nil,                                // 121: diode.v1.ContactGroup.CustomFieldsEntry
-	nil,                                // 122: diode.v1.ContactRole.CustomFieldsEntry
-	nil,                                // 123: diode.v1.Device.CustomFieldsEntry
-	nil,                                // 124: diode.v1.DeviceBay.CustomFieldsEntry
-	nil,                                // 125: diode.v1.DeviceRole.CustomFieldsEntry
-	nil,                                // 126: diode.v1.DeviceType.CustomFieldsEntry
-	nil,                                // 127: diode.v1.FHRPGroup.CustomFieldsEntry
-	nil,                                // 128: diode.v1.FrontPort.CustomFieldsEntry
-	nil,                                // 129: diode.v1.IKEPolicy.CustomFieldsEntry
-	nil,                                // 130: diode.v1.IKEProposal.CustomFieldsEntry
-	nil,                                // 131: diode.v1.IPAddress.CustomFieldsEntry
-	nil,                                // 132: diode.v1.IPRange.CustomFieldsEntry
-	nil,                                // 133: diode.v1.IPSecPolicy.CustomFieldsEntry
-	nil,                                // 134: diode.v1.IPSecProfile.CustomFieldsEntry
-	nil,                                // 135: diode.v1.IPSecProposal.CustomFieldsEntry
-	nil,                                // 136: diode.v1.Interface.CustomFieldsEntry
-	nil,                                // 137: diode.v1.InventoryItem.CustomFieldsEntry
-	nil,                                // 138: diode.v1.InventoryItemRole.CustomFieldsEntry
-	nil,                                // 139: diode.v1.L2VPN.CustomFieldsEntry
-	nil,                                // 140: diode.v1.L2VPNTermination.CustomFieldsEntry
-	nil,                                // 141: diode.v1.Location.CustomFieldsEntry
-	nil,                                // 142: diode.v1.MACAddress.CustomFieldsEntry
-	nil,                                // 143: diode.v1.Manufacturer.CustomFieldsEntry
-	nil,                                // 144: diode.v1.Module.CustomFieldsEntry
-	nil,                                // 145: diode.v1.ModuleBay.CustomFieldsEntry
-	nil,                                // 146: diode.v1.ModuleType.CustomFieldsEntry
-	nil,                                // 147: diode.v1.Platform.CustomFieldsEntry
-	nil,                                // 148: diode.v1.PowerFeed.CustomFieldsEntry
-	nil,                                // 149: diode.v1.PowerOutlet.CustomFieldsEntry
-	nil,                                // 150: diode.v1.PowerPanel.CustomFieldsEntry
-	nil,                                // 151: diode.v1.PowerPort.CustomFieldsEntry
-	nil,                                // 152: diode.v1.Prefix.CustomFieldsEntry
-	nil,                                // 153: diode.v1.Provider.CustomFieldsEntry
-	nil,                                // 154: diode.v1.ProviderAccount.CustomFieldsEntry
-	nil,                                // 155: diode.v1.ProviderNetwork.CustomFieldsEntry
-	nil,                                // 156: diode.v1.RIR.CustomFieldsEntry
-	nil,                                // 157: diode.v1.Rack.CustomFieldsEntry
-	nil,                                // 158: diode.v1.RackReservation.CustomFieldsEntry
-	nil,                                // 159: diode.v1.RackRole.CustomFieldsEntry
-	nil,                                // 160: diode.v1.RackType.CustomFieldsEntry
-	nil,                                // 161: diode.v1.RearPort.CustomFieldsEntry
-	nil,                                // 162: diode.v1.Region.CustomFieldsEntry
-	nil,                                // 163: diode.v1.Role.CustomFieldsEntry
-	nil,                                // 164: diode.v1.RouteTarget.CustomFieldsEntry
-	nil,                                // 165: diode.v1.Service.CustomFieldsEntry
-	nil,                                // 166: diode.v1.Site.CustomFieldsEntry
-	nil,                                // 167: diode.v1.SiteGroup.CustomFieldsEntry
-	nil,                                // 168: diode.v1.Tenant.CustomFieldsEntry
-	nil,                                // 169: diode.v1.TenantGroup.CustomFieldsEntry
-	nil,                                // 170: diode.v1.Tunnel.CustomFieldsEntry
-	nil,                                // 171: diode.v1.TunnelGroup.CustomFieldsEntry
-	nil,                                // 172: diode.v1.TunnelTermination.CustomFieldsEntry
-	nil,                                // 173: diode.v1.VLAN.CustomFieldsEntry
-	nil,                                // 174: diode.v1.VLANGroup.CustomFieldsEntry
-	nil,                                // 175: diode.v1.VMInterface.CustomFieldsEntry
-	nil,                                // 176: diode.v1.VRF.CustomFieldsEntry
-	nil,                                // 177: diode.v1.VirtualChassis.CustomFieldsEntry
-	nil,                                // 178: diode.v1.VirtualCircuit.CustomFieldsEntry
-	nil,                                // 179: diode.v1.VirtualCircuitTermination.CustomFieldsEntry
-	nil,                                // 180: diode.v1.VirtualCircuitType.CustomFieldsEntry
-	nil,                                // 181: diode.v1.VirtualDeviceContext.CustomFieldsEntry
-	nil,                                // 182: diode.v1.VirtualDisk.CustomFieldsEntry
-	nil,                                // 183: diode.v1.VirtualMachine.CustomFieldsEntry
-	nil,                                // 184: diode.v1.WirelessLAN.CustomFieldsEntry
-	nil,                                // 185: diode.v1.WirelessLANGroup.CustomFieldsEntry
-	nil,                                // 186: diode.v1.WirelessLink.CustomFieldsEntry
-	nil,                                // 187: diode.v1.JournalEntry.CustomFieldsEntry
-	nil,                                // 188: diode.v1.ModuleTypeProfile.CustomFieldsEntry
-	nil,                                // 189: diode.v1.CableBundle.CustomFieldsEntry
-	nil,                                // 190: diode.v1.RackGroup.CustomFieldsEntry
-	nil,                                // 191: diode.v1.VirtualMachineType.CustomFieldsEntry
-	(*timestamppb.Timestamp)(nil),      // 192: google.protobuf.Timestamp
-	(*structpb.Struct)(nil),            // 193: google.protobuf.Struct
-	(*descriptorpb.FieldOptions)(nil),  // 194: google.protobuf.FieldOptions
+	(*User)(nil),                       // 106: diode.v1.User
+	nil,                                // 107: diode.v1.ASN.CustomFieldsEntry
+	nil,                                // 108: diode.v1.ASNRange.CustomFieldsEntry
+	nil,                                // 109: diode.v1.Aggregate.CustomFieldsEntry
+	nil,                                // 110: diode.v1.Cable.CustomFieldsEntry
+	nil,                                // 111: diode.v1.Circuit.CustomFieldsEntry
+	nil,                                // 112: diode.v1.CircuitGroup.CustomFieldsEntry
+	nil,                                // 113: diode.v1.CircuitTermination.CustomFieldsEntry
+	nil,                                // 114: diode.v1.CircuitType.CustomFieldsEntry
+	nil,                                // 115: diode.v1.Cluster.CustomFieldsEntry
+	nil,                                // 116: diode.v1.ClusterGroup.CustomFieldsEntry
+	nil,                                // 117: diode.v1.ClusterType.CustomFieldsEntry
+	nil,                                // 118: diode.v1.ConsolePort.CustomFieldsEntry
+	nil,                                // 119: diode.v1.ConsoleServerPort.CustomFieldsEntry
+	nil,                                // 120: diode.v1.Contact.CustomFieldsEntry
+	nil,                                // 121: diode.v1.ContactAssignment.CustomFieldsEntry
+	nil,                                // 122: diode.v1.ContactGroup.CustomFieldsEntry
+	nil,                                // 123: diode.v1.ContactRole.CustomFieldsEntry
+	nil,                                // 124: diode.v1.Device.CustomFieldsEntry
+	nil,                                // 125: diode.v1.DeviceBay.CustomFieldsEntry
+	nil,                                // 126: diode.v1.DeviceRole.CustomFieldsEntry
+	nil,                                // 127: diode.v1.DeviceType.CustomFieldsEntry
+	nil,                                // 128: diode.v1.FHRPGroup.CustomFieldsEntry
+	nil,                                // 129: diode.v1.FrontPort.CustomFieldsEntry
+	nil,                                // 130: diode.v1.IKEPolicy.CustomFieldsEntry
+	nil,                                // 131: diode.v1.IKEProposal.CustomFieldsEntry
+	nil,                                // 132: diode.v1.IPAddress.CustomFieldsEntry
+	nil,                                // 133: diode.v1.IPRange.CustomFieldsEntry
+	nil,                                // 134: diode.v1.IPSecPolicy.CustomFieldsEntry
+	nil,                                // 135: diode.v1.IPSecProfile.CustomFieldsEntry
+	nil,                                // 136: diode.v1.IPSecProposal.CustomFieldsEntry
+	nil,                                // 137: diode.v1.Interface.CustomFieldsEntry
+	nil,                                // 138: diode.v1.InventoryItem.CustomFieldsEntry
+	nil,                                // 139: diode.v1.InventoryItemRole.CustomFieldsEntry
+	nil,                                // 140: diode.v1.L2VPN.CustomFieldsEntry
+	nil,                                // 141: diode.v1.L2VPNTermination.CustomFieldsEntry
+	nil,                                // 142: diode.v1.Location.CustomFieldsEntry
+	nil,                                // 143: diode.v1.MACAddress.CustomFieldsEntry
+	nil,                                // 144: diode.v1.Manufacturer.CustomFieldsEntry
+	nil,                                // 145: diode.v1.Module.CustomFieldsEntry
+	nil,                                // 146: diode.v1.ModuleBay.CustomFieldsEntry
+	nil,                                // 147: diode.v1.ModuleType.CustomFieldsEntry
+	nil,                                // 148: diode.v1.Platform.CustomFieldsEntry
+	nil,                                // 149: diode.v1.PowerFeed.CustomFieldsEntry
+	nil,                                // 150: diode.v1.PowerOutlet.CustomFieldsEntry
+	nil,                                // 151: diode.v1.PowerPanel.CustomFieldsEntry
+	nil,                                // 152: diode.v1.PowerPort.CustomFieldsEntry
+	nil,                                // 153: diode.v1.Prefix.CustomFieldsEntry
+	nil,                                // 154: diode.v1.Provider.CustomFieldsEntry
+	nil,                                // 155: diode.v1.ProviderAccount.CustomFieldsEntry
+	nil,                                // 156: diode.v1.ProviderNetwork.CustomFieldsEntry
+	nil,                                // 157: diode.v1.RIR.CustomFieldsEntry
+	nil,                                // 158: diode.v1.Rack.CustomFieldsEntry
+	nil,                                // 159: diode.v1.RackReservation.CustomFieldsEntry
+	nil,                                // 160: diode.v1.RackRole.CustomFieldsEntry
+	nil,                                // 161: diode.v1.RackType.CustomFieldsEntry
+	nil,                                // 162: diode.v1.RearPort.CustomFieldsEntry
+	nil,                                // 163: diode.v1.Region.CustomFieldsEntry
+	nil,                                // 164: diode.v1.Role.CustomFieldsEntry
+	nil,                                // 165: diode.v1.RouteTarget.CustomFieldsEntry
+	nil,                                // 166: diode.v1.Service.CustomFieldsEntry
+	nil,                                // 167: diode.v1.Site.CustomFieldsEntry
+	nil,                                // 168: diode.v1.SiteGroup.CustomFieldsEntry
+	nil,                                // 169: diode.v1.Tenant.CustomFieldsEntry
+	nil,                                // 170: diode.v1.TenantGroup.CustomFieldsEntry
+	nil,                                // 171: diode.v1.Tunnel.CustomFieldsEntry
+	nil,                                // 172: diode.v1.TunnelGroup.CustomFieldsEntry
+	nil,                                // 173: diode.v1.TunnelTermination.CustomFieldsEntry
+	nil,                                // 174: diode.v1.VLAN.CustomFieldsEntry
+	nil,                                // 175: diode.v1.VLANGroup.CustomFieldsEntry
+	nil,                                // 176: diode.v1.VMInterface.CustomFieldsEntry
+	nil,                                // 177: diode.v1.VRF.CustomFieldsEntry
+	nil,                                // 178: diode.v1.VirtualChassis.CustomFieldsEntry
+	nil,                                // 179: diode.v1.VirtualCircuit.CustomFieldsEntry
+	nil,                                // 180: diode.v1.VirtualCircuitTermination.CustomFieldsEntry
+	nil,                                // 181: diode.v1.VirtualCircuitType.CustomFieldsEntry
+	nil,                                // 182: diode.v1.VirtualDeviceContext.CustomFieldsEntry
+	nil,                                // 183: diode.v1.VirtualDisk.CustomFieldsEntry
+	nil,                                // 184: diode.v1.VirtualMachine.CustomFieldsEntry
+	nil,                                // 185: diode.v1.WirelessLAN.CustomFieldsEntry
+	nil,                                // 186: diode.v1.WirelessLANGroup.CustomFieldsEntry
+	nil,                                // 187: diode.v1.WirelessLink.CustomFieldsEntry
+	nil,                                // 188: diode.v1.JournalEntry.CustomFieldsEntry
+	nil,                                // 189: diode.v1.ModuleTypeProfile.CustomFieldsEntry
+	nil,                                // 190: diode.v1.CableBundle.CustomFieldsEntry
+	nil,                                // 191: diode.v1.RackGroup.CustomFieldsEntry
+	nil,                                // 192: diode.v1.VirtualMachineType.CustomFieldsEntry
+	(*timestamppb.Timestamp)(nil),      // 193: google.protobuf.Timestamp
+	(*structpb.Struct)(nil),            // 194: google.protobuf.Struct
+	(*descriptorpb.FieldOptions)(nil),  // 195: google.protobuf.FieldOptions
 }
 var file_diode_v1_ingester_proto_depIdxs = []int32{
-	192,  // 0: diode.v1.Entity.timestamp:type_name -> google.protobuf.Timestamp
+	193,  // 0: diode.v1.Entity.timestamp:type_name -> google.protobuf.Timestamp
 	3,    // 1: diode.v1.Entity.asn:type_name -> diode.v1.ASN
 	4,    // 2: diode.v1.Entity.asn_range:type_name -> diode.v1.ASNRange
 	5,    // 3: diode.v1.Entity.aggregate:type_name -> diode.v1.Aggregate
@@ -30588,1405 +30812,1417 @@ var file_diode_v1_ingester_proto_depIdxs = []int32{
 	103,  // 98: diode.v1.Entity.rack_group:type_name -> diode.v1.RackGroup
 	104,  // 99: diode.v1.Entity.script_module:type_name -> diode.v1.ScriptModule
 	105,  // 100: diode.v1.Entity.virtual_machine_type:type_name -> diode.v1.VirtualMachineType
-	0,    // 101: diode.v1.IngestRequest.entities:type_name -> diode.v1.Entity
-	193,  // 102: diode.v1.IngestRequest.metadata:type_name -> google.protobuf.Struct
-	60,   // 103: diode.v1.ASN.rir:type_name -> diode.v1.RIR
-	73,   // 104: diode.v1.ASN.tenant:type_name -> diode.v1.Tenant
-	72,   // 105: diode.v1.ASN.tags:type_name -> diode.v1.Tag
-	106,  // 106: diode.v1.ASN.custom_fields:type_name -> diode.v1.ASN.CustomFieldsEntry
-	193,  // 107: diode.v1.ASN.metadata:type_name -> google.protobuf.Struct
-	99,   // 108: diode.v1.ASN.owner:type_name -> diode.v1.Owner
-	70,   // 109: diode.v1.ASN.sites:type_name -> diode.v1.Site
-	67,   // 110: diode.v1.ASN.role:type_name -> diode.v1.Role
-	60,   // 111: diode.v1.ASNRange.rir:type_name -> diode.v1.RIR
-	73,   // 112: diode.v1.ASNRange.tenant:type_name -> diode.v1.Tenant
-	72,   // 113: diode.v1.ASNRange.tags:type_name -> diode.v1.Tag
-	107,  // 114: diode.v1.ASNRange.custom_fields:type_name -> diode.v1.ASNRange.CustomFieldsEntry
-	193,  // 115: diode.v1.ASNRange.metadata:type_name -> google.protobuf.Struct
-	99,   // 116: diode.v1.ASNRange.owner:type_name -> diode.v1.Owner
-	60,   // 117: diode.v1.Aggregate.rir:type_name -> diode.v1.RIR
-	73,   // 118: diode.v1.Aggregate.tenant:type_name -> diode.v1.Tenant
-	192,  // 119: diode.v1.Aggregate.date_added:type_name -> google.protobuf.Timestamp
-	72,   // 120: diode.v1.Aggregate.tags:type_name -> diode.v1.Tag
-	108,  // 121: diode.v1.Aggregate.custom_fields:type_name -> diode.v1.Aggregate.CustomFieldsEntry
-	193,  // 122: diode.v1.Aggregate.metadata:type_name -> google.protobuf.Struct
-	99,   // 123: diode.v1.Aggregate.owner:type_name -> diode.v1.Owner
-	32,   // 124: diode.v1.Cable.a_terminations:type_name -> diode.v1.GenericObject
-	32,   // 125: diode.v1.Cable.b_terminations:type_name -> diode.v1.GenericObject
-	73,   // 126: diode.v1.Cable.tenant:type_name -> diode.v1.Tenant
-	72,   // 127: diode.v1.Cable.tags:type_name -> diode.v1.Tag
-	109,  // 128: diode.v1.Cable.custom_fields:type_name -> diode.v1.Cable.CustomFieldsEntry
-	193,  // 129: diode.v1.Cable.metadata:type_name -> google.protobuf.Struct
-	99,   // 130: diode.v1.Cable.owner:type_name -> diode.v1.Owner
-	102,  // 131: diode.v1.Cable.bundle:type_name -> diode.v1.CableBundle
-	193,  // 132: diode.v1.CablePath.metadata:type_name -> google.protobuf.Struct
-	6,    // 133: diode.v1.CableTermination.cable:type_name -> diode.v1.Cable
-	12,   // 134: diode.v1.CableTermination.termination_circuit_termination:type_name -> diode.v1.CircuitTermination
-	17,   // 135: diode.v1.CableTermination.termination_console_port:type_name -> diode.v1.ConsolePort
-	18,   // 136: diode.v1.CableTermination.termination_console_server_port:type_name -> diode.v1.ConsoleServerPort
-	31,   // 137: diode.v1.CableTermination.termination_front_port:type_name -> diode.v1.FrontPort
-	40,   // 138: diode.v1.CableTermination.termination_interface:type_name -> diode.v1.Interface
-	52,   // 139: diode.v1.CableTermination.termination_power_feed:type_name -> diode.v1.PowerFeed
-	53,   // 140: diode.v1.CableTermination.termination_power_outlet:type_name -> diode.v1.PowerOutlet
-	55,   // 141: diode.v1.CableTermination.termination_power_port:type_name -> diode.v1.PowerPort
-	65,   // 142: diode.v1.CableTermination.termination_rear_port:type_name -> diode.v1.RearPort
-	193,  // 143: diode.v1.CableTermination.metadata:type_name -> google.protobuf.Struct
-	57,   // 144: diode.v1.Circuit.provider:type_name -> diode.v1.Provider
-	58,   // 145: diode.v1.Circuit.provider_account:type_name -> diode.v1.ProviderAccount
-	13,   // 146: diode.v1.Circuit.type:type_name -> diode.v1.CircuitType
-	73,   // 147: diode.v1.Circuit.tenant:type_name -> diode.v1.Tenant
-	192,  // 148: diode.v1.Circuit.install_date:type_name -> google.protobuf.Timestamp
-	192,  // 149: diode.v1.Circuit.termination_date:type_name -> google.protobuf.Timestamp
-	72,   // 150: diode.v1.Circuit.tags:type_name -> diode.v1.Tag
-	11,   // 151: diode.v1.Circuit.assignments:type_name -> diode.v1.CircuitGroupAssignment
-	110,  // 152: diode.v1.Circuit.custom_fields:type_name -> diode.v1.Circuit.CustomFieldsEntry
-	193,  // 153: diode.v1.Circuit.metadata:type_name -> google.protobuf.Struct
-	99,   // 154: diode.v1.Circuit.owner:type_name -> diode.v1.Owner
-	73,   // 155: diode.v1.CircuitGroup.tenant:type_name -> diode.v1.Tenant
-	72,   // 156: diode.v1.CircuitGroup.tags:type_name -> diode.v1.Tag
-	111,  // 157: diode.v1.CircuitGroup.custom_fields:type_name -> diode.v1.CircuitGroup.CustomFieldsEntry
-	193,  // 158: diode.v1.CircuitGroup.metadata:type_name -> google.protobuf.Struct
-	99,   // 159: diode.v1.CircuitGroup.owner:type_name -> diode.v1.Owner
-	10,   // 160: diode.v1.CircuitGroupAssignment.group:type_name -> diode.v1.CircuitGroup
-	9,    // 161: diode.v1.CircuitGroupAssignment.member_circuit:type_name -> diode.v1.Circuit
-	85,   // 162: diode.v1.CircuitGroupAssignment.member_virtual_circuit:type_name -> diode.v1.VirtualCircuit
-	72,   // 163: diode.v1.CircuitGroupAssignment.tags:type_name -> diode.v1.Tag
-	193,  // 164: diode.v1.CircuitGroupAssignment.metadata:type_name -> google.protobuf.Struct
-	9,    // 165: diode.v1.CircuitTermination.circuit:type_name -> diode.v1.Circuit
-	45,   // 166: diode.v1.CircuitTermination.termination_location:type_name -> diode.v1.Location
-	59,   // 167: diode.v1.CircuitTermination.termination_provider_network:type_name -> diode.v1.ProviderNetwork
-	66,   // 168: diode.v1.CircuitTermination.termination_region:type_name -> diode.v1.Region
-	70,   // 169: diode.v1.CircuitTermination.termination_site:type_name -> diode.v1.Site
-	71,   // 170: diode.v1.CircuitTermination.termination_site_group:type_name -> diode.v1.SiteGroup
-	72,   // 171: diode.v1.CircuitTermination.tags:type_name -> diode.v1.Tag
-	112,  // 172: diode.v1.CircuitTermination.custom_fields:type_name -> diode.v1.CircuitTermination.CustomFieldsEntry
-	193,  // 173: diode.v1.CircuitTermination.metadata:type_name -> google.protobuf.Struct
-	72,   // 174: diode.v1.CircuitType.tags:type_name -> diode.v1.Tag
-	113,  // 175: diode.v1.CircuitType.custom_fields:type_name -> diode.v1.CircuitType.CustomFieldsEntry
-	193,  // 176: diode.v1.CircuitType.metadata:type_name -> google.protobuf.Struct
-	99,   // 177: diode.v1.CircuitType.owner:type_name -> diode.v1.Owner
-	16,   // 178: diode.v1.Cluster.type:type_name -> diode.v1.ClusterType
-	15,   // 179: diode.v1.Cluster.group:type_name -> diode.v1.ClusterGroup
-	73,   // 180: diode.v1.Cluster.tenant:type_name -> diode.v1.Tenant
-	45,   // 181: diode.v1.Cluster.scope_location:type_name -> diode.v1.Location
-	66,   // 182: diode.v1.Cluster.scope_region:type_name -> diode.v1.Region
-	70,   // 183: diode.v1.Cluster.scope_site:type_name -> diode.v1.Site
-	71,   // 184: diode.v1.Cluster.scope_site_group:type_name -> diode.v1.SiteGroup
-	72,   // 185: diode.v1.Cluster.tags:type_name -> diode.v1.Tag
-	114,  // 186: diode.v1.Cluster.custom_fields:type_name -> diode.v1.Cluster.CustomFieldsEntry
-	193,  // 187: diode.v1.Cluster.metadata:type_name -> google.protobuf.Struct
-	99,   // 188: diode.v1.Cluster.owner:type_name -> diode.v1.Owner
-	72,   // 189: diode.v1.ClusterGroup.tags:type_name -> diode.v1.Tag
-	115,  // 190: diode.v1.ClusterGroup.custom_fields:type_name -> diode.v1.ClusterGroup.CustomFieldsEntry
-	193,  // 191: diode.v1.ClusterGroup.metadata:type_name -> google.protobuf.Struct
-	99,   // 192: diode.v1.ClusterGroup.owner:type_name -> diode.v1.Owner
-	72,   // 193: diode.v1.ClusterType.tags:type_name -> diode.v1.Tag
-	116,  // 194: diode.v1.ClusterType.custom_fields:type_name -> diode.v1.ClusterType.CustomFieldsEntry
-	193,  // 195: diode.v1.ClusterType.metadata:type_name -> google.protobuf.Struct
-	99,   // 196: diode.v1.ClusterType.owner:type_name -> diode.v1.Owner
-	25,   // 197: diode.v1.ConsolePort.device:type_name -> diode.v1.Device
-	48,   // 198: diode.v1.ConsolePort.module:type_name -> diode.v1.Module
-	72,   // 199: diode.v1.ConsolePort.tags:type_name -> diode.v1.Tag
-	117,  // 200: diode.v1.ConsolePort.custom_fields:type_name -> diode.v1.ConsolePort.CustomFieldsEntry
-	193,  // 201: diode.v1.ConsolePort.metadata:type_name -> google.protobuf.Struct
-	99,   // 202: diode.v1.ConsolePort.owner:type_name -> diode.v1.Owner
-	25,   // 203: diode.v1.ConsoleServerPort.device:type_name -> diode.v1.Device
-	48,   // 204: diode.v1.ConsoleServerPort.module:type_name -> diode.v1.Module
-	72,   // 205: diode.v1.ConsoleServerPort.tags:type_name -> diode.v1.Tag
-	118,  // 206: diode.v1.ConsoleServerPort.custom_fields:type_name -> diode.v1.ConsoleServerPort.CustomFieldsEntry
-	193,  // 207: diode.v1.ConsoleServerPort.metadata:type_name -> google.protobuf.Struct
-	99,   // 208: diode.v1.ConsoleServerPort.owner:type_name -> diode.v1.Owner
-	21,   // 209: diode.v1.Contact.group:type_name -> diode.v1.ContactGroup
-	72,   // 210: diode.v1.Contact.tags:type_name -> diode.v1.Tag
-	119,  // 211: diode.v1.Contact.custom_fields:type_name -> diode.v1.Contact.CustomFieldsEntry
-	21,   // 212: diode.v1.Contact.groups:type_name -> diode.v1.ContactGroup
-	193,  // 213: diode.v1.Contact.metadata:type_name -> google.protobuf.Struct
-	99,   // 214: diode.v1.Contact.owner:type_name -> diode.v1.Owner
-	3,    // 215: diode.v1.ContactAssignment.object_asn:type_name -> diode.v1.ASN
-	4,    // 216: diode.v1.ContactAssignment.object_asn_range:type_name -> diode.v1.ASNRange
-	5,    // 217: diode.v1.ContactAssignment.object_aggregate:type_name -> diode.v1.Aggregate
-	6,    // 218: diode.v1.ContactAssignment.object_cable:type_name -> diode.v1.Cable
-	7,    // 219: diode.v1.ContactAssignment.object_cable_path:type_name -> diode.v1.CablePath
-	8,    // 220: diode.v1.ContactAssignment.object_cable_termination:type_name -> diode.v1.CableTermination
-	9,    // 221: diode.v1.ContactAssignment.object_circuit:type_name -> diode.v1.Circuit
-	10,   // 222: diode.v1.ContactAssignment.object_circuit_group:type_name -> diode.v1.CircuitGroup
-	11,   // 223: diode.v1.ContactAssignment.object_circuit_group_assignment:type_name -> diode.v1.CircuitGroupAssignment
-	12,   // 224: diode.v1.ContactAssignment.object_circuit_termination:type_name -> diode.v1.CircuitTermination
-	13,   // 225: diode.v1.ContactAssignment.object_circuit_type:type_name -> diode.v1.CircuitType
-	14,   // 226: diode.v1.ContactAssignment.object_cluster:type_name -> diode.v1.Cluster
-	15,   // 227: diode.v1.ContactAssignment.object_cluster_group:type_name -> diode.v1.ClusterGroup
-	16,   // 228: diode.v1.ContactAssignment.object_cluster_type:type_name -> diode.v1.ClusterType
-	17,   // 229: diode.v1.ContactAssignment.object_console_port:type_name -> diode.v1.ConsolePort
-	18,   // 230: diode.v1.ContactAssignment.object_console_server_port:type_name -> diode.v1.ConsoleServerPort
-	19,   // 231: diode.v1.ContactAssignment.object_contact:type_name -> diode.v1.Contact
-	20,   // 232: diode.v1.ContactAssignment.object_contact_assignment:type_name -> diode.v1.ContactAssignment
-	21,   // 233: diode.v1.ContactAssignment.object_contact_group:type_name -> diode.v1.ContactGroup
-	22,   // 234: diode.v1.ContactAssignment.object_contact_role:type_name -> diode.v1.ContactRole
-	25,   // 235: diode.v1.ContactAssignment.object_device:type_name -> diode.v1.Device
-	26,   // 236: diode.v1.ContactAssignment.object_device_bay:type_name -> diode.v1.DeviceBay
-	27,   // 237: diode.v1.ContactAssignment.object_device_role:type_name -> diode.v1.DeviceRole
-	28,   // 238: diode.v1.ContactAssignment.object_device_type:type_name -> diode.v1.DeviceType
-	29,   // 239: diode.v1.ContactAssignment.object_fhrp_group:type_name -> diode.v1.FHRPGroup
-	30,   // 240: diode.v1.ContactAssignment.object_fhrp_group_assignment:type_name -> diode.v1.FHRPGroupAssignment
-	31,   // 241: diode.v1.ContactAssignment.object_front_port:type_name -> diode.v1.FrontPort
-	33,   // 242: diode.v1.ContactAssignment.object_ike_policy:type_name -> diode.v1.IKEPolicy
-	34,   // 243: diode.v1.ContactAssignment.object_ike_proposal:type_name -> diode.v1.IKEProposal
-	35,   // 244: diode.v1.ContactAssignment.object_ip_address:type_name -> diode.v1.IPAddress
-	36,   // 245: diode.v1.ContactAssignment.object_ip_range:type_name -> diode.v1.IPRange
-	37,   // 246: diode.v1.ContactAssignment.object_ip_sec_policy:type_name -> diode.v1.IPSecPolicy
-	38,   // 247: diode.v1.ContactAssignment.object_ip_sec_profile:type_name -> diode.v1.IPSecProfile
-	39,   // 248: diode.v1.ContactAssignment.object_ip_sec_proposal:type_name -> diode.v1.IPSecProposal
-	40,   // 249: diode.v1.ContactAssignment.object_interface:type_name -> diode.v1.Interface
-	41,   // 250: diode.v1.ContactAssignment.object_inventory_item:type_name -> diode.v1.InventoryItem
-	42,   // 251: diode.v1.ContactAssignment.object_inventory_item_role:type_name -> diode.v1.InventoryItemRole
-	43,   // 252: diode.v1.ContactAssignment.object_l2vpn:type_name -> diode.v1.L2VPN
-	44,   // 253: diode.v1.ContactAssignment.object_l2vpn_termination:type_name -> diode.v1.L2VPNTermination
-	45,   // 254: diode.v1.ContactAssignment.object_location:type_name -> diode.v1.Location
-	46,   // 255: diode.v1.ContactAssignment.object_mac_address:type_name -> diode.v1.MACAddress
-	47,   // 256: diode.v1.ContactAssignment.object_manufacturer:type_name -> diode.v1.Manufacturer
-	48,   // 257: diode.v1.ContactAssignment.object_module:type_name -> diode.v1.Module
-	49,   // 258: diode.v1.ContactAssignment.object_module_bay:type_name -> diode.v1.ModuleBay
-	50,   // 259: diode.v1.ContactAssignment.object_module_type:type_name -> diode.v1.ModuleType
-	51,   // 260: diode.v1.ContactAssignment.object_platform:type_name -> diode.v1.Platform
-	52,   // 261: diode.v1.ContactAssignment.object_power_feed:type_name -> diode.v1.PowerFeed
-	53,   // 262: diode.v1.ContactAssignment.object_power_outlet:type_name -> diode.v1.PowerOutlet
-	54,   // 263: diode.v1.ContactAssignment.object_power_panel:type_name -> diode.v1.PowerPanel
-	55,   // 264: diode.v1.ContactAssignment.object_power_port:type_name -> diode.v1.PowerPort
-	56,   // 265: diode.v1.ContactAssignment.object_prefix:type_name -> diode.v1.Prefix
-	57,   // 266: diode.v1.ContactAssignment.object_provider:type_name -> diode.v1.Provider
-	58,   // 267: diode.v1.ContactAssignment.object_provider_account:type_name -> diode.v1.ProviderAccount
-	59,   // 268: diode.v1.ContactAssignment.object_provider_network:type_name -> diode.v1.ProviderNetwork
-	60,   // 269: diode.v1.ContactAssignment.object_rir:type_name -> diode.v1.RIR
-	61,   // 270: diode.v1.ContactAssignment.object_rack:type_name -> diode.v1.Rack
-	62,   // 271: diode.v1.ContactAssignment.object_rack_reservation:type_name -> diode.v1.RackReservation
-	63,   // 272: diode.v1.ContactAssignment.object_rack_role:type_name -> diode.v1.RackRole
-	64,   // 273: diode.v1.ContactAssignment.object_rack_type:type_name -> diode.v1.RackType
-	65,   // 274: diode.v1.ContactAssignment.object_rear_port:type_name -> diode.v1.RearPort
-	66,   // 275: diode.v1.ContactAssignment.object_region:type_name -> diode.v1.Region
-	67,   // 276: diode.v1.ContactAssignment.object_role:type_name -> diode.v1.Role
-	68,   // 277: diode.v1.ContactAssignment.object_route_target:type_name -> diode.v1.RouteTarget
-	69,   // 278: diode.v1.ContactAssignment.object_service:type_name -> diode.v1.Service
-	70,   // 279: diode.v1.ContactAssignment.object_site:type_name -> diode.v1.Site
-	71,   // 280: diode.v1.ContactAssignment.object_site_group:type_name -> diode.v1.SiteGroup
-	72,   // 281: diode.v1.ContactAssignment.object_tag:type_name -> diode.v1.Tag
-	73,   // 282: diode.v1.ContactAssignment.object_tenant:type_name -> diode.v1.Tenant
-	74,   // 283: diode.v1.ContactAssignment.object_tenant_group:type_name -> diode.v1.TenantGroup
-	75,   // 284: diode.v1.ContactAssignment.object_tunnel:type_name -> diode.v1.Tunnel
-	76,   // 285: diode.v1.ContactAssignment.object_tunnel_group:type_name -> diode.v1.TunnelGroup
-	77,   // 286: diode.v1.ContactAssignment.object_tunnel_termination:type_name -> diode.v1.TunnelTermination
-	78,   // 287: diode.v1.ContactAssignment.object_vlan:type_name -> diode.v1.VLAN
-	79,   // 288: diode.v1.ContactAssignment.object_vlan_group:type_name -> diode.v1.VLANGroup
-	80,   // 289: diode.v1.ContactAssignment.object_vlan_translation_policy:type_name -> diode.v1.VLANTranslationPolicy
-	81,   // 290: diode.v1.ContactAssignment.object_vlan_translation_rule:type_name -> diode.v1.VLANTranslationRule
-	82,   // 291: diode.v1.ContactAssignment.object_vm_interface:type_name -> diode.v1.VMInterface
-	83,   // 292: diode.v1.ContactAssignment.object_vrf:type_name -> diode.v1.VRF
-	84,   // 293: diode.v1.ContactAssignment.object_virtual_chassis:type_name -> diode.v1.VirtualChassis
-	85,   // 294: diode.v1.ContactAssignment.object_virtual_circuit:type_name -> diode.v1.VirtualCircuit
-	86,   // 295: diode.v1.ContactAssignment.object_virtual_circuit_termination:type_name -> diode.v1.VirtualCircuitTermination
-	87,   // 296: diode.v1.ContactAssignment.object_virtual_circuit_type:type_name -> diode.v1.VirtualCircuitType
-	88,   // 297: diode.v1.ContactAssignment.object_virtual_device_context:type_name -> diode.v1.VirtualDeviceContext
-	89,   // 298: diode.v1.ContactAssignment.object_virtual_disk:type_name -> diode.v1.VirtualDisk
-	90,   // 299: diode.v1.ContactAssignment.object_virtual_machine:type_name -> diode.v1.VirtualMachine
-	91,   // 300: diode.v1.ContactAssignment.object_wireless_lan:type_name -> diode.v1.WirelessLAN
-	92,   // 301: diode.v1.ContactAssignment.object_wireless_lan_group:type_name -> diode.v1.WirelessLANGroup
-	93,   // 302: diode.v1.ContactAssignment.object_wireless_link:type_name -> diode.v1.WirelessLink
-	94,   // 303: diode.v1.ContactAssignment.object_custom_field:type_name -> diode.v1.CustomField
-	95,   // 304: diode.v1.ContactAssignment.object_custom_field_choice_set:type_name -> diode.v1.CustomFieldChoiceSet
-	96,   // 305: diode.v1.ContactAssignment.object_journal_entry:type_name -> diode.v1.JournalEntry
-	97,   // 306: diode.v1.ContactAssignment.object_module_type_profile:type_name -> diode.v1.ModuleTypeProfile
-	98,   // 307: diode.v1.ContactAssignment.object_custom_link:type_name -> diode.v1.CustomLink
-	99,   // 308: diode.v1.ContactAssignment.object_owner:type_name -> diode.v1.Owner
-	100,  // 309: diode.v1.ContactAssignment.object_owner_group:type_name -> diode.v1.OwnerGroup
-	102,  // 310: diode.v1.ContactAssignment.object_cable_bundle:type_name -> diode.v1.CableBundle
-	103,  // 311: diode.v1.ContactAssignment.object_rack_group:type_name -> diode.v1.RackGroup
-	104,  // 312: diode.v1.ContactAssignment.object_script_module:type_name -> diode.v1.ScriptModule
-	105,  // 313: diode.v1.ContactAssignment.object_virtual_machine_type:type_name -> diode.v1.VirtualMachineType
-	19,   // 314: diode.v1.ContactAssignment.contact:type_name -> diode.v1.Contact
-	22,   // 315: diode.v1.ContactAssignment.role:type_name -> diode.v1.ContactRole
-	72,   // 316: diode.v1.ContactAssignment.tags:type_name -> diode.v1.Tag
-	120,  // 317: diode.v1.ContactAssignment.custom_fields:type_name -> diode.v1.ContactAssignment.CustomFieldsEntry
-	193,  // 318: diode.v1.ContactAssignment.metadata:type_name -> google.protobuf.Struct
-	21,   // 319: diode.v1.ContactGroup.parent:type_name -> diode.v1.ContactGroup
-	72,   // 320: diode.v1.ContactGroup.tags:type_name -> diode.v1.Tag
-	121,  // 321: diode.v1.ContactGroup.custom_fields:type_name -> diode.v1.ContactGroup.CustomFieldsEntry
-	193,  // 322: diode.v1.ContactGroup.metadata:type_name -> google.protobuf.Struct
-	99,   // 323: diode.v1.ContactGroup.owner:type_name -> diode.v1.Owner
-	72,   // 324: diode.v1.ContactRole.tags:type_name -> diode.v1.Tag
-	122,  // 325: diode.v1.ContactRole.custom_fields:type_name -> diode.v1.ContactRole.CustomFieldsEntry
-	193,  // 326: diode.v1.ContactRole.metadata:type_name -> google.protobuf.Struct
-	99,   // 327: diode.v1.ContactRole.owner:type_name -> diode.v1.Owner
-	3,    // 328: diode.v1.CustomFieldObjectReference.asn:type_name -> diode.v1.ASN
-	4,    // 329: diode.v1.CustomFieldObjectReference.asn_range:type_name -> diode.v1.ASNRange
-	5,    // 330: diode.v1.CustomFieldObjectReference.aggregate:type_name -> diode.v1.Aggregate
-	6,    // 331: diode.v1.CustomFieldObjectReference.cable:type_name -> diode.v1.Cable
-	7,    // 332: diode.v1.CustomFieldObjectReference.cable_path:type_name -> diode.v1.CablePath
-	8,    // 333: diode.v1.CustomFieldObjectReference.cable_termination:type_name -> diode.v1.CableTermination
-	9,    // 334: diode.v1.CustomFieldObjectReference.circuit:type_name -> diode.v1.Circuit
-	10,   // 335: diode.v1.CustomFieldObjectReference.circuit_group:type_name -> diode.v1.CircuitGroup
-	11,   // 336: diode.v1.CustomFieldObjectReference.circuit_group_assignment:type_name -> diode.v1.CircuitGroupAssignment
-	12,   // 337: diode.v1.CustomFieldObjectReference.circuit_termination:type_name -> diode.v1.CircuitTermination
-	13,   // 338: diode.v1.CustomFieldObjectReference.circuit_type:type_name -> diode.v1.CircuitType
-	14,   // 339: diode.v1.CustomFieldObjectReference.cluster:type_name -> diode.v1.Cluster
-	15,   // 340: diode.v1.CustomFieldObjectReference.cluster_group:type_name -> diode.v1.ClusterGroup
-	16,   // 341: diode.v1.CustomFieldObjectReference.cluster_type:type_name -> diode.v1.ClusterType
-	17,   // 342: diode.v1.CustomFieldObjectReference.console_port:type_name -> diode.v1.ConsolePort
-	18,   // 343: diode.v1.CustomFieldObjectReference.console_server_port:type_name -> diode.v1.ConsoleServerPort
-	19,   // 344: diode.v1.CustomFieldObjectReference.contact:type_name -> diode.v1.Contact
-	20,   // 345: diode.v1.CustomFieldObjectReference.contact_assignment:type_name -> diode.v1.ContactAssignment
-	21,   // 346: diode.v1.CustomFieldObjectReference.contact_group:type_name -> diode.v1.ContactGroup
-	22,   // 347: diode.v1.CustomFieldObjectReference.contact_role:type_name -> diode.v1.ContactRole
-	25,   // 348: diode.v1.CustomFieldObjectReference.device:type_name -> diode.v1.Device
-	26,   // 349: diode.v1.CustomFieldObjectReference.device_bay:type_name -> diode.v1.DeviceBay
-	27,   // 350: diode.v1.CustomFieldObjectReference.device_role:type_name -> diode.v1.DeviceRole
-	28,   // 351: diode.v1.CustomFieldObjectReference.device_type:type_name -> diode.v1.DeviceType
-	29,   // 352: diode.v1.CustomFieldObjectReference.fhrp_group:type_name -> diode.v1.FHRPGroup
-	30,   // 353: diode.v1.CustomFieldObjectReference.fhrp_group_assignment:type_name -> diode.v1.FHRPGroupAssignment
-	31,   // 354: diode.v1.CustomFieldObjectReference.front_port:type_name -> diode.v1.FrontPort
-	33,   // 355: diode.v1.CustomFieldObjectReference.ike_policy:type_name -> diode.v1.IKEPolicy
-	34,   // 356: diode.v1.CustomFieldObjectReference.ike_proposal:type_name -> diode.v1.IKEProposal
-	35,   // 357: diode.v1.CustomFieldObjectReference.ip_address:type_name -> diode.v1.IPAddress
-	36,   // 358: diode.v1.CustomFieldObjectReference.ip_range:type_name -> diode.v1.IPRange
-	37,   // 359: diode.v1.CustomFieldObjectReference.ip_sec_policy:type_name -> diode.v1.IPSecPolicy
-	38,   // 360: diode.v1.CustomFieldObjectReference.ip_sec_profile:type_name -> diode.v1.IPSecProfile
-	39,   // 361: diode.v1.CustomFieldObjectReference.ip_sec_proposal:type_name -> diode.v1.IPSecProposal
-	40,   // 362: diode.v1.CustomFieldObjectReference.interface:type_name -> diode.v1.Interface
-	41,   // 363: diode.v1.CustomFieldObjectReference.inventory_item:type_name -> diode.v1.InventoryItem
-	42,   // 364: diode.v1.CustomFieldObjectReference.inventory_item_role:type_name -> diode.v1.InventoryItemRole
-	43,   // 365: diode.v1.CustomFieldObjectReference.l2vpn:type_name -> diode.v1.L2VPN
-	44,   // 366: diode.v1.CustomFieldObjectReference.l2vpn_termination:type_name -> diode.v1.L2VPNTermination
-	45,   // 367: diode.v1.CustomFieldObjectReference.location:type_name -> diode.v1.Location
-	46,   // 368: diode.v1.CustomFieldObjectReference.mac_address:type_name -> diode.v1.MACAddress
-	47,   // 369: diode.v1.CustomFieldObjectReference.manufacturer:type_name -> diode.v1.Manufacturer
-	48,   // 370: diode.v1.CustomFieldObjectReference.module:type_name -> diode.v1.Module
-	49,   // 371: diode.v1.CustomFieldObjectReference.module_bay:type_name -> diode.v1.ModuleBay
-	50,   // 372: diode.v1.CustomFieldObjectReference.module_type:type_name -> diode.v1.ModuleType
-	51,   // 373: diode.v1.CustomFieldObjectReference.platform:type_name -> diode.v1.Platform
-	52,   // 374: diode.v1.CustomFieldObjectReference.power_feed:type_name -> diode.v1.PowerFeed
-	53,   // 375: diode.v1.CustomFieldObjectReference.power_outlet:type_name -> diode.v1.PowerOutlet
-	54,   // 376: diode.v1.CustomFieldObjectReference.power_panel:type_name -> diode.v1.PowerPanel
-	55,   // 377: diode.v1.CustomFieldObjectReference.power_port:type_name -> diode.v1.PowerPort
-	56,   // 378: diode.v1.CustomFieldObjectReference.prefix:type_name -> diode.v1.Prefix
-	57,   // 379: diode.v1.CustomFieldObjectReference.provider:type_name -> diode.v1.Provider
-	58,   // 380: diode.v1.CustomFieldObjectReference.provider_account:type_name -> diode.v1.ProviderAccount
-	59,   // 381: diode.v1.CustomFieldObjectReference.provider_network:type_name -> diode.v1.ProviderNetwork
-	60,   // 382: diode.v1.CustomFieldObjectReference.rir:type_name -> diode.v1.RIR
-	61,   // 383: diode.v1.CustomFieldObjectReference.rack:type_name -> diode.v1.Rack
-	62,   // 384: diode.v1.CustomFieldObjectReference.rack_reservation:type_name -> diode.v1.RackReservation
-	63,   // 385: diode.v1.CustomFieldObjectReference.rack_role:type_name -> diode.v1.RackRole
-	64,   // 386: diode.v1.CustomFieldObjectReference.rack_type:type_name -> diode.v1.RackType
-	65,   // 387: diode.v1.CustomFieldObjectReference.rear_port:type_name -> diode.v1.RearPort
-	66,   // 388: diode.v1.CustomFieldObjectReference.region:type_name -> diode.v1.Region
-	67,   // 389: diode.v1.CustomFieldObjectReference.role:type_name -> diode.v1.Role
-	68,   // 390: diode.v1.CustomFieldObjectReference.route_target:type_name -> diode.v1.RouteTarget
-	69,   // 391: diode.v1.CustomFieldObjectReference.service:type_name -> diode.v1.Service
-	70,   // 392: diode.v1.CustomFieldObjectReference.site:type_name -> diode.v1.Site
-	71,   // 393: diode.v1.CustomFieldObjectReference.site_group:type_name -> diode.v1.SiteGroup
-	72,   // 394: diode.v1.CustomFieldObjectReference.tag:type_name -> diode.v1.Tag
-	73,   // 395: diode.v1.CustomFieldObjectReference.tenant:type_name -> diode.v1.Tenant
-	74,   // 396: diode.v1.CustomFieldObjectReference.tenant_group:type_name -> diode.v1.TenantGroup
-	75,   // 397: diode.v1.CustomFieldObjectReference.tunnel:type_name -> diode.v1.Tunnel
-	76,   // 398: diode.v1.CustomFieldObjectReference.tunnel_group:type_name -> diode.v1.TunnelGroup
-	77,   // 399: diode.v1.CustomFieldObjectReference.tunnel_termination:type_name -> diode.v1.TunnelTermination
-	78,   // 400: diode.v1.CustomFieldObjectReference.vlan:type_name -> diode.v1.VLAN
-	79,   // 401: diode.v1.CustomFieldObjectReference.vlan_group:type_name -> diode.v1.VLANGroup
-	80,   // 402: diode.v1.CustomFieldObjectReference.vlan_translation_policy:type_name -> diode.v1.VLANTranslationPolicy
-	81,   // 403: diode.v1.CustomFieldObjectReference.vlan_translation_rule:type_name -> diode.v1.VLANTranslationRule
-	82,   // 404: diode.v1.CustomFieldObjectReference.vm_interface:type_name -> diode.v1.VMInterface
-	83,   // 405: diode.v1.CustomFieldObjectReference.vrf:type_name -> diode.v1.VRF
-	84,   // 406: diode.v1.CustomFieldObjectReference.virtual_chassis:type_name -> diode.v1.VirtualChassis
-	85,   // 407: diode.v1.CustomFieldObjectReference.virtual_circuit:type_name -> diode.v1.VirtualCircuit
-	86,   // 408: diode.v1.CustomFieldObjectReference.virtual_circuit_termination:type_name -> diode.v1.VirtualCircuitTermination
-	87,   // 409: diode.v1.CustomFieldObjectReference.virtual_circuit_type:type_name -> diode.v1.VirtualCircuitType
-	88,   // 410: diode.v1.CustomFieldObjectReference.virtual_device_context:type_name -> diode.v1.VirtualDeviceContext
-	89,   // 411: diode.v1.CustomFieldObjectReference.virtual_disk:type_name -> diode.v1.VirtualDisk
-	90,   // 412: diode.v1.CustomFieldObjectReference.virtual_machine:type_name -> diode.v1.VirtualMachine
-	91,   // 413: diode.v1.CustomFieldObjectReference.wireless_lan:type_name -> diode.v1.WirelessLAN
-	92,   // 414: diode.v1.CustomFieldObjectReference.wireless_lan_group:type_name -> diode.v1.WirelessLANGroup
-	93,   // 415: diode.v1.CustomFieldObjectReference.wireless_link:type_name -> diode.v1.WirelessLink
-	94,   // 416: diode.v1.CustomFieldObjectReference.custom_field:type_name -> diode.v1.CustomField
-	95,   // 417: diode.v1.CustomFieldObjectReference.custom_field_choice_set:type_name -> diode.v1.CustomFieldChoiceSet
-	96,   // 418: diode.v1.CustomFieldObjectReference.journal_entry:type_name -> diode.v1.JournalEntry
-	97,   // 419: diode.v1.CustomFieldObjectReference.module_type_profile:type_name -> diode.v1.ModuleTypeProfile
-	98,   // 420: diode.v1.CustomFieldObjectReference.custom_link:type_name -> diode.v1.CustomLink
-	99,   // 421: diode.v1.CustomFieldObjectReference.owner:type_name -> diode.v1.Owner
-	100,  // 422: diode.v1.CustomFieldObjectReference.owner_group:type_name -> diode.v1.OwnerGroup
-	102,  // 423: diode.v1.CustomFieldObjectReference.cable_bundle:type_name -> diode.v1.CableBundle
-	103,  // 424: diode.v1.CustomFieldObjectReference.rack_group:type_name -> diode.v1.RackGroup
-	104,  // 425: diode.v1.CustomFieldObjectReference.script_module:type_name -> diode.v1.ScriptModule
-	105,  // 426: diode.v1.CustomFieldObjectReference.virtual_machine_type:type_name -> diode.v1.VirtualMachineType
-	23,   // 427: diode.v1.CustomFieldValue.multiple_objects:type_name -> diode.v1.CustomFieldObjectReference
-	192,  // 428: diode.v1.CustomFieldValue.date:type_name -> google.protobuf.Timestamp
-	192,  // 429: diode.v1.CustomFieldValue.datetime:type_name -> google.protobuf.Timestamp
-	23,   // 430: diode.v1.CustomFieldValue.object:type_name -> diode.v1.CustomFieldObjectReference
-	28,   // 431: diode.v1.Device.device_type:type_name -> diode.v1.DeviceType
-	27,   // 432: diode.v1.Device.role:type_name -> diode.v1.DeviceRole
-	73,   // 433: diode.v1.Device.tenant:type_name -> diode.v1.Tenant
-	51,   // 434: diode.v1.Device.platform:type_name -> diode.v1.Platform
-	70,   // 435: diode.v1.Device.site:type_name -> diode.v1.Site
-	45,   // 436: diode.v1.Device.location:type_name -> diode.v1.Location
-	61,   // 437: diode.v1.Device.rack:type_name -> diode.v1.Rack
-	35,   // 438: diode.v1.Device.primary_ip4:type_name -> diode.v1.IPAddress
-	35,   // 439: diode.v1.Device.primary_ip6:type_name -> diode.v1.IPAddress
-	35,   // 440: diode.v1.Device.oob_ip:type_name -> diode.v1.IPAddress
-	14,   // 441: diode.v1.Device.cluster:type_name -> diode.v1.Cluster
-	84,   // 442: diode.v1.Device.virtual_chassis:type_name -> diode.v1.VirtualChassis
-	72,   // 443: diode.v1.Device.tags:type_name -> diode.v1.Tag
-	123,  // 444: diode.v1.Device.custom_fields:type_name -> diode.v1.Device.CustomFieldsEntry
-	193,  // 445: diode.v1.Device.metadata:type_name -> google.protobuf.Struct
-	99,   // 446: diode.v1.Device.owner:type_name -> diode.v1.Owner
-	101,  // 447: diode.v1.Device.config:type_name -> diode.v1.DeviceConfig
-	25,   // 448: diode.v1.DeviceBay.device:type_name -> diode.v1.Device
-	25,   // 449: diode.v1.DeviceBay.installed_device:type_name -> diode.v1.Device
-	72,   // 450: diode.v1.DeviceBay.tags:type_name -> diode.v1.Tag
-	124,  // 451: diode.v1.DeviceBay.custom_fields:type_name -> diode.v1.DeviceBay.CustomFieldsEntry
-	193,  // 452: diode.v1.DeviceBay.metadata:type_name -> google.protobuf.Struct
-	99,   // 453: diode.v1.DeviceBay.owner:type_name -> diode.v1.Owner
-	72,   // 454: diode.v1.DeviceRole.tags:type_name -> diode.v1.Tag
-	125,  // 455: diode.v1.DeviceRole.custom_fields:type_name -> diode.v1.DeviceRole.CustomFieldsEntry
-	27,   // 456: diode.v1.DeviceRole.parent:type_name -> diode.v1.DeviceRole
-	193,  // 457: diode.v1.DeviceRole.metadata:type_name -> google.protobuf.Struct
-	99,   // 458: diode.v1.DeviceRole.owner:type_name -> diode.v1.Owner
-	47,   // 459: diode.v1.DeviceType.manufacturer:type_name -> diode.v1.Manufacturer
-	51,   // 460: diode.v1.DeviceType.default_platform:type_name -> diode.v1.Platform
-	72,   // 461: diode.v1.DeviceType.tags:type_name -> diode.v1.Tag
-	126,  // 462: diode.v1.DeviceType.custom_fields:type_name -> diode.v1.DeviceType.CustomFieldsEntry
-	193,  // 463: diode.v1.DeviceType.metadata:type_name -> google.protobuf.Struct
-	99,   // 464: diode.v1.DeviceType.owner:type_name -> diode.v1.Owner
-	72,   // 465: diode.v1.FHRPGroup.tags:type_name -> diode.v1.Tag
-	127,  // 466: diode.v1.FHRPGroup.custom_fields:type_name -> diode.v1.FHRPGroup.CustomFieldsEntry
-	193,  // 467: diode.v1.FHRPGroup.metadata:type_name -> google.protobuf.Struct
-	99,   // 468: diode.v1.FHRPGroup.owner:type_name -> diode.v1.Owner
-	29,   // 469: diode.v1.FHRPGroupAssignment.group:type_name -> diode.v1.FHRPGroup
-	3,    // 470: diode.v1.FHRPGroupAssignment.interface_asn:type_name -> diode.v1.ASN
-	4,    // 471: diode.v1.FHRPGroupAssignment.interface_asn_range:type_name -> diode.v1.ASNRange
-	5,    // 472: diode.v1.FHRPGroupAssignment.interface_aggregate:type_name -> diode.v1.Aggregate
-	6,    // 473: diode.v1.FHRPGroupAssignment.interface_cable:type_name -> diode.v1.Cable
-	7,    // 474: diode.v1.FHRPGroupAssignment.interface_cable_path:type_name -> diode.v1.CablePath
-	8,    // 475: diode.v1.FHRPGroupAssignment.interface_cable_termination:type_name -> diode.v1.CableTermination
-	9,    // 476: diode.v1.FHRPGroupAssignment.interface_circuit:type_name -> diode.v1.Circuit
-	10,   // 477: diode.v1.FHRPGroupAssignment.interface_circuit_group:type_name -> diode.v1.CircuitGroup
-	11,   // 478: diode.v1.FHRPGroupAssignment.interface_circuit_group_assignment:type_name -> diode.v1.CircuitGroupAssignment
-	12,   // 479: diode.v1.FHRPGroupAssignment.interface_circuit_termination:type_name -> diode.v1.CircuitTermination
-	13,   // 480: diode.v1.FHRPGroupAssignment.interface_circuit_type:type_name -> diode.v1.CircuitType
-	14,   // 481: diode.v1.FHRPGroupAssignment.interface_cluster:type_name -> diode.v1.Cluster
-	15,   // 482: diode.v1.FHRPGroupAssignment.interface_cluster_group:type_name -> diode.v1.ClusterGroup
-	16,   // 483: diode.v1.FHRPGroupAssignment.interface_cluster_type:type_name -> diode.v1.ClusterType
-	17,   // 484: diode.v1.FHRPGroupAssignment.interface_console_port:type_name -> diode.v1.ConsolePort
-	18,   // 485: diode.v1.FHRPGroupAssignment.interface_console_server_port:type_name -> diode.v1.ConsoleServerPort
-	19,   // 486: diode.v1.FHRPGroupAssignment.interface_contact:type_name -> diode.v1.Contact
-	20,   // 487: diode.v1.FHRPGroupAssignment.interface_contact_assignment:type_name -> diode.v1.ContactAssignment
-	21,   // 488: diode.v1.FHRPGroupAssignment.interface_contact_group:type_name -> diode.v1.ContactGroup
-	22,   // 489: diode.v1.FHRPGroupAssignment.interface_contact_role:type_name -> diode.v1.ContactRole
-	25,   // 490: diode.v1.FHRPGroupAssignment.interface_device:type_name -> diode.v1.Device
-	26,   // 491: diode.v1.FHRPGroupAssignment.interface_device_bay:type_name -> diode.v1.DeviceBay
-	27,   // 492: diode.v1.FHRPGroupAssignment.interface_device_role:type_name -> diode.v1.DeviceRole
-	28,   // 493: diode.v1.FHRPGroupAssignment.interface_device_type:type_name -> diode.v1.DeviceType
-	29,   // 494: diode.v1.FHRPGroupAssignment.interface_fhrp_group:type_name -> diode.v1.FHRPGroup
-	30,   // 495: diode.v1.FHRPGroupAssignment.interface_fhrp_group_assignment:type_name -> diode.v1.FHRPGroupAssignment
-	31,   // 496: diode.v1.FHRPGroupAssignment.interface_front_port:type_name -> diode.v1.FrontPort
-	33,   // 497: diode.v1.FHRPGroupAssignment.interface_ike_policy:type_name -> diode.v1.IKEPolicy
-	34,   // 498: diode.v1.FHRPGroupAssignment.interface_ike_proposal:type_name -> diode.v1.IKEProposal
-	35,   // 499: diode.v1.FHRPGroupAssignment.interface_ip_address:type_name -> diode.v1.IPAddress
-	36,   // 500: diode.v1.FHRPGroupAssignment.interface_ip_range:type_name -> diode.v1.IPRange
-	37,   // 501: diode.v1.FHRPGroupAssignment.interface_ip_sec_policy:type_name -> diode.v1.IPSecPolicy
-	38,   // 502: diode.v1.FHRPGroupAssignment.interface_ip_sec_profile:type_name -> diode.v1.IPSecProfile
-	39,   // 503: diode.v1.FHRPGroupAssignment.interface_ip_sec_proposal:type_name -> diode.v1.IPSecProposal
-	40,   // 504: diode.v1.FHRPGroupAssignment.interface_interface:type_name -> diode.v1.Interface
-	41,   // 505: diode.v1.FHRPGroupAssignment.interface_inventory_item:type_name -> diode.v1.InventoryItem
-	42,   // 506: diode.v1.FHRPGroupAssignment.interface_inventory_item_role:type_name -> diode.v1.InventoryItemRole
-	43,   // 507: diode.v1.FHRPGroupAssignment.interface_l2vpn:type_name -> diode.v1.L2VPN
-	44,   // 508: diode.v1.FHRPGroupAssignment.interface_l2vpn_termination:type_name -> diode.v1.L2VPNTermination
-	45,   // 509: diode.v1.FHRPGroupAssignment.interface_location:type_name -> diode.v1.Location
-	46,   // 510: diode.v1.FHRPGroupAssignment.interface_mac_address:type_name -> diode.v1.MACAddress
-	47,   // 511: diode.v1.FHRPGroupAssignment.interface_manufacturer:type_name -> diode.v1.Manufacturer
-	48,   // 512: diode.v1.FHRPGroupAssignment.interface_module:type_name -> diode.v1.Module
-	49,   // 513: diode.v1.FHRPGroupAssignment.interface_module_bay:type_name -> diode.v1.ModuleBay
-	50,   // 514: diode.v1.FHRPGroupAssignment.interface_module_type:type_name -> diode.v1.ModuleType
-	51,   // 515: diode.v1.FHRPGroupAssignment.interface_platform:type_name -> diode.v1.Platform
-	52,   // 516: diode.v1.FHRPGroupAssignment.interface_power_feed:type_name -> diode.v1.PowerFeed
-	53,   // 517: diode.v1.FHRPGroupAssignment.interface_power_outlet:type_name -> diode.v1.PowerOutlet
-	54,   // 518: diode.v1.FHRPGroupAssignment.interface_power_panel:type_name -> diode.v1.PowerPanel
-	55,   // 519: diode.v1.FHRPGroupAssignment.interface_power_port:type_name -> diode.v1.PowerPort
-	56,   // 520: diode.v1.FHRPGroupAssignment.interface_prefix:type_name -> diode.v1.Prefix
-	57,   // 521: diode.v1.FHRPGroupAssignment.interface_provider:type_name -> diode.v1.Provider
-	58,   // 522: diode.v1.FHRPGroupAssignment.interface_provider_account:type_name -> diode.v1.ProviderAccount
-	59,   // 523: diode.v1.FHRPGroupAssignment.interface_provider_network:type_name -> diode.v1.ProviderNetwork
-	60,   // 524: diode.v1.FHRPGroupAssignment.interface_rir:type_name -> diode.v1.RIR
-	61,   // 525: diode.v1.FHRPGroupAssignment.interface_rack:type_name -> diode.v1.Rack
-	62,   // 526: diode.v1.FHRPGroupAssignment.interface_rack_reservation:type_name -> diode.v1.RackReservation
-	63,   // 527: diode.v1.FHRPGroupAssignment.interface_rack_role:type_name -> diode.v1.RackRole
-	64,   // 528: diode.v1.FHRPGroupAssignment.interface_rack_type:type_name -> diode.v1.RackType
-	65,   // 529: diode.v1.FHRPGroupAssignment.interface_rear_port:type_name -> diode.v1.RearPort
-	66,   // 530: diode.v1.FHRPGroupAssignment.interface_region:type_name -> diode.v1.Region
-	67,   // 531: diode.v1.FHRPGroupAssignment.interface_role:type_name -> diode.v1.Role
-	68,   // 532: diode.v1.FHRPGroupAssignment.interface_route_target:type_name -> diode.v1.RouteTarget
-	69,   // 533: diode.v1.FHRPGroupAssignment.interface_service:type_name -> diode.v1.Service
-	70,   // 534: diode.v1.FHRPGroupAssignment.interface_site:type_name -> diode.v1.Site
-	71,   // 535: diode.v1.FHRPGroupAssignment.interface_site_group:type_name -> diode.v1.SiteGroup
-	72,   // 536: diode.v1.FHRPGroupAssignment.interface_tag:type_name -> diode.v1.Tag
-	73,   // 537: diode.v1.FHRPGroupAssignment.interface_tenant:type_name -> diode.v1.Tenant
-	74,   // 538: diode.v1.FHRPGroupAssignment.interface_tenant_group:type_name -> diode.v1.TenantGroup
-	75,   // 539: diode.v1.FHRPGroupAssignment.interface_tunnel:type_name -> diode.v1.Tunnel
-	76,   // 540: diode.v1.FHRPGroupAssignment.interface_tunnel_group:type_name -> diode.v1.TunnelGroup
-	77,   // 541: diode.v1.FHRPGroupAssignment.interface_tunnel_termination:type_name -> diode.v1.TunnelTermination
-	78,   // 542: diode.v1.FHRPGroupAssignment.interface_vlan:type_name -> diode.v1.VLAN
-	79,   // 543: diode.v1.FHRPGroupAssignment.interface_vlan_group:type_name -> diode.v1.VLANGroup
-	80,   // 544: diode.v1.FHRPGroupAssignment.interface_vlan_translation_policy:type_name -> diode.v1.VLANTranslationPolicy
-	81,   // 545: diode.v1.FHRPGroupAssignment.interface_vlan_translation_rule:type_name -> diode.v1.VLANTranslationRule
-	82,   // 546: diode.v1.FHRPGroupAssignment.interface_vm_interface:type_name -> diode.v1.VMInterface
-	83,   // 547: diode.v1.FHRPGroupAssignment.interface_vrf:type_name -> diode.v1.VRF
-	84,   // 548: diode.v1.FHRPGroupAssignment.interface_virtual_chassis:type_name -> diode.v1.VirtualChassis
-	85,   // 549: diode.v1.FHRPGroupAssignment.interface_virtual_circuit:type_name -> diode.v1.VirtualCircuit
-	86,   // 550: diode.v1.FHRPGroupAssignment.interface_virtual_circuit_termination:type_name -> diode.v1.VirtualCircuitTermination
-	87,   // 551: diode.v1.FHRPGroupAssignment.interface_virtual_circuit_type:type_name -> diode.v1.VirtualCircuitType
-	88,   // 552: diode.v1.FHRPGroupAssignment.interface_virtual_device_context:type_name -> diode.v1.VirtualDeviceContext
-	89,   // 553: diode.v1.FHRPGroupAssignment.interface_virtual_disk:type_name -> diode.v1.VirtualDisk
-	90,   // 554: diode.v1.FHRPGroupAssignment.interface_virtual_machine:type_name -> diode.v1.VirtualMachine
-	91,   // 555: diode.v1.FHRPGroupAssignment.interface_wireless_lan:type_name -> diode.v1.WirelessLAN
-	92,   // 556: diode.v1.FHRPGroupAssignment.interface_wireless_lan_group:type_name -> diode.v1.WirelessLANGroup
-	93,   // 557: diode.v1.FHRPGroupAssignment.interface_wireless_link:type_name -> diode.v1.WirelessLink
-	94,   // 558: diode.v1.FHRPGroupAssignment.interface_custom_field:type_name -> diode.v1.CustomField
-	95,   // 559: diode.v1.FHRPGroupAssignment.interface_custom_field_choice_set:type_name -> diode.v1.CustomFieldChoiceSet
-	96,   // 560: diode.v1.FHRPGroupAssignment.interface_journal_entry:type_name -> diode.v1.JournalEntry
-	97,   // 561: diode.v1.FHRPGroupAssignment.interface_module_type_profile:type_name -> diode.v1.ModuleTypeProfile
-	98,   // 562: diode.v1.FHRPGroupAssignment.interface_custom_link:type_name -> diode.v1.CustomLink
-	99,   // 563: diode.v1.FHRPGroupAssignment.interface_owner:type_name -> diode.v1.Owner
-	100,  // 564: diode.v1.FHRPGroupAssignment.interface_owner_group:type_name -> diode.v1.OwnerGroup
-	102,  // 565: diode.v1.FHRPGroupAssignment.interface_cable_bundle:type_name -> diode.v1.CableBundle
-	103,  // 566: diode.v1.FHRPGroupAssignment.interface_rack_group:type_name -> diode.v1.RackGroup
-	104,  // 567: diode.v1.FHRPGroupAssignment.interface_script_module:type_name -> diode.v1.ScriptModule
-	105,  // 568: diode.v1.FHRPGroupAssignment.interface_virtual_machine_type:type_name -> diode.v1.VirtualMachineType
-	193,  // 569: diode.v1.FHRPGroupAssignment.metadata:type_name -> google.protobuf.Struct
-	25,   // 570: diode.v1.FrontPort.device:type_name -> diode.v1.Device
-	48,   // 571: diode.v1.FrontPort.module:type_name -> diode.v1.Module
-	65,   // 572: diode.v1.FrontPort.rear_port:type_name -> diode.v1.RearPort
-	72,   // 573: diode.v1.FrontPort.tags:type_name -> diode.v1.Tag
-	128,  // 574: diode.v1.FrontPort.custom_fields:type_name -> diode.v1.FrontPort.CustomFieldsEntry
-	193,  // 575: diode.v1.FrontPort.metadata:type_name -> google.protobuf.Struct
-	99,   // 576: diode.v1.FrontPort.owner:type_name -> diode.v1.Owner
-	3,    // 577: diode.v1.GenericObject.object_asn:type_name -> diode.v1.ASN
-	4,    // 578: diode.v1.GenericObject.object_asn_range:type_name -> diode.v1.ASNRange
-	5,    // 579: diode.v1.GenericObject.object_aggregate:type_name -> diode.v1.Aggregate
-	6,    // 580: diode.v1.GenericObject.object_cable:type_name -> diode.v1.Cable
-	7,    // 581: diode.v1.GenericObject.object_cable_path:type_name -> diode.v1.CablePath
-	8,    // 582: diode.v1.GenericObject.object_cable_termination:type_name -> diode.v1.CableTermination
-	9,    // 583: diode.v1.GenericObject.object_circuit:type_name -> diode.v1.Circuit
-	10,   // 584: diode.v1.GenericObject.object_circuit_group:type_name -> diode.v1.CircuitGroup
-	11,   // 585: diode.v1.GenericObject.object_circuit_group_assignment:type_name -> diode.v1.CircuitGroupAssignment
-	12,   // 586: diode.v1.GenericObject.object_circuit_termination:type_name -> diode.v1.CircuitTermination
-	13,   // 587: diode.v1.GenericObject.object_circuit_type:type_name -> diode.v1.CircuitType
-	14,   // 588: diode.v1.GenericObject.object_cluster:type_name -> diode.v1.Cluster
-	15,   // 589: diode.v1.GenericObject.object_cluster_group:type_name -> diode.v1.ClusterGroup
-	16,   // 590: diode.v1.GenericObject.object_cluster_type:type_name -> diode.v1.ClusterType
-	17,   // 591: diode.v1.GenericObject.object_console_port:type_name -> diode.v1.ConsolePort
-	18,   // 592: diode.v1.GenericObject.object_console_server_port:type_name -> diode.v1.ConsoleServerPort
-	19,   // 593: diode.v1.GenericObject.object_contact:type_name -> diode.v1.Contact
-	20,   // 594: diode.v1.GenericObject.object_contact_assignment:type_name -> diode.v1.ContactAssignment
-	21,   // 595: diode.v1.GenericObject.object_contact_group:type_name -> diode.v1.ContactGroup
-	22,   // 596: diode.v1.GenericObject.object_contact_role:type_name -> diode.v1.ContactRole
-	25,   // 597: diode.v1.GenericObject.object_device:type_name -> diode.v1.Device
-	26,   // 598: diode.v1.GenericObject.object_device_bay:type_name -> diode.v1.DeviceBay
-	27,   // 599: diode.v1.GenericObject.object_device_role:type_name -> diode.v1.DeviceRole
-	28,   // 600: diode.v1.GenericObject.object_device_type:type_name -> diode.v1.DeviceType
-	29,   // 601: diode.v1.GenericObject.object_fhrp_group:type_name -> diode.v1.FHRPGroup
-	30,   // 602: diode.v1.GenericObject.object_fhrp_group_assignment:type_name -> diode.v1.FHRPGroupAssignment
-	31,   // 603: diode.v1.GenericObject.object_front_port:type_name -> diode.v1.FrontPort
-	33,   // 604: diode.v1.GenericObject.object_ike_policy:type_name -> diode.v1.IKEPolicy
-	34,   // 605: diode.v1.GenericObject.object_ike_proposal:type_name -> diode.v1.IKEProposal
-	35,   // 606: diode.v1.GenericObject.object_ip_address:type_name -> diode.v1.IPAddress
-	36,   // 607: diode.v1.GenericObject.object_ip_range:type_name -> diode.v1.IPRange
-	37,   // 608: diode.v1.GenericObject.object_ip_sec_policy:type_name -> diode.v1.IPSecPolicy
-	38,   // 609: diode.v1.GenericObject.object_ip_sec_profile:type_name -> diode.v1.IPSecProfile
-	39,   // 610: diode.v1.GenericObject.object_ip_sec_proposal:type_name -> diode.v1.IPSecProposal
-	40,   // 611: diode.v1.GenericObject.object_interface:type_name -> diode.v1.Interface
-	41,   // 612: diode.v1.GenericObject.object_inventory_item:type_name -> diode.v1.InventoryItem
-	42,   // 613: diode.v1.GenericObject.object_inventory_item_role:type_name -> diode.v1.InventoryItemRole
-	43,   // 614: diode.v1.GenericObject.object_l2vpn:type_name -> diode.v1.L2VPN
-	44,   // 615: diode.v1.GenericObject.object_l2vpn_termination:type_name -> diode.v1.L2VPNTermination
-	45,   // 616: diode.v1.GenericObject.object_location:type_name -> diode.v1.Location
-	46,   // 617: diode.v1.GenericObject.object_mac_address:type_name -> diode.v1.MACAddress
-	47,   // 618: diode.v1.GenericObject.object_manufacturer:type_name -> diode.v1.Manufacturer
-	48,   // 619: diode.v1.GenericObject.object_module:type_name -> diode.v1.Module
-	49,   // 620: diode.v1.GenericObject.object_module_bay:type_name -> diode.v1.ModuleBay
-	50,   // 621: diode.v1.GenericObject.object_module_type:type_name -> diode.v1.ModuleType
-	51,   // 622: diode.v1.GenericObject.object_platform:type_name -> diode.v1.Platform
-	52,   // 623: diode.v1.GenericObject.object_power_feed:type_name -> diode.v1.PowerFeed
-	53,   // 624: diode.v1.GenericObject.object_power_outlet:type_name -> diode.v1.PowerOutlet
-	54,   // 625: diode.v1.GenericObject.object_power_panel:type_name -> diode.v1.PowerPanel
-	55,   // 626: diode.v1.GenericObject.object_power_port:type_name -> diode.v1.PowerPort
-	56,   // 627: diode.v1.GenericObject.object_prefix:type_name -> diode.v1.Prefix
-	57,   // 628: diode.v1.GenericObject.object_provider:type_name -> diode.v1.Provider
-	58,   // 629: diode.v1.GenericObject.object_provider_account:type_name -> diode.v1.ProviderAccount
-	59,   // 630: diode.v1.GenericObject.object_provider_network:type_name -> diode.v1.ProviderNetwork
-	60,   // 631: diode.v1.GenericObject.object_rir:type_name -> diode.v1.RIR
-	61,   // 632: diode.v1.GenericObject.object_rack:type_name -> diode.v1.Rack
-	62,   // 633: diode.v1.GenericObject.object_rack_reservation:type_name -> diode.v1.RackReservation
-	63,   // 634: diode.v1.GenericObject.object_rack_role:type_name -> diode.v1.RackRole
-	64,   // 635: diode.v1.GenericObject.object_rack_type:type_name -> diode.v1.RackType
-	65,   // 636: diode.v1.GenericObject.object_rear_port:type_name -> diode.v1.RearPort
-	66,   // 637: diode.v1.GenericObject.object_region:type_name -> diode.v1.Region
-	67,   // 638: diode.v1.GenericObject.object_role:type_name -> diode.v1.Role
-	68,   // 639: diode.v1.GenericObject.object_route_target:type_name -> diode.v1.RouteTarget
-	69,   // 640: diode.v1.GenericObject.object_service:type_name -> diode.v1.Service
-	70,   // 641: diode.v1.GenericObject.object_site:type_name -> diode.v1.Site
-	71,   // 642: diode.v1.GenericObject.object_site_group:type_name -> diode.v1.SiteGroup
-	72,   // 643: diode.v1.GenericObject.object_tag:type_name -> diode.v1.Tag
-	73,   // 644: diode.v1.GenericObject.object_tenant:type_name -> diode.v1.Tenant
-	74,   // 645: diode.v1.GenericObject.object_tenant_group:type_name -> diode.v1.TenantGroup
-	75,   // 646: diode.v1.GenericObject.object_tunnel:type_name -> diode.v1.Tunnel
-	76,   // 647: diode.v1.GenericObject.object_tunnel_group:type_name -> diode.v1.TunnelGroup
-	77,   // 648: diode.v1.GenericObject.object_tunnel_termination:type_name -> diode.v1.TunnelTermination
-	78,   // 649: diode.v1.GenericObject.object_vlan:type_name -> diode.v1.VLAN
-	79,   // 650: diode.v1.GenericObject.object_vlan_group:type_name -> diode.v1.VLANGroup
-	80,   // 651: diode.v1.GenericObject.object_vlan_translation_policy:type_name -> diode.v1.VLANTranslationPolicy
-	81,   // 652: diode.v1.GenericObject.object_vlan_translation_rule:type_name -> diode.v1.VLANTranslationRule
-	82,   // 653: diode.v1.GenericObject.object_vm_interface:type_name -> diode.v1.VMInterface
-	83,   // 654: diode.v1.GenericObject.object_vrf:type_name -> diode.v1.VRF
-	84,   // 655: diode.v1.GenericObject.object_virtual_chassis:type_name -> diode.v1.VirtualChassis
-	85,   // 656: diode.v1.GenericObject.object_virtual_circuit:type_name -> diode.v1.VirtualCircuit
-	86,   // 657: diode.v1.GenericObject.object_virtual_circuit_termination:type_name -> diode.v1.VirtualCircuitTermination
-	87,   // 658: diode.v1.GenericObject.object_virtual_circuit_type:type_name -> diode.v1.VirtualCircuitType
-	88,   // 659: diode.v1.GenericObject.object_virtual_device_context:type_name -> diode.v1.VirtualDeviceContext
-	89,   // 660: diode.v1.GenericObject.object_virtual_disk:type_name -> diode.v1.VirtualDisk
-	90,   // 661: diode.v1.GenericObject.object_virtual_machine:type_name -> diode.v1.VirtualMachine
-	91,   // 662: diode.v1.GenericObject.object_wireless_lan:type_name -> diode.v1.WirelessLAN
-	92,   // 663: diode.v1.GenericObject.object_wireless_lan_group:type_name -> diode.v1.WirelessLANGroup
-	93,   // 664: diode.v1.GenericObject.object_wireless_link:type_name -> diode.v1.WirelessLink
-	94,   // 665: diode.v1.GenericObject.object_custom_field:type_name -> diode.v1.CustomField
-	95,   // 666: diode.v1.GenericObject.object_custom_field_choice_set:type_name -> diode.v1.CustomFieldChoiceSet
-	96,   // 667: diode.v1.GenericObject.object_journal_entry:type_name -> diode.v1.JournalEntry
-	97,   // 668: diode.v1.GenericObject.object_module_type_profile:type_name -> diode.v1.ModuleTypeProfile
-	98,   // 669: diode.v1.GenericObject.object_custom_link:type_name -> diode.v1.CustomLink
-	99,   // 670: diode.v1.GenericObject.object_owner:type_name -> diode.v1.Owner
-	100,  // 671: diode.v1.GenericObject.object_owner_group:type_name -> diode.v1.OwnerGroup
-	102,  // 672: diode.v1.GenericObject.object_cable_bundle:type_name -> diode.v1.CableBundle
-	103,  // 673: diode.v1.GenericObject.object_rack_group:type_name -> diode.v1.RackGroup
-	104,  // 674: diode.v1.GenericObject.object_script_module:type_name -> diode.v1.ScriptModule
-	105,  // 675: diode.v1.GenericObject.object_virtual_machine_type:type_name -> diode.v1.VirtualMachineType
-	72,   // 676: diode.v1.IKEPolicy.tags:type_name -> diode.v1.Tag
-	129,  // 677: diode.v1.IKEPolicy.custom_fields:type_name -> diode.v1.IKEPolicy.CustomFieldsEntry
-	34,   // 678: diode.v1.IKEPolicy.proposals:type_name -> diode.v1.IKEProposal
-	193,  // 679: diode.v1.IKEPolicy.metadata:type_name -> google.protobuf.Struct
-	99,   // 680: diode.v1.IKEPolicy.owner:type_name -> diode.v1.Owner
-	72,   // 681: diode.v1.IKEProposal.tags:type_name -> diode.v1.Tag
-	130,  // 682: diode.v1.IKEProposal.custom_fields:type_name -> diode.v1.IKEProposal.CustomFieldsEntry
-	193,  // 683: diode.v1.IKEProposal.metadata:type_name -> google.protobuf.Struct
-	99,   // 684: diode.v1.IKEProposal.owner:type_name -> diode.v1.Owner
-	83,   // 685: diode.v1.IPAddress.vrf:type_name -> diode.v1.VRF
-	73,   // 686: diode.v1.IPAddress.tenant:type_name -> diode.v1.Tenant
-	29,   // 687: diode.v1.IPAddress.assigned_object_fhrp_group:type_name -> diode.v1.FHRPGroup
-	40,   // 688: diode.v1.IPAddress.assigned_object_interface:type_name -> diode.v1.Interface
-	82,   // 689: diode.v1.IPAddress.assigned_object_vm_interface:type_name -> diode.v1.VMInterface
-	35,   // 690: diode.v1.IPAddress.nat_inside:type_name -> diode.v1.IPAddress
-	72,   // 691: diode.v1.IPAddress.tags:type_name -> diode.v1.Tag
-	131,  // 692: diode.v1.IPAddress.custom_fields:type_name -> diode.v1.IPAddress.CustomFieldsEntry
-	193,  // 693: diode.v1.IPAddress.metadata:type_name -> google.protobuf.Struct
-	99,   // 694: diode.v1.IPAddress.owner:type_name -> diode.v1.Owner
-	83,   // 695: diode.v1.IPRange.vrf:type_name -> diode.v1.VRF
-	73,   // 696: diode.v1.IPRange.tenant:type_name -> diode.v1.Tenant
-	67,   // 697: diode.v1.IPRange.role:type_name -> diode.v1.Role
-	72,   // 698: diode.v1.IPRange.tags:type_name -> diode.v1.Tag
-	132,  // 699: diode.v1.IPRange.custom_fields:type_name -> diode.v1.IPRange.CustomFieldsEntry
-	193,  // 700: diode.v1.IPRange.metadata:type_name -> google.protobuf.Struct
-	99,   // 701: diode.v1.IPRange.owner:type_name -> diode.v1.Owner
-	72,   // 702: diode.v1.IPSecPolicy.tags:type_name -> diode.v1.Tag
-	133,  // 703: diode.v1.IPSecPolicy.custom_fields:type_name -> diode.v1.IPSecPolicy.CustomFieldsEntry
-	39,   // 704: diode.v1.IPSecPolicy.proposals:type_name -> diode.v1.IPSecProposal
-	193,  // 705: diode.v1.IPSecPolicy.metadata:type_name -> google.protobuf.Struct
-	99,   // 706: diode.v1.IPSecPolicy.owner:type_name -> diode.v1.Owner
-	33,   // 707: diode.v1.IPSecProfile.ike_policy:type_name -> diode.v1.IKEPolicy
-	37,   // 708: diode.v1.IPSecProfile.ipsec_policy:type_name -> diode.v1.IPSecPolicy
-	72,   // 709: diode.v1.IPSecProfile.tags:type_name -> diode.v1.Tag
-	134,  // 710: diode.v1.IPSecProfile.custom_fields:type_name -> diode.v1.IPSecProfile.CustomFieldsEntry
-	193,  // 711: diode.v1.IPSecProfile.metadata:type_name -> google.protobuf.Struct
-	99,   // 712: diode.v1.IPSecProfile.owner:type_name -> diode.v1.Owner
-	72,   // 713: diode.v1.IPSecProposal.tags:type_name -> diode.v1.Tag
-	135,  // 714: diode.v1.IPSecProposal.custom_fields:type_name -> diode.v1.IPSecProposal.CustomFieldsEntry
-	193,  // 715: diode.v1.IPSecProposal.metadata:type_name -> google.protobuf.Struct
-	99,   // 716: diode.v1.IPSecProposal.owner:type_name -> diode.v1.Owner
-	25,   // 717: diode.v1.Interface.device:type_name -> diode.v1.Device
-	48,   // 718: diode.v1.Interface.module:type_name -> diode.v1.Module
-	40,   // 719: diode.v1.Interface.parent:type_name -> diode.v1.Interface
-	40,   // 720: diode.v1.Interface.bridge:type_name -> diode.v1.Interface
-	40,   // 721: diode.v1.Interface.lag:type_name -> diode.v1.Interface
-	46,   // 722: diode.v1.Interface.primary_mac_address:type_name -> diode.v1.MACAddress
-	78,   // 723: diode.v1.Interface.untagged_vlan:type_name -> diode.v1.VLAN
-	78,   // 724: diode.v1.Interface.qinq_svlan:type_name -> diode.v1.VLAN
-	80,   // 725: diode.v1.Interface.vlan_translation_policy:type_name -> diode.v1.VLANTranslationPolicy
-	83,   // 726: diode.v1.Interface.vrf:type_name -> diode.v1.VRF
-	72,   // 727: diode.v1.Interface.tags:type_name -> diode.v1.Tag
-	136,  // 728: diode.v1.Interface.custom_fields:type_name -> diode.v1.Interface.CustomFieldsEntry
-	88,   // 729: diode.v1.Interface.vdcs:type_name -> diode.v1.VirtualDeviceContext
-	78,   // 730: diode.v1.Interface.tagged_vlans:type_name -> diode.v1.VLAN
-	91,   // 731: diode.v1.Interface.wireless_lans:type_name -> diode.v1.WirelessLAN
-	193,  // 732: diode.v1.Interface.metadata:type_name -> google.protobuf.Struct
-	99,   // 733: diode.v1.Interface.owner:type_name -> diode.v1.Owner
-	25,   // 734: diode.v1.InventoryItem.device:type_name -> diode.v1.Device
-	41,   // 735: diode.v1.InventoryItem.parent:type_name -> diode.v1.InventoryItem
-	42,   // 736: diode.v1.InventoryItem.role:type_name -> diode.v1.InventoryItemRole
-	47,   // 737: diode.v1.InventoryItem.manufacturer:type_name -> diode.v1.Manufacturer
-	17,   // 738: diode.v1.InventoryItem.component_console_port:type_name -> diode.v1.ConsolePort
-	18,   // 739: diode.v1.InventoryItem.component_console_server_port:type_name -> diode.v1.ConsoleServerPort
-	31,   // 740: diode.v1.InventoryItem.component_front_port:type_name -> diode.v1.FrontPort
-	40,   // 741: diode.v1.InventoryItem.component_interface:type_name -> diode.v1.Interface
-	53,   // 742: diode.v1.InventoryItem.component_power_outlet:type_name -> diode.v1.PowerOutlet
-	55,   // 743: diode.v1.InventoryItem.component_power_port:type_name -> diode.v1.PowerPort
-	65,   // 744: diode.v1.InventoryItem.component_rear_port:type_name -> diode.v1.RearPort
-	72,   // 745: diode.v1.InventoryItem.tags:type_name -> diode.v1.Tag
-	137,  // 746: diode.v1.InventoryItem.custom_fields:type_name -> diode.v1.InventoryItem.CustomFieldsEntry
-	193,  // 747: diode.v1.InventoryItem.metadata:type_name -> google.protobuf.Struct
-	99,   // 748: diode.v1.InventoryItem.owner:type_name -> diode.v1.Owner
-	72,   // 749: diode.v1.InventoryItemRole.tags:type_name -> diode.v1.Tag
-	138,  // 750: diode.v1.InventoryItemRole.custom_fields:type_name -> diode.v1.InventoryItemRole.CustomFieldsEntry
-	193,  // 751: diode.v1.InventoryItemRole.metadata:type_name -> google.protobuf.Struct
-	99,   // 752: diode.v1.InventoryItemRole.owner:type_name -> diode.v1.Owner
-	73,   // 753: diode.v1.L2VPN.tenant:type_name -> diode.v1.Tenant
-	72,   // 754: diode.v1.L2VPN.tags:type_name -> diode.v1.Tag
-	139,  // 755: diode.v1.L2VPN.custom_fields:type_name -> diode.v1.L2VPN.CustomFieldsEntry
-	68,   // 756: diode.v1.L2VPN.import_targets:type_name -> diode.v1.RouteTarget
-	68,   // 757: diode.v1.L2VPN.export_targets:type_name -> diode.v1.RouteTarget
-	193,  // 758: diode.v1.L2VPN.metadata:type_name -> google.protobuf.Struct
-	99,   // 759: diode.v1.L2VPN.owner:type_name -> diode.v1.Owner
-	43,   // 760: diode.v1.L2VPNTermination.l2vpn:type_name -> diode.v1.L2VPN
-	40,   // 761: diode.v1.L2VPNTermination.assigned_object_interface:type_name -> diode.v1.Interface
-	78,   // 762: diode.v1.L2VPNTermination.assigned_object_vlan:type_name -> diode.v1.VLAN
-	82,   // 763: diode.v1.L2VPNTermination.assigned_object_vm_interface:type_name -> diode.v1.VMInterface
-	3,    // 764: diode.v1.L2VPNTermination.assigned_object_asn:type_name -> diode.v1.ASN
-	4,    // 765: diode.v1.L2VPNTermination.assigned_object_asn_range:type_name -> diode.v1.ASNRange
-	5,    // 766: diode.v1.L2VPNTermination.assigned_object_aggregate:type_name -> diode.v1.Aggregate
-	6,    // 767: diode.v1.L2VPNTermination.assigned_object_cable:type_name -> diode.v1.Cable
-	7,    // 768: diode.v1.L2VPNTermination.assigned_object_cable_path:type_name -> diode.v1.CablePath
-	8,    // 769: diode.v1.L2VPNTermination.assigned_object_cable_termination:type_name -> diode.v1.CableTermination
-	9,    // 770: diode.v1.L2VPNTermination.assigned_object_circuit:type_name -> diode.v1.Circuit
-	10,   // 771: diode.v1.L2VPNTermination.assigned_object_circuit_group:type_name -> diode.v1.CircuitGroup
-	11,   // 772: diode.v1.L2VPNTermination.assigned_object_circuit_group_assignment:type_name -> diode.v1.CircuitGroupAssignment
-	12,   // 773: diode.v1.L2VPNTermination.assigned_object_circuit_termination:type_name -> diode.v1.CircuitTermination
-	13,   // 774: diode.v1.L2VPNTermination.assigned_object_circuit_type:type_name -> diode.v1.CircuitType
-	14,   // 775: diode.v1.L2VPNTermination.assigned_object_cluster:type_name -> diode.v1.Cluster
-	15,   // 776: diode.v1.L2VPNTermination.assigned_object_cluster_group:type_name -> diode.v1.ClusterGroup
-	16,   // 777: diode.v1.L2VPNTermination.assigned_object_cluster_type:type_name -> diode.v1.ClusterType
-	17,   // 778: diode.v1.L2VPNTermination.assigned_object_console_port:type_name -> diode.v1.ConsolePort
-	18,   // 779: diode.v1.L2VPNTermination.assigned_object_console_server_port:type_name -> diode.v1.ConsoleServerPort
-	19,   // 780: diode.v1.L2VPNTermination.assigned_object_contact:type_name -> diode.v1.Contact
-	20,   // 781: diode.v1.L2VPNTermination.assigned_object_contact_assignment:type_name -> diode.v1.ContactAssignment
-	21,   // 782: diode.v1.L2VPNTermination.assigned_object_contact_group:type_name -> diode.v1.ContactGroup
-	22,   // 783: diode.v1.L2VPNTermination.assigned_object_contact_role:type_name -> diode.v1.ContactRole
-	94,   // 784: diode.v1.L2VPNTermination.assigned_object_custom_field:type_name -> diode.v1.CustomField
-	95,   // 785: diode.v1.L2VPNTermination.assigned_object_custom_field_choice_set:type_name -> diode.v1.CustomFieldChoiceSet
-	25,   // 786: diode.v1.L2VPNTermination.assigned_object_device:type_name -> diode.v1.Device
-	26,   // 787: diode.v1.L2VPNTermination.assigned_object_device_bay:type_name -> diode.v1.DeviceBay
-	27,   // 788: diode.v1.L2VPNTermination.assigned_object_device_role:type_name -> diode.v1.DeviceRole
-	28,   // 789: diode.v1.L2VPNTermination.assigned_object_device_type:type_name -> diode.v1.DeviceType
-	29,   // 790: diode.v1.L2VPNTermination.assigned_object_fhrp_group:type_name -> diode.v1.FHRPGroup
-	30,   // 791: diode.v1.L2VPNTermination.assigned_object_fhrp_group_assignment:type_name -> diode.v1.FHRPGroupAssignment
-	31,   // 792: diode.v1.L2VPNTermination.assigned_object_front_port:type_name -> diode.v1.FrontPort
-	33,   // 793: diode.v1.L2VPNTermination.assigned_object_ike_policy:type_name -> diode.v1.IKEPolicy
-	34,   // 794: diode.v1.L2VPNTermination.assigned_object_ike_proposal:type_name -> diode.v1.IKEProposal
-	35,   // 795: diode.v1.L2VPNTermination.assigned_object_ip_address:type_name -> diode.v1.IPAddress
-	36,   // 796: diode.v1.L2VPNTermination.assigned_object_ip_range:type_name -> diode.v1.IPRange
-	37,   // 797: diode.v1.L2VPNTermination.assigned_object_ip_sec_policy:type_name -> diode.v1.IPSecPolicy
-	38,   // 798: diode.v1.L2VPNTermination.assigned_object_ip_sec_profile:type_name -> diode.v1.IPSecProfile
-	39,   // 799: diode.v1.L2VPNTermination.assigned_object_ip_sec_proposal:type_name -> diode.v1.IPSecProposal
-	41,   // 800: diode.v1.L2VPNTermination.assigned_object_inventory_item:type_name -> diode.v1.InventoryItem
-	42,   // 801: diode.v1.L2VPNTermination.assigned_object_inventory_item_role:type_name -> diode.v1.InventoryItemRole
-	96,   // 802: diode.v1.L2VPNTermination.assigned_object_journal_entry:type_name -> diode.v1.JournalEntry
-	43,   // 803: diode.v1.L2VPNTermination.assigned_object_l2vpn:type_name -> diode.v1.L2VPN
-	44,   // 804: diode.v1.L2VPNTermination.assigned_object_l2vpn_termination:type_name -> diode.v1.L2VPNTermination
-	45,   // 805: diode.v1.L2VPNTermination.assigned_object_location:type_name -> diode.v1.Location
-	46,   // 806: diode.v1.L2VPNTermination.assigned_object_mac_address:type_name -> diode.v1.MACAddress
-	47,   // 807: diode.v1.L2VPNTermination.assigned_object_manufacturer:type_name -> diode.v1.Manufacturer
-	48,   // 808: diode.v1.L2VPNTermination.assigned_object_module:type_name -> diode.v1.Module
-	49,   // 809: diode.v1.L2VPNTermination.assigned_object_module_bay:type_name -> diode.v1.ModuleBay
-	50,   // 810: diode.v1.L2VPNTermination.assigned_object_module_type:type_name -> diode.v1.ModuleType
-	97,   // 811: diode.v1.L2VPNTermination.assigned_object_module_type_profile:type_name -> diode.v1.ModuleTypeProfile
-	51,   // 812: diode.v1.L2VPNTermination.assigned_object_platform:type_name -> diode.v1.Platform
-	52,   // 813: diode.v1.L2VPNTermination.assigned_object_power_feed:type_name -> diode.v1.PowerFeed
-	53,   // 814: diode.v1.L2VPNTermination.assigned_object_power_outlet:type_name -> diode.v1.PowerOutlet
-	54,   // 815: diode.v1.L2VPNTermination.assigned_object_power_panel:type_name -> diode.v1.PowerPanel
-	55,   // 816: diode.v1.L2VPNTermination.assigned_object_power_port:type_name -> diode.v1.PowerPort
-	56,   // 817: diode.v1.L2VPNTermination.assigned_object_prefix:type_name -> diode.v1.Prefix
-	57,   // 818: diode.v1.L2VPNTermination.assigned_object_provider:type_name -> diode.v1.Provider
-	58,   // 819: diode.v1.L2VPNTermination.assigned_object_provider_account:type_name -> diode.v1.ProviderAccount
-	59,   // 820: diode.v1.L2VPNTermination.assigned_object_provider_network:type_name -> diode.v1.ProviderNetwork
-	60,   // 821: diode.v1.L2VPNTermination.assigned_object_rir:type_name -> diode.v1.RIR
-	61,   // 822: diode.v1.L2VPNTermination.assigned_object_rack:type_name -> diode.v1.Rack
-	62,   // 823: diode.v1.L2VPNTermination.assigned_object_rack_reservation:type_name -> diode.v1.RackReservation
-	63,   // 824: diode.v1.L2VPNTermination.assigned_object_rack_role:type_name -> diode.v1.RackRole
-	64,   // 825: diode.v1.L2VPNTermination.assigned_object_rack_type:type_name -> diode.v1.RackType
-	65,   // 826: diode.v1.L2VPNTermination.assigned_object_rear_port:type_name -> diode.v1.RearPort
-	66,   // 827: diode.v1.L2VPNTermination.assigned_object_region:type_name -> diode.v1.Region
-	67,   // 828: diode.v1.L2VPNTermination.assigned_object_role:type_name -> diode.v1.Role
-	68,   // 829: diode.v1.L2VPNTermination.assigned_object_route_target:type_name -> diode.v1.RouteTarget
-	69,   // 830: diode.v1.L2VPNTermination.assigned_object_service:type_name -> diode.v1.Service
-	70,   // 831: diode.v1.L2VPNTermination.assigned_object_site:type_name -> diode.v1.Site
-	71,   // 832: diode.v1.L2VPNTermination.assigned_object_site_group:type_name -> diode.v1.SiteGroup
-	72,   // 833: diode.v1.L2VPNTermination.assigned_object_tag:type_name -> diode.v1.Tag
-	73,   // 834: diode.v1.L2VPNTermination.assigned_object_tenant:type_name -> diode.v1.Tenant
-	74,   // 835: diode.v1.L2VPNTermination.assigned_object_tenant_group:type_name -> diode.v1.TenantGroup
-	75,   // 836: diode.v1.L2VPNTermination.assigned_object_tunnel:type_name -> diode.v1.Tunnel
-	76,   // 837: diode.v1.L2VPNTermination.assigned_object_tunnel_group:type_name -> diode.v1.TunnelGroup
-	77,   // 838: diode.v1.L2VPNTermination.assigned_object_tunnel_termination:type_name -> diode.v1.TunnelTermination
-	79,   // 839: diode.v1.L2VPNTermination.assigned_object_vlan_group:type_name -> diode.v1.VLANGroup
-	80,   // 840: diode.v1.L2VPNTermination.assigned_object_vlan_translation_policy:type_name -> diode.v1.VLANTranslationPolicy
-	81,   // 841: diode.v1.L2VPNTermination.assigned_object_vlan_translation_rule:type_name -> diode.v1.VLANTranslationRule
-	83,   // 842: diode.v1.L2VPNTermination.assigned_object_vrf:type_name -> diode.v1.VRF
-	84,   // 843: diode.v1.L2VPNTermination.assigned_object_virtual_chassis:type_name -> diode.v1.VirtualChassis
-	85,   // 844: diode.v1.L2VPNTermination.assigned_object_virtual_circuit:type_name -> diode.v1.VirtualCircuit
-	86,   // 845: diode.v1.L2VPNTermination.assigned_object_virtual_circuit_termination:type_name -> diode.v1.VirtualCircuitTermination
-	87,   // 846: diode.v1.L2VPNTermination.assigned_object_virtual_circuit_type:type_name -> diode.v1.VirtualCircuitType
-	88,   // 847: diode.v1.L2VPNTermination.assigned_object_virtual_device_context:type_name -> diode.v1.VirtualDeviceContext
-	89,   // 848: diode.v1.L2VPNTermination.assigned_object_virtual_disk:type_name -> diode.v1.VirtualDisk
-	90,   // 849: diode.v1.L2VPNTermination.assigned_object_virtual_machine:type_name -> diode.v1.VirtualMachine
-	91,   // 850: diode.v1.L2VPNTermination.assigned_object_wireless_lan:type_name -> diode.v1.WirelessLAN
-	92,   // 851: diode.v1.L2VPNTermination.assigned_object_wireless_lan_group:type_name -> diode.v1.WirelessLANGroup
-	93,   // 852: diode.v1.L2VPNTermination.assigned_object_wireless_link:type_name -> diode.v1.WirelessLink
-	98,   // 853: diode.v1.L2VPNTermination.assigned_object_custom_link:type_name -> diode.v1.CustomLink
-	99,   // 854: diode.v1.L2VPNTermination.assigned_object_owner:type_name -> diode.v1.Owner
-	100,  // 855: diode.v1.L2VPNTermination.assigned_object_owner_group:type_name -> diode.v1.OwnerGroup
-	102,  // 856: diode.v1.L2VPNTermination.assigned_object_cable_bundle:type_name -> diode.v1.CableBundle
-	103,  // 857: diode.v1.L2VPNTermination.assigned_object_rack_group:type_name -> diode.v1.RackGroup
-	104,  // 858: diode.v1.L2VPNTermination.assigned_object_script_module:type_name -> diode.v1.ScriptModule
-	105,  // 859: diode.v1.L2VPNTermination.assigned_object_virtual_machine_type:type_name -> diode.v1.VirtualMachineType
-	72,   // 860: diode.v1.L2VPNTermination.tags:type_name -> diode.v1.Tag
-	140,  // 861: diode.v1.L2VPNTermination.custom_fields:type_name -> diode.v1.L2VPNTermination.CustomFieldsEntry
-	193,  // 862: diode.v1.L2VPNTermination.metadata:type_name -> google.protobuf.Struct
-	70,   // 863: diode.v1.Location.site:type_name -> diode.v1.Site
-	45,   // 864: diode.v1.Location.parent:type_name -> diode.v1.Location
-	73,   // 865: diode.v1.Location.tenant:type_name -> diode.v1.Tenant
-	72,   // 866: diode.v1.Location.tags:type_name -> diode.v1.Tag
-	141,  // 867: diode.v1.Location.custom_fields:type_name -> diode.v1.Location.CustomFieldsEntry
-	193,  // 868: diode.v1.Location.metadata:type_name -> google.protobuf.Struct
-	99,   // 869: diode.v1.Location.owner:type_name -> diode.v1.Owner
-	40,   // 870: diode.v1.MACAddress.assigned_object_interface:type_name -> diode.v1.Interface
-	82,   // 871: diode.v1.MACAddress.assigned_object_vm_interface:type_name -> diode.v1.VMInterface
-	72,   // 872: diode.v1.MACAddress.tags:type_name -> diode.v1.Tag
-	142,  // 873: diode.v1.MACAddress.custom_fields:type_name -> diode.v1.MACAddress.CustomFieldsEntry
-	193,  // 874: diode.v1.MACAddress.metadata:type_name -> google.protobuf.Struct
-	99,   // 875: diode.v1.MACAddress.owner:type_name -> diode.v1.Owner
-	72,   // 876: diode.v1.Manufacturer.tags:type_name -> diode.v1.Tag
-	143,  // 877: diode.v1.Manufacturer.custom_fields:type_name -> diode.v1.Manufacturer.CustomFieldsEntry
-	193,  // 878: diode.v1.Manufacturer.metadata:type_name -> google.protobuf.Struct
-	99,   // 879: diode.v1.Manufacturer.owner:type_name -> diode.v1.Owner
-	25,   // 880: diode.v1.Module.device:type_name -> diode.v1.Device
-	49,   // 881: diode.v1.Module.module_bay:type_name -> diode.v1.ModuleBay
-	50,   // 882: diode.v1.Module.module_type:type_name -> diode.v1.ModuleType
-	72,   // 883: diode.v1.Module.tags:type_name -> diode.v1.Tag
-	144,  // 884: diode.v1.Module.custom_fields:type_name -> diode.v1.Module.CustomFieldsEntry
-	193,  // 885: diode.v1.Module.metadata:type_name -> google.protobuf.Struct
-	99,   // 886: diode.v1.Module.owner:type_name -> diode.v1.Owner
-	25,   // 887: diode.v1.ModuleBay.device:type_name -> diode.v1.Device
-	48,   // 888: diode.v1.ModuleBay.module:type_name -> diode.v1.Module
-	48,   // 889: diode.v1.ModuleBay.installed_module:type_name -> diode.v1.Module
-	72,   // 890: diode.v1.ModuleBay.tags:type_name -> diode.v1.Tag
-	145,  // 891: diode.v1.ModuleBay.custom_fields:type_name -> diode.v1.ModuleBay.CustomFieldsEntry
-	193,  // 892: diode.v1.ModuleBay.metadata:type_name -> google.protobuf.Struct
-	99,   // 893: diode.v1.ModuleBay.owner:type_name -> diode.v1.Owner
-	47,   // 894: diode.v1.ModuleType.manufacturer:type_name -> diode.v1.Manufacturer
-	72,   // 895: diode.v1.ModuleType.tags:type_name -> diode.v1.Tag
-	146,  // 896: diode.v1.ModuleType.custom_fields:type_name -> diode.v1.ModuleType.CustomFieldsEntry
-	97,   // 897: diode.v1.ModuleType.profile:type_name -> diode.v1.ModuleTypeProfile
-	193,  // 898: diode.v1.ModuleType.metadata:type_name -> google.protobuf.Struct
-	99,   // 899: diode.v1.ModuleType.owner:type_name -> diode.v1.Owner
-	47,   // 900: diode.v1.Platform.manufacturer:type_name -> diode.v1.Manufacturer
-	72,   // 901: diode.v1.Platform.tags:type_name -> diode.v1.Tag
-	147,  // 902: diode.v1.Platform.custom_fields:type_name -> diode.v1.Platform.CustomFieldsEntry
-	51,   // 903: diode.v1.Platform.parent:type_name -> diode.v1.Platform
-	193,  // 904: diode.v1.Platform.metadata:type_name -> google.protobuf.Struct
-	99,   // 905: diode.v1.Platform.owner:type_name -> diode.v1.Owner
-	54,   // 906: diode.v1.PowerFeed.power_panel:type_name -> diode.v1.PowerPanel
-	61,   // 907: diode.v1.PowerFeed.rack:type_name -> diode.v1.Rack
-	73,   // 908: diode.v1.PowerFeed.tenant:type_name -> diode.v1.Tenant
-	72,   // 909: diode.v1.PowerFeed.tags:type_name -> diode.v1.Tag
-	148,  // 910: diode.v1.PowerFeed.custom_fields:type_name -> diode.v1.PowerFeed.CustomFieldsEntry
-	193,  // 911: diode.v1.PowerFeed.metadata:type_name -> google.protobuf.Struct
-	99,   // 912: diode.v1.PowerFeed.owner:type_name -> diode.v1.Owner
-	25,   // 913: diode.v1.PowerOutlet.device:type_name -> diode.v1.Device
-	48,   // 914: diode.v1.PowerOutlet.module:type_name -> diode.v1.Module
-	55,   // 915: diode.v1.PowerOutlet.power_port:type_name -> diode.v1.PowerPort
-	72,   // 916: diode.v1.PowerOutlet.tags:type_name -> diode.v1.Tag
-	149,  // 917: diode.v1.PowerOutlet.custom_fields:type_name -> diode.v1.PowerOutlet.CustomFieldsEntry
-	193,  // 918: diode.v1.PowerOutlet.metadata:type_name -> google.protobuf.Struct
-	99,   // 919: diode.v1.PowerOutlet.owner:type_name -> diode.v1.Owner
-	70,   // 920: diode.v1.PowerPanel.site:type_name -> diode.v1.Site
-	45,   // 921: diode.v1.PowerPanel.location:type_name -> diode.v1.Location
-	72,   // 922: diode.v1.PowerPanel.tags:type_name -> diode.v1.Tag
-	150,  // 923: diode.v1.PowerPanel.custom_fields:type_name -> diode.v1.PowerPanel.CustomFieldsEntry
-	193,  // 924: diode.v1.PowerPanel.metadata:type_name -> google.protobuf.Struct
-	99,   // 925: diode.v1.PowerPanel.owner:type_name -> diode.v1.Owner
-	25,   // 926: diode.v1.PowerPort.device:type_name -> diode.v1.Device
-	48,   // 927: diode.v1.PowerPort.module:type_name -> diode.v1.Module
-	72,   // 928: diode.v1.PowerPort.tags:type_name -> diode.v1.Tag
-	151,  // 929: diode.v1.PowerPort.custom_fields:type_name -> diode.v1.PowerPort.CustomFieldsEntry
-	193,  // 930: diode.v1.PowerPort.metadata:type_name -> google.protobuf.Struct
-	99,   // 931: diode.v1.PowerPort.owner:type_name -> diode.v1.Owner
-	83,   // 932: diode.v1.Prefix.vrf:type_name -> diode.v1.VRF
-	45,   // 933: diode.v1.Prefix.scope_location:type_name -> diode.v1.Location
-	66,   // 934: diode.v1.Prefix.scope_region:type_name -> diode.v1.Region
-	70,   // 935: diode.v1.Prefix.scope_site:type_name -> diode.v1.Site
-	71,   // 936: diode.v1.Prefix.scope_site_group:type_name -> diode.v1.SiteGroup
-	73,   // 937: diode.v1.Prefix.tenant:type_name -> diode.v1.Tenant
-	78,   // 938: diode.v1.Prefix.vlan:type_name -> diode.v1.VLAN
-	67,   // 939: diode.v1.Prefix.role:type_name -> diode.v1.Role
-	72,   // 940: diode.v1.Prefix.tags:type_name -> diode.v1.Tag
-	152,  // 941: diode.v1.Prefix.custom_fields:type_name -> diode.v1.Prefix.CustomFieldsEntry
-	193,  // 942: diode.v1.Prefix.metadata:type_name -> google.protobuf.Struct
-	99,   // 943: diode.v1.Prefix.owner:type_name -> diode.v1.Owner
-	72,   // 944: diode.v1.Provider.tags:type_name -> diode.v1.Tag
-	153,  // 945: diode.v1.Provider.custom_fields:type_name -> diode.v1.Provider.CustomFieldsEntry
-	58,   // 946: diode.v1.Provider.accounts:type_name -> diode.v1.ProviderAccount
-	3,    // 947: diode.v1.Provider.asns:type_name -> diode.v1.ASN
-	193,  // 948: diode.v1.Provider.metadata:type_name -> google.protobuf.Struct
-	99,   // 949: diode.v1.Provider.owner:type_name -> diode.v1.Owner
-	57,   // 950: diode.v1.ProviderAccount.provider:type_name -> diode.v1.Provider
-	72,   // 951: diode.v1.ProviderAccount.tags:type_name -> diode.v1.Tag
-	154,  // 952: diode.v1.ProviderAccount.custom_fields:type_name -> diode.v1.ProviderAccount.CustomFieldsEntry
-	193,  // 953: diode.v1.ProviderAccount.metadata:type_name -> google.protobuf.Struct
-	99,   // 954: diode.v1.ProviderAccount.owner:type_name -> diode.v1.Owner
-	57,   // 955: diode.v1.ProviderNetwork.provider:type_name -> diode.v1.Provider
-	72,   // 956: diode.v1.ProviderNetwork.tags:type_name -> diode.v1.Tag
-	155,  // 957: diode.v1.ProviderNetwork.custom_fields:type_name -> diode.v1.ProviderNetwork.CustomFieldsEntry
-	193,  // 958: diode.v1.ProviderNetwork.metadata:type_name -> google.protobuf.Struct
-	99,   // 959: diode.v1.ProviderNetwork.owner:type_name -> diode.v1.Owner
-	72,   // 960: diode.v1.RIR.tags:type_name -> diode.v1.Tag
-	156,  // 961: diode.v1.RIR.custom_fields:type_name -> diode.v1.RIR.CustomFieldsEntry
-	193,  // 962: diode.v1.RIR.metadata:type_name -> google.protobuf.Struct
-	99,   // 963: diode.v1.RIR.owner:type_name -> diode.v1.Owner
-	70,   // 964: diode.v1.Rack.site:type_name -> diode.v1.Site
-	45,   // 965: diode.v1.Rack.location:type_name -> diode.v1.Location
-	73,   // 966: diode.v1.Rack.tenant:type_name -> diode.v1.Tenant
-	63,   // 967: diode.v1.Rack.role:type_name -> diode.v1.RackRole
-	64,   // 968: diode.v1.Rack.rack_type:type_name -> diode.v1.RackType
-	72,   // 969: diode.v1.Rack.tags:type_name -> diode.v1.Tag
-	157,  // 970: diode.v1.Rack.custom_fields:type_name -> diode.v1.Rack.CustomFieldsEntry
-	193,  // 971: diode.v1.Rack.metadata:type_name -> google.protobuf.Struct
-	99,   // 972: diode.v1.Rack.owner:type_name -> diode.v1.Owner
-	103,  // 973: diode.v1.Rack.group:type_name -> diode.v1.RackGroup
-	61,   // 974: diode.v1.RackReservation.rack:type_name -> diode.v1.Rack
-	73,   // 975: diode.v1.RackReservation.tenant:type_name -> diode.v1.Tenant
-	72,   // 976: diode.v1.RackReservation.tags:type_name -> diode.v1.Tag
-	158,  // 977: diode.v1.RackReservation.custom_fields:type_name -> diode.v1.RackReservation.CustomFieldsEntry
-	193,  // 978: diode.v1.RackReservation.metadata:type_name -> google.protobuf.Struct
-	99,   // 979: diode.v1.RackReservation.owner:type_name -> diode.v1.Owner
-	72,   // 980: diode.v1.RackRole.tags:type_name -> diode.v1.Tag
-	159,  // 981: diode.v1.RackRole.custom_fields:type_name -> diode.v1.RackRole.CustomFieldsEntry
-	193,  // 982: diode.v1.RackRole.metadata:type_name -> google.protobuf.Struct
-	99,   // 983: diode.v1.RackRole.owner:type_name -> diode.v1.Owner
-	47,   // 984: diode.v1.RackType.manufacturer:type_name -> diode.v1.Manufacturer
-	72,   // 985: diode.v1.RackType.tags:type_name -> diode.v1.Tag
-	160,  // 986: diode.v1.RackType.custom_fields:type_name -> diode.v1.RackType.CustomFieldsEntry
-	193,  // 987: diode.v1.RackType.metadata:type_name -> google.protobuf.Struct
-	99,   // 988: diode.v1.RackType.owner:type_name -> diode.v1.Owner
-	25,   // 989: diode.v1.RearPort.device:type_name -> diode.v1.Device
-	48,   // 990: diode.v1.RearPort.module:type_name -> diode.v1.Module
-	72,   // 991: diode.v1.RearPort.tags:type_name -> diode.v1.Tag
-	161,  // 992: diode.v1.RearPort.custom_fields:type_name -> diode.v1.RearPort.CustomFieldsEntry
-	193,  // 993: diode.v1.RearPort.metadata:type_name -> google.protobuf.Struct
-	99,   // 994: diode.v1.RearPort.owner:type_name -> diode.v1.Owner
-	66,   // 995: diode.v1.Region.parent:type_name -> diode.v1.Region
-	72,   // 996: diode.v1.Region.tags:type_name -> diode.v1.Tag
-	162,  // 997: diode.v1.Region.custom_fields:type_name -> diode.v1.Region.CustomFieldsEntry
-	193,  // 998: diode.v1.Region.metadata:type_name -> google.protobuf.Struct
-	99,   // 999: diode.v1.Region.owner:type_name -> diode.v1.Owner
-	72,   // 1000: diode.v1.Role.tags:type_name -> diode.v1.Tag
-	163,  // 1001: diode.v1.Role.custom_fields:type_name -> diode.v1.Role.CustomFieldsEntry
-	193,  // 1002: diode.v1.Role.metadata:type_name -> google.protobuf.Struct
-	99,   // 1003: diode.v1.Role.owner:type_name -> diode.v1.Owner
-	73,   // 1004: diode.v1.RouteTarget.tenant:type_name -> diode.v1.Tenant
-	72,   // 1005: diode.v1.RouteTarget.tags:type_name -> diode.v1.Tag
-	164,  // 1006: diode.v1.RouteTarget.custom_fields:type_name -> diode.v1.RouteTarget.CustomFieldsEntry
-	193,  // 1007: diode.v1.RouteTarget.metadata:type_name -> google.protobuf.Struct
-	99,   // 1008: diode.v1.RouteTarget.owner:type_name -> diode.v1.Owner
-	25,   // 1009: diode.v1.Service.device:type_name -> diode.v1.Device
-	90,   // 1010: diode.v1.Service.virtual_machine:type_name -> diode.v1.VirtualMachine
-	72,   // 1011: diode.v1.Service.tags:type_name -> diode.v1.Tag
-	165,  // 1012: diode.v1.Service.custom_fields:type_name -> diode.v1.Service.CustomFieldsEntry
-	35,   // 1013: diode.v1.Service.ipaddresses:type_name -> diode.v1.IPAddress
-	25,   // 1014: diode.v1.Service.parent_object_device:type_name -> diode.v1.Device
-	29,   // 1015: diode.v1.Service.parent_object_fhrp_group:type_name -> diode.v1.FHRPGroup
-	90,   // 1016: diode.v1.Service.parent_object_virtual_machine:type_name -> diode.v1.VirtualMachine
-	193,  // 1017: diode.v1.Service.metadata:type_name -> google.protobuf.Struct
-	99,   // 1018: diode.v1.Service.owner:type_name -> diode.v1.Owner
-	66,   // 1019: diode.v1.Site.region:type_name -> diode.v1.Region
-	71,   // 1020: diode.v1.Site.group:type_name -> diode.v1.SiteGroup
-	73,   // 1021: diode.v1.Site.tenant:type_name -> diode.v1.Tenant
-	72,   // 1022: diode.v1.Site.tags:type_name -> diode.v1.Tag
-	166,  // 1023: diode.v1.Site.custom_fields:type_name -> diode.v1.Site.CustomFieldsEntry
-	3,    // 1024: diode.v1.Site.asns:type_name -> diode.v1.ASN
-	193,  // 1025: diode.v1.Site.metadata:type_name -> google.protobuf.Struct
-	99,   // 1026: diode.v1.Site.owner:type_name -> diode.v1.Owner
-	71,   // 1027: diode.v1.SiteGroup.parent:type_name -> diode.v1.SiteGroup
-	72,   // 1028: diode.v1.SiteGroup.tags:type_name -> diode.v1.Tag
-	167,  // 1029: diode.v1.SiteGroup.custom_fields:type_name -> diode.v1.SiteGroup.CustomFieldsEntry
-	193,  // 1030: diode.v1.SiteGroup.metadata:type_name -> google.protobuf.Struct
-	99,   // 1031: diode.v1.SiteGroup.owner:type_name -> diode.v1.Owner
-	193,  // 1032: diode.v1.Tag.metadata:type_name -> google.protobuf.Struct
-	74,   // 1033: diode.v1.Tenant.group:type_name -> diode.v1.TenantGroup
-	72,   // 1034: diode.v1.Tenant.tags:type_name -> diode.v1.Tag
-	168,  // 1035: diode.v1.Tenant.custom_fields:type_name -> diode.v1.Tenant.CustomFieldsEntry
-	193,  // 1036: diode.v1.Tenant.metadata:type_name -> google.protobuf.Struct
-	99,   // 1037: diode.v1.Tenant.owner:type_name -> diode.v1.Owner
-	74,   // 1038: diode.v1.TenantGroup.parent:type_name -> diode.v1.TenantGroup
-	72,   // 1039: diode.v1.TenantGroup.tags:type_name -> diode.v1.Tag
-	169,  // 1040: diode.v1.TenantGroup.custom_fields:type_name -> diode.v1.TenantGroup.CustomFieldsEntry
-	193,  // 1041: diode.v1.TenantGroup.metadata:type_name -> google.protobuf.Struct
-	99,   // 1042: diode.v1.TenantGroup.owner:type_name -> diode.v1.Owner
-	76,   // 1043: diode.v1.Tunnel.group:type_name -> diode.v1.TunnelGroup
-	38,   // 1044: diode.v1.Tunnel.ipsec_profile:type_name -> diode.v1.IPSecProfile
-	73,   // 1045: diode.v1.Tunnel.tenant:type_name -> diode.v1.Tenant
-	72,   // 1046: diode.v1.Tunnel.tags:type_name -> diode.v1.Tag
-	170,  // 1047: diode.v1.Tunnel.custom_fields:type_name -> diode.v1.Tunnel.CustomFieldsEntry
-	193,  // 1048: diode.v1.Tunnel.metadata:type_name -> google.protobuf.Struct
-	99,   // 1049: diode.v1.Tunnel.owner:type_name -> diode.v1.Owner
-	72,   // 1050: diode.v1.TunnelGroup.tags:type_name -> diode.v1.Tag
-	171,  // 1051: diode.v1.TunnelGroup.custom_fields:type_name -> diode.v1.TunnelGroup.CustomFieldsEntry
-	193,  // 1052: diode.v1.TunnelGroup.metadata:type_name -> google.protobuf.Struct
-	99,   // 1053: diode.v1.TunnelGroup.owner:type_name -> diode.v1.Owner
-	75,   // 1054: diode.v1.TunnelTermination.tunnel:type_name -> diode.v1.Tunnel
-	3,    // 1055: diode.v1.TunnelTermination.termination_asn:type_name -> diode.v1.ASN
-	4,    // 1056: diode.v1.TunnelTermination.termination_asn_range:type_name -> diode.v1.ASNRange
-	5,    // 1057: diode.v1.TunnelTermination.termination_aggregate:type_name -> diode.v1.Aggregate
-	6,    // 1058: diode.v1.TunnelTermination.termination_cable:type_name -> diode.v1.Cable
-	7,    // 1059: diode.v1.TunnelTermination.termination_cable_path:type_name -> diode.v1.CablePath
-	8,    // 1060: diode.v1.TunnelTermination.termination_cable_termination:type_name -> diode.v1.CableTermination
-	9,    // 1061: diode.v1.TunnelTermination.termination_circuit:type_name -> diode.v1.Circuit
-	10,   // 1062: diode.v1.TunnelTermination.termination_circuit_group:type_name -> diode.v1.CircuitGroup
-	11,   // 1063: diode.v1.TunnelTermination.termination_circuit_group_assignment:type_name -> diode.v1.CircuitGroupAssignment
-	12,   // 1064: diode.v1.TunnelTermination.termination_circuit_termination:type_name -> diode.v1.CircuitTermination
-	13,   // 1065: diode.v1.TunnelTermination.termination_circuit_type:type_name -> diode.v1.CircuitType
-	14,   // 1066: diode.v1.TunnelTermination.termination_cluster:type_name -> diode.v1.Cluster
-	15,   // 1067: diode.v1.TunnelTermination.termination_cluster_group:type_name -> diode.v1.ClusterGroup
-	16,   // 1068: diode.v1.TunnelTermination.termination_cluster_type:type_name -> diode.v1.ClusterType
-	17,   // 1069: diode.v1.TunnelTermination.termination_console_port:type_name -> diode.v1.ConsolePort
-	18,   // 1070: diode.v1.TunnelTermination.termination_console_server_port:type_name -> diode.v1.ConsoleServerPort
-	19,   // 1071: diode.v1.TunnelTermination.termination_contact:type_name -> diode.v1.Contact
-	20,   // 1072: diode.v1.TunnelTermination.termination_contact_assignment:type_name -> diode.v1.ContactAssignment
-	21,   // 1073: diode.v1.TunnelTermination.termination_contact_group:type_name -> diode.v1.ContactGroup
-	22,   // 1074: diode.v1.TunnelTermination.termination_contact_role:type_name -> diode.v1.ContactRole
-	25,   // 1075: diode.v1.TunnelTermination.termination_device:type_name -> diode.v1.Device
-	26,   // 1076: diode.v1.TunnelTermination.termination_device_bay:type_name -> diode.v1.DeviceBay
-	27,   // 1077: diode.v1.TunnelTermination.termination_device_role:type_name -> diode.v1.DeviceRole
-	28,   // 1078: diode.v1.TunnelTermination.termination_device_type:type_name -> diode.v1.DeviceType
-	29,   // 1079: diode.v1.TunnelTermination.termination_fhrp_group:type_name -> diode.v1.FHRPGroup
-	30,   // 1080: diode.v1.TunnelTermination.termination_fhrp_group_assignment:type_name -> diode.v1.FHRPGroupAssignment
-	31,   // 1081: diode.v1.TunnelTermination.termination_front_port:type_name -> diode.v1.FrontPort
-	33,   // 1082: diode.v1.TunnelTermination.termination_ike_policy:type_name -> diode.v1.IKEPolicy
-	34,   // 1083: diode.v1.TunnelTermination.termination_ike_proposal:type_name -> diode.v1.IKEProposal
-	35,   // 1084: diode.v1.TunnelTermination.termination_ip_address:type_name -> diode.v1.IPAddress
-	36,   // 1085: diode.v1.TunnelTermination.termination_ip_range:type_name -> diode.v1.IPRange
-	37,   // 1086: diode.v1.TunnelTermination.termination_ip_sec_policy:type_name -> diode.v1.IPSecPolicy
-	38,   // 1087: diode.v1.TunnelTermination.termination_ip_sec_profile:type_name -> diode.v1.IPSecProfile
-	39,   // 1088: diode.v1.TunnelTermination.termination_ip_sec_proposal:type_name -> diode.v1.IPSecProposal
-	40,   // 1089: diode.v1.TunnelTermination.termination_interface:type_name -> diode.v1.Interface
-	41,   // 1090: diode.v1.TunnelTermination.termination_inventory_item:type_name -> diode.v1.InventoryItem
-	42,   // 1091: diode.v1.TunnelTermination.termination_inventory_item_role:type_name -> diode.v1.InventoryItemRole
-	43,   // 1092: diode.v1.TunnelTermination.termination_l2vpn:type_name -> diode.v1.L2VPN
-	44,   // 1093: diode.v1.TunnelTermination.termination_l2vpn_termination:type_name -> diode.v1.L2VPNTermination
-	45,   // 1094: diode.v1.TunnelTermination.termination_location:type_name -> diode.v1.Location
-	46,   // 1095: diode.v1.TunnelTermination.termination_mac_address:type_name -> diode.v1.MACAddress
-	47,   // 1096: diode.v1.TunnelTermination.termination_manufacturer:type_name -> diode.v1.Manufacturer
-	48,   // 1097: diode.v1.TunnelTermination.termination_module:type_name -> diode.v1.Module
-	49,   // 1098: diode.v1.TunnelTermination.termination_module_bay:type_name -> diode.v1.ModuleBay
-	50,   // 1099: diode.v1.TunnelTermination.termination_module_type:type_name -> diode.v1.ModuleType
-	51,   // 1100: diode.v1.TunnelTermination.termination_platform:type_name -> diode.v1.Platform
-	52,   // 1101: diode.v1.TunnelTermination.termination_power_feed:type_name -> diode.v1.PowerFeed
-	53,   // 1102: diode.v1.TunnelTermination.termination_power_outlet:type_name -> diode.v1.PowerOutlet
-	54,   // 1103: diode.v1.TunnelTermination.termination_power_panel:type_name -> diode.v1.PowerPanel
-	55,   // 1104: diode.v1.TunnelTermination.termination_power_port:type_name -> diode.v1.PowerPort
-	56,   // 1105: diode.v1.TunnelTermination.termination_prefix:type_name -> diode.v1.Prefix
-	57,   // 1106: diode.v1.TunnelTermination.termination_provider:type_name -> diode.v1.Provider
-	58,   // 1107: diode.v1.TunnelTermination.termination_provider_account:type_name -> diode.v1.ProviderAccount
-	59,   // 1108: diode.v1.TunnelTermination.termination_provider_network:type_name -> diode.v1.ProviderNetwork
-	60,   // 1109: diode.v1.TunnelTermination.termination_rir:type_name -> diode.v1.RIR
-	61,   // 1110: diode.v1.TunnelTermination.termination_rack:type_name -> diode.v1.Rack
-	62,   // 1111: diode.v1.TunnelTermination.termination_rack_reservation:type_name -> diode.v1.RackReservation
-	63,   // 1112: diode.v1.TunnelTermination.termination_rack_role:type_name -> diode.v1.RackRole
-	64,   // 1113: diode.v1.TunnelTermination.termination_rack_type:type_name -> diode.v1.RackType
-	65,   // 1114: diode.v1.TunnelTermination.termination_rear_port:type_name -> diode.v1.RearPort
-	66,   // 1115: diode.v1.TunnelTermination.termination_region:type_name -> diode.v1.Region
-	67,   // 1116: diode.v1.TunnelTermination.termination_role:type_name -> diode.v1.Role
-	68,   // 1117: diode.v1.TunnelTermination.termination_route_target:type_name -> diode.v1.RouteTarget
-	69,   // 1118: diode.v1.TunnelTermination.termination_service:type_name -> diode.v1.Service
-	70,   // 1119: diode.v1.TunnelTermination.termination_site:type_name -> diode.v1.Site
-	71,   // 1120: diode.v1.TunnelTermination.termination_site_group:type_name -> diode.v1.SiteGroup
-	72,   // 1121: diode.v1.TunnelTermination.termination_tag:type_name -> diode.v1.Tag
-	73,   // 1122: diode.v1.TunnelTermination.termination_tenant:type_name -> diode.v1.Tenant
-	74,   // 1123: diode.v1.TunnelTermination.termination_tenant_group:type_name -> diode.v1.TenantGroup
-	75,   // 1124: diode.v1.TunnelTermination.termination_tunnel:type_name -> diode.v1.Tunnel
-	76,   // 1125: diode.v1.TunnelTermination.termination_tunnel_group:type_name -> diode.v1.TunnelGroup
-	77,   // 1126: diode.v1.TunnelTermination.termination_tunnel_termination:type_name -> diode.v1.TunnelTermination
-	78,   // 1127: diode.v1.TunnelTermination.termination_vlan:type_name -> diode.v1.VLAN
-	79,   // 1128: diode.v1.TunnelTermination.termination_vlan_group:type_name -> diode.v1.VLANGroup
-	80,   // 1129: diode.v1.TunnelTermination.termination_vlan_translation_policy:type_name -> diode.v1.VLANTranslationPolicy
-	81,   // 1130: diode.v1.TunnelTermination.termination_vlan_translation_rule:type_name -> diode.v1.VLANTranslationRule
-	82,   // 1131: diode.v1.TunnelTermination.termination_vm_interface:type_name -> diode.v1.VMInterface
-	83,   // 1132: diode.v1.TunnelTermination.termination_vrf:type_name -> diode.v1.VRF
-	84,   // 1133: diode.v1.TunnelTermination.termination_virtual_chassis:type_name -> diode.v1.VirtualChassis
-	85,   // 1134: diode.v1.TunnelTermination.termination_virtual_circuit:type_name -> diode.v1.VirtualCircuit
-	86,   // 1135: diode.v1.TunnelTermination.termination_virtual_circuit_termination:type_name -> diode.v1.VirtualCircuitTermination
-	87,   // 1136: diode.v1.TunnelTermination.termination_virtual_circuit_type:type_name -> diode.v1.VirtualCircuitType
-	88,   // 1137: diode.v1.TunnelTermination.termination_virtual_device_context:type_name -> diode.v1.VirtualDeviceContext
-	89,   // 1138: diode.v1.TunnelTermination.termination_virtual_disk:type_name -> diode.v1.VirtualDisk
-	90,   // 1139: diode.v1.TunnelTermination.termination_virtual_machine:type_name -> diode.v1.VirtualMachine
-	91,   // 1140: diode.v1.TunnelTermination.termination_wireless_lan:type_name -> diode.v1.WirelessLAN
-	92,   // 1141: diode.v1.TunnelTermination.termination_wireless_lan_group:type_name -> diode.v1.WirelessLANGroup
-	93,   // 1142: diode.v1.TunnelTermination.termination_wireless_link:type_name -> diode.v1.WirelessLink
-	94,   // 1143: diode.v1.TunnelTermination.termination_custom_field:type_name -> diode.v1.CustomField
-	95,   // 1144: diode.v1.TunnelTermination.termination_custom_field_choice_set:type_name -> diode.v1.CustomFieldChoiceSet
-	96,   // 1145: diode.v1.TunnelTermination.termination_journal_entry:type_name -> diode.v1.JournalEntry
-	97,   // 1146: diode.v1.TunnelTermination.termination_module_type_profile:type_name -> diode.v1.ModuleTypeProfile
-	98,   // 1147: diode.v1.TunnelTermination.termination_custom_link:type_name -> diode.v1.CustomLink
-	99,   // 1148: diode.v1.TunnelTermination.termination_owner:type_name -> diode.v1.Owner
-	100,  // 1149: diode.v1.TunnelTermination.termination_owner_group:type_name -> diode.v1.OwnerGroup
-	102,  // 1150: diode.v1.TunnelTermination.termination_cable_bundle:type_name -> diode.v1.CableBundle
-	103,  // 1151: diode.v1.TunnelTermination.termination_rack_group:type_name -> diode.v1.RackGroup
-	104,  // 1152: diode.v1.TunnelTermination.termination_script_module:type_name -> diode.v1.ScriptModule
-	105,  // 1153: diode.v1.TunnelTermination.termination_virtual_machine_type:type_name -> diode.v1.VirtualMachineType
-	35,   // 1154: diode.v1.TunnelTermination.outside_ip:type_name -> diode.v1.IPAddress
-	72,   // 1155: diode.v1.TunnelTermination.tags:type_name -> diode.v1.Tag
-	172,  // 1156: diode.v1.TunnelTermination.custom_fields:type_name -> diode.v1.TunnelTermination.CustomFieldsEntry
-	193,  // 1157: diode.v1.TunnelTermination.metadata:type_name -> google.protobuf.Struct
-	70,   // 1158: diode.v1.VLAN.site:type_name -> diode.v1.Site
-	79,   // 1159: diode.v1.VLAN.group:type_name -> diode.v1.VLANGroup
-	73,   // 1160: diode.v1.VLAN.tenant:type_name -> diode.v1.Tenant
-	67,   // 1161: diode.v1.VLAN.role:type_name -> diode.v1.Role
-	78,   // 1162: diode.v1.VLAN.qinq_svlan:type_name -> diode.v1.VLAN
-	72,   // 1163: diode.v1.VLAN.tags:type_name -> diode.v1.Tag
-	173,  // 1164: diode.v1.VLAN.custom_fields:type_name -> diode.v1.VLAN.CustomFieldsEntry
-	193,  // 1165: diode.v1.VLAN.metadata:type_name -> google.protobuf.Struct
-	99,   // 1166: diode.v1.VLAN.owner:type_name -> diode.v1.Owner
-	14,   // 1167: diode.v1.VLANGroup.scope_cluster:type_name -> diode.v1.Cluster
-	15,   // 1168: diode.v1.VLANGroup.scope_cluster_group:type_name -> diode.v1.ClusterGroup
-	45,   // 1169: diode.v1.VLANGroup.scope_location:type_name -> diode.v1.Location
-	61,   // 1170: diode.v1.VLANGroup.scope_rack:type_name -> diode.v1.Rack
-	66,   // 1171: diode.v1.VLANGroup.scope_region:type_name -> diode.v1.Region
-	70,   // 1172: diode.v1.VLANGroup.scope_site:type_name -> diode.v1.Site
-	71,   // 1173: diode.v1.VLANGroup.scope_site_group:type_name -> diode.v1.SiteGroup
-	103,  // 1174: diode.v1.VLANGroup.scope_rack_group:type_name -> diode.v1.RackGroup
-	72,   // 1175: diode.v1.VLANGroup.tags:type_name -> diode.v1.Tag
-	174,  // 1176: diode.v1.VLANGroup.custom_fields:type_name -> diode.v1.VLANGroup.CustomFieldsEntry
-	73,   // 1177: diode.v1.VLANGroup.tenant:type_name -> diode.v1.Tenant
-	193,  // 1178: diode.v1.VLANGroup.metadata:type_name -> google.protobuf.Struct
-	99,   // 1179: diode.v1.VLANGroup.owner:type_name -> diode.v1.Owner
-	193,  // 1180: diode.v1.VLANTranslationPolicy.metadata:type_name -> google.protobuf.Struct
-	99,   // 1181: diode.v1.VLANTranslationPolicy.owner:type_name -> diode.v1.Owner
-	80,   // 1182: diode.v1.VLANTranslationRule.policy:type_name -> diode.v1.VLANTranslationPolicy
-	193,  // 1183: diode.v1.VLANTranslationRule.metadata:type_name -> google.protobuf.Struct
-	90,   // 1184: diode.v1.VMInterface.virtual_machine:type_name -> diode.v1.VirtualMachine
-	82,   // 1185: diode.v1.VMInterface.parent:type_name -> diode.v1.VMInterface
-	82,   // 1186: diode.v1.VMInterface.bridge:type_name -> diode.v1.VMInterface
-	46,   // 1187: diode.v1.VMInterface.primary_mac_address:type_name -> diode.v1.MACAddress
-	78,   // 1188: diode.v1.VMInterface.untagged_vlan:type_name -> diode.v1.VLAN
-	78,   // 1189: diode.v1.VMInterface.qinq_svlan:type_name -> diode.v1.VLAN
-	80,   // 1190: diode.v1.VMInterface.vlan_translation_policy:type_name -> diode.v1.VLANTranslationPolicy
-	83,   // 1191: diode.v1.VMInterface.vrf:type_name -> diode.v1.VRF
-	72,   // 1192: diode.v1.VMInterface.tags:type_name -> diode.v1.Tag
-	175,  // 1193: diode.v1.VMInterface.custom_fields:type_name -> diode.v1.VMInterface.CustomFieldsEntry
-	78,   // 1194: diode.v1.VMInterface.tagged_vlans:type_name -> diode.v1.VLAN
-	193,  // 1195: diode.v1.VMInterface.metadata:type_name -> google.protobuf.Struct
-	99,   // 1196: diode.v1.VMInterface.owner:type_name -> diode.v1.Owner
-	73,   // 1197: diode.v1.VRF.tenant:type_name -> diode.v1.Tenant
-	72,   // 1198: diode.v1.VRF.tags:type_name -> diode.v1.Tag
-	176,  // 1199: diode.v1.VRF.custom_fields:type_name -> diode.v1.VRF.CustomFieldsEntry
-	68,   // 1200: diode.v1.VRF.import_targets:type_name -> diode.v1.RouteTarget
-	68,   // 1201: diode.v1.VRF.export_targets:type_name -> diode.v1.RouteTarget
-	193,  // 1202: diode.v1.VRF.metadata:type_name -> google.protobuf.Struct
-	99,   // 1203: diode.v1.VRF.owner:type_name -> diode.v1.Owner
-	25,   // 1204: diode.v1.VirtualChassis.master:type_name -> diode.v1.Device
-	72,   // 1205: diode.v1.VirtualChassis.tags:type_name -> diode.v1.Tag
-	177,  // 1206: diode.v1.VirtualChassis.custom_fields:type_name -> diode.v1.VirtualChassis.CustomFieldsEntry
-	193,  // 1207: diode.v1.VirtualChassis.metadata:type_name -> google.protobuf.Struct
-	99,   // 1208: diode.v1.VirtualChassis.owner:type_name -> diode.v1.Owner
-	59,   // 1209: diode.v1.VirtualCircuit.provider_network:type_name -> diode.v1.ProviderNetwork
-	58,   // 1210: diode.v1.VirtualCircuit.provider_account:type_name -> diode.v1.ProviderAccount
-	87,   // 1211: diode.v1.VirtualCircuit.type:type_name -> diode.v1.VirtualCircuitType
-	73,   // 1212: diode.v1.VirtualCircuit.tenant:type_name -> diode.v1.Tenant
-	72,   // 1213: diode.v1.VirtualCircuit.tags:type_name -> diode.v1.Tag
-	178,  // 1214: diode.v1.VirtualCircuit.custom_fields:type_name -> diode.v1.VirtualCircuit.CustomFieldsEntry
-	193,  // 1215: diode.v1.VirtualCircuit.metadata:type_name -> google.protobuf.Struct
-	99,   // 1216: diode.v1.VirtualCircuit.owner:type_name -> diode.v1.Owner
-	85,   // 1217: diode.v1.VirtualCircuitTermination.virtual_circuit:type_name -> diode.v1.VirtualCircuit
-	40,   // 1218: diode.v1.VirtualCircuitTermination.interface:type_name -> diode.v1.Interface
-	72,   // 1219: diode.v1.VirtualCircuitTermination.tags:type_name -> diode.v1.Tag
-	179,  // 1220: diode.v1.VirtualCircuitTermination.custom_fields:type_name -> diode.v1.VirtualCircuitTermination.CustomFieldsEntry
-	193,  // 1221: diode.v1.VirtualCircuitTermination.metadata:type_name -> google.protobuf.Struct
-	72,   // 1222: diode.v1.VirtualCircuitType.tags:type_name -> diode.v1.Tag
-	180,  // 1223: diode.v1.VirtualCircuitType.custom_fields:type_name -> diode.v1.VirtualCircuitType.CustomFieldsEntry
-	193,  // 1224: diode.v1.VirtualCircuitType.metadata:type_name -> google.protobuf.Struct
-	99,   // 1225: diode.v1.VirtualCircuitType.owner:type_name -> diode.v1.Owner
-	25,   // 1226: diode.v1.VirtualDeviceContext.device:type_name -> diode.v1.Device
-	73,   // 1227: diode.v1.VirtualDeviceContext.tenant:type_name -> diode.v1.Tenant
-	35,   // 1228: diode.v1.VirtualDeviceContext.primary_ip4:type_name -> diode.v1.IPAddress
-	35,   // 1229: diode.v1.VirtualDeviceContext.primary_ip6:type_name -> diode.v1.IPAddress
-	72,   // 1230: diode.v1.VirtualDeviceContext.tags:type_name -> diode.v1.Tag
-	181,  // 1231: diode.v1.VirtualDeviceContext.custom_fields:type_name -> diode.v1.VirtualDeviceContext.CustomFieldsEntry
-	193,  // 1232: diode.v1.VirtualDeviceContext.metadata:type_name -> google.protobuf.Struct
-	99,   // 1233: diode.v1.VirtualDeviceContext.owner:type_name -> diode.v1.Owner
-	90,   // 1234: diode.v1.VirtualDisk.virtual_machine:type_name -> diode.v1.VirtualMachine
-	72,   // 1235: diode.v1.VirtualDisk.tags:type_name -> diode.v1.Tag
-	182,  // 1236: diode.v1.VirtualDisk.custom_fields:type_name -> diode.v1.VirtualDisk.CustomFieldsEntry
-	193,  // 1237: diode.v1.VirtualDisk.metadata:type_name -> google.protobuf.Struct
-	99,   // 1238: diode.v1.VirtualDisk.owner:type_name -> diode.v1.Owner
-	70,   // 1239: diode.v1.VirtualMachine.site:type_name -> diode.v1.Site
-	14,   // 1240: diode.v1.VirtualMachine.cluster:type_name -> diode.v1.Cluster
-	25,   // 1241: diode.v1.VirtualMachine.device:type_name -> diode.v1.Device
-	27,   // 1242: diode.v1.VirtualMachine.role:type_name -> diode.v1.DeviceRole
-	73,   // 1243: diode.v1.VirtualMachine.tenant:type_name -> diode.v1.Tenant
-	51,   // 1244: diode.v1.VirtualMachine.platform:type_name -> diode.v1.Platform
-	35,   // 1245: diode.v1.VirtualMachine.primary_ip4:type_name -> diode.v1.IPAddress
-	35,   // 1246: diode.v1.VirtualMachine.primary_ip6:type_name -> diode.v1.IPAddress
-	72,   // 1247: diode.v1.VirtualMachine.tags:type_name -> diode.v1.Tag
-	183,  // 1248: diode.v1.VirtualMachine.custom_fields:type_name -> diode.v1.VirtualMachine.CustomFieldsEntry
-	193,  // 1249: diode.v1.VirtualMachine.metadata:type_name -> google.protobuf.Struct
-	99,   // 1250: diode.v1.VirtualMachine.owner:type_name -> diode.v1.Owner
-	105,  // 1251: diode.v1.VirtualMachine.virtual_machine_type:type_name -> diode.v1.VirtualMachineType
-	92,   // 1252: diode.v1.WirelessLAN.group:type_name -> diode.v1.WirelessLANGroup
-	78,   // 1253: diode.v1.WirelessLAN.vlan:type_name -> diode.v1.VLAN
-	45,   // 1254: diode.v1.WirelessLAN.scope_location:type_name -> diode.v1.Location
-	66,   // 1255: diode.v1.WirelessLAN.scope_region:type_name -> diode.v1.Region
-	70,   // 1256: diode.v1.WirelessLAN.scope_site:type_name -> diode.v1.Site
-	71,   // 1257: diode.v1.WirelessLAN.scope_site_group:type_name -> diode.v1.SiteGroup
-	73,   // 1258: diode.v1.WirelessLAN.tenant:type_name -> diode.v1.Tenant
-	72,   // 1259: diode.v1.WirelessLAN.tags:type_name -> diode.v1.Tag
-	184,  // 1260: diode.v1.WirelessLAN.custom_fields:type_name -> diode.v1.WirelessLAN.CustomFieldsEntry
-	193,  // 1261: diode.v1.WirelessLAN.metadata:type_name -> google.protobuf.Struct
-	99,   // 1262: diode.v1.WirelessLAN.owner:type_name -> diode.v1.Owner
-	92,   // 1263: diode.v1.WirelessLANGroup.parent:type_name -> diode.v1.WirelessLANGroup
-	72,   // 1264: diode.v1.WirelessLANGroup.tags:type_name -> diode.v1.Tag
-	185,  // 1265: diode.v1.WirelessLANGroup.custom_fields:type_name -> diode.v1.WirelessLANGroup.CustomFieldsEntry
-	193,  // 1266: diode.v1.WirelessLANGroup.metadata:type_name -> google.protobuf.Struct
-	99,   // 1267: diode.v1.WirelessLANGroup.owner:type_name -> diode.v1.Owner
-	40,   // 1268: diode.v1.WirelessLink.interface_a:type_name -> diode.v1.Interface
-	40,   // 1269: diode.v1.WirelessLink.interface_b:type_name -> diode.v1.Interface
-	73,   // 1270: diode.v1.WirelessLink.tenant:type_name -> diode.v1.Tenant
-	72,   // 1271: diode.v1.WirelessLink.tags:type_name -> diode.v1.Tag
-	186,  // 1272: diode.v1.WirelessLink.custom_fields:type_name -> diode.v1.WirelessLink.CustomFieldsEntry
-	193,  // 1273: diode.v1.WirelessLink.metadata:type_name -> google.protobuf.Struct
-	99,   // 1274: diode.v1.WirelessLink.owner:type_name -> diode.v1.Owner
-	95,   // 1275: diode.v1.CustomField.choice_set:type_name -> diode.v1.CustomFieldChoiceSet
-	193,  // 1276: diode.v1.CustomField.metadata:type_name -> google.protobuf.Struct
-	99,   // 1277: diode.v1.CustomField.owner:type_name -> diode.v1.Owner
-	193,  // 1278: diode.v1.CustomFieldChoiceSet.metadata:type_name -> google.protobuf.Struct
-	99,   // 1279: diode.v1.CustomFieldChoiceSet.owner:type_name -> diode.v1.Owner
-	3,    // 1280: diode.v1.JournalEntry.assigned_object_asn:type_name -> diode.v1.ASN
-	4,    // 1281: diode.v1.JournalEntry.assigned_object_asn_range:type_name -> diode.v1.ASNRange
-	5,    // 1282: diode.v1.JournalEntry.assigned_object_aggregate:type_name -> diode.v1.Aggregate
-	6,    // 1283: diode.v1.JournalEntry.assigned_object_cable:type_name -> diode.v1.Cable
-	7,    // 1284: diode.v1.JournalEntry.assigned_object_cable_path:type_name -> diode.v1.CablePath
-	8,    // 1285: diode.v1.JournalEntry.assigned_object_cable_termination:type_name -> diode.v1.CableTermination
-	9,    // 1286: diode.v1.JournalEntry.assigned_object_circuit:type_name -> diode.v1.Circuit
-	10,   // 1287: diode.v1.JournalEntry.assigned_object_circuit_group:type_name -> diode.v1.CircuitGroup
-	11,   // 1288: diode.v1.JournalEntry.assigned_object_circuit_group_assignment:type_name -> diode.v1.CircuitGroupAssignment
-	12,   // 1289: diode.v1.JournalEntry.assigned_object_circuit_termination:type_name -> diode.v1.CircuitTermination
-	13,   // 1290: diode.v1.JournalEntry.assigned_object_circuit_type:type_name -> diode.v1.CircuitType
-	14,   // 1291: diode.v1.JournalEntry.assigned_object_cluster:type_name -> diode.v1.Cluster
-	15,   // 1292: diode.v1.JournalEntry.assigned_object_cluster_group:type_name -> diode.v1.ClusterGroup
-	16,   // 1293: diode.v1.JournalEntry.assigned_object_cluster_type:type_name -> diode.v1.ClusterType
-	17,   // 1294: diode.v1.JournalEntry.assigned_object_console_port:type_name -> diode.v1.ConsolePort
-	18,   // 1295: diode.v1.JournalEntry.assigned_object_console_server_port:type_name -> diode.v1.ConsoleServerPort
-	19,   // 1296: diode.v1.JournalEntry.assigned_object_contact:type_name -> diode.v1.Contact
-	20,   // 1297: diode.v1.JournalEntry.assigned_object_contact_assignment:type_name -> diode.v1.ContactAssignment
-	21,   // 1298: diode.v1.JournalEntry.assigned_object_contact_group:type_name -> diode.v1.ContactGroup
-	22,   // 1299: diode.v1.JournalEntry.assigned_object_contact_role:type_name -> diode.v1.ContactRole
-	94,   // 1300: diode.v1.JournalEntry.assigned_object_custom_field:type_name -> diode.v1.CustomField
-	95,   // 1301: diode.v1.JournalEntry.assigned_object_custom_field_choice_set:type_name -> diode.v1.CustomFieldChoiceSet
-	25,   // 1302: diode.v1.JournalEntry.assigned_object_device:type_name -> diode.v1.Device
-	26,   // 1303: diode.v1.JournalEntry.assigned_object_device_bay:type_name -> diode.v1.DeviceBay
-	27,   // 1304: diode.v1.JournalEntry.assigned_object_device_role:type_name -> diode.v1.DeviceRole
-	28,   // 1305: diode.v1.JournalEntry.assigned_object_device_type:type_name -> diode.v1.DeviceType
-	29,   // 1306: diode.v1.JournalEntry.assigned_object_fhrp_group:type_name -> diode.v1.FHRPGroup
-	30,   // 1307: diode.v1.JournalEntry.assigned_object_fhrp_group_assignment:type_name -> diode.v1.FHRPGroupAssignment
-	31,   // 1308: diode.v1.JournalEntry.assigned_object_front_port:type_name -> diode.v1.FrontPort
-	33,   // 1309: diode.v1.JournalEntry.assigned_object_ike_policy:type_name -> diode.v1.IKEPolicy
-	34,   // 1310: diode.v1.JournalEntry.assigned_object_ike_proposal:type_name -> diode.v1.IKEProposal
-	35,   // 1311: diode.v1.JournalEntry.assigned_object_ip_address:type_name -> diode.v1.IPAddress
-	36,   // 1312: diode.v1.JournalEntry.assigned_object_ip_range:type_name -> diode.v1.IPRange
-	37,   // 1313: diode.v1.JournalEntry.assigned_object_ip_sec_policy:type_name -> diode.v1.IPSecPolicy
-	38,   // 1314: diode.v1.JournalEntry.assigned_object_ip_sec_profile:type_name -> diode.v1.IPSecProfile
-	39,   // 1315: diode.v1.JournalEntry.assigned_object_ip_sec_proposal:type_name -> diode.v1.IPSecProposal
-	40,   // 1316: diode.v1.JournalEntry.assigned_object_interface:type_name -> diode.v1.Interface
-	41,   // 1317: diode.v1.JournalEntry.assigned_object_inventory_item:type_name -> diode.v1.InventoryItem
-	42,   // 1318: diode.v1.JournalEntry.assigned_object_inventory_item_role:type_name -> diode.v1.InventoryItemRole
-	96,   // 1319: diode.v1.JournalEntry.assigned_object_journal_entry:type_name -> diode.v1.JournalEntry
-	43,   // 1320: diode.v1.JournalEntry.assigned_object_l2vpn:type_name -> diode.v1.L2VPN
-	44,   // 1321: diode.v1.JournalEntry.assigned_object_l2vpn_termination:type_name -> diode.v1.L2VPNTermination
-	45,   // 1322: diode.v1.JournalEntry.assigned_object_location:type_name -> diode.v1.Location
-	46,   // 1323: diode.v1.JournalEntry.assigned_object_mac_address:type_name -> diode.v1.MACAddress
-	47,   // 1324: diode.v1.JournalEntry.assigned_object_manufacturer:type_name -> diode.v1.Manufacturer
-	48,   // 1325: diode.v1.JournalEntry.assigned_object_module:type_name -> diode.v1.Module
-	49,   // 1326: diode.v1.JournalEntry.assigned_object_module_bay:type_name -> diode.v1.ModuleBay
-	50,   // 1327: diode.v1.JournalEntry.assigned_object_module_type:type_name -> diode.v1.ModuleType
-	97,   // 1328: diode.v1.JournalEntry.assigned_object_module_type_profile:type_name -> diode.v1.ModuleTypeProfile
-	51,   // 1329: diode.v1.JournalEntry.assigned_object_platform:type_name -> diode.v1.Platform
-	52,   // 1330: diode.v1.JournalEntry.assigned_object_power_feed:type_name -> diode.v1.PowerFeed
-	53,   // 1331: diode.v1.JournalEntry.assigned_object_power_outlet:type_name -> diode.v1.PowerOutlet
-	54,   // 1332: diode.v1.JournalEntry.assigned_object_power_panel:type_name -> diode.v1.PowerPanel
-	55,   // 1333: diode.v1.JournalEntry.assigned_object_power_port:type_name -> diode.v1.PowerPort
-	56,   // 1334: diode.v1.JournalEntry.assigned_object_prefix:type_name -> diode.v1.Prefix
-	57,   // 1335: diode.v1.JournalEntry.assigned_object_provider:type_name -> diode.v1.Provider
-	58,   // 1336: diode.v1.JournalEntry.assigned_object_provider_account:type_name -> diode.v1.ProviderAccount
-	59,   // 1337: diode.v1.JournalEntry.assigned_object_provider_network:type_name -> diode.v1.ProviderNetwork
-	60,   // 1338: diode.v1.JournalEntry.assigned_object_rir:type_name -> diode.v1.RIR
-	61,   // 1339: diode.v1.JournalEntry.assigned_object_rack:type_name -> diode.v1.Rack
-	62,   // 1340: diode.v1.JournalEntry.assigned_object_rack_reservation:type_name -> diode.v1.RackReservation
-	63,   // 1341: diode.v1.JournalEntry.assigned_object_rack_role:type_name -> diode.v1.RackRole
-	64,   // 1342: diode.v1.JournalEntry.assigned_object_rack_type:type_name -> diode.v1.RackType
-	65,   // 1343: diode.v1.JournalEntry.assigned_object_rear_port:type_name -> diode.v1.RearPort
-	66,   // 1344: diode.v1.JournalEntry.assigned_object_region:type_name -> diode.v1.Region
-	67,   // 1345: diode.v1.JournalEntry.assigned_object_role:type_name -> diode.v1.Role
-	68,   // 1346: diode.v1.JournalEntry.assigned_object_route_target:type_name -> diode.v1.RouteTarget
-	69,   // 1347: diode.v1.JournalEntry.assigned_object_service:type_name -> diode.v1.Service
-	70,   // 1348: diode.v1.JournalEntry.assigned_object_site:type_name -> diode.v1.Site
-	71,   // 1349: diode.v1.JournalEntry.assigned_object_site_group:type_name -> diode.v1.SiteGroup
-	72,   // 1350: diode.v1.JournalEntry.assigned_object_tag:type_name -> diode.v1.Tag
-	73,   // 1351: diode.v1.JournalEntry.assigned_object_tenant:type_name -> diode.v1.Tenant
-	74,   // 1352: diode.v1.JournalEntry.assigned_object_tenant_group:type_name -> diode.v1.TenantGroup
-	75,   // 1353: diode.v1.JournalEntry.assigned_object_tunnel:type_name -> diode.v1.Tunnel
-	76,   // 1354: diode.v1.JournalEntry.assigned_object_tunnel_group:type_name -> diode.v1.TunnelGroup
-	77,   // 1355: diode.v1.JournalEntry.assigned_object_tunnel_termination:type_name -> diode.v1.TunnelTermination
-	78,   // 1356: diode.v1.JournalEntry.assigned_object_vlan:type_name -> diode.v1.VLAN
-	79,   // 1357: diode.v1.JournalEntry.assigned_object_vlan_group:type_name -> diode.v1.VLANGroup
-	80,   // 1358: diode.v1.JournalEntry.assigned_object_vlan_translation_policy:type_name -> diode.v1.VLANTranslationPolicy
-	81,   // 1359: diode.v1.JournalEntry.assigned_object_vlan_translation_rule:type_name -> diode.v1.VLANTranslationRule
-	82,   // 1360: diode.v1.JournalEntry.assigned_object_vm_interface:type_name -> diode.v1.VMInterface
-	83,   // 1361: diode.v1.JournalEntry.assigned_object_vrf:type_name -> diode.v1.VRF
-	84,   // 1362: diode.v1.JournalEntry.assigned_object_virtual_chassis:type_name -> diode.v1.VirtualChassis
-	85,   // 1363: diode.v1.JournalEntry.assigned_object_virtual_circuit:type_name -> diode.v1.VirtualCircuit
-	86,   // 1364: diode.v1.JournalEntry.assigned_object_virtual_circuit_termination:type_name -> diode.v1.VirtualCircuitTermination
-	87,   // 1365: diode.v1.JournalEntry.assigned_object_virtual_circuit_type:type_name -> diode.v1.VirtualCircuitType
-	88,   // 1366: diode.v1.JournalEntry.assigned_object_virtual_device_context:type_name -> diode.v1.VirtualDeviceContext
-	89,   // 1367: diode.v1.JournalEntry.assigned_object_virtual_disk:type_name -> diode.v1.VirtualDisk
-	90,   // 1368: diode.v1.JournalEntry.assigned_object_virtual_machine:type_name -> diode.v1.VirtualMachine
-	91,   // 1369: diode.v1.JournalEntry.assigned_object_wireless_lan:type_name -> diode.v1.WirelessLAN
-	92,   // 1370: diode.v1.JournalEntry.assigned_object_wireless_lan_group:type_name -> diode.v1.WirelessLANGroup
-	93,   // 1371: diode.v1.JournalEntry.assigned_object_wireless_link:type_name -> diode.v1.WirelessLink
-	98,   // 1372: diode.v1.JournalEntry.assigned_object_custom_link:type_name -> diode.v1.CustomLink
-	99,   // 1373: diode.v1.JournalEntry.assigned_object_owner:type_name -> diode.v1.Owner
-	100,  // 1374: diode.v1.JournalEntry.assigned_object_owner_group:type_name -> diode.v1.OwnerGroup
-	102,  // 1375: diode.v1.JournalEntry.assigned_object_cable_bundle:type_name -> diode.v1.CableBundle
-	103,  // 1376: diode.v1.JournalEntry.assigned_object_rack_group:type_name -> diode.v1.RackGroup
-	104,  // 1377: diode.v1.JournalEntry.assigned_object_script_module:type_name -> diode.v1.ScriptModule
-	105,  // 1378: diode.v1.JournalEntry.assigned_object_virtual_machine_type:type_name -> diode.v1.VirtualMachineType
-	72,   // 1379: diode.v1.JournalEntry.tags:type_name -> diode.v1.Tag
-	187,  // 1380: diode.v1.JournalEntry.custom_fields:type_name -> diode.v1.JournalEntry.CustomFieldsEntry
-	193,  // 1381: diode.v1.JournalEntry.metadata:type_name -> google.protobuf.Struct
-	72,   // 1382: diode.v1.ModuleTypeProfile.tags:type_name -> diode.v1.Tag
-	188,  // 1383: diode.v1.ModuleTypeProfile.custom_fields:type_name -> diode.v1.ModuleTypeProfile.CustomFieldsEntry
-	193,  // 1384: diode.v1.ModuleTypeProfile.metadata:type_name -> google.protobuf.Struct
-	99,   // 1385: diode.v1.ModuleTypeProfile.owner:type_name -> diode.v1.Owner
-	193,  // 1386: diode.v1.CustomLink.metadata:type_name -> google.protobuf.Struct
-	99,   // 1387: diode.v1.CustomLink.owner:type_name -> diode.v1.Owner
-	100,  // 1388: diode.v1.Owner.group:type_name -> diode.v1.OwnerGroup
-	193,  // 1389: diode.v1.Owner.metadata:type_name -> google.protobuf.Struct
-	193,  // 1390: diode.v1.OwnerGroup.metadata:type_name -> google.protobuf.Struct
-	193,  // 1391: diode.v1.DeviceConfig.metadata:type_name -> google.protobuf.Struct
-	99,   // 1392: diode.v1.CableBundle.owner:type_name -> diode.v1.Owner
-	72,   // 1393: diode.v1.CableBundle.tags:type_name -> diode.v1.Tag
-	189,  // 1394: diode.v1.CableBundle.custom_fields:type_name -> diode.v1.CableBundle.CustomFieldsEntry
-	193,  // 1395: diode.v1.CableBundle.metadata:type_name -> google.protobuf.Struct
-	99,   // 1396: diode.v1.RackGroup.owner:type_name -> diode.v1.Owner
-	72,   // 1397: diode.v1.RackGroup.tags:type_name -> diode.v1.Tag
-	190,  // 1398: diode.v1.RackGroup.custom_fields:type_name -> diode.v1.RackGroup.CustomFieldsEntry
-	193,  // 1399: diode.v1.RackGroup.metadata:type_name -> google.protobuf.Struct
-	193,  // 1400: diode.v1.ScriptModule.metadata:type_name -> google.protobuf.Struct
-	51,   // 1401: diode.v1.VirtualMachineType.default_platform:type_name -> diode.v1.Platform
-	99,   // 1402: diode.v1.VirtualMachineType.owner:type_name -> diode.v1.Owner
-	72,   // 1403: diode.v1.VirtualMachineType.tags:type_name -> diode.v1.Tag
-	191,  // 1404: diode.v1.VirtualMachineType.custom_fields:type_name -> diode.v1.VirtualMachineType.CustomFieldsEntry
-	193,  // 1405: diode.v1.VirtualMachineType.metadata:type_name -> google.protobuf.Struct
-	24,   // 1406: diode.v1.ASN.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1407: diode.v1.ASNRange.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1408: diode.v1.Aggregate.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1409: diode.v1.Cable.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1410: diode.v1.Circuit.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1411: diode.v1.CircuitGroup.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1412: diode.v1.CircuitTermination.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1413: diode.v1.CircuitType.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1414: diode.v1.Cluster.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1415: diode.v1.ClusterGroup.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1416: diode.v1.ClusterType.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1417: diode.v1.ConsolePort.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1418: diode.v1.ConsoleServerPort.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1419: diode.v1.Contact.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1420: diode.v1.ContactAssignment.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1421: diode.v1.ContactGroup.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1422: diode.v1.ContactRole.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1423: diode.v1.Device.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1424: diode.v1.DeviceBay.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1425: diode.v1.DeviceRole.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1426: diode.v1.DeviceType.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1427: diode.v1.FHRPGroup.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1428: diode.v1.FrontPort.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1429: diode.v1.IKEPolicy.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1430: diode.v1.IKEProposal.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1431: diode.v1.IPAddress.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1432: diode.v1.IPRange.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1433: diode.v1.IPSecPolicy.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1434: diode.v1.IPSecProfile.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1435: diode.v1.IPSecProposal.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1436: diode.v1.Interface.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1437: diode.v1.InventoryItem.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1438: diode.v1.InventoryItemRole.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1439: diode.v1.L2VPN.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1440: diode.v1.L2VPNTermination.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1441: diode.v1.Location.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1442: diode.v1.MACAddress.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1443: diode.v1.Manufacturer.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1444: diode.v1.Module.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1445: diode.v1.ModuleBay.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1446: diode.v1.ModuleType.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1447: diode.v1.Platform.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1448: diode.v1.PowerFeed.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1449: diode.v1.PowerOutlet.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1450: diode.v1.PowerPanel.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1451: diode.v1.PowerPort.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1452: diode.v1.Prefix.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1453: diode.v1.Provider.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1454: diode.v1.ProviderAccount.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1455: diode.v1.ProviderNetwork.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1456: diode.v1.RIR.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1457: diode.v1.Rack.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1458: diode.v1.RackReservation.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1459: diode.v1.RackRole.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1460: diode.v1.RackType.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1461: diode.v1.RearPort.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1462: diode.v1.Region.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1463: diode.v1.Role.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1464: diode.v1.RouteTarget.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1465: diode.v1.Service.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1466: diode.v1.Site.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1467: diode.v1.SiteGroup.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1468: diode.v1.Tenant.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1469: diode.v1.TenantGroup.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1470: diode.v1.Tunnel.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1471: diode.v1.TunnelGroup.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1472: diode.v1.TunnelTermination.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1473: diode.v1.VLAN.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1474: diode.v1.VLANGroup.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1475: diode.v1.VMInterface.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1476: diode.v1.VRF.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1477: diode.v1.VirtualChassis.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1478: diode.v1.VirtualCircuit.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1479: diode.v1.VirtualCircuitTermination.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1480: diode.v1.VirtualCircuitType.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1481: diode.v1.VirtualDeviceContext.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1482: diode.v1.VirtualDisk.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1483: diode.v1.VirtualMachine.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1484: diode.v1.WirelessLAN.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1485: diode.v1.WirelessLANGroup.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1486: diode.v1.WirelessLink.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1487: diode.v1.JournalEntry.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1488: diode.v1.ModuleTypeProfile.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1489: diode.v1.CableBundle.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1490: diode.v1.RackGroup.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	24,   // 1491: diode.v1.VirtualMachineType.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
-	194,  // 1492: diode.v1.netbox_supported:extendee -> google.protobuf.FieldOptions
-	1,    // 1493: diode.v1.IngesterService.Ingest:input_type -> diode.v1.IngestRequest
-	2,    // 1494: diode.v1.IngesterService.Ingest:output_type -> diode.v1.IngestResponse
-	1494, // [1494:1495] is the sub-list for method output_type
-	1493, // [1493:1494] is the sub-list for method input_type
-	1493, // [1493:1493] is the sub-list for extension type_name
-	1492, // [1492:1493] is the sub-list for extension extendee
-	0,    // [0:1492] is the sub-list for field type_name
+	106,  // 101: diode.v1.Entity.user:type_name -> diode.v1.User
+	0,    // 102: diode.v1.IngestRequest.entities:type_name -> diode.v1.Entity
+	194,  // 103: diode.v1.IngestRequest.metadata:type_name -> google.protobuf.Struct
+	60,   // 104: diode.v1.ASN.rir:type_name -> diode.v1.RIR
+	73,   // 105: diode.v1.ASN.tenant:type_name -> diode.v1.Tenant
+	72,   // 106: diode.v1.ASN.tags:type_name -> diode.v1.Tag
+	107,  // 107: diode.v1.ASN.custom_fields:type_name -> diode.v1.ASN.CustomFieldsEntry
+	194,  // 108: diode.v1.ASN.metadata:type_name -> google.protobuf.Struct
+	99,   // 109: diode.v1.ASN.owner:type_name -> diode.v1.Owner
+	70,   // 110: diode.v1.ASN.sites:type_name -> diode.v1.Site
+	67,   // 111: diode.v1.ASN.role:type_name -> diode.v1.Role
+	60,   // 112: diode.v1.ASNRange.rir:type_name -> diode.v1.RIR
+	73,   // 113: diode.v1.ASNRange.tenant:type_name -> diode.v1.Tenant
+	72,   // 114: diode.v1.ASNRange.tags:type_name -> diode.v1.Tag
+	108,  // 115: diode.v1.ASNRange.custom_fields:type_name -> diode.v1.ASNRange.CustomFieldsEntry
+	194,  // 116: diode.v1.ASNRange.metadata:type_name -> google.protobuf.Struct
+	99,   // 117: diode.v1.ASNRange.owner:type_name -> diode.v1.Owner
+	60,   // 118: diode.v1.Aggregate.rir:type_name -> diode.v1.RIR
+	73,   // 119: diode.v1.Aggregate.tenant:type_name -> diode.v1.Tenant
+	193,  // 120: diode.v1.Aggregate.date_added:type_name -> google.protobuf.Timestamp
+	72,   // 121: diode.v1.Aggregate.tags:type_name -> diode.v1.Tag
+	109,  // 122: diode.v1.Aggregate.custom_fields:type_name -> diode.v1.Aggregate.CustomFieldsEntry
+	194,  // 123: diode.v1.Aggregate.metadata:type_name -> google.protobuf.Struct
+	99,   // 124: diode.v1.Aggregate.owner:type_name -> diode.v1.Owner
+	32,   // 125: diode.v1.Cable.a_terminations:type_name -> diode.v1.GenericObject
+	32,   // 126: diode.v1.Cable.b_terminations:type_name -> diode.v1.GenericObject
+	73,   // 127: diode.v1.Cable.tenant:type_name -> diode.v1.Tenant
+	72,   // 128: diode.v1.Cable.tags:type_name -> diode.v1.Tag
+	110,  // 129: diode.v1.Cable.custom_fields:type_name -> diode.v1.Cable.CustomFieldsEntry
+	194,  // 130: diode.v1.Cable.metadata:type_name -> google.protobuf.Struct
+	99,   // 131: diode.v1.Cable.owner:type_name -> diode.v1.Owner
+	102,  // 132: diode.v1.Cable.bundle:type_name -> diode.v1.CableBundle
+	194,  // 133: diode.v1.CablePath.metadata:type_name -> google.protobuf.Struct
+	6,    // 134: diode.v1.CableTermination.cable:type_name -> diode.v1.Cable
+	12,   // 135: diode.v1.CableTermination.termination_circuit_termination:type_name -> diode.v1.CircuitTermination
+	17,   // 136: diode.v1.CableTermination.termination_console_port:type_name -> diode.v1.ConsolePort
+	18,   // 137: diode.v1.CableTermination.termination_console_server_port:type_name -> diode.v1.ConsoleServerPort
+	31,   // 138: diode.v1.CableTermination.termination_front_port:type_name -> diode.v1.FrontPort
+	40,   // 139: diode.v1.CableTermination.termination_interface:type_name -> diode.v1.Interface
+	52,   // 140: diode.v1.CableTermination.termination_power_feed:type_name -> diode.v1.PowerFeed
+	53,   // 141: diode.v1.CableTermination.termination_power_outlet:type_name -> diode.v1.PowerOutlet
+	55,   // 142: diode.v1.CableTermination.termination_power_port:type_name -> diode.v1.PowerPort
+	65,   // 143: diode.v1.CableTermination.termination_rear_port:type_name -> diode.v1.RearPort
+	194,  // 144: diode.v1.CableTermination.metadata:type_name -> google.protobuf.Struct
+	57,   // 145: diode.v1.Circuit.provider:type_name -> diode.v1.Provider
+	58,   // 146: diode.v1.Circuit.provider_account:type_name -> diode.v1.ProviderAccount
+	13,   // 147: diode.v1.Circuit.type:type_name -> diode.v1.CircuitType
+	73,   // 148: diode.v1.Circuit.tenant:type_name -> diode.v1.Tenant
+	193,  // 149: diode.v1.Circuit.install_date:type_name -> google.protobuf.Timestamp
+	193,  // 150: diode.v1.Circuit.termination_date:type_name -> google.protobuf.Timestamp
+	72,   // 151: diode.v1.Circuit.tags:type_name -> diode.v1.Tag
+	11,   // 152: diode.v1.Circuit.assignments:type_name -> diode.v1.CircuitGroupAssignment
+	111,  // 153: diode.v1.Circuit.custom_fields:type_name -> diode.v1.Circuit.CustomFieldsEntry
+	194,  // 154: diode.v1.Circuit.metadata:type_name -> google.protobuf.Struct
+	99,   // 155: diode.v1.Circuit.owner:type_name -> diode.v1.Owner
+	73,   // 156: diode.v1.CircuitGroup.tenant:type_name -> diode.v1.Tenant
+	72,   // 157: diode.v1.CircuitGroup.tags:type_name -> diode.v1.Tag
+	112,  // 158: diode.v1.CircuitGroup.custom_fields:type_name -> diode.v1.CircuitGroup.CustomFieldsEntry
+	194,  // 159: diode.v1.CircuitGroup.metadata:type_name -> google.protobuf.Struct
+	99,   // 160: diode.v1.CircuitGroup.owner:type_name -> diode.v1.Owner
+	10,   // 161: diode.v1.CircuitGroupAssignment.group:type_name -> diode.v1.CircuitGroup
+	9,    // 162: diode.v1.CircuitGroupAssignment.member_circuit:type_name -> diode.v1.Circuit
+	85,   // 163: diode.v1.CircuitGroupAssignment.member_virtual_circuit:type_name -> diode.v1.VirtualCircuit
+	72,   // 164: diode.v1.CircuitGroupAssignment.tags:type_name -> diode.v1.Tag
+	194,  // 165: diode.v1.CircuitGroupAssignment.metadata:type_name -> google.protobuf.Struct
+	9,    // 166: diode.v1.CircuitTermination.circuit:type_name -> diode.v1.Circuit
+	45,   // 167: diode.v1.CircuitTermination.termination_location:type_name -> diode.v1.Location
+	59,   // 168: diode.v1.CircuitTermination.termination_provider_network:type_name -> diode.v1.ProviderNetwork
+	66,   // 169: diode.v1.CircuitTermination.termination_region:type_name -> diode.v1.Region
+	70,   // 170: diode.v1.CircuitTermination.termination_site:type_name -> diode.v1.Site
+	71,   // 171: diode.v1.CircuitTermination.termination_site_group:type_name -> diode.v1.SiteGroup
+	72,   // 172: diode.v1.CircuitTermination.tags:type_name -> diode.v1.Tag
+	113,  // 173: diode.v1.CircuitTermination.custom_fields:type_name -> diode.v1.CircuitTermination.CustomFieldsEntry
+	194,  // 174: diode.v1.CircuitTermination.metadata:type_name -> google.protobuf.Struct
+	72,   // 175: diode.v1.CircuitType.tags:type_name -> diode.v1.Tag
+	114,  // 176: diode.v1.CircuitType.custom_fields:type_name -> diode.v1.CircuitType.CustomFieldsEntry
+	194,  // 177: diode.v1.CircuitType.metadata:type_name -> google.protobuf.Struct
+	99,   // 178: diode.v1.CircuitType.owner:type_name -> diode.v1.Owner
+	16,   // 179: diode.v1.Cluster.type:type_name -> diode.v1.ClusterType
+	15,   // 180: diode.v1.Cluster.group:type_name -> diode.v1.ClusterGroup
+	73,   // 181: diode.v1.Cluster.tenant:type_name -> diode.v1.Tenant
+	45,   // 182: diode.v1.Cluster.scope_location:type_name -> diode.v1.Location
+	66,   // 183: diode.v1.Cluster.scope_region:type_name -> diode.v1.Region
+	70,   // 184: diode.v1.Cluster.scope_site:type_name -> diode.v1.Site
+	71,   // 185: diode.v1.Cluster.scope_site_group:type_name -> diode.v1.SiteGroup
+	72,   // 186: diode.v1.Cluster.tags:type_name -> diode.v1.Tag
+	115,  // 187: diode.v1.Cluster.custom_fields:type_name -> diode.v1.Cluster.CustomFieldsEntry
+	194,  // 188: diode.v1.Cluster.metadata:type_name -> google.protobuf.Struct
+	99,   // 189: diode.v1.Cluster.owner:type_name -> diode.v1.Owner
+	72,   // 190: diode.v1.ClusterGroup.tags:type_name -> diode.v1.Tag
+	116,  // 191: diode.v1.ClusterGroup.custom_fields:type_name -> diode.v1.ClusterGroup.CustomFieldsEntry
+	194,  // 192: diode.v1.ClusterGroup.metadata:type_name -> google.protobuf.Struct
+	99,   // 193: diode.v1.ClusterGroup.owner:type_name -> diode.v1.Owner
+	72,   // 194: diode.v1.ClusterType.tags:type_name -> diode.v1.Tag
+	117,  // 195: diode.v1.ClusterType.custom_fields:type_name -> diode.v1.ClusterType.CustomFieldsEntry
+	194,  // 196: diode.v1.ClusterType.metadata:type_name -> google.protobuf.Struct
+	99,   // 197: diode.v1.ClusterType.owner:type_name -> diode.v1.Owner
+	25,   // 198: diode.v1.ConsolePort.device:type_name -> diode.v1.Device
+	48,   // 199: diode.v1.ConsolePort.module:type_name -> diode.v1.Module
+	72,   // 200: diode.v1.ConsolePort.tags:type_name -> diode.v1.Tag
+	118,  // 201: diode.v1.ConsolePort.custom_fields:type_name -> diode.v1.ConsolePort.CustomFieldsEntry
+	194,  // 202: diode.v1.ConsolePort.metadata:type_name -> google.protobuf.Struct
+	99,   // 203: diode.v1.ConsolePort.owner:type_name -> diode.v1.Owner
+	25,   // 204: diode.v1.ConsoleServerPort.device:type_name -> diode.v1.Device
+	48,   // 205: diode.v1.ConsoleServerPort.module:type_name -> diode.v1.Module
+	72,   // 206: diode.v1.ConsoleServerPort.tags:type_name -> diode.v1.Tag
+	119,  // 207: diode.v1.ConsoleServerPort.custom_fields:type_name -> diode.v1.ConsoleServerPort.CustomFieldsEntry
+	194,  // 208: diode.v1.ConsoleServerPort.metadata:type_name -> google.protobuf.Struct
+	99,   // 209: diode.v1.ConsoleServerPort.owner:type_name -> diode.v1.Owner
+	21,   // 210: diode.v1.Contact.group:type_name -> diode.v1.ContactGroup
+	72,   // 211: diode.v1.Contact.tags:type_name -> diode.v1.Tag
+	120,  // 212: diode.v1.Contact.custom_fields:type_name -> diode.v1.Contact.CustomFieldsEntry
+	21,   // 213: diode.v1.Contact.groups:type_name -> diode.v1.ContactGroup
+	194,  // 214: diode.v1.Contact.metadata:type_name -> google.protobuf.Struct
+	99,   // 215: diode.v1.Contact.owner:type_name -> diode.v1.Owner
+	3,    // 216: diode.v1.ContactAssignment.object_asn:type_name -> diode.v1.ASN
+	4,    // 217: diode.v1.ContactAssignment.object_asn_range:type_name -> diode.v1.ASNRange
+	5,    // 218: diode.v1.ContactAssignment.object_aggregate:type_name -> diode.v1.Aggregate
+	6,    // 219: diode.v1.ContactAssignment.object_cable:type_name -> diode.v1.Cable
+	7,    // 220: diode.v1.ContactAssignment.object_cable_path:type_name -> diode.v1.CablePath
+	8,    // 221: diode.v1.ContactAssignment.object_cable_termination:type_name -> diode.v1.CableTermination
+	9,    // 222: diode.v1.ContactAssignment.object_circuit:type_name -> diode.v1.Circuit
+	10,   // 223: diode.v1.ContactAssignment.object_circuit_group:type_name -> diode.v1.CircuitGroup
+	11,   // 224: diode.v1.ContactAssignment.object_circuit_group_assignment:type_name -> diode.v1.CircuitGroupAssignment
+	12,   // 225: diode.v1.ContactAssignment.object_circuit_termination:type_name -> diode.v1.CircuitTermination
+	13,   // 226: diode.v1.ContactAssignment.object_circuit_type:type_name -> diode.v1.CircuitType
+	14,   // 227: diode.v1.ContactAssignment.object_cluster:type_name -> diode.v1.Cluster
+	15,   // 228: diode.v1.ContactAssignment.object_cluster_group:type_name -> diode.v1.ClusterGroup
+	16,   // 229: diode.v1.ContactAssignment.object_cluster_type:type_name -> diode.v1.ClusterType
+	17,   // 230: diode.v1.ContactAssignment.object_console_port:type_name -> diode.v1.ConsolePort
+	18,   // 231: diode.v1.ContactAssignment.object_console_server_port:type_name -> diode.v1.ConsoleServerPort
+	19,   // 232: diode.v1.ContactAssignment.object_contact:type_name -> diode.v1.Contact
+	20,   // 233: diode.v1.ContactAssignment.object_contact_assignment:type_name -> diode.v1.ContactAssignment
+	21,   // 234: diode.v1.ContactAssignment.object_contact_group:type_name -> diode.v1.ContactGroup
+	22,   // 235: diode.v1.ContactAssignment.object_contact_role:type_name -> diode.v1.ContactRole
+	25,   // 236: diode.v1.ContactAssignment.object_device:type_name -> diode.v1.Device
+	26,   // 237: diode.v1.ContactAssignment.object_device_bay:type_name -> diode.v1.DeviceBay
+	27,   // 238: diode.v1.ContactAssignment.object_device_role:type_name -> diode.v1.DeviceRole
+	28,   // 239: diode.v1.ContactAssignment.object_device_type:type_name -> diode.v1.DeviceType
+	29,   // 240: diode.v1.ContactAssignment.object_fhrp_group:type_name -> diode.v1.FHRPGroup
+	30,   // 241: diode.v1.ContactAssignment.object_fhrp_group_assignment:type_name -> diode.v1.FHRPGroupAssignment
+	31,   // 242: diode.v1.ContactAssignment.object_front_port:type_name -> diode.v1.FrontPort
+	33,   // 243: diode.v1.ContactAssignment.object_ike_policy:type_name -> diode.v1.IKEPolicy
+	34,   // 244: diode.v1.ContactAssignment.object_ike_proposal:type_name -> diode.v1.IKEProposal
+	35,   // 245: diode.v1.ContactAssignment.object_ip_address:type_name -> diode.v1.IPAddress
+	36,   // 246: diode.v1.ContactAssignment.object_ip_range:type_name -> diode.v1.IPRange
+	37,   // 247: diode.v1.ContactAssignment.object_ip_sec_policy:type_name -> diode.v1.IPSecPolicy
+	38,   // 248: diode.v1.ContactAssignment.object_ip_sec_profile:type_name -> diode.v1.IPSecProfile
+	39,   // 249: diode.v1.ContactAssignment.object_ip_sec_proposal:type_name -> diode.v1.IPSecProposal
+	40,   // 250: diode.v1.ContactAssignment.object_interface:type_name -> diode.v1.Interface
+	41,   // 251: diode.v1.ContactAssignment.object_inventory_item:type_name -> diode.v1.InventoryItem
+	42,   // 252: diode.v1.ContactAssignment.object_inventory_item_role:type_name -> diode.v1.InventoryItemRole
+	43,   // 253: diode.v1.ContactAssignment.object_l2vpn:type_name -> diode.v1.L2VPN
+	44,   // 254: diode.v1.ContactAssignment.object_l2vpn_termination:type_name -> diode.v1.L2VPNTermination
+	45,   // 255: diode.v1.ContactAssignment.object_location:type_name -> diode.v1.Location
+	46,   // 256: diode.v1.ContactAssignment.object_mac_address:type_name -> diode.v1.MACAddress
+	47,   // 257: diode.v1.ContactAssignment.object_manufacturer:type_name -> diode.v1.Manufacturer
+	48,   // 258: diode.v1.ContactAssignment.object_module:type_name -> diode.v1.Module
+	49,   // 259: diode.v1.ContactAssignment.object_module_bay:type_name -> diode.v1.ModuleBay
+	50,   // 260: diode.v1.ContactAssignment.object_module_type:type_name -> diode.v1.ModuleType
+	51,   // 261: diode.v1.ContactAssignment.object_platform:type_name -> diode.v1.Platform
+	52,   // 262: diode.v1.ContactAssignment.object_power_feed:type_name -> diode.v1.PowerFeed
+	53,   // 263: diode.v1.ContactAssignment.object_power_outlet:type_name -> diode.v1.PowerOutlet
+	54,   // 264: diode.v1.ContactAssignment.object_power_panel:type_name -> diode.v1.PowerPanel
+	55,   // 265: diode.v1.ContactAssignment.object_power_port:type_name -> diode.v1.PowerPort
+	56,   // 266: diode.v1.ContactAssignment.object_prefix:type_name -> diode.v1.Prefix
+	57,   // 267: diode.v1.ContactAssignment.object_provider:type_name -> diode.v1.Provider
+	58,   // 268: diode.v1.ContactAssignment.object_provider_account:type_name -> diode.v1.ProviderAccount
+	59,   // 269: diode.v1.ContactAssignment.object_provider_network:type_name -> diode.v1.ProviderNetwork
+	60,   // 270: diode.v1.ContactAssignment.object_rir:type_name -> diode.v1.RIR
+	61,   // 271: diode.v1.ContactAssignment.object_rack:type_name -> diode.v1.Rack
+	62,   // 272: diode.v1.ContactAssignment.object_rack_reservation:type_name -> diode.v1.RackReservation
+	63,   // 273: diode.v1.ContactAssignment.object_rack_role:type_name -> diode.v1.RackRole
+	64,   // 274: diode.v1.ContactAssignment.object_rack_type:type_name -> diode.v1.RackType
+	65,   // 275: diode.v1.ContactAssignment.object_rear_port:type_name -> diode.v1.RearPort
+	66,   // 276: diode.v1.ContactAssignment.object_region:type_name -> diode.v1.Region
+	67,   // 277: diode.v1.ContactAssignment.object_role:type_name -> diode.v1.Role
+	68,   // 278: diode.v1.ContactAssignment.object_route_target:type_name -> diode.v1.RouteTarget
+	69,   // 279: diode.v1.ContactAssignment.object_service:type_name -> diode.v1.Service
+	70,   // 280: diode.v1.ContactAssignment.object_site:type_name -> diode.v1.Site
+	71,   // 281: diode.v1.ContactAssignment.object_site_group:type_name -> diode.v1.SiteGroup
+	72,   // 282: diode.v1.ContactAssignment.object_tag:type_name -> diode.v1.Tag
+	73,   // 283: diode.v1.ContactAssignment.object_tenant:type_name -> diode.v1.Tenant
+	74,   // 284: diode.v1.ContactAssignment.object_tenant_group:type_name -> diode.v1.TenantGroup
+	75,   // 285: diode.v1.ContactAssignment.object_tunnel:type_name -> diode.v1.Tunnel
+	76,   // 286: diode.v1.ContactAssignment.object_tunnel_group:type_name -> diode.v1.TunnelGroup
+	77,   // 287: diode.v1.ContactAssignment.object_tunnel_termination:type_name -> diode.v1.TunnelTermination
+	78,   // 288: diode.v1.ContactAssignment.object_vlan:type_name -> diode.v1.VLAN
+	79,   // 289: diode.v1.ContactAssignment.object_vlan_group:type_name -> diode.v1.VLANGroup
+	80,   // 290: diode.v1.ContactAssignment.object_vlan_translation_policy:type_name -> diode.v1.VLANTranslationPolicy
+	81,   // 291: diode.v1.ContactAssignment.object_vlan_translation_rule:type_name -> diode.v1.VLANTranslationRule
+	82,   // 292: diode.v1.ContactAssignment.object_vm_interface:type_name -> diode.v1.VMInterface
+	83,   // 293: diode.v1.ContactAssignment.object_vrf:type_name -> diode.v1.VRF
+	84,   // 294: diode.v1.ContactAssignment.object_virtual_chassis:type_name -> diode.v1.VirtualChassis
+	85,   // 295: diode.v1.ContactAssignment.object_virtual_circuit:type_name -> diode.v1.VirtualCircuit
+	86,   // 296: diode.v1.ContactAssignment.object_virtual_circuit_termination:type_name -> diode.v1.VirtualCircuitTermination
+	87,   // 297: diode.v1.ContactAssignment.object_virtual_circuit_type:type_name -> diode.v1.VirtualCircuitType
+	88,   // 298: diode.v1.ContactAssignment.object_virtual_device_context:type_name -> diode.v1.VirtualDeviceContext
+	89,   // 299: diode.v1.ContactAssignment.object_virtual_disk:type_name -> diode.v1.VirtualDisk
+	90,   // 300: diode.v1.ContactAssignment.object_virtual_machine:type_name -> diode.v1.VirtualMachine
+	91,   // 301: diode.v1.ContactAssignment.object_wireless_lan:type_name -> diode.v1.WirelessLAN
+	92,   // 302: diode.v1.ContactAssignment.object_wireless_lan_group:type_name -> diode.v1.WirelessLANGroup
+	93,   // 303: diode.v1.ContactAssignment.object_wireless_link:type_name -> diode.v1.WirelessLink
+	94,   // 304: diode.v1.ContactAssignment.object_custom_field:type_name -> diode.v1.CustomField
+	95,   // 305: diode.v1.ContactAssignment.object_custom_field_choice_set:type_name -> diode.v1.CustomFieldChoiceSet
+	96,   // 306: diode.v1.ContactAssignment.object_journal_entry:type_name -> diode.v1.JournalEntry
+	97,   // 307: diode.v1.ContactAssignment.object_module_type_profile:type_name -> diode.v1.ModuleTypeProfile
+	98,   // 308: diode.v1.ContactAssignment.object_custom_link:type_name -> diode.v1.CustomLink
+	99,   // 309: diode.v1.ContactAssignment.object_owner:type_name -> diode.v1.Owner
+	100,  // 310: diode.v1.ContactAssignment.object_owner_group:type_name -> diode.v1.OwnerGroup
+	102,  // 311: diode.v1.ContactAssignment.object_cable_bundle:type_name -> diode.v1.CableBundle
+	103,  // 312: diode.v1.ContactAssignment.object_rack_group:type_name -> diode.v1.RackGroup
+	104,  // 313: diode.v1.ContactAssignment.object_script_module:type_name -> diode.v1.ScriptModule
+	105,  // 314: diode.v1.ContactAssignment.object_virtual_machine_type:type_name -> diode.v1.VirtualMachineType
+	106,  // 315: diode.v1.ContactAssignment.object_user:type_name -> diode.v1.User
+	19,   // 316: diode.v1.ContactAssignment.contact:type_name -> diode.v1.Contact
+	22,   // 317: diode.v1.ContactAssignment.role:type_name -> diode.v1.ContactRole
+	72,   // 318: diode.v1.ContactAssignment.tags:type_name -> diode.v1.Tag
+	121,  // 319: diode.v1.ContactAssignment.custom_fields:type_name -> diode.v1.ContactAssignment.CustomFieldsEntry
+	194,  // 320: diode.v1.ContactAssignment.metadata:type_name -> google.protobuf.Struct
+	21,   // 321: diode.v1.ContactGroup.parent:type_name -> diode.v1.ContactGroup
+	72,   // 322: diode.v1.ContactGroup.tags:type_name -> diode.v1.Tag
+	122,  // 323: diode.v1.ContactGroup.custom_fields:type_name -> diode.v1.ContactGroup.CustomFieldsEntry
+	194,  // 324: diode.v1.ContactGroup.metadata:type_name -> google.protobuf.Struct
+	99,   // 325: diode.v1.ContactGroup.owner:type_name -> diode.v1.Owner
+	72,   // 326: diode.v1.ContactRole.tags:type_name -> diode.v1.Tag
+	123,  // 327: diode.v1.ContactRole.custom_fields:type_name -> diode.v1.ContactRole.CustomFieldsEntry
+	194,  // 328: diode.v1.ContactRole.metadata:type_name -> google.protobuf.Struct
+	99,   // 329: diode.v1.ContactRole.owner:type_name -> diode.v1.Owner
+	3,    // 330: diode.v1.CustomFieldObjectReference.asn:type_name -> diode.v1.ASN
+	4,    // 331: diode.v1.CustomFieldObjectReference.asn_range:type_name -> diode.v1.ASNRange
+	5,    // 332: diode.v1.CustomFieldObjectReference.aggregate:type_name -> diode.v1.Aggregate
+	6,    // 333: diode.v1.CustomFieldObjectReference.cable:type_name -> diode.v1.Cable
+	7,    // 334: diode.v1.CustomFieldObjectReference.cable_path:type_name -> diode.v1.CablePath
+	8,    // 335: diode.v1.CustomFieldObjectReference.cable_termination:type_name -> diode.v1.CableTermination
+	9,    // 336: diode.v1.CustomFieldObjectReference.circuit:type_name -> diode.v1.Circuit
+	10,   // 337: diode.v1.CustomFieldObjectReference.circuit_group:type_name -> diode.v1.CircuitGroup
+	11,   // 338: diode.v1.CustomFieldObjectReference.circuit_group_assignment:type_name -> diode.v1.CircuitGroupAssignment
+	12,   // 339: diode.v1.CustomFieldObjectReference.circuit_termination:type_name -> diode.v1.CircuitTermination
+	13,   // 340: diode.v1.CustomFieldObjectReference.circuit_type:type_name -> diode.v1.CircuitType
+	14,   // 341: diode.v1.CustomFieldObjectReference.cluster:type_name -> diode.v1.Cluster
+	15,   // 342: diode.v1.CustomFieldObjectReference.cluster_group:type_name -> diode.v1.ClusterGroup
+	16,   // 343: diode.v1.CustomFieldObjectReference.cluster_type:type_name -> diode.v1.ClusterType
+	17,   // 344: diode.v1.CustomFieldObjectReference.console_port:type_name -> diode.v1.ConsolePort
+	18,   // 345: diode.v1.CustomFieldObjectReference.console_server_port:type_name -> diode.v1.ConsoleServerPort
+	19,   // 346: diode.v1.CustomFieldObjectReference.contact:type_name -> diode.v1.Contact
+	20,   // 347: diode.v1.CustomFieldObjectReference.contact_assignment:type_name -> diode.v1.ContactAssignment
+	21,   // 348: diode.v1.CustomFieldObjectReference.contact_group:type_name -> diode.v1.ContactGroup
+	22,   // 349: diode.v1.CustomFieldObjectReference.contact_role:type_name -> diode.v1.ContactRole
+	25,   // 350: diode.v1.CustomFieldObjectReference.device:type_name -> diode.v1.Device
+	26,   // 351: diode.v1.CustomFieldObjectReference.device_bay:type_name -> diode.v1.DeviceBay
+	27,   // 352: diode.v1.CustomFieldObjectReference.device_role:type_name -> diode.v1.DeviceRole
+	28,   // 353: diode.v1.CustomFieldObjectReference.device_type:type_name -> diode.v1.DeviceType
+	29,   // 354: diode.v1.CustomFieldObjectReference.fhrp_group:type_name -> diode.v1.FHRPGroup
+	30,   // 355: diode.v1.CustomFieldObjectReference.fhrp_group_assignment:type_name -> diode.v1.FHRPGroupAssignment
+	31,   // 356: diode.v1.CustomFieldObjectReference.front_port:type_name -> diode.v1.FrontPort
+	33,   // 357: diode.v1.CustomFieldObjectReference.ike_policy:type_name -> diode.v1.IKEPolicy
+	34,   // 358: diode.v1.CustomFieldObjectReference.ike_proposal:type_name -> diode.v1.IKEProposal
+	35,   // 359: diode.v1.CustomFieldObjectReference.ip_address:type_name -> diode.v1.IPAddress
+	36,   // 360: diode.v1.CustomFieldObjectReference.ip_range:type_name -> diode.v1.IPRange
+	37,   // 361: diode.v1.CustomFieldObjectReference.ip_sec_policy:type_name -> diode.v1.IPSecPolicy
+	38,   // 362: diode.v1.CustomFieldObjectReference.ip_sec_profile:type_name -> diode.v1.IPSecProfile
+	39,   // 363: diode.v1.CustomFieldObjectReference.ip_sec_proposal:type_name -> diode.v1.IPSecProposal
+	40,   // 364: diode.v1.CustomFieldObjectReference.interface:type_name -> diode.v1.Interface
+	41,   // 365: diode.v1.CustomFieldObjectReference.inventory_item:type_name -> diode.v1.InventoryItem
+	42,   // 366: diode.v1.CustomFieldObjectReference.inventory_item_role:type_name -> diode.v1.InventoryItemRole
+	43,   // 367: diode.v1.CustomFieldObjectReference.l2vpn:type_name -> diode.v1.L2VPN
+	44,   // 368: diode.v1.CustomFieldObjectReference.l2vpn_termination:type_name -> diode.v1.L2VPNTermination
+	45,   // 369: diode.v1.CustomFieldObjectReference.location:type_name -> diode.v1.Location
+	46,   // 370: diode.v1.CustomFieldObjectReference.mac_address:type_name -> diode.v1.MACAddress
+	47,   // 371: diode.v1.CustomFieldObjectReference.manufacturer:type_name -> diode.v1.Manufacturer
+	48,   // 372: diode.v1.CustomFieldObjectReference.module:type_name -> diode.v1.Module
+	49,   // 373: diode.v1.CustomFieldObjectReference.module_bay:type_name -> diode.v1.ModuleBay
+	50,   // 374: diode.v1.CustomFieldObjectReference.module_type:type_name -> diode.v1.ModuleType
+	51,   // 375: diode.v1.CustomFieldObjectReference.platform:type_name -> diode.v1.Platform
+	52,   // 376: diode.v1.CustomFieldObjectReference.power_feed:type_name -> diode.v1.PowerFeed
+	53,   // 377: diode.v1.CustomFieldObjectReference.power_outlet:type_name -> diode.v1.PowerOutlet
+	54,   // 378: diode.v1.CustomFieldObjectReference.power_panel:type_name -> diode.v1.PowerPanel
+	55,   // 379: diode.v1.CustomFieldObjectReference.power_port:type_name -> diode.v1.PowerPort
+	56,   // 380: diode.v1.CustomFieldObjectReference.prefix:type_name -> diode.v1.Prefix
+	57,   // 381: diode.v1.CustomFieldObjectReference.provider:type_name -> diode.v1.Provider
+	58,   // 382: diode.v1.CustomFieldObjectReference.provider_account:type_name -> diode.v1.ProviderAccount
+	59,   // 383: diode.v1.CustomFieldObjectReference.provider_network:type_name -> diode.v1.ProviderNetwork
+	60,   // 384: diode.v1.CustomFieldObjectReference.rir:type_name -> diode.v1.RIR
+	61,   // 385: diode.v1.CustomFieldObjectReference.rack:type_name -> diode.v1.Rack
+	62,   // 386: diode.v1.CustomFieldObjectReference.rack_reservation:type_name -> diode.v1.RackReservation
+	63,   // 387: diode.v1.CustomFieldObjectReference.rack_role:type_name -> diode.v1.RackRole
+	64,   // 388: diode.v1.CustomFieldObjectReference.rack_type:type_name -> diode.v1.RackType
+	65,   // 389: diode.v1.CustomFieldObjectReference.rear_port:type_name -> diode.v1.RearPort
+	66,   // 390: diode.v1.CustomFieldObjectReference.region:type_name -> diode.v1.Region
+	67,   // 391: diode.v1.CustomFieldObjectReference.role:type_name -> diode.v1.Role
+	68,   // 392: diode.v1.CustomFieldObjectReference.route_target:type_name -> diode.v1.RouteTarget
+	69,   // 393: diode.v1.CustomFieldObjectReference.service:type_name -> diode.v1.Service
+	70,   // 394: diode.v1.CustomFieldObjectReference.site:type_name -> diode.v1.Site
+	71,   // 395: diode.v1.CustomFieldObjectReference.site_group:type_name -> diode.v1.SiteGroup
+	72,   // 396: diode.v1.CustomFieldObjectReference.tag:type_name -> diode.v1.Tag
+	73,   // 397: diode.v1.CustomFieldObjectReference.tenant:type_name -> diode.v1.Tenant
+	74,   // 398: diode.v1.CustomFieldObjectReference.tenant_group:type_name -> diode.v1.TenantGroup
+	75,   // 399: diode.v1.CustomFieldObjectReference.tunnel:type_name -> diode.v1.Tunnel
+	76,   // 400: diode.v1.CustomFieldObjectReference.tunnel_group:type_name -> diode.v1.TunnelGroup
+	77,   // 401: diode.v1.CustomFieldObjectReference.tunnel_termination:type_name -> diode.v1.TunnelTermination
+	78,   // 402: diode.v1.CustomFieldObjectReference.vlan:type_name -> diode.v1.VLAN
+	79,   // 403: diode.v1.CustomFieldObjectReference.vlan_group:type_name -> diode.v1.VLANGroup
+	80,   // 404: diode.v1.CustomFieldObjectReference.vlan_translation_policy:type_name -> diode.v1.VLANTranslationPolicy
+	81,   // 405: diode.v1.CustomFieldObjectReference.vlan_translation_rule:type_name -> diode.v1.VLANTranslationRule
+	82,   // 406: diode.v1.CustomFieldObjectReference.vm_interface:type_name -> diode.v1.VMInterface
+	83,   // 407: diode.v1.CustomFieldObjectReference.vrf:type_name -> diode.v1.VRF
+	84,   // 408: diode.v1.CustomFieldObjectReference.virtual_chassis:type_name -> diode.v1.VirtualChassis
+	85,   // 409: diode.v1.CustomFieldObjectReference.virtual_circuit:type_name -> diode.v1.VirtualCircuit
+	86,   // 410: diode.v1.CustomFieldObjectReference.virtual_circuit_termination:type_name -> diode.v1.VirtualCircuitTermination
+	87,   // 411: diode.v1.CustomFieldObjectReference.virtual_circuit_type:type_name -> diode.v1.VirtualCircuitType
+	88,   // 412: diode.v1.CustomFieldObjectReference.virtual_device_context:type_name -> diode.v1.VirtualDeviceContext
+	89,   // 413: diode.v1.CustomFieldObjectReference.virtual_disk:type_name -> diode.v1.VirtualDisk
+	90,   // 414: diode.v1.CustomFieldObjectReference.virtual_machine:type_name -> diode.v1.VirtualMachine
+	91,   // 415: diode.v1.CustomFieldObjectReference.wireless_lan:type_name -> diode.v1.WirelessLAN
+	92,   // 416: diode.v1.CustomFieldObjectReference.wireless_lan_group:type_name -> diode.v1.WirelessLANGroup
+	93,   // 417: diode.v1.CustomFieldObjectReference.wireless_link:type_name -> diode.v1.WirelessLink
+	94,   // 418: diode.v1.CustomFieldObjectReference.custom_field:type_name -> diode.v1.CustomField
+	95,   // 419: diode.v1.CustomFieldObjectReference.custom_field_choice_set:type_name -> diode.v1.CustomFieldChoiceSet
+	96,   // 420: diode.v1.CustomFieldObjectReference.journal_entry:type_name -> diode.v1.JournalEntry
+	97,   // 421: diode.v1.CustomFieldObjectReference.module_type_profile:type_name -> diode.v1.ModuleTypeProfile
+	98,   // 422: diode.v1.CustomFieldObjectReference.custom_link:type_name -> diode.v1.CustomLink
+	99,   // 423: diode.v1.CustomFieldObjectReference.owner:type_name -> diode.v1.Owner
+	100,  // 424: diode.v1.CustomFieldObjectReference.owner_group:type_name -> diode.v1.OwnerGroup
+	102,  // 425: diode.v1.CustomFieldObjectReference.cable_bundle:type_name -> diode.v1.CableBundle
+	103,  // 426: diode.v1.CustomFieldObjectReference.rack_group:type_name -> diode.v1.RackGroup
+	104,  // 427: diode.v1.CustomFieldObjectReference.script_module:type_name -> diode.v1.ScriptModule
+	105,  // 428: diode.v1.CustomFieldObjectReference.virtual_machine_type:type_name -> diode.v1.VirtualMachineType
+	106,  // 429: diode.v1.CustomFieldObjectReference.user:type_name -> diode.v1.User
+	23,   // 430: diode.v1.CustomFieldValue.multiple_objects:type_name -> diode.v1.CustomFieldObjectReference
+	193,  // 431: diode.v1.CustomFieldValue.date:type_name -> google.protobuf.Timestamp
+	193,  // 432: diode.v1.CustomFieldValue.datetime:type_name -> google.protobuf.Timestamp
+	23,   // 433: diode.v1.CustomFieldValue.object:type_name -> diode.v1.CustomFieldObjectReference
+	28,   // 434: diode.v1.Device.device_type:type_name -> diode.v1.DeviceType
+	27,   // 435: diode.v1.Device.role:type_name -> diode.v1.DeviceRole
+	73,   // 436: diode.v1.Device.tenant:type_name -> diode.v1.Tenant
+	51,   // 437: diode.v1.Device.platform:type_name -> diode.v1.Platform
+	70,   // 438: diode.v1.Device.site:type_name -> diode.v1.Site
+	45,   // 439: diode.v1.Device.location:type_name -> diode.v1.Location
+	61,   // 440: diode.v1.Device.rack:type_name -> diode.v1.Rack
+	35,   // 441: diode.v1.Device.primary_ip4:type_name -> diode.v1.IPAddress
+	35,   // 442: diode.v1.Device.primary_ip6:type_name -> diode.v1.IPAddress
+	35,   // 443: diode.v1.Device.oob_ip:type_name -> diode.v1.IPAddress
+	14,   // 444: diode.v1.Device.cluster:type_name -> diode.v1.Cluster
+	84,   // 445: diode.v1.Device.virtual_chassis:type_name -> diode.v1.VirtualChassis
+	72,   // 446: diode.v1.Device.tags:type_name -> diode.v1.Tag
+	124,  // 447: diode.v1.Device.custom_fields:type_name -> diode.v1.Device.CustomFieldsEntry
+	194,  // 448: diode.v1.Device.metadata:type_name -> google.protobuf.Struct
+	99,   // 449: diode.v1.Device.owner:type_name -> diode.v1.Owner
+	101,  // 450: diode.v1.Device.config:type_name -> diode.v1.DeviceConfig
+	25,   // 451: diode.v1.DeviceBay.device:type_name -> diode.v1.Device
+	25,   // 452: diode.v1.DeviceBay.installed_device:type_name -> diode.v1.Device
+	72,   // 453: diode.v1.DeviceBay.tags:type_name -> diode.v1.Tag
+	125,  // 454: diode.v1.DeviceBay.custom_fields:type_name -> diode.v1.DeviceBay.CustomFieldsEntry
+	194,  // 455: diode.v1.DeviceBay.metadata:type_name -> google.protobuf.Struct
+	99,   // 456: diode.v1.DeviceBay.owner:type_name -> diode.v1.Owner
+	72,   // 457: diode.v1.DeviceRole.tags:type_name -> diode.v1.Tag
+	126,  // 458: diode.v1.DeviceRole.custom_fields:type_name -> diode.v1.DeviceRole.CustomFieldsEntry
+	27,   // 459: diode.v1.DeviceRole.parent:type_name -> diode.v1.DeviceRole
+	194,  // 460: diode.v1.DeviceRole.metadata:type_name -> google.protobuf.Struct
+	99,   // 461: diode.v1.DeviceRole.owner:type_name -> diode.v1.Owner
+	47,   // 462: diode.v1.DeviceType.manufacturer:type_name -> diode.v1.Manufacturer
+	51,   // 463: diode.v1.DeviceType.default_platform:type_name -> diode.v1.Platform
+	72,   // 464: diode.v1.DeviceType.tags:type_name -> diode.v1.Tag
+	127,  // 465: diode.v1.DeviceType.custom_fields:type_name -> diode.v1.DeviceType.CustomFieldsEntry
+	194,  // 466: diode.v1.DeviceType.metadata:type_name -> google.protobuf.Struct
+	99,   // 467: diode.v1.DeviceType.owner:type_name -> diode.v1.Owner
+	72,   // 468: diode.v1.FHRPGroup.tags:type_name -> diode.v1.Tag
+	128,  // 469: diode.v1.FHRPGroup.custom_fields:type_name -> diode.v1.FHRPGroup.CustomFieldsEntry
+	194,  // 470: diode.v1.FHRPGroup.metadata:type_name -> google.protobuf.Struct
+	99,   // 471: diode.v1.FHRPGroup.owner:type_name -> diode.v1.Owner
+	29,   // 472: diode.v1.FHRPGroupAssignment.group:type_name -> diode.v1.FHRPGroup
+	3,    // 473: diode.v1.FHRPGroupAssignment.interface_asn:type_name -> diode.v1.ASN
+	4,    // 474: diode.v1.FHRPGroupAssignment.interface_asn_range:type_name -> diode.v1.ASNRange
+	5,    // 475: diode.v1.FHRPGroupAssignment.interface_aggregate:type_name -> diode.v1.Aggregate
+	6,    // 476: diode.v1.FHRPGroupAssignment.interface_cable:type_name -> diode.v1.Cable
+	7,    // 477: diode.v1.FHRPGroupAssignment.interface_cable_path:type_name -> diode.v1.CablePath
+	8,    // 478: diode.v1.FHRPGroupAssignment.interface_cable_termination:type_name -> diode.v1.CableTermination
+	9,    // 479: diode.v1.FHRPGroupAssignment.interface_circuit:type_name -> diode.v1.Circuit
+	10,   // 480: diode.v1.FHRPGroupAssignment.interface_circuit_group:type_name -> diode.v1.CircuitGroup
+	11,   // 481: diode.v1.FHRPGroupAssignment.interface_circuit_group_assignment:type_name -> diode.v1.CircuitGroupAssignment
+	12,   // 482: diode.v1.FHRPGroupAssignment.interface_circuit_termination:type_name -> diode.v1.CircuitTermination
+	13,   // 483: diode.v1.FHRPGroupAssignment.interface_circuit_type:type_name -> diode.v1.CircuitType
+	14,   // 484: diode.v1.FHRPGroupAssignment.interface_cluster:type_name -> diode.v1.Cluster
+	15,   // 485: diode.v1.FHRPGroupAssignment.interface_cluster_group:type_name -> diode.v1.ClusterGroup
+	16,   // 486: diode.v1.FHRPGroupAssignment.interface_cluster_type:type_name -> diode.v1.ClusterType
+	17,   // 487: diode.v1.FHRPGroupAssignment.interface_console_port:type_name -> diode.v1.ConsolePort
+	18,   // 488: diode.v1.FHRPGroupAssignment.interface_console_server_port:type_name -> diode.v1.ConsoleServerPort
+	19,   // 489: diode.v1.FHRPGroupAssignment.interface_contact:type_name -> diode.v1.Contact
+	20,   // 490: diode.v1.FHRPGroupAssignment.interface_contact_assignment:type_name -> diode.v1.ContactAssignment
+	21,   // 491: diode.v1.FHRPGroupAssignment.interface_contact_group:type_name -> diode.v1.ContactGroup
+	22,   // 492: diode.v1.FHRPGroupAssignment.interface_contact_role:type_name -> diode.v1.ContactRole
+	25,   // 493: diode.v1.FHRPGroupAssignment.interface_device:type_name -> diode.v1.Device
+	26,   // 494: diode.v1.FHRPGroupAssignment.interface_device_bay:type_name -> diode.v1.DeviceBay
+	27,   // 495: diode.v1.FHRPGroupAssignment.interface_device_role:type_name -> diode.v1.DeviceRole
+	28,   // 496: diode.v1.FHRPGroupAssignment.interface_device_type:type_name -> diode.v1.DeviceType
+	29,   // 497: diode.v1.FHRPGroupAssignment.interface_fhrp_group:type_name -> diode.v1.FHRPGroup
+	30,   // 498: diode.v1.FHRPGroupAssignment.interface_fhrp_group_assignment:type_name -> diode.v1.FHRPGroupAssignment
+	31,   // 499: diode.v1.FHRPGroupAssignment.interface_front_port:type_name -> diode.v1.FrontPort
+	33,   // 500: diode.v1.FHRPGroupAssignment.interface_ike_policy:type_name -> diode.v1.IKEPolicy
+	34,   // 501: diode.v1.FHRPGroupAssignment.interface_ike_proposal:type_name -> diode.v1.IKEProposal
+	35,   // 502: diode.v1.FHRPGroupAssignment.interface_ip_address:type_name -> diode.v1.IPAddress
+	36,   // 503: diode.v1.FHRPGroupAssignment.interface_ip_range:type_name -> diode.v1.IPRange
+	37,   // 504: diode.v1.FHRPGroupAssignment.interface_ip_sec_policy:type_name -> diode.v1.IPSecPolicy
+	38,   // 505: diode.v1.FHRPGroupAssignment.interface_ip_sec_profile:type_name -> diode.v1.IPSecProfile
+	39,   // 506: diode.v1.FHRPGroupAssignment.interface_ip_sec_proposal:type_name -> diode.v1.IPSecProposal
+	40,   // 507: diode.v1.FHRPGroupAssignment.interface_interface:type_name -> diode.v1.Interface
+	41,   // 508: diode.v1.FHRPGroupAssignment.interface_inventory_item:type_name -> diode.v1.InventoryItem
+	42,   // 509: diode.v1.FHRPGroupAssignment.interface_inventory_item_role:type_name -> diode.v1.InventoryItemRole
+	43,   // 510: diode.v1.FHRPGroupAssignment.interface_l2vpn:type_name -> diode.v1.L2VPN
+	44,   // 511: diode.v1.FHRPGroupAssignment.interface_l2vpn_termination:type_name -> diode.v1.L2VPNTermination
+	45,   // 512: diode.v1.FHRPGroupAssignment.interface_location:type_name -> diode.v1.Location
+	46,   // 513: diode.v1.FHRPGroupAssignment.interface_mac_address:type_name -> diode.v1.MACAddress
+	47,   // 514: diode.v1.FHRPGroupAssignment.interface_manufacturer:type_name -> diode.v1.Manufacturer
+	48,   // 515: diode.v1.FHRPGroupAssignment.interface_module:type_name -> diode.v1.Module
+	49,   // 516: diode.v1.FHRPGroupAssignment.interface_module_bay:type_name -> diode.v1.ModuleBay
+	50,   // 517: diode.v1.FHRPGroupAssignment.interface_module_type:type_name -> diode.v1.ModuleType
+	51,   // 518: diode.v1.FHRPGroupAssignment.interface_platform:type_name -> diode.v1.Platform
+	52,   // 519: diode.v1.FHRPGroupAssignment.interface_power_feed:type_name -> diode.v1.PowerFeed
+	53,   // 520: diode.v1.FHRPGroupAssignment.interface_power_outlet:type_name -> diode.v1.PowerOutlet
+	54,   // 521: diode.v1.FHRPGroupAssignment.interface_power_panel:type_name -> diode.v1.PowerPanel
+	55,   // 522: diode.v1.FHRPGroupAssignment.interface_power_port:type_name -> diode.v1.PowerPort
+	56,   // 523: diode.v1.FHRPGroupAssignment.interface_prefix:type_name -> diode.v1.Prefix
+	57,   // 524: diode.v1.FHRPGroupAssignment.interface_provider:type_name -> diode.v1.Provider
+	58,   // 525: diode.v1.FHRPGroupAssignment.interface_provider_account:type_name -> diode.v1.ProviderAccount
+	59,   // 526: diode.v1.FHRPGroupAssignment.interface_provider_network:type_name -> diode.v1.ProviderNetwork
+	60,   // 527: diode.v1.FHRPGroupAssignment.interface_rir:type_name -> diode.v1.RIR
+	61,   // 528: diode.v1.FHRPGroupAssignment.interface_rack:type_name -> diode.v1.Rack
+	62,   // 529: diode.v1.FHRPGroupAssignment.interface_rack_reservation:type_name -> diode.v1.RackReservation
+	63,   // 530: diode.v1.FHRPGroupAssignment.interface_rack_role:type_name -> diode.v1.RackRole
+	64,   // 531: diode.v1.FHRPGroupAssignment.interface_rack_type:type_name -> diode.v1.RackType
+	65,   // 532: diode.v1.FHRPGroupAssignment.interface_rear_port:type_name -> diode.v1.RearPort
+	66,   // 533: diode.v1.FHRPGroupAssignment.interface_region:type_name -> diode.v1.Region
+	67,   // 534: diode.v1.FHRPGroupAssignment.interface_role:type_name -> diode.v1.Role
+	68,   // 535: diode.v1.FHRPGroupAssignment.interface_route_target:type_name -> diode.v1.RouteTarget
+	69,   // 536: diode.v1.FHRPGroupAssignment.interface_service:type_name -> diode.v1.Service
+	70,   // 537: diode.v1.FHRPGroupAssignment.interface_site:type_name -> diode.v1.Site
+	71,   // 538: diode.v1.FHRPGroupAssignment.interface_site_group:type_name -> diode.v1.SiteGroup
+	72,   // 539: diode.v1.FHRPGroupAssignment.interface_tag:type_name -> diode.v1.Tag
+	73,   // 540: diode.v1.FHRPGroupAssignment.interface_tenant:type_name -> diode.v1.Tenant
+	74,   // 541: diode.v1.FHRPGroupAssignment.interface_tenant_group:type_name -> diode.v1.TenantGroup
+	75,   // 542: diode.v1.FHRPGroupAssignment.interface_tunnel:type_name -> diode.v1.Tunnel
+	76,   // 543: diode.v1.FHRPGroupAssignment.interface_tunnel_group:type_name -> diode.v1.TunnelGroup
+	77,   // 544: diode.v1.FHRPGroupAssignment.interface_tunnel_termination:type_name -> diode.v1.TunnelTermination
+	78,   // 545: diode.v1.FHRPGroupAssignment.interface_vlan:type_name -> diode.v1.VLAN
+	79,   // 546: diode.v1.FHRPGroupAssignment.interface_vlan_group:type_name -> diode.v1.VLANGroup
+	80,   // 547: diode.v1.FHRPGroupAssignment.interface_vlan_translation_policy:type_name -> diode.v1.VLANTranslationPolicy
+	81,   // 548: diode.v1.FHRPGroupAssignment.interface_vlan_translation_rule:type_name -> diode.v1.VLANTranslationRule
+	82,   // 549: diode.v1.FHRPGroupAssignment.interface_vm_interface:type_name -> diode.v1.VMInterface
+	83,   // 550: diode.v1.FHRPGroupAssignment.interface_vrf:type_name -> diode.v1.VRF
+	84,   // 551: diode.v1.FHRPGroupAssignment.interface_virtual_chassis:type_name -> diode.v1.VirtualChassis
+	85,   // 552: diode.v1.FHRPGroupAssignment.interface_virtual_circuit:type_name -> diode.v1.VirtualCircuit
+	86,   // 553: diode.v1.FHRPGroupAssignment.interface_virtual_circuit_termination:type_name -> diode.v1.VirtualCircuitTermination
+	87,   // 554: diode.v1.FHRPGroupAssignment.interface_virtual_circuit_type:type_name -> diode.v1.VirtualCircuitType
+	88,   // 555: diode.v1.FHRPGroupAssignment.interface_virtual_device_context:type_name -> diode.v1.VirtualDeviceContext
+	89,   // 556: diode.v1.FHRPGroupAssignment.interface_virtual_disk:type_name -> diode.v1.VirtualDisk
+	90,   // 557: diode.v1.FHRPGroupAssignment.interface_virtual_machine:type_name -> diode.v1.VirtualMachine
+	91,   // 558: diode.v1.FHRPGroupAssignment.interface_wireless_lan:type_name -> diode.v1.WirelessLAN
+	92,   // 559: diode.v1.FHRPGroupAssignment.interface_wireless_lan_group:type_name -> diode.v1.WirelessLANGroup
+	93,   // 560: diode.v1.FHRPGroupAssignment.interface_wireless_link:type_name -> diode.v1.WirelessLink
+	94,   // 561: diode.v1.FHRPGroupAssignment.interface_custom_field:type_name -> diode.v1.CustomField
+	95,   // 562: diode.v1.FHRPGroupAssignment.interface_custom_field_choice_set:type_name -> diode.v1.CustomFieldChoiceSet
+	96,   // 563: diode.v1.FHRPGroupAssignment.interface_journal_entry:type_name -> diode.v1.JournalEntry
+	97,   // 564: diode.v1.FHRPGroupAssignment.interface_module_type_profile:type_name -> diode.v1.ModuleTypeProfile
+	98,   // 565: diode.v1.FHRPGroupAssignment.interface_custom_link:type_name -> diode.v1.CustomLink
+	99,   // 566: diode.v1.FHRPGroupAssignment.interface_owner:type_name -> diode.v1.Owner
+	100,  // 567: diode.v1.FHRPGroupAssignment.interface_owner_group:type_name -> diode.v1.OwnerGroup
+	102,  // 568: diode.v1.FHRPGroupAssignment.interface_cable_bundle:type_name -> diode.v1.CableBundle
+	103,  // 569: diode.v1.FHRPGroupAssignment.interface_rack_group:type_name -> diode.v1.RackGroup
+	104,  // 570: diode.v1.FHRPGroupAssignment.interface_script_module:type_name -> diode.v1.ScriptModule
+	105,  // 571: diode.v1.FHRPGroupAssignment.interface_virtual_machine_type:type_name -> diode.v1.VirtualMachineType
+	106,  // 572: diode.v1.FHRPGroupAssignment.interface_user:type_name -> diode.v1.User
+	194,  // 573: diode.v1.FHRPGroupAssignment.metadata:type_name -> google.protobuf.Struct
+	25,   // 574: diode.v1.FrontPort.device:type_name -> diode.v1.Device
+	48,   // 575: diode.v1.FrontPort.module:type_name -> diode.v1.Module
+	65,   // 576: diode.v1.FrontPort.rear_port:type_name -> diode.v1.RearPort
+	72,   // 577: diode.v1.FrontPort.tags:type_name -> diode.v1.Tag
+	129,  // 578: diode.v1.FrontPort.custom_fields:type_name -> diode.v1.FrontPort.CustomFieldsEntry
+	194,  // 579: diode.v1.FrontPort.metadata:type_name -> google.protobuf.Struct
+	99,   // 580: diode.v1.FrontPort.owner:type_name -> diode.v1.Owner
+	3,    // 581: diode.v1.GenericObject.object_asn:type_name -> diode.v1.ASN
+	4,    // 582: diode.v1.GenericObject.object_asn_range:type_name -> diode.v1.ASNRange
+	5,    // 583: diode.v1.GenericObject.object_aggregate:type_name -> diode.v1.Aggregate
+	6,    // 584: diode.v1.GenericObject.object_cable:type_name -> diode.v1.Cable
+	7,    // 585: diode.v1.GenericObject.object_cable_path:type_name -> diode.v1.CablePath
+	8,    // 586: diode.v1.GenericObject.object_cable_termination:type_name -> diode.v1.CableTermination
+	9,    // 587: diode.v1.GenericObject.object_circuit:type_name -> diode.v1.Circuit
+	10,   // 588: diode.v1.GenericObject.object_circuit_group:type_name -> diode.v1.CircuitGroup
+	11,   // 589: diode.v1.GenericObject.object_circuit_group_assignment:type_name -> diode.v1.CircuitGroupAssignment
+	12,   // 590: diode.v1.GenericObject.object_circuit_termination:type_name -> diode.v1.CircuitTermination
+	13,   // 591: diode.v1.GenericObject.object_circuit_type:type_name -> diode.v1.CircuitType
+	14,   // 592: diode.v1.GenericObject.object_cluster:type_name -> diode.v1.Cluster
+	15,   // 593: diode.v1.GenericObject.object_cluster_group:type_name -> diode.v1.ClusterGroup
+	16,   // 594: diode.v1.GenericObject.object_cluster_type:type_name -> diode.v1.ClusterType
+	17,   // 595: diode.v1.GenericObject.object_console_port:type_name -> diode.v1.ConsolePort
+	18,   // 596: diode.v1.GenericObject.object_console_server_port:type_name -> diode.v1.ConsoleServerPort
+	19,   // 597: diode.v1.GenericObject.object_contact:type_name -> diode.v1.Contact
+	20,   // 598: diode.v1.GenericObject.object_contact_assignment:type_name -> diode.v1.ContactAssignment
+	21,   // 599: diode.v1.GenericObject.object_contact_group:type_name -> diode.v1.ContactGroup
+	22,   // 600: diode.v1.GenericObject.object_contact_role:type_name -> diode.v1.ContactRole
+	25,   // 601: diode.v1.GenericObject.object_device:type_name -> diode.v1.Device
+	26,   // 602: diode.v1.GenericObject.object_device_bay:type_name -> diode.v1.DeviceBay
+	27,   // 603: diode.v1.GenericObject.object_device_role:type_name -> diode.v1.DeviceRole
+	28,   // 604: diode.v1.GenericObject.object_device_type:type_name -> diode.v1.DeviceType
+	29,   // 605: diode.v1.GenericObject.object_fhrp_group:type_name -> diode.v1.FHRPGroup
+	30,   // 606: diode.v1.GenericObject.object_fhrp_group_assignment:type_name -> diode.v1.FHRPGroupAssignment
+	31,   // 607: diode.v1.GenericObject.object_front_port:type_name -> diode.v1.FrontPort
+	33,   // 608: diode.v1.GenericObject.object_ike_policy:type_name -> diode.v1.IKEPolicy
+	34,   // 609: diode.v1.GenericObject.object_ike_proposal:type_name -> diode.v1.IKEProposal
+	35,   // 610: diode.v1.GenericObject.object_ip_address:type_name -> diode.v1.IPAddress
+	36,   // 611: diode.v1.GenericObject.object_ip_range:type_name -> diode.v1.IPRange
+	37,   // 612: diode.v1.GenericObject.object_ip_sec_policy:type_name -> diode.v1.IPSecPolicy
+	38,   // 613: diode.v1.GenericObject.object_ip_sec_profile:type_name -> diode.v1.IPSecProfile
+	39,   // 614: diode.v1.GenericObject.object_ip_sec_proposal:type_name -> diode.v1.IPSecProposal
+	40,   // 615: diode.v1.GenericObject.object_interface:type_name -> diode.v1.Interface
+	41,   // 616: diode.v1.GenericObject.object_inventory_item:type_name -> diode.v1.InventoryItem
+	42,   // 617: diode.v1.GenericObject.object_inventory_item_role:type_name -> diode.v1.InventoryItemRole
+	43,   // 618: diode.v1.GenericObject.object_l2vpn:type_name -> diode.v1.L2VPN
+	44,   // 619: diode.v1.GenericObject.object_l2vpn_termination:type_name -> diode.v1.L2VPNTermination
+	45,   // 620: diode.v1.GenericObject.object_location:type_name -> diode.v1.Location
+	46,   // 621: diode.v1.GenericObject.object_mac_address:type_name -> diode.v1.MACAddress
+	47,   // 622: diode.v1.GenericObject.object_manufacturer:type_name -> diode.v1.Manufacturer
+	48,   // 623: diode.v1.GenericObject.object_module:type_name -> diode.v1.Module
+	49,   // 624: diode.v1.GenericObject.object_module_bay:type_name -> diode.v1.ModuleBay
+	50,   // 625: diode.v1.GenericObject.object_module_type:type_name -> diode.v1.ModuleType
+	51,   // 626: diode.v1.GenericObject.object_platform:type_name -> diode.v1.Platform
+	52,   // 627: diode.v1.GenericObject.object_power_feed:type_name -> diode.v1.PowerFeed
+	53,   // 628: diode.v1.GenericObject.object_power_outlet:type_name -> diode.v1.PowerOutlet
+	54,   // 629: diode.v1.GenericObject.object_power_panel:type_name -> diode.v1.PowerPanel
+	55,   // 630: diode.v1.GenericObject.object_power_port:type_name -> diode.v1.PowerPort
+	56,   // 631: diode.v1.GenericObject.object_prefix:type_name -> diode.v1.Prefix
+	57,   // 632: diode.v1.GenericObject.object_provider:type_name -> diode.v1.Provider
+	58,   // 633: diode.v1.GenericObject.object_provider_account:type_name -> diode.v1.ProviderAccount
+	59,   // 634: diode.v1.GenericObject.object_provider_network:type_name -> diode.v1.ProviderNetwork
+	60,   // 635: diode.v1.GenericObject.object_rir:type_name -> diode.v1.RIR
+	61,   // 636: diode.v1.GenericObject.object_rack:type_name -> diode.v1.Rack
+	62,   // 637: diode.v1.GenericObject.object_rack_reservation:type_name -> diode.v1.RackReservation
+	63,   // 638: diode.v1.GenericObject.object_rack_role:type_name -> diode.v1.RackRole
+	64,   // 639: diode.v1.GenericObject.object_rack_type:type_name -> diode.v1.RackType
+	65,   // 640: diode.v1.GenericObject.object_rear_port:type_name -> diode.v1.RearPort
+	66,   // 641: diode.v1.GenericObject.object_region:type_name -> diode.v1.Region
+	67,   // 642: diode.v1.GenericObject.object_role:type_name -> diode.v1.Role
+	68,   // 643: diode.v1.GenericObject.object_route_target:type_name -> diode.v1.RouteTarget
+	69,   // 644: diode.v1.GenericObject.object_service:type_name -> diode.v1.Service
+	70,   // 645: diode.v1.GenericObject.object_site:type_name -> diode.v1.Site
+	71,   // 646: diode.v1.GenericObject.object_site_group:type_name -> diode.v1.SiteGroup
+	72,   // 647: diode.v1.GenericObject.object_tag:type_name -> diode.v1.Tag
+	73,   // 648: diode.v1.GenericObject.object_tenant:type_name -> diode.v1.Tenant
+	74,   // 649: diode.v1.GenericObject.object_tenant_group:type_name -> diode.v1.TenantGroup
+	75,   // 650: diode.v1.GenericObject.object_tunnel:type_name -> diode.v1.Tunnel
+	76,   // 651: diode.v1.GenericObject.object_tunnel_group:type_name -> diode.v1.TunnelGroup
+	77,   // 652: diode.v1.GenericObject.object_tunnel_termination:type_name -> diode.v1.TunnelTermination
+	78,   // 653: diode.v1.GenericObject.object_vlan:type_name -> diode.v1.VLAN
+	79,   // 654: diode.v1.GenericObject.object_vlan_group:type_name -> diode.v1.VLANGroup
+	80,   // 655: diode.v1.GenericObject.object_vlan_translation_policy:type_name -> diode.v1.VLANTranslationPolicy
+	81,   // 656: diode.v1.GenericObject.object_vlan_translation_rule:type_name -> diode.v1.VLANTranslationRule
+	82,   // 657: diode.v1.GenericObject.object_vm_interface:type_name -> diode.v1.VMInterface
+	83,   // 658: diode.v1.GenericObject.object_vrf:type_name -> diode.v1.VRF
+	84,   // 659: diode.v1.GenericObject.object_virtual_chassis:type_name -> diode.v1.VirtualChassis
+	85,   // 660: diode.v1.GenericObject.object_virtual_circuit:type_name -> diode.v1.VirtualCircuit
+	86,   // 661: diode.v1.GenericObject.object_virtual_circuit_termination:type_name -> diode.v1.VirtualCircuitTermination
+	87,   // 662: diode.v1.GenericObject.object_virtual_circuit_type:type_name -> diode.v1.VirtualCircuitType
+	88,   // 663: diode.v1.GenericObject.object_virtual_device_context:type_name -> diode.v1.VirtualDeviceContext
+	89,   // 664: diode.v1.GenericObject.object_virtual_disk:type_name -> diode.v1.VirtualDisk
+	90,   // 665: diode.v1.GenericObject.object_virtual_machine:type_name -> diode.v1.VirtualMachine
+	91,   // 666: diode.v1.GenericObject.object_wireless_lan:type_name -> diode.v1.WirelessLAN
+	92,   // 667: diode.v1.GenericObject.object_wireless_lan_group:type_name -> diode.v1.WirelessLANGroup
+	93,   // 668: diode.v1.GenericObject.object_wireless_link:type_name -> diode.v1.WirelessLink
+	94,   // 669: diode.v1.GenericObject.object_custom_field:type_name -> diode.v1.CustomField
+	95,   // 670: diode.v1.GenericObject.object_custom_field_choice_set:type_name -> diode.v1.CustomFieldChoiceSet
+	96,   // 671: diode.v1.GenericObject.object_journal_entry:type_name -> diode.v1.JournalEntry
+	97,   // 672: diode.v1.GenericObject.object_module_type_profile:type_name -> diode.v1.ModuleTypeProfile
+	98,   // 673: diode.v1.GenericObject.object_custom_link:type_name -> diode.v1.CustomLink
+	99,   // 674: diode.v1.GenericObject.object_owner:type_name -> diode.v1.Owner
+	100,  // 675: diode.v1.GenericObject.object_owner_group:type_name -> diode.v1.OwnerGroup
+	102,  // 676: diode.v1.GenericObject.object_cable_bundle:type_name -> diode.v1.CableBundle
+	103,  // 677: diode.v1.GenericObject.object_rack_group:type_name -> diode.v1.RackGroup
+	104,  // 678: diode.v1.GenericObject.object_script_module:type_name -> diode.v1.ScriptModule
+	105,  // 679: diode.v1.GenericObject.object_virtual_machine_type:type_name -> diode.v1.VirtualMachineType
+	106,  // 680: diode.v1.GenericObject.object_user:type_name -> diode.v1.User
+	72,   // 681: diode.v1.IKEPolicy.tags:type_name -> diode.v1.Tag
+	130,  // 682: diode.v1.IKEPolicy.custom_fields:type_name -> diode.v1.IKEPolicy.CustomFieldsEntry
+	34,   // 683: diode.v1.IKEPolicy.proposals:type_name -> diode.v1.IKEProposal
+	194,  // 684: diode.v1.IKEPolicy.metadata:type_name -> google.protobuf.Struct
+	99,   // 685: diode.v1.IKEPolicy.owner:type_name -> diode.v1.Owner
+	72,   // 686: diode.v1.IKEProposal.tags:type_name -> diode.v1.Tag
+	131,  // 687: diode.v1.IKEProposal.custom_fields:type_name -> diode.v1.IKEProposal.CustomFieldsEntry
+	194,  // 688: diode.v1.IKEProposal.metadata:type_name -> google.protobuf.Struct
+	99,   // 689: diode.v1.IKEProposal.owner:type_name -> diode.v1.Owner
+	83,   // 690: diode.v1.IPAddress.vrf:type_name -> diode.v1.VRF
+	73,   // 691: diode.v1.IPAddress.tenant:type_name -> diode.v1.Tenant
+	29,   // 692: diode.v1.IPAddress.assigned_object_fhrp_group:type_name -> diode.v1.FHRPGroup
+	40,   // 693: diode.v1.IPAddress.assigned_object_interface:type_name -> diode.v1.Interface
+	82,   // 694: diode.v1.IPAddress.assigned_object_vm_interface:type_name -> diode.v1.VMInterface
+	35,   // 695: diode.v1.IPAddress.nat_inside:type_name -> diode.v1.IPAddress
+	72,   // 696: diode.v1.IPAddress.tags:type_name -> diode.v1.Tag
+	132,  // 697: diode.v1.IPAddress.custom_fields:type_name -> diode.v1.IPAddress.CustomFieldsEntry
+	194,  // 698: diode.v1.IPAddress.metadata:type_name -> google.protobuf.Struct
+	99,   // 699: diode.v1.IPAddress.owner:type_name -> diode.v1.Owner
+	83,   // 700: diode.v1.IPRange.vrf:type_name -> diode.v1.VRF
+	73,   // 701: diode.v1.IPRange.tenant:type_name -> diode.v1.Tenant
+	67,   // 702: diode.v1.IPRange.role:type_name -> diode.v1.Role
+	72,   // 703: diode.v1.IPRange.tags:type_name -> diode.v1.Tag
+	133,  // 704: diode.v1.IPRange.custom_fields:type_name -> diode.v1.IPRange.CustomFieldsEntry
+	194,  // 705: diode.v1.IPRange.metadata:type_name -> google.protobuf.Struct
+	99,   // 706: diode.v1.IPRange.owner:type_name -> diode.v1.Owner
+	72,   // 707: diode.v1.IPSecPolicy.tags:type_name -> diode.v1.Tag
+	134,  // 708: diode.v1.IPSecPolicy.custom_fields:type_name -> diode.v1.IPSecPolicy.CustomFieldsEntry
+	39,   // 709: diode.v1.IPSecPolicy.proposals:type_name -> diode.v1.IPSecProposal
+	194,  // 710: diode.v1.IPSecPolicy.metadata:type_name -> google.protobuf.Struct
+	99,   // 711: diode.v1.IPSecPolicy.owner:type_name -> diode.v1.Owner
+	33,   // 712: diode.v1.IPSecProfile.ike_policy:type_name -> diode.v1.IKEPolicy
+	37,   // 713: diode.v1.IPSecProfile.ipsec_policy:type_name -> diode.v1.IPSecPolicy
+	72,   // 714: diode.v1.IPSecProfile.tags:type_name -> diode.v1.Tag
+	135,  // 715: diode.v1.IPSecProfile.custom_fields:type_name -> diode.v1.IPSecProfile.CustomFieldsEntry
+	194,  // 716: diode.v1.IPSecProfile.metadata:type_name -> google.protobuf.Struct
+	99,   // 717: diode.v1.IPSecProfile.owner:type_name -> diode.v1.Owner
+	72,   // 718: diode.v1.IPSecProposal.tags:type_name -> diode.v1.Tag
+	136,  // 719: diode.v1.IPSecProposal.custom_fields:type_name -> diode.v1.IPSecProposal.CustomFieldsEntry
+	194,  // 720: diode.v1.IPSecProposal.metadata:type_name -> google.protobuf.Struct
+	99,   // 721: diode.v1.IPSecProposal.owner:type_name -> diode.v1.Owner
+	25,   // 722: diode.v1.Interface.device:type_name -> diode.v1.Device
+	48,   // 723: diode.v1.Interface.module:type_name -> diode.v1.Module
+	40,   // 724: diode.v1.Interface.parent:type_name -> diode.v1.Interface
+	40,   // 725: diode.v1.Interface.bridge:type_name -> diode.v1.Interface
+	40,   // 726: diode.v1.Interface.lag:type_name -> diode.v1.Interface
+	46,   // 727: diode.v1.Interface.primary_mac_address:type_name -> diode.v1.MACAddress
+	78,   // 728: diode.v1.Interface.untagged_vlan:type_name -> diode.v1.VLAN
+	78,   // 729: diode.v1.Interface.qinq_svlan:type_name -> diode.v1.VLAN
+	80,   // 730: diode.v1.Interface.vlan_translation_policy:type_name -> diode.v1.VLANTranslationPolicy
+	83,   // 731: diode.v1.Interface.vrf:type_name -> diode.v1.VRF
+	72,   // 732: diode.v1.Interface.tags:type_name -> diode.v1.Tag
+	137,  // 733: diode.v1.Interface.custom_fields:type_name -> diode.v1.Interface.CustomFieldsEntry
+	88,   // 734: diode.v1.Interface.vdcs:type_name -> diode.v1.VirtualDeviceContext
+	78,   // 735: diode.v1.Interface.tagged_vlans:type_name -> diode.v1.VLAN
+	91,   // 736: diode.v1.Interface.wireless_lans:type_name -> diode.v1.WirelessLAN
+	194,  // 737: diode.v1.Interface.metadata:type_name -> google.protobuf.Struct
+	99,   // 738: diode.v1.Interface.owner:type_name -> diode.v1.Owner
+	25,   // 739: diode.v1.InventoryItem.device:type_name -> diode.v1.Device
+	41,   // 740: diode.v1.InventoryItem.parent:type_name -> diode.v1.InventoryItem
+	42,   // 741: diode.v1.InventoryItem.role:type_name -> diode.v1.InventoryItemRole
+	47,   // 742: diode.v1.InventoryItem.manufacturer:type_name -> diode.v1.Manufacturer
+	17,   // 743: diode.v1.InventoryItem.component_console_port:type_name -> diode.v1.ConsolePort
+	18,   // 744: diode.v1.InventoryItem.component_console_server_port:type_name -> diode.v1.ConsoleServerPort
+	31,   // 745: diode.v1.InventoryItem.component_front_port:type_name -> diode.v1.FrontPort
+	40,   // 746: diode.v1.InventoryItem.component_interface:type_name -> diode.v1.Interface
+	53,   // 747: diode.v1.InventoryItem.component_power_outlet:type_name -> diode.v1.PowerOutlet
+	55,   // 748: diode.v1.InventoryItem.component_power_port:type_name -> diode.v1.PowerPort
+	65,   // 749: diode.v1.InventoryItem.component_rear_port:type_name -> diode.v1.RearPort
+	72,   // 750: diode.v1.InventoryItem.tags:type_name -> diode.v1.Tag
+	138,  // 751: diode.v1.InventoryItem.custom_fields:type_name -> diode.v1.InventoryItem.CustomFieldsEntry
+	194,  // 752: diode.v1.InventoryItem.metadata:type_name -> google.protobuf.Struct
+	99,   // 753: diode.v1.InventoryItem.owner:type_name -> diode.v1.Owner
+	72,   // 754: diode.v1.InventoryItemRole.tags:type_name -> diode.v1.Tag
+	139,  // 755: diode.v1.InventoryItemRole.custom_fields:type_name -> diode.v1.InventoryItemRole.CustomFieldsEntry
+	194,  // 756: diode.v1.InventoryItemRole.metadata:type_name -> google.protobuf.Struct
+	99,   // 757: diode.v1.InventoryItemRole.owner:type_name -> diode.v1.Owner
+	73,   // 758: diode.v1.L2VPN.tenant:type_name -> diode.v1.Tenant
+	72,   // 759: diode.v1.L2VPN.tags:type_name -> diode.v1.Tag
+	140,  // 760: diode.v1.L2VPN.custom_fields:type_name -> diode.v1.L2VPN.CustomFieldsEntry
+	68,   // 761: diode.v1.L2VPN.import_targets:type_name -> diode.v1.RouteTarget
+	68,   // 762: diode.v1.L2VPN.export_targets:type_name -> diode.v1.RouteTarget
+	194,  // 763: diode.v1.L2VPN.metadata:type_name -> google.protobuf.Struct
+	99,   // 764: diode.v1.L2VPN.owner:type_name -> diode.v1.Owner
+	43,   // 765: diode.v1.L2VPNTermination.l2vpn:type_name -> diode.v1.L2VPN
+	40,   // 766: diode.v1.L2VPNTermination.assigned_object_interface:type_name -> diode.v1.Interface
+	78,   // 767: diode.v1.L2VPNTermination.assigned_object_vlan:type_name -> diode.v1.VLAN
+	82,   // 768: diode.v1.L2VPNTermination.assigned_object_vm_interface:type_name -> diode.v1.VMInterface
+	3,    // 769: diode.v1.L2VPNTermination.assigned_object_asn:type_name -> diode.v1.ASN
+	4,    // 770: diode.v1.L2VPNTermination.assigned_object_asn_range:type_name -> diode.v1.ASNRange
+	5,    // 771: diode.v1.L2VPNTermination.assigned_object_aggregate:type_name -> diode.v1.Aggregate
+	6,    // 772: diode.v1.L2VPNTermination.assigned_object_cable:type_name -> diode.v1.Cable
+	7,    // 773: diode.v1.L2VPNTermination.assigned_object_cable_path:type_name -> diode.v1.CablePath
+	8,    // 774: diode.v1.L2VPNTermination.assigned_object_cable_termination:type_name -> diode.v1.CableTermination
+	9,    // 775: diode.v1.L2VPNTermination.assigned_object_circuit:type_name -> diode.v1.Circuit
+	10,   // 776: diode.v1.L2VPNTermination.assigned_object_circuit_group:type_name -> diode.v1.CircuitGroup
+	11,   // 777: diode.v1.L2VPNTermination.assigned_object_circuit_group_assignment:type_name -> diode.v1.CircuitGroupAssignment
+	12,   // 778: diode.v1.L2VPNTermination.assigned_object_circuit_termination:type_name -> diode.v1.CircuitTermination
+	13,   // 779: diode.v1.L2VPNTermination.assigned_object_circuit_type:type_name -> diode.v1.CircuitType
+	14,   // 780: diode.v1.L2VPNTermination.assigned_object_cluster:type_name -> diode.v1.Cluster
+	15,   // 781: diode.v1.L2VPNTermination.assigned_object_cluster_group:type_name -> diode.v1.ClusterGroup
+	16,   // 782: diode.v1.L2VPNTermination.assigned_object_cluster_type:type_name -> diode.v1.ClusterType
+	17,   // 783: diode.v1.L2VPNTermination.assigned_object_console_port:type_name -> diode.v1.ConsolePort
+	18,   // 784: diode.v1.L2VPNTermination.assigned_object_console_server_port:type_name -> diode.v1.ConsoleServerPort
+	19,   // 785: diode.v1.L2VPNTermination.assigned_object_contact:type_name -> diode.v1.Contact
+	20,   // 786: diode.v1.L2VPNTermination.assigned_object_contact_assignment:type_name -> diode.v1.ContactAssignment
+	21,   // 787: diode.v1.L2VPNTermination.assigned_object_contact_group:type_name -> diode.v1.ContactGroup
+	22,   // 788: diode.v1.L2VPNTermination.assigned_object_contact_role:type_name -> diode.v1.ContactRole
+	94,   // 789: diode.v1.L2VPNTermination.assigned_object_custom_field:type_name -> diode.v1.CustomField
+	95,   // 790: diode.v1.L2VPNTermination.assigned_object_custom_field_choice_set:type_name -> diode.v1.CustomFieldChoiceSet
+	25,   // 791: diode.v1.L2VPNTermination.assigned_object_device:type_name -> diode.v1.Device
+	26,   // 792: diode.v1.L2VPNTermination.assigned_object_device_bay:type_name -> diode.v1.DeviceBay
+	27,   // 793: diode.v1.L2VPNTermination.assigned_object_device_role:type_name -> diode.v1.DeviceRole
+	28,   // 794: diode.v1.L2VPNTermination.assigned_object_device_type:type_name -> diode.v1.DeviceType
+	29,   // 795: diode.v1.L2VPNTermination.assigned_object_fhrp_group:type_name -> diode.v1.FHRPGroup
+	30,   // 796: diode.v1.L2VPNTermination.assigned_object_fhrp_group_assignment:type_name -> diode.v1.FHRPGroupAssignment
+	31,   // 797: diode.v1.L2VPNTermination.assigned_object_front_port:type_name -> diode.v1.FrontPort
+	33,   // 798: diode.v1.L2VPNTermination.assigned_object_ike_policy:type_name -> diode.v1.IKEPolicy
+	34,   // 799: diode.v1.L2VPNTermination.assigned_object_ike_proposal:type_name -> diode.v1.IKEProposal
+	35,   // 800: diode.v1.L2VPNTermination.assigned_object_ip_address:type_name -> diode.v1.IPAddress
+	36,   // 801: diode.v1.L2VPNTermination.assigned_object_ip_range:type_name -> diode.v1.IPRange
+	37,   // 802: diode.v1.L2VPNTermination.assigned_object_ip_sec_policy:type_name -> diode.v1.IPSecPolicy
+	38,   // 803: diode.v1.L2VPNTermination.assigned_object_ip_sec_profile:type_name -> diode.v1.IPSecProfile
+	39,   // 804: diode.v1.L2VPNTermination.assigned_object_ip_sec_proposal:type_name -> diode.v1.IPSecProposal
+	41,   // 805: diode.v1.L2VPNTermination.assigned_object_inventory_item:type_name -> diode.v1.InventoryItem
+	42,   // 806: diode.v1.L2VPNTermination.assigned_object_inventory_item_role:type_name -> diode.v1.InventoryItemRole
+	96,   // 807: diode.v1.L2VPNTermination.assigned_object_journal_entry:type_name -> diode.v1.JournalEntry
+	43,   // 808: diode.v1.L2VPNTermination.assigned_object_l2vpn:type_name -> diode.v1.L2VPN
+	44,   // 809: diode.v1.L2VPNTermination.assigned_object_l2vpn_termination:type_name -> diode.v1.L2VPNTermination
+	45,   // 810: diode.v1.L2VPNTermination.assigned_object_location:type_name -> diode.v1.Location
+	46,   // 811: diode.v1.L2VPNTermination.assigned_object_mac_address:type_name -> diode.v1.MACAddress
+	47,   // 812: diode.v1.L2VPNTermination.assigned_object_manufacturer:type_name -> diode.v1.Manufacturer
+	48,   // 813: diode.v1.L2VPNTermination.assigned_object_module:type_name -> diode.v1.Module
+	49,   // 814: diode.v1.L2VPNTermination.assigned_object_module_bay:type_name -> diode.v1.ModuleBay
+	50,   // 815: diode.v1.L2VPNTermination.assigned_object_module_type:type_name -> diode.v1.ModuleType
+	97,   // 816: diode.v1.L2VPNTermination.assigned_object_module_type_profile:type_name -> diode.v1.ModuleTypeProfile
+	51,   // 817: diode.v1.L2VPNTermination.assigned_object_platform:type_name -> diode.v1.Platform
+	52,   // 818: diode.v1.L2VPNTermination.assigned_object_power_feed:type_name -> diode.v1.PowerFeed
+	53,   // 819: diode.v1.L2VPNTermination.assigned_object_power_outlet:type_name -> diode.v1.PowerOutlet
+	54,   // 820: diode.v1.L2VPNTermination.assigned_object_power_panel:type_name -> diode.v1.PowerPanel
+	55,   // 821: diode.v1.L2VPNTermination.assigned_object_power_port:type_name -> diode.v1.PowerPort
+	56,   // 822: diode.v1.L2VPNTermination.assigned_object_prefix:type_name -> diode.v1.Prefix
+	57,   // 823: diode.v1.L2VPNTermination.assigned_object_provider:type_name -> diode.v1.Provider
+	58,   // 824: diode.v1.L2VPNTermination.assigned_object_provider_account:type_name -> diode.v1.ProviderAccount
+	59,   // 825: diode.v1.L2VPNTermination.assigned_object_provider_network:type_name -> diode.v1.ProviderNetwork
+	60,   // 826: diode.v1.L2VPNTermination.assigned_object_rir:type_name -> diode.v1.RIR
+	61,   // 827: diode.v1.L2VPNTermination.assigned_object_rack:type_name -> diode.v1.Rack
+	62,   // 828: diode.v1.L2VPNTermination.assigned_object_rack_reservation:type_name -> diode.v1.RackReservation
+	63,   // 829: diode.v1.L2VPNTermination.assigned_object_rack_role:type_name -> diode.v1.RackRole
+	64,   // 830: diode.v1.L2VPNTermination.assigned_object_rack_type:type_name -> diode.v1.RackType
+	65,   // 831: diode.v1.L2VPNTermination.assigned_object_rear_port:type_name -> diode.v1.RearPort
+	66,   // 832: diode.v1.L2VPNTermination.assigned_object_region:type_name -> diode.v1.Region
+	67,   // 833: diode.v1.L2VPNTermination.assigned_object_role:type_name -> diode.v1.Role
+	68,   // 834: diode.v1.L2VPNTermination.assigned_object_route_target:type_name -> diode.v1.RouteTarget
+	69,   // 835: diode.v1.L2VPNTermination.assigned_object_service:type_name -> diode.v1.Service
+	70,   // 836: diode.v1.L2VPNTermination.assigned_object_site:type_name -> diode.v1.Site
+	71,   // 837: diode.v1.L2VPNTermination.assigned_object_site_group:type_name -> diode.v1.SiteGroup
+	72,   // 838: diode.v1.L2VPNTermination.assigned_object_tag:type_name -> diode.v1.Tag
+	73,   // 839: diode.v1.L2VPNTermination.assigned_object_tenant:type_name -> diode.v1.Tenant
+	74,   // 840: diode.v1.L2VPNTermination.assigned_object_tenant_group:type_name -> diode.v1.TenantGroup
+	75,   // 841: diode.v1.L2VPNTermination.assigned_object_tunnel:type_name -> diode.v1.Tunnel
+	76,   // 842: diode.v1.L2VPNTermination.assigned_object_tunnel_group:type_name -> diode.v1.TunnelGroup
+	77,   // 843: diode.v1.L2VPNTermination.assigned_object_tunnel_termination:type_name -> diode.v1.TunnelTermination
+	79,   // 844: diode.v1.L2VPNTermination.assigned_object_vlan_group:type_name -> diode.v1.VLANGroup
+	80,   // 845: diode.v1.L2VPNTermination.assigned_object_vlan_translation_policy:type_name -> diode.v1.VLANTranslationPolicy
+	81,   // 846: diode.v1.L2VPNTermination.assigned_object_vlan_translation_rule:type_name -> diode.v1.VLANTranslationRule
+	83,   // 847: diode.v1.L2VPNTermination.assigned_object_vrf:type_name -> diode.v1.VRF
+	84,   // 848: diode.v1.L2VPNTermination.assigned_object_virtual_chassis:type_name -> diode.v1.VirtualChassis
+	85,   // 849: diode.v1.L2VPNTermination.assigned_object_virtual_circuit:type_name -> diode.v1.VirtualCircuit
+	86,   // 850: diode.v1.L2VPNTermination.assigned_object_virtual_circuit_termination:type_name -> diode.v1.VirtualCircuitTermination
+	87,   // 851: diode.v1.L2VPNTermination.assigned_object_virtual_circuit_type:type_name -> diode.v1.VirtualCircuitType
+	88,   // 852: diode.v1.L2VPNTermination.assigned_object_virtual_device_context:type_name -> diode.v1.VirtualDeviceContext
+	89,   // 853: diode.v1.L2VPNTermination.assigned_object_virtual_disk:type_name -> diode.v1.VirtualDisk
+	90,   // 854: diode.v1.L2VPNTermination.assigned_object_virtual_machine:type_name -> diode.v1.VirtualMachine
+	91,   // 855: diode.v1.L2VPNTermination.assigned_object_wireless_lan:type_name -> diode.v1.WirelessLAN
+	92,   // 856: diode.v1.L2VPNTermination.assigned_object_wireless_lan_group:type_name -> diode.v1.WirelessLANGroup
+	93,   // 857: diode.v1.L2VPNTermination.assigned_object_wireless_link:type_name -> diode.v1.WirelessLink
+	98,   // 858: diode.v1.L2VPNTermination.assigned_object_custom_link:type_name -> diode.v1.CustomLink
+	99,   // 859: diode.v1.L2VPNTermination.assigned_object_owner:type_name -> diode.v1.Owner
+	100,  // 860: diode.v1.L2VPNTermination.assigned_object_owner_group:type_name -> diode.v1.OwnerGroup
+	102,  // 861: diode.v1.L2VPNTermination.assigned_object_cable_bundle:type_name -> diode.v1.CableBundle
+	103,  // 862: diode.v1.L2VPNTermination.assigned_object_rack_group:type_name -> diode.v1.RackGroup
+	104,  // 863: diode.v1.L2VPNTermination.assigned_object_script_module:type_name -> diode.v1.ScriptModule
+	105,  // 864: diode.v1.L2VPNTermination.assigned_object_virtual_machine_type:type_name -> diode.v1.VirtualMachineType
+	106,  // 865: diode.v1.L2VPNTermination.assigned_object_user:type_name -> diode.v1.User
+	72,   // 866: diode.v1.L2VPNTermination.tags:type_name -> diode.v1.Tag
+	141,  // 867: diode.v1.L2VPNTermination.custom_fields:type_name -> diode.v1.L2VPNTermination.CustomFieldsEntry
+	194,  // 868: diode.v1.L2VPNTermination.metadata:type_name -> google.protobuf.Struct
+	70,   // 869: diode.v1.Location.site:type_name -> diode.v1.Site
+	45,   // 870: diode.v1.Location.parent:type_name -> diode.v1.Location
+	73,   // 871: diode.v1.Location.tenant:type_name -> diode.v1.Tenant
+	72,   // 872: diode.v1.Location.tags:type_name -> diode.v1.Tag
+	142,  // 873: diode.v1.Location.custom_fields:type_name -> diode.v1.Location.CustomFieldsEntry
+	194,  // 874: diode.v1.Location.metadata:type_name -> google.protobuf.Struct
+	99,   // 875: diode.v1.Location.owner:type_name -> diode.v1.Owner
+	40,   // 876: diode.v1.MACAddress.assigned_object_interface:type_name -> diode.v1.Interface
+	82,   // 877: diode.v1.MACAddress.assigned_object_vm_interface:type_name -> diode.v1.VMInterface
+	72,   // 878: diode.v1.MACAddress.tags:type_name -> diode.v1.Tag
+	143,  // 879: diode.v1.MACAddress.custom_fields:type_name -> diode.v1.MACAddress.CustomFieldsEntry
+	194,  // 880: diode.v1.MACAddress.metadata:type_name -> google.protobuf.Struct
+	99,   // 881: diode.v1.MACAddress.owner:type_name -> diode.v1.Owner
+	72,   // 882: diode.v1.Manufacturer.tags:type_name -> diode.v1.Tag
+	144,  // 883: diode.v1.Manufacturer.custom_fields:type_name -> diode.v1.Manufacturer.CustomFieldsEntry
+	194,  // 884: diode.v1.Manufacturer.metadata:type_name -> google.protobuf.Struct
+	99,   // 885: diode.v1.Manufacturer.owner:type_name -> diode.v1.Owner
+	25,   // 886: diode.v1.Module.device:type_name -> diode.v1.Device
+	49,   // 887: diode.v1.Module.module_bay:type_name -> diode.v1.ModuleBay
+	50,   // 888: diode.v1.Module.module_type:type_name -> diode.v1.ModuleType
+	72,   // 889: diode.v1.Module.tags:type_name -> diode.v1.Tag
+	145,  // 890: diode.v1.Module.custom_fields:type_name -> diode.v1.Module.CustomFieldsEntry
+	194,  // 891: diode.v1.Module.metadata:type_name -> google.protobuf.Struct
+	99,   // 892: diode.v1.Module.owner:type_name -> diode.v1.Owner
+	25,   // 893: diode.v1.ModuleBay.device:type_name -> diode.v1.Device
+	48,   // 894: diode.v1.ModuleBay.module:type_name -> diode.v1.Module
+	48,   // 895: diode.v1.ModuleBay.installed_module:type_name -> diode.v1.Module
+	72,   // 896: diode.v1.ModuleBay.tags:type_name -> diode.v1.Tag
+	146,  // 897: diode.v1.ModuleBay.custom_fields:type_name -> diode.v1.ModuleBay.CustomFieldsEntry
+	194,  // 898: diode.v1.ModuleBay.metadata:type_name -> google.protobuf.Struct
+	99,   // 899: diode.v1.ModuleBay.owner:type_name -> diode.v1.Owner
+	47,   // 900: diode.v1.ModuleType.manufacturer:type_name -> diode.v1.Manufacturer
+	72,   // 901: diode.v1.ModuleType.tags:type_name -> diode.v1.Tag
+	147,  // 902: diode.v1.ModuleType.custom_fields:type_name -> diode.v1.ModuleType.CustomFieldsEntry
+	97,   // 903: diode.v1.ModuleType.profile:type_name -> diode.v1.ModuleTypeProfile
+	194,  // 904: diode.v1.ModuleType.metadata:type_name -> google.protobuf.Struct
+	99,   // 905: diode.v1.ModuleType.owner:type_name -> diode.v1.Owner
+	47,   // 906: diode.v1.Platform.manufacturer:type_name -> diode.v1.Manufacturer
+	72,   // 907: diode.v1.Platform.tags:type_name -> diode.v1.Tag
+	148,  // 908: diode.v1.Platform.custom_fields:type_name -> diode.v1.Platform.CustomFieldsEntry
+	51,   // 909: diode.v1.Platform.parent:type_name -> diode.v1.Platform
+	194,  // 910: diode.v1.Platform.metadata:type_name -> google.protobuf.Struct
+	99,   // 911: diode.v1.Platform.owner:type_name -> diode.v1.Owner
+	54,   // 912: diode.v1.PowerFeed.power_panel:type_name -> diode.v1.PowerPanel
+	61,   // 913: diode.v1.PowerFeed.rack:type_name -> diode.v1.Rack
+	73,   // 914: diode.v1.PowerFeed.tenant:type_name -> diode.v1.Tenant
+	72,   // 915: diode.v1.PowerFeed.tags:type_name -> diode.v1.Tag
+	149,  // 916: diode.v1.PowerFeed.custom_fields:type_name -> diode.v1.PowerFeed.CustomFieldsEntry
+	194,  // 917: diode.v1.PowerFeed.metadata:type_name -> google.protobuf.Struct
+	99,   // 918: diode.v1.PowerFeed.owner:type_name -> diode.v1.Owner
+	25,   // 919: diode.v1.PowerOutlet.device:type_name -> diode.v1.Device
+	48,   // 920: diode.v1.PowerOutlet.module:type_name -> diode.v1.Module
+	55,   // 921: diode.v1.PowerOutlet.power_port:type_name -> diode.v1.PowerPort
+	72,   // 922: diode.v1.PowerOutlet.tags:type_name -> diode.v1.Tag
+	150,  // 923: diode.v1.PowerOutlet.custom_fields:type_name -> diode.v1.PowerOutlet.CustomFieldsEntry
+	194,  // 924: diode.v1.PowerOutlet.metadata:type_name -> google.protobuf.Struct
+	99,   // 925: diode.v1.PowerOutlet.owner:type_name -> diode.v1.Owner
+	70,   // 926: diode.v1.PowerPanel.site:type_name -> diode.v1.Site
+	45,   // 927: diode.v1.PowerPanel.location:type_name -> diode.v1.Location
+	72,   // 928: diode.v1.PowerPanel.tags:type_name -> diode.v1.Tag
+	151,  // 929: diode.v1.PowerPanel.custom_fields:type_name -> diode.v1.PowerPanel.CustomFieldsEntry
+	194,  // 930: diode.v1.PowerPanel.metadata:type_name -> google.protobuf.Struct
+	99,   // 931: diode.v1.PowerPanel.owner:type_name -> diode.v1.Owner
+	25,   // 932: diode.v1.PowerPort.device:type_name -> diode.v1.Device
+	48,   // 933: diode.v1.PowerPort.module:type_name -> diode.v1.Module
+	72,   // 934: diode.v1.PowerPort.tags:type_name -> diode.v1.Tag
+	152,  // 935: diode.v1.PowerPort.custom_fields:type_name -> diode.v1.PowerPort.CustomFieldsEntry
+	194,  // 936: diode.v1.PowerPort.metadata:type_name -> google.protobuf.Struct
+	99,   // 937: diode.v1.PowerPort.owner:type_name -> diode.v1.Owner
+	83,   // 938: diode.v1.Prefix.vrf:type_name -> diode.v1.VRF
+	45,   // 939: diode.v1.Prefix.scope_location:type_name -> diode.v1.Location
+	66,   // 940: diode.v1.Prefix.scope_region:type_name -> diode.v1.Region
+	70,   // 941: diode.v1.Prefix.scope_site:type_name -> diode.v1.Site
+	71,   // 942: diode.v1.Prefix.scope_site_group:type_name -> diode.v1.SiteGroup
+	73,   // 943: diode.v1.Prefix.tenant:type_name -> diode.v1.Tenant
+	78,   // 944: diode.v1.Prefix.vlan:type_name -> diode.v1.VLAN
+	67,   // 945: diode.v1.Prefix.role:type_name -> diode.v1.Role
+	72,   // 946: diode.v1.Prefix.tags:type_name -> diode.v1.Tag
+	153,  // 947: diode.v1.Prefix.custom_fields:type_name -> diode.v1.Prefix.CustomFieldsEntry
+	194,  // 948: diode.v1.Prefix.metadata:type_name -> google.protobuf.Struct
+	99,   // 949: diode.v1.Prefix.owner:type_name -> diode.v1.Owner
+	72,   // 950: diode.v1.Provider.tags:type_name -> diode.v1.Tag
+	154,  // 951: diode.v1.Provider.custom_fields:type_name -> diode.v1.Provider.CustomFieldsEntry
+	58,   // 952: diode.v1.Provider.accounts:type_name -> diode.v1.ProviderAccount
+	3,    // 953: diode.v1.Provider.asns:type_name -> diode.v1.ASN
+	194,  // 954: diode.v1.Provider.metadata:type_name -> google.protobuf.Struct
+	99,   // 955: diode.v1.Provider.owner:type_name -> diode.v1.Owner
+	57,   // 956: diode.v1.ProviderAccount.provider:type_name -> diode.v1.Provider
+	72,   // 957: diode.v1.ProviderAccount.tags:type_name -> diode.v1.Tag
+	155,  // 958: diode.v1.ProviderAccount.custom_fields:type_name -> diode.v1.ProviderAccount.CustomFieldsEntry
+	194,  // 959: diode.v1.ProviderAccount.metadata:type_name -> google.protobuf.Struct
+	99,   // 960: diode.v1.ProviderAccount.owner:type_name -> diode.v1.Owner
+	57,   // 961: diode.v1.ProviderNetwork.provider:type_name -> diode.v1.Provider
+	72,   // 962: diode.v1.ProviderNetwork.tags:type_name -> diode.v1.Tag
+	156,  // 963: diode.v1.ProviderNetwork.custom_fields:type_name -> diode.v1.ProviderNetwork.CustomFieldsEntry
+	194,  // 964: diode.v1.ProviderNetwork.metadata:type_name -> google.protobuf.Struct
+	99,   // 965: diode.v1.ProviderNetwork.owner:type_name -> diode.v1.Owner
+	72,   // 966: diode.v1.RIR.tags:type_name -> diode.v1.Tag
+	157,  // 967: diode.v1.RIR.custom_fields:type_name -> diode.v1.RIR.CustomFieldsEntry
+	194,  // 968: diode.v1.RIR.metadata:type_name -> google.protobuf.Struct
+	99,   // 969: diode.v1.RIR.owner:type_name -> diode.v1.Owner
+	70,   // 970: diode.v1.Rack.site:type_name -> diode.v1.Site
+	45,   // 971: diode.v1.Rack.location:type_name -> diode.v1.Location
+	73,   // 972: diode.v1.Rack.tenant:type_name -> diode.v1.Tenant
+	63,   // 973: diode.v1.Rack.role:type_name -> diode.v1.RackRole
+	64,   // 974: diode.v1.Rack.rack_type:type_name -> diode.v1.RackType
+	72,   // 975: diode.v1.Rack.tags:type_name -> diode.v1.Tag
+	158,  // 976: diode.v1.Rack.custom_fields:type_name -> diode.v1.Rack.CustomFieldsEntry
+	194,  // 977: diode.v1.Rack.metadata:type_name -> google.protobuf.Struct
+	99,   // 978: diode.v1.Rack.owner:type_name -> diode.v1.Owner
+	103,  // 979: diode.v1.Rack.group:type_name -> diode.v1.RackGroup
+	61,   // 980: diode.v1.RackReservation.rack:type_name -> diode.v1.Rack
+	73,   // 981: diode.v1.RackReservation.tenant:type_name -> diode.v1.Tenant
+	72,   // 982: diode.v1.RackReservation.tags:type_name -> diode.v1.Tag
+	159,  // 983: diode.v1.RackReservation.custom_fields:type_name -> diode.v1.RackReservation.CustomFieldsEntry
+	194,  // 984: diode.v1.RackReservation.metadata:type_name -> google.protobuf.Struct
+	99,   // 985: diode.v1.RackReservation.owner:type_name -> diode.v1.Owner
+	106,  // 986: diode.v1.RackReservation.user:type_name -> diode.v1.User
+	72,   // 987: diode.v1.RackRole.tags:type_name -> diode.v1.Tag
+	160,  // 988: diode.v1.RackRole.custom_fields:type_name -> diode.v1.RackRole.CustomFieldsEntry
+	194,  // 989: diode.v1.RackRole.metadata:type_name -> google.protobuf.Struct
+	99,   // 990: diode.v1.RackRole.owner:type_name -> diode.v1.Owner
+	47,   // 991: diode.v1.RackType.manufacturer:type_name -> diode.v1.Manufacturer
+	72,   // 992: diode.v1.RackType.tags:type_name -> diode.v1.Tag
+	161,  // 993: diode.v1.RackType.custom_fields:type_name -> diode.v1.RackType.CustomFieldsEntry
+	194,  // 994: diode.v1.RackType.metadata:type_name -> google.protobuf.Struct
+	99,   // 995: diode.v1.RackType.owner:type_name -> diode.v1.Owner
+	25,   // 996: diode.v1.RearPort.device:type_name -> diode.v1.Device
+	48,   // 997: diode.v1.RearPort.module:type_name -> diode.v1.Module
+	72,   // 998: diode.v1.RearPort.tags:type_name -> diode.v1.Tag
+	162,  // 999: diode.v1.RearPort.custom_fields:type_name -> diode.v1.RearPort.CustomFieldsEntry
+	194,  // 1000: diode.v1.RearPort.metadata:type_name -> google.protobuf.Struct
+	99,   // 1001: diode.v1.RearPort.owner:type_name -> diode.v1.Owner
+	66,   // 1002: diode.v1.Region.parent:type_name -> diode.v1.Region
+	72,   // 1003: diode.v1.Region.tags:type_name -> diode.v1.Tag
+	163,  // 1004: diode.v1.Region.custom_fields:type_name -> diode.v1.Region.CustomFieldsEntry
+	194,  // 1005: diode.v1.Region.metadata:type_name -> google.protobuf.Struct
+	99,   // 1006: diode.v1.Region.owner:type_name -> diode.v1.Owner
+	72,   // 1007: diode.v1.Role.tags:type_name -> diode.v1.Tag
+	164,  // 1008: diode.v1.Role.custom_fields:type_name -> diode.v1.Role.CustomFieldsEntry
+	194,  // 1009: diode.v1.Role.metadata:type_name -> google.protobuf.Struct
+	99,   // 1010: diode.v1.Role.owner:type_name -> diode.v1.Owner
+	73,   // 1011: diode.v1.RouteTarget.tenant:type_name -> diode.v1.Tenant
+	72,   // 1012: diode.v1.RouteTarget.tags:type_name -> diode.v1.Tag
+	165,  // 1013: diode.v1.RouteTarget.custom_fields:type_name -> diode.v1.RouteTarget.CustomFieldsEntry
+	194,  // 1014: diode.v1.RouteTarget.metadata:type_name -> google.protobuf.Struct
+	99,   // 1015: diode.v1.RouteTarget.owner:type_name -> diode.v1.Owner
+	25,   // 1016: diode.v1.Service.device:type_name -> diode.v1.Device
+	90,   // 1017: diode.v1.Service.virtual_machine:type_name -> diode.v1.VirtualMachine
+	72,   // 1018: diode.v1.Service.tags:type_name -> diode.v1.Tag
+	166,  // 1019: diode.v1.Service.custom_fields:type_name -> diode.v1.Service.CustomFieldsEntry
+	35,   // 1020: diode.v1.Service.ipaddresses:type_name -> diode.v1.IPAddress
+	25,   // 1021: diode.v1.Service.parent_object_device:type_name -> diode.v1.Device
+	29,   // 1022: diode.v1.Service.parent_object_fhrp_group:type_name -> diode.v1.FHRPGroup
+	90,   // 1023: diode.v1.Service.parent_object_virtual_machine:type_name -> diode.v1.VirtualMachine
+	194,  // 1024: diode.v1.Service.metadata:type_name -> google.protobuf.Struct
+	99,   // 1025: diode.v1.Service.owner:type_name -> diode.v1.Owner
+	66,   // 1026: diode.v1.Site.region:type_name -> diode.v1.Region
+	71,   // 1027: diode.v1.Site.group:type_name -> diode.v1.SiteGroup
+	73,   // 1028: diode.v1.Site.tenant:type_name -> diode.v1.Tenant
+	72,   // 1029: diode.v1.Site.tags:type_name -> diode.v1.Tag
+	167,  // 1030: diode.v1.Site.custom_fields:type_name -> diode.v1.Site.CustomFieldsEntry
+	3,    // 1031: diode.v1.Site.asns:type_name -> diode.v1.ASN
+	194,  // 1032: diode.v1.Site.metadata:type_name -> google.protobuf.Struct
+	99,   // 1033: diode.v1.Site.owner:type_name -> diode.v1.Owner
+	71,   // 1034: diode.v1.SiteGroup.parent:type_name -> diode.v1.SiteGroup
+	72,   // 1035: diode.v1.SiteGroup.tags:type_name -> diode.v1.Tag
+	168,  // 1036: diode.v1.SiteGroup.custom_fields:type_name -> diode.v1.SiteGroup.CustomFieldsEntry
+	194,  // 1037: diode.v1.SiteGroup.metadata:type_name -> google.protobuf.Struct
+	99,   // 1038: diode.v1.SiteGroup.owner:type_name -> diode.v1.Owner
+	194,  // 1039: diode.v1.Tag.metadata:type_name -> google.protobuf.Struct
+	74,   // 1040: diode.v1.Tenant.group:type_name -> diode.v1.TenantGroup
+	72,   // 1041: diode.v1.Tenant.tags:type_name -> diode.v1.Tag
+	169,  // 1042: diode.v1.Tenant.custom_fields:type_name -> diode.v1.Tenant.CustomFieldsEntry
+	194,  // 1043: diode.v1.Tenant.metadata:type_name -> google.protobuf.Struct
+	99,   // 1044: diode.v1.Tenant.owner:type_name -> diode.v1.Owner
+	74,   // 1045: diode.v1.TenantGroup.parent:type_name -> diode.v1.TenantGroup
+	72,   // 1046: diode.v1.TenantGroup.tags:type_name -> diode.v1.Tag
+	170,  // 1047: diode.v1.TenantGroup.custom_fields:type_name -> diode.v1.TenantGroup.CustomFieldsEntry
+	194,  // 1048: diode.v1.TenantGroup.metadata:type_name -> google.protobuf.Struct
+	99,   // 1049: diode.v1.TenantGroup.owner:type_name -> diode.v1.Owner
+	76,   // 1050: diode.v1.Tunnel.group:type_name -> diode.v1.TunnelGroup
+	38,   // 1051: diode.v1.Tunnel.ipsec_profile:type_name -> diode.v1.IPSecProfile
+	73,   // 1052: diode.v1.Tunnel.tenant:type_name -> diode.v1.Tenant
+	72,   // 1053: diode.v1.Tunnel.tags:type_name -> diode.v1.Tag
+	171,  // 1054: diode.v1.Tunnel.custom_fields:type_name -> diode.v1.Tunnel.CustomFieldsEntry
+	194,  // 1055: diode.v1.Tunnel.metadata:type_name -> google.protobuf.Struct
+	99,   // 1056: diode.v1.Tunnel.owner:type_name -> diode.v1.Owner
+	72,   // 1057: diode.v1.TunnelGroup.tags:type_name -> diode.v1.Tag
+	172,  // 1058: diode.v1.TunnelGroup.custom_fields:type_name -> diode.v1.TunnelGroup.CustomFieldsEntry
+	194,  // 1059: diode.v1.TunnelGroup.metadata:type_name -> google.protobuf.Struct
+	99,   // 1060: diode.v1.TunnelGroup.owner:type_name -> diode.v1.Owner
+	75,   // 1061: diode.v1.TunnelTermination.tunnel:type_name -> diode.v1.Tunnel
+	3,    // 1062: diode.v1.TunnelTermination.termination_asn:type_name -> diode.v1.ASN
+	4,    // 1063: diode.v1.TunnelTermination.termination_asn_range:type_name -> diode.v1.ASNRange
+	5,    // 1064: diode.v1.TunnelTermination.termination_aggregate:type_name -> diode.v1.Aggregate
+	6,    // 1065: diode.v1.TunnelTermination.termination_cable:type_name -> diode.v1.Cable
+	7,    // 1066: diode.v1.TunnelTermination.termination_cable_path:type_name -> diode.v1.CablePath
+	8,    // 1067: diode.v1.TunnelTermination.termination_cable_termination:type_name -> diode.v1.CableTermination
+	9,    // 1068: diode.v1.TunnelTermination.termination_circuit:type_name -> diode.v1.Circuit
+	10,   // 1069: diode.v1.TunnelTermination.termination_circuit_group:type_name -> diode.v1.CircuitGroup
+	11,   // 1070: diode.v1.TunnelTermination.termination_circuit_group_assignment:type_name -> diode.v1.CircuitGroupAssignment
+	12,   // 1071: diode.v1.TunnelTermination.termination_circuit_termination:type_name -> diode.v1.CircuitTermination
+	13,   // 1072: diode.v1.TunnelTermination.termination_circuit_type:type_name -> diode.v1.CircuitType
+	14,   // 1073: diode.v1.TunnelTermination.termination_cluster:type_name -> diode.v1.Cluster
+	15,   // 1074: diode.v1.TunnelTermination.termination_cluster_group:type_name -> diode.v1.ClusterGroup
+	16,   // 1075: diode.v1.TunnelTermination.termination_cluster_type:type_name -> diode.v1.ClusterType
+	17,   // 1076: diode.v1.TunnelTermination.termination_console_port:type_name -> diode.v1.ConsolePort
+	18,   // 1077: diode.v1.TunnelTermination.termination_console_server_port:type_name -> diode.v1.ConsoleServerPort
+	19,   // 1078: diode.v1.TunnelTermination.termination_contact:type_name -> diode.v1.Contact
+	20,   // 1079: diode.v1.TunnelTermination.termination_contact_assignment:type_name -> diode.v1.ContactAssignment
+	21,   // 1080: diode.v1.TunnelTermination.termination_contact_group:type_name -> diode.v1.ContactGroup
+	22,   // 1081: diode.v1.TunnelTermination.termination_contact_role:type_name -> diode.v1.ContactRole
+	25,   // 1082: diode.v1.TunnelTermination.termination_device:type_name -> diode.v1.Device
+	26,   // 1083: diode.v1.TunnelTermination.termination_device_bay:type_name -> diode.v1.DeviceBay
+	27,   // 1084: diode.v1.TunnelTermination.termination_device_role:type_name -> diode.v1.DeviceRole
+	28,   // 1085: diode.v1.TunnelTermination.termination_device_type:type_name -> diode.v1.DeviceType
+	29,   // 1086: diode.v1.TunnelTermination.termination_fhrp_group:type_name -> diode.v1.FHRPGroup
+	30,   // 1087: diode.v1.TunnelTermination.termination_fhrp_group_assignment:type_name -> diode.v1.FHRPGroupAssignment
+	31,   // 1088: diode.v1.TunnelTermination.termination_front_port:type_name -> diode.v1.FrontPort
+	33,   // 1089: diode.v1.TunnelTermination.termination_ike_policy:type_name -> diode.v1.IKEPolicy
+	34,   // 1090: diode.v1.TunnelTermination.termination_ike_proposal:type_name -> diode.v1.IKEProposal
+	35,   // 1091: diode.v1.TunnelTermination.termination_ip_address:type_name -> diode.v1.IPAddress
+	36,   // 1092: diode.v1.TunnelTermination.termination_ip_range:type_name -> diode.v1.IPRange
+	37,   // 1093: diode.v1.TunnelTermination.termination_ip_sec_policy:type_name -> diode.v1.IPSecPolicy
+	38,   // 1094: diode.v1.TunnelTermination.termination_ip_sec_profile:type_name -> diode.v1.IPSecProfile
+	39,   // 1095: diode.v1.TunnelTermination.termination_ip_sec_proposal:type_name -> diode.v1.IPSecProposal
+	40,   // 1096: diode.v1.TunnelTermination.termination_interface:type_name -> diode.v1.Interface
+	41,   // 1097: diode.v1.TunnelTermination.termination_inventory_item:type_name -> diode.v1.InventoryItem
+	42,   // 1098: diode.v1.TunnelTermination.termination_inventory_item_role:type_name -> diode.v1.InventoryItemRole
+	43,   // 1099: diode.v1.TunnelTermination.termination_l2vpn:type_name -> diode.v1.L2VPN
+	44,   // 1100: diode.v1.TunnelTermination.termination_l2vpn_termination:type_name -> diode.v1.L2VPNTermination
+	45,   // 1101: diode.v1.TunnelTermination.termination_location:type_name -> diode.v1.Location
+	46,   // 1102: diode.v1.TunnelTermination.termination_mac_address:type_name -> diode.v1.MACAddress
+	47,   // 1103: diode.v1.TunnelTermination.termination_manufacturer:type_name -> diode.v1.Manufacturer
+	48,   // 1104: diode.v1.TunnelTermination.termination_module:type_name -> diode.v1.Module
+	49,   // 1105: diode.v1.TunnelTermination.termination_module_bay:type_name -> diode.v1.ModuleBay
+	50,   // 1106: diode.v1.TunnelTermination.termination_module_type:type_name -> diode.v1.ModuleType
+	51,   // 1107: diode.v1.TunnelTermination.termination_platform:type_name -> diode.v1.Platform
+	52,   // 1108: diode.v1.TunnelTermination.termination_power_feed:type_name -> diode.v1.PowerFeed
+	53,   // 1109: diode.v1.TunnelTermination.termination_power_outlet:type_name -> diode.v1.PowerOutlet
+	54,   // 1110: diode.v1.TunnelTermination.termination_power_panel:type_name -> diode.v1.PowerPanel
+	55,   // 1111: diode.v1.TunnelTermination.termination_power_port:type_name -> diode.v1.PowerPort
+	56,   // 1112: diode.v1.TunnelTermination.termination_prefix:type_name -> diode.v1.Prefix
+	57,   // 1113: diode.v1.TunnelTermination.termination_provider:type_name -> diode.v1.Provider
+	58,   // 1114: diode.v1.TunnelTermination.termination_provider_account:type_name -> diode.v1.ProviderAccount
+	59,   // 1115: diode.v1.TunnelTermination.termination_provider_network:type_name -> diode.v1.ProviderNetwork
+	60,   // 1116: diode.v1.TunnelTermination.termination_rir:type_name -> diode.v1.RIR
+	61,   // 1117: diode.v1.TunnelTermination.termination_rack:type_name -> diode.v1.Rack
+	62,   // 1118: diode.v1.TunnelTermination.termination_rack_reservation:type_name -> diode.v1.RackReservation
+	63,   // 1119: diode.v1.TunnelTermination.termination_rack_role:type_name -> diode.v1.RackRole
+	64,   // 1120: diode.v1.TunnelTermination.termination_rack_type:type_name -> diode.v1.RackType
+	65,   // 1121: diode.v1.TunnelTermination.termination_rear_port:type_name -> diode.v1.RearPort
+	66,   // 1122: diode.v1.TunnelTermination.termination_region:type_name -> diode.v1.Region
+	67,   // 1123: diode.v1.TunnelTermination.termination_role:type_name -> diode.v1.Role
+	68,   // 1124: diode.v1.TunnelTermination.termination_route_target:type_name -> diode.v1.RouteTarget
+	69,   // 1125: diode.v1.TunnelTermination.termination_service:type_name -> diode.v1.Service
+	70,   // 1126: diode.v1.TunnelTermination.termination_site:type_name -> diode.v1.Site
+	71,   // 1127: diode.v1.TunnelTermination.termination_site_group:type_name -> diode.v1.SiteGroup
+	72,   // 1128: diode.v1.TunnelTermination.termination_tag:type_name -> diode.v1.Tag
+	73,   // 1129: diode.v1.TunnelTermination.termination_tenant:type_name -> diode.v1.Tenant
+	74,   // 1130: diode.v1.TunnelTermination.termination_tenant_group:type_name -> diode.v1.TenantGroup
+	75,   // 1131: diode.v1.TunnelTermination.termination_tunnel:type_name -> diode.v1.Tunnel
+	76,   // 1132: diode.v1.TunnelTermination.termination_tunnel_group:type_name -> diode.v1.TunnelGroup
+	77,   // 1133: diode.v1.TunnelTermination.termination_tunnel_termination:type_name -> diode.v1.TunnelTermination
+	78,   // 1134: diode.v1.TunnelTermination.termination_vlan:type_name -> diode.v1.VLAN
+	79,   // 1135: diode.v1.TunnelTermination.termination_vlan_group:type_name -> diode.v1.VLANGroup
+	80,   // 1136: diode.v1.TunnelTermination.termination_vlan_translation_policy:type_name -> diode.v1.VLANTranslationPolicy
+	81,   // 1137: diode.v1.TunnelTermination.termination_vlan_translation_rule:type_name -> diode.v1.VLANTranslationRule
+	82,   // 1138: diode.v1.TunnelTermination.termination_vm_interface:type_name -> diode.v1.VMInterface
+	83,   // 1139: diode.v1.TunnelTermination.termination_vrf:type_name -> diode.v1.VRF
+	84,   // 1140: diode.v1.TunnelTermination.termination_virtual_chassis:type_name -> diode.v1.VirtualChassis
+	85,   // 1141: diode.v1.TunnelTermination.termination_virtual_circuit:type_name -> diode.v1.VirtualCircuit
+	86,   // 1142: diode.v1.TunnelTermination.termination_virtual_circuit_termination:type_name -> diode.v1.VirtualCircuitTermination
+	87,   // 1143: diode.v1.TunnelTermination.termination_virtual_circuit_type:type_name -> diode.v1.VirtualCircuitType
+	88,   // 1144: diode.v1.TunnelTermination.termination_virtual_device_context:type_name -> diode.v1.VirtualDeviceContext
+	89,   // 1145: diode.v1.TunnelTermination.termination_virtual_disk:type_name -> diode.v1.VirtualDisk
+	90,   // 1146: diode.v1.TunnelTermination.termination_virtual_machine:type_name -> diode.v1.VirtualMachine
+	91,   // 1147: diode.v1.TunnelTermination.termination_wireless_lan:type_name -> diode.v1.WirelessLAN
+	92,   // 1148: diode.v1.TunnelTermination.termination_wireless_lan_group:type_name -> diode.v1.WirelessLANGroup
+	93,   // 1149: diode.v1.TunnelTermination.termination_wireless_link:type_name -> diode.v1.WirelessLink
+	94,   // 1150: diode.v1.TunnelTermination.termination_custom_field:type_name -> diode.v1.CustomField
+	95,   // 1151: diode.v1.TunnelTermination.termination_custom_field_choice_set:type_name -> diode.v1.CustomFieldChoiceSet
+	96,   // 1152: diode.v1.TunnelTermination.termination_journal_entry:type_name -> diode.v1.JournalEntry
+	97,   // 1153: diode.v1.TunnelTermination.termination_module_type_profile:type_name -> diode.v1.ModuleTypeProfile
+	98,   // 1154: diode.v1.TunnelTermination.termination_custom_link:type_name -> diode.v1.CustomLink
+	99,   // 1155: diode.v1.TunnelTermination.termination_owner:type_name -> diode.v1.Owner
+	100,  // 1156: diode.v1.TunnelTermination.termination_owner_group:type_name -> diode.v1.OwnerGroup
+	102,  // 1157: diode.v1.TunnelTermination.termination_cable_bundle:type_name -> diode.v1.CableBundle
+	103,  // 1158: diode.v1.TunnelTermination.termination_rack_group:type_name -> diode.v1.RackGroup
+	104,  // 1159: diode.v1.TunnelTermination.termination_script_module:type_name -> diode.v1.ScriptModule
+	105,  // 1160: diode.v1.TunnelTermination.termination_virtual_machine_type:type_name -> diode.v1.VirtualMachineType
+	106,  // 1161: diode.v1.TunnelTermination.termination_user:type_name -> diode.v1.User
+	35,   // 1162: diode.v1.TunnelTermination.outside_ip:type_name -> diode.v1.IPAddress
+	72,   // 1163: diode.v1.TunnelTermination.tags:type_name -> diode.v1.Tag
+	173,  // 1164: diode.v1.TunnelTermination.custom_fields:type_name -> diode.v1.TunnelTermination.CustomFieldsEntry
+	194,  // 1165: diode.v1.TunnelTermination.metadata:type_name -> google.protobuf.Struct
+	70,   // 1166: diode.v1.VLAN.site:type_name -> diode.v1.Site
+	79,   // 1167: diode.v1.VLAN.group:type_name -> diode.v1.VLANGroup
+	73,   // 1168: diode.v1.VLAN.tenant:type_name -> diode.v1.Tenant
+	67,   // 1169: diode.v1.VLAN.role:type_name -> diode.v1.Role
+	78,   // 1170: diode.v1.VLAN.qinq_svlan:type_name -> diode.v1.VLAN
+	72,   // 1171: diode.v1.VLAN.tags:type_name -> diode.v1.Tag
+	174,  // 1172: diode.v1.VLAN.custom_fields:type_name -> diode.v1.VLAN.CustomFieldsEntry
+	194,  // 1173: diode.v1.VLAN.metadata:type_name -> google.protobuf.Struct
+	99,   // 1174: diode.v1.VLAN.owner:type_name -> diode.v1.Owner
+	14,   // 1175: diode.v1.VLANGroup.scope_cluster:type_name -> diode.v1.Cluster
+	15,   // 1176: diode.v1.VLANGroup.scope_cluster_group:type_name -> diode.v1.ClusterGroup
+	45,   // 1177: diode.v1.VLANGroup.scope_location:type_name -> diode.v1.Location
+	61,   // 1178: diode.v1.VLANGroup.scope_rack:type_name -> diode.v1.Rack
+	66,   // 1179: diode.v1.VLANGroup.scope_region:type_name -> diode.v1.Region
+	70,   // 1180: diode.v1.VLANGroup.scope_site:type_name -> diode.v1.Site
+	71,   // 1181: diode.v1.VLANGroup.scope_site_group:type_name -> diode.v1.SiteGroup
+	103,  // 1182: diode.v1.VLANGroup.scope_rack_group:type_name -> diode.v1.RackGroup
+	72,   // 1183: diode.v1.VLANGroup.tags:type_name -> diode.v1.Tag
+	175,  // 1184: diode.v1.VLANGroup.custom_fields:type_name -> diode.v1.VLANGroup.CustomFieldsEntry
+	73,   // 1185: diode.v1.VLANGroup.tenant:type_name -> diode.v1.Tenant
+	194,  // 1186: diode.v1.VLANGroup.metadata:type_name -> google.protobuf.Struct
+	99,   // 1187: diode.v1.VLANGroup.owner:type_name -> diode.v1.Owner
+	194,  // 1188: diode.v1.VLANTranslationPolicy.metadata:type_name -> google.protobuf.Struct
+	99,   // 1189: diode.v1.VLANTranslationPolicy.owner:type_name -> diode.v1.Owner
+	80,   // 1190: diode.v1.VLANTranslationRule.policy:type_name -> diode.v1.VLANTranslationPolicy
+	194,  // 1191: diode.v1.VLANTranslationRule.metadata:type_name -> google.protobuf.Struct
+	90,   // 1192: diode.v1.VMInterface.virtual_machine:type_name -> diode.v1.VirtualMachine
+	82,   // 1193: diode.v1.VMInterface.parent:type_name -> diode.v1.VMInterface
+	82,   // 1194: diode.v1.VMInterface.bridge:type_name -> diode.v1.VMInterface
+	46,   // 1195: diode.v1.VMInterface.primary_mac_address:type_name -> diode.v1.MACAddress
+	78,   // 1196: diode.v1.VMInterface.untagged_vlan:type_name -> diode.v1.VLAN
+	78,   // 1197: diode.v1.VMInterface.qinq_svlan:type_name -> diode.v1.VLAN
+	80,   // 1198: diode.v1.VMInterface.vlan_translation_policy:type_name -> diode.v1.VLANTranslationPolicy
+	83,   // 1199: diode.v1.VMInterface.vrf:type_name -> diode.v1.VRF
+	72,   // 1200: diode.v1.VMInterface.tags:type_name -> diode.v1.Tag
+	176,  // 1201: diode.v1.VMInterface.custom_fields:type_name -> diode.v1.VMInterface.CustomFieldsEntry
+	78,   // 1202: diode.v1.VMInterface.tagged_vlans:type_name -> diode.v1.VLAN
+	194,  // 1203: diode.v1.VMInterface.metadata:type_name -> google.protobuf.Struct
+	99,   // 1204: diode.v1.VMInterface.owner:type_name -> diode.v1.Owner
+	73,   // 1205: diode.v1.VRF.tenant:type_name -> diode.v1.Tenant
+	72,   // 1206: diode.v1.VRF.tags:type_name -> diode.v1.Tag
+	177,  // 1207: diode.v1.VRF.custom_fields:type_name -> diode.v1.VRF.CustomFieldsEntry
+	68,   // 1208: diode.v1.VRF.import_targets:type_name -> diode.v1.RouteTarget
+	68,   // 1209: diode.v1.VRF.export_targets:type_name -> diode.v1.RouteTarget
+	194,  // 1210: diode.v1.VRF.metadata:type_name -> google.protobuf.Struct
+	99,   // 1211: diode.v1.VRF.owner:type_name -> diode.v1.Owner
+	25,   // 1212: diode.v1.VirtualChassis.master:type_name -> diode.v1.Device
+	72,   // 1213: diode.v1.VirtualChassis.tags:type_name -> diode.v1.Tag
+	178,  // 1214: diode.v1.VirtualChassis.custom_fields:type_name -> diode.v1.VirtualChassis.CustomFieldsEntry
+	194,  // 1215: diode.v1.VirtualChassis.metadata:type_name -> google.protobuf.Struct
+	99,   // 1216: diode.v1.VirtualChassis.owner:type_name -> diode.v1.Owner
+	59,   // 1217: diode.v1.VirtualCircuit.provider_network:type_name -> diode.v1.ProviderNetwork
+	58,   // 1218: diode.v1.VirtualCircuit.provider_account:type_name -> diode.v1.ProviderAccount
+	87,   // 1219: diode.v1.VirtualCircuit.type:type_name -> diode.v1.VirtualCircuitType
+	73,   // 1220: diode.v1.VirtualCircuit.tenant:type_name -> diode.v1.Tenant
+	72,   // 1221: diode.v1.VirtualCircuit.tags:type_name -> diode.v1.Tag
+	179,  // 1222: diode.v1.VirtualCircuit.custom_fields:type_name -> diode.v1.VirtualCircuit.CustomFieldsEntry
+	194,  // 1223: diode.v1.VirtualCircuit.metadata:type_name -> google.protobuf.Struct
+	99,   // 1224: diode.v1.VirtualCircuit.owner:type_name -> diode.v1.Owner
+	85,   // 1225: diode.v1.VirtualCircuitTermination.virtual_circuit:type_name -> diode.v1.VirtualCircuit
+	40,   // 1226: diode.v1.VirtualCircuitTermination.interface:type_name -> diode.v1.Interface
+	72,   // 1227: diode.v1.VirtualCircuitTermination.tags:type_name -> diode.v1.Tag
+	180,  // 1228: diode.v1.VirtualCircuitTermination.custom_fields:type_name -> diode.v1.VirtualCircuitTermination.CustomFieldsEntry
+	194,  // 1229: diode.v1.VirtualCircuitTermination.metadata:type_name -> google.protobuf.Struct
+	72,   // 1230: diode.v1.VirtualCircuitType.tags:type_name -> diode.v1.Tag
+	181,  // 1231: diode.v1.VirtualCircuitType.custom_fields:type_name -> diode.v1.VirtualCircuitType.CustomFieldsEntry
+	194,  // 1232: diode.v1.VirtualCircuitType.metadata:type_name -> google.protobuf.Struct
+	99,   // 1233: diode.v1.VirtualCircuitType.owner:type_name -> diode.v1.Owner
+	25,   // 1234: diode.v1.VirtualDeviceContext.device:type_name -> diode.v1.Device
+	73,   // 1235: diode.v1.VirtualDeviceContext.tenant:type_name -> diode.v1.Tenant
+	35,   // 1236: diode.v1.VirtualDeviceContext.primary_ip4:type_name -> diode.v1.IPAddress
+	35,   // 1237: diode.v1.VirtualDeviceContext.primary_ip6:type_name -> diode.v1.IPAddress
+	72,   // 1238: diode.v1.VirtualDeviceContext.tags:type_name -> diode.v1.Tag
+	182,  // 1239: diode.v1.VirtualDeviceContext.custom_fields:type_name -> diode.v1.VirtualDeviceContext.CustomFieldsEntry
+	194,  // 1240: diode.v1.VirtualDeviceContext.metadata:type_name -> google.protobuf.Struct
+	99,   // 1241: diode.v1.VirtualDeviceContext.owner:type_name -> diode.v1.Owner
+	90,   // 1242: diode.v1.VirtualDisk.virtual_machine:type_name -> diode.v1.VirtualMachine
+	72,   // 1243: diode.v1.VirtualDisk.tags:type_name -> diode.v1.Tag
+	183,  // 1244: diode.v1.VirtualDisk.custom_fields:type_name -> diode.v1.VirtualDisk.CustomFieldsEntry
+	194,  // 1245: diode.v1.VirtualDisk.metadata:type_name -> google.protobuf.Struct
+	99,   // 1246: diode.v1.VirtualDisk.owner:type_name -> diode.v1.Owner
+	70,   // 1247: diode.v1.VirtualMachine.site:type_name -> diode.v1.Site
+	14,   // 1248: diode.v1.VirtualMachine.cluster:type_name -> diode.v1.Cluster
+	25,   // 1249: diode.v1.VirtualMachine.device:type_name -> diode.v1.Device
+	27,   // 1250: diode.v1.VirtualMachine.role:type_name -> diode.v1.DeviceRole
+	73,   // 1251: diode.v1.VirtualMachine.tenant:type_name -> diode.v1.Tenant
+	51,   // 1252: diode.v1.VirtualMachine.platform:type_name -> diode.v1.Platform
+	35,   // 1253: diode.v1.VirtualMachine.primary_ip4:type_name -> diode.v1.IPAddress
+	35,   // 1254: diode.v1.VirtualMachine.primary_ip6:type_name -> diode.v1.IPAddress
+	72,   // 1255: diode.v1.VirtualMachine.tags:type_name -> diode.v1.Tag
+	184,  // 1256: diode.v1.VirtualMachine.custom_fields:type_name -> diode.v1.VirtualMachine.CustomFieldsEntry
+	194,  // 1257: diode.v1.VirtualMachine.metadata:type_name -> google.protobuf.Struct
+	99,   // 1258: diode.v1.VirtualMachine.owner:type_name -> diode.v1.Owner
+	105,  // 1259: diode.v1.VirtualMachine.virtual_machine_type:type_name -> diode.v1.VirtualMachineType
+	92,   // 1260: diode.v1.WirelessLAN.group:type_name -> diode.v1.WirelessLANGroup
+	78,   // 1261: diode.v1.WirelessLAN.vlan:type_name -> diode.v1.VLAN
+	45,   // 1262: diode.v1.WirelessLAN.scope_location:type_name -> diode.v1.Location
+	66,   // 1263: diode.v1.WirelessLAN.scope_region:type_name -> diode.v1.Region
+	70,   // 1264: diode.v1.WirelessLAN.scope_site:type_name -> diode.v1.Site
+	71,   // 1265: diode.v1.WirelessLAN.scope_site_group:type_name -> diode.v1.SiteGroup
+	73,   // 1266: diode.v1.WirelessLAN.tenant:type_name -> diode.v1.Tenant
+	72,   // 1267: diode.v1.WirelessLAN.tags:type_name -> diode.v1.Tag
+	185,  // 1268: diode.v1.WirelessLAN.custom_fields:type_name -> diode.v1.WirelessLAN.CustomFieldsEntry
+	194,  // 1269: diode.v1.WirelessLAN.metadata:type_name -> google.protobuf.Struct
+	99,   // 1270: diode.v1.WirelessLAN.owner:type_name -> diode.v1.Owner
+	92,   // 1271: diode.v1.WirelessLANGroup.parent:type_name -> diode.v1.WirelessLANGroup
+	72,   // 1272: diode.v1.WirelessLANGroup.tags:type_name -> diode.v1.Tag
+	186,  // 1273: diode.v1.WirelessLANGroup.custom_fields:type_name -> diode.v1.WirelessLANGroup.CustomFieldsEntry
+	194,  // 1274: diode.v1.WirelessLANGroup.metadata:type_name -> google.protobuf.Struct
+	99,   // 1275: diode.v1.WirelessLANGroup.owner:type_name -> diode.v1.Owner
+	40,   // 1276: diode.v1.WirelessLink.interface_a:type_name -> diode.v1.Interface
+	40,   // 1277: diode.v1.WirelessLink.interface_b:type_name -> diode.v1.Interface
+	73,   // 1278: diode.v1.WirelessLink.tenant:type_name -> diode.v1.Tenant
+	72,   // 1279: diode.v1.WirelessLink.tags:type_name -> diode.v1.Tag
+	187,  // 1280: diode.v1.WirelessLink.custom_fields:type_name -> diode.v1.WirelessLink.CustomFieldsEntry
+	194,  // 1281: diode.v1.WirelessLink.metadata:type_name -> google.protobuf.Struct
+	99,   // 1282: diode.v1.WirelessLink.owner:type_name -> diode.v1.Owner
+	95,   // 1283: diode.v1.CustomField.choice_set:type_name -> diode.v1.CustomFieldChoiceSet
+	194,  // 1284: diode.v1.CustomField.metadata:type_name -> google.protobuf.Struct
+	99,   // 1285: diode.v1.CustomField.owner:type_name -> diode.v1.Owner
+	194,  // 1286: diode.v1.CustomFieldChoiceSet.metadata:type_name -> google.protobuf.Struct
+	99,   // 1287: diode.v1.CustomFieldChoiceSet.owner:type_name -> diode.v1.Owner
+	3,    // 1288: diode.v1.JournalEntry.assigned_object_asn:type_name -> diode.v1.ASN
+	4,    // 1289: diode.v1.JournalEntry.assigned_object_asn_range:type_name -> diode.v1.ASNRange
+	5,    // 1290: diode.v1.JournalEntry.assigned_object_aggregate:type_name -> diode.v1.Aggregate
+	6,    // 1291: diode.v1.JournalEntry.assigned_object_cable:type_name -> diode.v1.Cable
+	7,    // 1292: diode.v1.JournalEntry.assigned_object_cable_path:type_name -> diode.v1.CablePath
+	8,    // 1293: diode.v1.JournalEntry.assigned_object_cable_termination:type_name -> diode.v1.CableTermination
+	9,    // 1294: diode.v1.JournalEntry.assigned_object_circuit:type_name -> diode.v1.Circuit
+	10,   // 1295: diode.v1.JournalEntry.assigned_object_circuit_group:type_name -> diode.v1.CircuitGroup
+	11,   // 1296: diode.v1.JournalEntry.assigned_object_circuit_group_assignment:type_name -> diode.v1.CircuitGroupAssignment
+	12,   // 1297: diode.v1.JournalEntry.assigned_object_circuit_termination:type_name -> diode.v1.CircuitTermination
+	13,   // 1298: diode.v1.JournalEntry.assigned_object_circuit_type:type_name -> diode.v1.CircuitType
+	14,   // 1299: diode.v1.JournalEntry.assigned_object_cluster:type_name -> diode.v1.Cluster
+	15,   // 1300: diode.v1.JournalEntry.assigned_object_cluster_group:type_name -> diode.v1.ClusterGroup
+	16,   // 1301: diode.v1.JournalEntry.assigned_object_cluster_type:type_name -> diode.v1.ClusterType
+	17,   // 1302: diode.v1.JournalEntry.assigned_object_console_port:type_name -> diode.v1.ConsolePort
+	18,   // 1303: diode.v1.JournalEntry.assigned_object_console_server_port:type_name -> diode.v1.ConsoleServerPort
+	19,   // 1304: diode.v1.JournalEntry.assigned_object_contact:type_name -> diode.v1.Contact
+	20,   // 1305: diode.v1.JournalEntry.assigned_object_contact_assignment:type_name -> diode.v1.ContactAssignment
+	21,   // 1306: diode.v1.JournalEntry.assigned_object_contact_group:type_name -> diode.v1.ContactGroup
+	22,   // 1307: diode.v1.JournalEntry.assigned_object_contact_role:type_name -> diode.v1.ContactRole
+	94,   // 1308: diode.v1.JournalEntry.assigned_object_custom_field:type_name -> diode.v1.CustomField
+	95,   // 1309: diode.v1.JournalEntry.assigned_object_custom_field_choice_set:type_name -> diode.v1.CustomFieldChoiceSet
+	25,   // 1310: diode.v1.JournalEntry.assigned_object_device:type_name -> diode.v1.Device
+	26,   // 1311: diode.v1.JournalEntry.assigned_object_device_bay:type_name -> diode.v1.DeviceBay
+	27,   // 1312: diode.v1.JournalEntry.assigned_object_device_role:type_name -> diode.v1.DeviceRole
+	28,   // 1313: diode.v1.JournalEntry.assigned_object_device_type:type_name -> diode.v1.DeviceType
+	29,   // 1314: diode.v1.JournalEntry.assigned_object_fhrp_group:type_name -> diode.v1.FHRPGroup
+	30,   // 1315: diode.v1.JournalEntry.assigned_object_fhrp_group_assignment:type_name -> diode.v1.FHRPGroupAssignment
+	31,   // 1316: diode.v1.JournalEntry.assigned_object_front_port:type_name -> diode.v1.FrontPort
+	33,   // 1317: diode.v1.JournalEntry.assigned_object_ike_policy:type_name -> diode.v1.IKEPolicy
+	34,   // 1318: diode.v1.JournalEntry.assigned_object_ike_proposal:type_name -> diode.v1.IKEProposal
+	35,   // 1319: diode.v1.JournalEntry.assigned_object_ip_address:type_name -> diode.v1.IPAddress
+	36,   // 1320: diode.v1.JournalEntry.assigned_object_ip_range:type_name -> diode.v1.IPRange
+	37,   // 1321: diode.v1.JournalEntry.assigned_object_ip_sec_policy:type_name -> diode.v1.IPSecPolicy
+	38,   // 1322: diode.v1.JournalEntry.assigned_object_ip_sec_profile:type_name -> diode.v1.IPSecProfile
+	39,   // 1323: diode.v1.JournalEntry.assigned_object_ip_sec_proposal:type_name -> diode.v1.IPSecProposal
+	40,   // 1324: diode.v1.JournalEntry.assigned_object_interface:type_name -> diode.v1.Interface
+	41,   // 1325: diode.v1.JournalEntry.assigned_object_inventory_item:type_name -> diode.v1.InventoryItem
+	42,   // 1326: diode.v1.JournalEntry.assigned_object_inventory_item_role:type_name -> diode.v1.InventoryItemRole
+	96,   // 1327: diode.v1.JournalEntry.assigned_object_journal_entry:type_name -> diode.v1.JournalEntry
+	43,   // 1328: diode.v1.JournalEntry.assigned_object_l2vpn:type_name -> diode.v1.L2VPN
+	44,   // 1329: diode.v1.JournalEntry.assigned_object_l2vpn_termination:type_name -> diode.v1.L2VPNTermination
+	45,   // 1330: diode.v1.JournalEntry.assigned_object_location:type_name -> diode.v1.Location
+	46,   // 1331: diode.v1.JournalEntry.assigned_object_mac_address:type_name -> diode.v1.MACAddress
+	47,   // 1332: diode.v1.JournalEntry.assigned_object_manufacturer:type_name -> diode.v1.Manufacturer
+	48,   // 1333: diode.v1.JournalEntry.assigned_object_module:type_name -> diode.v1.Module
+	49,   // 1334: diode.v1.JournalEntry.assigned_object_module_bay:type_name -> diode.v1.ModuleBay
+	50,   // 1335: diode.v1.JournalEntry.assigned_object_module_type:type_name -> diode.v1.ModuleType
+	97,   // 1336: diode.v1.JournalEntry.assigned_object_module_type_profile:type_name -> diode.v1.ModuleTypeProfile
+	51,   // 1337: diode.v1.JournalEntry.assigned_object_platform:type_name -> diode.v1.Platform
+	52,   // 1338: diode.v1.JournalEntry.assigned_object_power_feed:type_name -> diode.v1.PowerFeed
+	53,   // 1339: diode.v1.JournalEntry.assigned_object_power_outlet:type_name -> diode.v1.PowerOutlet
+	54,   // 1340: diode.v1.JournalEntry.assigned_object_power_panel:type_name -> diode.v1.PowerPanel
+	55,   // 1341: diode.v1.JournalEntry.assigned_object_power_port:type_name -> diode.v1.PowerPort
+	56,   // 1342: diode.v1.JournalEntry.assigned_object_prefix:type_name -> diode.v1.Prefix
+	57,   // 1343: diode.v1.JournalEntry.assigned_object_provider:type_name -> diode.v1.Provider
+	58,   // 1344: diode.v1.JournalEntry.assigned_object_provider_account:type_name -> diode.v1.ProviderAccount
+	59,   // 1345: diode.v1.JournalEntry.assigned_object_provider_network:type_name -> diode.v1.ProviderNetwork
+	60,   // 1346: diode.v1.JournalEntry.assigned_object_rir:type_name -> diode.v1.RIR
+	61,   // 1347: diode.v1.JournalEntry.assigned_object_rack:type_name -> diode.v1.Rack
+	62,   // 1348: diode.v1.JournalEntry.assigned_object_rack_reservation:type_name -> diode.v1.RackReservation
+	63,   // 1349: diode.v1.JournalEntry.assigned_object_rack_role:type_name -> diode.v1.RackRole
+	64,   // 1350: diode.v1.JournalEntry.assigned_object_rack_type:type_name -> diode.v1.RackType
+	65,   // 1351: diode.v1.JournalEntry.assigned_object_rear_port:type_name -> diode.v1.RearPort
+	66,   // 1352: diode.v1.JournalEntry.assigned_object_region:type_name -> diode.v1.Region
+	67,   // 1353: diode.v1.JournalEntry.assigned_object_role:type_name -> diode.v1.Role
+	68,   // 1354: diode.v1.JournalEntry.assigned_object_route_target:type_name -> diode.v1.RouteTarget
+	69,   // 1355: diode.v1.JournalEntry.assigned_object_service:type_name -> diode.v1.Service
+	70,   // 1356: diode.v1.JournalEntry.assigned_object_site:type_name -> diode.v1.Site
+	71,   // 1357: diode.v1.JournalEntry.assigned_object_site_group:type_name -> diode.v1.SiteGroup
+	72,   // 1358: diode.v1.JournalEntry.assigned_object_tag:type_name -> diode.v1.Tag
+	73,   // 1359: diode.v1.JournalEntry.assigned_object_tenant:type_name -> diode.v1.Tenant
+	74,   // 1360: diode.v1.JournalEntry.assigned_object_tenant_group:type_name -> diode.v1.TenantGroup
+	75,   // 1361: diode.v1.JournalEntry.assigned_object_tunnel:type_name -> diode.v1.Tunnel
+	76,   // 1362: diode.v1.JournalEntry.assigned_object_tunnel_group:type_name -> diode.v1.TunnelGroup
+	77,   // 1363: diode.v1.JournalEntry.assigned_object_tunnel_termination:type_name -> diode.v1.TunnelTermination
+	78,   // 1364: diode.v1.JournalEntry.assigned_object_vlan:type_name -> diode.v1.VLAN
+	79,   // 1365: diode.v1.JournalEntry.assigned_object_vlan_group:type_name -> diode.v1.VLANGroup
+	80,   // 1366: diode.v1.JournalEntry.assigned_object_vlan_translation_policy:type_name -> diode.v1.VLANTranslationPolicy
+	81,   // 1367: diode.v1.JournalEntry.assigned_object_vlan_translation_rule:type_name -> diode.v1.VLANTranslationRule
+	82,   // 1368: diode.v1.JournalEntry.assigned_object_vm_interface:type_name -> diode.v1.VMInterface
+	83,   // 1369: diode.v1.JournalEntry.assigned_object_vrf:type_name -> diode.v1.VRF
+	84,   // 1370: diode.v1.JournalEntry.assigned_object_virtual_chassis:type_name -> diode.v1.VirtualChassis
+	85,   // 1371: diode.v1.JournalEntry.assigned_object_virtual_circuit:type_name -> diode.v1.VirtualCircuit
+	86,   // 1372: diode.v1.JournalEntry.assigned_object_virtual_circuit_termination:type_name -> diode.v1.VirtualCircuitTermination
+	87,   // 1373: diode.v1.JournalEntry.assigned_object_virtual_circuit_type:type_name -> diode.v1.VirtualCircuitType
+	88,   // 1374: diode.v1.JournalEntry.assigned_object_virtual_device_context:type_name -> diode.v1.VirtualDeviceContext
+	89,   // 1375: diode.v1.JournalEntry.assigned_object_virtual_disk:type_name -> diode.v1.VirtualDisk
+	90,   // 1376: diode.v1.JournalEntry.assigned_object_virtual_machine:type_name -> diode.v1.VirtualMachine
+	91,   // 1377: diode.v1.JournalEntry.assigned_object_wireless_lan:type_name -> diode.v1.WirelessLAN
+	92,   // 1378: diode.v1.JournalEntry.assigned_object_wireless_lan_group:type_name -> diode.v1.WirelessLANGroup
+	93,   // 1379: diode.v1.JournalEntry.assigned_object_wireless_link:type_name -> diode.v1.WirelessLink
+	98,   // 1380: diode.v1.JournalEntry.assigned_object_custom_link:type_name -> diode.v1.CustomLink
+	99,   // 1381: diode.v1.JournalEntry.assigned_object_owner:type_name -> diode.v1.Owner
+	100,  // 1382: diode.v1.JournalEntry.assigned_object_owner_group:type_name -> diode.v1.OwnerGroup
+	102,  // 1383: diode.v1.JournalEntry.assigned_object_cable_bundle:type_name -> diode.v1.CableBundle
+	103,  // 1384: diode.v1.JournalEntry.assigned_object_rack_group:type_name -> diode.v1.RackGroup
+	104,  // 1385: diode.v1.JournalEntry.assigned_object_script_module:type_name -> diode.v1.ScriptModule
+	105,  // 1386: diode.v1.JournalEntry.assigned_object_virtual_machine_type:type_name -> diode.v1.VirtualMachineType
+	106,  // 1387: diode.v1.JournalEntry.assigned_object_user:type_name -> diode.v1.User
+	72,   // 1388: diode.v1.JournalEntry.tags:type_name -> diode.v1.Tag
+	188,  // 1389: diode.v1.JournalEntry.custom_fields:type_name -> diode.v1.JournalEntry.CustomFieldsEntry
+	194,  // 1390: diode.v1.JournalEntry.metadata:type_name -> google.protobuf.Struct
+	106,  // 1391: diode.v1.JournalEntry.created_by:type_name -> diode.v1.User
+	72,   // 1392: diode.v1.ModuleTypeProfile.tags:type_name -> diode.v1.Tag
+	189,  // 1393: diode.v1.ModuleTypeProfile.custom_fields:type_name -> diode.v1.ModuleTypeProfile.CustomFieldsEntry
+	194,  // 1394: diode.v1.ModuleTypeProfile.metadata:type_name -> google.protobuf.Struct
+	99,   // 1395: diode.v1.ModuleTypeProfile.owner:type_name -> diode.v1.Owner
+	194,  // 1396: diode.v1.CustomLink.metadata:type_name -> google.protobuf.Struct
+	99,   // 1397: diode.v1.CustomLink.owner:type_name -> diode.v1.Owner
+	100,  // 1398: diode.v1.Owner.group:type_name -> diode.v1.OwnerGroup
+	194,  // 1399: diode.v1.Owner.metadata:type_name -> google.protobuf.Struct
+	106,  // 1400: diode.v1.Owner.users:type_name -> diode.v1.User
+	194,  // 1401: diode.v1.OwnerGroup.metadata:type_name -> google.protobuf.Struct
+	194,  // 1402: diode.v1.DeviceConfig.metadata:type_name -> google.protobuf.Struct
+	99,   // 1403: diode.v1.CableBundle.owner:type_name -> diode.v1.Owner
+	72,   // 1404: diode.v1.CableBundle.tags:type_name -> diode.v1.Tag
+	190,  // 1405: diode.v1.CableBundle.custom_fields:type_name -> diode.v1.CableBundle.CustomFieldsEntry
+	194,  // 1406: diode.v1.CableBundle.metadata:type_name -> google.protobuf.Struct
+	99,   // 1407: diode.v1.RackGroup.owner:type_name -> diode.v1.Owner
+	72,   // 1408: diode.v1.RackGroup.tags:type_name -> diode.v1.Tag
+	191,  // 1409: diode.v1.RackGroup.custom_fields:type_name -> diode.v1.RackGroup.CustomFieldsEntry
+	194,  // 1410: diode.v1.RackGroup.metadata:type_name -> google.protobuf.Struct
+	194,  // 1411: diode.v1.ScriptModule.metadata:type_name -> google.protobuf.Struct
+	51,   // 1412: diode.v1.VirtualMachineType.default_platform:type_name -> diode.v1.Platform
+	99,   // 1413: diode.v1.VirtualMachineType.owner:type_name -> diode.v1.Owner
+	72,   // 1414: diode.v1.VirtualMachineType.tags:type_name -> diode.v1.Tag
+	192,  // 1415: diode.v1.VirtualMachineType.custom_fields:type_name -> diode.v1.VirtualMachineType.CustomFieldsEntry
+	194,  // 1416: diode.v1.VirtualMachineType.metadata:type_name -> google.protobuf.Struct
+	194,  // 1417: diode.v1.User.metadata:type_name -> google.protobuf.Struct
+	24,   // 1418: diode.v1.ASN.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1419: diode.v1.ASNRange.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1420: diode.v1.Aggregate.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1421: diode.v1.Cable.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1422: diode.v1.Circuit.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1423: diode.v1.CircuitGroup.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1424: diode.v1.CircuitTermination.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1425: diode.v1.CircuitType.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1426: diode.v1.Cluster.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1427: diode.v1.ClusterGroup.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1428: diode.v1.ClusterType.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1429: diode.v1.ConsolePort.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1430: diode.v1.ConsoleServerPort.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1431: diode.v1.Contact.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1432: diode.v1.ContactAssignment.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1433: diode.v1.ContactGroup.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1434: diode.v1.ContactRole.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1435: diode.v1.Device.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1436: diode.v1.DeviceBay.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1437: diode.v1.DeviceRole.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1438: diode.v1.DeviceType.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1439: diode.v1.FHRPGroup.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1440: diode.v1.FrontPort.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1441: diode.v1.IKEPolicy.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1442: diode.v1.IKEProposal.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1443: diode.v1.IPAddress.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1444: diode.v1.IPRange.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1445: diode.v1.IPSecPolicy.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1446: diode.v1.IPSecProfile.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1447: diode.v1.IPSecProposal.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1448: diode.v1.Interface.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1449: diode.v1.InventoryItem.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1450: diode.v1.InventoryItemRole.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1451: diode.v1.L2VPN.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1452: diode.v1.L2VPNTermination.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1453: diode.v1.Location.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1454: diode.v1.MACAddress.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1455: diode.v1.Manufacturer.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1456: diode.v1.Module.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1457: diode.v1.ModuleBay.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1458: diode.v1.ModuleType.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1459: diode.v1.Platform.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1460: diode.v1.PowerFeed.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1461: diode.v1.PowerOutlet.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1462: diode.v1.PowerPanel.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1463: diode.v1.PowerPort.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1464: diode.v1.Prefix.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1465: diode.v1.Provider.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1466: diode.v1.ProviderAccount.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1467: diode.v1.ProviderNetwork.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1468: diode.v1.RIR.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1469: diode.v1.Rack.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1470: diode.v1.RackReservation.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1471: diode.v1.RackRole.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1472: diode.v1.RackType.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1473: diode.v1.RearPort.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1474: diode.v1.Region.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1475: diode.v1.Role.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1476: diode.v1.RouteTarget.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1477: diode.v1.Service.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1478: diode.v1.Site.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1479: diode.v1.SiteGroup.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1480: diode.v1.Tenant.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1481: diode.v1.TenantGroup.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1482: diode.v1.Tunnel.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1483: diode.v1.TunnelGroup.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1484: diode.v1.TunnelTermination.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1485: diode.v1.VLAN.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1486: diode.v1.VLANGroup.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1487: diode.v1.VMInterface.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1488: diode.v1.VRF.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1489: diode.v1.VirtualChassis.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1490: diode.v1.VirtualCircuit.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1491: diode.v1.VirtualCircuitTermination.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1492: diode.v1.VirtualCircuitType.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1493: diode.v1.VirtualDeviceContext.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1494: diode.v1.VirtualDisk.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1495: diode.v1.VirtualMachine.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1496: diode.v1.WirelessLAN.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1497: diode.v1.WirelessLANGroup.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1498: diode.v1.WirelessLink.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1499: diode.v1.JournalEntry.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1500: diode.v1.ModuleTypeProfile.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1501: diode.v1.CableBundle.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1502: diode.v1.RackGroup.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	24,   // 1503: diode.v1.VirtualMachineType.CustomFieldsEntry.value:type_name -> diode.v1.CustomFieldValue
+	195,  // 1504: diode.v1.netbox_supported:extendee -> google.protobuf.FieldOptions
+	1,    // 1505: diode.v1.IngesterService.Ingest:input_type -> diode.v1.IngestRequest
+	2,    // 1506: diode.v1.IngesterService.Ingest:output_type -> diode.v1.IngestResponse
+	1506, // [1506:1507] is the sub-list for method output_type
+	1505, // [1505:1506] is the sub-list for method input_type
+	1505, // [1505:1505] is the sub-list for extension type_name
+	1504, // [1504:1505] is the sub-list for extension extendee
+	0,    // [0:1504] is the sub-list for field type_name
 }
 
 func init() { file_diode_v1_ingester_proto_init() }
@@ -32095,6 +32331,7 @@ func file_diode_v1_ingester_proto_init() {
 		(*Entity_RackGroup)(nil),
 		(*Entity_ScriptModule)(nil),
 		(*Entity_VirtualMachineType)(nil),
+		(*Entity_User)(nil),
 	}
 	file_diode_v1_ingester_proto_msgTypes[3].OneofWrappers = []any{}
 	file_diode_v1_ingester_proto_msgTypes[4].OneofWrappers = []any{}
@@ -32237,6 +32474,7 @@ func file_diode_v1_ingester_proto_init() {
 		(*ContactAssignment_ObjectRackGroup)(nil),
 		(*ContactAssignment_ObjectScriptModule)(nil),
 		(*ContactAssignment_ObjectVirtualMachineType)(nil),
+		(*ContactAssignment_ObjectUser)(nil),
 	}
 	file_diode_v1_ingester_proto_msgTypes[21].OneofWrappers = []any{}
 	file_diode_v1_ingester_proto_msgTypes[22].OneofWrappers = []any{}
@@ -32340,6 +32578,7 @@ func file_diode_v1_ingester_proto_init() {
 		(*CustomFieldObjectReference_RackGroup)(nil),
 		(*CustomFieldObjectReference_ScriptModule)(nil),
 		(*CustomFieldObjectReference_VirtualMachineType)(nil),
+		(*CustomFieldObjectReference_User)(nil),
 	}
 	file_diode_v1_ingester_proto_msgTypes[24].OneofWrappers = []any{
 		(*CustomFieldValue_Text)(nil),
@@ -32459,6 +32698,7 @@ func file_diode_v1_ingester_proto_init() {
 		(*FHRPGroupAssignment_InterfaceRackGroup)(nil),
 		(*FHRPGroupAssignment_InterfaceScriptModule)(nil),
 		(*FHRPGroupAssignment_InterfaceVirtualMachineType)(nil),
+		(*FHRPGroupAssignment_InterfaceUser)(nil),
 	}
 	file_diode_v1_ingester_proto_msgTypes[31].OneofWrappers = []any{}
 	file_diode_v1_ingester_proto_msgTypes[32].OneofWrappers = []any{
@@ -32561,6 +32801,7 @@ func file_diode_v1_ingester_proto_init() {
 		(*GenericObject_ObjectRackGroup)(nil),
 		(*GenericObject_ObjectScriptModule)(nil),
 		(*GenericObject_ObjectVirtualMachineType)(nil),
+		(*GenericObject_ObjectUser)(nil),
 	}
 	file_diode_v1_ingester_proto_msgTypes[33].OneofWrappers = []any{}
 	file_diode_v1_ingester_proto_msgTypes[34].OneofWrappers = []any{}
@@ -32685,6 +32926,7 @@ func file_diode_v1_ingester_proto_init() {
 		(*L2VPNTermination_AssignedObjectRackGroup)(nil),
 		(*L2VPNTermination_AssignedObjectScriptModule)(nil),
 		(*L2VPNTermination_AssignedObjectVirtualMachineType)(nil),
+		(*L2VPNTermination_AssignedObjectUser)(nil),
 	}
 	file_diode_v1_ingester_proto_msgTypes[45].OneofWrappers = []any{}
 	file_diode_v1_ingester_proto_msgTypes[46].OneofWrappers = []any{
@@ -32830,6 +33072,7 @@ func file_diode_v1_ingester_proto_init() {
 		(*TunnelTermination_TerminationRackGroup)(nil),
 		(*TunnelTermination_TerminationScriptModule)(nil),
 		(*TunnelTermination_TerminationVirtualMachineType)(nil),
+		(*TunnelTermination_TerminationUser)(nil),
 	}
 	file_diode_v1_ingester_proto_msgTypes[78].OneofWrappers = []any{}
 	file_diode_v1_ingester_proto_msgTypes[79].OneofWrappers = []any{
@@ -32963,6 +33206,7 @@ func file_diode_v1_ingester_proto_init() {
 		(*JournalEntry_AssignedObjectRackGroup)(nil),
 		(*JournalEntry_AssignedObjectScriptModule)(nil),
 		(*JournalEntry_AssignedObjectVirtualMachineType)(nil),
+		(*JournalEntry_AssignedObjectUser)(nil),
 	}
 	file_diode_v1_ingester_proto_msgTypes[97].OneofWrappers = []any{}
 	file_diode_v1_ingester_proto_msgTypes[98].OneofWrappers = []any{}
@@ -32977,7 +33221,7 @@ func file_diode_v1_ingester_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_diode_v1_ingester_proto_rawDesc), len(file_diode_v1_ingester_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   192,
+			NumMessages:   193,
 			NumExtensions: 1,
 			NumServices:   1,
 		},

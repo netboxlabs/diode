@@ -2,7 +2,7 @@ syntax = "proto3";
 
 // Generated Code. DO NOT EDIT.
 // Source: NetBox v4.6.0
-// Timestamp: 2026-05-14 20:30:13Z
+// Timestamp: 2026-07-08 14:57:55Z
 
 package diode.v1;
 
@@ -124,6 +124,7 @@ message Entity {
     RackGroup rack_group = 99;
     ScriptModule script_module = 100;
     VirtualMachineType virtual_machine_type = 101;
+    User user = 102;
   }
 }
 
@@ -521,6 +522,7 @@ message ContactAssignment {
     RackGroup object_rack_group = 103;
     ScriptModule object_script_module = 104;
     VirtualMachineType object_virtual_machine_type = 105;
+    User object_user = 106;
   }
   Contact contact = 89;
   optional ContactRole role = 90;
@@ -654,6 +656,7 @@ message CustomFieldObjectReference {
     RackGroup rack_group = 97;
     ScriptModule script_module = 98;
     VirtualMachineType virtual_machine_type = 99;
+    User user = 100;
   }
 }
 
@@ -872,6 +875,7 @@ message FHRPGroupAssignment {
     RackGroup interface_rack_group = 100;
     ScriptModule interface_script_module = 101;
     VirtualMachineType interface_virtual_machine_type = 102;
+    User interface_user = 103;
   }
   int64 priority = 90;
   google.protobuf.Struct metadata = 96 [(netbox_supported) = false];
@@ -996,6 +1000,7 @@ message GenericObject {
     RackGroup object_rack_group = 97;
     ScriptModule object_script_module = 98;
     VirtualMachineType object_virtual_machine_type = 99;
+    User object_user = 100;
   }
 }
 
@@ -1303,6 +1308,7 @@ message L2VPNTermination {
     RackGroup assigned_object_rack_group = 101;
     ScriptModule assigned_object_script_module = 102;
     VirtualMachineType assigned_object_virtual_machine_type = 103;
+    User assigned_object_user = 104;
   }
   repeated Tag tags = 5;
   map<string, CustomFieldValue> custom_fields = 6;
@@ -1596,6 +1602,7 @@ message RackReservation {
   optional string status = 8 [(validate.rules).string = { in: ["active","pending","stale"] }];
   google.protobuf.Struct metadata = 9 [(netbox_supported) = false];
   optional Owner owner = 10;
+  User user = 11;
 }
 
 message RackRole {
@@ -1904,6 +1911,7 @@ message TunnelTermination {
     RackGroup termination_rack_group = 103;
     ScriptModule termination_script_module = 104;
     VirtualMachineType termination_virtual_machine_type = 105;
+    User termination_user = 106;
   }
   optional IPAddress outside_ip = 91;
   repeated Tag tags = 92;
@@ -2161,7 +2169,7 @@ message WirelessLink {
 
 message CustomField {
   string type = 1 [(validate.rules).string = { in: ["boolean","date","datetime","decimal","integer","json","longtext","multiobject","multiselect","object","select","text","url"] }];
-  optional string related_object_type = 2 [(validate.rules).string = { in: ["circuits.circuit","circuits.circuitgroup","circuits.circuitgroupassignment","circuits.circuittermination","circuits.circuittype","circuits.provider","circuits.provideraccount","circuits.providernetwork","circuits.virtualcircuit","circuits.virtualcircuittermination","circuits.virtualcircuittype","core.managedfile","dcim.cable","dcim.cablebundle","dcim.cablepath","dcim.consoleport","dcim.consoleserverport","dcim.device","dcim.devicebay","dcim.devicerole","dcim.devicetype","dcim.frontport","dcim.interface","dcim.inventoryitem","dcim.inventoryitemrole","dcim.location","dcim.macaddress","dcim.manufacturer","dcim.module","dcim.modulebay","dcim.moduletype","dcim.moduletypeprofile","dcim.platform","dcim.powerfeed","dcim.poweroutlet","dcim.powerpanel","dcim.powerport","dcim.rack","dcim.rackgroup","dcim.rackreservation","dcim.rackrole","dcim.racktype","dcim.rearport","dcim.region","dcim.site","dcim.sitegroup","dcim.virtualchassis","dcim.virtualdevicecontext","extras.customfield","extras.customfieldchoiceset","extras.customlink","extras.journalentry","extras.tag","ipam.aggregate","ipam.asn","ipam.asnrange","ipam.fhrpgroup","ipam.fhrpgroupassignment","ipam.ipaddress","ipam.iprange","ipam.prefix","ipam.rir","ipam.role","ipam.routetarget","ipam.service","ipam.vlan","ipam.vlangroup","ipam.vlantranslationpolicy","ipam.vlantranslationrule","ipam.vrf","tenancy.contact","tenancy.contactassignment","tenancy.contactgroup","tenancy.contactrole","tenancy.tenant","tenancy.tenantgroup","users.owner","users.ownergroup","virtualization.cluster","virtualization.clustergroup","virtualization.clustertype","virtualization.virtualdisk","virtualization.virtualmachine","virtualization.virtualmachinetype","virtualization.vminterface","vpn.ikepolicy","vpn.ikeproposal","vpn.ipsecpolicy","vpn.ipsecprofile","vpn.ipsecproposal","vpn.l2vpn","vpn.l2vpntermination","vpn.tunnel","vpn.tunnelgroup","vpn.tunneltermination","wireless.wirelesslan","wireless.wirelesslangroup","wireless.wirelesslink"] }];
+  optional string related_object_type = 2 [(validate.rules).string = { in: ["circuits.circuit","circuits.circuitgroup","circuits.circuitgroupassignment","circuits.circuittermination","circuits.circuittype","circuits.provider","circuits.provideraccount","circuits.providernetwork","circuits.virtualcircuit","circuits.virtualcircuittermination","circuits.virtualcircuittype","core.managedfile","dcim.cable","dcim.cablebundle","dcim.cablepath","dcim.consoleport","dcim.consoleserverport","dcim.device","dcim.devicebay","dcim.devicerole","dcim.devicetype","dcim.frontport","dcim.interface","dcim.inventoryitem","dcim.inventoryitemrole","dcim.location","dcim.macaddress","dcim.manufacturer","dcim.module","dcim.modulebay","dcim.moduletype","dcim.moduletypeprofile","dcim.platform","dcim.powerfeed","dcim.poweroutlet","dcim.powerpanel","dcim.powerport","dcim.rack","dcim.rackgroup","dcim.rackreservation","dcim.rackrole","dcim.racktype","dcim.rearport","dcim.region","dcim.site","dcim.sitegroup","dcim.virtualchassis","dcim.virtualdevicecontext","extras.customfield","extras.customfieldchoiceset","extras.customlink","extras.journalentry","extras.tag","ipam.aggregate","ipam.asn","ipam.asnrange","ipam.fhrpgroup","ipam.fhrpgroupassignment","ipam.ipaddress","ipam.iprange","ipam.prefix","ipam.rir","ipam.role","ipam.routetarget","ipam.service","ipam.vlan","ipam.vlangroup","ipam.vlantranslationpolicy","ipam.vlantranslationrule","ipam.vrf","tenancy.contact","tenancy.contactassignment","tenancy.contactgroup","tenancy.contactrole","tenancy.tenant","tenancy.tenantgroup","users.owner","users.ownergroup","users.user","virtualization.cluster","virtualization.clustergroup","virtualization.clustertype","virtualization.virtualdisk","virtualization.virtualmachine","virtualization.virtualmachinetype","virtualization.vminterface","vpn.ikepolicy","vpn.ikeproposal","vpn.ipsecpolicy","vpn.ipsecprofile","vpn.ipsecproposal","vpn.l2vpn","vpn.l2vpntermination","vpn.tunnel","vpn.tunnelgroup","vpn.tunneltermination","wireless.wirelesslan","wireless.wirelesslangroup","wireless.wirelesslink"] }];
   string name = 3;
   optional string label = 4;
   optional string group_name = 5;
@@ -2299,12 +2307,14 @@ message JournalEntry {
     RackGroup assigned_object_rack_group = 102;
     ScriptModule assigned_object_script_module = 103;
     VirtualMachineType assigned_object_virtual_machine_type = 104;
+    User assigned_object_user = 105;
   }
   optional string kind = 93 [(validate.rules).string = { in: ["danger","info","success","warning"] }];
   string comments = 94;
   repeated Tag tags = 95;
   map<string, CustomFieldValue> custom_fields = 96;
   google.protobuf.Struct metadata = 98 [(netbox_supported) = false];
+  optional User created_by = 106;
 }
 
 message ModuleTypeProfile {
@@ -2337,6 +2347,7 @@ message Owner {
   OwnerGroup group = 2;
   optional string description = 3;
   google.protobuf.Struct metadata = 4 [(netbox_supported) = false];
+  repeated User users = 5;
 }
 
 message OwnerGroup {
@@ -2390,4 +2401,9 @@ message VirtualMachineType {
   repeated Tag tags = 9;
   map<string, CustomFieldValue> custom_fields = 10;
   google.protobuf.Struct metadata = 11 [(netbox_supported) = false];
+}
+
+message User {
+  string username = 1;
+  google.protobuf.Struct metadata = 2 [(netbox_supported) = false];
 }

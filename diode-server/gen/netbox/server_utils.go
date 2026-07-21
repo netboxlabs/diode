@@ -1,6 +1,6 @@
 // Generated code. DO NOT EDIT.
 // Source: NetBox v4.6.0
-// Timestamp: 2026-05-14 20:30:15Z
+// Timestamp: 2026-07-08 14:57:56Z
 package netbox
 
 import (
@@ -207,6 +207,8 @@ const (
 	ScriptModuleObjectTypeName              = "Script Module"
 	VirtualMachineTypeObjectType            = "virtualization.virtualmachinetype"
 	VirtualMachineTypeObjectTypeName        = "Virtual Machine Type"
+	UserObjectType                          = "users.user"
+	UserObjectTypeName                      = "User"
 	DeviceConfigObjectType                  = "dcim.deviceconfig"
 	DeviceConfigObjectTypeName              = "Device Config"
 )
@@ -311,6 +313,7 @@ var entityTypeMap = map[reflect.Type]string{
 	reflect.TypeOf((*pb.Entity_RackGroup)(nil)):                 RackGroupObjectType,
 	reflect.TypeOf((*pb.Entity_ScriptModule)(nil)):              ScriptModuleObjectType,
 	reflect.TypeOf((*pb.Entity_VirtualMachineType)(nil)):        VirtualMachineTypeObjectType,
+	reflect.TypeOf((*pb.Entity_User)(nil)):                      UserObjectType,
 }
 
 func GetObjectType(entity *pb.Entity) (string, error) {
@@ -519,6 +522,8 @@ func GetObjectTypeName(objectType string) (string, error) {
 		return ScriptModuleObjectTypeName, nil
 	case VirtualMachineTypeObjectType:
 		return VirtualMachineTypeObjectTypeName, nil
+	case UserObjectType:
+		return UserObjectTypeName, nil
 	case DeviceConfigObjectType:
 		return DeviceConfigObjectTypeName, nil
 	default:
@@ -662,6 +667,8 @@ func GetPrimaryValue(entity *pb.Entity) (string, error) {
 		return fmt.Sprintf("%v", e.Tunnel.Name), nil
 	case *pb.Entity_TunnelGroup:
 		return fmt.Sprintf("%v", e.TunnelGroup.Name), nil
+	case *pb.Entity_User:
+		return fmt.Sprintf("%v", e.User.Username), nil
 	case *pb.Entity_Vlan:
 		return fmt.Sprintf("%v", e.Vlan.Name), nil
 	case *pb.Entity_VlanGroup:
