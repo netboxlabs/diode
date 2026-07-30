@@ -324,18 +324,25 @@ func TestCacheableTokenRequest(t *testing.T) {
 			},
 		},
 		{
-			name:   "client secret basic is url decoded",
+			// Every client this service registers uses client_secret_post and the
+			// upstream rejects anything else, so basic credentials cannot yield a
+			// cacheable response. Bypassing is also what stops us keying on the form
+			// while the upstream authenticates the header.
+			name:   "credentials in an authorization header bypass the cache",
 			body:   "grant_type=client_credentials",
-			header: basic("a b", "s:p@ce"),
-			wantOK: true,
-			wantCred: tokenCredentials{
-				grantType: grantTypeClientCredentials, clientID: "a b", clientSecret: "s:p@ce",
-			},
+			header: basic("a", "b"),
+			wantOK: false,
 		},
 		{
-			name:   "both authentication methods is ambiguous",
+			name:   "form credentials alongside an authorization header are ambiguous",
 			body:   "grant_type=client_credentials&client_id=a&client_secret=b",
 			header: basic("a", "b"),
+			wantOK: false,
+		},
+		{
+			name:   "any authorization scheme bypasses the cache",
+			body:   "grant_type=client_credentials&client_id=a&client_secret=b",
+			header: http.Header{"Authorization": {"Bearer some-token"}},
 			wantOK: false,
 		},
 		{

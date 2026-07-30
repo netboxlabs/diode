@@ -151,6 +151,8 @@ func (c *tokenCache) get(key string, now time.Time) (tokenCacheEntry, bool) {
 	if !ok {
 		return tokenCacheEntry{}, false
 	}
+	// Past its serving window. Drop it rather than leaving it to be evicted later, so a
+	// stale entry can never be served and the slot is freed now.
 	if !now.Before(entry.servableUntil) {
 		c.entries.Remove(key)
 		return tokenCacheEntry{}, false
@@ -188,6 +190,11 @@ func (c *tokenCache) putToken(key string, cred tokenCredentials, body map[string
 // This is safe only because the presented secret is part of the key: a caller that later
 // presents the correct secret derives a different key and cannot be locked out by a
 // cached rejection.
+//
+// It never overwrites a live token for the same key, because every path that reaches the
+// upstream has already dropped that key: get removes on expiry, a gate denial removes
+// before falling through, and an unusable response body removes too. The invariant
+// matters because Add would otherwise replace a valid token with a rejection.
 func (c *tokenCache) putNegative(key string, statusCode int, contentType string, body []byte, now time.Time) {
 	if c.negativeTTL <= 0 {
 		return
@@ -244,24 +251,17 @@ func cacheableTokenRequest(body []byte, header http.Header) (tokenCredentials, b
 		return tokenCredentials{}, false
 	}
 
-	basicID, basicSecret, hasBasic := basicAuthCredentials(header)
-	formID, formSecret := form.Get("client_id"), form.Get("client_secret")
-	hasForm := formID != "" || formSecret != ""
-
-	var clientID, clientSecret string
-	switch {
-	case hasBasic && hasForm:
-		// RFC 6749 section 2.3 forbids more than one authentication method. We cannot
-		// know which one the upstream will validate, so we must not key on either.
-		return tokenCredentials{}, false
-	case hasBasic:
-		clientID, clientSecret = basicID, basicSecret
-	case hasForm:
-		clientID, clientSecret = formID, formSecret
-	default:
+	// Clients registered by this service all use client_secret_post, and the
+	// authorization server rejects any other method, so credentials carried in an
+	// Authorization header can never produce a cacheable response. Refuse to key such a
+	// request rather than guess which credentials the upstream will validate: keying on
+	// the form while it authenticates the header would cache one client's token under
+	// another client's key.
+	if header.Get("Authorization") != "" {
 		return tokenCredentials{}, false
 	}
 
+	clientID, clientSecret := form.Get("client_id"), form.Get("client_secret")
 	if clientID == "" || clientSecret == "" {
 		return tokenCredentials{}, false
 	}
@@ -273,40 +273,6 @@ func cacheableTokenRequest(body []byte, header http.Header) (tokenCredentials, b
 		scopes:       sortedFields(form["scope"]),
 		audiences:    sortedFields(form["audience"]),
 	}, true
-}
-
-// basicAuthCredentials extracts client_secret_basic credentials.
-//
-// RFC 6749 section 2.3.1 requires both halves to be form-urlencoded before they are
-// base64 encoded, which http.Request.BasicAuth does not undo.
-func basicAuthCredentials(header http.Header) (string, string, bool) {
-	const prefix = "Basic "
-
-	value := header.Get("Authorization")
-	if len(value) <= len(prefix) || !strings.EqualFold(value[:len(prefix)], prefix) {
-		return "", "", false
-	}
-
-	raw, err := base64.StdEncoding.DecodeString(strings.TrimSpace(value[len(prefix):]))
-	if err != nil {
-		return "", "", false
-	}
-
-	clientID, clientSecret, ok := strings.Cut(string(raw), ":")
-	if !ok {
-		return "", "", false
-	}
-
-	clientID, err = url.QueryUnescape(clientID)
-	if err != nil {
-		return "", "", false
-	}
-	clientSecret, err = url.QueryUnescape(clientSecret)
-	if err != nil {
-		return "", "", false
-	}
-
-	return clientID, clientSecret, true
 }
 
 // sortedFields splits each value on whitespace and returns the result in a stable order,
