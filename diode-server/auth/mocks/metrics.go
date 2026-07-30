@@ -4,6 +4,7 @@ package mocks
 
 import (
 	context "context"
+	time "time"
 
 	mock "github.com/stretchr/testify/mock"
 )
@@ -51,6 +52,75 @@ func (_c *Metrics_RecordServiceStartupAttempt_Call) Return() *Metrics_RecordServ
 }
 
 func (_c *Metrics_RecordServiceStartupAttempt_Call) RunAndReturn(run func(context.Context, bool)) *Metrics_RecordServiceStartupAttempt_Call {
+	_c.Run(run)
+	return _c
+}
+
+// RecordTokenCacheOutcome provides a mock function with given fields: ctx, outcome
+func (_m *Metrics) RecordTokenCacheOutcome(ctx context.Context, outcome string) {
+	_m.Called(ctx, outcome)
+}
+
+// Metrics_RecordTokenCacheOutcome_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RecordTokenCacheOutcome'
+type Metrics_RecordTokenCacheOutcome_Call struct {
+	*mock.Call
+}
+
+// RecordTokenCacheOutcome is a helper method to define mock.On call
+//   - ctx context.Context
+//   - outcome string
+func (_e *Metrics_Expecter) RecordTokenCacheOutcome(ctx interface{}, outcome interface{}) *Metrics_RecordTokenCacheOutcome_Call {
+	return &Metrics_RecordTokenCacheOutcome_Call{Call: _e.mock.On("RecordTokenCacheOutcome", ctx, outcome)}
+}
+
+func (_c *Metrics_RecordTokenCacheOutcome_Call) Run(run func(ctx context.Context, outcome string)) *Metrics_RecordTokenCacheOutcome_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *Metrics_RecordTokenCacheOutcome_Call) Return() *Metrics_RecordTokenCacheOutcome_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Metrics_RecordTokenCacheOutcome_Call) RunAndReturn(run func(context.Context, string)) *Metrics_RecordTokenCacheOutcome_Call {
+	_c.Run(run)
+	return _c
+}
+
+// RecordUpstreamTokenRequest provides a mock function with given fields: ctx, duration, outcome
+func (_m *Metrics) RecordUpstreamTokenRequest(ctx context.Context, duration time.Duration, outcome string) {
+	_m.Called(ctx, duration, outcome)
+}
+
+// Metrics_RecordUpstreamTokenRequest_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RecordUpstreamTokenRequest'
+type Metrics_RecordUpstreamTokenRequest_Call struct {
+	*mock.Call
+}
+
+// RecordUpstreamTokenRequest is a helper method to define mock.On call
+//   - ctx context.Context
+//   - duration time.Duration
+//   - outcome string
+func (_e *Metrics_Expecter) RecordUpstreamTokenRequest(ctx interface{}, duration interface{}, outcome interface{}) *Metrics_RecordUpstreamTokenRequest_Call {
+	return &Metrics_RecordUpstreamTokenRequest_Call{Call: _e.mock.On("RecordUpstreamTokenRequest", ctx, duration, outcome)}
+}
+
+func (_c *Metrics_RecordUpstreamTokenRequest_Call) Run(run func(ctx context.Context, duration time.Duration, outcome string)) *Metrics_RecordUpstreamTokenRequest_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(time.Duration), args[2].(string))
+	})
+	return _c
+}
+
+func (_c *Metrics_RecordUpstreamTokenRequest_Call) Return() *Metrics_RecordUpstreamTokenRequest_Call {
+	_c.Call.Return()
+	return _c
+}
+
+func (_c *Metrics_RecordUpstreamTokenRequest_Call) RunAndReturn(run func(context.Context, time.Duration, string)) *Metrics_RecordUpstreamTokenRequest_Call {
 	_c.Run(run)
 	return _c
 }
