@@ -72,6 +72,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	httpServer.SetMetrics(metricRecorder)
+
 	if err := s.RegisterComponent(httpServer); err != nil {
 		s.Logger().Error("failed to register HTTP server", "error", err)
 		metricRecorder.RecordServiceStartupAttempt(ctx, false)
