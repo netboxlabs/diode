@@ -32,7 +32,7 @@ func TestServerHydraIntegration(t *testing.T) {
 	creq := testcontainers.ContainerRequest{
 		Image:        "oryd/hydra:v26.2.0",
 		ExposedPorts: []string{"4445/tcp", "4444/tcp"},
-		WaitingFor:   wait.ForLog("Setting up http server on 0.0.0.0:4445"),
+		WaitingFor:   wait.ForHTTP("/health/ready").WithPort("4445/tcp").WithStartupTimeout(60 * time.Second),
 		Cmd:          []string{"serve", "all", "--dev"},
 		Env: map[string]string{
 			"DSN":                                      "memory",
