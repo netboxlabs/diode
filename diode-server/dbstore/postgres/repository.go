@@ -3,8 +3,13 @@ package postgres
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"log/slog"
+	"slices"
+	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -13,11 +18,20 @@ import (
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
+	"github.com/netboxlabs/diode/diode-server/reconciler/ops"
 )
+
+// rollbackTimeout bounds how long we wait for a rollback during shutdown.
+// The parent context may already be canceled, so rollback uses a detached
+// context with this timeout to ensure cleanup completes.
+const rollbackTimeout = 5 * time.Second
 
 // Repository is an interface for interacting with ingestion logs and change sets.
 type Repository struct {
-	pool    *pgxpool.Pool
+	pool *pgxpool.Pool
+	// db is the executor for raw (non-sqlc) SQL: the pool normally, the
+	// transaction for tx-scoped instances created by WithDedupLocks.
+	db      postgres.DBTX
 	queries *postgres.Queries
 }
 
@@ -25,8 +39,43 @@ type Repository struct {
 func NewRepository(pool *pgxpool.Pool) *Repository {
 	return &Repository{
 		pool:    pool,
+		db:      pool,
 		queries: postgres.New(pool),
 	}
+}
+
+// WithDedupLocks runs fn within a single transaction that holds per-entity-hash
+// advisory locks (pg_advisory_xact_lock, sorted to avoid lock-order deadlocks)
+// for its whole duration. This closes the find-prior -> insert race: two
+// concurrent batches carrying the same entity serialize on the hash lock, so
+// the second one sees the first one's committed row and dedups against it
+// instead of inserting its own. fn receives a tx-scoped repository; returning
+// an error rolls the whole transaction back.
+func (r *Repository) WithDedupLocks(ctx context.Context, entityHashes []string, fn func(ops.DedupRepository) error) error {
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to start transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	txRepo := &Repository{
+		pool:    r.pool,
+		db:      tx,
+		queries: r.queries.WithTx(tx),
+	}
+
+	if err := txRepo.queries.AcquireEntityHashLocks(ctx, entityHashes); err != nil {
+		return fmt.Errorf("failed to acquire entity hash locks: %w", err)
+	}
+
+	if err := fn(txRepo); err != nil {
+		return err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+	return nil
 }
 
 // CreateIngestionLog creates a new ingestion log with entity hash and deduplication fields.
@@ -245,8 +294,17 @@ func (r *Repository) CreateChangeSet(ctx context.Context, changeSet changeset.Ch
 	}
 
 	rollback := func() {
-		if err := tx.Rollback(ctx); err != nil {
-			panic(fmt.Errorf("failed to rollback transaction: %w", err))
+		// Detached context so the rollback can complete even when the
+		// caller's context is already canceled (pod shutdown, parent
+		// timeout). pgx5 otherwise fails to DEALLOCATE prepared statements
+		// and returns an error here. Panicking on that would crash the
+		// reconciler over what is at worst a logged warning - the
+		// transaction is cleaned up when the connection returns to the
+		// pool either way.
+		rollbackCtx, cancel := context.WithTimeout(context.Background(), rollbackTimeout)
+		defer cancel()
+		if err := tx.Rollback(rollbackCtx); err != nil && !errors.Is(err, pgx.ErrTxClosed) {
+			slog.WarnContext(ctx, "failed to rollback transaction", "error", err)
 		}
 	}
 
@@ -268,6 +326,7 @@ func (r *Repository) CreateChangeSet(ctx context.Context, changeSet changeset.Ch
 		return nil, fmt.Errorf("failed to create change set: %w", err)
 	}
 
+	bulkParams := make([]postgres.BulkCreateChangesParams, 0, len(changeSet.Changes))
 	for i, change := range changeSet.Changes {
 		beforeJSON, err := json.Marshal(change.Before)
 		if err != nil {
@@ -281,7 +340,7 @@ func (r *Repository) CreateChangeSet(ctx context.Context, changeSet changeset.Ch
 			return nil, fmt.Errorf("failed to marshal after state: %w", err)
 		}
 
-		changeParams := postgres.CreateChangeParams{
+		p := postgres.BulkCreateChangesParams{
 			ExternalID:         change.ID,
 			ChangeSetID:        cs.ID,
 			ChangeType:         change.ChangeType,
@@ -293,19 +352,20 @@ func (r *Repository) CreateChangeSet(ctx context.Context, changeSet changeset.Ch
 			SequenceNumber:     pgtype.Int4{Int32: int32(i), Valid: true},
 		}
 		if change.ObjectID != nil {
-			changeParams.ObjectID = pgtype.Int4{Int32: int32(*change.ObjectID), Valid: true}
+			p.ObjectID = pgtype.Int4{Int32: int32(*change.ObjectID), Valid: true}
 		}
 		if change.ObjectVersion != nil {
-			changeParams.ObjectVersion = pgtype.Int4{Int32: int32(*change.ObjectVersion), Valid: true}
+			p.ObjectVersion = pgtype.Int4{Int32: int32(*change.ObjectVersion), Valid: true}
 		}
 		if change.RefID != nil {
-			changeParams.RefID = pgtype.Text{String: *change.RefID, Valid: true}
+			p.RefID = pgtype.Text{String: *change.RefID, Valid: true}
 		}
+		bulkParams = append(bulkParams, p)
+	}
 
-		if _, err = qtx.CreateChange(ctx, changeParams); err != nil {
-			rollback()
-			return nil, fmt.Errorf("failed to create change: %w", err)
-		}
+	if _, err = qtx.BulkCreateChanges(ctx, bulkParams); err != nil {
+		rollback()
+		return nil, fmt.Errorf("failed to bulk create changes: %w", err)
 	}
 
 	if err := tx.Commit(ctx); err != nil {
@@ -460,9 +520,34 @@ func (r *Repository) FindPriorIngestionLogByEntityHash(ctx context.Context, enti
 	return &dbLog.ID, log, nil
 }
 
-// IncrementDuplicateCount increments the duplicate count for an ingestion log
-func (r *Repository) IncrementDuplicateCount(ctx context.Context, id int32) error {
-	return r.queries.IncrementDuplicateCount(ctx, id)
+// BulkMarkDuplicates increments duplicate bookkeeping for the given prior
+// ingestion logs (by the per-ID amount, so a batch carrying n copies of one
+// entity counts n observations) and requeues drift-eligible ones
+// (APPLIED/FAILED/NO_CHANGES -> QUEUED). Returns requeued flag by ingestion
+// log ID.
+func (r *Repository) BulkMarkDuplicates(ctx context.Context, increments map[int32]int32) (map[int32]bool, error) {
+	ids := make([]int32, 0, len(increments))
+	for id := range increments {
+		ids = append(ids, id)
+	}
+	slices.Sort(ids)
+	counts := make([]int32, len(ids))
+	for i, id := range ids {
+		counts[i] = increments[id]
+	}
+
+	rows, err := r.queries.BulkMarkDuplicates(ctx, postgres.BulkMarkDuplicatesParams{
+		Ids:        ids,
+		Increments: counts,
+	})
+	if err != nil {
+		return nil, err
+	}
+	requeued := make(map[int32]bool, len(rows))
+	for _, row := range rows {
+		requeued[row.ID] = row.Requeued
+	}
+	return requeued, nil
 }
 
 // TruncateChangeSets truncates change sets for an ingestion log to the given limit (keeps latest n)
@@ -471,4 +556,384 @@ func (r *Repository) TruncateChangeSets(ctx context.Context, ingestionLogID int3
 		IngestionLogID: ingestionLogID,
 		Limit:          limit,
 	})
+}
+
+// FindPriorIngestionLogsByEntityHashes finds prior ingestion logs matching the given entity hashes, scoped by branch.
+func (r *Repository) FindPriorIngestionLogsByEntityHashes(ctx context.Context, entityHashes []string, currentBranch *string) (map[string]*ops.PriorIngestionLog, error) {
+	params := postgres.FindPriorIngestionLogsByEntityHashesParams{
+		EntityHashes: entityHashes,
+	}
+	if currentBranch != nil {
+		params.BranchID = pgtype.Text{String: *currentBranch, Valid: true}
+	}
+
+	dbLogs, err := r.queries.FindPriorIngestionLogsByEntityHashes(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make(map[string]*ops.PriorIngestionLog, len(dbLogs))
+	for _, dbLog := range dbLogs {
+		log, err := dbLog.ToProto()
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert to proto: %w", err)
+		}
+		result[dbLog.EntityHash.String] = &ops.PriorIngestionLog{
+			ID:           dbLog.ID,
+			IngestionLog: log,
+		}
+	}
+	return result, nil
+}
+
+// BulkCreateIngestionLogs bulk inserts ingestion logs using the COPY protocol.
+// It pre-allocates sequence IDs and returns a map of external_id → id.
+func (r *Repository) BulkCreateIngestionLogs(ctx context.Context, logs []*reconcilerpb.IngestionLog, sourceMetadata [][]byte, entityHashes []string) (map[string]int32, error) {
+	ids, err := r.allocateIngestionLogIDs(ctx, len(logs))
+	if err != nil {
+		return nil, fmt.Errorf("failed to allocate IDs: %w", err)
+	}
+
+	marshaler := protojson.MarshalOptions{
+		UseProtoNames: true,
+	}
+
+	params := make([]postgres.BulkCreateIngestionLogsParams, 0, len(logs))
+	idMap := make(map[string]int32, len(logs))
+	for i, log := range logs {
+		entityJSON, err := marshaler.Marshal(log.Entity)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal entity at index %d: %w", i, err)
+		}
+
+		var sm []byte
+		if i < len(sourceMetadata) {
+			sm = sourceMetadata[i]
+		}
+
+		params = append(params, postgres.BulkCreateIngestionLogsParams{
+			ID:                 ids[i],
+			ExternalID:         log.Id,
+			ObjectType:         pgtype.Text{String: log.ObjectType, Valid: true},
+			State:              pgtype.Int4{Int32: int32(log.State), Valid: true},
+			RequestID:          pgtype.Text{String: log.RequestId, Valid: true},
+			IngestionTs:        pgtype.Int8{Int64: log.IngestionTs, Valid: true},
+			SourceTs:           pgtype.Int8{Int64: log.SourceTs, Valid: true},
+			ProducerAppName:    pgtype.Text{String: log.ProducerAppName, Valid: true},
+			ProducerAppVersion: pgtype.Text{String: log.ProducerAppVersion, Valid: true},
+			SdkName:            pgtype.Text{String: log.SdkName, Valid: true},
+			SdkVersion:         pgtype.Text{String: log.SdkVersion, Valid: true},
+			Entity:             entityJSON,
+			SourceMetadata:     sm,
+			EntityHash:         pgtype.Text{String: entityHashes[i], Valid: true},
+		})
+		idMap[log.Id] = ids[i]
+	}
+
+	if _, err := r.queries.BulkCreateIngestionLogs(ctx, params); err != nil {
+		return nil, err
+	}
+	return idMap, nil
+}
+
+func (r *Repository) allocateIngestionLogIDs(ctx context.Context, n int) ([]int32, error) {
+	rows, err := r.db.Query(ctx, "SELECT nextval('ingestion_logs_id_seq')::int4 FROM generate_series(1, $1)", n)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	ids := make([]int32, 0, n)
+	for rows.Next() {
+		var id int32
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
+}
+
+// BulkPersistChangeSets persists multiple changesets and their changes in a
+// single transaction, then bulk-updates ingestion log states.
+func (r *Repository) BulkPersistChangeSets(ctx context.Context, items []ops.BulkPersistItem, maxChangeSetsPerLog int32) ([]ops.BulkPersistResult, error) {
+	results := make([]ops.BulkPersistResult, len(items))
+
+	var withChanges []int
+	for i, item := range items {
+		results[i].IngestionLogID = item.IngestionLogID
+		if len(item.ChangeSet.Changes) > 0 {
+			withChanges = append(withChanges, i)
+		}
+	}
+
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to start transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	qtx := r.queries.WithTx(tx)
+
+	if len(withChanges) > 0 {
+		csIDs, err := r.allocateChangeSetIDs(ctx, len(withChanges))
+		if err != nil {
+			return nil, fmt.Errorf("failed to allocate change set IDs: %w", err)
+		}
+
+		csParams := make([]postgres.BulkCreateChangeSetsParams, 0, len(withChanges))
+		var allChangeParams []postgres.BulkCreateChangesParams
+
+		for j, idx := range withChanges {
+			item := items[idx]
+			csID := csIDs[j]
+			results[idx].ChangeSetID = &csID
+
+			csParams = append(csParams, buildChangeSetParams(csID, item.IngestionLogID, item.ChangeSet))
+
+			changeParams, err := buildChangeParams(csID, item.ChangeSet)
+			if err != nil {
+				return nil, err
+			}
+			allChangeParams = append(allChangeParams, changeParams...)
+		}
+
+		if _, err := qtx.BulkCreateChangeSets(ctx, csParams); err != nil {
+			return nil, fmt.Errorf("failed to bulk create change sets: %w", err)
+		}
+		if _, err := qtx.BulkCreateChanges(ctx, allChangeParams); err != nil {
+			return nil, fmt.Errorf("failed to bulk create changes: %w", err)
+		}
+	}
+
+	stateIDs := make([]int32, len(items))
+	states := make([]int32, len(items))
+	for i, item := range items {
+		stateIDs[i] = item.IngestionLogID
+		states[i] = int32(item.NewState)
+	}
+	if err := qtx.BulkUpdateIngestionLogStates(ctx, postgres.BulkUpdateIngestionLogStatesParams{
+		Ids:    stateIDs,
+		States: states,
+	}); err != nil {
+		return nil, fmt.Errorf("failed to bulk update ingestion log states: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	if maxChangeSetsPerLog > 0 && len(withChanges) > 0 {
+		ingLogIDs := make([]int32, len(withChanges))
+		for j, idx := range withChanges {
+			ingLogIDs[j] = items[idx].IngestionLogID
+		}
+		if err := r.queries.BulkTruncateChangeSets(ctx, postgres.BulkTruncateChangeSetsParams{
+			IngestionLogIds: ingLogIDs,
+			KeepCount:       maxChangeSetsPerLog,
+		}); err != nil {
+			return nil, fmt.Errorf("failed to bulk truncate change sets: %w", err)
+		}
+	}
+
+	return results, nil
+}
+
+func buildChangeSetParams(csID int32, ingestionLogID int32, cs changeset.ChangeSet) postgres.BulkCreateChangeSetsParams {
+	p := postgres.BulkCreateChangeSetsParams{
+		ID:             csID,
+		ExternalID:     cs.ID,
+		IngestionLogID: ingestionLogID,
+	}
+	if cs.BranchID != nil {
+		p.BranchID = pgtype.Text{String: *cs.BranchID, Valid: true}
+	}
+	if cs.DeviationName != nil {
+		p.DeviationName = pgtype.Text{String: *cs.DeviationName, Valid: true}
+	}
+	return p
+}
+
+func buildChangeParams(csID int32, cs changeset.ChangeSet) ([]postgres.BulkCreateChangesParams, error) {
+	params := make([]postgres.BulkCreateChangesParams, 0, len(cs.Changes))
+	for seq, change := range cs.Changes {
+		beforeJSON, err := json.Marshal(change.Before)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal before state: %w", err)
+		}
+		afterJSON, err := json.Marshal(change.After)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal after state: %w", err)
+		}
+
+		cp := postgres.BulkCreateChangesParams{
+			ExternalID:         change.ID,
+			ChangeSetID:        csID,
+			ChangeType:         change.ChangeType,
+			ObjectType:         change.ObjectType,
+			ObjectPrimaryValue: change.ObjectPrimaryValue,
+			Before:             beforeJSON,
+			After:              afterJSON,
+			NewRefs:            change.NewRefs,
+			SequenceNumber:     pgtype.Int4{Int32: int32(seq), Valid: true},
+		}
+		if change.ObjectID != nil {
+			cp.ObjectID = pgtype.Int4{Int32: int32(*change.ObjectID), Valid: true}
+		}
+		if change.ObjectVersion != nil {
+			cp.ObjectVersion = pgtype.Int4{Int32: int32(*change.ObjectVersion), Valid: true}
+		}
+		if change.RefID != nil {
+			cp.RefID = pgtype.Text{String: *change.RefID, Valid: true}
+		}
+		params = append(params, cp)
+	}
+	return params, nil
+}
+
+// BulkCreateDriftDeviations creates, in one transaction, a new ingestion log
+// per item (clone of the prior with a fresh external ID) carrying the drift
+// change set, and restores each prior log to APPLIED so its history stays
+// intact.
+func (r *Repository) BulkCreateDriftDeviations(ctx context.Context, items []ops.DriftDeviationItem) ([]ops.DriftDeviationResult, error) {
+	results := make([]ops.DriftDeviationResult, len(items))
+
+	csIDs, err := r.allocateChangeSetIDs(ctx, len(items))
+	if err != nil {
+		return nil, fmt.Errorf("failed to allocate change set IDs: %w", err)
+	}
+
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to start transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	qtx := r.queries.WithTx(tx)
+	ingestionTs := time.Now().UnixNano()
+
+	csParams := make([]postgres.BulkCreateChangeSetsParams, 0, len(items))
+	var allChangeParams []postgres.BulkCreateChangesParams
+	priorIDs := make([]int32, len(items))
+	priorStates := make([]int32, len(items))
+
+	for i, item := range items {
+		newLogID, err := qtx.CloneIngestionLogForDrift(ctx, postgres.CloneIngestionLogForDriftParams{
+			NewExternalID: item.NewExternalID,
+			NewState:      int32(item.NewState),
+			IngestionTs:   ingestionTs,
+			PriorID:       item.PriorIngestionLogID,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to clone ingestion log %d: %w", item.PriorIngestionLogID, err)
+		}
+
+		csID := csIDs[i]
+		results[i] = ops.DriftDeviationResult{
+			PriorIngestionLogID: item.PriorIngestionLogID,
+			NewIngestionLogID:   newLogID,
+			ChangeSetID:         &csID,
+		}
+
+		csParams = append(csParams, buildChangeSetParams(csID, newLogID, item.ChangeSet))
+		changeParams, err := buildChangeParams(csID, item.ChangeSet)
+		if err != nil {
+			return nil, err
+		}
+		allChangeParams = append(allChangeParams, changeParams...)
+
+		priorIDs[i] = item.PriorIngestionLogID
+		priorStates[i] = int32(reconcilerpb.State_APPLIED)
+	}
+
+	if _, err := qtx.BulkCreateChangeSets(ctx, csParams); err != nil {
+		return nil, fmt.Errorf("failed to bulk create change sets: %w", err)
+	}
+	if _, err := qtx.BulkCreateChanges(ctx, allChangeParams); err != nil {
+		return nil, fmt.Errorf("failed to bulk create changes: %w", err)
+	}
+
+	// Restore priors to APPLIED; also clears error and requeued_from_state.
+	if err := qtx.BulkUpdateIngestionLogStates(ctx, postgres.BulkUpdateIngestionLogStatesParams{
+		Ids:    priorIDs,
+		States: priorStates,
+	}); err != nil {
+		return nil, fmt.Errorf("failed to restore prior ingestion log states: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return results, nil
+}
+
+func (r *Repository) allocateChangeSetIDs(ctx context.Context, n int) ([]int32, error) {
+	rows, err := r.db.Query(ctx, "SELECT nextval('change_sets_id_seq')::int4 FROM generate_series(1, $1)", n)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	ids := make([]int32, 0, n)
+	for rows.Next() {
+		var id int32
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
+}
+
+// ClaimQueuedIngestionLogs returns a batch of ingestion logs in QUEUED state for processing.
+func (r *Repository) ClaimQueuedIngestionLogs(ctx context.Context, batchSize int32) ([]ops.QueuedIngestionLog, error) {
+	dbLogs, err := r.queries.ClaimQueuedIngestionLogs(ctx, batchSize)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]ops.QueuedIngestionLog, 0, len(dbLogs))
+	for _, dbLog := range dbLogs {
+		log, err := dbLog.ToProto()
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert to proto: %w", err)
+		}
+		result = append(result, ops.QueuedIngestionLog{
+			ID:                dbLog.ID,
+			IngestionLog:      log,
+			RequeuedFromState: reconcilerpb.State(dbLog.RequeuedFromState.Int32),
+		})
+	}
+	return result, nil
+}
+
+// ClaimQueuedForAutoApply claims a batch of QUEUED ingestion logs for the
+// AutoApplyProcessor (combined plan + apply). Each claimed row transitions to
+// APPLYING for the duration of the NetBox round-trip; stuck rows are returned
+// to QUEUED on startup via ResetApplyingIngestionLogs.
+func (r *Repository) ClaimQueuedForAutoApply(ctx context.Context, batchSize int32) ([]ops.QueuedIngestionLog, error) {
+	dbLogs, err := r.queries.ClaimQueuedForAutoApply(ctx, batchSize)
+	if err != nil {
+		return nil, fmt.Errorf("failed to claim queued ingestion logs for auto-apply: %w", err)
+	}
+
+	result := make([]ops.QueuedIngestionLog, 0, len(dbLogs))
+	for _, dbLog := range dbLogs {
+		log, err := dbLog.ToProto()
+		if err != nil {
+			return nil, fmt.Errorf("failed to convert ingestion log %d to proto: %w", dbLog.ID, err)
+		}
+		result = append(result, ops.QueuedIngestionLog{
+			ID:                dbLog.ID,
+			IngestionLog:      log,
+			RequeuedFromState: reconcilerpb.State(dbLog.RequeuedFromState.Int32),
+		})
+	}
+	return result, nil
+}
+
+// ResetApplyingIngestionLogs resets any ingestion logs stuck in APPLYING state back to OPEN.
+func (r *Repository) ResetApplyingIngestionLogs(ctx context.Context) error {
+	return r.queries.ResetApplyingIngestionLogs(ctx)
 }

@@ -1,9 +1,11 @@
 // Generated code. DO NOT EDIT.
-// Timestamp: 2025-10-02 12:39:10Z
+// Source: NetBox v4.6.0
+// Timestamp: 2026-07-08 14:57:56Z
 package netbox
 
 import (
 	"fmt"
+	"reflect"
 
 	pb "github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 )
@@ -19,8 +21,6 @@ const (
 	CableObjectTypeName                     = "Cable"
 	CablePathObjectType                     = "dcim.cablepath"
 	CablePathObjectTypeName                 = "Cable Path"
-	CableTerminationObjectType              = "dcim.cabletermination"
-	CableTerminationObjectTypeName          = "Cable Termination"
 	CircuitObjectType                       = "circuits.circuit"
 	CircuitObjectTypeName                   = "Circuit"
 	CircuitGroupObjectType                  = "circuits.circuitgroup"
@@ -195,199 +195,133 @@ const (
 	ModuleTypeProfileObjectTypeName         = "Module Type Profile"
 	CustomLinkObjectType                    = "extras.customlink"
 	CustomLinkObjectTypeName                = "Custom Link"
+	OwnerObjectType                         = "users.owner"
+	OwnerObjectTypeName                     = "Owner"
+	OwnerGroupObjectType                    = "users.ownergroup"
+	OwnerGroupObjectTypeName                = "Owner Group"
+	CableBundleObjectType                   = "dcim.cablebundle"
+	CableBundleObjectTypeName               = "Cable Bundle"
+	RackGroupObjectType                     = "dcim.rackgroup"
+	RackGroupObjectTypeName                 = "Rack Group"
+	ScriptModuleObjectType                  = "core.managedfile"
+	ScriptModuleObjectTypeName              = "Script Module"
+	VirtualMachineTypeObjectType            = "virtualization.virtualmachinetype"
+	VirtualMachineTypeObjectTypeName        = "Virtual Machine Type"
+	UserObjectType                          = "users.user"
+	UserObjectTypeName                      = "User"
+	DeviceConfigObjectType                  = "dcim.deviceconfig"
+	DeviceConfigObjectTypeName              = "Device Config"
 )
 
+// entityTypeMap provides O(1) lookup vs O(n) linear switch evaluation
+var entityTypeMap = map[reflect.Type]string{
+	reflect.TypeOf((*pb.Entity_Asn)(nil)):                       ASNObjectType,
+	reflect.TypeOf((*pb.Entity_AsnRange)(nil)):                  ASNRangeObjectType,
+	reflect.TypeOf((*pb.Entity_Aggregate)(nil)):                 AggregateObjectType,
+	reflect.TypeOf((*pb.Entity_Cable)(nil)):                     CableObjectType,
+	reflect.TypeOf((*pb.Entity_CablePath)(nil)):                 CablePathObjectType,
+	reflect.TypeOf((*pb.Entity_Circuit)(nil)):                   CircuitObjectType,
+	reflect.TypeOf((*pb.Entity_CircuitGroup)(nil)):              CircuitGroupObjectType,
+	reflect.TypeOf((*pb.Entity_CircuitGroupAssignment)(nil)):    CircuitGroupAssignmentObjectType,
+	reflect.TypeOf((*pb.Entity_CircuitTermination)(nil)):        CircuitTerminationObjectType,
+	reflect.TypeOf((*pb.Entity_CircuitType)(nil)):               CircuitTypeObjectType,
+	reflect.TypeOf((*pb.Entity_Cluster)(nil)):                   ClusterObjectType,
+	reflect.TypeOf((*pb.Entity_ClusterGroup)(nil)):              ClusterGroupObjectType,
+	reflect.TypeOf((*pb.Entity_ClusterType)(nil)):               ClusterTypeObjectType,
+	reflect.TypeOf((*pb.Entity_ConsolePort)(nil)):               ConsolePortObjectType,
+	reflect.TypeOf((*pb.Entity_ConsoleServerPort)(nil)):         ConsoleServerPortObjectType,
+	reflect.TypeOf((*pb.Entity_Contact)(nil)):                   ContactObjectType,
+	reflect.TypeOf((*pb.Entity_ContactAssignment)(nil)):         ContactAssignmentObjectType,
+	reflect.TypeOf((*pb.Entity_ContactGroup)(nil)):              ContactGroupObjectType,
+	reflect.TypeOf((*pb.Entity_ContactRole)(nil)):               ContactRoleObjectType,
+	reflect.TypeOf((*pb.Entity_Device)(nil)):                    DeviceObjectType,
+	reflect.TypeOf((*pb.Entity_DeviceBay)(nil)):                 DeviceBayObjectType,
+	reflect.TypeOf((*pb.Entity_DeviceRole)(nil)):                DeviceRoleObjectType,
+	reflect.TypeOf((*pb.Entity_DeviceType)(nil)):                DeviceTypeObjectType,
+	reflect.TypeOf((*pb.Entity_FhrpGroup)(nil)):                 FHRPGroupObjectType,
+	reflect.TypeOf((*pb.Entity_FhrpGroupAssignment)(nil)):       FHRPGroupAssignmentObjectType,
+	reflect.TypeOf((*pb.Entity_FrontPort)(nil)):                 FrontPortObjectType,
+	reflect.TypeOf((*pb.Entity_IkePolicy)(nil)):                 IKEPolicyObjectType,
+	reflect.TypeOf((*pb.Entity_IkeProposal)(nil)):               IKEProposalObjectType,
+	reflect.TypeOf((*pb.Entity_IpAddress)(nil)):                 IPAddressObjectType,
+	reflect.TypeOf((*pb.Entity_IpRange)(nil)):                   IPRangeObjectType,
+	reflect.TypeOf((*pb.Entity_IpSecPolicy)(nil)):               IPSecPolicyObjectType,
+	reflect.TypeOf((*pb.Entity_IpSecProfile)(nil)):              IPSecProfileObjectType,
+	reflect.TypeOf((*pb.Entity_IpSecProposal)(nil)):             IPSecProposalObjectType,
+	reflect.TypeOf((*pb.Entity_Interface)(nil)):                 InterfaceObjectType,
+	reflect.TypeOf((*pb.Entity_InventoryItem)(nil)):             InventoryItemObjectType,
+	reflect.TypeOf((*pb.Entity_InventoryItemRole)(nil)):         InventoryItemRoleObjectType,
+	reflect.TypeOf((*pb.Entity_L2Vpn)(nil)):                     L2VPNObjectType,
+	reflect.TypeOf((*pb.Entity_L2VpnTermination)(nil)):          L2VPNTerminationObjectType,
+	reflect.TypeOf((*pb.Entity_Location)(nil)):                  LocationObjectType,
+	reflect.TypeOf((*pb.Entity_MacAddress)(nil)):                MACAddressObjectType,
+	reflect.TypeOf((*pb.Entity_Manufacturer)(nil)):              ManufacturerObjectType,
+	reflect.TypeOf((*pb.Entity_Module)(nil)):                    ModuleObjectType,
+	reflect.TypeOf((*pb.Entity_ModuleBay)(nil)):                 ModuleBayObjectType,
+	reflect.TypeOf((*pb.Entity_ModuleType)(nil)):                ModuleTypeObjectType,
+	reflect.TypeOf((*pb.Entity_Platform)(nil)):                  PlatformObjectType,
+	reflect.TypeOf((*pb.Entity_PowerFeed)(nil)):                 PowerFeedObjectType,
+	reflect.TypeOf((*pb.Entity_PowerOutlet)(nil)):               PowerOutletObjectType,
+	reflect.TypeOf((*pb.Entity_PowerPanel)(nil)):                PowerPanelObjectType,
+	reflect.TypeOf((*pb.Entity_PowerPort)(nil)):                 PowerPortObjectType,
+	reflect.TypeOf((*pb.Entity_Prefix)(nil)):                    PrefixObjectType,
+	reflect.TypeOf((*pb.Entity_Provider)(nil)):                  ProviderObjectType,
+	reflect.TypeOf((*pb.Entity_ProviderAccount)(nil)):           ProviderAccountObjectType,
+	reflect.TypeOf((*pb.Entity_ProviderNetwork)(nil)):           ProviderNetworkObjectType,
+	reflect.TypeOf((*pb.Entity_Rir)(nil)):                       RIRObjectType,
+	reflect.TypeOf((*pb.Entity_Rack)(nil)):                      RackObjectType,
+	reflect.TypeOf((*pb.Entity_RackReservation)(nil)):           RackReservationObjectType,
+	reflect.TypeOf((*pb.Entity_RackRole)(nil)):                  RackRoleObjectType,
+	reflect.TypeOf((*pb.Entity_RackType)(nil)):                  RackTypeObjectType,
+	reflect.TypeOf((*pb.Entity_RearPort)(nil)):                  RearPortObjectType,
+	reflect.TypeOf((*pb.Entity_Region)(nil)):                    RegionObjectType,
+	reflect.TypeOf((*pb.Entity_Role)(nil)):                      RoleObjectType,
+	reflect.TypeOf((*pb.Entity_RouteTarget)(nil)):               RouteTargetObjectType,
+	reflect.TypeOf((*pb.Entity_Service)(nil)):                   ServiceObjectType,
+	reflect.TypeOf((*pb.Entity_Site)(nil)):                      SiteObjectType,
+	reflect.TypeOf((*pb.Entity_SiteGroup)(nil)):                 SiteGroupObjectType,
+	reflect.TypeOf((*pb.Entity_Tag)(nil)):                       TagObjectType,
+	reflect.TypeOf((*pb.Entity_Tenant)(nil)):                    TenantObjectType,
+	reflect.TypeOf((*pb.Entity_TenantGroup)(nil)):               TenantGroupObjectType,
+	reflect.TypeOf((*pb.Entity_Tunnel)(nil)):                    TunnelObjectType,
+	reflect.TypeOf((*pb.Entity_TunnelGroup)(nil)):               TunnelGroupObjectType,
+	reflect.TypeOf((*pb.Entity_TunnelTermination)(nil)):         TunnelTerminationObjectType,
+	reflect.TypeOf((*pb.Entity_Vlan)(nil)):                      VLANObjectType,
+	reflect.TypeOf((*pb.Entity_VlanGroup)(nil)):                 VLANGroupObjectType,
+	reflect.TypeOf((*pb.Entity_VlanTranslationPolicy)(nil)):     VLANTranslationPolicyObjectType,
+	reflect.TypeOf((*pb.Entity_VlanTranslationRule)(nil)):       VLANTranslationRuleObjectType,
+	reflect.TypeOf((*pb.Entity_VmInterface)(nil)):               VMInterfaceObjectType,
+	reflect.TypeOf((*pb.Entity_Vrf)(nil)):                       VRFObjectType,
+	reflect.TypeOf((*pb.Entity_VirtualChassis)(nil)):            VirtualChassisObjectType,
+	reflect.TypeOf((*pb.Entity_VirtualCircuit)(nil)):            VirtualCircuitObjectType,
+	reflect.TypeOf((*pb.Entity_VirtualCircuitTermination)(nil)): VirtualCircuitTerminationObjectType,
+	reflect.TypeOf((*pb.Entity_VirtualCircuitType)(nil)):        VirtualCircuitTypeObjectType,
+	reflect.TypeOf((*pb.Entity_VirtualDeviceContext)(nil)):      VirtualDeviceContextObjectType,
+	reflect.TypeOf((*pb.Entity_VirtualDisk)(nil)):               VirtualDiskObjectType,
+	reflect.TypeOf((*pb.Entity_VirtualMachine)(nil)):            VirtualMachineObjectType,
+	reflect.TypeOf((*pb.Entity_WirelessLan)(nil)):               WirelessLANObjectType,
+	reflect.TypeOf((*pb.Entity_WirelessLanGroup)(nil)):          WirelessLANGroupObjectType,
+	reflect.TypeOf((*pb.Entity_WirelessLink)(nil)):              WirelessLinkObjectType,
+	reflect.TypeOf((*pb.Entity_CustomField)(nil)):               CustomFieldObjectType,
+	reflect.TypeOf((*pb.Entity_CustomFieldChoiceSet)(nil)):      CustomFieldChoiceSetObjectType,
+	reflect.TypeOf((*pb.Entity_JournalEntry)(nil)):              JournalEntryObjectType,
+	reflect.TypeOf((*pb.Entity_ModuleTypeProfile)(nil)):         ModuleTypeProfileObjectType,
+	reflect.TypeOf((*pb.Entity_CustomLink)(nil)):                CustomLinkObjectType,
+	reflect.TypeOf((*pb.Entity_Owner)(nil)):                     OwnerObjectType,
+	reflect.TypeOf((*pb.Entity_OwnerGroup)(nil)):                OwnerGroupObjectType,
+	reflect.TypeOf((*pb.Entity_CableBundle)(nil)):               CableBundleObjectType,
+	reflect.TypeOf((*pb.Entity_RackGroup)(nil)):                 RackGroupObjectType,
+	reflect.TypeOf((*pb.Entity_ScriptModule)(nil)):              ScriptModuleObjectType,
+	reflect.TypeOf((*pb.Entity_VirtualMachineType)(nil)):        VirtualMachineTypeObjectType,
+	reflect.TypeOf((*pb.Entity_User)(nil)):                      UserObjectType,
+}
+
 func GetObjectType(entity *pb.Entity) (string, error) {
-	switch entity.GetEntity().(type) {
-	case *pb.Entity_Asn:
-		return ASNObjectType, nil
-	case *pb.Entity_AsnRange:
-		return ASNRangeObjectType, nil
-	case *pb.Entity_Aggregate:
-		return AggregateObjectType, nil
-	case *pb.Entity_Cable:
-		return CableObjectType, nil
-	case *pb.Entity_CablePath:
-		return CablePathObjectType, nil
-	case *pb.Entity_CableTermination:
-		return CableTerminationObjectType, nil
-	case *pb.Entity_Circuit:
-		return CircuitObjectType, nil
-	case *pb.Entity_CircuitGroup:
-		return CircuitGroupObjectType, nil
-	case *pb.Entity_CircuitGroupAssignment:
-		return CircuitGroupAssignmentObjectType, nil
-	case *pb.Entity_CircuitTermination:
-		return CircuitTerminationObjectType, nil
-	case *pb.Entity_CircuitType:
-		return CircuitTypeObjectType, nil
-	case *pb.Entity_Cluster:
-		return ClusterObjectType, nil
-	case *pb.Entity_ClusterGroup:
-		return ClusterGroupObjectType, nil
-	case *pb.Entity_ClusterType:
-		return ClusterTypeObjectType, nil
-	case *pb.Entity_ConsolePort:
-		return ConsolePortObjectType, nil
-	case *pb.Entity_ConsoleServerPort:
-		return ConsoleServerPortObjectType, nil
-	case *pb.Entity_Contact:
-		return ContactObjectType, nil
-	case *pb.Entity_ContactAssignment:
-		return ContactAssignmentObjectType, nil
-	case *pb.Entity_ContactGroup:
-		return ContactGroupObjectType, nil
-	case *pb.Entity_ContactRole:
-		return ContactRoleObjectType, nil
-	case *pb.Entity_Device:
-		return DeviceObjectType, nil
-	case *pb.Entity_DeviceBay:
-		return DeviceBayObjectType, nil
-	case *pb.Entity_DeviceRole:
-		return DeviceRoleObjectType, nil
-	case *pb.Entity_DeviceType:
-		return DeviceTypeObjectType, nil
-	case *pb.Entity_FhrpGroup:
-		return FHRPGroupObjectType, nil
-	case *pb.Entity_FhrpGroupAssignment:
-		return FHRPGroupAssignmentObjectType, nil
-	case *pb.Entity_FrontPort:
-		return FrontPortObjectType, nil
-	case *pb.Entity_IkePolicy:
-		return IKEPolicyObjectType, nil
-	case *pb.Entity_IkeProposal:
-		return IKEProposalObjectType, nil
-	case *pb.Entity_IpAddress:
-		return IPAddressObjectType, nil
-	case *pb.Entity_IpRange:
-		return IPRangeObjectType, nil
-	case *pb.Entity_IpSecPolicy:
-		return IPSecPolicyObjectType, nil
-	case *pb.Entity_IpSecProfile:
-		return IPSecProfileObjectType, nil
-	case *pb.Entity_IpSecProposal:
-		return IPSecProposalObjectType, nil
-	case *pb.Entity_Interface:
-		return InterfaceObjectType, nil
-	case *pb.Entity_InventoryItem:
-		return InventoryItemObjectType, nil
-	case *pb.Entity_InventoryItemRole:
-		return InventoryItemRoleObjectType, nil
-	case *pb.Entity_L2Vpn:
-		return L2VPNObjectType, nil
-	case *pb.Entity_L2VpnTermination:
-		return L2VPNTerminationObjectType, nil
-	case *pb.Entity_Location:
-		return LocationObjectType, nil
-	case *pb.Entity_MacAddress:
-		return MACAddressObjectType, nil
-	case *pb.Entity_Manufacturer:
-		return ManufacturerObjectType, nil
-	case *pb.Entity_Module:
-		return ModuleObjectType, nil
-	case *pb.Entity_ModuleBay:
-		return ModuleBayObjectType, nil
-	case *pb.Entity_ModuleType:
-		return ModuleTypeObjectType, nil
-	case *pb.Entity_Platform:
-		return PlatformObjectType, nil
-	case *pb.Entity_PowerFeed:
-		return PowerFeedObjectType, nil
-	case *pb.Entity_PowerOutlet:
-		return PowerOutletObjectType, nil
-	case *pb.Entity_PowerPanel:
-		return PowerPanelObjectType, nil
-	case *pb.Entity_PowerPort:
-		return PowerPortObjectType, nil
-	case *pb.Entity_Prefix:
-		return PrefixObjectType, nil
-	case *pb.Entity_Provider:
-		return ProviderObjectType, nil
-	case *pb.Entity_ProviderAccount:
-		return ProviderAccountObjectType, nil
-	case *pb.Entity_ProviderNetwork:
-		return ProviderNetworkObjectType, nil
-	case *pb.Entity_Rir:
-		return RIRObjectType, nil
-	case *pb.Entity_Rack:
-		return RackObjectType, nil
-	case *pb.Entity_RackReservation:
-		return RackReservationObjectType, nil
-	case *pb.Entity_RackRole:
-		return RackRoleObjectType, nil
-	case *pb.Entity_RackType:
-		return RackTypeObjectType, nil
-	case *pb.Entity_RearPort:
-		return RearPortObjectType, nil
-	case *pb.Entity_Region:
-		return RegionObjectType, nil
-	case *pb.Entity_Role:
-		return RoleObjectType, nil
-	case *pb.Entity_RouteTarget:
-		return RouteTargetObjectType, nil
-	case *pb.Entity_Service:
-		return ServiceObjectType, nil
-	case *pb.Entity_Site:
-		return SiteObjectType, nil
-	case *pb.Entity_SiteGroup:
-		return SiteGroupObjectType, nil
-	case *pb.Entity_Tag:
-		return TagObjectType, nil
-	case *pb.Entity_Tenant:
-		return TenantObjectType, nil
-	case *pb.Entity_TenantGroup:
-		return TenantGroupObjectType, nil
-	case *pb.Entity_Tunnel:
-		return TunnelObjectType, nil
-	case *pb.Entity_TunnelGroup:
-		return TunnelGroupObjectType, nil
-	case *pb.Entity_TunnelTermination:
-		return TunnelTerminationObjectType, nil
-	case *pb.Entity_Vlan:
-		return VLANObjectType, nil
-	case *pb.Entity_VlanGroup:
-		return VLANGroupObjectType, nil
-	case *pb.Entity_VlanTranslationPolicy:
-		return VLANTranslationPolicyObjectType, nil
-	case *pb.Entity_VlanTranslationRule:
-		return VLANTranslationRuleObjectType, nil
-	case *pb.Entity_VmInterface:
-		return VMInterfaceObjectType, nil
-	case *pb.Entity_Vrf:
-		return VRFObjectType, nil
-	case *pb.Entity_VirtualChassis:
-		return VirtualChassisObjectType, nil
-	case *pb.Entity_VirtualCircuit:
-		return VirtualCircuitObjectType, nil
-	case *pb.Entity_VirtualCircuitTermination:
-		return VirtualCircuitTerminationObjectType, nil
-	case *pb.Entity_VirtualCircuitType:
-		return VirtualCircuitTypeObjectType, nil
-	case *pb.Entity_VirtualDeviceContext:
-		return VirtualDeviceContextObjectType, nil
-	case *pb.Entity_VirtualDisk:
-		return VirtualDiskObjectType, nil
-	case *pb.Entity_VirtualMachine:
-		return VirtualMachineObjectType, nil
-	case *pb.Entity_WirelessLan:
-		return WirelessLANObjectType, nil
-	case *pb.Entity_WirelessLanGroup:
-		return WirelessLANGroupObjectType, nil
-	case *pb.Entity_WirelessLink:
-		return WirelessLinkObjectType, nil
-	case *pb.Entity_CustomField:
-		return CustomFieldObjectType, nil
-	case *pb.Entity_CustomFieldChoiceSet:
-		return CustomFieldChoiceSetObjectType, nil
-	case *pb.Entity_JournalEntry:
-		return JournalEntryObjectType, nil
-	case *pb.Entity_ModuleTypeProfile:
-		return ModuleTypeProfileObjectType, nil
-	case *pb.Entity_CustomLink:
-		return CustomLinkObjectType, nil
-	default:
-		return "", fmt.Errorf("unknown entity type: %v", entity.GetEntity())
+	entityType := reflect.TypeOf(entity.GetEntity())
+	if objectType, ok := entityTypeMap[entityType]; ok {
+		return objectType, nil
 	}
+	return "", fmt.Errorf("unknown entity type: %T", entity.GetEntity())
 }
 
 func GetObjectTypeName(objectType string) (string, error) {
@@ -402,8 +336,6 @@ func GetObjectTypeName(objectType string) (string, error) {
 		return CableObjectTypeName, nil
 	case CablePathObjectType:
 		return CablePathObjectTypeName, nil
-	case CableTerminationObjectType:
-		return CableTerminationObjectTypeName, nil
 	case CircuitObjectType:
 		return CircuitObjectTypeName, nil
 	case CircuitGroupObjectType:
@@ -578,6 +510,22 @@ func GetObjectTypeName(objectType string) (string, error) {
 		return ModuleTypeProfileObjectTypeName, nil
 	case CustomLinkObjectType:
 		return CustomLinkObjectTypeName, nil
+	case OwnerObjectType:
+		return OwnerObjectTypeName, nil
+	case OwnerGroupObjectType:
+		return OwnerGroupObjectTypeName, nil
+	case CableBundleObjectType:
+		return CableBundleObjectTypeName, nil
+	case RackGroupObjectType:
+		return RackGroupObjectTypeName, nil
+	case ScriptModuleObjectType:
+		return ScriptModuleObjectTypeName, nil
+	case VirtualMachineTypeObjectType:
+		return VirtualMachineTypeObjectTypeName, nil
+	case UserObjectType:
+		return UserObjectTypeName, nil
+	case DeviceConfigObjectType:
+		return DeviceConfigObjectTypeName, nil
 	default:
 		return "", fmt.Errorf("unknown object type: %v", objectType)
 	}
@@ -589,6 +537,8 @@ func GetPrimaryValue(entity *pb.Entity) (string, error) {
 		return fmt.Sprintf("%v", e.Asn.Asn), nil
 	case *pb.Entity_AsnRange:
 		return fmt.Sprintf("%v", e.AsnRange.Name), nil
+	case *pb.Entity_CableBundle:
+		return fmt.Sprintf("%v", e.CableBundle.Name), nil
 	case *pb.Entity_Circuit:
 		return fmt.Sprintf("%v", e.Circuit.Cid), nil
 	case *pb.Entity_CircuitGroup:
@@ -661,6 +611,10 @@ func GetPrimaryValue(entity *pb.Entity) (string, error) {
 		return fmt.Sprintf("%v", e.ModuleType.Model), nil
 	case *pb.Entity_ModuleTypeProfile:
 		return fmt.Sprintf("%v", e.ModuleTypeProfile.Name), nil
+	case *pb.Entity_Owner:
+		return fmt.Sprintf("%v", e.Owner.Name), nil
+	case *pb.Entity_OwnerGroup:
+		return fmt.Sprintf("%v", e.OwnerGroup.Name), nil
 	case *pb.Entity_Platform:
 		return fmt.Sprintf("%v", e.Platform.Name), nil
 	case *pb.Entity_PowerFeed:
@@ -683,6 +637,8 @@ func GetPrimaryValue(entity *pb.Entity) (string, error) {
 		return fmt.Sprintf("%v", e.Rir.Name), nil
 	case *pb.Entity_Rack:
 		return fmt.Sprintf("%v", e.Rack.Name), nil
+	case *pb.Entity_RackGroup:
+		return fmt.Sprintf("%v", e.RackGroup.Name), nil
 	case *pb.Entity_RackRole:
 		return fmt.Sprintf("%v", e.RackRole.Name), nil
 	case *pb.Entity_RackType:
@@ -711,6 +667,8 @@ func GetPrimaryValue(entity *pb.Entity) (string, error) {
 		return fmt.Sprintf("%v", e.Tunnel.Name), nil
 	case *pb.Entity_TunnelGroup:
 		return fmt.Sprintf("%v", e.TunnelGroup.Name), nil
+	case *pb.Entity_User:
+		return fmt.Sprintf("%v", e.User.Username), nil
 	case *pb.Entity_Vlan:
 		return fmt.Sprintf("%v", e.Vlan.Name), nil
 	case *pb.Entity_VlanGroup:
@@ -733,6 +691,8 @@ func GetPrimaryValue(entity *pb.Entity) (string, error) {
 		return fmt.Sprintf("%v", e.VirtualDisk.Name), nil
 	case *pb.Entity_VirtualMachine:
 		return fmt.Sprintf("%v", e.VirtualMachine.Name), nil
+	case *pb.Entity_VirtualMachineType:
+		return fmt.Sprintf("%v", e.VirtualMachineType.Name), nil
 	case *pb.Entity_WirelessLan:
 		return fmt.Sprintf("%v", e.WirelessLan.Ssid), nil
 	case *pb.Entity_WirelessLanGroup:

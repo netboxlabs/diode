@@ -23,6 +23,7 @@ services:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
+      - REDIS_USERNAME=${REDIS_USERNAME}
       - SENTRY_DSN=${SENTRY_DSN}
       - TELEMETRY_METRICS_EXPORTER=${TELEMETRY_METRICS_EXPORTER}
       - TELEMETRY_TRACES_EXPORTER=${TELEMETRY_TRACES_EXPORTER}
@@ -40,13 +41,12 @@ services:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
+      - REDIS_USERNAME=${REDIS_USERNAME}
       - NETBOX_DIODE_PLUGIN_API_BASE_URL=${NETBOX_DIODE_PLUGIN_API_BASE_URL}
       - NETBOX_DIODE_PLUGIN_SKIP_TLS_VERIFY=${NETBOX_DIODE_PLUGIN_SKIP_TLS_VERIFY}
       - LOGGING_LEVEL=${LOGGING_LEVEL}
       - SENTRY_DSN=${SENTRY_DSN}
       - MIGRATION_ENABLED=${MIGRATION_ENABLED}
-      - RECONCILER_RATE_LIMITER_RPS=${RECONCILER_RATE_LIMITER_RPS}
-      - RECONCILER_RATE_LIMITER_BURST=${RECONCILER_RATE_LIMITER_BURST}
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
       - POSTGRES_DB_NAME=${DIODE_POSTGRES_DB_NAME}
@@ -58,10 +58,14 @@ services:
       - DIODE_AUTH_TOKEN_URL=${DIODE_AUTH_TOKEN_URL}
       - DIODE_TO_NETBOX_CLIENT_ID=${DIODE_TO_NETBOX_CLIENT_ID}
       - DIODE_TO_NETBOX_CLIENT_SECRET=${DIODE_TO_NETBOX_CLIENT_SECRET}
+      - ENABLE_GRAPH_DB=${ENABLE_GRAPH_DB:-false}
+      - ENTITY_MATCHING_CONFIG_PATH=${ENTITY_MATCHING_CONFIG_PATH:-}
     restart: on-failure
     ports: [ ]
     volumes:
       - ./oauth2/client:/etc/config/oauth2/client:z,ro
+      # Uncomment to mount entity matching config when ENABLE_GRAPH_DB=true
+      # - ./examples/entity_matching_config.yaml:/etc/diode/entity_matching.yaml:z,ro
     depends_on:
       redis:
         condition: service_started
@@ -135,7 +139,7 @@ services:
           size: 1000000
 
   hydra:
-    image: oryd/hydra:v2.3.0
+    image: oryd/hydra:v26.2.0
     pull_policy: always
     expose:
       - "4444" # Public port
@@ -156,7 +160,7 @@ services:
       - postgres
 
   hydra-migrate:
-    image: oryd/hydra:v2.3.0
+    image: oryd/hydra:v26.2.0
     pull_policy: always
     command: migrate sql up -e --yes
     environment:

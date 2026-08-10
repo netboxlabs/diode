@@ -14,8 +14,10 @@ import (
 
 	"github.com/netboxlabs/diode/diode-server/authutil"
 	"github.com/netboxlabs/diode/diode-server/ingester"
+	"github.com/netboxlabs/diode/diode-server/pprof"
 	"github.com/netboxlabs/diode/diode-server/server"
 	"github.com/netboxlabs/diode/diode-server/telemetry"
+	diodetls "github.com/netboxlabs/diode/diode-server/tls"
 	"github.com/netboxlabs/diode/diode-server/version"
 )
 
@@ -35,6 +37,10 @@ func main() {
 	// Load configuration
 	var cfg ingester.Config
 	envconfig.MustProcess("", &cfg)
+
+	if cfg.PProfAddr != "" {
+		go pprof.Listen(ctx, s.Logger(), cfg.PProfAddr)
+	}
 
 	// Set default telemetry configuration if not provided
 	if cfg.Telemetry.ServiceName == "" {
@@ -61,19 +67,20 @@ func main() {
 
 	metricRecorder.SetServiceInfo(ctx, fmt.Sprintf("%s.%s", version.GetBuildVersion(), version.GetBuildCommit()))
 
-	redisTLSConfig, err := cfg.RedisTLS.ToTLSConfig()
+	redisOptions, err := diodetls.NewRedisOptions(diodetls.RedisParams{
+		Host:     cfg.RedisHost,
+		Port:     cfg.RedisPort,
+		Username: cfg.RedisUsername,
+		Password: cfg.RedisPassword,
+		DB:       cfg.RedisStreamDB,
+		TLS:      &cfg.RedisTLS,
+	})
 	if err != nil {
-		s.Logger().Error("failed to create TLS config for Redis", "error", err)
+		s.Logger().Error("failed to create Redis options", "error", err)
 		metricRecorder.RecordServiceStartupAttempt(ctx, false)
 		os.Exit(1)
 	}
-
-	redisStreamClient := redis.NewClient(&redis.Options{
-		Addr:      fmt.Sprintf("%s:%s", cfg.RedisHost, cfg.RedisPort),
-		Password:  cfg.RedisPassword,
-		DB:        cfg.RedisStreamDB,
-		TLSConfig: redisTLSConfig,
-	})
+	redisStreamClient := redis.NewClient(&redisOptions)
 
 	if _, err := redisStreamClient.Ping(ctx).Result(); err != nil {
 		s.Logger().Error("failed to connect to redis stream", "redisStream", redisStreamClient.String(), "error", err)

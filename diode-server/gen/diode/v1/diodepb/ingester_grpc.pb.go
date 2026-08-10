@@ -5,8 +5,8 @@
 // source: diode/v1/ingester.proto
 
 // Generated Code. DO NOT EDIT.
-// Source: NetBox v4.4.2
-// Timestamp: 2025-10-02 12:39:08Z
+// Source: NetBox v4.6.0
+// Timestamp: 2026-07-08 14:57:55Z
 
 package diodepb
 

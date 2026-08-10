@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	hydra "github.com/ory/hydra-client-go/v2"
+	hydra "github.com/ory/hydra-client-go/v26"
 )
 
 const (
@@ -171,7 +171,7 @@ func (h *HydraClientManager) RetrieveClients(ctx context.Context, q RetrieveClie
 		out.Clients = append(out.Clients, clientInfoFromHydraClient(&client))
 	}
 
-	out.NextPageToken, out.PrevPageToken = getHydraPagingTokens(response, h.logger)
+	out.FirstPageToken, out.NextPageToken = getHydraPagingTokens(response, h.logger)
 	return out, nil
 }
 
@@ -205,11 +205,12 @@ func clientInfoFromHydraClient(client *hydra.OAuth2Client) ClientInfo {
 	return clientInfo
 }
 
-// getHydraPagingLinks returns the next and previous page tokens from the response header
+// getHydraPagingLinks returns the first and next page tokens from the response header
 func getHydraPagingTokens(response *http.Response, logger *slog.Logger) (string, string) {
+	first := ""
 	next := ""
-	prev := ""
-	for _, linkHeader := range response.Header.Values("Link") {
+	linkHeaders := response.Header.Values("Link")
+	for _, linkHeader := range linkHeaders {
 		links := strings.Split(linkHeader, ",")
 		for _, link := range links {
 			params := strings.Split(link, ";")
@@ -226,16 +227,16 @@ func getHydraPagingTokens(response *http.Response, logger *slog.Logger) (string,
 				k, v := strings.TrimSpace(vs[0]), strings.TrimSpace(vs[1])
 				if k == "rel" {
 					switch v {
+					case "first", "\"first\"":
+						first = getHydraPageToken(link, logger)
 					case "next", "\"next\"":
 						next = getHydraPageToken(link, logger)
-					case "prev", "\"prev\"":
-						prev = getHydraPageToken(link, logger)
 					}
 				}
 			}
 		}
 	}
-	return next, prev
+	return first, next
 }
 
 func getHydraPageToken(link string, logger *slog.Logger) string {
@@ -249,7 +250,6 @@ func getHydraPageToken(link string, logger *slog.Logger) string {
 	queryParams := parsedURL.Query()
 	for key, values := range queryParams {
 		if key == "page_token" {
-			logger.Debug("found page token", "token", values[0])
 			return values[0]
 		}
 	}

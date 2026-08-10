@@ -2,3 +2,16 @@ CHART NAME: {{ .Chart.Name }}
 CHART VERSION: {{ .Chart.Version }}
 APP VERSION: {{ .Chart.AppVersion }}
 DESCRIPTION: {{ .Chart.Description }}
+
+{{- $r := .Values.diodeReconciler.config }}
+{{- $deprecated := list }}
+{{- if hasKey $r "generateChangesetConcurrency" }}{{ $deprecated = append $deprecated "diodeReconciler.config.generateChangesetConcurrency -> diodeReconciler.config.ingestionLogProcessorConcurrency" }}{{ end }}
+{{- if hasKey $r "applyChangesetConcurrency" }}{{ $deprecated = append $deprecated "diodeReconciler.config.applyChangesetConcurrency -> diodeReconciler.config.autoApplyProcessorConcurrency" }}{{ end }}
+{{- if $deprecated }}
+
+WARNING: deprecated diodeReconciler values detected — the binary no longer reads them.
+Please update your values.yaml to the new keys. The old keys are ignored.
+{{- range $deprecated }}
+  - {{ . }}
+{{- end }}
+{{- end }}

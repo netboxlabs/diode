@@ -16,14 +16,11 @@ concurrency:
 env:
   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   SEMANTIC_RELEASE_PACKAGE: ${{ github.repository }}
-  GO_VERSION: '1.24'
-  JF_REPOSITORY: obs-builds
-
+  GO_VERSION: '1.26'
 permissions:
   contents: write
   issues: write
   pull-requests: write
-  id-token: write
 
 jobs:
   setup:
@@ -98,22 +95,6 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Setup JFrog CLI
-        id: setup-jfrog-cli
-        uses: jfrog/setup-jfrog-cli@ff5cb544114ffc152db9cea1cd3d5978d5074946 # v4.5.11
-        env:
-          JF_URL: https://netboxlabs.jfrog.io
-          JF_PROJECT: obs
-        with:
-          oidc-provider-name: github-ci
-
-      - name: Login to JFrog Artifactory
-        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 #v3
-        with:
-          registry: netboxlabs.jfrog.io
-          username: ${{ steps.setup-jfrog-cli.outputs.oidc-user }}
-          password: ${{ steps.setup-jfrog-cli.outputs.oidc-token }}
-
       - name: Set build info
         run: |
           echo $BUILD_COMMIT > ./diode-server/version/BUILD_COMMIT.txt
@@ -132,17 +113,9 @@ jobs:
           tags: |
             netboxlabs/${{ env.APP_NAME }}:latest
             netboxlabs/${{ env.APP_NAME }}:${{ env.BUILD_VERSION }}
-            netboxlabs.jfrog.io/${{ env.JF_REPOSITORY }}/${{ env.APP_NAME }}:latest
-            netboxlabs.jfrog.io/${{ env.JF_REPOSITORY }}/${{ env.APP_NAME }}:${{ env.BUILD_VERSION }}
           build-args: |
             GO_VERSION=${{ env.GO_VERSION }}
             SVC=${{ matrix.app }}
-
-      - name: Create and publish JFrog build
-        run: |
-          echo '${{ steps.docker-build.outputs.metadata }}' > build-metadata
-          jf rt build-docker-create ${{ env.JF_REPOSITORY }} --image-file build-metadata --build-name ${{ env.APP_NAME }} --build-number ${{ env.BUILD_VERSION }}
-          jf rt build-publish ${{ env.APP_NAME }} ${{ env.BUILD_VERSION }}
 
   semantic-release:
     name: Semantic release - ${{ matrix.app }}

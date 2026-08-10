@@ -1,12 +1,12 @@
 package differ
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"
 
+	diodeErrors "github.com/netboxlabs/diode/diode-server/errors"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/gen/netbox"
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
@@ -21,25 +21,19 @@ type IngestEntity struct {
 	State      int           `json:"state"`
 }
 
-// Diff compares ingested entity with the intended state in NetBox and returns a change set
-func Diff(ctx context.Context, entity IngestEntity, branchID string, netboxAPI netboxdiodeplugin.NetBoxAPI) (*changeset.ChangeSet, error) {
-	req := netboxdiodeplugin.GenerateDiffRequest{
-		ObjectType: entity.ObjectType,
-		BranchID:   branchID,
-		Entity:     entity.Entity,
+// ConvertBulkPlanResult converts a single BulkPlanResult to a changeset.ChangeSet.
+// Returns nil changeset if the result contains errors.
+func ConvertBulkPlanResult(result netboxdiodeplugin.BulkPlanResult, objectType string) (*changeset.ChangeSet, error) {
+	if len(result.Errors) > 0 && string(result.Errors) != "null" {
+		return nil, changeset.NewError("failed to determine deviation", diodeErrors.ErrCodeOpsGenerateDiff, result.Errors)
 	}
 
-	res, err := netboxAPI.GenerateDiff(ctx, req)
-	if err != nil {
-		return nil, err
+	if result.ChangeSet == nil {
+		return nil, fmt.Errorf("no change set returned for entity %s", result.ID)
 	}
 
-	if res.ChangeSet == nil {
-		return nil, fmt.Errorf("no change set returned")
-	}
-
-	changes := make([]changeset.Change, 0)
-	for _, change := range res.ChangeSet.Changes {
+	changes := make([]changeset.Change, 0, len(result.ChangeSet.Changes))
+	for _, change := range result.ChangeSet.Changes {
 		changes = append(changes, changeset.Change{
 			ID:                 change.ID,
 			ChangeType:         change.ChangeType,
@@ -54,13 +48,63 @@ func Diff(ctx context.Context, entity IngestEntity, branchID string, netboxAPI n
 		})
 	}
 
-	deviationName := genDeviationName(changes, entity.ObjectType)
-	cs := &changeset.ChangeSet{ID: res.ID, Changes: changes, DeviationName: deviationName}
-	if res.ChangeSet.Branch != nil {
-		branchID := fmt.Sprintf("%s (%s)", res.ChangeSet.Branch.Name, res.ChangeSet.Branch.ID)
+	deviationName := genDeviationName(changes, objectType)
+	cs := &changeset.ChangeSet{ID: result.ChangeSet.ID, Changes: changes, DeviationName: deviationName}
+	if result.ChangeSet.Branch != nil {
+		branchID := fmt.Sprintf("%s (%s)", result.ChangeSet.Branch.Name, result.ChangeSet.Branch.ID)
 		cs.BranchID = &branchID
 	}
 	return cs, nil
+}
+
+// ConvertBulkPlanApplyResult converts a /bulk-plan-apply per-entity result into a
+// ChangeSet plus separate plan/apply errors. ChangeSet is returned whenever the plan
+// phase produced one (regardless of apply outcome) so the reconciler can persist it
+// for audit/retry. A nil plan error means plan succeeded; planErr non-nil means the
+// returned ChangeSet is nil. applyErr is set independently when the apply phase
+// reported failures on a successfully-planned change_set.
+func ConvertBulkPlanApplyResult(result netboxdiodeplugin.BulkPlanApplyResult, objectType string) (*changeset.ChangeSet, error, error) {
+	var planErr, applyErr error
+	if result.Errors != nil {
+		if len(result.Errors.Plan) > 0 && string(result.Errors.Plan) != "null" {
+			planErr = changeset.NewError("failed to determine deviation", diodeErrors.ErrCodeOpsGenerateDiff, result.Errors.Plan)
+		}
+		if len(result.Errors.Apply) > 0 && string(result.Errors.Apply) != "null" {
+			applyErr = changeset.NewError("failed to apply deviation to NetBox", diodeErrors.ErrCodeOpsApplyChangeSet, result.Errors.Apply)
+		}
+	}
+
+	if planErr != nil {
+		return nil, planErr, applyErr
+	}
+
+	if result.ChangeSet == nil {
+		return nil, fmt.Errorf("no change set returned for entity %s", result.ID), applyErr
+	}
+
+	changes := make([]changeset.Change, 0, len(result.ChangeSet.Changes))
+	for _, change := range result.ChangeSet.Changes {
+		changes = append(changes, changeset.Change{
+			ID:                 change.ID,
+			ChangeType:         change.ChangeType,
+			ObjectType:         change.ObjectType,
+			ObjectID:           change.ObjectID,
+			ObjectVersion:      change.ObjectVersion,
+			RefID:              change.RefID,
+			ObjectPrimaryValue: change.ObjectPrimaryValue,
+			After:              change.Data,
+			Before:             change.Before,
+			NewRefs:            change.NewRefs,
+		})
+	}
+
+	deviationName := genDeviationName(changes, objectType)
+	cs := &changeset.ChangeSet{ID: result.ChangeSet.ID, Changes: changes, DeviationName: deviationName}
+	if result.ChangeSet.Branch != nil {
+		branchID := fmt.Sprintf("%s (%s)", result.ChangeSet.Branch.Name, result.ChangeSet.Branch.ID)
+		cs.BranchID = &branchID
+	}
+	return cs, nil, applyErr
 }
 
 // FindPrimaryChange attempts to find the earliest change that refers to the primary object.

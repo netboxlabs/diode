@@ -17,11 +17,16 @@ import (
 
 	"github.com/netboxlabs/diode/diode-server/authutil"
 	"github.com/netboxlabs/diode/diode-server/dbstore/postgres"
+	"github.com/netboxlabs/diode/diode-server/entitymatcher"
+	"github.com/netboxlabs/diode/diode-server/graph"
+	"github.com/netboxlabs/diode/diode-server/matching"
 	"github.com/netboxlabs/diode/diode-server/migrator"
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
+	"github.com/netboxlabs/diode/diode-server/pprof"
 	"github.com/netboxlabs/diode/diode-server/reconciler"
 	"github.com/netboxlabs/diode/diode-server/server"
 	"github.com/netboxlabs/diode/diode-server/telemetry"
+	diodetls "github.com/netboxlabs/diode/diode-server/tls"
 	"github.com/netboxlabs/diode/diode-server/version"
 )
 
@@ -40,6 +45,10 @@ func main() {
 
 	var cfg reconciler.Config
 	envconfig.MustProcess("", &cfg)
+
+	if cfg.PProfAddr != "" {
+		go pprof.Listen(ctx, s.Logger(), cfg.PProfAddr)
+	}
 
 	// Set default telemetry configuration if not provided
 	if cfg.Telemetry.ServiceName == "" {
@@ -77,19 +86,20 @@ func main() {
 		}
 	}
 
-	redisTLSConfig, err := cfg.RedisTLS.ToTLSConfig()
+	redisOptions, err := diodetls.NewRedisOptions(diodetls.RedisParams{
+		Host:     cfg.RedisHost,
+		Port:     cfg.RedisPort,
+		Username: cfg.RedisUsername,
+		Password: cfg.RedisPassword,
+		DB:       cfg.RedisDB,
+		TLS:      &cfg.RedisTLS,
+	})
 	if err != nil {
-		s.Logger().Error("failed to create TLS config for Redis", "error", err)
+		s.Logger().Error("failed to create Redis options", "error", err)
 		metricRecorder.RecordServiceStartupAttempt(ctx, false)
 		os.Exit(1)
 	}
-
-	redisClient := redis.NewClient(&redis.Options{
-		Addr:      fmt.Sprintf("%s:%s", cfg.RedisHost, cfg.RedisPort),
-		Password:  cfg.RedisPassword,
-		DB:        cfg.RedisDB,
-		TLSConfig: redisTLSConfig,
-	})
+	redisClient := redis.NewClient(&redisOptions)
 
 	if _, err := redisClient.Ping(ctx).Result(); err != nil {
 		s.Logger().Error("failed to connect to redis", "redis", redisClient.String(), "error", err)
@@ -97,12 +107,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	redisStreamClient := redis.NewClient(&redis.Options{
-		Addr:      fmt.Sprintf("%s:%s", cfg.RedisHost, cfg.RedisPort),
-		Password:  cfg.RedisPassword,
-		DB:        cfg.RedisStreamDB,
-		TLSConfig: redisTLSConfig,
-	})
+	// The stream client shares the same connection settings; only the DB
+	// differs, so copy the options rather than rebuilding the TLS config.
+	redisStreamOptions := redisOptions
+	redisStreamOptions.DB = cfg.RedisStreamDB
+	redisStreamClient := redis.NewClient(&redisStreamOptions)
 
 	if _, err := redisStreamClient.Ping(ctx).Result(); err != nil {
 		s.Logger().Error("failed to connect to redis stream", "redisStream", redisStreamClient.String(), "error", err)
@@ -119,6 +128,50 @@ func main() {
 	defer dbPool.Close()
 
 	repository := postgres.NewRepository(dbPool)
+
+	// Initialize graph Service if graph DB feature is enabled
+	var graphServiceOpt reconciler.ProcessorOption
+	if cfg.EnableGraphDB {
+		s.Logger().Info("graph DB feature enabled, initializing graph Service")
+
+		// Load matching configuration if provided
+		var matchingConfig *matching.Config
+		if cfg.EntityMatchingConfigPath != "" {
+			var err error
+			matchingConfig, err = matching.LoadMatchingConfig(cfg.EntityMatchingConfigPath)
+			if err != nil {
+				s.Logger().Warn("failed to load entity matching config, using defaults",
+					"path", cfg.EntityMatchingConfigPath,
+					"error", err)
+			} else {
+				s.Logger().Info("loaded entity matching configuration",
+					"path", cfg.EntityMatchingConfigPath)
+			}
+		}
+
+		// Create graph repository adapter
+		graphRepo := postgres.NewGraphRepository(dbPool)
+
+		// Create graph Service with repository
+		var opts []graph.Option
+		if matchingConfig != nil {
+			opts = append(opts, graph.WithMatchingConfig(matchingConfig))
+
+			// Create entity matcher for confidence-based matching
+			matcherConfig := &matching.EntityMatchingConfig{
+				Rules:          matchingConfig.GetFinalRules(),
+				GlobalMinConf:  matching.MatchConfidence(matchingConfig.GlobalSettings.DefaultMinConfidence),
+				EnableFallback: true,
+				CacheResults:   true,
+				MaxCacheSize:   1000,
+			}
+			entityMatcher := entitymatcher.NewMatcher(graphRepo, matcherConfig, s.Logger())
+			opts = append(opts, graph.WithEntityMatcher(entityMatcher))
+		}
+		graphService := graph.NewService(graphRepo, s.Logger(), opts...)
+
+		graphServiceOpt = reconciler.WithGraphService(graphService)
+	}
 
 	diodeToNetBoxMaxRetries := 3
 
@@ -140,8 +193,15 @@ func main() {
 	}
 
 	ops := reconciler.NewOps(repository, nbClient, s.Logger(), nil)
+	ops.Start(ctx)
 
-	ingestionProcessor, err := reconciler.NewIngestionProcessor(ctx, s.Logger(), cfg, redisClient, redisStreamClient, reconciler.DefaultRedisStreamID, reconciler.DefaultRedisConsumerGroup, ops, metricRecorder)
+	// Build processor options
+	var processorOpts []reconciler.ProcessorOption
+	if graphServiceOpt != nil {
+		processorOpts = append(processorOpts, graphServiceOpt)
+	}
+
+	ingestionProcessor, err := reconciler.NewIngestionProcessor(ctx, s.Logger(), cfg, redisClient, redisStreamClient, reconciler.DefaultRedisStreamID, reconciler.DefaultRedisConsumerGroup, ops, metricRecorder, processorOpts...)
 	if err != nil {
 		s.Logger().Error("failed to instantiate ingestion processor", "error", err)
 		metricRecorder.RecordServiceStartupAttempt(ctx, false)
@@ -152,6 +212,41 @@ func main() {
 		s.Logger().Error("failed to register ingestion processor", "error", err)
 		metricRecorder.RecordServiceStartupAttempt(ctx, false)
 		os.Exit(1)
+	}
+
+	// Route to one of the two processors based on AUTO_APPLY_CHANGESETS:
+	//   - false: IngestionLogProcessor handles plan only, leaves rows in OPEN for manual review.
+	//   - true:  AutoApplyProcessor combines plan + apply in one /bulk-plan-apply round-trip,
+	//            never producing intermediate OPEN rows. ResetApplyingIngestionLogs at startup
+	//            recovers rows stuck in APPLYING from a previous crash.
+	//
+	// Both processors take a backpressure function so they yield to the Redis
+	// consume loop when the ingest stream is backed up — avoids competing for
+	// Postgres + NetBox capacity while the consume loop is still draining.
+	backpressure := func(ctx context.Context) bool {
+		xlen, err := redisStreamClient.XLen(ctx, reconciler.DefaultRedisStreamID).Result()
+		if err != nil {
+			return false
+		}
+		return xlen > cfg.IngestionLogProcessorBackpressureThreshold
+	}
+	if cfg.AutoApplyChangesets {
+		if err := repository.ResetApplyingIngestionLogs(ctx); err != nil {
+			s.Logger().Error("failed to reset applying ingestion logs", "error", err)
+		}
+		autoApplyProcessor := reconciler.NewAutoApplyProcessor(s.Logger(), cfg, repository, ops, metricRecorder, backpressure)
+		if err := s.RegisterComponent(autoApplyProcessor); err != nil {
+			s.Logger().Error("failed to register auto-apply processor", "error", err)
+			metricRecorder.RecordServiceStartupAttempt(ctx, false)
+			os.Exit(1)
+		}
+	} else {
+		ingestionLogProcessor := reconciler.NewIngestionLogProcessor(s.Logger(), cfg, repository, ops, metricRecorder, backpressure)
+		if err := s.RegisterComponent(ingestionLogProcessor); err != nil {
+			s.Logger().Error("failed to register ingestion log processor", "error", err)
+			metricRecorder.RecordServiceStartupAttempt(ctx, false)
+			os.Exit(1)
+		}
 	}
 
 	authorizer := authutil.NewContextAuthorizer(s.Logger())

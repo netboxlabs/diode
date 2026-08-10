@@ -26,6 +26,13 @@ var ReconcilerMetricDefinitions = map[string]otel.MetricDefinition{
 		Description: "Total number of ingestion logs created",
 		Attributes:  []string{"success"},
 	},
+	"ingestionlog.requeue": {
+		Name:        "ingestion_log_requeue_total",
+		Type:        otel.Counter,
+		Unit:        otel.Dimensionless,
+		Description: "Total number of duplicate ingestion logs requeued for re-plan due to possible NetBox state drift",
+		Attributes:  []string{},
+	},
 	"changeset.create": {
 		Name:        "change_set_create_total",
 		Type:        otel.Counter,
@@ -54,6 +61,14 @@ var ReconcilerMetricDefinitions = map[string]otel.MetricDefinition{
 		Description: "Total number of changes applied",
 		Attributes:  []string{},
 	},
+	"graph.upsert.duration": {
+		Name:        "graph_upsert_duration_seconds",
+		Type:        otel.Histogram,
+		Unit:        otel.Seconds,
+		Description: "Duration of graph entity upsert operations",
+		Attributes:  []string{"success", "node_type"},
+		Boundaries:  []float64{0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0},
+	},
 }
 
 // Metrics defines the interface for recording reconciler-specific metrics
@@ -66,10 +81,14 @@ type Metrics interface {
 	RecordHandleMessage(ctx context.Context, success bool)
 	// RecordIngestionLogCreate records the creation of an ingestion log
 	RecordIngestionLogCreate(ctx context.Context, success bool)
+	// RecordIngestionLogRequeue records the requeue of a duplicate ingestion log for re-plan
+	RecordIngestionLogRequeue(ctx context.Context)
 	// RecordChangeSetCreate records the creation of a change set
 	RecordChangeSetCreate(ctx context.Context, success bool, changes int64)
 	// RecordChangeSetApply records the application of a change set
 	RecordChangeSetApply(ctx context.Context, success bool, changes int64)
+	// RecordGraphUpsert records the duration of a graph entity upsert
+	RecordGraphUpsert(ctx context.Context, success bool, nodeType string, duration float64)
 }
 
 // MetricRecorder is a wrapper around the telemetry.MetricRecorder
@@ -119,6 +138,13 @@ func (r *MetricRecorder) RecordIngestionLogCreate(ctx context.Context, success b
 	r.mr.RecordCounter(ctx, "ingestionlog.create", 1, attrs...)
 }
 
+// RecordIngestionLogRequeue records the requeue of a duplicate ingestion log for re-plan
+func (r *MetricRecorder) RecordIngestionLogRequeue(ctx context.Context) {
+	attrs := telemetry.GetAttributesFromContext(ctx, r.contextAttributeKeys...)
+
+	r.mr.RecordCounter(ctx, "ingestionlog.requeue", 1, attrs...)
+}
+
 // RecordChangeSetCreate records the creation of a change set
 func (r *MetricRecorder) RecordChangeSetCreate(ctx context.Context, success bool, changes int64) {
 	attrs := append([]attribute.KeyValue{
@@ -149,4 +175,14 @@ func (r *MetricRecorder) RecordChangeSetApply(ctx context.Context, success bool,
 		changeAttrs := telemetry.GetAttributesFromContext(ctx, r.contextAttributeKeys...)
 		r.mr.RecordCounter(ctx, "change.apply", changes, changeAttrs...)
 	}
+}
+
+// RecordGraphUpsert records the duration of a graph entity upsert
+func (r *MetricRecorder) RecordGraphUpsert(ctx context.Context, success bool, nodeType string, duration float64) {
+	attrs := append([]attribute.KeyValue{
+		attribute.Bool("success", success),
+		attribute.String("node_type", nodeType),
+	}, telemetry.GetAttributesFromContext(ctx, r.contextAttributeKeys...)...)
+
+	r.mr.RecordHistogram(ctx, "graph.upsert.duration", duration, attrs...)
 }

@@ -78,4 +78,10 @@ spec:
           envFrom:
             - configMapRef:
                 name: {{ include "diode.auth.configmap" . }}
+          {{- if .Values.diodeAuth.extraVolumeMounts }}
+          volumeMounts: {{- include "common.tplvalues.render" (dict "value" .Values.diodeAuth.extraVolumeMounts "context" $) | nindent 12 }}
+          {{- end }}
+      {{- if .Values.diodeAuth.extraVolumes }}
+      volumes: {{- include "common.tplvalues.render" (dict "value" .Values.diodeAuth.extraVolumes "context" $) | nindent 8 }}
+      {{- end }}
 {{- end }} 

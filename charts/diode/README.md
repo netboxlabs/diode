@@ -2,7 +2,7 @@
 
 A Helm chart for Diode
 
-![Version: 1.9.0](https://img.shields.io/badge/Version-1.9.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.5.0](https://img.shields.io/badge/AppVersion-1.5.0-informational?style=flat-square)
+![Version: 1.14.0](https://img.shields.io/badge/Version-1.14.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.5.0](https://img.shields.io/badge/AppVersion-1.5.0-informational?style=flat-square)
 
 ## Prerequisites
 
@@ -207,7 +207,7 @@ helm show values diode/diode
 | https://charts.bitnami.com/bitnami | postgresql | 16.6.3 |
 | https://charts.bitnami.com/bitnami | redis | 20.11.5 |
 | https://charts.jetstack.io | cert-manager | v1.12.0 |
-| https://k8s.ory.sh/helm/charts | hydra | 0.53.0 |
+| https://k8s.ory.sh/helm/charts | hydra | 0.61.0 |
 | https://kubernetes.github.io/ingress-nginx | ingress-nginx | 4.12.1 |
 
 ## Values
@@ -237,10 +237,12 @@ helm show values diode/diode
 | diodeAuth.enabled | bool | `true` | enabled |
 | diodeAuth.extraEnvs | string or list | `[]` | extra environment variables to be set on containers' `env` section |
 | diodeAuth.extraInitContainers | string or list | `""` | additional containers to run before auth finishes initializing (may contain templating instructions) |
+| diodeAuth.extraVolumeMounts | string or list | `[]` | additional volumes to mount in the container (may contain templating instructions) |
+| diodeAuth.extraVolumes | string or list | `[]` | additional volumes to define for the container (may contain templating instructions) |
 | diodeAuth.image.imagePullSecrets | list | `[]` | secrets with credentials to pull images from a private registry |
 | diodeAuth.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
 | diodeAuth.image.repository | string | `"docker.io/netboxlabs/diode-auth"` | image repository |
-| diodeAuth.image.tag | string | `"1.6.1"` | image tag |
+| diodeAuth.image.tag | string | `"1.12.0"` | image tag |
 | diodeAuth.replicaCount | int | `1` | replica count |
 | diodeAuth.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
 | diodeAuth.serviceAccount.create | bool | `true` | create service account |
@@ -248,12 +250,17 @@ helm show values diode/diode
 | diodeAuthBootstrap.image.imagePullSecrets | list | `[]` | secrets with credentials to pull images from a private registry |
 | diodeAuthBootstrap.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
 | diodeAuthBootstrap.image.repository | string | `"docker.io/netboxlabs/diode-auth"` | image repository |
-| diodeAuthBootstrap.image.tag | string | `"1.6.1"` | image tag |
+| diodeAuthBootstrap.image.tag | string | `"1.12.0"` | image tag |
 | diodeAuthBootstrap.job.annotations | object | `{"helm.sh/hook":"post-install, post-upgrade","helm.sh/hook-weight":"2"}` | annotations to add to the auth bootstrap job |
 | diodeAuthBootstrap.job.backoffLimit | int | `20` | backoff limit |
 | diodeAuthBootstrap.job.extraInitContainers | string or list | `""` | additional initContainers to run during bootstrap (may contain templating instructions) |
+| diodeAuthBootstrap.job.extraVolumeMounts | string or list | `[]` | additional volumes to mount in the container (may contain templating instructions) |
+| diodeAuthBootstrap.job.extraVolumes | string or list | `[]` | additional volumes to define for the container (may contain templating instructions) |
 | diodeIngester.annotations | object | `{}` | annotations to add to the ingester deployment |
 | diodeIngester.config.loggingLevel | string | `"INFO"` | logging level |
+| diodeIngester.config.redisMemoryCheckInterval | string | `"500ms"` | minimum interval between Redis INFO memory polls when the high-watermark check is enabled (Go duration) |
+| diodeIngester.config.redisMemoryCheckTimeout | string | `"250ms"` | per-call timeout for the Redis INFO memory poll (Go duration) |
+| diodeIngester.config.redisMemoryHighWatermarkPct | int | `0` | redis used_memory / maxmemory percentage at which the ingester rejects Ingest requests with ResourceExhausted; 0 disables the check |
 | diodeIngester.config.redisStreamDb | int | `1` | redis stream db |
 | diodeIngester.config.sentryDsn | string | `""` | sentry DSN |
 | diodeIngester.config.telemetryEnvironment | string | `"dev"` | telemetry environment |
@@ -264,27 +271,33 @@ helm show values diode/diode
 | diodeIngester.existingSecret | string | `"diode-ingester-secret"` | existing secret name |
 | diodeIngester.extraEnvs | string or list | `[]` | extra environment variables to be set on containers' `env` section |
 | diodeIngester.extraInitContainers | string or list | `""` | additional containers to run before the ingester finishes initializing (may contain templating instructions) |
+| diodeIngester.extraVolumeMounts | string or list | `[]` | additional volumes to mount in the container (may contain templating instructions) |
+| diodeIngester.extraVolumes | string or list | `[]` | additional volumes to define for the container (may contain templating instructions) |
 | diodeIngester.grpc.serviceName | string | `"diode.v1.IngesterService"` | grpc service name |
 | diodeIngester.image.imagePullSecrets | list | `[]` | secrets with credentials to pull images from a private registry |
 | diodeIngester.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
 | diodeIngester.image.repository | string | `"docker.io/netboxlabs/diode-ingester"` | image repository |
-| diodeIngester.image.tag | string | `"1.7.1"` | image tag |
+| diodeIngester.image.tag | string | `"1.13.0"` | image tag |
 | diodeIngester.replicaCount | int | `1` | replica count |
 | diodeIngester.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
 | diodeIngester.serviceAccount.create | bool | `true` | create service account |
 | diodeReconciler.annotations | object | `{}` | annotations to add to the reconciler deployment |
 | diodeReconciler.config.autoApplyChangesets | string | `"true"` | auto apply changesets |
+| diodeReconciler.config.autoApplyProcessorBatchSize | int | `50` | auto apply processor batch size |
+| diodeReconciler.config.autoApplyProcessorConcurrency | int | `1` | auto apply processor concurrency |
 | diodeReconciler.config.diodeToNetBoxClientId | string | `"diode-to-netbox"` | diode to netbox client id |
 | diodeReconciler.config.diodeToNetboxRateLimiterBurst | int | `1` | diode to netbox rate limiter burst |
 | diodeReconciler.config.diodeToNetboxRateLimiterRps | int | `20` | diode to netbox rate limiter rps |
+| diodeReconciler.config.ingestionLogProcessorBackpressureThreshold | int | `100` | ingestion log processor redis-stream-length backpressure threshold; 0 disables |
+| diodeReconciler.config.ingestionLogProcessorBatchSize | int | `400` | ingestion log processor batch size |
+| diodeReconciler.config.ingestionLogProcessorConcurrency | int | `4` | ingestion log processor concurrency |
 | diodeReconciler.config.loggingLevel | string | `"INFO"` | logging level |
 | diodeReconciler.config.migrationEnabled | string | `"true"` | migration enabled |
 | diodeReconciler.config.netboxDiodePluginApiBaseUrl | string | `"http://localhost:8000/netbox/api/plugins/diode"` | netbox diode plugin api base url |
+| diodeReconciler.config.netboxDiodePluginApiTimeoutSeconds | int | `5` | NetBox diode plugin HTTP client timeout (seconds) |
 | diodeReconciler.config.netboxDiodePluginSkipTlsVerify | bool | `false` | netbox diode plugin skip tls verify |
 | diodeReconciler.config.postgresDbName | string | `"diode"` | postgres db name |
 | diodeReconciler.config.postgresUser | string | `"diode"` | postgres user |
-| diodeReconciler.config.reconcilerRateLimiterBurst | int | `1` | reconciler rate limiter burst |
-| diodeReconciler.config.reconcilerRateLimiterRps | int | `20` | reconciler rate limiter rps |
 | diodeReconciler.config.redisDb | int | `0` | redis db |
 | diodeReconciler.config.redisStreamDb | int | `1` | redis stream db |
 | diodeReconciler.config.sentryDsn | string | `""` | sentry DSN |
@@ -296,11 +309,13 @@ helm show values diode/diode
 | diodeReconciler.existingSecret | string | `"diode-reconciler-secret"` | existing secret name |
 | diodeReconciler.extraEnvs | string or list | `[]` | extra environment variables to be set on containers' `env` section |
 | diodeReconciler.extraInitContainers | string or list | `""` | additional containers to run before the reconciler finishes initializing (may contain templating instructions) |
+| diodeReconciler.extraVolumeMounts | string or list | `[]` | additional volumes to mount in the container (may contain templating instructions) |
+| diodeReconciler.extraVolumes | string or list | `[]` | additional volumes to define for the container (may contain templating instructions) |
 | diodeReconciler.grpc.serviceName | string | `"diode.v1.ReconcilerService"` | grpc service name |
 | diodeReconciler.image.imagePullSecrets | list | `[]` | secrets with credentials to pull images from a private registry |
 | diodeReconciler.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
 | diodeReconciler.image.repository | string | `"docker.io/netboxlabs/diode-reconciler"` | image repository |
-| diodeReconciler.image.tag | string | `"1.7.1"` | image tag |
+| diodeReconciler.image.tag | string | `"1.13.0"` | image tag |
 | diodeReconciler.replicaCount | int | `1` | replica count |
 | diodeReconciler.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
 | diodeReconciler.serviceAccount.create | bool | `true` | create service account |
@@ -319,6 +334,7 @@ helm show values diode/diode
 | externalRedis.tls.clientKeyPath | string | `""` | path to client private key for mutual TLS |
 | externalRedis.tls.enabled | bool | `false` | enable TLS |
 | externalRedis.tls.skipVerify | bool | `false` | skip TLS verify |
+| externalRedis.username | string | `""` | username (optional, Redis 6+) |
 | global.commonAnnotations | object | `{}` | common annotations for all resources |
 | global.commonLabels | object | `{}` | common labels for all resources |
 | global.diode | object | `{"busybox":{"image":"busybox:latest","imagePullPolicy":"IfNotPresent"},"hydra":{"waitForPostgres":true},"ingester":{"waitForRedis":true},"reconciler":{"waitForPostgres":true,"waitForRedis":true}}` | diode global configuration |

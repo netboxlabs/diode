@@ -284,6 +284,19 @@ Create the port of the Redis database
 {{- end }}
 
 {{/*
+Create the username of the Redis database
+*/}}
+{{- define "diode.redis.username" -}}
+{{- if .Values.redis.enabled -}}
+{{- printf "" }}
+{{- else if and .Values.externalRedis (hasKey .Values.externalRedis "username") -}}
+{{- .Values.externalRedis.username }}
+{{- else -}}
+{{- fail "externalRedis.username must be defined when redis.enabled is false" }}
+{{- end }}
+{{- end }}
+
+{{/*
 Create the database name for PostgreSQL
 */}}
 {{- define "diode.postgresql.database" -}}

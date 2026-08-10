@@ -32,8 +32,8 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.24.x'
-          check-latest: true
+          go-version-file: diode-server/go.mod
+          cache-dependency-path: diode-server/go.sum
       - name: Run go build
         run: go build ./...
       - name: Install additional dependencies

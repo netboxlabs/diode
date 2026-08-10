@@ -1,9 +1,11 @@
 package reconciler
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"strconv"
@@ -11,18 +13,19 @@ import (
 	"sync"
 	"time"
 
+	"github.com/andybalholm/brotli"
 	"github.com/cloudflare/backoff"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 	"go.opentelemetry.io/otel/attribute"
-	"golang.org/x/time/rate"
 	"google.golang.org/protobuf/proto"
 
+	"github.com/netboxlabs/diode/diode-server/entityhash"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 	"github.com/netboxlabs/diode/diode-server/gen/netbox"
+	"github.com/netboxlabs/diode/diode-server/graph"
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
-	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
 	"github.com/netboxlabs/diode/diode-server/reconciler/ops"
 	"github.com/netboxlabs/diode/diode-server/sentry"
 	"github.com/netboxlabs/diode/diode-server/telemetry"
@@ -69,28 +72,33 @@ type IngestionProcessor struct {
 	metrics            Metrics
 	cancel             context.CancelFunc
 	mx                 sync.Mutex
-}
-
-// IngestionLogToProcess represents an ingestion log to process
-type IngestionLogToProcess struct {
-	ingestionLogID int32
-	ingestionLog   *reconcilerpb.IngestionLog
-	changeSetID    int32
-	changeSet      *changeset.ChangeSet
-	branchID       string // the branch ID for this ingestion log (empty string means main branch)
+	graphService       *graph.Service // nil when ENABLE_GRAPH_DB is false
 }
 
 // IngestionProcessorOps represents the basic operations that the ingestion processor performs
 type IngestionProcessorOps interface {
 	CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb.IngestionLog, sourceMetadata []byte) (*ops.CreateIngestionLogResult, error)
-	GenerateChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, branchID string) (*int32, *changeset.ChangeSet, error)
-	ApplyChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, changeSetID int32, changeSet *changeset.ChangeSet) error
+	BulkCreateIngestionLogs(ctx context.Context, ingestionLogs []*reconcilerpb.IngestionLog, sourceMetadata [][]byte, entityHashes []string) ([]*ops.CreateIngestionLogResult, error)
+	BulkPlan(ctx context.Context, items []ops.QueuedIngestionLog, branchID string) []ops.BulkGenerateChangeSetResult
+	BulkPlanApply(ctx context.Context, items []ops.QueuedIngestionLog, branchID string) []ops.BulkPlanApplyResult
 	DefaultBranch(ctx context.Context) (*netboxdiodeplugin.Branch, error)
 	RefreshDefaultBranch(ctx context.Context) (*netboxdiodeplugin.Branch, error)
 }
 
+// ProcessorOption is a functional option for configuring IngestionProcessor
+type ProcessorOption func(*IngestionProcessor)
+
+// WithGraphService sets the graph.Service for graph-based entity extraction.
+// When set, entities are also stored in the graph database for relationship tracking.
+// Pass nil to disable graph extraction.
+func WithGraphService(svc *graph.Service) ProcessorOption {
+	return func(p *IngestionProcessor) {
+		p.graphService = svc
+	}
+}
+
 // NewIngestionProcessor creates a new ingestion processor
-func NewIngestionProcessor(_ context.Context, logger *slog.Logger, cfg Config, redisClient, redisStreamClient RedisClient, redisStreamID string, redisConsumerGroup string, ops IngestionProcessorOps, metrics Metrics) (*IngestionProcessor, error) {
+func NewIngestionProcessor(_ context.Context, logger *slog.Logger, cfg Config, redisClient, redisStreamClient RedisClient, redisStreamID string, redisConsumerGroup string, ops IngestionProcessorOps, metrics Metrics, opts ...ProcessorOption) (*IngestionProcessor, error) {
 	hostname, err := os.Hostname()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get hostname: %v", err)
@@ -106,6 +114,11 @@ func NewIngestionProcessor(_ context.Context, logger *slog.Logger, cfg Config, r
 		redisConsumerGroup: redisConsumerGroup,
 		ops:                ops,
 		metrics:            metrics,
+	}
+
+	// Apply functional options
+	for _, opt := range opts {
+		opt(component)
 	}
 
 	return component, nil
@@ -179,7 +192,7 @@ func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, redisSt
 		b.Reset()
 
 		for _, msg := range streams[0].Messages {
-			_, err := p.handleStreamMessage(ctx, msg)
+			err := p.handleStreamMessage(ctx, msg)
 			if err != nil {
 				p.logger.Error("failed to handle stream message", "error", err, "message", msg)
 
@@ -196,23 +209,33 @@ func (p *IngestionProcessor) consumeIngestionStream(ctx context.Context, redisSt
 	}
 }
 
-func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.XMessage) (chan struct{}, error) {
-	doneChan := make(chan struct{})
-	defer close(doneChan)
+func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.XMessage) (err error) {
+	ctx, span := telemetry.StartSpan(ctx, telemetry.SpanIngestionHandleStreamMessage,
+		attribute.String(telemetry.AttributeHostname, p.hostname),
+	)
+	defer func() { telemetry.End(span, err) }()
 
-	// Create attributes for metrics
 	attrs := []attribute.KeyValue{
 		attribute.String(telemetry.AttributeHostname, p.hostname),
 	}
 	ctx = telemetry.ContextWithMetricAttributes(ctx, attrs...)
 
-	ingestReq := &diodepb.IngestRequest{}
-	if err := proto.Unmarshal([]byte(msg.Values["request"].(string)), ingestReq); err != nil {
-		p.metrics.RecordHandleMessage(ctx, false)
-		return doneChan, err
+	reqBytes := []byte(msg.Values["request"].(string))
+	if enc, ok := msg.Values["encoding"].(string); ok && enc == "br" {
+		var err error
+		reqBytes, err = decompressBrotli(reqBytes)
+		if err != nil {
+			p.metrics.RecordHandleMessage(ctx, false)
+			return fmt.Errorf("decompressing request: %w", err)
+		}
 	}
 
-	// Add request-specific attributes
+	ingestReq := &diodepb.IngestRequest{}
+	if err := proto.Unmarshal(reqBytes, ingestReq); err != nil {
+		p.metrics.RecordHandleMessage(ctx, false)
+		return err
+	}
+
 	attrs = append(attrs,
 		attribute.String(telemetry.AttributeSDKName, ingestReq.SdkName),
 		attribute.String(telemetry.AttributeSDKVersion, ingestReq.SdkVersion),
@@ -226,42 +249,19 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 	ingestionTs, err := strconv.Atoi(msg.Values["ingestion_ts"].(string))
 	if err != nil {
 		errs = append(errs, fmt.Errorf("failed to convert ingestion timestamp: %v", err))
+	} else {
+		streamLag := int64(time.Since(time.Unix(0, int64(ingestionTs))).Seconds())
+		span.SetAttributes(attribute.Int64(telemetry.AttributeStreamLag, streamLag))
 	}
+
+	span.SetAttributes(
+		attribute.String(telemetry.AttributeRequestID, ingestReq.GetId()),
+		attribute.Int(telemetry.AttributeEntityCount, len(ingestReq.GetEntities())),
+	)
 
 	p.logger.Debug("handling ingest request", "request", ingestReq)
 
-	bufCapacity := 100
-
-	generateIngestionLogChan := make(chan IngestionLogToProcess, bufCapacity)
-	generateIngestionLogDoneChan := make(chan struct{})
-	var applyChangeSetChan chan IngestionLogToProcess
-	var applyChangeSetDoneChan chan struct{}
-
-	if p.Config.AutoApplyChangesets {
-		applyChangeSetChan = make(chan IngestionLogToProcess, bufCapacity)
-		applyChangeSetDoneChan = make(chan struct{})
-	}
-
-	p.GenerateChangeSet(ctx, generateIngestionLogChan, applyChangeSetChan, generateIngestionLogDoneChan)
-
-	if p.Config.AutoApplyChangesets {
-		p.ApplyChangeSet(ctx, applyChangeSetChan, applyChangeSetDoneChan)
-	} else {
-		// Only close the channel if it's not nil to avoid panic
-		if applyChangeSetDoneChan != nil {
-			close(applyChangeSetDoneChan)
-		}
-	}
-
-	allDone := make(chan struct{})
-	go func() {
-		<-doneChan
-		<-generateIngestionLogDoneChan
-		<-applyChangeSetDoneChan
-		close(allDone)
-	}()
-
-	createIngestionLogsErrs := p.CreateIngestionLogs(ctx, ingestReq, ingestionTs, generateIngestionLogChan)
+	createIngestionLogsErrs := p.CreateIngestionLogs(ctx, ingestReq, ingestionTs)
 	if len(createIngestionLogsErrs) > 0 {
 		errs = append(errs, createIngestionLogsErrs...)
 	}
@@ -287,105 +287,42 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 		p.metrics.RecordHandleMessage(ctx, true)
 	}
 
-	return allDone, nil
+	return nil
 }
 
-// GenerateChangeSet generates a change set for an ingestion log
-func (p *IngestionProcessor) GenerateChangeSet(ctx context.Context, generateChangeSetChan <-chan IngestionLogToProcess, applyChangeSetChan chan<- IngestionLogToProcess, doneChan chan<- struct{}) {
-	limiter := rate.NewLimiter(rate.Limit(p.Config.ReconcilerRateLimiterRPS), p.Config.ReconcilerRateLimiterBurst)
-
-	go func() {
-		defer func() {
-			if applyChangeSetChan != nil {
-				close(applyChangeSetChan)
-			}
-			if doneChan != nil {
-				doneChan <- struct{}{}
-			}
-		}()
-
-		for {
-			select {
-			case <-ctx.Done():
-				p.logger.Debug("context cancelled", "error", ctx.Err())
-				return
-			case msg, ok := <-generateChangeSetChan:
-				if !ok {
-					return
-				}
-				if err := limiter.Wait(ctx); err != nil {
-					p.logger.Debug("rate limiter wait", "error", err)
-					return
-				}
-
-				id, changeSet, err := p.ops.GenerateChangeSet(ctx, msg.ingestionLogID, msg.ingestionLog, msg.branchID)
-				if err != nil {
-					p.logger.Error("error generating changeset", "error", err)
-					p.metrics.RecordChangeSetCreate(ctx, false, 0)
-				} else {
-					p.metrics.RecordChangeSetCreate(ctx, true, int64(len(changeSet.Changes)))
-				}
-
-				if changeSet != nil && len(changeSet.Changes) > 0 {
-					if applyChangeSetChan != nil {
-						applyChangeSetChan <- IngestionLogToProcess{
-							ingestionLogID: msg.ingestionLogID,
-							ingestionLog:   msg.ingestionLog,
-							changeSetID:    *id,
-							changeSet:      changeSet,
-							branchID:       msg.branchID,
-						}
-					}
-				}
-			}
+// CreateIngestionLogs creates ingestion logs for an ingest request using bulk operations
+func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq *diodepb.IngestRequest, ingestionTs int) (errs []error) {
+	ctx, span := telemetry.StartSpan(ctx, telemetry.SpanIngestionCreateIngestionLogs,
+		attribute.String(telemetry.AttributeRequestID, ingestReq.GetId()),
+		attribute.Int(telemetry.AttributeEntityCount, len(ingestReq.GetEntities())),
+	)
+	defer func() {
+		if len(errs) > 0 {
+			telemetry.End(span, errors.Join(errs...))
+		} else {
+			telemetry.End(span, nil)
 		}
 	}()
-}
 
-// ApplyChangeSet applies a change set for an ingestion log
-func (p *IngestionProcessor) ApplyChangeSet(ctx context.Context, applyChan <-chan IngestionLogToProcess, doneChan chan<- struct{}) {
-	limiter := rate.NewLimiter(rate.Limit(p.Config.ReconcilerRateLimiterRPS), p.Config.ReconcilerRateLimiterBurst)
+	errs = make([]error, 0)
 
-	go func() {
-		defer func() {
-			if doneChan != nil {
-				doneChan <- struct{}{}
-			}
-		}()
+	// Resolve the default branch via the 60s LRU cache. A short staleness
+	// window on a value that changes rarely is acceptable, and avoids a
+	// per-batch NetBox hit that thrashes plugin workers under burst ingest.
+	_, _ = p.ops.DefaultBranch(ctx)
 
-		for {
-			select {
-			case <-ctx.Done():
-				p.logger.Debug("context cancelled", "error", ctx.Err())
-				return
-			case msg, ok := <-applyChan:
-				if !ok {
-					return
-				}
-				if err := limiter.Wait(ctx); err != nil {
-					p.logger.Debug("rate limiter wait", "error", err)
-					return
-				}
+	// Phase 1: Pre-validate entities, build ingestion log protos, and generate entity hashes
+	fingerprinter := entityhash.NewEntityFingerprinter()
 
-				if err := p.ops.ApplyChangeSet(ctx, msg.ingestionLogID, msg.ingestionLog, msg.changeSetID, msg.changeSet); err != nil {
-					p.logger.Error("error applying changeset", "error", err)
-					p.metrics.RecordChangeSetApply(ctx, false, 0)
-				} else {
-					p.metrics.RecordChangeSetApply(ctx, true, int64(len(msg.changeSet.Changes)))
-				}
-			}
-		}
-	}()
-}
+	type validEntity struct {
+		index        int
+		ingestionLog *reconcilerpb.IngestionLog
+		entityHash   string
+		entity       *diodepb.Entity
+		objectType   string
+	}
 
-// CreateIngestionLogs creates ingestion logs for an ingest request
-func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq *diodepb.IngestRequest, ingestionTs int, generateIngestionLogChan chan<- IngestionLogToProcess) []error {
-	defer close(generateIngestionLogChan)
-
-	errs := make([]error, 0)
-
-	// Ensure the current default branch is retrieved
-	_, _ = p.ops.RefreshDefaultBranch(ctx)
+	var valid []validEntity
 
 	for i, v := range ingestReq.GetEntities() {
 		if v.GetEntity() == nil {
@@ -396,6 +333,12 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 		objectType, err := netbox.GetObjectType(v)
 		if err != nil {
 			errs = append(errs, fmt.Errorf("failed to extract object type for index %d: %v", i, err))
+			continue
+		}
+
+		hash, err := fingerprinter.GenerateEntityHash(v)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("failed to generate entity hash for index %d: %v", i, err))
 			continue
 		}
 
@@ -414,13 +357,44 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 			SourceTs:           v.GetTimestamp().AsTime().UnixNano(),
 		}
 
-		result, err := p.ops.CreateIngestionLog(ctx, ingestionLog, nil)
-		if err != nil {
-			errs = append(errs, fmt.Errorf("failed to process ingestion log: %v", err))
-			p.metrics.RecordIngestionLogCreate(ctx, false)
+		valid = append(valid, validEntity{
+			index:        i,
+			ingestionLog: ingestionLog,
+			entityHash:   hash,
+			entity:       v,
+			objectType:   objectType,
+		})
+	}
+
+	if len(valid) == 0 {
+		return errs
+	}
+
+	// Phase 2-4: Bulk create via Ops
+	logs := make([]*reconcilerpb.IngestionLog, len(valid))
+	sourceMetadata := make([][]byte, len(valid))
+	entityHashes := make([]string, len(valid))
+	for i, v := range valid {
+		logs[i] = v.ingestionLog
+		sourceMetadata[i] = nil
+		entityHashes[i] = v.entityHash
+	}
+
+	results, err := p.ops.BulkCreateIngestionLogs(ctx, logs, sourceMetadata, entityHashes)
+	if err != nil {
+		errs = append(errs, fmt.Errorf("failed to bulk create ingestion logs: %v", err))
+		p.metrics.RecordIngestionLogCreate(ctx, false)
+		return errs
+	}
+
+	// Phase 5: Post-processing — metrics, graph upserts, send to channel
+	for i, result := range results {
+		if result == nil {
 			continue
 		}
-		ingestionLog = result.IngestionLog
+
+		v := valid[i]
+		ingestionLog := result.IngestionLog
 		id := result.ID
 
 		if !result.WasDuplicate {
@@ -429,25 +403,51 @@ func (p *IngestionProcessor) CreateIngestionLogs(ctx context.Context, ingestReq 
 			p.logger.Debug("ingested duplicate ingestion log", "id", id, "externalID", ingestionLog.GetId())
 		}
 
+		if result.Requeued {
+			p.logger.Debug("requeued duplicate ingestion log for re-plan", "id", id, "externalID", ingestionLog.GetId())
+			p.metrics.RecordIngestionLogRequeue(ctx)
+		}
+
 		attrs := []attribute.KeyValue{
 			attribute.Bool(telemetry.AttributeDuplicate, result.WasDuplicate),
 		}
-		ctx = telemetry.ContextWithMetricAttributes(ctx, attrs...)
+		metricsCtx := telemetry.ContextWithMetricAttributes(ctx, attrs...)
+		p.metrics.RecordIngestionLogCreate(metricsCtx, true)
 
-		p.metrics.RecordIngestionLogCreate(ctx, true)
+		// Upsert entity into graph if graph DB is enabled (non-blocking, errors logged but not fatal)
+		if p.graphService != nil {
+			start := time.Now()
+			// Pass request-level metadata (e.g. run_id) for graph storage
+			var reqMeta map[string]any
+			if md := ingestReq.GetMetadata(); md != nil {
+				reqMeta = md.AsMap()
+			}
+			_, graphErr := p.graphService.UpsertEntity(ctx, v.entity, reqMeta)
+			duration := time.Since(start).Seconds()
+			if graphErr != nil {
+				p.logger.Warn("graph upsert entity failed",
+					"error", graphErr,
+					"ingestion_log_id", id,
+					"entity_type", v.objectType)
+				p.metrics.RecordGraphUpsert(ctx, false, v.objectType, duration)
+			} else {
+				p.metrics.RecordGraphUpsert(ctx, true, v.objectType, duration)
+			}
+		}
 
 		if result.WasDuplicate && result.IngestionLog.State == reconcilerpb.State_IGNORED {
 			p.logger.Debug("skipping ingestion log because it is a duplicate of an ignored ingestion log", "id", id, "externalID", ingestionLog.GetId())
-			continue
-		}
-
-		// otherwise, even if it was a duplicate, reprocess to see if it has been updated
-		generateIngestionLogChan <- IngestionLogToProcess{
-			ingestionLogID: id,
-			ingestionLog:   ingestionLog,
-			branchID:       result.BranchID,
 		}
 	}
 
 	return errs
+}
+
+func decompressBrotli(data []byte) ([]byte, error) {
+	r := brotli.NewReader(bytes.NewReader(data))
+	out, err := io.ReadAll(r)
+	if err != nil {
+		return nil, fmt.Errorf("brotli decompress: %w", err)
+	}
+	return out, nil
 }

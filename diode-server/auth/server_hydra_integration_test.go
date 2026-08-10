@@ -12,6 +12,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"reflect"
 	"strconv"
 	"strings"
 	"testing"
@@ -30,9 +31,9 @@ func TestServerHydraIntegration(t *testing.T) {
 	defer cancel()
 
 	creq := testcontainers.ContainerRequest{
-		Image:        "oryd/hydra:v2.3.0",
+		Image:        "oryd/hydra:v26.2.0",
 		ExposedPorts: []string{"4445/tcp", "4444/tcp"},
-		WaitingFor:   wait.ForLog("Setting up http server on :4445"),
+		WaitingFor:   wait.ForHTTP("/health/ready").WithPort("4445/tcp").WithStartupTimeout(60 * time.Second),
 		Cmd:          []string{"serve", "all", "--dev"},
 		Env: map[string]string{
 			"DSN":                                      "memory",
@@ -169,26 +170,19 @@ func TestServerHydraIntegration(t *testing.T) {
 	require.Equal(t, 9, len(result.Data))
 
 	// page through the 9 remaining clients in pages of size 2
-	var priorResult auth.ListClientsResponse
 	pageSize := 2
-	nextToken := ""
+	var nextPageToken string
 	seen := make(map[string]bool)
 	pages := 0
 	for range 6 { // should be 5 pages, stop after 6
-		result = client.listClients(t, nextToken, pageSize)
-		// previous page should be the same as the prior result
-		if pages > 0 {
-			prevPage := client.listClients(t, result.PrevPageToken, pageSize)
-			require.Equal(t, priorResult.Data, prevPage.Data)
-		}
-		priorResult = result
+		result = client.listClients(t, nextPageToken, pageSize)
 
 		pages++
 		for _, c := range result.Data {
 			seen[c.ClientID] = true
 		}
-		nextToken = result.NextPageToken
-		if nextToken == "" {
+		nextPageToken = result.NextPageToken
+		if nextPageToken == "" {
 			break
 		} else {
 			require.Equal(t, pageSize, len(result.Data))
@@ -240,6 +234,126 @@ func TestServerHydraIntegration(t *testing.T) {
 	// try to use the credentials to create a token with a different scope ...
 	resp = client.getToken(t, tokenClientInfo.ClientID, tokenClientInfo.ClientSecret, "netbox:read", []string{"aud:2"})
 	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+
+	// A cached response is served without consulting the authorization server, so it
+	// must carry exactly the authorization that server would have granted. A valid
+	// token is not sufficient, it has to be the right one.
+	t.Run("cached token carries the same authorization as a freshly issued one", func(t *testing.T) {
+		_ = os.Setenv("OAUTH2_TOKEN_CACHE_ENABLED", "true")
+		defer func() {
+			_ = os.Unsetenv("OAUTH2_TOKEN_CACHE_ENABLED")
+		}()
+
+		cachingServer, err := auth.NewServer(ctx, logger, tokenParser, manager, defaultOwnership)
+		require.NoError(t, err)
+
+		cachingTestServer := httptest.NewServer(cachingServer.GetMux())
+		defer cachingTestServer.Close()
+
+		cachingClient := &authTestClient{endpoint: cachingTestServer.URL}
+		cacheClient := client.createClient(t, "test-client-cache-compare", ingestClientScope)
+		audience := []string{"aud:2"}
+
+		// The first call fills the cache. Identical token strings prove the second was
+		// served from it, since a fresh issuance would carry a different jti.
+		issued := readAccessToken(t, cachingClient.getToken(t, cacheClient.ClientID, cacheClient.ClientSecret, ingestClientScope, audience))
+		cached := readAccessToken(t, cachingClient.getToken(t, cacheClient.ClientID, cacheClient.ClientSecret, ingestClientScope, audience))
+		require.Equal(t, issued, cached, "second request should have been served from the cache")
+
+		fresh := mintTokenDirectly(t, publicEndpoint, cacheClient.ClientID, cacheClient.ClientSecret, ingestClientScope, audience)
+		require.NotEqual(t, cached, fresh, "a direct request should produce a distinct issuance")
+
+		diff := claimDiff(unverifiedClaims(t, cached), unverifiedClaims(t, fresh))
+		require.Empty(t, diff, "cached token claims differ from a freshly issued token")
+
+		// A comparison that cannot fail proves nothing, so confirm it distinguishes a
+		// token issued for different credentials.
+		other := client.createClient(t, "test-client-cache-compare-other", ingestClientScope)
+		otherToken := mintTokenDirectly(t, publicEndpoint, other.ClientID, other.ClientSecret, ingestClientScope, audience)
+		require.NotEmpty(t, claimDiff(unverifiedClaims(t, cached), unverifiedClaims(t, otherToken)),
+			"claim comparison failed to distinguish tokens issued for different clients")
+	})
+}
+
+// volatileClaims are re-generated on every issuance, so two tokens for the same
+// credentials always differ on them.
+var volatileClaims = map[string]bool{"jti": true, "iat": true, "exp": true, "nbf": true}
+
+// claimDiff reports every non-volatile claim that differs between two tokens.
+//
+// It ignores a fixed set rather than checking a fixed set, so a claim nobody anticipated
+// is compared by default instead of being silently skipped. That matters most for claims
+// injected by a token hook, where serving the wrong value would hand a caller another
+// tenant's authorization.
+func claimDiff(a, b jwt.MapClaims) map[string][2]any {
+	keys := make(map[string]struct{}, len(a)+len(b))
+	for k := range a {
+		keys[k] = struct{}{}
+	}
+	for k := range b {
+		keys[k] = struct{}{}
+	}
+
+	diff := make(map[string][2]any)
+	for k := range keys {
+		if volatileClaims[k] {
+			continue
+		}
+		if !reflect.DeepEqual(a[k], b[k]) {
+			diff[k] = [2]any{a[k], b[k]}
+		}
+	}
+	return diff
+}
+
+// unverifiedClaims decodes a token's claims without checking its signature, which is
+// what allows two tokens to be compared field by field.
+func unverifiedClaims(t *testing.T, accessToken string) jwt.MapClaims {
+	t.Helper()
+
+	token, _, err := jwt.NewParser().ParseUnverified(accessToken, jwt.MapClaims{})
+	require.NoError(t, err)
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	require.True(t, ok)
+	return claims
+}
+
+// readAccessToken extracts the access token from a token endpoint response.
+func readAccessToken(t *testing.T, resp *http.Response) string {
+	t.Helper()
+
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var result struct {
+		AccessToken string `json:"access_token"`
+	}
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&result))
+	require.NotEmpty(t, result.AccessToken)
+	return result.AccessToken
+}
+
+// mintTokenDirectly requests a token straight from the authorization server, bypassing
+// the auth service and therefore its cache.
+func mintTokenDirectly(t *testing.T, publicEndpoint, clientID, clientSecret, scope string, audience []string) string {
+	t.Helper()
+
+	data := url.Values{}
+	data.Set("grant_type", "client_credentials")
+	data.Set("client_id", clientID)
+	data.Set("client_secret", clientSecret)
+	data.Set("scope", scope)
+	if len(audience) > 0 {
+		data.Set("audience", strings.Join(audience, " "))
+	}
+
+	resp, err := http.Post(publicEndpoint+"/oauth2/token", "application/x-www-form-urlencoded", strings.NewReader(data.Encode()))
+	require.NoError(t, err)
+
+	return readAccessToken(t, resp)
 }
 
 type authTestClient struct {

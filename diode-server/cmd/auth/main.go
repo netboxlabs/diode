@@ -10,6 +10,7 @@ import (
 	"go.opentelemetry.io/otel"
 
 	"github.com/netboxlabs/diode/diode-server/auth"
+	"github.com/netboxlabs/diode/diode-server/pprof"
 	"github.com/netboxlabs/diode/diode-server/server"
 	"github.com/netboxlabs/diode/diode-server/telemetry"
 	"github.com/netboxlabs/diode/diode-server/version"
@@ -31,6 +32,10 @@ func main() {
 
 	var cfg auth.Config
 	envconfig.MustProcess("", &cfg)
+
+	if cfg.PProfAddr != "" {
+		go pprof.Listen(ctx, s.Logger(), cfg.PProfAddr)
+	}
 
 	// Set default telemetry configuration if not provided
 	if cfg.Telemetry.ServiceName == "" {
@@ -66,6 +71,8 @@ func main() {
 		metricRecorder.RecordServiceStartupAttempt(ctx, false)
 		os.Exit(1)
 	}
+
+	httpServer.SetMetrics(metricRecorder)
 
 	if err := s.RegisterComponent(httpServer); err != nil {
 		s.Logger().Error("failed to register HTTP server", "error", err)

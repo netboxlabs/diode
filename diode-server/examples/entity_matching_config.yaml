@@ -1,0 +1,159 @@
+# Example Entity Matching Configuration for Diode Graph DB
+#
+# This file configures how Diode matches incoming entities with existing graph nodes.
+# Enable graph DB with ENABLE_GRAPH_DB=true and point to this file with
+# ENTITY_MATCHING_CONFIG_PATH=/path/to/this/file.yaml
+
+global_settings:
+  # Default minimum confidence threshold for entity matching (0.0-1.0)
+  default_min_confidence: 0.7
+  # Whether all primary rules must match by default
+  default_require_all_primary: false
+  # Enable fuzzy string matching for name comparisons
+  enable_fuzzy_matching: true
+  # Default similarity threshold for fuzzy matching
+  default_fuzzy_threshold: 0.85
+
+# Entity-specific matching rules
+default_entity_rules:
+  # Device matching rules
+  Device:
+    min_confidence: 0.8
+    require_all_primary: false
+    primary_rules:
+      # Name is the primary identifier
+      - field_path: "device.name"
+        match_type: exact
+        weight: 1.0
+        required: true
+        confidence: 0.9
+    secondary_rules:
+      # Serial number as secondary match
+      - field_path: "device.serial"
+        match_type: exact
+        weight: 0.8
+        required: false
+        confidence: 0.7
+      # Asset tag as another secondary identifier
+      - field_path: "device.asset_tag"
+        match_type: exact
+        weight: 0.6
+        required: false
+        confidence: 0.6
+
+  # Site matching rules
+  Site:
+    min_confidence: 0.7
+    require_all_primary: true
+    primary_rules:
+      - field_path: "site.name"
+        match_type: exact
+        weight: 1.0
+        required: true
+        confidence: 0.95
+    secondary_rules:
+      - field_path: "site.slug"
+        match_type: exact
+        weight: 0.7
+        required: false
+        confidence: 0.6
+
+  # Interface matching rules
+  Interface:
+    min_confidence: 0.8
+    require_all_primary: true
+    primary_rules:
+      # Interface name within device context
+      - field_path: "interface.name"
+        match_type: exact
+        weight: 1.0
+        required: true
+        confidence: 0.9
+      # Device reference for scoping
+      - field_path: "interface.device.name"
+        match_type: exact
+        weight: 0.9
+        required: true
+        confidence: 0.8
+    secondary_rules:
+      - field_path: "interface.mac_address"
+        match_type: exact
+        weight: 0.7
+        required: false
+        confidence: 0.6
+
+  # IP Address matching rules
+  IPAddress:
+    min_confidence: 0.9
+    require_all_primary: true
+    primary_rules:
+      - field_path: "ip_address.address"
+        match_type: exact
+        weight: 1.0
+        required: true
+        confidence: 0.95
+
+  # Prefix matching rules
+  Prefix:
+    min_confidence: 0.9
+    require_all_primary: true
+    primary_rules:
+      - field_path: "prefix.prefix"
+        match_type: exact
+        weight: 1.0
+        required: true
+        confidence: 0.95
+
+  # VLAN matching rules
+  VLAN:
+    min_confidence: 0.8
+    require_all_primary: true
+    primary_rules:
+      - field_path: "vlan.vid"
+        match_type: exact
+        weight: 1.0
+        required: true
+        confidence: 0.9
+    secondary_rules:
+      - field_path: "vlan.name"
+        match_type: fuzzy
+        weight: 0.5
+        required: false
+        confidence: 0.5
+        fuzzy_options:
+          min_similarity: 0.8
+          case_ignore: true
+
+  # Manufacturer matching rules
+  Manufacturer:
+    min_confidence: 0.7
+    primary_rules:
+      - field_path: "manufacturer.name"
+        match_type: fuzzy
+        weight: 1.0
+        required: true
+        confidence: 0.8
+        fuzzy_options:
+          min_similarity: 0.85
+          case_ignore: true
+          normalize: true
+
+  # DeviceType matching rules
+  DeviceType:
+    min_confidence: 0.8
+    require_all_primary: true
+    primary_rules:
+      - field_path: "device_type.model"
+        match_type: exact
+        weight: 1.0
+        required: true
+        confidence: 0.9
+      - field_path: "device_type.manufacturer.name"
+        match_type: exact
+        weight: 0.8
+        required: true
+        confidence: 0.8
+
+# Environment-specific overrides (optional)
+# These override the default rules for specific environments
+entity_overrides: {}

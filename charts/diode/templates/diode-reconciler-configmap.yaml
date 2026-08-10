@@ -17,6 +17,7 @@ data:
   SENTRY_DSN: {{ $config.sentryDsn | quote }}
   REDIS_HOST: {{ include "diode.redis.hostname" . | quote }}
   REDIS_PORT: {{ include "diode.redis.port" . | quote }}
+  REDIS_USERNAME: {{ include "diode.redis.username" . | quote }}
   REDIS_DB: {{ $config.redisDb | default "0" | quote }}
   REDIS_STREAM_DB: {{ $config.redisStreamDb | default "1" | quote }}
   {{- if and .Values.externalRedis.tls .Values.externalRedis.tls.enabled }}
@@ -28,10 +29,14 @@ data:
   {{- end }}
   MIGRATION_ENABLED: {{ $config.migrationEnabled | default "true" | quote }}
   AUTO_APPLY_CHANGESETS: {{ $config.autoApplyChangesets | default "true" | quote }}
-  RECONCILER_RATE_LIMITER_RPS: {{ $config.reconcilerRateLimiterRps | default "20" | quote }}
-  RECONCILER_RATE_LIMITER_BURST: {{ $config.reconcilerRateLimiterBurst | default "1" | quote }}
   DIODE_TO_NETBOX_RATE_LIMITER_RPS: {{ $config.diodeToNetboxRateLimiterRps | default "20" | quote }}
   DIODE_TO_NETBOX_RATE_LIMITER_BURST: {{ $config.diodeToNetboxRateLimiterBurst | default "1" | quote }}
+  INGESTION_LOG_PROCESSOR_CONCURRENCY: {{ $config.ingestionLogProcessorConcurrency | default "4" | quote }}
+  INGESTION_LOG_PROCESSOR_BATCH_SIZE: {{ $config.ingestionLogProcessorBatchSize | default "400" | quote }}
+  INGESTION_LOG_PROCESSOR_BACKPRESSURE_THRESHOLD: {{ $config.ingestionLogProcessorBackpressureThreshold | default "100" | quote }}
+  AUTO_APPLY_PROCESSOR_CONCURRENCY: {{ $config.autoApplyProcessorConcurrency | default "1" | quote }}
+  AUTO_APPLY_PROCESSOR_BATCH_SIZE: {{ $config.autoApplyProcessorBatchSize | default "50" | quote }}
+  NETBOX_DIODE_PLUGIN_API_TIMEOUT_SECONDS: {{ $config.netboxDiodePluginApiTimeoutSeconds | default "5" | quote }}
   POSTGRES_HOST: {{ include "diode.postgresql.hostname" . | quote }}
   POSTGRES_PORT: {{ include "diode.postgresql.port" . | quote }}
   POSTGRES_DB_NAME: {{ include "diode.postgresql.database" . | quote }}

@@ -13,6 +13,8 @@ import (
 	"google.golang.org/grpc/reflection"
 
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
+	"github.com/netboxlabs/diode/diode-server/grpckeepalive"
+	diodetls "github.com/netboxlabs/diode/diode-server/tls"
 )
 
 // Server is a reconciler Server
@@ -32,17 +34,18 @@ func NewServer(ctx context.Context, logger *slog.Logger, repository Repository, 
 	var cfg Config
 	envconfig.MustProcess("", &cfg)
 
-	redisTLSConfig, err := cfg.RedisTLS.ToTLSConfig()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create TLS config for Redis: %v", err)
-	}
-
-	redisClient := redis.NewClient(&redis.Options{
-		Addr:      fmt.Sprintf("%s:%s", cfg.RedisHost, cfg.RedisPort),
-		Password:  cfg.RedisPassword,
-		DB:        cfg.RedisDB,
-		TLSConfig: redisTLSConfig,
+	redisOptions, err := diodetls.NewRedisOptions(diodetls.RedisParams{
+		Host:     cfg.RedisHost,
+		Port:     cfg.RedisPort,
+		Username: cfg.RedisUsername,
+		Password: cfg.RedisPassword,
+		DB:       cfg.RedisDB,
+		TLS:      &cfg.RedisTLS,
 	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to create Redis options: %w", err)
+	}
+	redisClient := redis.NewClient(&redisOptions)
 
 	if _, err := redisClient.Ping(ctx).Result(); err != nil {
 		return nil, fmt.Errorf("failed connection to %s: %v", redisClient.String(), err)
@@ -53,10 +56,10 @@ func NewServer(ctx context.Context, logger *slog.Logger, repository Repository, 
 		return nil, fmt.Errorf("failed to listen on port %d: %v", cfg.GRPCPort, err)
 	}
 
-	grpcServer := grpc.NewServer(
+	grpcServer := grpc.NewServer(append(grpckeepalive.ServerOptions(),
 		grpc.ChainUnaryInterceptor(serverInterceptors...),
 		grpc.StatsHandler(otelgrpc.NewServerHandler()),
-	)
+	)...)
 
 	component := &Server{
 		config:       cfg,

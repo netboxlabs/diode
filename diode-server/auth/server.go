@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -27,17 +28,35 @@ const (
 	DefaultTokenOwnerID = "diode/user"
 )
 
+// upstreamTokenTimeout bounds a single upstream token request. The upstream call is
+// detached from the caller's context, so this timeout is the only thing that unwinds a
+// stalled upstream transaction and must not be removed.
+const upstreamTokenTimeout = 10 * time.Second
+
 // Server is a auth Server
 type Server struct {
 	config         Config
 	keyfunc        keyfunc.Keyfunc
 	logger         *slog.Logger
 	httpServer     *http.Server
+	httpClient     *http.Client
 	mux            *http.ServeMux
 	tokenParser    TokenParser
 	clientManager  ClientManager
 	tokenOwnership TokenOwnershipProvider
 	decorators     []ClientInfoDecorator
+	tokenCache     *tokenCache
+	issuanceGate   TokenIssuanceGate
+	metrics        Metrics
+}
+
+// upstreamTokenResponse is a buffered upstream token response. Token responses are
+// small, and buffering lets one upstream call be replayed to every single-flight waiter
+// as well as stored in the cache.
+type upstreamTokenResponse struct {
+	statusCode int
+	header     http.Header
+	body       []byte
 }
 
 // IntrospectResponse is the response for the introspect request
@@ -72,9 +91,9 @@ type ClientResponse struct {
 
 // ListClientsResponse response to list clients
 type ListClientsResponse struct {
-	Data          []ClientResponse `json:"data"`
-	NextPageToken string           `json:"next_page_token,omitempty"`
-	PrevPageToken string           `json:"prev_page_token,omitempty"`
+	Data           []ClientResponse `json:"data"`
+	FirstPageToken string           `json:"first_page_token,omitempty"`
+	NextPageToken  string           `json:"next_page_token,omitempty"`
 }
 
 // ClientErrorResponse error response to client requests
@@ -131,11 +150,24 @@ func NewServer(ctx context.Context, logger *slog.Logger, tokenParser TokenParser
 		return nil, fmt.Errorf("failed to create keyfunc: %w", err)
 	}
 
+	var cache *tokenCache
+	if cfg.OAuth2.TokenCache.Enabled {
+		cache, err = newTokenCache(cfg.OAuth2.TokenCache)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	server := &Server{
 		config:  cfg,
 		keyfunc: k,
 		logger:  logger,
 		mux:     mux,
+		httpClient: &http.Client{
+			Transport: otelhttp.NewTransport(http.DefaultTransport),
+			Timeout:   upstreamTokenTimeout,
+		},
+		tokenCache: cache,
 		httpServer: &http.Server{
 			Addr: fmt.Sprintf(":%d", cfg.HTTPPort),
 			Handler: otelhttp.NewHandler(mux, "auth-http-server", otelhttp.WithMetricAttributesFn(
@@ -202,6 +234,21 @@ func (s *Server) RegisterHandlers() {
 // these are called prior to a user generated client being created.
 func (s *Server) AddClientInfoDecorator(decorator ClientInfoDecorator) {
 	s.decorators = append(s.decorators, decorator)
+}
+
+// SetTokenIssuanceGate installs a gate consulted on every token cache hit, so that
+// checks the upstream would have performed stay in force for cached responses.
+//
+// Deployments that enable the token cache and have such checks must install a gate.
+// Without one, a cache hit is served on the strength of the credentials alone.
+func (s *Server) SetTokenIssuanceGate(gate TokenIssuanceGate) {
+	s.issuanceGate = gate
+}
+
+// SetMetrics installs a metrics recorder. Metrics are optional; without one the server
+// records nothing.
+func (s *Server) SetMetrics(metrics Metrics) {
+	s.metrics = metrics
 }
 
 // introspect handles the introspect request
@@ -386,49 +433,244 @@ func (s *Server) token(w http.ResponseWriter, r *http.Request) {
 		_ = r.Body.Close()
 	}()
 
-	// Create a new request with the same method and buffered body
-	req, err := http.NewRequestWithContext(r.Context(), r.Method, s.config.OAuth2.PublicServerURL+"/oauth2/token", bytes.NewReader(bodyBuf.Bytes()))
-	if err != nil {
-		s.logger.Error("failed to create request to token endpoint", "error", err)
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+	if s.tokenCache == nil {
+		s.proxyToken(w, r, bodyBuf.Bytes())
 		return
 	}
 
-	for name, values := range r.Header {
-		for _, value := range values {
-			req.Header.Add(name, value)
+	cred, ok := cacheableTokenRequest(bodyBuf.Bytes(), r.Header)
+	if !ok {
+		s.recordTokenCacheOutcome(r.Context(), tokenCacheBypass)
+		s.proxyToken(w, r, bodyBuf.Bytes())
+		return
+	}
+
+	key := s.tokenCache.key(cred)
+
+	outcome, served := s.serveCachedToken(w, r, key)
+	s.recordTokenCacheOutcome(r.Context(), outcome)
+	if served {
+		return
+	}
+
+	s.fetchToken(w, r, key, cred, bodyBuf.Bytes())
+}
+
+// serveCachedToken serves a live cache entry, if one exists and the issuance gate still
+// allows it. It returns the outcome and whether a response was written.
+func (s *Server) serveCachedToken(w http.ResponseWriter, r *http.Request, key string) (tokenCacheOutcome, bool) {
+	now := time.Now()
+
+	entry, ok := s.tokenCache.get(key, now)
+	if !ok {
+		return tokenCacheMiss, false
+	}
+
+	if entry.negative {
+		s.writeCachedResponse(w, entry.statusCode, entry.contentType, entry.rawBody)
+		return tokenCacheNegativeHit, true
+	}
+
+	if !s.allowIssuance(r.Context(), entry.clientID) {
+		// Fall through to the upstream rather than inventing a rejection here, so the
+		// caller sees the authoritative error. This is never worse than not caching.
+		s.tokenCache.remove(key)
+		return tokenCacheGateDenied, false
+	}
+
+	body, ok := entry.responseBody(now)
+	if !ok {
+		s.tokenCache.remove(key)
+		return tokenCacheMiss, false
+	}
+
+	s.writeCachedResponse(w, http.StatusOK, "application/json", body)
+	return tokenCacheHit, true
+}
+
+// allowIssuance consults the issuance gate.
+//
+// A gate error is treated as a denial. Denial means the cached response is not served
+// and the request goes upstream, so failing closed here costs a cache hit rather than
+// availability.
+func (s *Server) allowIssuance(ctx context.Context, clientID string) bool {
+	if s.issuanceGate == nil {
+		return true
+	}
+
+	allowed, err := s.issuanceGate.Allow(ctx, clientID)
+	if err != nil {
+		s.logger.Error("failed to evaluate token issuance gate", "error", err, "client_id", clientID)
+		return false
+	}
+	return allowed
+}
+
+// fetchToken obtains a token from the upstream and caches the result.
+//
+// Concurrent misses on the same key are collapsed into a single upstream request.
+// Without this, a synchronised token expiry across callers stampedes the upstream. The
+// collapsed request carries the leading caller's headers; callers that share a key
+// present the same credentials, so only incidental headers can differ.
+func (s *Server) fetchToken(w http.ResponseWriter, r *http.Request, key string, cred tokenCredentials, body []byte) {
+	result, err, _ := s.tokenCache.group.Do(key, func() (any, error) {
+		resp, err := s.requestToken(r.Context(), r.Header, body)
+		if err != nil {
+			return nil, err
 		}
-	}
-
-	// Use a custom HTTP client with a timeout
-	client := &http.Client{
-		Transport: otelhttp.NewTransport(http.DefaultTransport),
-		Timeout:   10 * time.Second,
-	}
-
-	resp, err := client.Do(req)
+		s.storeTokenResponse(key, cred, resp)
+		return resp, nil
+	})
 	if err != nil {
 		s.logger.Error("failed to send token request", "error", err)
 		http.Error(w, "failed to obtain the token", http.StatusBadGateway)
 		return
 	}
 
+	resp, ok := result.(*upstreamTokenResponse)
+	if !ok {
+		s.logger.Error("unexpected token request result type")
+		http.Error(w, "failed to obtain the token", http.StatusInternalServerError)
+		return
+	}
+
+	s.writeUpstreamResponse(w, resp)
+}
+
+// proxyToken forwards a token request that the cache may not serve.
+func (s *Server) proxyToken(w http.ResponseWriter, r *http.Request, body []byte) {
+	resp, err := s.requestToken(r.Context(), r.Header, body)
+	if err != nil {
+		s.logger.Error("failed to send token request", "error", err)
+		http.Error(w, "failed to obtain the token", http.StatusBadGateway)
+		return
+	}
+
+	s.writeUpstreamResponse(w, resp)
+}
+
+// requestToken performs the upstream token request.
+//
+// The call is deliberately detached from the caller's context. A caller that gives up
+// must not abort an in-flight upstream transaction, and under single-flight it must not
+// abort the request other waiters are relying on. upstreamTokenTimeout is what bounds
+// the call instead.
+func (s *Server) requestToken(ctx context.Context, header http.Header, body []byte) (*upstreamTokenResponse, error) {
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(ctx), upstreamTokenTimeout)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, s.config.OAuth2.PublicServerURL+"/oauth2/token", bytes.NewReader(body))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request to token endpoint: %w", err)
+	}
+	req.Header = header.Clone()
+
+	started := time.Now()
+	resp, err := s.httpClient.Do(req)
+	s.recordUpstreamTokenRequest(ctx, time.Since(started), err)
+	if err != nil {
+		return nil, fmt.Errorf("failed to send token request: %w", err)
+	}
+
 	defer func() {
 		_ = resp.Body.Close()
 	}()
 
-	// Copy headers from the response (avoid duplication if needed)
-	for name, values := range resp.Header {
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read token response: %w", err)
+	}
+
+	return &upstreamTokenResponse{
+		statusCode: resp.StatusCode,
+		header:     resp.Header.Clone(),
+		body:       respBody,
+	}, nil
+}
+
+// storeTokenResponse caches a successful token response, or a definitive upstream
+// rejection of the presented credentials.
+func (s *Server) storeTokenResponse(key string, cred tokenCredentials, resp *upstreamTokenResponse) {
+	now := time.Now()
+
+	if resp.statusCode != http.StatusOK {
+		if negativelyCacheable(resp.statusCode, resp.body) {
+			s.tokenCache.putNegative(key, resp.statusCode, resp.header.Get("Content-Type"), resp.body, now)
+		}
+		return
+	}
+
+	// UseNumber keeps upstream numbers exact, so re-marshalling a hit reproduces the
+	// original response rather than a float64 approximation of it.
+	decoder := json.NewDecoder(bytes.NewReader(resp.body))
+	decoder.UseNumber()
+
+	var body map[string]any
+	if err := decoder.Decode(&body); err != nil {
+		s.logger.Warn("token response is not cacheable", "error", err)
+		return
+	}
+
+	s.tokenCache.putToken(key, cred, body, now)
+}
+
+// writeUpstreamResponse relays an upstream response verbatim.
+func (s *Server) writeUpstreamResponse(w http.ResponseWriter, resp *upstreamTokenResponse) {
+	for name, values := range resp.header {
 		for _, value := range values {
-			w.Header().Add(name, value) // Use Set() instead if you want to overwrite duplicates
+			w.Header().Add(name, value)
 		}
 	}
 
-	w.WriteHeader(resp.StatusCode)
-	if _, err := io.Copy(w, resp.Body); err != nil {
-		// Response headers already sent — cannot modify response at this point
-		s.logger.Error("failed to stream response body to client", "error", err)
+	w.WriteHeader(resp.statusCode)
+	if _, err := w.Write(resp.body); err != nil {
+		// Response headers already sent, cannot modify the response at this point
+		s.logger.Error("failed to write response body to client", "error", err)
 	}
+}
+
+// writeCachedResponse writes a response served from cache. There is no upstream response
+// to copy headers from, so the headers the upstream would have set are set here.
+func (s *Server) writeCachedResponse(w http.ResponseWriter, statusCode int, contentType string, body []byte) {
+	if contentType == "" {
+		contentType = "application/json"
+	}
+
+	w.Header().Set("Content-Type", contentType)
+	w.Header().Set("Cache-Control", "no-store")
+	w.Header().Set("Pragma", "no-cache")
+
+	w.WriteHeader(statusCode)
+	if _, err := w.Write(body); err != nil {
+		s.logger.Error("failed to write cached response body to client", "error", err)
+	}
+}
+
+// recordTokenCacheOutcome records how a token request interacted with the cache.
+func (s *Server) recordTokenCacheOutcome(ctx context.Context, outcome tokenCacheOutcome) {
+	if s.metrics == nil {
+		return
+	}
+	s.metrics.RecordTokenCacheOutcome(ctx, string(outcome))
+}
+
+// recordUpstreamTokenRequest records the duration of an upstream token request, split by
+// outcome. Separating a timeout from other transport failures is what distinguishes a
+// stalled upstream from an unreachable one.
+func (s *Server) recordUpstreamTokenRequest(ctx context.Context, duration time.Duration, err error) {
+	if s.metrics == nil {
+		return
+	}
+
+	outcome := "ok"
+	switch {
+	case errors.Is(err, context.DeadlineExceeded):
+		outcome = "deadline_exceeded"
+	case err != nil:
+		outcome = "error"
+	}
+
+	s.metrics.RecordUpstreamTokenRequest(ctx, duration, outcome)
 }
 
 func (s *Server) createClient(w http.ResponseWriter, r *http.Request) {
@@ -570,9 +812,9 @@ func (s *Server) listClients(w http.ResponseWriter, r *http.Request) {
 	}
 
 	out := ListClientsResponse{
-		Data:          make([]ClientResponse, 0, len(clients.Clients)),
-		NextPageToken: clients.NextPageToken,
-		PrevPageToken: clients.PrevPageToken,
+		Data:           make([]ClientResponse, 0, len(clients.Clients)),
+		FirstPageToken: clients.FirstPageToken,
+		NextPageToken:  clients.NextPageToken,
 	}
 	for _, client := range clients.Clients {
 		out.Data = append(out.Data, ClientResponse{

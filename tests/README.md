@@ -1,92 +1,116 @@
 # Tests
 
-This directory contains integrations tests that can be run against the Diode Plugin
+This directory contains integration tests for the Diode project, using pytest.
 
-Here's what you'll need to do in order to run these tests:
+## Prerequisites
 
-- Start docker containers stack (diode and NetBox)
-- Check the users and their tokens
-- Configure the test settings
-- Run behave
+To run the tests, you'll need:
 
-## Start the Docker container for Netbox with Diode Plugin
+- Python 3.9+
+- A running Diode server
+- A running NetBox instance with the Diode plugin installed
 
-To run the tests, you must have the diode plugin directory, and execute the following commands in the **diode-server**
-folder.
+## Setup
+
+### 1. Configure Environment Variables
+
+The tests read configuration from environment variables. Configure them according to your setup:
+
+#### Environment Variables
+
+**NetBox connection (required for external NetBox):**
+- `NETBOX_URL`: URL of your NetBox instance (default: `http://localhost:8000/netbox/`)
+- `NETBOX_USERNAME`: NetBox web UI username (default: `admin`)
+- `NETBOX_PASSWORD`: NetBox web UI password (default: `admin`)
+
+**Diode server (optional):**
+- `DIODE_TARGET`: Diode gRPC server URL (default: `grpc://localhost:8080/diode`)
+
+**Note**: The tests automatically create Diode client credentials dynamically via the NetBox plugin web interface during test execution. You don't need to manually configure `DIODE_ADMIN_CLIENT_ID` or `DIODE_ADMIN_CLIENT_SECRET`.
+
+#### Setting Environment Variables
+
+You can set these variables in your shell before running tests:
 
 ```bash
-pip install netboxlabs-diode-netbox-plugin
+export NETBOX_URL="http://my-netbox-server:8000/netbox/"
+export NETBOX_USERNAME="admin"
+export NETBOX_PASSWORD="admin"
 ```
 
-After that, you can start the docker container by running the following command:
+## Running Tests
+
+### Install Dependencies
+
+Before running tests, create a virtual environment and install dependencies:
 
 ```bash
-make docker-compose-up
+# Create and activate virtual environment
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-make docker-compose-netbox-up
+# Install test dependencies
+pip install -r tests/requirements.txt
 ```
 
-## Users and tokens
+### Run Tests
 
-The command above will create all users necessary to run the tests.
+Run all tests:
+```bash
+pytest tests/
+```
 
-Using the Admin user, you can access the Netbox at http://0.0.0.0:8000/netbox/.
+Run specific test files:
+```bash
+pytest tests/test_ingestion.py
+```
 
-- username: admin
-- password: admin
+Run tests with verbose output:
+```bash
+pytest tests/ -v
+```
 
-To check the tokens of the users, navigate to the "Admin" menu and select "API Token". This will display a list of all
-the tokens associated with the users.
+Run tests with coverage:
+```bash
+pytest tests/ --cov=diode
+```
 
-Please, pay attention to the token for user "INGESTION", it will be used in the next section.
+## Linting
 
-## Test settings
+This project uses [Ruff](https://docs.astral.sh/ruff/) for Python linting and formatting.
 
-Create the test config file from the template: `cp config.ini.tpl config.ini`.
+### Run Linting
 
-Then fill in the correct values:
+Check for linting issues:
+```bash
+ruff check .
+```
 
-- **user_token**:
-    - Mandatory!
-    - string
-    - **ADMIN** token created in the previous step
+Automatically fix linting issues:
+```bash
+ruff check --fix .
+```
 
-- **api_root_path**:
-    - Mandatory!
-    - string
-    - netbox API URL, e.g. http://0.0.0.0:8000/netbox/api
+### Run Formatting
 
-- **api_key**:
-    - Mandatory!
-    - string
-    - **INGESTION** user token created in the previous step
+Format code:
+```bash
+ruff format .
+```
 
-## Run behave using parallel process
+Check formatting without making changes:
+```bash
+ruff format --check .
+```
 
-You can use [behavex](https://github.com/hrcorval/behavex) to run the scenarios using multiprocess by simply run:
+### Configuration
 
-Examples:
+Linting configuration is defined in `pyproject.toml`. The configuration:
+- Targets Python 3.12
+- Sets line length to 120 characters
+- Excludes protobuf generated files (`*.pb2.py`, `*.pb2_grpc.py`)
+- Enables pycodestyle, pyflakes, isort, flake8-bugbear, flake8-comprehensions, and pyupgrade rules
 
-> behavex -t @\<TAG\> --parallel-processes=2 --parallel-schema=feature
+## Test Structure
 
-> behavex -t @\<TAG\> --parallel-processes=2 --parallel-schema=feature
-
-Running smoke tests:
-
-> behavex -t=@smoke --parallel-processes=2 --parallel-scheme=feature
-
-## Test execution reports
-
-[behavex](https://github.com/hrcorval/behavex) provides a friendly HTML test execution report that contains information
-related to test scenarios, execution status, execution evidence and metrics. A filters bar is also provided to filter
-scenarios by name, tag or status.
-
-It should be available at the following path:
-
-`<output_folder>/report.html`
-
-## Clean your environment
-
-After running the tests, clean up your environment by running the command:
-
-> behavex -t=@cleanup --parallel-processes=2 --parallel-scheme=feature
+- `tests/`: Integration tests for the Diode SDK and NetBox plugin

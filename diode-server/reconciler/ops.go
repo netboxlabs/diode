@@ -6,15 +6,15 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"sync"
 	"time"
 
-	"github.com/hashicorp/golang-lru/v2/expirable"
+	"github.com/google/uuid"
 
 	"github.com/netboxlabs/diode/diode-server/entityhash"
 	diodeErrors "github.com/netboxlabs/diode/diode-server/errors"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
-	"github.com/netboxlabs/diode/diode-server/reconciler/applier"
 	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
 	"github.com/netboxlabs/diode/diode-server/reconciler/differ"
 	"github.com/netboxlabs/diode/diode-server/reconciler/ops"
@@ -22,8 +22,11 @@ import (
 )
 
 const (
-	// DefaultBranchCacheTTL is the default TTL for caching the default branch
-	DefaultBranchCacheTTL = 60 * time.Second
+	// DefaultBranchRefreshInterval is how often the background refresher re-fetches the default branch.
+	DefaultBranchRefreshInterval = 5 * time.Minute
+
+	// DefaultBranchFetchTimeout bounds each refresh attempt; matches the bulk-plan-apply client timeout.
+	DefaultBranchFetchTimeout = 30 * time.Second
 )
 
 // Limits is an interface that provides limits for the reconciler operations to enforce
@@ -39,77 +42,136 @@ func (l *DefaultLimits) MaxChangeSetsPerIngestionLog() int32 {
 	return 5
 }
 
-// Ops high level operations performed during ingestion processing
+// Ops high level operations performed during ingestion processing.
+//
+// DefaultBranch lookups are served exclusively from an in-memory cache that
+// a background goroutine (Start) keeps current. Hot-path callers (consume
+// loop, AutoApply) never do synchronous NetBox HTTP via DefaultBranch — so
+// a NetBox/Hydra outage cannot block Redis→inbox draining.
 type Ops struct {
 	repository Repository
 	nbClient   netboxdiodeplugin.NetBoxAPI
 	logger     *slog.Logger
 	limits     Limits
 
-	// Cache for default branch (5 minute TTL, size 1 since we only cache one value)
-	branchCache *expirable.LRU[string, *netboxdiodeplugin.Branch]
+	// Default-branch state. Updated only by the background refresher.
+	branchMu     sync.RWMutex
+	branch       *netboxdiodeplugin.Branch
+	branchLoaded bool          // true once we've recorded ANY result (success, nil, or known-absent)
+	refreshSig   chan struct{} // signal channel for on-demand refresh; buffered=1
+	startOnce    sync.Once     // guards the refresher goroutine
 }
 
-// NewOps creates a new Ops
+// NewOps creates a new Ops. The background DefaultBranch refresher is NOT
+// started until Start(ctx) is called; until then DefaultBranch() returns
+// (nil, nil) and callers degrade to "no branch context".
 func NewOps(repository Repository, nbClient netboxdiodeplugin.NetBoxAPI, logger *slog.Logger, limits Limits) *Ops {
 	if limits == nil {
 		limits = &DefaultLimits{}
 	}
 
-	// Create LRU cache with size 1 (we only cache one default branch)
-	branchCache := expirable.NewLRU[string, *netboxdiodeplugin.Branch](1, nil, DefaultBranchCacheTTL)
-
 	return &Ops{
-		repository:  repository,
-		nbClient:    nbClient,
-		logger:      logger,
-		limits:      limits,
-		branchCache: branchCache,
+		repository: repository,
+		nbClient:   nbClient,
+		logger:     logger,
+		limits:     limits,
+		refreshSig: make(chan struct{}, 1),
 	}
 }
 
-// DefaultBranch fetches the default branch from the NetBox plugin with caching
-func (o *Ops) DefaultBranch(ctx context.Context) (*netboxdiodeplugin.Branch, error) {
-	const cacheKey = "default_branch"
+// Start launches the background default-branch refresher. It fetches once
+// immediately (fire-and-forget) and then on a fixed interval, stopping when
+// ctx is cancelled. Subsequent calls after the first are no-ops; the ctx
+// from the first call governs the refresher's lifetime.
+func (o *Ops) Start(ctx context.Context) {
+	o.startOnce.Do(func() {
+		go o.runBranchRefresher(ctx)
+	})
+}
 
-	// Check cache first
-	if cachedBranch, ok := o.branchCache.Get(cacheKey); ok {
-		o.logger.Debug("using cached default branch", "branch", cachedBranch)
-		return cachedBranch, nil
-	}
+func (o *Ops) runBranchRefresher(ctx context.Context) {
+	o.fetchAndStoreBranch(ctx)
 
-	// Cache miss - fetch from NetBox plugin
-	o.logger.Debug("cache miss - fetching default branch from NetBox plugin")
-	branch, err := o.nbClient.GetDefaultBranch(ctx)
-	if err != nil {
-		// Cache nil result for 404s (endpoint doesn't exist on older plugin versions)
-		// This prevents hammering the NetBox plugin with requests that will always fail
-		if errors.Is(err, netboxdiodeplugin.ErrDefaultBranchNotFound) {
-			o.logger.Debug("default-branch endpoint not found (older plugin version), caching nil result", "ttl", "5m")
-			o.branchCache.Add(cacheKey, nil)
-			return nil, nil // Return nil branch without error (gracefully handle missing endpoint)
+	ticker := time.NewTicker(DefaultBranchRefreshInterval)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			o.fetchAndStoreBranch(ctx)
+		case <-o.refreshSig:
+			o.fetchAndStoreBranch(ctx)
 		}
-		return nil, err
 	}
-
-	// Store in cache (automatically expires after 5 minutes)
-	o.branchCache.Add(cacheKey, branch)
-	o.logger.Debug("fetched and cached default branch", "branch", branch)
-
-	return branch, nil
 }
 
-// RefreshDefaultBranch forces a refresh of the default branch cache from NetBox
+func (o *Ops) fetchAndStoreBranch(ctx context.Context) {
+	fetchCtx, cancel := context.WithTimeout(ctx, DefaultBranchFetchTimeout)
+	defer cancel()
+
+	branch, err := o.nbClient.GetDefaultBranch(fetchCtx)
+	if err != nil {
+		if errors.Is(err, netboxdiodeplugin.ErrDefaultBranchNotFound) {
+			// Older plugin version — there is no default-branch endpoint.
+			// Remember nil so we don't keep retrying frivolously.
+			o.setBranch(nil)
+			return
+		}
+		// Transient failure (auth, network, NetBox down). Leave the
+		// last-known value in place; consume loop and AutoApply keep
+		// reading the previous successful result.
+		o.logger.Warn("default branch refresh failed; serving last-known value",
+			"error", err,
+			"have_value", o.HasBranchLoaded(),
+		)
+		return
+	}
+	o.setBranch(branch)
+}
+
+func (o *Ops) setBranch(b *netboxdiodeplugin.Branch) {
+	o.branchMu.Lock()
+	defer o.branchMu.Unlock()
+	o.branch = b
+	o.branchLoaded = true
+}
+
+// HasBranchLoaded reports whether the refresher has successfully recorded
+// any result (a real branch, nil-known-absent, or a 404-on-older-plugin).
+// False means the cache is cold and DefaultBranch will return (nil, nil).
+func (o *Ops) HasBranchLoaded() bool {
+	o.branchMu.RLock()
+	defer o.branchMu.RUnlock()
+	return o.branchLoaded
+}
+
+// DefaultBranch returns the cached default branch. It never makes a network
+// call — the background refresher (started via Start) owns NetBox HTTP for
+// this value. Returns (nil, nil) if the cache is still cold; callers must
+// tolerate that and degrade gracefully (e.g., no branch filter on lookups).
+func (o *Ops) DefaultBranch(_ context.Context) (*netboxdiodeplugin.Branch, error) {
+	o.branchMu.RLock()
+	defer o.branchMu.RUnlock()
+	return o.branch, nil
+}
+
+// RefreshDefaultBranch signals the background refresher to refetch ASAP.
+// Non-blocking — returns the current cached value immediately. The actual
+// refresh happens asynchronously; callers that need the freshly-fetched
+// value should poll DefaultBranch after a short delay.
 func (o *Ops) RefreshDefaultBranch(ctx context.Context) (*netboxdiodeplugin.Branch, error) {
-	const cacheKey = "default_branch"
-	o.branchCache.Remove(cacheKey)
+	select {
+	case o.refreshSig <- struct{}{}:
+	default:
+		// Refresh already pending; nothing to do.
+	}
 	return o.DefaultBranch(ctx)
 }
 
 // CreateIngestionLog creates a record for a newly received ingestion log
 func (o *Ops) CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb.IngestionLog, sourceMetadata []byte) (*ops.CreateIngestionLogResult, error) {
-	// TODO: this should be in a transaction.
-
 	fingerprinter := entityhash.NewEntityFingerprinter()
 	entityHash, err := fingerprinter.GenerateEntityHash(ingestionLog.Entity)
 	if err != nil {
@@ -129,99 +191,398 @@ func (o *Ops) CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb
 		o.logger.Debug("using default branch for ingestion log deduplication", "branch", branch.Name, "branchID", branch.ID)
 	}
 
-	existingID, existingLog, err := o.repository.FindPriorIngestionLogByEntityHash(ctx, entityHash, defaultBranchID)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		return nil, fmt.Errorf("failed to search for prior deviation: %w", err)
-	}
-
-	if existingID == nil {
-		id, err := o.repository.CreateIngestionLog(ctx, ingestionLog, sourceMetadata, entityHash)
-		if err != nil {
-			return nil, err
+	var result *ops.CreateIngestionLogResult
+	err = o.repository.WithDedupLocks(ctx, []string{entityHash}, func(repo ops.DedupRepository) error {
+		existingID, existingLog, err := repo.FindPriorIngestionLogByEntityHash(ctx, entityHash, defaultBranchID)
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
+			return fmt.Errorf("failed to search for prior deviation: %w", err)
 		}
 
-		result := &ops.CreateIngestionLogResult{
-			ID:           *id,
-			IngestionLog: ingestionLog,
+		if existingID == nil {
+			id, err := repo.CreateIngestionLog(ctx, ingestionLog, sourceMetadata, entityHash)
+			if err != nil {
+				return err
+			}
+
+			result = &ops.CreateIngestionLogResult{
+				ID:           *id,
+				IngestionLog: ingestionLog,
+				BranchID:     branchIDForResult,
+			}
+			return nil
+		}
+
+		// It was a duplicate: increment the duplicate count, requeue the prior
+		// ingestion log if its NetBox state may have drifted, and return it
+		requeued, err := repo.BulkMarkDuplicates(ctx, map[int32]int32{*existingID: 1})
+		if err != nil {
+			return fmt.Errorf("failed to mark record as duplicate: %w", err)
+		}
+
+		result = &ops.CreateIngestionLogResult{
+			ID:           *existingID,
+			IngestionLog: existingLog,
+			WasDuplicate: true,
+			Requeued:     requeued[*existingID],
 			BranchID:     branchIDForResult,
 		}
-		return result, nil
-	}
-
-	// It was a duplicate, increment the duplicate count and return the prior ingestion log
-	if err := o.repository.IncrementDuplicateCount(ctx, *existingID); err != nil {
-		return nil, fmt.Errorf("failed to mark record as duplicate: %w", err)
-	}
-
-	result := &ops.CreateIngestionLogResult{
-		ID:           *existingID,
-		IngestionLog: existingLog,
-		WasDuplicate: true,
-		BranchID:     branchIDForResult,
+		if result.Requeued {
+			result.IngestionLog.State = reconcilerpb.State_QUEUED
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
 	}
 
 	return result, nil
 }
 
-// GenerateChangeSet creates a change set based on current NetBox state with optional branch
-func (o *Ops) GenerateChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, branchID string) (*int32, *changeset.ChangeSet, error) {
-	ingestEntity := differ.IngestEntity{
-		RequestID:  ingestionLog.GetRequestId(),
-		ObjectType: ingestionLog.GetObjectType(),
-		Entity:     ingestionLog.GetEntity(),
-		State:      int(ingestionLog.GetState()),
+// BulkCreateIngestionLogs creates multiple ingestion logs in bulk, deduplicating against existing records.
+func (o *Ops) BulkCreateIngestionLogs(ctx context.Context, ingestionLogs []*reconcilerpb.IngestionLog, sourceMetadata [][]byte, entityHashes []string) ([]*ops.CreateIngestionLogResult, error) {
+	// Fetch default branch (cached)
+	var defaultBranchID *string
+	var branchIDForResult string
+	if branch, err := o.DefaultBranch(ctx); err != nil {
+		o.logger.Warn("failed to fetch default branch from NetBox plugin", "error", err)
+	} else if branch != nil {
+		branchID := fmt.Sprintf("%s (%s)", branch.Name, branch.ID)
+		defaultBranchID = &branchID
+		branchIDForResult = branch.ID
+		o.logger.Debug("using default branch for bulk ingestion log deduplication", "branch", branch.Name, "branchID", branch.ID)
 	}
 
-	changeSet, err := differ.Diff(ctx, ingestEntity, branchID, o.nbClient)
+	// Collect unique hashes for the batch find
+	uniqueHashes := make(map[string]struct{}, len(entityHashes))
+	for _, h := range entityHashes {
+		uniqueHashes[h] = struct{}{}
+	}
+	hashSlice := make([]string, 0, len(uniqueHashes))
+	for h := range uniqueHashes {
+		hashSlice = append(hashSlice, h)
+	}
+
+	results := make([]*ops.CreateIngestionLogResult, len(ingestionLogs))
+
+	// The find-prior -> insert window runs in one transaction holding
+	// per-entity-hash advisory locks, so a concurrent batch carrying the same
+	// entity waits and then dedups against our committed rows instead of
+	// inserting its own.
+	err := o.repository.WithDedupLocks(ctx, hashSlice, func(repo ops.DedupRepository) error {
+		// Batch find priors
+		priors, err := repo.FindPriorIngestionLogsByEntityHashes(ctx, hashSlice, defaultBranchID)
+		if err != nil {
+			return fmt.Errorf("failed to batch find prior ingestion logs: %w", err)
+		}
+
+		// Partition into new, duplicate-of-prior, and duplicate-within-batch.
+		// A batch can carry many copies of the same entity; only the first
+		// occurrence of a hash with no DB prior is inserted, the rest are
+		// counted as duplicates of that new row.
+		var newLogs []*reconcilerpb.IngestionLog
+		var newSourceMetadata [][]byte
+		var newEntityHashes []string
+		var newIndices []int // original indices for correlation
+
+		firstSeenAt := make(map[string]int)     // hash -> original index of first in-batch occurrence
+		inBatchDups := make(map[int]int)        // original index -> first occurrence's original index
+		increments := make(map[int32]int32)     // ingestion log ID -> duplicate observations in this batch
+		inBatchExtras := make(map[string]int32) // hash -> in-batch copies collapsed into the new row
+
+		for i, log := range ingestionLogs {
+			hash := entityHashes[i]
+			if prior, found := priors[hash]; found {
+				increments[prior.ID]++
+				results[i] = &ops.CreateIngestionLogResult{
+					ID:           prior.ID,
+					IngestionLog: prior.IngestionLog,
+					WasDuplicate: true,
+					BranchID:     branchIDForResult,
+				}
+				continue
+			}
+			if firstIdx, seen := firstSeenAt[hash]; seen {
+				inBatchDups[i] = firstIdx
+				inBatchExtras[hash]++
+				continue
+			}
+			firstSeenAt[hash] = i
+			newLogs = append(newLogs, log)
+			var sm []byte
+			if i < len(sourceMetadata) {
+				sm = sourceMetadata[i]
+			}
+			newSourceMetadata = append(newSourceMetadata, sm)
+			newEntityHashes = append(newEntityHashes, hash)
+			newIndices = append(newIndices, i)
+		}
+
+		// Bulk insert new logs first so in-batch duplicate counts can target
+		// the freshly created rows.
+		if len(newLogs) > 0 {
+			idMap, err := repo.BulkCreateIngestionLogs(ctx, newLogs, newSourceMetadata, newEntityHashes)
+			if err != nil {
+				return fmt.Errorf("failed to bulk create ingestion logs: %w", err)
+			}
+
+			for j, log := range newLogs {
+				origIdx := newIndices[j]
+				id, ok := idMap[log.Id]
+				if !ok {
+					return fmt.Errorf("inserted ingestion log ID not found for external_id %s", log.Id)
+				}
+				results[origIdx] = &ops.CreateIngestionLogResult{
+					ID:           id,
+					IngestionLog: log,
+					WasDuplicate: false,
+					BranchID:     branchIDForResult,
+				}
+				if extra := inBatchExtras[newEntityHashes[j]]; extra > 0 {
+					increments[id] += extra
+				}
+			}
+		}
+
+		// In-batch duplicates resolve to their first occurrence's new row.
+		for origIdx, firstIdx := range inBatchDups {
+			first := results[firstIdx]
+			results[origIdx] = &ops.CreateIngestionLogResult{
+				ID:           first.ID,
+				IngestionLog: first.IngestionLog,
+				WasDuplicate: true,
+				BranchID:     branchIDForResult,
+			}
+		}
+
+		// Bulk mark duplicates: increment duplicate counts (per-ID amounts
+		// cover batches with many copies of one entity) and requeue prior
+		// ingestion logs whose NetBox state may have drifted since last
+		// plan/apply. Freshly inserted rows are QUEUED, so they only get the
+		// bookkeeping, never a requeue.
+		if len(increments) > 0 {
+			requeued, err := repo.BulkMarkDuplicates(ctx, increments)
+			if err != nil {
+				return fmt.Errorf("failed to bulk mark duplicates: %w", err)
+			}
+			// Results with the same entity hash share one prior *IngestionLog;
+			// writing the same QUEUED value into it repeatedly is idempotent.
+			for _, res := range results {
+				if res != nil && res.WasDuplicate && requeued[res.ID] {
+					res.Requeued = true
+					res.IngestionLog.State = reconcilerpb.State_QUEUED
+				}
+			}
+		}
+		return nil
+	})
 	if err != nil {
-		tags := map[string]string{
-			"request_id": ingestEntity.RequestID,
-		}
-		contextMap := map[string]any{
-			"request_id":  ingestEntity.RequestID,
-			"object_type": ingestEntity.ObjectType,
-		}
-		sentry.CaptureError(err, tags, "Ingest Entity", contextMap)
-
-		ingestionLog.State = reconcilerpb.State_FAILED
-
-		changeSetErr := handleChangeSetError(err)
-		if err2 := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, reconcilerpb.State_FAILED, changeSetErr); err2 != nil {
-			err = errors.Join(err, err2)
-		}
-
-		cs := differ.FailedDiffChangeSet(ingestEntity, branchID)
-		id, err1 := o.repository.CreateChangeSet(ctx, *cs, ingestionLogID)
-		if err1 != nil {
-			o.logger.Error("error generating diff failure placeholder change set")
-			return nil, nil, errors.Join(err, err1)
-		}
-
-		return id, cs, err
+		return nil, err
 	}
 
-	// if the change set has no changes and the ingestion log is already in the no changes or applied state,
-	// we don't record another changeset in the database, we just bump the updated at time.
-	if len(changeSet.Changes) == 0 && (ingestionLog.State == reconcilerpb.State_NO_CHANGES || ingestionLog.State == reconcilerpb.State_APPLIED) {
-		if err := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, ingestionLog.State, nil); err != nil {
+	return results, nil
+}
+
+// BulkPlan generates change sets for a batch of ingestion logs via a single
+// /bulk-plan HTTP call against the diode-netbox-plugin.
+func (o *Ops) BulkPlan(ctx context.Context, items []ops.QueuedIngestionLog, branchID string) []ops.BulkGenerateChangeSetResult {
+	results := make([]ops.BulkGenerateChangeSetResult, len(items))
+
+	entities := make([]netboxdiodeplugin.BulkPlanEntity, len(items))
+	for i, item := range items {
+		entities[i] = netboxdiodeplugin.BulkPlanEntity{
+			ID:         fmt.Sprintf("%d", item.ID),
+			ObjectType: item.IngestionLog.GetObjectType(),
+			Entity:     item.IngestionLog.GetEntity(),
+		}
+	}
+
+	bulkResp, err := o.nbClient.BulkPlan(ctx, netboxdiodeplugin.BulkPlanRequest{
+		Entities: entities,
+		BranchID: branchID,
+	})
+	if err != nil {
+		for i, item := range items {
+			results[i] = o.handleGenerateChangeSetFailure(ctx, item, branchID, err)
+		}
+		return results
+	}
+
+	resultByID := make(map[string]netboxdiodeplugin.BulkPlanResult, len(bulkResp.Results))
+	for _, r := range bulkResp.Results {
+		resultByID[r.ID] = r
+	}
+
+	persistItems := make([]ops.BulkPersistItem, 0, len(items))
+	persistIndex := make([]int, 0, len(items))
+	var driftItems []ops.DriftDeviationItem
+	var driftIndex []int
+
+	for i, item := range items {
+		entityID := fmt.Sprintf("%d", item.ID)
+		planResult, found := resultByID[entityID]
+		if !found {
+			results[i] = o.handleGenerateChangeSetFailure(ctx, item, branchID, fmt.Errorf("no result returned for ingestion log %d", item.ID))
+			continue
+		}
+
+		cs, err := differ.ConvertBulkPlanResult(planResult, item.IngestionLog.GetObjectType())
+		if err != nil {
+			results[i] = o.handleGenerateChangeSetFailure(ctx, item, branchID, err)
+			continue
+		}
+
+		stripNoopOnlyChanges(cs)
+
+		// NetBox drifted since this entity was applied: the applied deviation
+		// stays APPLIED and the drift becomes a new deviation of its own.
+		if item.RequeuedFromState == reconcilerpb.State_APPLIED && len(cs.Changes) > 0 {
+			driftItems = append(driftItems, ops.DriftDeviationItem{
+				PriorIngestionLogID: item.ID,
+				NewExternalID:       uuid.NewString(),
+				NewState:            reconcilerpb.State_OPEN,
+				ChangeSet:           *cs,
+			})
+			driftIndex = append(driftIndex, i)
+			results[i] = ops.BulkGenerateChangeSetResult{IngestionLogID: item.ID, ChangeSet: cs}
+			continue
+		}
+
+		persistItems, persistIndex = collectPersistItem(persistItems, persistIndex, results, i, item, cs)
+	}
+
+	if len(persistItems) > 0 {
+		persistResults, err := o.repository.BulkPersistChangeSets(ctx, persistItems, o.limits.MaxChangeSetsPerIngestionLog())
+		if err != nil {
+			o.logger.Error("bulk persist failed, falling back to per-item persist", "error", err)
+			for j, idx := range persistIndex {
+				item := items[idx]
+				results[idx] = o.persistChangeSet(ctx, item.ID, item.IngestionLog, &persistItems[j].ChangeSet, persistItems[j].NewState)
+			}
+		} else {
+			for j, pr := range persistResults {
+				idx := persistIndex[j]
+				results[idx].ChangeSetID = pr.ChangeSetID
+			}
+		}
+	}
+
+	if len(driftItems) > 0 {
+		driftResults, err := o.repository.BulkCreateDriftDeviations(ctx, driftItems)
+		if err != nil {
+			o.logger.Error("failed to create drift deviations", "error", err)
+			for _, idx := range driftIndex {
+				// Restore the prior so it does not linger in the claimed
+				// state; the drift is re-detected on the next observation.
+				o.restoreRequeuedPrior(ctx, items[idx].ID)
+				results[idx].Err = err
+			}
+		} else {
+			for j, dr := range driftResults {
+				idx := driftIndex[j]
+				results[idx].IngestionLogID = dr.NewIngestionLogID
+				results[idx].ChangeSetID = dr.ChangeSetID
+			}
+		}
+	}
+
+	return results
+}
+
+// restoreRequeuedPrior returns a drift-recheck prior to APPLIED (clearing its
+// requeue marker) after a failure that must not destroy its applied record.
+func (o *Ops) restoreRequeuedPrior(ctx context.Context, ingestionLogID int32) {
+	if err := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, reconcilerpb.State_APPLIED, nil); err != nil {
+		o.logger.Error("failed to restore requeued prior to APPLIED", "ingestionLogID", ingestionLogID, "error", err)
+	}
+}
+
+// collectPersistItem appends a persist item for cs, whose noop-only changes
+// the caller has already stripped.
+func collectPersistItem(persistItems []ops.BulkPersistItem, persistIndex []int, results []ops.BulkGenerateChangeSetResult, i int, item ops.QueuedIngestionLog, cs *changeset.ChangeSet) ([]ops.BulkPersistItem, []int) {
+	newState := reconcilerpb.State_OPEN
+	if len(cs.Changes) == 0 {
+		newState = reconcilerpb.State_NO_CHANGES
+		if item.RequeuedFromState == reconcilerpb.State_APPLIED {
+			// Drift re-check of an applied entity found NetBox still in sync:
+			// keep the applied fact instead of degrading it to NO_CHANGES.
+			newState = reconcilerpb.State_APPLIED
+		}
+	}
+
+	persistItems = append(persistItems, ops.BulkPersistItem{
+		IngestionLogID: item.ID,
+		ChangeSet:      *cs,
+		NewState:       newState,
+	})
+	persistIndex = append(persistIndex, i)
+	results[i] = ops.BulkGenerateChangeSetResult{
+		IngestionLogID: item.ID,
+		ChangeSet:      cs,
+	}
+
+	return persistItems, persistIndex
+}
+
+func stripNoopOnlyChanges(cs *changeset.ChangeSet) {
+	for _, c := range cs.Changes {
+		if c.ChangeType != changeset.ChangeTypeNoop {
+			return
+		}
+	}
+	cs.Changes = nil
+}
+
+func (o *Ops) handleGenerateChangeSetFailure(ctx context.Context, item ops.QueuedIngestionLog, branchID string, err error) ops.BulkGenerateChangeSetResult {
+	ingestEntity := differ.IngestEntity{
+		RequestID:  item.IngestionLog.GetRequestId(),
+		ObjectType: item.IngestionLog.GetObjectType(),
+		Entity:     item.IngestionLog.GetEntity(),
+		State:      int(item.IngestionLog.GetState()),
+	}
+
+	tags := map[string]string{"request_id": ingestEntity.RequestID}
+	contextMap := map[string]any{"request_id": ingestEntity.RequestID, "object_type": ingestEntity.ObjectType}
+	sentry.CaptureError(err, tags, "Ingest Entity", contextMap)
+
+	// A plan failure on a drift re-check must not destroy the prior APPLIED
+	// record: restore it and surface the error via Sentry/logs only. The
+	// check retries on the next duplicate observation.
+	if item.RequeuedFromState == reconcilerpb.State_APPLIED {
+		o.restoreRequeuedPrior(ctx, item.ID)
+		return ops.BulkGenerateChangeSetResult{IngestionLogID: item.ID, Err: err}
+	}
+
+	item.IngestionLog.State = reconcilerpb.State_FAILED
+	changeSetErr := handleChangeSetError(err)
+	if err2 := o.repository.UpdateIngestionLogStateWithError(ctx, item.ID, reconcilerpb.State_FAILED, changeSetErr); err2 != nil {
+		err = errors.Join(err, err2)
+	}
+
+	cs := differ.FailedDiffChangeSet(ingestEntity, branchID)
+	id, err1 := o.repository.CreateChangeSet(ctx, *cs, item.ID)
+	if err1 != nil {
+		o.logger.Error("error creating failure placeholder change set", "ingestionLogID", item.ID)
+		return ops.BulkGenerateChangeSetResult{IngestionLogID: item.ID, Err: errors.Join(err, err1)}
+	}
+
+	return ops.BulkGenerateChangeSetResult{IngestionLogID: item.ID, ChangeSetID: id, ChangeSet: cs, Err: err}
+}
+
+// persistChangeSet is the per-item fallback when bulk persist fails. newState
+// is the state the bulk path already decided for this item; re-deriving it
+// here would demote a drift re-check restored to APPLIED back to NO_CHANGES.
+func (o *Ops) persistChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, cs *changeset.ChangeSet, newState reconcilerpb.State) ops.BulkGenerateChangeSetResult {
+	if len(cs.Changes) == 0 {
+		ingestionLog.State = newState
+		if err := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, newState, nil); err != nil {
 			o.logger.Error("failed to update ingestion log state (error ignored)", "ingestionLogID", ingestionLogID, "error", err)
 		}
-		return nil, changeSet, nil
+		return ops.BulkGenerateChangeSetResult{IngestionLogID: ingestionLogID, ChangeSet: cs}
 	}
 
-	// TODO: At this point if the prior ingestion log is in the applied state, and we have
-	// a new set of changes, we could "clone" the ingestion log to open a new "deviation"
-	// and leave the prior one as applied. This would be more historically accurate /
-	// less surprising.  For now we just re-open the previously applied change set.
-	//
-	// If we did create a new one, we would need to communicate that back to the rest
-	// of the pipeline and also this operation's name would be a bit of misnomer.
-	// Possibly some refactoring/renaming of the operations (which are meant to
-	// keep rpc and pipeline behavior in sync) would be warranted.
-
-	changeSetID, err := o.repository.CreateChangeSet(ctx, *changeSet, ingestionLogID)
+	changeSetID, err := o.repository.CreateChangeSet(ctx, *cs, ingestionLogID)
 	if err != nil {
-		return nil, nil, err
+		return ops.BulkGenerateChangeSetResult{IngestionLogID: ingestionLogID, Err: err}
 	}
 
 	maxChangeSets := o.limits.MaxChangeSetsPerIngestionLog()
@@ -231,41 +592,221 @@ func (o *Ops) GenerateChangeSet(ctx context.Context, ingestionLogID int32, inges
 		}
 	}
 
-	if len(changeSet.Changes) > 0 {
-		ingestionLog.State = reconcilerpb.State_OPEN
-	} else {
-		ingestionLog.State = reconcilerpb.State_NO_CHANGES
-	}
-	if err := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, ingestionLog.State, nil); err != nil {
+	ingestionLog.State = newState
+	if err := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, newState, nil); err != nil {
 		o.logger.Error("failed to update ingestion log state (error ignored)", "ingestionLogID", ingestionLogID, "error", err)
 	}
 
-	o.logger.Debug("change set generated", "id", changeSetID, "externalID", changeSet.ID, "ingestionLogID", ingestionLogID)
-	return changeSetID, changeSet, nil
+	o.logger.Debug("change set generated", "id", changeSetID, "externalID", cs.ID, "ingestionLogID", ingestionLogID)
+	return ops.BulkGenerateChangeSetResult{IngestionLogID: ingestionLogID, ChangeSetID: changeSetID, ChangeSet: cs}
 }
 
-// ApplyChangeSet applies change set to NetBox and updates related states
-func (o *Ops) ApplyChangeSet(ctx context.Context, ingestionLogID int32, ingestionLog *reconcilerpb.IngestionLog, changeSetID int32, changeSet *changeset.ChangeSet) error {
-	if err := applier.ApplyChangeSet(ctx, o.logger, *changeSet, o.nbClient); err != nil {
-		o.logger.Debug("failed to apply change set", "id", changeSetID, "externalID", changeSet.ID, "ingestionLogID", ingestionLogID, "error", err)
+// BulkPlanApply runs combined plan + apply for a batch of QUEUED ingestion logs
+// via a single /bulk-plan-apply HTTP call. Per-entity outcomes:
+//   - plan failed                 -> state FAILED, no change_set persisted
+//   - plan ok, no changes         -> state NO_CHANGES, no change_set persisted
+//   - plan ok, apply ok           -> state APPLIED, change_set persisted
+//   - plan ok, apply failed       -> state FAILED, change_set persisted (audit/retry)
+//
+// On a whole-batch transport error, every entity is marked FAILED with that error.
+// Returns one BulkPlanApplyResult per input item, in order.
+func (o *Ops) BulkPlanApply(ctx context.Context, items []ops.QueuedIngestionLog, branchID string) []ops.BulkPlanApplyResult {
+	results := make([]ops.BulkPlanApplyResult, len(items))
 
-		changeSetErr := handleChangeSetError(err)
-
-		if err2 := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, reconcilerpb.State_FAILED, changeSetErr); err2 != nil {
-			err = errors.Join(err, err2)
+	entities := make([]netboxdiodeplugin.BulkPlanEntity, len(items))
+	for i, item := range items {
+		entities[i] = netboxdiodeplugin.BulkPlanEntity{
+			ID:         fmt.Sprintf("%d", item.ID),
+			ObjectType: item.IngestionLog.GetObjectType(),
+			Entity:     item.IngestionLog.GetEntity(),
 		}
-		return err
 	}
 
-	ingestionLog.State = reconcilerpb.State_APPLIED
-	if err := o.repository.UpdateIngestionLogStateWithError(ctx, ingestionLogID, reconcilerpb.State_APPLIED, nil); err != nil {
-		o.logger.Warn("failed to update ingestion log state (error ignored)", "ingestionLogID", ingestionLogID, "error", err)
-		// TODO(ltucker): This should be in a transaction.  Can leave an inconsistent state marked on the ingestion log.
-		// return nil, err
+	resp, err := o.nbClient.BulkPlanApply(ctx, netboxdiodeplugin.BulkPlanApplyRequest{
+		Entities: entities,
+		BranchID: branchID,
+	})
+	if err != nil {
+		for i, item := range items {
+			results[i] = o.persistPlanApplyFailurePlaceholder(ctx, item, branchID, err)
+		}
+		return results
 	}
 
-	o.logger.Debug("change set applied", "id", changeSetID, "externalID", changeSet.ID, "ingestionLogID", ingestionLogID)
-	return nil
+	resultByID := make(map[string]netboxdiodeplugin.BulkPlanApplyResult, len(resp.Results))
+	for _, r := range resp.Results {
+		resultByID[r.ID] = r
+	}
+
+	var persistItems []ops.BulkPersistItem
+	var persistIndex []int
+	var driftItems []ops.DriftDeviationItem
+	var driftIndex []int
+
+	for i, item := range items {
+		entityID := fmt.Sprintf("%d", item.ID)
+		planApplyResult, found := resultByID[entityID]
+		if !found {
+			results[i] = o.persistPlanApplyFailurePlaceholder(ctx, item, branchID, fmt.Errorf("no result returned for ingestion log %d", item.ID))
+			continue
+		}
+
+		cs, planErr, applyErr := differ.ConvertBulkPlanApplyResult(planApplyResult, item.IngestionLog.GetObjectType())
+
+		results[i].IngestionLogID = item.ID
+		results[i].ChangeSet = cs
+		results[i].PlanErr = planErr
+		results[i].ApplyErr = applyErr
+
+		if planErr != nil {
+			// Plan failed — record state FAILED with error, and persist a
+			// failure-placeholder change_set so audit/deviation-type tooling
+			// has something to associate against (matches BulkGenerateChangeSets).
+			results[i] = o.persistPlanApplyFailurePlaceholder(ctx, item, branchID, planErr)
+			continue
+		}
+
+		// Plan succeeded — collect for bulk persist with the right terminal state.
+		stripNoopOnlyChanges(cs)
+
+		// NetBox drifted since this entity was applied: the applied deviation
+		// stays APPLIED and the drift becomes a new deviation of its own,
+		// APPLIED on success or FAILED when the apply phase reported errors.
+		if item.RequeuedFromState == reconcilerpb.State_APPLIED && len(cs.Changes) > 0 {
+			newState := reconcilerpb.State_APPLIED
+			if applyErr != nil {
+				newState = reconcilerpb.State_FAILED
+			}
+			driftItems = append(driftItems, ops.DriftDeviationItem{
+				PriorIngestionLogID: item.ID,
+				NewExternalID:       uuid.NewString(),
+				NewState:            newState,
+				ChangeSet:           *cs,
+			})
+			driftIndex = append(driftIndex, i)
+			continue
+		}
+
+		newState := reconcilerpb.State_APPLIED
+		switch {
+		case len(cs.Changes) == 0:
+			newState = reconcilerpb.State_NO_CHANGES
+			if item.RequeuedFromState == reconcilerpb.State_APPLIED {
+				// Drift re-check found NetBox still in sync: keep the applied
+				// fact instead of degrading it to NO_CHANGES.
+				newState = reconcilerpb.State_APPLIED
+			}
+		case applyErr != nil:
+			newState = reconcilerpb.State_FAILED
+		}
+
+		persistItems = append(persistItems, ops.BulkPersistItem{
+			IngestionLogID: item.ID,
+			ChangeSet:      *cs,
+			NewState:       newState,
+		})
+		persistIndex = append(persistIndex, i)
+	}
+
+	if len(persistItems) > 0 {
+		persistResults, err := o.repository.BulkPersistChangeSets(ctx, persistItems, o.limits.MaxChangeSetsPerIngestionLog())
+		if err != nil {
+			o.logger.Error("bulk persist failed during bulk-plan-apply", "error", err)
+			for _, idx := range persistIndex {
+				if results[idx].PlanErr == nil && results[idx].ApplyErr == nil {
+					results[idx].ApplyErr = err
+				}
+			}
+		} else {
+			for j, pr := range persistResults {
+				idx := persistIndex[j]
+				results[idx].ChangeSetID = pr.ChangeSetID
+			}
+		}
+	}
+
+	if len(driftItems) > 0 {
+		driftResults, err := o.repository.BulkCreateDriftDeviations(ctx, driftItems)
+		if err != nil {
+			o.logger.Error("failed to create drift deviations during bulk-plan-apply", "error", err)
+			for _, idx := range driftIndex {
+				// Restore the prior so it does not linger in APPLYING; the
+				// drift is re-detected on the next observation.
+				o.restoreRequeuedPrior(ctx, items[idx].ID)
+				if results[idx].ApplyErr == nil {
+					results[idx].ApplyErr = err
+				}
+			}
+		} else {
+			for j, dr := range driftResults {
+				idx := driftIndex[j]
+				results[idx].IngestionLogID = dr.NewIngestionLogID
+				results[idx].ChangeSetID = dr.ChangeSetID
+				// The new deviation was created in FAILED state when the apply
+				// phase reported errors; annotate it with the reason.
+				if results[idx].ApplyErr != nil {
+					changeSetErr := handleChangeSetError(results[idx].ApplyErr)
+					if err := o.repository.UpdateIngestionLogStateWithError(ctx, dr.NewIngestionLogID, reconcilerpb.State_FAILED, changeSetErr); err != nil {
+						o.logger.Warn("failed to annotate apply failure", "ingestionLogID", dr.NewIngestionLogID, "error", err)
+					}
+				}
+			}
+		}
+	}
+
+	// For entities whose apply phase failed, attach the apply error message to the
+	// ingestion log row. BulkPersistChangeSets clears the error column when it sets
+	// the state, so this second pass annotates the FAILED rows with their reason.
+	for _, idx := range persistIndex {
+		if results[idx].ApplyErr != nil {
+			changeSetErr := handleChangeSetError(results[idx].ApplyErr)
+			if err := o.repository.UpdateIngestionLogStateWithError(ctx, results[idx].IngestionLogID, reconcilerpb.State_FAILED, changeSetErr); err != nil {
+				o.logger.Warn("failed to annotate apply failure", "ingestionLogID", results[idx].IngestionLogID, "error", err)
+			}
+		}
+	}
+
+	return results
+}
+
+// persistPlanApplyFailurePlaceholder records a plan-phase failure as a
+// failure-placeholder change_set + ingestion log state=FAILED with the error
+// detail. Mirrors handleGenerateChangeSetFailure in the plan-only flow so
+// downstream consumers (deviation type association, audit) have a change_set
+// ID to attach to. Returns a fully populated BulkPlanApplyResult.
+func (o *Ops) persistPlanApplyFailurePlaceholder(ctx context.Context, item ops.QueuedIngestionLog, branchID string, planErr error) ops.BulkPlanApplyResult {
+	ingestEntity := differ.IngestEntity{
+		RequestID:  item.IngestionLog.GetRequestId(),
+		ObjectType: item.IngestionLog.GetObjectType(),
+		Entity:     item.IngestionLog.GetEntity(),
+		State:      int(item.IngestionLog.GetState()),
+	}
+
+	tags := map[string]string{"request_id": ingestEntity.RequestID}
+	contextMap := map[string]any{"request_id": ingestEntity.RequestID, "object_type": ingestEntity.ObjectType}
+	sentry.CaptureError(planErr, tags, "BulkPlanApply", contextMap)
+
+	// A plan failure on a drift re-check must not destroy the prior APPLIED
+	// record: restore it and surface the error via Sentry/logs only. The
+	// check retries on the next duplicate observation.
+	if item.RequeuedFromState == reconcilerpb.State_APPLIED {
+		o.restoreRequeuedPrior(ctx, item.ID)
+		return ops.BulkPlanApplyResult{IngestionLogID: item.ID, PlanErr: planErr}
+	}
+
+	changeSetErr := handleChangeSetError(planErr)
+	if err2 := o.repository.UpdateIngestionLogStateWithError(ctx, item.ID, reconcilerpb.State_FAILED, changeSetErr); err2 != nil {
+		planErr = errors.Join(planErr, err2)
+	}
+
+	cs := differ.FailedDiffChangeSet(ingestEntity, branchID)
+	id, err1 := o.repository.CreateChangeSet(ctx, *cs, item.ID)
+	if err1 != nil {
+		o.logger.Error("error creating failure placeholder change set", "ingestionLogID", item.ID, "error", err1)
+		return ops.BulkPlanApplyResult{IngestionLogID: item.ID, PlanErr: errors.Join(planErr, err1)}
+	}
+
+	return ops.BulkPlanApplyResult{IngestionLogID: item.ID, ChangeSetID: id, ChangeSet: cs, PlanErr: planErr}
 }
 
 func handleChangeSetError(err error) error {

@@ -87,12 +87,35 @@ Edit the `.env` file to adjust Diode server settings as needed:
 | Variable | Description | Default |
 |:---|:---|:---|
 | `DIODE_NGINX_PORT` | Port for the Nginx HTTP service. | `8080` |
-| `RECONCILER_RATE_LIMITER_RPS` | Rate limit (requests per second) for reconciler change set generation. | `20` |
-| `RECONCILER_RATE_LIMITER_BURST` | Burst limit for reconciler operations. | `1` |
 | `DIODE_TO_NETBOX_RATE_LIMITER_RPC` | Rate limit for RPC calls to NetBox. | `20` |
 | `DIODE_TO_NETBOX_RATE_LIMITER_BURST` | Burst limit for RPC calls to NetBox. | `1` |
 | `LOGGING_LEVEL` | Log verbosity: `DEBUG`, `INFO`, `WARN`, `ERROR`. | `INFO` |
 | `LOGGING_FORMAT` | Log output format: `json` or `text`. | `json` |
+
+Note that pprof profiling endpoints can be enabled for the reconciler, ingester, and auth services via the environnment variable `PPROF_ADDR` (using host:port addresses)
+
+### Connecting to NetBox over HTTPS with a private CA
+
+When `NETBOX_DIODE_PLUGIN_API_BASE_URL` points at a NetBox served over HTTPS with a certificate issued by a private/internal CA, the reconciler fails with:
+
+```
+tls: failed to verify certificate: x509: certificate signed by unknown authority
+```
+
+The reconciler uses Go's system certificate pool, which honors the standard `SSL_CERT_FILE` environment variable — including in the distroless container image. Mount your CA bundle and point `SSL_CERT_FILE` at it with a `docker-compose.override.yaml`:
+
+```yaml
+services:
+  diode-reconciler:
+    volumes:
+      - /path/to/your/ca.pem:/certs/ca.pem:ro
+    environment:
+      - SSL_CERT_FILE=/certs/ca.pem
+```
+
+Keep `NETBOX_DIODE_PLUGIN_SKIP_TLS_VERIFY=false` — certificate verification stays enabled, validated against your CA. To trust a directory of CA certificates instead of a single bundle, mount the directory and use `SSL_CERT_DIR`.
+
+Setting `NETBOX_DIODE_PLUGIN_SKIP_TLS_VERIFY=true` disables certificate verification entirely and should be a last resort.
 
 ---
 
