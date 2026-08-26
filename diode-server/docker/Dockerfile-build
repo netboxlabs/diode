@@ -10,9 +10,9 @@ ARG TARGETOS TARGETARCH SVC
 RUN --mount=target=. \
     --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg \
-    GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o /build/$SVC ./cmd/$SVC
+    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o /build/$SVC ./cmd/$SVC
 
-FROM gcr.io/distroless/base:latest
+FROM gcr.io/distroless/static-debian13:nonroot
 
 USER nonroot
 
