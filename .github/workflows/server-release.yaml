@@ -110,6 +110,8 @@ jobs:
           push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          # Always reinstall OS packages so releases pick up security updates.
+          no-cache-filters: runtime
           tags: |
             netboxlabs/${{ env.APP_NAME }}:latest
             netboxlabs/${{ env.APP_NAME }}:${{ env.BUILD_VERSION }}

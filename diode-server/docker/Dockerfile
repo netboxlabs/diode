@@ -1,4 +1,4 @@
-FROM gcr.io/distroless/base:latest
+FROM gcr.io/distroless/static-debian13:nonroot
 
 USER nonroot
 
