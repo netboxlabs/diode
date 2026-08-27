@@ -96,14 +96,6 @@ jobs:
 
             const blockingSeverities = new Set(['CRITICAL', 'HIGH']);
 
-            // The auth image copies the hydra binary directly from oryd/hydra:v26.2.0.
-            // CVEs in that binary come from upstream's vendored dependencies (pgx,
-            // go-jose, otel, stdlib, etc.) and cannot be fixed in this repo — they
-            // require an upstream hydra release. Vulnerabilities in our own auth binary
-            // (usr/local/bin/diode-server) are still treated as blocking.
-            // Tracked: https://github.com/ory/hydra/issues/4080
-            const isUpstreamHydra = (v) => app === 'auth' && v.target === 'usr/bin/hydra';
-
             const SEVERITY_LABEL = {
               CRITICAL: '🔴 **CRITICAL**',
               HIGH: '🟠 **HIGH**',
@@ -116,9 +108,7 @@ jobs:
               if (counts[v.Severity] !== undefined) counts[v.Severity]++;
             }
 
-            const hasBlocking = vulns.some(v =>
-              blockingSeverities.has(v.Severity) && !isUpstreamHydra(v)
-            );
+            const hasBlocking = vulns.some(v => blockingSeverities.has(v.Severity));
             core.setOutput('has_blocking', hasBlocking.toString());
 
             const buildTable = (vulns) => {

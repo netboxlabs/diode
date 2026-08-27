@@ -42,6 +42,11 @@ func MakeDefaultCommands(authClientManager auth.ClientManager) map[string]SubCom
 	commands["delete-client"] = &DeleteClientCommand{
 		clientManager: authClientManager,
 	}
+	commands["bootstrap-clients"] = &BootstrapClientsCommand{
+		clientManager: authClientManager,
+		readyTimeout:  defaultReadyTimeout,
+		readyInterval: defaultReadyInterval,
+	}
 	return commands
 }
 

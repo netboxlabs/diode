@@ -191,9 +191,9 @@ services:
   diode-auth-bootstrap:
     image: netboxlabs/diode-auth:${DIODE_TAG:-latest}
     pull_policy: always
-    command: ["/bin/sh", "/etc/config/oauth2/bootstrap-clients.sh"]
+    command: ["/usr/local/bin/authmanager", "bootstrap-clients"]
     environment:
-      - HYDRA_ADMIN_URL=http://hydra:4445
+      - OAUTH2_ADMIN_SERVER_URL=http://hydra:4445
     volumes:
       - ./oauth2/client:/etc/config/oauth2/client:z,ro
     restart: on-failure

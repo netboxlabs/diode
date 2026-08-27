@@ -53,9 +53,11 @@ spec:
         - name: {{ include "diode.auth.bootstrapjobname" . }}
           image: "{{ .Values.diodeAuthBootstrap.image.repository }}:{{ .Values.diodeAuthBootstrap.image.tag }}"
           imagePullPolicy: {{ .Values.diodeAuthBootstrap.image.pullPolicy | default "IfNotPresent" }}
-          command: ["/bin/sh", "/etc/config/oauth2/bootstrap-clients.sh"]
+          # Requires a diode-auth image that ships the authmanager
+          # bootstrap-clients subcommand; older images used a shell script.
+          command: ["/usr/local/bin/authmanager", "bootstrap-clients"]
           env:
-            - name: HYDRA_ADMIN_URL
+            - name: OAUTH2_ADMIN_SERVER_URL
               value: {{ include "diode.hydra.admin.url" . }}
           volumeMounts:
             {{- if .Values.diodeAuthBootstrap.job.extraVolumeMounts }}

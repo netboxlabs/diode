@@ -18,23 +18,14 @@ RUN --mount=target=. \
     CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o /build/authmanager ./cmd/authmanager
 
 
-FROM alpine:3.22
+FROM gcr.io/distroless/static-debian13:nonroot
 
-RUN apk upgrade --no-cache && apk add --no-cache jq
-
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-
-COPY --chown=appuser:appgroup --from=oryd/hydra:v26.2.0@sha256:ff67c7fb5f95074fa53374d41151713554960504b340cd3f95b09e65deaea2a9 /usr/bin/hydra /usr/bin/hydra
+USER nonroot
 
 ARG SVC
 
-COPY --chown=appuser:appgroup --from=build /build/$SVC /usr/local/bin/diode-server
-COPY --chown=appuser:appgroup --from=build /build/authmanager /usr/local/bin/authmanager
-COPY --chown=appuser:appgroup --from=build /app/docker/oauth2/bootstrap-clients.sh /etc/config/oauth2/
-
-RUN chmod +x /etc/config/oauth2/bootstrap-clients.sh
-
-USER appuser
+COPY --from=build /build/$SVC /usr/local/bin/diode-server
+COPY --from=build /build/authmanager /usr/local/bin/authmanager
 
 LABEL maintainer="techops@netboxlabs.com"
 LABEL org.opencontainers.image.title="Diode $SVC"
