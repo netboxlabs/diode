@@ -6,6 +6,9 @@ on:
     paths:
       - "diode-server/**"
       - "!diode-server/docker/**"
+      # Dockerfiles define the image being scanned, so changes to them must
+      # re-run the scan even though the rest of docker/ is excluded.
+      - "diode-server/docker/Dockerfile*"
       - "!diode-server/Makefile"
       - "!diode-server/README.md"
       - ".github/workflows/container-scan.yaml"
