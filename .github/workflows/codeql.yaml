@@ -59,6 +59,9 @@ jobs:
         with:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
+          # Default setup runs the extended suite; advanced setup would
+          # otherwise fall back to the standard one and quietly narrow the gate.
+          queries: security-extended
 
       # Built explicitly rather than via autobuild: the module lives in a
       # subdirectory, and this matches how Go - test builds the server.
