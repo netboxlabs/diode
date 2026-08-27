@@ -18,7 +18,9 @@ RUN --mount=target=. \
     CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o /build/authmanager ./cmd/authmanager
 
 
-FROM alpine:3.22
+# Named so CI can build this stage without layer cache; a cached `apk upgrade`
+# silently keeps whatever package versions were current when it was first built.
+FROM alpine:3.22 AS runtime
 
 RUN apk upgrade --no-cache && apk add --no-cache jq
 
