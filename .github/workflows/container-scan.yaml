@@ -62,6 +62,9 @@ jobs:
           platforms: linux/amd64
           cache-from: type=gha,scope=${{ matrix.app }}
           cache-to: type=gha,scope=${{ matrix.app }},mode=max
+          # The scan must see the packages a fresh build would install, not the
+          # ones cached in the runtime stage. No-op for images without the stage.
+          no-cache-filters: runtime
           build-args: |
             SVC=${{ matrix.app }}
             GO_VERSION=${{ env.GO_VERSION }}
