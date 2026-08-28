@@ -42,15 +42,7 @@ Create chart name and version as used by the chart label.
 Common labels
 */}}
 {{- define "diode.labels" -}}
-helm.sh/chart: {{ include "diode.chart" . }}
-{{ include "diode.selectorlabels" . }}
-{{- if .Chart.AppVersion }}
-app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
-{{- end }}
-app.kubernetes.io/managed-by: {{ .Release.Service }}
-{{- if .Values.global.commonLabels }}
-{{- include "common.labels.standard" ( dict "customLabels" .Values.global.commonLabels "context" $ ) }}
-{{- end }}
+{{- include "common.labels.standard" ( dict "customLabels" .Values.global.commonLabels "context" . ) }}
 {{- end }}
 
 {{/*
