@@ -32,6 +32,13 @@ Allows overriding it for multi-namespace deployments in combined charts.
 {{- end -}}
 
 {{/*
+Create the DNS domain of the k8s cluster, used to build in-cluster service FQDNs.
+*/}}
+{{- define "diode.clusterDomain" -}}
+{{- default "cluster.local" .Values.global.clusterDomain -}}
+{{- end -}}
+
+{{/*
 Create chart name and version as used by the chart label.
 */}}
 {{- define "diode.chart" -}}
@@ -114,7 +121,7 @@ Create the name of the auth service account to use
 Create the hostname of the auth service
 */}}
 {{- define "diode.auth.hostname" -}}
-{{- printf "%s-auth.%s.svc.cluster.local" (include "diode.fullname" .) .Release.Namespace }}
+{{- printf "%s-auth.%s.svc.%s" (include "diode.fullname" .) .Release.Namespace (include "diode.clusterDomain" .) }}
 {{- end }}
 
 {{/*
@@ -236,7 +243,7 @@ Create the hostname of the PostgreSQL database
 */}}
 {{- define "diode.postgresql.hostname" -}}
 {{- if .Values.postgresql.enabled -}}
-{{- printf "diode-postgresql.%s.svc.cluster.local" .Release.Namespace }}
+{{- printf "diode-postgresql.%s.svc.%s" .Release.Namespace (include "diode.clusterDomain" .) }}
 {{- else if and .Values.externalPostgresql (hasKey .Values.externalPostgresql "hostname") -}}
 {{- .Values.externalPostgresql.hostname }}
 {{- else -}}
@@ -262,7 +269,7 @@ Create the hostname of the Redis database
 */}}
 {{- define "diode.redis.hostname" -}}
 {{- if .Values.redis.enabled -}}
-{{- printf "diode-redis-master.%s.svc.cluster.local" .Release.Namespace }}
+{{- printf "diode-redis-master.%s.svc.%s" .Release.Namespace (include "diode.clusterDomain" .) }}
 {{- else if and .Values.externalRedis (hasKey .Values.externalRedis "hostname") -}}
 {{- .Values.externalRedis.hostname }}
 {{- else -}}
@@ -365,7 +372,7 @@ Create the SSL option for PostgreSQL
 Create the hostname of the public Hydra service
 */}}
 {{- define "diode.hydra.public.hostname" -}}
-{{- printf "diode-hydra-public.%s.svc.cluster.local" .Release.Namespace }}
+{{- printf "diode-hydra-public.%s.svc.%s" .Release.Namespace (include "diode.clusterDomain" .) }}
 {{- end }}
 
 {{/*
@@ -386,7 +393,7 @@ Create the URL to the public Hydra service
 Create the hostname of the admin Hydra service
 */}}
 {{- define "diode.hydra.admin.hostname" -}}
-{{- printf "diode-hydra-admin.%s.svc.cluster.local" .Release.Namespace }}
+{{- printf "diode-hydra-admin.%s.svc.%s" .Release.Namespace (include "diode.clusterDomain" .) }}
 {{- end }}
 
 {{/*
