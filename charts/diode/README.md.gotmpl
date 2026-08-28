@@ -84,7 +84,8 @@ REDIS_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 | base6
 POSTGRES_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 | base64 | head -c 32)
 DIODE_POSTGRES_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 | base64 | head -c 32)
 HYDRA_POSTGRES_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 | base64 | head -c 32)
-POSTGRES_HOSTNAME=diode-postgresql.$NAMESPACE.svc.cluster.local
+CLUSTER_DOMAIN=cluster.local  # change if your cluster uses a different DNS domain
+POSTGRES_HOSTNAME=diode-postgresql.$NAMESPACE.svc.$CLUSTER_DOMAIN
 POSTGRES_PORT=5432
 ```
 
