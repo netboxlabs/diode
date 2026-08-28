@@ -1,8 +1,8 @@
 syntax = "proto3";
 
 // Generated Code. DO NOT EDIT.
-// Source: NetBox v4.7.0-beta1
-// Timestamp: 2026-08-18 14:36:59Z
+// Source: NetBox v4.7.0-beta2
+// Timestamp: 2026-08-28 12:13:45Z
 
 package diode.v1;
 
@@ -1675,6 +1675,7 @@ message Interface {
       "100gbase-x-dsfp",
       "100gbase-x-qsfp28",
       "100gbase-x-qsfpdd",
+      "100gbase-x-sfp112",
       "100gbase-x-sfpdd",
       "100gbase-zr",
       "10g-epon",
@@ -1799,6 +1800,7 @@ message Interface {
       "extreme-summitstack-512",
       "gpon",
       "gsm",
+      "hpe-synergy-interconnect-link",
       "ieee802.11a",
       "ieee802.11ac",
       "ieee802.11ad",
@@ -1810,14 +1812,23 @@ message Interface {
       "ieee802.15.1",
       "ieee802.15.4",
       "infiniband-ddr",
+      "infiniband-ddr-4x",
       "infiniband-edr",
+      "infiniband-edr-4x",
       "infiniband-fdr",
+      "infiniband-fdr-4x",
       "infiniband-fdr10",
+      "infiniband-fdr10-4x",
       "infiniband-hdr",
+      "infiniband-hdr-4x",
       "infiniband-ndr",
+      "infiniband-ndr-4x",
       "infiniband-qdr",
+      "infiniband-qdr-4x",
       "infiniband-sdr",
+      "infiniband-sdr-4x",
       "infiniband-xdr",
+      "infiniband-xdr-4x",
       "juniper-vcp",
       "lag",
       "lte",

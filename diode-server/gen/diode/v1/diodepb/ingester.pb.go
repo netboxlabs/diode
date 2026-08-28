@@ -5,8 +5,8 @@
 // source: diode/v1/ingester.proto
 
 // Generated Code. DO NOT EDIT.
-// Source: NetBox v4.7.0-beta1
-// Timestamp: 2026-08-18 14:36:59Z
+// Source: NetBox v4.7.0-beta2
+// Timestamp: 2026-08-28 12:13:45Z
 
 package diodepb
 
@@ -30070,17 +30070,17 @@ const file_diode_v1_ingester_proto_rawDesc = "" +
 	"\x14_sa_lifetime_secondsB\x13\n" +
 	"\x11_sa_lifetime_dataB\v\n" +
 	"\t_commentsB\b\n" +
-	"\x06_owner\"\x96C\n" +
+	"\x06_owner\"\xf5D\n" +
 	"\tInterface\x12(\n" +
 	"\x06device\x18\x01 \x01(\v2\x10.diode.v1.DeviceR\x06device\x12-\n" +
 	"\x06module\x18\x02 \x01(\v2\x10.diode.v1.ModuleH\x00R\x06module\x88\x01\x01\x12\x12\n" +
 	"\x04name\x18\x03 \x01(\tR\x04name\x12\x19\n" +
-	"\x05label\x18\x04 \x01(\tH\x01R\x05label\x88\x01\x01\x12\xd7\x17\n" +
-	"\x04type\x18\x05 \x01(\tB\xc2\x17\xfaB\xbe\x17r\xbb\x17R\f1.6tbase-cr8R\f1.6tbase-dr8R\x0e1.6tbase-dr8-2R\f1.6tbase-kr8R\x131.6tbase-x-osfp1600R\x171.6tbase-x-osfp1600-rhsR\x151.6tbase-x-qsfpdd1600R\x0f1000base-bx10-dR\x0f1000base-bx10-uR\r1000base-cwdmR\v1000base-cxR\r1000base-dwdmR\v1000base-exR\v1000base-kxR\f1000base-lsxR\v1000base-lxR\r1000base-lx10R\v1000base-sxR\n" +
+	"\x05label\x18\x04 \x01(\tH\x01R\x05label\x88\x01\x01\x12\xb6\x19\n" +
+	"\x04type\x18\x05 \x01(\tB\xa1\x19\xfaB\x9d\x19r\x9a\x19R\f1.6tbase-cr8R\f1.6tbase-dr8R\x0e1.6tbase-dr8-2R\f1.6tbase-kr8R\x131.6tbase-x-osfp1600R\x171.6tbase-x-osfp1600-rhsR\x151.6tbase-x-qsfpdd1600R\x0f1000base-bx10-dR\x0f1000base-bx10-uR\r1000base-cwdmR\v1000base-cxR\r1000base-dwdmR\v1000base-exR\v1000base-kxR\f1000base-lsxR\v1000base-lxR\r1000base-lx10R\v1000base-sxR\n" +
 	"1000base-tR\v1000base-txR\x0f1000base-x-gbicR\x0e1000base-x-sfpR\v1000base-zxR\n" +
 	"100base-fxR\v100base-lfxR\n" +
 	"100base-t1R\n" +
-	"100base-txR\r100base-x-sfpR\f100gbase-cr1R\r100gbase-cr10R\f100gbase-cr2R\f100gbase-cr4R\x0e100gbase-cwdm4R\v100gbase-drR\f100gbase-er4R\f100gbase-fr1R\f100gbase-kp4R\f100gbase-kr2R\f100gbase-kr4R\f100gbase-lr1R\f100gbase-lr4R\f100gbase-sr1R\x0e100gbase-sr1.2R\r100gbase-sr10R\f100gbase-sr2R\f100gbase-sr4R\x0e100gbase-x-cfpR\x0f100gbase-x-cfp2R\x0f100gbase-x-cfp4R\x0f100gbase-x-cpakR\x0e100gbase-x-cxpR\x0f100gbase-x-dsfpR\x11100gbase-x-qsfp28R\x11100gbase-x-qsfpddR\x10100gbase-x-sfpddR\v100gbase-zrR\b10g-eponR\f10gbase-br-dR\f10gbase-br-uR\n" +
+	"100base-txR\r100base-x-sfpR\f100gbase-cr1R\r100gbase-cr10R\f100gbase-cr2R\f100gbase-cr4R\x0e100gbase-cwdm4R\v100gbase-drR\f100gbase-er4R\f100gbase-fr1R\f100gbase-kp4R\f100gbase-kr2R\f100gbase-kr4R\f100gbase-lr1R\f100gbase-lr4R\f100gbase-sr1R\x0e100gbase-sr1.2R\r100gbase-sr10R\f100gbase-sr2R\f100gbase-sr4R\x0e100gbase-x-cfpR\x0f100gbase-x-cfp2R\x0f100gbase-x-cfp4R\x0f100gbase-x-cpakR\x0e100gbase-x-cxpR\x0f100gbase-x-dsfpR\x11100gbase-x-qsfp28R\x11100gbase-x-qsfpddR\x11100gbase-x-sfp112R\x10100gbase-x-sfpddR\v100gbase-zrR\b10g-eponR\f10gbase-br-dR\f10gbase-br-uR\n" +
 	"10gbase-cuR\v10gbase-cx4R\n" +
 	"10gbase-erR\n" +
 	"10gbase-krR\v10gbase-kx4R\n" +
@@ -30101,7 +30101,7 @@ const file_diode_v1_ingester_proto_rawDesc = "" +
 	"50gbase-krR\n" +
 	"50gbase-lrR\n" +
 	"50gbase-srR\x0f50gbase-x-sfp28R\x0f50gbase-x-sfp56R\x025gR\t5gbase-krR\b5gbase-tR\v64gfc-qsfppR\v64gfc-sfpddR\n" +
-	"64gfc-sfppR\f800gbase-cr8R\f800gbase-dr8R\f800gbase-sr8R\f800gbase-vr8R\x0f800gbase-x-osfpR\x11800gbase-x-qsfpddR\t8gfc-sfppR\x04bponR\x06bridgeR\x04cdmaR\achannelR\x0fcisco-flexstackR\x14cisco-flexstack-plusR\x0fcisco-stackwiseR\x13cisco-stackwise-160R\x12cisco-stackwise-1tR\x13cisco-stackwise-320R\x13cisco-stackwise-480R\x12cisco-stackwise-80R\x14cisco-stackwise-plusR\x06docsisR\x02e1R\x02e3R\x04eponR\x13extreme-summitstackR\x17extreme-summitstack-128R\x17extreme-summitstack-256R\x17extreme-summitstack-512R\x04gponR\x03gsmR\vieee802.11aR\fieee802.11acR\fieee802.11adR\fieee802.11axR\fieee802.11ayR\fieee802.11beR\vieee802.11gR\vieee802.11nR\fieee802.15.1R\fieee802.15.4R\x0einfiniband-ddrR\x0einfiniband-edrR\x0einfiniband-fdrR\x10infiniband-fdr10R\x0einfiniband-hdrR\x0einfiniband-ndrR\x0einfiniband-qdrR\x0einfiniband-sdrR\x0einfiniband-xdrR\vjuniper-vcpR\x03lagR\x03lteR\x04mocaR\ang-pon2R\x05otherR\x0eother-wirelessR\n" +
+	"64gfc-sfppR\f800gbase-cr8R\f800gbase-dr8R\f800gbase-sr8R\f800gbase-vr8R\x0f800gbase-x-osfpR\x11800gbase-x-qsfpddR\t8gfc-sfppR\x04bponR\x06bridgeR\x04cdmaR\achannelR\x0fcisco-flexstackR\x14cisco-flexstack-plusR\x0fcisco-stackwiseR\x13cisco-stackwise-160R\x12cisco-stackwise-1tR\x13cisco-stackwise-320R\x13cisco-stackwise-480R\x12cisco-stackwise-80R\x14cisco-stackwise-plusR\x06docsisR\x02e1R\x02e3R\x04eponR\x13extreme-summitstackR\x17extreme-summitstack-128R\x17extreme-summitstack-256R\x17extreme-summitstack-512R\x04gponR\x03gsmR\x1dhpe-synergy-interconnect-linkR\vieee802.11aR\fieee802.11acR\fieee802.11adR\fieee802.11axR\fieee802.11ayR\fieee802.11beR\vieee802.11gR\vieee802.11nR\fieee802.15.1R\fieee802.15.4R\x0einfiniband-ddrR\x11infiniband-ddr-4xR\x0einfiniband-edrR\x11infiniband-edr-4xR\x0einfiniband-fdrR\x11infiniband-fdr-4xR\x10infiniband-fdr10R\x13infiniband-fdr10-4xR\x0einfiniband-hdrR\x11infiniband-hdr-4xR\x0einfiniband-ndrR\x11infiniband-ndr-4xR\x0einfiniband-qdrR\x11infiniband-qdr-4xR\x0einfiniband-sdrR\x11infiniband-sdr-4xR\x0einfiniband-xdrR\x11infiniband-xdr-4xR\vjuniper-vcpR\x03lagR\x03lteR\x04mocaR\ang-pon2R\x05otherR\x0eother-wirelessR\n" +
 	"sonet-oc12R\vsonet-oc192R\fsonet-oc1920R\tsonet-oc3R\fsonet-oc3840R\n" +
 	"sonet-oc48R\vsonet-oc768R\x02t1R\x02t3R\avirtualR\x04xdslR\x06xg-ponR\axgs-ponR\x04type\x12\x1d\n" +
 	"\aenabled\x18\x06 \x01(\bH\x02R\aenabled\x88\x01\x01\x120\n" +
