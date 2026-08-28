@@ -181,6 +181,17 @@ Install chart with release name `[RELEASE_NAME]` in namespace `[NAMESPACE]` with
 helm install [RELEASE_NAME] diode/diode --namespace $NAMESPACE --create-namespace --set [KEY]=[VALUE]
 ```
 
+If your cluster does not use the default `cluster.local` DNS domain, pass the same domain you set as `CLUSTER_DOMAIN` above to the chart and to its Redis and PostgreSQL dependencies, otherwise the in-cluster service hostnames will not resolve:
+
+```console
+helm install [RELEASE_NAME] diode/diode --namespace $NAMESPACE --create-namespace \
+  --set global.clusterDomain=$CLUSTER_DOMAIN \
+  --set redis.clusterDomain=$CLUSTER_DOMAIN \
+  --set postgresql.clusterDomain=$CLUSTER_DOMAIN
+```
+
+The equivalent keys can be set in your `values.yaml` instead.
+
 ## Uninstalling the Chart
 
 To uninstall the `[RELEASE_NAME]` deployment:
