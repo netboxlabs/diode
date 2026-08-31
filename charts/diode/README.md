@@ -85,7 +85,8 @@ REDIS_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 | base6
 POSTGRES_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 | base64 | head -c 32)
 DIODE_POSTGRES_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 | base64 | head -c 32)
 HYDRA_POSTGRES_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 | base64 | head -c 32)
-POSTGRES_HOSTNAME=diode-postgresql.$NAMESPACE.svc.cluster.local
+CLUSTER_DOMAIN=cluster.local  # change if your cluster uses a different DNS domain
+POSTGRES_HOSTNAME=diode-postgresql.$NAMESPACE.svc.$CLUSTER_DOMAIN
 POSTGRES_PORT=5432
 ```
 
@@ -179,6 +180,17 @@ Install chart with release name `[RELEASE_NAME]` in namespace `[NAMESPACE]` with
 ```console
 helm install [RELEASE_NAME] diode/diode --namespace $NAMESPACE --create-namespace --set [KEY]=[VALUE]
 ```
+
+If your cluster does not use the default `cluster.local` DNS domain, pass the same domain you set as `CLUSTER_DOMAIN` above to the chart and to its Redis and PostgreSQL dependencies, otherwise the in-cluster service hostnames will not resolve:
+
+```console
+helm install [RELEASE_NAME] diode/diode --namespace $NAMESPACE --create-namespace \
+  --set global.clusterDomain=$CLUSTER_DOMAIN \
+  --set redis.clusterDomain=$CLUSTER_DOMAIN \
+  --set postgresql.clusterDomain=$CLUSTER_DOMAIN
+```
+
+The equivalent keys can be set in your `values.yaml` instead.
 
 ## Uninstalling the Chart
 
@@ -335,6 +347,7 @@ helm show values diode/diode
 | externalRedis.tls.enabled | bool | `false` | enable TLS |
 | externalRedis.tls.skipVerify | bool | `false` | skip TLS verify |
 | externalRedis.username | string | `""` | username (optional, Redis 6+) |
+| global.clusterDomain | string | `"cluster.local"` | DNS domain of the k8s cluster, used to build in-cluster service FQDNs. Set this if your cluster does not use the default domain. It lives under `global` so that subchart values rendered with `tpl` can read it too. The redis, postgresql and hydra subcharts have their own `clusterDomain` values, which should be set to match. |
 | global.commonAnnotations | object | `{}` | common annotations for all resources |
 | global.commonLabels | object | `{}` | common labels for all resources |
 | global.diode | object | `{"busybox":{"image":"busybox:latest","imagePullPolicy":"IfNotPresent"},"hydra":{"waitForPostgres":true},"ingester":{"waitForRedis":true},"reconciler":{"waitForPostgres":true,"waitForRedis":true}}` | diode global configuration |
@@ -345,7 +358,7 @@ helm show values diode/diode
 | global.diode.reconciler.waitForPostgres | bool | `true` | wait for PostgreSQL to be reachable |
 | global.diode.reconciler.waitForRedis | bool | `true` | wait for Redis to be reachable |
 | global.security.allowInsecureImages | bool | `true` |  |
-| hydra | object | `{"deployment":{"extraInitContainers":"{{ include \"diode.hydra.extrainitcontainers\" . }}","resources":{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}},"enabled":true,"fullnameOverride":"diode-hydra","hydra":{"automigration":{"enabled":true},"config":{"oidc":{"subject_identifiers":{"supported_types":["public"]}},"strategies":{"access_token":"jwt","jwt":{"scope_claim":"both"}},"ttl":{"access_token":"1h"},"urls":{"self":{"issuer":"http://diode-hydra-public.{{ .Release.Namespace }}.svc.cluster.local:4444"}}},"dev":true,"ingress":{"admin":{"enabled":false},"public":{"enabled":false}},"service":{"admin":{"enabled":true,"port":4445,"type":"ClusterIP"},"public":{"enabled":true,"port":4444,"type":"ClusterIP"}}},"job":{"annotations":{"helm.sh/hook":"post-install, post-upgrade","helm.sh/hook-delete-policy":"hook-succeeded","helm.sh/hook-weight":"1"},"extraInitContainers":"{{ include \"diode.hydra.extrainitcontainers\" . }}"},"secret":{"enabled":false,"nameOverride":"diode-hydra-secret"}}` | ref: https://github.com/ory/k8s/blob/master/helm/charts/hydra/values.yaml |
+| hydra | object | `{"deployment":{"extraInitContainers":"{{ include \"diode.hydra.extrainitcontainers\" . }}","resources":{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}},"enabled":true,"fullnameOverride":"diode-hydra","hydra":{"automigration":{"enabled":true},"config":{"oidc":{"subject_identifiers":{"supported_types":["public"]}},"strategies":{"access_token":"jwt","jwt":{"scope_claim":"both"}},"ttl":{"access_token":"1h"},"urls":{"self":{"issuer":"http://diode-hydra-public.{{ .Release.Namespace }}.svc.{{ .Values.global.clusterDomain | default \"cluster.local\" }}:4444"}}},"dev":true,"ingress":{"admin":{"enabled":false},"public":{"enabled":false}},"service":{"admin":{"enabled":true,"port":4445,"type":"ClusterIP"},"public":{"enabled":true,"port":4444,"type":"ClusterIP"}}},"job":{"annotations":{"helm.sh/hook":"post-install, post-upgrade","helm.sh/hook-delete-policy":"hook-succeeded","helm.sh/hook-weight":"1"},"extraInitContainers":"{{ include \"diode.hydra.extrainitcontainers\" . }}"},"secret":{"enabled":false,"nameOverride":"diode-hydra-secret"}}` | ref: https://github.com/ory/k8s/blob/master/helm/charts/hydra/values.yaml |
 | hydra.deployment.extraInitContainers | string or list | `"{{ include \"diode.hydra.extrainitcontainers\" . }}"` | extra init containers |
 | hydra.deployment.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
 | hydra.enabled | bool | `true` | enabled |
@@ -355,8 +368,8 @@ helm show values diode/diode
 | hydra.hydra.config.strategies.access_token | string | `"jwt"` | access token strategy |
 | hydra.hydra.config.strategies.jwt.scope_claim | string | `"both"` | scope claim |
 | hydra.hydra.config.ttl.access_token | string | `"1h"` | access token TTL |
-| hydra.hydra.config.urls.self | object | `{"issuer":"http://diode-hydra-public.{{ .Release.Namespace }}.svc.cluster.local:4444"}` | self issuer |
-| hydra.hydra.config.urls.self.issuer | string | `"http://diode-hydra-public.{{ .Release.Namespace }}.svc.cluster.local:4444"` | hydra public url |
+| hydra.hydra.config.urls.self | object | `{"issuer":"http://diode-hydra-public.{{ .Release.Namespace }}.svc.{{ .Values.global.clusterDomain | default \"cluster.local\" }}:4444"}` | self issuer |
+| hydra.hydra.config.urls.self.issuer | string | `"http://diode-hydra-public.{{ .Release.Namespace }}.svc.{{ .Values.global.clusterDomain | default \"cluster.local\" }}:4444"` | hydra public url |
 | hydra.hydra.dev | bool | `true` | dev mode |
 | hydra.hydra.ingress.admin.enabled | bool | `false` | admin ingress enabled |
 | hydra.hydra.ingress.public.enabled | bool | `false` | public ingress enabled |

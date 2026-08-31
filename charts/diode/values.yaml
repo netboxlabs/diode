@@ -18,6 +18,13 @@ global:
       # -- wait for Redis to be reachable
       waitForRedis: true
 
+  # -- DNS domain of the k8s cluster, used to build in-cluster service FQDNs.
+  # Set this if your cluster does not use the default domain. It lives under
+  # `global` so that subchart values rendered with `tpl` can read it too.
+  # The redis, postgresql and hydra subcharts have their own `clusterDomain`
+  # values, which should be set to match.
+  clusterDomain: cluster.local
+
   # -- common annotations for all resources
   commonAnnotations: {}
 
@@ -463,7 +470,7 @@ hydra:
         # -- self issuer
         self:
           # -- hydra public url
-          issuer: http://diode-hydra-public.{{ .Release.Namespace }}.svc.cluster.local:4444
+          issuer: http://diode-hydra-public.{{ .Release.Namespace }}.svc.{{ .Values.global.clusterDomain | default "cluster.local" }}:4444
     automigration:
       # -- automigration enabled
       enabled: true

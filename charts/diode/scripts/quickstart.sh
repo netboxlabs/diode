@@ -34,8 +34,12 @@ error() {
 usage() {
     echo "Usage: $0 NAMESPACE"
     echo
-    echo "Example:"
+    echo "Environment:"
+    echo "  CLUSTER_DOMAIN  DNS domain of the k8s cluster (default: cluster.local)"
+    echo
+    echo "Examples:"
     echo "  $0 diode-dev"
+    echo "  CLUSTER_DOMAIN=cluster.example.net $0 diode-dev"
     exit 1
 }
 
@@ -55,6 +59,9 @@ if ! command -v jq >/dev/null 2>&1; then
 fi
 
 NAMESPACE=$1
+
+# DNS domain of the k8s cluster; override for clusters not using the default.
+CLUSTER_DOMAIN="${CLUSTER_DOMAIN:-cluster.local}"
 # check if namespace is provided
 if [ -z "$NAMESPACE" ]; then
     error "Error: namespace is required"
@@ -113,7 +120,7 @@ REDIS_PASSWORD=$(generate_secret)
 POSTGRES_PASSWORD=$(generate_secret)
 DIODE_POSTGRES_PASSWORD=$(generate_secret)
 HYDRA_POSTGRES_PASSWORD=$(generate_secret)
-POSTGRES_HOSTNAME=diode-postgresql.$NAMESPACE.svc.cluster.local
+POSTGRES_HOSTNAME=diode-postgresql.$NAMESPACE.svc.$CLUSTER_DOMAIN
 POSTGRES_PORT=5432
 
 DIODE_POSTGRES_SECRET="diode-postgresql-secret"
@@ -222,4 +229,11 @@ fi
 echo "----------------------------------------"
 ok "Environment setup completed!"
 info "You can now install the diode helm chart by running:"
-info "  helm install <RELEASE_NAME> diode/diode --namespace $NAMESPACE"
+if [[ "$CLUSTER_DOMAIN" == "cluster.local" ]]; then
+    info "  helm install <RELEASE_NAME> diode/diode --namespace $NAMESPACE"
+else
+    info "  helm install <RELEASE_NAME> diode/diode --namespace $NAMESPACE \\"
+    info "    --set global.clusterDomain=$CLUSTER_DOMAIN \\"
+    info "    --set redis.clusterDomain=$CLUSTER_DOMAIN \\"
+    info "    --set postgresql.clusterDomain=$CLUSTER_DOMAIN"
+fi
