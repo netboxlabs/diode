@@ -191,6 +191,24 @@ helm install [RELEASE_NAME] diode/{{ template "chart.name" . }} --namespace $NAM
 
 The equivalent keys can be set in your `values.yaml` instead.
 
+## Connecting clients
+
+Point clients at the ingress, not at the `diode-ingester` or `diode-reconciler` Services:
+
+```console
+target = grpc://<ingress-hostname>:<port>/diode
+```
+
+The path is `ingressNginx.pathPrefix` (default `/diode`). The same host serves the gRPC ingestion endpoints and, under `/diode/auth`, the token endpoint that clients call before ingesting.
+
+Targeting a component Service directly, for example `diode-ingester.<namespace>.svc:8081`, fails during authentication with:
+
+```console
+DiodeConfigError: Failed to obtain access token: [Errno 104] Connection reset by peer
+```
+
+That Service serves only gRPC. The token endpoint is on `diode-auth`, reachable through the ingress, so the client's HTTP token request has nowhere to land.
+
 ## Uninstalling the Chart
 
 To uninstall the `[RELEASE_NAME]` deployment:
