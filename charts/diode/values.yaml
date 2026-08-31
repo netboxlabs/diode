@@ -39,7 +39,10 @@ diode:
   # -- environment name
   environment: development
 
-# External PostgreSQL configuration (optional)
+# External PostgreSQL configuration (used when postgresql.enabled is false).
+# Setting existingSecretName or password makes the chart wire POSTGRES_PASSWORD into
+# the reconciler explicitly. That takes precedence over a POSTGRES_PASSWORD supplied
+# through diodeReconciler.existingSecret, which is loaded with envFrom.
 externalPostgresql:
   # -- hostname
   hostname: localhost
@@ -236,7 +239,8 @@ diodeReconciler:
   serviceAccount:
     # -- create service account
     create: true
-  # -- existing secret name
+  # -- existing secret name, loaded with envFrom. Keys here are overridden by any
+  # explicitly wired env of the same name, e.g. POSTGRES_PASSWORD from externalPostgresql
   existingSecret: diode-reconciler-secret
   # -- port to listen on
   containerPort: 8081
