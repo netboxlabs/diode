@@ -227,6 +227,20 @@ func (p *IngestionLogProcessor) pollWorker(pollCtx, workCtx context.Context) {
 			}
 		}
 
+		// A cold default-branch cache is indistinguishable from "no default
+		// branch" at the point of use, so claiming work now would plan and
+		// apply it against main and bypass the branch's approval boundary.
+		// Hold off instead; the refresher is retrying with backoff.
+		if !p.ops.HasBranchLoaded() {
+			p.logger.Warn("default branch not yet known; deferring change set generation until it is known")
+			select {
+			case <-pollCtx.Done():
+				return
+			case <-time.After(defaultIngestionLogIdleInterval):
+				continue
+			}
+		}
+
 		// Claim + process run on workCtx so they survive pollCtx cancel.
 		// Only force-cancellation of workCtx (after the drain timeout)
 		// aborts them.

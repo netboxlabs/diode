@@ -43,6 +43,7 @@ func TestIngestionLogProcessor_Name(t *testing.T) {
 func TestIngestionLogProcessor_StartStop(t *testing.T) {
 	repo := mocks.NewRepository(t)
 	mockOps := mocks.NewIngestionProcessorOps(t)
+	mockOps.On("HasBranchLoaded").Return(true).Maybe()
 	mockMetrics := mocks.NewMetrics(t)
 
 	repo.On("ClaimQueuedIngestionLogs", mock.Anything, mock.Anything).Return([]ops.QueuedIngestionLog{}, nil).Maybe()
@@ -67,6 +68,7 @@ func TestIngestionLogProcessor_StartStop(t *testing.T) {
 func TestIngestionLogProcessor_StopViaMethod(t *testing.T) {
 	repo := mocks.NewRepository(t)
 	mockOps := mocks.NewIngestionProcessorOps(t)
+	mockOps.On("HasBranchLoaded").Return(true).Maybe()
 	mockMetrics := mocks.NewMetrics(t)
 
 	repo.On("ClaimQueuedIngestionLogs", mock.Anything, mock.Anything).Return([]ops.QueuedIngestionLog{}, nil).Maybe()
@@ -91,6 +93,7 @@ func TestIngestionLogProcessor_StopViaMethod(t *testing.T) {
 func TestIngestionLogProcessor_ProcessesItems(t *testing.T) {
 	repo := mocks.NewRepository(t)
 	mockOps := mocks.NewIngestionProcessorOps(t)
+	mockOps.On("HasBranchLoaded").Return(true).Maybe()
 	mockMetrics := mocks.NewMetrics(t)
 
 	ingestionLog := newTestIngestionLog()
@@ -151,6 +154,7 @@ func TestIngestionLogProcessor_ProcessesItems(t *testing.T) {
 func TestIngestionLogProcessor_GenerateChangeSetError(t *testing.T) {
 	repo := mocks.NewRepository(t)
 	mockOps := mocks.NewIngestionProcessorOps(t)
+	mockOps.On("HasBranchLoaded").Return(true).Maybe()
 	mockMetrics := mocks.NewMetrics(t)
 
 	ingestionLog := newTestIngestionLog()
@@ -191,6 +195,7 @@ func TestIngestionLogProcessor_GenerateChangeSetError(t *testing.T) {
 func TestIngestionLogProcessor_BackpressureSkipsProcessing(t *testing.T) {
 	repo := mocks.NewRepository(t)
 	mockOps := mocks.NewIngestionProcessorOps(t)
+	mockOps.On("HasBranchLoaded").Return(true).Maybe()
 	mockMetrics := mocks.NewMetrics(t)
 
 	var backpressureActive atomic.Bool
@@ -215,6 +220,7 @@ func TestIngestionLogProcessor_BackpressureSkipsProcessing(t *testing.T) {
 func TestIngestionLogProcessor_BackpressureReleasedResumesProcessing(t *testing.T) {
 	repo := mocks.NewRepository(t)
 	mockOps := mocks.NewIngestionProcessorOps(t)
+	mockOps.On("HasBranchLoaded").Return(true).Maybe()
 	mockMetrics := mocks.NewMetrics(t)
 
 	ingestionLog := newTestIngestionLog()
@@ -268,6 +274,7 @@ func TestIngestionLogProcessor_BackpressureReleasedResumesProcessing(t *testing.
 func TestIngestionLogProcessor_NilBackpressureIsIgnored(t *testing.T) {
 	repo := mocks.NewRepository(t)
 	mockOps := mocks.NewIngestionProcessorOps(t)
+	mockOps.On("HasBranchLoaded").Return(true).Maybe()
 	mockMetrics := mocks.NewMetrics(t)
 
 	claimed := make(chan struct{}, 1)
@@ -298,6 +305,7 @@ func TestIngestionLogProcessor_NilBackpressureIsIgnored(t *testing.T) {
 func TestIngestionLogProcessor_ClaimError(t *testing.T) {
 	repo := mocks.NewRepository(t)
 	mockOps := mocks.NewIngestionProcessorOps(t)
+	mockOps.On("HasBranchLoaded").Return(true).Maybe()
 	mockMetrics := mocks.NewMetrics(t)
 
 	errCh := make(chan struct{}, 1)

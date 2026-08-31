@@ -3,6 +3,7 @@ package reconciler_test
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -586,6 +587,30 @@ func TestOpsBranchRefresherSeedsCache(t *testing.T) {
 	defer cancel()
 	opsInstance.Start(ctx)
 
+	got := waitForBranch(t, opsInstance, func(b *netboxdiodeplugin.Branch) bool { return b != nil })
+	require.Equal(t, want, got)
+	require.True(t, opsInstance.HasBranchLoaded())
+}
+
+func TestOpsBranchRefresherRetriesInitialFailure(t *testing.T) {
+	// The initial fetch races OAuth client bootstrap and can come back 403.
+	// Retry with backoff instead of waiting a full DefaultBranchRefreshInterval,
+	// which would leave the cache cold — and processors idle — for 5 minutes.
+	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug, AddSource: false}))
+	mockRepository := mocks.NewRepository(t)
+	mockNetBoxClient := pluginmocks.NewNetBoxAPI(t)
+	opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil)
+
+	want := &netboxdiodeplugin.Branch{ID: "branch-1", Name: "Branch One"}
+	mockNetBoxClient.EXPECT().GetDefaultBranch(mock.Anything).
+		Return((*netboxdiodeplugin.Branch)(nil), errors.New("get default branch failed with status 403: Invalid token")).Once()
+	mockNetBoxClient.EXPECT().GetDefaultBranch(mock.Anything).Return(want, nil)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	opsInstance.Start(ctx)
+
+	// Well inside DefaultBranchRefreshInterval, so only the retry can satisfy this.
 	got := waitForBranch(t, opsInstance, func(b *netboxdiodeplugin.Branch) bool { return b != nil })
 	require.Equal(t, want, got)
 	require.True(t, opsInstance.HasBranchLoaded())
