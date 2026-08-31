@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -44,6 +45,11 @@ type AutoApplyProcessor struct {
 	workCancel context.CancelFunc
 	pollCancel context.CancelFunc
 	done       chan struct{}
+
+	// coldBranchLogged keeps the cold-cache warning to one line per cold
+	// period. The gate is re-evaluated every poll interval by every worker,
+	// and a misconfigured client keeps it cold indefinitely.
+	coldBranchLogged atomic.Bool
 
 	batchSize int32
 }
@@ -189,13 +195,18 @@ func (p *AutoApplyProcessor) pollWorker(pollCtx, workCtx context.Context) {
 		// apply it against main and bypass the branch's approval boundary.
 		// Hold off instead; the refresher is retrying with backoff.
 		if !p.ops.HasBranchLoaded() {
-			p.logger.Warn("default branch not yet known; deferring auto-apply until it is known")
+			if !p.coldBranchLogged.Swap(true) {
+				p.logger.Warn("default branch not yet known; deferring auto-apply until it is known")
+			}
 			select {
 			case <-pollCtx.Done():
 				return
 			case <-time.After(defaultIngestionLogIdleInterval):
 				continue
 			}
+		}
+		if p.coldBranchLogged.CompareAndSwap(true, false) {
+			p.logger.Info("default branch known; resuming auto-apply")
 		}
 
 		// Claim + process run on workCtx so they survive pollCtx cancel.

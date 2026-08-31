@@ -1,7 +1,11 @@
 package reconciler_test
 
 import (
+	"bytes"
 	"context"
+	"log/slog"
+	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -87,3 +91,65 @@ func runBriefly(t *testing.T, start func(context.Context) error) {
 		t.Fatal("processor did not exit")
 	}
 }
+
+// lockedBuffer collects log output safely across poll workers.
+type lockedBuffer struct {
+	mu  sync.Mutex
+	buf bytes.Buffer
+}
+
+func (b *lockedBuffer) Write(p []byte) (int, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buf.Write(p)
+}
+
+func (b *lockedBuffer) String() string {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buf.String()
+}
+
+// The gate is re-evaluated on every poll iteration by every worker, and a
+// misconfigured client keeps the cache cold indefinitely, so the warning has
+// to be emitted once per cold period rather than once per iteration.
+func TestColdBranchCacheWarnsOncePerColdPeriod(t *testing.T) {
+	repo := mocks.NewRepository(t)
+	mockOps := mocks.NewIngestionProcessorOps(t)
+	mockMetrics := mocks.NewMetrics(t)
+
+	mockOps.On("HasBranchLoaded").Return(false)
+
+	out := &lockedBuffer{}
+	logger := slog.New(slog.NewTextHandler(out, &slog.HandlerOptions{Level: slog.LevelDebug}))
+
+	p := reconciler.NewIngestionLogProcessor(
+		logger,
+		reconciler.Config{},
+		repo,
+		mockOps,
+		mockMetrics,
+		nil,
+	)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan error, 1)
+	go func() { done <- p.Start(ctx) }()
+
+	// Several idle intervals, so an unguarded warning would repeat.
+	time.Sleep(defaultIdleIntervalsForWarnTest)
+	cancel()
+
+	select {
+	case err := <-done:
+		require.NoError(t, err)
+	case <-time.After(5 * time.Second):
+		t.Fatal("processor did not exit")
+	}
+
+	n := strings.Count(out.String(), "default branch not yet known")
+	require.Equal(t, 1, n, "cold-cache warning should be logged once per cold period, got %d", n)
+}
+
+// Long enough for several poll iterations at the idle interval.
+const defaultIdleIntervalsForWarnTest = 3200 * time.Millisecond
