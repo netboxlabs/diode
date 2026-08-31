@@ -330,6 +330,18 @@ Create the username for PostgreSQL
 {{- end }}
 
 {{/*
+Whether the chart can wire POSTGRES_PASSWORD itself, i.e. external PostgreSQL is in
+use and credentials were supplied through externalPostgresql. Returns "" when not,
+so it can be used directly in a boolean context.
+*/}}
+{{- define "diode.postgresql.externalcredentials" -}}
+{{- $ext := .Values.externalPostgresql | default dict -}}
+{{- if and (not .Values.postgresql.enabled) (or $ext.existingSecretName $ext.password) -}}
+true
+{{- end -}}
+{{- end }}
+
+{{/*
 Create the secret name for PostgreSQL credentials
 */}}
 {{- define "diode.postgresql.secretname" -}}

@@ -336,7 +336,7 @@ helm show values diode/diode
 | diodeReconciler.config.telemetryTracesExporter | string | `"none"` | telemetry traces exporter |
 | diodeReconciler.containerPort | int | `8081` | port to listen on |
 | diodeReconciler.enabled | bool | `true` | enabled |
-| diodeReconciler.existingSecret | string | `"diode-reconciler-secret"` | existing secret name |
+| diodeReconciler.existingSecret | string | `"diode-reconciler-secret"` | existing secret name, loaded with envFrom. Keys here are overridden by any explicitly wired env of the same name, e.g. POSTGRES_PASSWORD from externalPostgresql |
 | diodeReconciler.extraEnvs | string or list | `[]` | extra environment variables to be set on containers' `env` section |
 | diodeReconciler.extraInitContainers | string or list | `""` | additional containers to run before the reconciler finishes initializing (may contain templating instructions) |
 | diodeReconciler.extraVolumeMounts | string or list | `[]` | additional volumes to mount in the container (may contain templating instructions) |
