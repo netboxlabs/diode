@@ -121,7 +121,7 @@ Create the name of the auth service account to use
 Create the hostname of the auth service
 */}}
 {{- define "diode.auth.hostname" -}}
-{{- printf "%s-auth.%s.svc.%s" (include "diode.fullname" .) .Release.Namespace (include "diode.clusterDomain" .) }}
+{{- printf "%s-auth.%s.svc.%s" (include "diode.fullname" .) (include "diode.namespace" .) (include "diode.clusterDomain" .) }}
 {{- end }}
 
 {{/*
@@ -239,6 +239,11 @@ Create the name of the PostgreSQL initialization database scripts ConfigMap
 {{- end }}
 
 {{/*
+Subcharts do not follow namespaceOverride, so their Services stay in the
+release namespace. These hostnames must use .Release.Namespace, not
+diode.namespace, or they break whenever the override is set.
+*/}}
+{{/*
 Create the hostname of the PostgreSQL database
 */}}
 {{- define "diode.postgresql.hostname" -}}
@@ -264,6 +269,11 @@ Create the port of the PostgreSQL database
 {{- end }}
 {{- end }}
 
+{{/*
+Subcharts do not follow namespaceOverride, so their Services stay in the
+release namespace. These hostnames must use .Release.Namespace, not
+diode.namespace, or they break whenever the override is set.
+*/}}
 {{/*
 Create the hostname of the Redis database
 */}}
@@ -381,6 +391,11 @@ Create the SSL option for PostgreSQL
 {{- end }}
 
 {{/*
+Subcharts do not follow namespaceOverride, so their Services stay in the
+release namespace. These hostnames must use .Release.Namespace, not
+diode.namespace, or they break whenever the override is set.
+*/}}
+{{/*
 Create the hostname of the public Hydra service
 */}}
 {{- define "diode.hydra.public.hostname" -}}
@@ -401,6 +416,11 @@ Create the URL to the public Hydra service
 {{- printf "http://%s:%d" (include "diode.hydra.public.hostname" .) (include "diode.hydra.public.port" . | int) }}
 {{- end }}
 
+{{/*
+Subcharts do not follow namespaceOverride, so their Services stay in the
+release namespace. These hostnames must use .Release.Namespace, not
+diode.namespace, or they break whenever the override is set.
+*/}}
 {{/*
 Create the hostname of the admin Hydra service
 */}}

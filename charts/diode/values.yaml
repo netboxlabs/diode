@@ -39,6 +39,12 @@ diode:
   # -- environment name
   environment: development
 
+# -- namespace to deploy diode's own resources into, overriding the release
+# namespace. Dependencies (redis, postgresql, hydra, ingress-nginx) do not
+# follow this and stay in the release namespace, so diode still addresses
+# them there.
+namespaceOverride: ""
+
 # External PostgreSQL configuration (used when postgresql.enabled is false).
 # Setting existingSecretName or password makes the chart wire POSTGRES_PASSWORD into
 # the reconciler explicitly. That takes precedence over a POSTGRES_PASSWORD supplied
