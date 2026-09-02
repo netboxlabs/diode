@@ -84,7 +84,8 @@ REDIS_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 | base6
 POSTGRES_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 | base64 | head -c 32)
 DIODE_POSTGRES_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 | base64 | head -c 32)
 HYDRA_POSTGRES_PASSWORD=$(LC_ALL=C tr -dc 'A-Za-z0-9' < /dev/urandom | head -c 32 | base64 | head -c 32)
-POSTGRES_HOSTNAME=diode-postgresql.$NAMESPACE.svc.cluster.local
+CLUSTER_DOMAIN=cluster.local  # change if your cluster uses a different DNS domain
+POSTGRES_HOSTNAME=diode-postgresql.$NAMESPACE.svc.$CLUSTER_DOMAIN
 POSTGRES_PORT=5432
 ```
 
@@ -178,6 +179,35 @@ Install chart with release name `[RELEASE_NAME]` in namespace `[NAMESPACE]` with
 ```console
 helm install [RELEASE_NAME] diode/{{ template "chart.name" . }} --namespace $NAMESPACE --create-namespace --set [KEY]=[VALUE]
 ```
+
+If your cluster does not use the default `cluster.local` DNS domain, pass the same domain you set as `CLUSTER_DOMAIN` above to the chart and to its Redis and PostgreSQL dependencies, otherwise the in-cluster service hostnames will not resolve:
+
+```console
+helm install [RELEASE_NAME] diode/{{ template "chart.name" . }} --namespace $NAMESPACE --create-namespace \
+  --set global.clusterDomain=$CLUSTER_DOMAIN \
+  --set redis.clusterDomain=$CLUSTER_DOMAIN \
+  --set postgresql.clusterDomain=$CLUSTER_DOMAIN
+```
+
+The equivalent keys can be set in your `values.yaml` instead.
+
+## Connecting clients
+
+Point clients at the ingress, not at the `diode-ingester` or `diode-reconciler` Services:
+
+```console
+target = grpc://<ingress-hostname>:<port>/diode
+```
+
+The path is `ingressNginx.pathPrefix` (default `/diode`). The same host serves the gRPC ingestion endpoints and, under `/diode/auth`, the token endpoint that clients call before ingesting.
+
+Targeting a component Service directly, for example `diode-ingester.<namespace>.svc:8081`, fails during authentication with:
+
+```console
+DiodeConfigError: Failed to obtain access token: [Errno 104] Connection reset by peer
+```
+
+That Service serves only gRPC. The token endpoint is on `diode-auth`, reachable through the ingress, so the client's HTTP token request has nowhere to land.
 
 ## Uninstalling the Chart
 

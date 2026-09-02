@@ -18,6 +18,13 @@ global:
       # -- wait for Redis to be reachable
       waitForRedis: true
 
+  # -- DNS domain of the k8s cluster, used to build in-cluster service FQDNs.
+  # Set this if your cluster does not use the default domain. It lives under
+  # `global` so that subchart values rendered with `tpl` can read it too.
+  # The redis, postgresql and hydra subcharts have their own `clusterDomain`
+  # values, which should be set to match.
+  clusterDomain: cluster.local
+
   # -- common annotations for all resources
   commonAnnotations: {}
 
@@ -32,7 +39,16 @@ diode:
   # -- environment name
   environment: development
 
-# External PostgreSQL configuration (optional)
+# -- namespace to deploy diode's own resources into, overriding the release
+# namespace. Dependencies (redis, postgresql, hydra, ingress-nginx) do not
+# follow this and stay in the release namespace, so diode still addresses
+# them there.
+namespaceOverride: ""
+
+# External PostgreSQL configuration (used when postgresql.enabled is false).
+# Setting existingSecretName or password makes the chart wire POSTGRES_PASSWORD into
+# the reconciler explicitly. That takes precedence over a POSTGRES_PASSWORD supplied
+# through diodeReconciler.existingSecret, which is loaded with envFrom.
 externalPostgresql:
   # -- hostname
   hostname: localhost
@@ -229,7 +245,8 @@ diodeReconciler:
   serviceAccount:
     # -- create service account
     create: true
-  # -- existing secret name
+  # -- existing secret name, loaded with envFrom. Keys here are overridden by any
+  # explicitly wired env of the same name, e.g. POSTGRES_PASSWORD from externalPostgresql
   existingSecret: diode-reconciler-secret
   # -- port to listen on
   containerPort: 8081
@@ -463,7 +480,7 @@ hydra:
         # -- self issuer
         self:
           # -- hydra public url
-          issuer: http://diode-hydra-public.{{ .Release.Namespace }}.svc.cluster.local:4444
+          issuer: http://diode-hydra-public.{{ .Release.Namespace }}.svc.{{ .Values.global.clusterDomain | default "cluster.local" }}:4444
     automigration:
       # -- automigration enabled
       enabled: true

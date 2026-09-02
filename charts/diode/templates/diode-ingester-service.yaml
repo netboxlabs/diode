@@ -3,7 +3,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: {{ include "diode.ingester.servicename" . }}
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ include "diode.namespace" . }}
   labels:
     {{- include "diode.labels" . | nindent 4 }}
     app: {{ include "diode.ingester.servicename" . }}

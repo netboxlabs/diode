@@ -32,6 +32,13 @@ Allows overriding it for multi-namespace deployments in combined charts.
 {{- end -}}
 
 {{/*
+Create the DNS domain of the k8s cluster, used to build in-cluster service FQDNs.
+*/}}
+{{- define "diode.clusterDomain" -}}
+{{- default "cluster.local" .Values.global.clusterDomain -}}
+{{- end -}}
+
+{{/*
 Create chart name and version as used by the chart label.
 */}}
 {{- define "diode.chart" -}}
@@ -42,15 +49,7 @@ Create chart name and version as used by the chart label.
 Common labels
 */}}
 {{- define "diode.labels" -}}
-helm.sh/chart: {{ include "diode.chart" . }}
-{{ include "diode.selectorlabels" . }}
-{{- if .Chart.AppVersion }}
-app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
-{{- end }}
-app.kubernetes.io/managed-by: {{ .Release.Service }}
-{{- if .Values.global.commonLabels }}
-{{- include "common.labels.standard" ( dict "customLabels" .Values.global.commonLabels "context" $ ) }}
-{{- end }}
+{{- include "common.labels.standard" ( dict "customLabels" .Values.global.commonLabels "context" . ) }}
 {{- end }}
 
 {{/*
@@ -122,7 +121,7 @@ Create the name of the auth service account to use
 Create the hostname of the auth service
 */}}
 {{- define "diode.auth.hostname" -}}
-{{- printf "%s-auth.%s.svc.cluster.local" (include "diode.fullname" .) .Release.Namespace }}
+{{- printf "%s-auth.%s.svc.%s" (include "diode.fullname" .) (include "diode.namespace" .) (include "diode.clusterDomain" .) }}
 {{- end }}
 
 {{/*
@@ -240,11 +239,16 @@ Create the name of the PostgreSQL initialization database scripts ConfigMap
 {{- end }}
 
 {{/*
+Subcharts do not follow namespaceOverride, so their Services stay in the
+release namespace. These hostnames must use .Release.Namespace, not
+diode.namespace, or they break whenever the override is set.
+*/}}
+{{/*
 Create the hostname of the PostgreSQL database
 */}}
 {{- define "diode.postgresql.hostname" -}}
 {{- if .Values.postgresql.enabled -}}
-{{- printf "diode-postgresql.%s.svc.cluster.local" .Release.Namespace }}
+{{- printf "diode-postgresql.%s.svc.%s" .Release.Namespace (include "diode.clusterDomain" .) }}
 {{- else if and .Values.externalPostgresql (hasKey .Values.externalPostgresql "hostname") -}}
 {{- .Values.externalPostgresql.hostname }}
 {{- else -}}
@@ -266,11 +270,16 @@ Create the port of the PostgreSQL database
 {{- end }}
 
 {{/*
+Subcharts do not follow namespaceOverride, so their Services stay in the
+release namespace. These hostnames must use .Release.Namespace, not
+diode.namespace, or they break whenever the override is set.
+*/}}
+{{/*
 Create the hostname of the Redis database
 */}}
 {{- define "diode.redis.hostname" -}}
 {{- if .Values.redis.enabled -}}
-{{- printf "diode-redis-master.%s.svc.cluster.local" .Release.Namespace }}
+{{- printf "diode-redis-master.%s.svc.%s" .Release.Namespace (include "diode.clusterDomain" .) }}
 {{- else if and .Values.externalRedis (hasKey .Values.externalRedis "hostname") -}}
 {{- .Values.externalRedis.hostname }}
 {{- else -}}
@@ -331,6 +340,18 @@ Create the username for PostgreSQL
 {{- end }}
 
 {{/*
+Whether the chart can wire POSTGRES_PASSWORD itself, i.e. external PostgreSQL is in
+use and credentials were supplied through externalPostgresql. Returns "" when not,
+so it can be used directly in a boolean context.
+*/}}
+{{- define "diode.postgresql.externalcredentials" -}}
+{{- $ext := .Values.externalPostgresql | default dict -}}
+{{- if and (not .Values.postgresql.enabled) (or $ext.existingSecretName $ext.password) -}}
+true
+{{- end -}}
+{{- end }}
+
+{{/*
 Create the secret name for PostgreSQL credentials
 */}}
 {{- define "diode.postgresql.secretname" -}}
@@ -370,10 +391,15 @@ Create the SSL option for PostgreSQL
 {{- end }}
 
 {{/*
+Subcharts do not follow namespaceOverride, so their Services stay in the
+release namespace. These hostnames must use .Release.Namespace, not
+diode.namespace, or they break whenever the override is set.
+*/}}
+{{/*
 Create the hostname of the public Hydra service
 */}}
 {{- define "diode.hydra.public.hostname" -}}
-{{- printf "diode-hydra-public.%s.svc.cluster.local" .Release.Namespace }}
+{{- printf "diode-hydra-public.%s.svc.%s" .Release.Namespace (include "diode.clusterDomain" .) }}
 {{- end }}
 
 {{/*
@@ -391,10 +417,15 @@ Create the URL to the public Hydra service
 {{- end }}
 
 {{/*
+Subcharts do not follow namespaceOverride, so their Services stay in the
+release namespace. These hostnames must use .Release.Namespace, not
+diode.namespace, or they break whenever the override is set.
+*/}}
+{{/*
 Create the hostname of the admin Hydra service
 */}}
 {{- define "diode.hydra.admin.hostname" -}}
-{{- printf "diode-hydra-admin.%s.svc.cluster.local" .Release.Namespace }}
+{{- printf "diode-hydra-admin.%s.svc.%s" .Release.Namespace (include "diode.clusterDomain" .) }}
 {{- end }}
 
 {{/*
