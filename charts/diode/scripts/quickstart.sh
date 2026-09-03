@@ -230,7 +230,21 @@ fi
 # to the ingest one used by orb-agent. Surfacing it here avoids pasting the
 # wrong secret and hitting "Failed to obtain access token".
 NETBOX_TO_DIODE_CLIENT_ID="netbox-to-diode"
-NETBOX_TO_DIODE_CLIENT_SECRET=$(jq -r '.[] | select(.client_id == "'$NETBOX_TO_DIODE_CLIENT_ID'") | .client_secret' "$PWD/client-credentials.json")
+
+# Read it from the deployed Secret rather than the local file. When the Secret
+# already existed we skipped creating it above, so a client-credentials.json
+# regenerated in a fresh working directory holds values that were never applied
+# to the cluster; printing those would hand out a credential that cannot
+# authenticate. Fall back to the local file only when the Secret is unreadable.
+NETBOX_TO_DIODE_CLIENT_SECRET=$(kubectl get secret "$DIODE_AUTH_OAUTH2_SECRET" -n "$NAMESPACE" \
+  -o jsonpath='{.data.client-credentials\.json}' 2>/dev/null | base64 -d 2>/dev/null \
+  | jq -r --arg id "$NETBOX_TO_DIODE_CLIENT_ID" \
+      'try (.[] | select(.client_id == $id) | .client_secret) // empty' 2>/dev/null)
+
+if [[ -z "$NETBOX_TO_DIODE_CLIENT_SECRET" ]]; then
+    NETBOX_TO_DIODE_CLIENT_SECRET=$(jq -r --arg id "$NETBOX_TO_DIODE_CLIENT_ID" \
+      '.[] | select(.client_id == $id) | .client_secret' "$PWD/client-credentials.json")
+fi
 
 echo "----------------------------------------"
 ok "Environment setup completed!"
