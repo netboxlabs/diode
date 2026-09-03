@@ -1,0 +1,76 @@
+name: CodeQL
+
+# Advanced setup, replacing CodeQL default setup. Default setup does not
+# analyze pull requests from forks, so the "SAST Enforcement" ruleset — which
+# requires CodeQL results — left every fork PR permanently unmergeable.
+#
+# Deliberately has no `paths` filter: that ruleset requires results on every
+# pull request, so skipping a run would recreate the same deadlock for PRs
+# that happen to touch no analyzed code.
+
+on:
+  push:
+    branches: [ develop ]
+  pull_request:
+    branches: [ develop ]
+  schedule:
+    - cron: '0 6 * * 1'  # Mondays at 06:00 UTC
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      # Pull requests from forks get a read-only token; the CodeQL action
+      # uploads their results without needing write, so fork PRs still report.
+      security-events: write
+      contents: read
+      actions: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: actions
+            build-mode: none
+          - language: go
+            build-mode: manual
+          - language: python
+            build-mode: none
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Go
+        if: matrix.language == 'go'
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
+        with:
+          go-version-file: diode-server/go.mod
+          cache-dependency-path: diode-server/go.sum
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@0d579ffd059c29b07949a3cce3983f0780820c98 # v4.32.6
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+          # Default setup runs the extended suite; advanced setup would
+          # otherwise fall back to the standard one and quietly narrow the gate.
+          queries: security-extended
+
+      # Built explicitly rather than via autobuild: the module lives in a
+      # subdirectory, and this matches how Go - test builds the server.
+      - name: Build Go
+        if: matrix.language == 'go'
+        working-directory: diode-server
+        run: go build ./...
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@0d579ffd059c29b07949a3cce3983f0780820c98 # v4.32.6
+        with:
+          category: "/language:${{ matrix.language }}"

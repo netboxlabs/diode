@@ -128,6 +128,10 @@ func TestHandleStreamMessage(t *testing.T) {
 			}
 			mockNbClient.On("GetDefaultBranch", mock.Anything).Return((*netboxdiodeplugin.Branch)(nil), nil)
 			if tt.entities[0].Entity != nil {
+				mockRepository.EXPECT().WithDedupLocks(mock.Anything, mock.Anything, mock.Anything).
+					RunAndReturn(func(_ context.Context, _ []string, fn func(ops.DedupRepository) error) error {
+						return fn(mockRepository)
+					})
 				mockRepository.On("FindPriorIngestionLogsByEntityHashes", mock.Anything, mock.Anything, mock.Anything).Return(map[string]*ops.PriorIngestionLog{}, nil)
 				mockRepository.On("BulkCreateIngestionLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
 					func(_ context.Context, logs []*reconcilerpb.IngestionLog, _ [][]byte, _ []string) map[string]int32 {
@@ -276,6 +280,10 @@ func TestHandleStreamMessageLegacyUncompressed(t *testing.T) {
 	}
 
 	mockNbClient.On("GetDefaultBranch", mock.Anything).Return((*netboxdiodeplugin.Branch)(nil), nil)
+	mockRepository.EXPECT().WithDedupLocks(mock.Anything, mock.Anything, mock.Anything).
+		RunAndReturn(func(_ context.Context, _ []string, fn func(ops.DedupRepository) error) error {
+			return fn(mockRepository)
+		})
 	mockRepository.On("FindPriorIngestionLogsByEntityHashes", mock.Anything, mock.Anything, mock.Anything).Return(map[string]*ops.PriorIngestionLog{}, nil)
 	mockRepository.On("BulkCreateIngestionLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
 		func(_ context.Context, logs []*reconcilerpb.IngestionLog, _ [][]byte, _ []string) map[string]int32 {

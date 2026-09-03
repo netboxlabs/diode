@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -27,7 +28,10 @@ const rollbackTimeout = 5 * time.Second
 
 // Repository is an interface for interacting with ingestion logs and change sets.
 type Repository struct {
-	pool    *pgxpool.Pool
+	pool *pgxpool.Pool
+	// db is the executor for raw (non-sqlc) SQL: the pool normally, the
+	// transaction for tx-scoped instances created by WithDedupLocks.
+	db      postgres.DBTX
 	queries *postgres.Queries
 }
 
@@ -35,8 +39,43 @@ type Repository struct {
 func NewRepository(pool *pgxpool.Pool) *Repository {
 	return &Repository{
 		pool:    pool,
+		db:      pool,
 		queries: postgres.New(pool),
 	}
+}
+
+// WithDedupLocks runs fn within a single transaction that holds per-entity-hash
+// advisory locks (pg_advisory_xact_lock, sorted to avoid lock-order deadlocks)
+// for its whole duration. This closes the find-prior -> insert race: two
+// concurrent batches carrying the same entity serialize on the hash lock, so
+// the second one sees the first one's committed row and dedups against it
+// instead of inserting its own. fn receives a tx-scoped repository; returning
+// an error rolls the whole transaction back.
+func (r *Repository) WithDedupLocks(ctx context.Context, entityHashes []string, fn func(ops.DedupRepository) error) error {
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to start transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	txRepo := &Repository{
+		pool:    r.pool,
+		db:      tx,
+		queries: r.queries.WithTx(tx),
+	}
+
+	if err := txRepo.queries.AcquireEntityHashLocks(ctx, entityHashes); err != nil {
+		return fmt.Errorf("failed to acquire entity hash locks: %w", err)
+	}
+
+	if err := fn(txRepo); err != nil {
+		return err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+	return nil
 }
 
 // CreateIngestionLog creates a new ingestion log with entity hash and deduplication fields.
@@ -482,10 +521,25 @@ func (r *Repository) FindPriorIngestionLogByEntityHash(ctx context.Context, enti
 }
 
 // BulkMarkDuplicates increments duplicate bookkeeping for the given prior
-// ingestion logs and requeues drift-eligible ones (APPLIED/FAILED/NO_CHANGES
-// -> QUEUED). Returns requeued flag by ingestion log ID.
-func (r *Repository) BulkMarkDuplicates(ctx context.Context, ids []int32) (map[int32]bool, error) {
-	rows, err := r.queries.BulkMarkDuplicates(ctx, ids)
+// ingestion logs (by the per-ID amount, so a batch carrying n copies of one
+// entity counts n observations) and requeues drift-eligible ones
+// (APPLIED/FAILED/NO_CHANGES -> QUEUED). Returns requeued flag by ingestion
+// log ID.
+func (r *Repository) BulkMarkDuplicates(ctx context.Context, increments map[int32]int32) (map[int32]bool, error) {
+	ids := make([]int32, 0, len(increments))
+	for id := range increments {
+		ids = append(ids, id)
+	}
+	slices.Sort(ids)
+	counts := make([]int32, len(ids))
+	for i, id := range ids {
+		counts[i] = increments[id]
+	}
+
+	rows, err := r.queries.BulkMarkDuplicates(ctx, postgres.BulkMarkDuplicatesParams{
+		Ids:        ids,
+		Increments: counts,
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -583,7 +637,7 @@ func (r *Repository) BulkCreateIngestionLogs(ctx context.Context, logs []*reconc
 }
 
 func (r *Repository) allocateIngestionLogIDs(ctx context.Context, n int) ([]int32, error) {
-	rows, err := r.pool.Query(ctx, "SELECT nextval('ingestion_logs_id_seq')::int4 FROM generate_series(1, $1)", n)
+	rows, err := r.db.Query(ctx, "SELECT nextval('ingestion_logs_id_seq')::int4 FROM generate_series(1, $1)", n)
 	if err != nil {
 		return nil, err
 	}
@@ -815,7 +869,7 @@ func (r *Repository) BulkCreateDriftDeviations(ctx context.Context, items []ops.
 }
 
 func (r *Repository) allocateChangeSetIDs(ctx context.Context, n int) ([]int32, error) {
-	rows, err := r.pool.Query(ctx, "SELECT nextval('change_sets_id_seq')::int4 FROM generate_series(1, $1)", n)
+	rows, err := r.db.Query(ctx, "SELECT nextval('change_sets_id_seq')::int4 FROM generate_series(1, $1)", n)
 	if err != nil {
 		return nil, err
 	}

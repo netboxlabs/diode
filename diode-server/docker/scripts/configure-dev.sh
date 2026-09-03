@@ -56,6 +56,12 @@ fi
 
 NETBOX_HOST="$1"
 
+# The env template appends /api/plugins/diode, so a host copied from a browser
+# with a trailing slash would produce a double slash and 404 every request.
+while [[ "$NETBOX_HOST" == */ ]]; do
+    NETBOX_HOST="${NETBOX_HOST%/}"
+done
+
 if [[ -z "$NETBOX_HOST" ]]; then
     error "NETBOX_HOST is not provided"
     exit 1

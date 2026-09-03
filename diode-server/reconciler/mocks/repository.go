@@ -147,9 +147,9 @@ func (_c *Repository_BulkCreateIngestionLogs_Call) RunAndReturn(run func(context
 	return _c
 }
 
-// BulkMarkDuplicates provides a mock function with given fields: ctx, ids
-func (_m *Repository) BulkMarkDuplicates(ctx context.Context, ids []int32) (map[int32]bool, error) {
-	ret := _m.Called(ctx, ids)
+// BulkMarkDuplicates provides a mock function with given fields: ctx, increments
+func (_m *Repository) BulkMarkDuplicates(ctx context.Context, increments map[int32]int32) (map[int32]bool, error) {
+	ret := _m.Called(ctx, increments)
 
 	if len(ret) == 0 {
 		panic("no return value specified for BulkMarkDuplicates")
@@ -157,19 +157,19 @@ func (_m *Repository) BulkMarkDuplicates(ctx context.Context, ids []int32) (map[
 
 	var r0 map[int32]bool
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, []int32) (map[int32]bool, error)); ok {
-		return rf(ctx, ids)
+	if rf, ok := ret.Get(0).(func(context.Context, map[int32]int32) (map[int32]bool, error)); ok {
+		return rf(ctx, increments)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, []int32) map[int32]bool); ok {
-		r0 = rf(ctx, ids)
+	if rf, ok := ret.Get(0).(func(context.Context, map[int32]int32) map[int32]bool); ok {
+		r0 = rf(ctx, increments)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(map[int32]bool)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, []int32) error); ok {
-		r1 = rf(ctx, ids)
+	if rf, ok := ret.Get(1).(func(context.Context, map[int32]int32) error); ok {
+		r1 = rf(ctx, increments)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -184,14 +184,14 @@ type Repository_BulkMarkDuplicates_Call struct {
 
 // BulkMarkDuplicates is a helper method to define mock.On call
 //   - ctx context.Context
-//   - ids []int32
-func (_e *Repository_Expecter) BulkMarkDuplicates(ctx interface{}, ids interface{}) *Repository_BulkMarkDuplicates_Call {
-	return &Repository_BulkMarkDuplicates_Call{Call: _e.mock.On("BulkMarkDuplicates", ctx, ids)}
+//   - increments map[int32]int32
+func (_e *Repository_Expecter) BulkMarkDuplicates(ctx interface{}, increments interface{}) *Repository_BulkMarkDuplicates_Call {
+	return &Repository_BulkMarkDuplicates_Call{Call: _e.mock.On("BulkMarkDuplicates", ctx, increments)}
 }
 
-func (_c *Repository_BulkMarkDuplicates_Call) Run(run func(ctx context.Context, ids []int32)) *Repository_BulkMarkDuplicates_Call {
+func (_c *Repository_BulkMarkDuplicates_Call) Run(run func(ctx context.Context, increments map[int32]int32)) *Repository_BulkMarkDuplicates_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].([]int32))
+		run(args[0].(context.Context), args[1].(map[int32]int32))
 	})
 	return _c
 }
@@ -201,7 +201,7 @@ func (_c *Repository_BulkMarkDuplicates_Call) Return(_a0 map[int32]bool, _a1 err
 	return _c
 }
 
-func (_c *Repository_BulkMarkDuplicates_Call) RunAndReturn(run func(context.Context, []int32) (map[int32]bool, error)) *Repository_BulkMarkDuplicates_Call {
+func (_c *Repository_BulkMarkDuplicates_Call) RunAndReturn(run func(context.Context, map[int32]int32) (map[int32]bool, error)) *Repository_BulkMarkDuplicates_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1080,6 +1080,54 @@ func (_c *Repository_UpdateIngestionLogStateWithError_Call) Return(_a0 error) *R
 }
 
 func (_c *Repository_UpdateIngestionLogStateWithError_Call) RunAndReturn(run func(context.Context, int32, reconcilerpb.State, error) error) *Repository_UpdateIngestionLogStateWithError_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// WithDedupLocks provides a mock function with given fields: ctx, entityHashes, fn
+func (_m *Repository) WithDedupLocks(ctx context.Context, entityHashes []string, fn func(ops.DedupRepository) error) error {
+	ret := _m.Called(ctx, entityHashes, fn)
+
+	if len(ret) == 0 {
+		panic("no return value specified for WithDedupLocks")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, []string, func(ops.DedupRepository) error) error); ok {
+		r0 = rf(ctx, entityHashes, fn)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// Repository_WithDedupLocks_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'WithDedupLocks'
+type Repository_WithDedupLocks_Call struct {
+	*mock.Call
+}
+
+// WithDedupLocks is a helper method to define mock.On call
+//   - ctx context.Context
+//   - entityHashes []string
+//   - fn func(ops.DedupRepository) error
+func (_e *Repository_Expecter) WithDedupLocks(ctx interface{}, entityHashes interface{}, fn interface{}) *Repository_WithDedupLocks_Call {
+	return &Repository_WithDedupLocks_Call{Call: _e.mock.On("WithDedupLocks", ctx, entityHashes, fn)}
+}
+
+func (_c *Repository_WithDedupLocks_Call) Run(run func(ctx context.Context, entityHashes []string, fn func(ops.DedupRepository) error)) *Repository_WithDedupLocks_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].([]string), args[2].(func(ops.DedupRepository) error))
+	})
+	return _c
+}
+
+func (_c *Repository_WithDedupLocks_Call) Return(_a0 error) *Repository_WithDedupLocks_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *Repository_WithDedupLocks_Call) RunAndReturn(run func(context.Context, []string, func(ops.DedupRepository) error) error) *Repository_WithDedupLocks_Call {
 	_c.Call.Return(run)
 	return _c
 }

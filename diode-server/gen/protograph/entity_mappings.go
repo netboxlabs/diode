@@ -207,6 +207,26 @@ func CreateEntityFromInterface(fieldValue any) *diodepb.Entity {
 		return &diodepb.Entity{Entity: &diodepb.Entity_OwnerGroup{OwnerGroup: v}}
 	case *diodepb.DeviceConfig:
 		return &diodepb.Entity{Entity: &diodepb.Entity_DeviceConfig{DeviceConfig: v}}
+	case *diodepb.CableBundle:
+		return &diodepb.Entity{Entity: &diodepb.Entity_CableBundle{CableBundle: v}}
+	case *diodepb.RackGroup:
+		return &diodepb.Entity{Entity: &diodepb.Entity_RackGroup{RackGroup: v}}
+	case *diodepb.ScriptModule:
+		return &diodepb.Entity{Entity: &diodepb.Entity_ScriptModule{ScriptModule: v}}
+	case *diodepb.VirtualMachineType:
+		return &diodepb.Entity{Entity: &diodepb.Entity_VirtualMachineType{VirtualMachineType: v}}
+	case *diodepb.User:
+		return &diodepb.Entity{Entity: &diodepb.Entity_User{User: v}}
+	case *diodepb.CoolingFeed:
+		return &diodepb.Entity{Entity: &diodepb.Entity_CoolingFeed{CoolingFeed: v}}
+	case *diodepb.CoolingIntake:
+		return &diodepb.Entity{Entity: &diodepb.Entity_CoolingIntake{CoolingIntake: v}}
+	case *diodepb.CoolingOutflow:
+		return &diodepb.Entity{Entity: &diodepb.Entity_CoolingOutflow{CoolingOutflow: v}}
+	case *diodepb.CoolingSource:
+		return &diodepb.Entity{Entity: &diodepb.Entity_CoolingSource{CoolingSource: v}}
+	case *diodepb.ModuleBayType:
+		return &diodepb.Entity{Entity: &diodepb.Entity_ModuleBayType{ModuleBayType: v}}
 	default:
 		return nil
 	}
@@ -412,6 +432,26 @@ func GetEntityTypeName(fieldValue any) string {
 		return "OwnerGroup"
 	case *diodepb.DeviceConfig:
 		return "DeviceConfig"
+	case *diodepb.CableBundle:
+		return "CableBundle"
+	case *diodepb.RackGroup:
+		return "RackGroup"
+	case *diodepb.ScriptModule:
+		return "ScriptModule"
+	case *diodepb.VirtualMachineType:
+		return "VirtualMachineType"
+	case *diodepb.User:
+		return "User"
+	case *diodepb.CoolingFeed:
+		return "CoolingFeed"
+	case *diodepb.CoolingIntake:
+		return "CoolingIntake"
+	case *diodepb.CoolingOutflow:
+		return "CoolingOutflow"
+	case *diodepb.CoolingSource:
+		return "CoolingSource"
+	case *diodepb.ModuleBayType:
+		return "ModuleBayType"
 	default:
 		return "unknown"
 	}
@@ -616,6 +656,26 @@ func IsKnownEntityType(fieldValue any) bool {
 		return true
 	case *diodepb.DeviceConfig:
 		return true
+	case *diodepb.CableBundle:
+		return true
+	case *diodepb.RackGroup:
+		return true
+	case *diodepb.ScriptModule:
+		return true
+	case *diodepb.VirtualMachineType:
+		return true
+	case *diodepb.User:
+		return true
+	case *diodepb.CoolingFeed:
+		return true
+	case *diodepb.CoolingIntake:
+		return true
+	case *diodepb.CoolingOutflow:
+		return true
+	case *diodepb.CoolingSource:
+		return true
+	case *diodepb.ModuleBayType:
+		return true
 	default:
 		return false
 	}
@@ -721,6 +781,16 @@ func GetAllEntityTypes() []string {
 		"Owner",
 		"OwnerGroup",
 		"DeviceConfig",
+		"CableBundle",
+		"RackGroup",
+		"ScriptModule",
+		"VirtualMachineType",
+		"User",
+		"CoolingFeed",
+		"CoolingIntake",
+		"CoolingOutflow",
+		"CoolingSource",
+		"ModuleBayType",
 	}
 }
 
@@ -766,12 +836,17 @@ func GetNodeTypeForField(fieldName string) string {
 		"Asns":                    "ASN",
 		"Assignments":             "CircuitGroupAssignment",
 		"Bridge":                  "Interface",
+		"Bundle":                  "CableBundle",
 		"Cable":                   "Cable",
 		"ChoiceSet":               "CustomFieldChoiceSet",
 		"Circuit":                 "Circuit",
 		"Cluster":                 "Cluster",
 		"Config":                  "DeviceConfig",
 		"Contact":                 "Contact",
+		"CoolingIntake":           "CoolingIntake",
+		"CoolingOutflow":          "CoolingOutflow",
+		"CoolingSource":           "CoolingSource",
+		"CreatedBy":               "User",
 		"DefaultPlatform":         "Platform",
 		"Device":                  "Device",
 		"DeviceType":              "DeviceType",
@@ -795,6 +870,7 @@ func GetNodeTypeForField(fieldName string) string {
 		"Master":                  "Device",
 		"Module":                  "Module",
 		"ModuleBay":               "ModuleBay",
+		"ModuleBayTypes":          "ModuleBayType",
 		"ModuleType":              "ModuleType",
 		"NatInside":               "IPAddress",
 		"OobIp":                   "IPAddress",
@@ -819,7 +895,7 @@ func GetNodeTypeForField(fieldName string) string {
 		"RearPort":                "RearPort",
 		"Region":                  "Region",
 		"Rir":                     "RIR",
-		"Role":                    "ContactRole",
+		"Role":                    "Role",
 		"Site":                    "Site",
 		"Sites":                   "Site",
 		"TaggedVlans":             "VLAN",
@@ -828,10 +904,13 @@ func GetNodeTypeForField(fieldName string) string {
 		"Tunnel":                  "Tunnel",
 		"Type":                    "CircuitType",
 		"UntaggedVlan":            "VLAN",
+		"User":                    "User",
+		"Users":                   "User",
 		"Vdcs":                    "VirtualDeviceContext",
 		"VirtualChassis":          "VirtualChassis",
 		"VirtualCircuit":          "VirtualCircuit",
 		"VirtualMachine":          "VirtualMachine",
+		"VirtualMachineType":      "VirtualMachineType",
 		"Vlan":                    "VLAN",
 		"VlanTranslationPolicy":   "VLANTranslationPolicy",
 		"Vrf":                     "VRF",
@@ -840,12 +919,17 @@ func GetNodeTypeForField(fieldName string) string {
 		"asns":                    "ASN",
 		"assignments":             "CircuitGroupAssignment",
 		"bridge":                  "Interface",
+		"bundle":                  "CableBundle",
 		"cable":                   "Cable",
 		"choice_set":              "CustomFieldChoiceSet",
 		"circuit":                 "Circuit",
 		"cluster":                 "Cluster",
 		"config":                  "DeviceConfig",
 		"contact":                 "Contact",
+		"cooling_intake":          "CoolingIntake",
+		"cooling_outflow":         "CoolingOutflow",
+		"cooling_source":          "CoolingSource",
+		"created_by":              "User",
 		"default_platform":        "Platform",
 		"device":                  "Device",
 		"device_type":             "DeviceType",
@@ -869,6 +953,7 @@ func GetNodeTypeForField(fieldName string) string {
 		"master":                  "Device",
 		"module":                  "Module",
 		"module_bay":              "ModuleBay",
+		"module_bay_types":        "ModuleBayType",
 		"module_type":             "ModuleType",
 		"nat_inside":              "IPAddress",
 		"oob_ip":                  "IPAddress",
@@ -893,7 +978,7 @@ func GetNodeTypeForField(fieldName string) string {
 		"rear_port":               "RearPort",
 		"region":                  "Region",
 		"rir":                     "RIR",
-		"role":                    "ContactRole",
+		"role":                    "Role",
 		"site":                    "Site",
 		"sites":                   "Site",
 		"tagged_vlans":            "VLAN",
@@ -902,10 +987,13 @@ func GetNodeTypeForField(fieldName string) string {
 		"tunnel":                  "Tunnel",
 		"type":                    "CircuitType",
 		"untagged_vlan":           "VLAN",
+		"user":                    "User",
+		"users":                   "User",
 		"vdcs":                    "VirtualDeviceContext",
 		"virtual_chassis":         "VirtualChassis",
 		"virtual_circuit":         "VirtualCircuit",
 		"virtual_machine":         "VirtualMachine",
+		"virtual_machine_type":    "VirtualMachineType",
 		"vlan":                    "VLAN",
 		"vlan_translation_policy": "VLANTranslationPolicy",
 		"vrf":                     "VRF",
