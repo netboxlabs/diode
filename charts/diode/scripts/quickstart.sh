@@ -248,10 +248,10 @@ fi
 
 echo "----------------------------------------"
 ok "Environment setup completed!"
-info "Configure the NetBox Diode plugin in configuration.py with:"
-info "  netbox_to_diode_client_secret: $NETBOX_TO_DIODE_CLIENT_SECRET"
+info "Add the following to PLUGINS_CONFIG[\"netbox_diode_plugin\"] in configuration.py:"
+info "  \"netbox_to_diode_client_secret\": \"$NETBOX_TO_DIODE_CLIENT_SECRET\","
 info "That is the $NETBOX_TO_DIODE_CLIENT_ID client secret, not the ingest one."
-info "diode_target_override must point at the ingress, reachable from NetBox."
+info "Set \"diode_target_override\" to the ingress address, reachable from NetBox."
 echo
 info "You can now install the diode helm chart by running:"
 if [[ "$CLUSTER_DOMAIN" == "cluster.local" ]]; then
