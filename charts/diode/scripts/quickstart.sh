@@ -226,8 +226,19 @@ else
     fi
 fi
 
+# The NetBox Diode plugin authenticates as netbox-to-diode, a different client
+# to the ingest one used by orb-agent. Surfacing it here avoids pasting the
+# wrong secret and hitting "Failed to obtain access token".
+NETBOX_TO_DIODE_CLIENT_ID="netbox-to-diode"
+NETBOX_TO_DIODE_CLIENT_SECRET=$(jq -r '.[] | select(.client_id == "'$NETBOX_TO_DIODE_CLIENT_ID'") | .client_secret' "$PWD/client-credentials.json")
+
 echo "----------------------------------------"
 ok "Environment setup completed!"
+info "Configure the NetBox Diode plugin in configuration.py with:"
+info "  netbox_to_diode_client_secret: $NETBOX_TO_DIODE_CLIENT_SECRET"
+info "That is the $NETBOX_TO_DIODE_CLIENT_ID client secret, not the ingest one."
+info "diode_target_override must point at the ingress, reachable from NetBox."
+echo
 info "You can now install the diode helm chart by running:"
 if [[ "$CLUSTER_DOMAIN" == "cluster.local" ]]; then
     info "  helm install <RELEASE_NAME> diode/diode --namespace $NAMESPACE"
