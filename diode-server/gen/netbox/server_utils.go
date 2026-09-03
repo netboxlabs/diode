@@ -1,6 +1,6 @@
 // Generated code. DO NOT EDIT.
-// Source: NetBox v4.6.0
-// Timestamp: 2026-07-08 14:57:56Z
+// Source: NetBox v4.7.0
+// Timestamp: 2026-09-02 20:52:39Z
 package netbox
 
 import (
@@ -209,6 +209,16 @@ const (
 	VirtualMachineTypeObjectTypeName        = "Virtual Machine Type"
 	UserObjectType                          = "users.user"
 	UserObjectTypeName                      = "User"
+	CoolingFeedObjectType                   = "dcim.coolingfeed"
+	CoolingFeedObjectTypeName               = "Cooling Feed"
+	CoolingIntakeObjectType                 = "dcim.coolingintake"
+	CoolingIntakeObjectTypeName             = "Cooling Intake"
+	CoolingOutflowObjectType                = "dcim.coolingoutflow"
+	CoolingOutflowObjectTypeName            = "Cooling Outflow"
+	CoolingSourceObjectType                 = "dcim.coolingsource"
+	CoolingSourceObjectTypeName             = "Cooling Source"
+	ModuleBayTypeObjectType                 = "dcim.modulebaytype"
+	ModuleBayTypeObjectTypeName             = "Module Bay Type"
 	DeviceConfigObjectType                  = "dcim.deviceconfig"
 	DeviceConfigObjectTypeName              = "Device Config"
 )
@@ -314,6 +324,11 @@ var entityTypeMap = map[reflect.Type]string{
 	reflect.TypeOf((*pb.Entity_ScriptModule)(nil)):              ScriptModuleObjectType,
 	reflect.TypeOf((*pb.Entity_VirtualMachineType)(nil)):        VirtualMachineTypeObjectType,
 	reflect.TypeOf((*pb.Entity_User)(nil)):                      UserObjectType,
+	reflect.TypeOf((*pb.Entity_CoolingFeed)(nil)):               CoolingFeedObjectType,
+	reflect.TypeOf((*pb.Entity_CoolingIntake)(nil)):             CoolingIntakeObjectType,
+	reflect.TypeOf((*pb.Entity_CoolingOutflow)(nil)):            CoolingOutflowObjectType,
+	reflect.TypeOf((*pb.Entity_CoolingSource)(nil)):             CoolingSourceObjectType,
+	reflect.TypeOf((*pb.Entity_ModuleBayType)(nil)):             ModuleBayTypeObjectType,
 }
 
 func GetObjectType(entity *pb.Entity) (string, error) {
@@ -524,6 +539,16 @@ func GetObjectTypeName(objectType string) (string, error) {
 		return VirtualMachineTypeObjectTypeName, nil
 	case UserObjectType:
 		return UserObjectTypeName, nil
+	case CoolingFeedObjectType:
+		return CoolingFeedObjectTypeName, nil
+	case CoolingIntakeObjectType:
+		return CoolingIntakeObjectTypeName, nil
+	case CoolingOutflowObjectType:
+		return CoolingOutflowObjectTypeName, nil
+	case CoolingSourceObjectType:
+		return CoolingSourceObjectTypeName, nil
+	case ModuleBayTypeObjectType:
+		return ModuleBayTypeObjectTypeName, nil
 	case DeviceConfigObjectType:
 		return DeviceConfigObjectTypeName, nil
 	default:
@@ -561,6 +586,14 @@ func GetPrimaryValue(entity *pb.Entity) (string, error) {
 		return fmt.Sprintf("%v", e.ContactGroup.Name), nil
 	case *pb.Entity_ContactRole:
 		return fmt.Sprintf("%v", e.ContactRole.Name), nil
+	case *pb.Entity_CoolingFeed:
+		return fmt.Sprintf("%v", e.CoolingFeed.Name), nil
+	case *pb.Entity_CoolingIntake:
+		return fmt.Sprintf("%v", e.CoolingIntake.Name), nil
+	case *pb.Entity_CoolingOutflow:
+		return fmt.Sprintf("%v", e.CoolingOutflow.Name), nil
+	case *pb.Entity_CoolingSource:
+		return fmt.Sprintf("%v", e.CoolingSource.Name), nil
 	case *pb.Entity_CustomField:
 		return fmt.Sprintf("%v", e.CustomField.Name), nil
 	case *pb.Entity_CustomFieldChoiceSet:
@@ -607,6 +640,8 @@ func GetPrimaryValue(entity *pb.Entity) (string, error) {
 		return fmt.Sprintf("%v", e.Manufacturer.Name), nil
 	case *pb.Entity_ModuleBay:
 		return fmt.Sprintf("%v", e.ModuleBay.Name), nil
+	case *pb.Entity_ModuleBayType:
+		return fmt.Sprintf("%v", e.ModuleBayType.Name), nil
 	case *pb.Entity_ModuleType:
 		return fmt.Sprintf("%v", e.ModuleType.Model), nil
 	case *pb.Entity_ModuleTypeProfile:
