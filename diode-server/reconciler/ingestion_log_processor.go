@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -86,6 +87,11 @@ type IngestionLogProcessor struct {
 	workCancel context.CancelFunc
 	pollCancel context.CancelFunc
 	done       chan struct{}
+
+	// coldBranchLogged keeps the cold-cache warning to one line per cold
+	// period. The gate is re-evaluated every poll interval by every worker,
+	// and a misconfigured client keeps it cold indefinitely.
+	coldBranchLogged atomic.Bool
 
 	batchSize int32
 }
@@ -225,6 +231,25 @@ func (p *IngestionLogProcessor) pollWorker(pollCtx, workCtx context.Context) {
 			case <-time.After(defaultIngestionLogIdleInterval):
 				continue
 			}
+		}
+
+		// A cold default-branch cache is indistinguishable from "no default
+		// branch" at the point of use, so claiming work now would plan and
+		// apply it against main and bypass the branch's approval boundary.
+		// Hold off instead; the refresher is retrying with backoff.
+		if !p.ops.HasBranchLoaded() {
+			if !p.coldBranchLogged.Swap(true) {
+				p.logger.Warn("default branch not yet known; deferring change set generation until it is known")
+			}
+			select {
+			case <-pollCtx.Done():
+				return
+			case <-time.After(defaultIngestionLogIdleInterval):
+				continue
+			}
+		}
+		if p.coldBranchLogged.CompareAndSwap(true, false) {
+			p.logger.Info("default branch known; resuming change set generation")
 		}
 
 		// Claim + process run on workCtx so they survive pollCtx cancel.

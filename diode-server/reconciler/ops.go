@@ -27,6 +27,15 @@ const (
 
 	// DefaultBranchFetchTimeout bounds each refresh attempt; matches the bulk-plan-apply client timeout.
 	DefaultBranchFetchTimeout = 30 * time.Second
+
+	// initialBranchRetryInterval is the first backoff between initial-fetch attempts.
+	// The boot race against OAuth bootstrap resolves in seconds, so waiting a full
+	// DefaultBranchRefreshInterval before retrying would keep the cache cold — and
+	// processors idle — far longer than necessary.
+	initialBranchRetryInterval = time.Second
+
+	// maxInitialBranchRetryInterval caps that backoff.
+	maxInitialBranchRetryInterval = 30 * time.Second
 )
 
 // Limits is an interface that provides limits for the reconciler operations to enforce
@@ -90,7 +99,7 @@ func (o *Ops) Start(ctx context.Context) {
 }
 
 func (o *Ops) runBranchRefresher(ctx context.Context) {
-	o.fetchAndStoreBranch(ctx)
+	o.fetchInitialBranch(ctx)
 
 	ticker := time.NewTicker(DefaultBranchRefreshInterval)
 	defer ticker.Stop()
@@ -107,7 +116,28 @@ func (o *Ops) runBranchRefresher(ctx context.Context) {
 	}
 }
 
-func (o *Ops) fetchAndStoreBranch(ctx context.Context) {
+// fetchInitialBranch retries the first fetch with backoff until it records a
+// result. Until it does the cache stays cold, and processors hold off rather
+// than planning and applying against no branch.
+func (o *Ops) fetchInitialBranch(ctx context.Context) {
+	backoff := initialBranchRetryInterval
+
+	for !o.fetchAndStoreBranch(ctx) {
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(backoff):
+		}
+
+		if backoff < maxInitialBranchRetryInterval {
+			backoff = min(backoff*2, maxInitialBranchRetryInterval)
+		}
+	}
+}
+
+// fetchAndStoreBranch reports whether it recorded a result, i.e. whether the
+// cache is warm afterwards.
+func (o *Ops) fetchAndStoreBranch(ctx context.Context) bool {
 	fetchCtx, cancel := context.WithTimeout(ctx, DefaultBranchFetchTimeout)
 	defer cancel()
 
@@ -117,7 +147,7 @@ func (o *Ops) fetchAndStoreBranch(ctx context.Context) {
 			// Older plugin version — there is no default-branch endpoint.
 			// Remember nil so we don't keep retrying frivolously.
 			o.setBranch(nil)
-			return
+			return true
 		}
 		// Transient failure (auth, network, NetBox down). Leave the
 		// last-known value in place; consume loop and AutoApply keep
@@ -126,9 +156,10 @@ func (o *Ops) fetchAndStoreBranch(ctx context.Context) {
 			"error", err,
 			"have_value", o.HasBranchLoaded(),
 		)
-		return
+		return false
 	}
 	o.setBranch(branch)
+	return true
 }
 
 func (o *Ops) setBranch(b *netboxdiodeplugin.Branch) {

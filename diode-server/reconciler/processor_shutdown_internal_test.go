@@ -62,6 +62,7 @@ func withShortGracefulShutdown(t *testing.T, d time.Duration) {
 func TestAutoApplyProcessor_StopWaitsForInFlightBatch(t *testing.T) {
 	repo := mocks.NewRepository(t)
 	mockOps := mocks.NewIngestionProcessorOps(t)
+	mockOps.On("HasBranchLoaded").Return(true).Maybe()
 	mockMetrics := mocks.NewMetrics(t)
 
 	batch := []ops.QueuedIngestionLog{{ID: 1, IngestionLog: newShutdownTestIngestionLog()}}
@@ -147,6 +148,7 @@ func TestAutoApplyProcessor_StopWaitsForInFlightBatch(t *testing.T) {
 func TestAutoApplyProcessor_ParentCancelWaitsForInFlightBatch(t *testing.T) {
 	repo := mocks.NewRepository(t)
 	mockOps := mocks.NewIngestionProcessorOps(t)
+	mockOps.On("HasBranchLoaded").Return(true).Maybe()
 	mockMetrics := mocks.NewMetrics(t)
 
 	batch := []ops.QueuedIngestionLog{{ID: 1, IngestionLog: newShutdownTestIngestionLog()}}
@@ -213,6 +215,7 @@ func TestAutoApplyProcessor_ForceCancelAfterTimeout(t *testing.T) {
 
 	repo := mocks.NewRepository(t)
 	mockOps := mocks.NewIngestionProcessorOps(t)
+	mockOps.On("HasBranchLoaded").Return(true).Maybe()
 	mockMetrics := mocks.NewMetrics(t)
 
 	batch := []ops.QueuedIngestionLog{{ID: 1, IngestionLog: newShutdownTestIngestionLog()}}
@@ -280,6 +283,7 @@ func TestAutoApplyProcessor_StopBeforeStartIsSafe(t *testing.T) {
 func TestIngestionLogProcessor_StopWaitsForInFlightBatch(t *testing.T) {
 	repo := mocks.NewRepository(t)
 	mockOps := mocks.NewIngestionProcessorOps(t)
+	mockOps.On("HasBranchLoaded").Return(true).Maybe()
 	mockMetrics := mocks.NewMetrics(t)
 
 	batch := []ops.QueuedIngestionLog{{ID: 1, IngestionLog: newShutdownTestIngestionLog()}}
@@ -352,6 +356,7 @@ func TestIngestionLogProcessor_StopWaitsForInFlightBatch(t *testing.T) {
 func TestIngestionLogProcessor_ParentCancelWaitsForInFlightBatch(t *testing.T) {
 	repo := mocks.NewRepository(t)
 	mockOps := mocks.NewIngestionProcessorOps(t)
+	mockOps.On("HasBranchLoaded").Return(true).Maybe()
 	mockMetrics := mocks.NewMetrics(t)
 
 	batch := []ops.QueuedIngestionLog{{ID: 1, IngestionLog: newShutdownTestIngestionLog()}}
@@ -408,6 +413,7 @@ func TestIngestionLogProcessor_ForceCancelAfterTimeout(t *testing.T) {
 
 	repo := mocks.NewRepository(t)
 	mockOps := mocks.NewIngestionProcessorOps(t)
+	mockOps.On("HasBranchLoaded").Return(true).Maybe()
 	mockMetrics := mocks.NewMetrics(t)
 
 	batch := []ops.QueuedIngestionLog{{ID: 1, IngestionLog: newShutdownTestIngestionLog()}}
