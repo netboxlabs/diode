@@ -192,14 +192,28 @@ fi
 DIODE_NGINX_PORT=$(grep -oP 'DIODE_NGINX_PORT=\K[0-9]+' "$ENV_FILE" 2>/dev/null || echo "8080")
 DIODE_TARGET="grpc://localhost:$DIODE_NGINX_PORT/diode"
 
-# Get diode-ingest client credentials
+# Get diode-ingest client credentials, used by orb-agent to ingest data
 DIODE_INGEST_CLIENT_ID="diode-ingest"
 DIODE_INGEST_CLIENT_SECRET=$(jq -r '.[] | select(.client_id == "'$DIODE_INGEST_CLIENT_ID'") | .client_secret' oauth2/client/client-credentials.json)
+
+# Get netbox-to-diode client credentials, used by the NetBox Diode plugin. These
+# are a different client to the ingest one above; pasting the ingest secret into
+# the plugin fails with "Failed to obtain access token".
+NETBOX_TO_DIODE_CLIENT_ID="netbox-to-diode"
+NETBOX_TO_DIODE_CLIENT_SECRET=$(jq -r '.[] | select(.client_id == "'$NETBOX_TO_DIODE_CLIENT_ID'") | .client_secret' oauth2/client/client-credentials.json)
 
 echo "----------------------------------------"
 ok "Environment setup completed!"
 info "You can now start the diode by running:"
 info "  $DOCKER_COMPOSE up -d"
+echo
 info "Configure orb-agent with diode target $DIODE_TARGET to use the following credentials:"
 info "  DIODE_CLIENT_ID:     $DIODE_INGEST_CLIENT_ID"
 info "  DIODE_CLIENT_SECRET: $DIODE_INGEST_CLIENT_SECRET"
+echo
+info "Add the following to PLUGINS_CONFIG[\"netbox_diode_plugin\"] in configuration.py:"
+info "  \"netbox_to_diode_client_secret\": \"$NETBOX_TO_DIODE_CLIENT_SECRET\","
+info "  \"diode_target_override\": \"grpc://<diode-host>:$DIODE_NGINX_PORT/diode\","
+info "That is the $NETBOX_TO_DIODE_CLIENT_ID client secret, not the ingest one above."
+info "Replace <diode-host> with an address reachable from NetBox. localhost only"
+info "works when NetBox runs directly on this host, outside a container."
