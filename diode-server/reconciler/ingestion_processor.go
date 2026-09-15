@@ -266,7 +266,13 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 		errs = append(errs, createIngestionLogsErrs...)
 	}
 
+	// Ack and delete regardless of outcome. Acknowledged entries are never
+	// re-read (the consume loop only asks for undelivered entries), so keeping
+	// a failed one serves no purpose, while it still counts toward XLEN. Enough
+	// of them would trip the stream-length backpressure gate permanently and
+	// stall the database processors with nothing left to drain.
 	p.redisStreamClient.XAck(ctx, p.redisStreamID, p.redisConsumerGroup, msg.ID)
+	p.redisStreamClient.XDel(ctx, p.redisStreamID, msg.ID)
 
 	if len(errs) > 0 {
 		errsStr := make([]string, 0)
@@ -283,7 +289,6 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 		sentry.CaptureError(fmt.Errorf("failed to handle ingest request: %v", errs), nil, "Ingestion request", contextMap)
 		p.metrics.RecordHandleMessage(ctx, false)
 	} else {
-		p.redisStreamClient.XDel(ctx, p.redisStreamID, msg.ID)
 		p.metrics.RecordHandleMessage(ctx, true)
 	}
 

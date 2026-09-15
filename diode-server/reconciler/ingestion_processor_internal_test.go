@@ -342,3 +342,55 @@ func TestCompressChangeSet(t *testing.T) {
 	require.Equal(t, csJSON, decodedOutput.Bytes())
 	require.Contains(t, decodedOutput.String(), "5663a77e-9bad-4981-afe9-77d8a9f2b8b5")
 }
+
+// A message whose ingestion_logs write fails is acknowledged and never
+// re-read, so it must also be deleted. Left in place it still counts toward
+// XLEN, and once enough accumulate the stream-length backpressure gate closes
+// for good with nothing left to drain.
+func TestHandleStreamMessageDeletesEntryWhenIngestionLogsFail(t *testing.T) {
+	ctx := context.Background()
+	mockRedisStreamClient := new(mr.RedisClient)
+	mockNbClient := new(mnp.NetBoxAPI)
+	mockRepository := new(mr.Repository)
+	mockMetrics := mr.NewMetrics(t)
+	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))
+
+	p := &IngestionProcessor{
+		redisStreamClient:  mockRedisStreamClient,
+		redisStreamID:      "test-stream",
+		redisConsumerGroup: "test-group",
+		logger:             logger,
+		ops:                NewOps(mockRepository, mockNbClient, logger, nil),
+		metrics:            mockMetrics,
+	}
+
+	reqBytes, err := proto.Marshal(&diodepb.IngestRequest{
+		Id:       "req-fail",
+		Entities: []*diodepb.Entity{{Entity: &diodepb.Entity_Site{Site: &diodepb.Site{Name: "site"}}}},
+	})
+	require.NoError(t, err)
+	msg := redis.XMessage{
+		ID:     "1700000000000-0",
+		Values: map[string]interface{}{"request": string(reqBytes), "ingestion_ts": "1720425600"},
+	}
+
+	mockNbClient.On("GetDefaultBranch", mock.Anything).Return((*netboxdiodeplugin.Branch)(nil), nil)
+	mockRepository.EXPECT().WithDedupLocks(mock.Anything, mock.Anything, mock.Anything).
+		RunAndReturn(func(_ context.Context, _ []string, fn func(ops.DedupRepository) error) error {
+			return fn(mockRepository)
+		})
+	mockRepository.On("FindPriorIngestionLogsByEntityHashes", mock.Anything, mock.Anything, mock.Anything).Return(map[string]*ops.PriorIngestionLog{}, nil)
+	mockRepository.On("BulkCreateIngestionLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+		Return(nil, errors.New("connection refused"))
+	mockRedisStreamClient.On("XAck", mock.Anything, "test-stream", "test-group", msg.ID).Return(redis.NewIntCmd(ctx))
+	mockRedisStreamClient.On("XDel", mock.Anything, "test-stream", msg.ID).Return(redis.NewIntCmd(ctx))
+	mockMetrics.On("RecordIngestionLogCreate", mock.Anything, false).Return()
+	mockMetrics.On("RecordHandleMessage", mock.Anything, false).Return()
+
+	// The failure is logged and reported, not returned: returning it would
+	// stop the consume loop.
+	require.NoError(t, p.handleStreamMessage(ctx, msg))
+
+	mockRedisStreamClient.AssertCalled(t, "XAck", mock.Anything, "test-stream", "test-group", msg.ID)
+	mockRedisStreamClient.AssertCalled(t, "XDel", mock.Anything, "test-stream", msg.ID)
+}
