@@ -271,8 +271,17 @@ func (p *IngestionProcessor) handleStreamMessage(ctx context.Context, msg redis.
 	// a failed one serves no purpose, while it still counts toward XLEN. Enough
 	// of them would trip the stream-length backpressure gate permanently and
 	// stall the database processors with nothing left to drain.
-	p.redisStreamClient.XAck(ctx, p.redisStreamID, p.redisConsumerGroup, msg.ID)
-	p.redisStreamClient.XDel(ctx, p.redisStreamID, msg.ID)
+	//
+	// The client already retries transient command failures. Anything that
+	// still fails is logged rather than swallowed: an entry left behind here
+	// is invisible otherwise, and it keeps counting toward the gate.
+	if err := p.redisStreamClient.XAck(ctx, p.redisStreamID, p.redisConsumerGroup, msg.ID).Err(); err != nil {
+		p.logger.Warn("failed to ack stream entry", "error", err, "redis_stream_msg_id", msg.ID)
+	}
+	if err := p.redisStreamClient.XDel(ctx, p.redisStreamID, msg.ID).Err(); err != nil {
+		p.logger.Warn("failed to delete stream entry, it stays counted toward the backpressure threshold",
+			"error", err, "redis_stream_msg_id", msg.ID)
+	}
 
 	if len(errs) > 0 {
 		errsStr := make([]string, 0)
