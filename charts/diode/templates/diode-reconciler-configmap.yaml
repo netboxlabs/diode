@@ -33,7 +33,6 @@ data:
   DIODE_TO_NETBOX_RATE_LIMITER_BURST: {{ $config.diodeToNetboxRateLimiterBurst | default "1" | quote }}
   INGESTION_LOG_PROCESSOR_CONCURRENCY: {{ $config.ingestionLogProcessorConcurrency | default "4" | quote }}
   INGESTION_LOG_PROCESSOR_BATCH_SIZE: {{ $config.ingestionLogProcessorBatchSize | default "400" | quote }}
-  {{- /* Not piped through `default`: it treats 0 as unset, and 0 is the documented way to disable the check. */}}
   {{- if hasKey $config "ingestionLogProcessorBackpressureThreshold" }}
   INGESTION_LOG_PROCESSOR_BACKPRESSURE_THRESHOLD: {{ $config.ingestionLogProcessorBackpressureThreshold | quote }}
   {{- else }}
