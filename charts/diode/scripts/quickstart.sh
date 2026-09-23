@@ -226,8 +226,33 @@ else
     fi
 fi
 
+# The NetBox Diode plugin authenticates as netbox-to-diode, a different client
+# to the ingest one used by orb-agent. Surfacing it here avoids pasting the
+# wrong secret and hitting "Failed to obtain access token".
+NETBOX_TO_DIODE_CLIENT_ID="netbox-to-diode"
+
+# Read it from the deployed Secret rather than the local file. When the Secret
+# already existed we skipped creating it above, so a client-credentials.json
+# regenerated in a fresh working directory holds values that were never applied
+# to the cluster; printing those would hand out a credential that cannot
+# authenticate. Fall back to the local file only when the Secret is unreadable.
+NETBOX_TO_DIODE_CLIENT_SECRET=$(kubectl get secret "$DIODE_AUTH_OAUTH2_SECRET" -n "$NAMESPACE" \
+  -o jsonpath='{.data.client-credentials\.json}' 2>/dev/null | base64 -d 2>/dev/null \
+  | jq -r --arg id "$NETBOX_TO_DIODE_CLIENT_ID" \
+      'try (.[] | select(.client_id == $id) | .client_secret) // empty' 2>/dev/null)
+
+if [[ -z "$NETBOX_TO_DIODE_CLIENT_SECRET" ]]; then
+    NETBOX_TO_DIODE_CLIENT_SECRET=$(jq -r --arg id "$NETBOX_TO_DIODE_CLIENT_ID" \
+      '.[] | select(.client_id == $id) | .client_secret' "$PWD/client-credentials.json")
+fi
+
 echo "----------------------------------------"
 ok "Environment setup completed!"
+info "Add the following to PLUGINS_CONFIG[\"netbox_diode_plugin\"] in configuration.py:"
+info "  \"netbox_to_diode_client_secret\": \"$NETBOX_TO_DIODE_CLIENT_SECRET\","
+info "That is the $NETBOX_TO_DIODE_CLIENT_ID client secret, not the ingest one."
+info "Set \"diode_target_override\" to the ingress address, reachable from NetBox."
+echo
 info "You can now install the diode helm chart by running:"
 if [[ "$CLUSTER_DOMAIN" == "cluster.local" ]]; then
     info "  helm install <RELEASE_NAME> diode/diode --namespace $NAMESPACE"

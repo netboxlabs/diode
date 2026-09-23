@@ -5,6 +5,9 @@ global:
     busybox:
       image: busybox:latest
       imagePullPolicy: IfNotPresent
+      # -- resources for the wait-for-* busybox init containers (wait-for-redis,
+      # wait-for-postgres, wait-for-oauth2-server)
+      resources: {}
     # -- hydra additional init containers configuration
     hydra:
       # -- wait for PostgreSQL to be reachable
@@ -107,6 +110,8 @@ diodeAuth:
     create: true
   # -- port to listen on
   containerPort: 8080
+  # -- pod-level security context
+  podSecurityContext: {}
   # -- resources
   resources:
     requests:
@@ -157,6 +162,12 @@ diodeAuthBootstrap:
     annotations:
       "helm.sh/hook": post-install, post-upgrade
       "helm.sh/hook-weight": "2"
+    # -- pod-level security context
+    podSecurityContext: {}
+    # -- container-level security context
+    securityContext: {}
+    # -- resources
+    resources: {}
     # -- (string or list) additional initContainers to run during bootstrap (may contain templating instructions)
     extraInitContainers: ""
     # -- (string or list) additional volumes to define for the container (may contain templating instructions)
@@ -186,6 +197,8 @@ diodeIngester:
   existingSecret: diode-ingester-secret
   # -- port to listen on
   containerPort: 8081
+  # -- pod-level security context
+  podSecurityContext: {}
   # -- resources
   resources:
     requests:
@@ -250,6 +263,8 @@ diodeReconciler:
   existingSecret: diode-reconciler-secret
   # -- port to listen on
   containerPort: 8081
+  # -- pod-level security context
+  podSecurityContext: {}
   # -- resources
   resources:
     requests:

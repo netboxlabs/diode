@@ -90,6 +90,11 @@ We provide a `quickstart.sh` script to automate the setup process. The script wi
    }
    ```
 
+   `diode_target_override` must be an address reachable **from inside NetBox**.
+   If NetBox itself runs in a container, `localhost` resolves to that container
+   rather than to the Diode server, so use the host's IP address or FQDN
+   instead, for example `grpc://192.168.1.10:8080/diode`.
+
 4. **Apply Database Migrations**
    ```bash
    cd /opt/netbox/netbox

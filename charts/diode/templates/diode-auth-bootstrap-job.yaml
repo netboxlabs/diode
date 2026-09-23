@@ -29,11 +29,19 @@ spec:
       imagePullSecrets:
         {{- toYaml .Values.diodeAuthBootstrap.image.imagePullSecrets | nindent 8 }}
       {{- end }}
+      {{- with .Values.diodeAuthBootstrap.job.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       initContainers:
         {{- if .Values.hydra.enabled }}
         - name: wait-for-oauth2-server
           image: {{ include "diode.busybox.image" . }}
           imagePullPolicy: {{ include "diode.busybox.imagepullpolicy" . }}
+          {{- with .Values.global.diode.busybox.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           command:
             - sh
             - -c
@@ -54,6 +62,14 @@ spec:
           image: "{{ .Values.diodeAuthBootstrap.image.repository }}:{{ .Values.diodeAuthBootstrap.image.tag }}"
           imagePullPolicy: {{ .Values.diodeAuthBootstrap.image.pullPolicy | default "IfNotPresent" }}
           command: ["/bin/sh", "/etc/config/oauth2/bootstrap-clients.sh"]
+          {{- with .Values.diodeAuthBootstrap.job.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.diodeAuthBootstrap.job.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           env:
             - name: HYDRA_ADMIN_URL
               value: {{ include "diode.hydra.admin.url" . }}
@@ -72,4 +88,4 @@ spec:
           secret:
             secretName: {{ include "diode.auth.oauth2.secret" . }}
       restartPolicy: OnFailure
-{{- end }} 
+{{- end }}
