@@ -223,13 +223,7 @@ func main() {
 	// Both processors take a backpressure function so they yield to the Redis
 	// consume loop when the ingest stream is backed up — avoids competing for
 	// Postgres + NetBox capacity while the consume loop is still draining.
-	backpressure := func(ctx context.Context) bool {
-		xlen, err := redisStreamClient.XLen(ctx, reconciler.DefaultRedisStreamID).Result()
-		if err != nil {
-			return false
-		}
-		return xlen > cfg.IngestionLogProcessorBackpressureThreshold
-	}
+	backpressure := reconciler.NewStreamLengthBackpressure(s.Logger(), redisStreamClient, reconciler.DefaultRedisStreamID, cfg.IngestionLogProcessorBackpressureThreshold)
 	if cfg.AutoApplyChangesets {
 		if err := repository.ResetApplyingIngestionLogs(ctx); err != nil {
 			s.Logger().Error("failed to reset applying ingestion logs", "error", err)
