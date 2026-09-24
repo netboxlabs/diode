@@ -83,11 +83,21 @@ default_entity_rules:
         confidence: 0.6
 
   # IP Address matching rules
+  # POC (VRF-aware IP matching): paths are camelCase to match the protojson the
+  # graph actually stores/serialises (`ipAddress`, not `ip_address`), and
+  # `ipAddress.vrf.name` is added so two allocations of the same address in
+  # different VRFs stay distinct nodes. rd is intentionally ignored; VRF name
+  # is sufficient identity. See .session/diode-graph-vrf-proof/PROOF.md.
   IPAddress:
     min_confidence: 0.9
     require_all_primary: true
     primary_rules:
-      - field_path: "ip_address.address"
+      - field_path: "ipAddress.address"
+        match_type: exact
+        weight: 1.0
+        required: true
+        confidence: 0.95
+      - field_path: "ipAddress.vrf.name"
         match_type: exact
         weight: 1.0
         required: true
