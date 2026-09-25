@@ -169,14 +169,8 @@ func NewServer(ctx context.Context, logger *slog.Logger, tokenParser TokenParser
 		},
 		tokenCache: cache,
 		httpServer: &http.Server{
-			Addr: fmt.Sprintf(":%d", cfg.HTTPPort),
-			Handler: otelhttp.NewHandler(mux, "auth-http-server", otelhttp.WithMetricAttributesFn(
-				func(r *http.Request) []attribute.KeyValue {
-					return []attribute.KeyValue{
-						attribute.String("http.route", telemetry.ExtractPathFromPattern(r.Pattern)),
-					}
-				},
-			)),
+			Addr:    fmt.Sprintf(":%d", cfg.HTTPPort),
+			Handler: otelhttp.NewHandler(withRouteLabel(mux), "auth-http-server"),
 		},
 		tokenParser:    tokenParser,
 		clientManager:  clientManager,
@@ -186,6 +180,18 @@ func NewServer(ctx context.Context, logger *slog.Logger, tokenParser TokenParser
 	server.RegisterHandlers()
 
 	return server, nil
+}
+
+// withRouteLabel adds the matched route to the request's otelhttp metric
+// attributes. It has to run after the mux, which is what fills in r.Pattern,
+// and otelhttp reads the labeler once the inner handler has returned.
+func withRouteLabel(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		next.ServeHTTP(w, r)
+		if labeler, ok := otelhttp.LabelerFromContext(r.Context()); ok {
+			labeler.Add(attribute.String("http.route", telemetry.ExtractPathFromPattern(r.Pattern)))
+		}
+	})
 }
 
 // Name returns the name of the server
