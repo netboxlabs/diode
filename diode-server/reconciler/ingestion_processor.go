@@ -83,6 +83,7 @@ type IngestionProcessorOps interface {
 	BulkPlanApply(ctx context.Context, items []ops.QueuedIngestionLog, branchID string) []ops.BulkPlanApplyResult
 	DefaultBranch(ctx context.Context) (*netboxdiodeplugin.Branch, error)
 	RefreshDefaultBranch(ctx context.Context) (*netboxdiodeplugin.Branch, error)
+	HasBranchLoaded() bool
 }
 
 // ProcessorOption is a functional option for configuring IngestionProcessor
