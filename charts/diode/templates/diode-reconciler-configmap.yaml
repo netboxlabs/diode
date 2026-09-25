@@ -33,7 +33,11 @@ data:
   DIODE_TO_NETBOX_RATE_LIMITER_BURST: {{ $config.diodeToNetboxRateLimiterBurst | default "1" | quote }}
   INGESTION_LOG_PROCESSOR_CONCURRENCY: {{ $config.ingestionLogProcessorConcurrency | default "4" | quote }}
   INGESTION_LOG_PROCESSOR_BATCH_SIZE: {{ $config.ingestionLogProcessorBatchSize | default "400" | quote }}
-  INGESTION_LOG_PROCESSOR_BACKPRESSURE_THRESHOLD: {{ $config.ingestionLogProcessorBackpressureThreshold | default "100" | quote }}
+  {{- if hasKey $config "ingestionLogProcessorBackpressureThreshold" }}
+  INGESTION_LOG_PROCESSOR_BACKPRESSURE_THRESHOLD: {{ $config.ingestionLogProcessorBackpressureThreshold | quote }}
+  {{- else }}
+  INGESTION_LOG_PROCESSOR_BACKPRESSURE_THRESHOLD: "100"
+  {{- end }}
   AUTO_APPLY_PROCESSOR_CONCURRENCY: {{ $config.autoApplyProcessorConcurrency | default "1" | quote }}
   AUTO_APPLY_PROCESSOR_BATCH_SIZE: {{ $config.autoApplyProcessorBatchSize | default "50" | quote }}
   NETBOX_DIODE_PLUGIN_API_TIMEOUT_SECONDS: {{ $config.netboxDiodePluginApiTimeoutSeconds | default "5" | quote }}

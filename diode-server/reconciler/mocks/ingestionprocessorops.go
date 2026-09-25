@@ -305,6 +305,51 @@ func (_c *IngestionProcessorOps_DefaultBranch_Call) RunAndReturn(run func(contex
 	return _c
 }
 
+// HasBranchLoaded provides a mock function with no fields
+func (_m *IngestionProcessorOps) HasBranchLoaded() bool {
+	ret := _m.Called()
+
+	if len(ret) == 0 {
+		panic("no return value specified for HasBranchLoaded")
+	}
+
+	var r0 bool
+	if rf, ok := ret.Get(0).(func() bool); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// IngestionProcessorOps_HasBranchLoaded_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'HasBranchLoaded'
+type IngestionProcessorOps_HasBranchLoaded_Call struct {
+	*mock.Call
+}
+
+// HasBranchLoaded is a helper method to define mock.On call
+func (_e *IngestionProcessorOps_Expecter) HasBranchLoaded() *IngestionProcessorOps_HasBranchLoaded_Call {
+	return &IngestionProcessorOps_HasBranchLoaded_Call{Call: _e.mock.On("HasBranchLoaded")}
+}
+
+func (_c *IngestionProcessorOps_HasBranchLoaded_Call) Run(run func()) *IngestionProcessorOps_HasBranchLoaded_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *IngestionProcessorOps_HasBranchLoaded_Call) Return(_a0 bool) *IngestionProcessorOps_HasBranchLoaded_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *IngestionProcessorOps_HasBranchLoaded_Call) RunAndReturn(run func() bool) *IngestionProcessorOps_HasBranchLoaded_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // RefreshDefaultBranch provides a mock function with given fields: ctx
 func (_m *IngestionProcessorOps) RefreshDefaultBranch(ctx context.Context) (*netboxdiodeplugin.Branch, error) {
 	ret := _m.Called(ctx)
