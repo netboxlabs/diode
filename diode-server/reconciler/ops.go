@@ -72,8 +72,10 @@ type Ops struct {
 }
 
 // NewOps creates a new Ops. The background DefaultBranch refresher is NOT
-// started until Start(ctx) is called; until then DefaultBranch() returns
-// (nil, nil) and callers degrade to "no branch context".
+// started until Start(ctx) is called; until then the branch cache is cold:
+// HasBranchLoaded() reports false and both processors hold off claiming work
+// rather than plan against an unknown branch. A caller that never calls Start
+// therefore stalls reconciliation indefinitely.
 func NewOps(repository Repository, nbClient netboxdiodeplugin.NetBoxAPI, logger *slog.Logger, limits Limits) *Ops {
 	if limits == nil {
 		limits = &DefaultLimits{}
@@ -180,8 +182,9 @@ func (o *Ops) HasBranchLoaded() bool {
 
 // DefaultBranch returns the cached default branch. It never makes a network
 // call — the background refresher (started via Start) owns NetBox HTTP for
-// this value. Returns (nil, nil) if the cache is still cold; callers must
-// tolerate that and degrade gracefully (e.g., no branch filter on lookups).
+// this value. Returns (nil, nil) both when no default branch is configured and
+// while the cache is still cold; the two are indistinguishable here, so callers
+// that would act on an empty branch must check HasBranchLoaded() first.
 func (o *Ops) DefaultBranch(_ context.Context) (*netboxdiodeplugin.Branch, error) {
 	o.branchMu.RLock()
 	defer o.branchMu.RUnlock()

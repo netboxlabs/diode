@@ -9,10 +9,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/netboxlabs/diode/diode-server/reconciler"
 	"github.com/netboxlabs/diode/diode-server/reconciler/mocks"
+	"github.com/netboxlabs/diode/diode-server/reconciler/ops"
 )
 
 // A cold default-branch cache is indistinguishable from "no default branch" at
@@ -153,3 +155,43 @@ func TestColdBranchCacheWarnsOncePerColdPeriod(t *testing.T) {
 
 // Long enough for several poll iterations at the idle interval.
 const defaultIdleIntervalsForWarnTest = 3200 * time.Millisecond
+
+// The gate must reopen. A cold cache that warms up has to be followed by a
+// claim on the next poll; a gate that never reopens would be worse than the
+// original bug.
+func TestIngestionLogProcessor_ClaimsOnceBranchBecomesKnown(t *testing.T) {
+	repo := mocks.NewRepository(t)
+	mockOps := mocks.NewIngestionProcessorOps(t)
+	mockMetrics := mocks.NewMetrics(t)
+
+	// Cold on the first poll, warm from then on.
+	mockOps.On("HasBranchLoaded").Return(false).Once()
+	mockOps.On("HasBranchLoaded").Return(true)
+	repo.On("ClaimQueuedIngestionLogs", mock.Anything, mock.Anything).Return([]ops.QueuedIngestionLog{}, nil)
+
+	p := reconciler.NewIngestionLogProcessor(
+		newIngestionLogProcessorTestLogger(),
+		reconciler.Config{},
+		repo,
+		mockOps,
+		mockMetrics,
+		nil,
+	)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan error, 1)
+	go func() { done <- p.Start(ctx) }()
+
+	// One idle interval while cold, then at least one warm poll.
+	time.Sleep(1500 * time.Millisecond)
+	cancel()
+
+	select {
+	case err := <-done:
+		require.NoError(t, err)
+	case <-time.After(5 * time.Second):
+		t.Fatal("processor did not exit")
+	}
+
+	repo.AssertCalled(t, "ClaimQueuedIngestionLogs", mock.Anything, mock.Anything)
+}
