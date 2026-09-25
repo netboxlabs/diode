@@ -40,6 +40,7 @@ func newAutoApplyTestLogger() *slog.Logger {
 func TestIngestionLogProcessor_AutoApplyPolicyMatch_AppliesItem(t *testing.T) {
 	repo := mocks.NewRepository(t)
 	mockOps := mocks.NewIngestionProcessorOps(t)
+	mockOps.On("HasBranchLoaded").Return(true).Maybe()
 	mockMetrics := mocks.NewMetrics(t)
 
 	log := newAutoApplyTestLog()
@@ -105,6 +106,7 @@ func TestIngestionLogProcessor_AutoApplyPolicyMatch_AppliesItem(t *testing.T) {
 func TestIngestionLogProcessor_AutoApplyPolicyNoMatch_DoesNotApply(t *testing.T) {
 	repo := mocks.NewRepository(t)
 	mockOps := mocks.NewIngestionProcessorOps(t)
+	mockOps.On("HasBranchLoaded").Return(true).Maybe()
 	mockMetrics := mocks.NewMetrics(t)
 
 	log := newAutoApplyTestLog()

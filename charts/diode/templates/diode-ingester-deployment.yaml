@@ -38,11 +38,19 @@ spec:
       imagePullSecrets:
         {{- toYaml .Values.diodeIngester.image.imagePullSecrets | nindent 8 }}
       {{- end }}
+      {{- with .Values.diodeIngester.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       initContainers:
         {{- if .Values.global.diode.ingester.waitForRedis }}
         - name: wait-for-redis
           image: {{ include "diode.busybox.image" . }}
           imagePullPolicy: {{ include "diode.busybox.imagepullpolicy" . }}
+          {{- with .Values.global.diode.busybox.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           command:
             - sh
             - -c
@@ -84,4 +92,4 @@ spec:
       {{- if .Values.diodeIngester.extraVolumes }}
       volumes: {{- include "common.tplvalues.render" (dict "value" .Values.diodeIngester.extraVolumes "context" $) | nindent 8 }}
       {{- end }}
-{{- end }} 
+{{- end }}

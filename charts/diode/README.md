@@ -2,7 +2,7 @@
 
 A Helm chart for Diode
 
-![Version: 1.14.0](https://img.shields.io/badge/Version-1.14.0-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.5.0](https://img.shields.io/badge/AppVersion-1.5.0-informational?style=flat-square)
+![Version: 1.15.6](https://img.shields.io/badge/Version-1.15.6-informational?style=flat-square) ![Type: application](https://img.shields.io/badge/Type-application-informational?style=flat-square) ![AppVersion: 1.5.0](https://img.shields.io/badge/AppVersion-1.5.0-informational?style=flat-square)
 
 ## Prerequisites
 
@@ -273,6 +273,7 @@ helm show values diode/diode
 | diodeAuth.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
 | diodeAuth.image.repository | string | `"docker.io/netboxlabs/diode-auth"` | image repository |
 | diodeAuth.image.tag | string | `"1.12.0"` | image tag |
+| diodeAuth.podSecurityContext | object | `{}` | pod-level security context |
 | diodeAuth.replicaCount | int | `1` | replica count |
 | diodeAuth.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
 | diodeAuth.serviceAccount.create | bool | `true` | create service account |
@@ -286,6 +287,9 @@ helm show values diode/diode
 | diodeAuthBootstrap.job.extraInitContainers | string or list | `""` | additional initContainers to run during bootstrap (may contain templating instructions) |
 | diodeAuthBootstrap.job.extraVolumeMounts | string or list | `[]` | additional volumes to mount in the container (may contain templating instructions) |
 | diodeAuthBootstrap.job.extraVolumes | string or list | `[]` | additional volumes to define for the container (may contain templating instructions) |
+| diodeAuthBootstrap.job.podSecurityContext | object | `{}` | pod-level security context |
+| diodeAuthBootstrap.job.resources | object | `{}` | resources |
+| diodeAuthBootstrap.job.securityContext | object | `{}` | container-level security context |
 | diodeIngester.annotations | object | `{}` | annotations to add to the ingester deployment |
 | diodeIngester.config.loggingLevel | string | `"INFO"` | logging level |
 | diodeIngester.config.redisMemoryCheckInterval | string | `"500ms"` | minimum interval between Redis INFO memory polls when the high-watermark check is enabled (Go duration) |
@@ -308,6 +312,7 @@ helm show values diode/diode
 | diodeIngester.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
 | diodeIngester.image.repository | string | `"docker.io/netboxlabs/diode-ingester"` | image repository |
 | diodeIngester.image.tag | string | `"1.13.0"` | image tag |
+| diodeIngester.podSecurityContext | object | `{}` | pod-level security context |
 | diodeIngester.replicaCount | int | `1` | replica count |
 | diodeIngester.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
 | diodeIngester.serviceAccount.create | bool | `true` | create service account |
@@ -346,6 +351,7 @@ helm show values diode/diode
 | diodeReconciler.image.pullPolicy | string | `"IfNotPresent"` | pull policy |
 | diodeReconciler.image.repository | string | `"docker.io/netboxlabs/diode-reconciler"` | image repository |
 | diodeReconciler.image.tag | string | `"1.13.0"` | image tag |
+| diodeReconciler.podSecurityContext | object | `{}` | pod-level security context |
 | diodeReconciler.replicaCount | int | `1` | replica count |
 | diodeReconciler.resources | object | `{"limits":{"cpu":"500m","memory":"512Mi"},"requests":{"cpu":"100m","memory":"128Mi"}}` | resources |
 | diodeReconciler.serviceAccount.create | bool | `true` | create service account |
@@ -368,8 +374,9 @@ helm show values diode/diode
 | global.clusterDomain | string | `"cluster.local"` | DNS domain of the k8s cluster, used to build in-cluster service FQDNs. Set this if your cluster does not use the default domain. It lives under `global` so that subchart values rendered with `tpl` can read it too. The redis, postgresql and hydra subcharts have their own `clusterDomain` values, which should be set to match. |
 | global.commonAnnotations | object | `{}` | common annotations for all resources |
 | global.commonLabels | object | `{}` | common labels for all resources |
-| global.diode | object | `{"busybox":{"image":"busybox:latest","imagePullPolicy":"IfNotPresent"},"hydra":{"waitForPostgres":true},"ingester":{"waitForRedis":true},"reconciler":{"waitForPostgres":true,"waitForRedis":true}}` | diode global configuration |
-| global.diode.busybox | object | `{"image":"busybox:latest","imagePullPolicy":"IfNotPresent"}` | busybox image configuration |
+| global.diode | object | `{"busybox":{"image":"busybox:latest","imagePullPolicy":"IfNotPresent","resources":{}},"hydra":{"waitForPostgres":true},"ingester":{"waitForRedis":true},"reconciler":{"waitForPostgres":true,"waitForRedis":true}}` | diode global configuration |
+| global.diode.busybox | object | `{"image":"busybox:latest","imagePullPolicy":"IfNotPresent","resources":{}}` | busybox image configuration |
+| global.diode.busybox.resources | object | `{}` | resources for the wait-for-* busybox init containers (wait-for-redis, wait-for-postgres, wait-for-oauth2-server) |
 | global.diode.hydra | object | `{"waitForPostgres":true}` | hydra additional init containers configuration |
 | global.diode.hydra.waitForPostgres | bool | `true` | wait for PostgreSQL to be reachable |
 | global.diode.ingester.waitForRedis | bool | `true` | wait for Redis to be reachable |

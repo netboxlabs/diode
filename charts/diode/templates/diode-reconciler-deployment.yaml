@@ -38,11 +38,19 @@ spec:
       imagePullSecrets:
         {{- toYaml .Values.diodeReconciler.image.imagePullSecrets | nindent 8 }}
       {{- end }}
+      {{- with .Values.diodeReconciler.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       initContainers:
         {{- if .Values.global.diode.reconciler.waitForRedis }}
         - name: wait-for-redis
           image: {{ include "diode.busybox.image" . }}
           imagePullPolicy: {{ include "diode.busybox.imagepullpolicy" . }}
+          {{- with .Values.global.diode.busybox.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           command:
             - sh
             - -c
@@ -57,6 +65,10 @@ spec:
         - name: wait-for-postgres
           image: {{ include "diode.busybox.image" . }}
           imagePullPolicy: {{ include "diode.busybox.imagepullpolicy" . }}
+          {{- with .Values.global.diode.busybox.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           command:
             - sh
             - -c
@@ -116,4 +128,4 @@ spec:
         - name: oauth2-secret
           secret:
             secretName: {{ include "diode.auth.oauth2.secret" . }}
-{{- end }} 
+{{- end }}
