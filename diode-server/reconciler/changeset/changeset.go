@@ -41,6 +41,10 @@ type Change struct {
 	Before             json.RawMessage `json:"before"`
 	After              json.RawMessage `json:"after"`
 	NewRefs            []string        `json:"new_refs,omitempty"`
+	// TagsResolved is the plugin's tags_resolved: the names of the tags the
+	// object holds once the change applies. Empty when the plugin did not
+	// send it.
+	TagsResolved json.RawMessage `json:"tags_resolved,omitempty"`
 }
 
 // CompressChangeSet compresses a change set

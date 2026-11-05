@@ -79,6 +79,11 @@ type Change struct {
 	Before             json.RawMessage `json:"before,omitempty"`
 	ObjectPrimaryValue string          `json:"object_primary_value,omitempty"`
 	NewRefs            []string        `json:"new_refs,omitempty"`
+	// TagsResolved names every tag the object holds once the change applies,
+	// as [{"ref", "name", "slug"}] where ref is the tag as Before and Data
+	// carry it (a primary key or a new_object ref). Absent from plugins that
+	// predate it and on objects without tags.
+	TagsResolved json.RawMessage `json:"tags_resolved,omitempty"`
 }
 
 // Branch represents a NetBox branch details

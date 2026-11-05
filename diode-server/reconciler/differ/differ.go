@@ -45,6 +45,7 @@ func ConvertBulkPlanResult(result netboxdiodeplugin.BulkPlanResult, objectType s
 			After:              change.Data,
 			Before:             change.Before,
 			NewRefs:            change.NewRefs,
+			TagsResolved:       change.TagsResolved,
 		})
 	}
 
@@ -95,6 +96,7 @@ func ConvertBulkPlanApplyResult(result netboxdiodeplugin.BulkPlanApplyResult, ob
 			After:              change.Data,
 			Before:             change.Before,
 			NewRefs:            change.NewRefs,
+			TagsResolved:       change.TagsResolved,
 		})
 	}
 
