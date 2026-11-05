@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
@@ -302,6 +303,142 @@ func TestEntityFingerprinter_BasicEntities(t *testing.T) {
 			}
 		})
 	}
+}
+
+// The NetBox plugin plans a payload against the object its
+// metadata.source_match addresses, so source_match is identity: payloads
+// that address different objects must not share a hash. All other metadata
+// stays out of the hash.
+func TestEntityFingerprinter_SourceMatch(t *testing.T) {
+	fingerprinter := entityhash.NewEntityFingerprinter()
+
+	device := func(md *structpb.Struct) *diodepb.Entity {
+		return &diodepb.Entity{Entity: &diodepb.Entity_Device{Device: &diodepb.Device{
+			Name: strPtr("device1"), Serial: strPtr("serial123"), Metadata: md,
+		}}}
+	}
+	deviceOnSite := func(siteMD *structpb.Struct) *diodepb.Entity {
+		return &diodepb.Entity{Entity: &diodepb.Entity_Device{Device: &diodepb.Device{
+			Name: strPtr("device1"), Site: &diodepb.Site{Name: "site1", Metadata: siteMD},
+		}}}
+	}
+	deviceTagged := func(tagMD *structpb.Struct) *diodepb.Entity {
+		return &diodepb.Entity{Entity: &diodepb.Entity_Device{Device: &diodepb.Device{
+			Name: strPtr("device1"), Tags: []*diodepb.Tag{{Name: "tag1", Metadata: tagMD}},
+		}}}
+	}
+	ip := func(md *structpb.Struct) *diodepb.Entity {
+		return &diodepb.Entity{Entity: &diodepb.Entity_IpAddress{IpAddress: &diodepb.IPAddress{
+			Address: "10.0.0.1/24", Status: strPtr("active"), Metadata: md,
+		}}}
+	}
+
+	tests := []struct {
+		name        string
+		entity1     *diodepb.Entity
+		entity2     *diodepb.Entity
+		shouldMatch bool
+	}{
+		{
+			name:    "different netbox_id produces different hashes",
+			entity1: device(metadata(t, map[string]any{"source_match": map[string]any{"netbox_id": 914}})),
+			entity2: device(metadata(t, map[string]any{"source_match": map[string]any{"netbox_id": 1164}})),
+		},
+		{
+			name:    "same content addressing two objects with non-unique natural keys produces different hashes",
+			entity1: ip(metadata(t, map[string]any{"source_match": map[string]any{"netbox_id": 11}})),
+			entity2: ip(metadata(t, map[string]any{"source_match": map[string]any{"netbox_id": 12}})),
+		},
+		{
+			name:    "source_match and no metadata produce different hashes",
+			entity1: device(metadata(t, map[string]any{"source_match": map[string]any{"netbox_id": 914}})),
+			entity2: device(nil),
+		},
+		{
+			name:    "source_match and other metadata only produce different hashes",
+			entity1: device(metadata(t, map[string]any{"source_match": map[string]any{"netbox_id": 914}})),
+			entity2: device(metadata(t, map[string]any{"run_id": "run-1"})),
+		},
+		{
+			name:        "same netbox_id with different run_id produces same hash",
+			entity1:     device(metadata(t, map[string]any{"source_match": map[string]any{"netbox_id": 914}, "run_id": "run-1"})),
+			entity2:     device(metadata(t, map[string]any{"source_match": map[string]any{"netbox_id": 914}, "run_id": "run-2"})),
+			shouldMatch: true,
+		},
+		{
+			name:        "same netbox_id with and without other metadata produces same hash",
+			entity1:     device(metadata(t, map[string]any{"source_match": map[string]any{"netbox_id": 914}})),
+			entity2:     device(metadata(t, map[string]any{"source_match": map[string]any{"netbox_id": 914}, "job": "discovery"})),
+			shouldMatch: true,
+		},
+		{
+			name:    "different netbox_id on a nested entity produces different hashes",
+			entity1: deviceOnSite(metadata(t, map[string]any{"source_match": map[string]any{"netbox_id": 1}})),
+			entity2: deviceOnSite(metadata(t, map[string]any{"source_match": map[string]any{"netbox_id": 2}})),
+		},
+		{
+			name:        "same netbox_id on a nested entity with different run_id produces same hash",
+			entity1:     deviceOnSite(metadata(t, map[string]any{"source_match": map[string]any{"netbox_id": 1}, "run_id": "run-1"})),
+			entity2:     deviceOnSite(metadata(t, map[string]any{"source_match": map[string]any{"netbox_id": 1}, "run_id": "run-2"})),
+			shouldMatch: true,
+		},
+		{
+			name:    "different netbox_id on a list element produces different hashes",
+			entity1: deviceTagged(metadata(t, map[string]any{"source_match": map[string]any{"netbox_id": 7}})),
+			entity2: deviceTagged(metadata(t, map[string]any{"source_match": map[string]any{"netbox_id": 8}})),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			hash1, err := fingerprinter.GenerateEntityHash(tt.entity1)
+			require.NoError(t, err)
+			hash2, err := fingerprinter.GenerateEntityHash(tt.entity2)
+			require.NoError(t, err)
+
+			if tt.shouldMatch {
+				assert.Equal(t, hash1, hash2, "hashes should be identical")
+			} else {
+				assert.NotEqual(t, hash1, hash2, "hashes should be different")
+			}
+		})
+	}
+}
+
+// GenerateEntityHash reduces metadata in place while it marshals; the
+// caller's entity must come back unchanged, and hashing it again must give
+// the same result.
+func TestEntityFingerprinter_RestoresMetadata(t *testing.T) {
+	fingerprinter := entityhash.NewEntityFingerprinter()
+
+	entity := &diodepb.Entity{Entity: &diodepb.Entity_Device{Device: &diodepb.Device{
+		Name:     strPtr("device1"),
+		Metadata: metadata(t, map[string]any{"source_match": map[string]any{"netbox_id": 914}, "run_id": "run-1"}),
+		Site: &diodepb.Site{
+			Name:     "site1",
+			Metadata: metadata(t, map[string]any{"run_id": "run-1"}),
+		},
+		Tags: []*diodepb.Tag{{
+			Name:     "tag1",
+			Metadata: metadata(t, map[string]any{"source_match": map[string]any{"netbox_id": 7}, "job": "discovery"}),
+		}},
+	}}}
+	want := proto.Clone(entity)
+
+	hash1, err := fingerprinter.GenerateEntityHash(entity)
+	require.NoError(t, err)
+	require.True(t, proto.Equal(want, entity), "entity changed by hashing: %v", entity)
+
+	hash2, err := fingerprinter.GenerateEntityHash(entity)
+	require.NoError(t, err)
+	assert.Equal(t, hash1, hash2)
+}
+
+func metadata(t *testing.T, fields map[string]any) *structpb.Struct {
+	t.Helper()
+	md, err := structpb.NewStruct(fields)
+	require.NoError(t, err)
+	return md
 }
 
 func strPtr(s string) *string {

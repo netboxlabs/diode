@@ -12,6 +12,7 @@ import (
 
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	pb "github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
@@ -680,3 +681,55 @@ func TestOpsBranchRefresherKeepsLastOnError(t *testing.T) {
 // of DefaultBranch. After the refresher refactor, DefaultBranch no longer
 // performs HTTP itself — TestOpsBranchRefresher{SeedsCache,404IsRecorded,
 // KeepsLastOnError} above cover the equivalent behaviour.
+
+// Dedup must treat payloads that address different NetBox objects through
+// metadata.source_match as different entities: otherwise a payload with a new
+// netbox_id merges into the prior ingestion log and is planned against the
+// old object. Other metadata (run IDs) must not split an entity.
+func TestOpsCreateIngestionLogDedupKeyFollowsSourceMatch(t *testing.T) {
+	ctx := context.Background()
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelWarn}))
+
+	deviceLog := func(md map[string]any) *pb.IngestionLog {
+		meta, err := structpb.NewStruct(md)
+		require.NoError(t, err)
+		return &pb.IngestionLog{
+			Id:         "8a8ae517-85b9-466e-890c-aadb0771cc9e",
+			ObjectType: netbox.DeviceObjectType,
+			State:      pb.State_QUEUED,
+			Entity: &diodepb.Entity{Entity: &diodepb.Entity_Device{Device: &diodepb.Device{
+				Name: strPtr("edge-01"), Metadata: meta,
+			}}},
+		}
+	}
+
+	// dedupKey returns the entity hash CreateIngestionLog looks up a prior
+	// ingestion log with.
+	dedupKey := func(t *testing.T, log *pb.IngestionLog) string {
+		mockRepository := mocks.NewRepository(t)
+		opsInstance := reconciler.NewOps(mockRepository, pluginmocks.NewNetBoxAPI(t), logger, nil)
+		expectDedupPassthrough(mockRepository)
+
+		var key string
+		mockRepository.EXPECT().FindPriorIngestionLogByEntityHash(mock.Anything, mock.AnythingOfType("string"), (*string)(nil)).
+			Run(func(_ context.Context, entityHash string, _ *string) { key = entityHash }).
+			Return(nil, nil, sql.ErrNoRows)
+		mockRepository.EXPECT().CreateIngestionLog(mock.Anything, log, mock.Anything, mock.AnythingOfType("string")).
+			RunAndReturn(func(_ context.Context, _ *pb.IngestionLog, _ []byte, entityHash string) (*int32, error) {
+				require.Equal(t, key, entityHash, "the created row must carry the key it was looked up with")
+				return int32Ptr(1), nil
+			})
+
+		_, err := opsInstance.CreateIngestionLog(ctx, log, nil)
+		require.NoError(t, err)
+		require.NotEmpty(t, key)
+		return key
+	}
+
+	oldDevice := dedupKey(t, deviceLog(map[string]any{"source_match": map[string]any{"netbox_id": 914}, "run_id": "run-1"}))
+	newDevice := dedupKey(t, deviceLog(map[string]any{"source_match": map[string]any{"netbox_id": 1164}, "run_id": "run-1"}))
+	nextRun := dedupKey(t, deviceLog(map[string]any{"source_match": map[string]any{"netbox_id": 914}, "run_id": "run-2"}))
+
+	require.NotEqual(t, oldDevice, newDevice, "a new netbox_id must not dedup into the prior ingestion log")
+	require.Equal(t, oldDevice, nextRun, "a new run_id alone must dedup into the prior ingestion log")
+}

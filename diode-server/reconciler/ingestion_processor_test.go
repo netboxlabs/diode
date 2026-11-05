@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 	"github.com/netboxlabs/diode/diode-server/gen/diode/v1/reconcilerpb"
@@ -491,5 +492,88 @@ func TestIngestionProcessor_DuplicateHandling(t *testing.T) {
 			mockOps.AssertExpectations(t)
 			mockMetrics.AssertExpectations(t)
 		})
+	}
+}
+
+// The bulk ingest path dedups on the hashes computed per entity here. Two
+// entities that address different NetBox objects through
+// metadata.source_match must get different dedup keys; a new run_id alone
+// must not.
+func TestIngestionProcessor_DedupKeysFollowSourceMatch(t *testing.T) {
+	ctx := context.Background()
+	s := miniredis.RunT(t)
+	s.DB(1)
+	defer s.Close()
+
+	setupEnv(s.Addr())
+	defer teardownEnv()
+	var cfg reconciler.Config
+	envconfig.MustProcess("", &cfg)
+
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelWarn}))
+	mockOps := mocks.NewIngestionProcessorOps(t)
+	mockMetrics := mocks.NewMetrics(t)
+
+	redisClient := redis.NewClient(&redis.Options{Addr: s.Addr(), DB: 0})
+	defer func() { _ = redisClient.Close() }()
+	redisStreamClient := redis.NewClient(&redis.Options{Addr: s.Addr(), DB: 1})
+	defer func() { _ = redisStreamClient.Close() }()
+
+	device := func(netboxID int, runID string) *diodepb.Entity {
+		md, err := structpb.NewStruct(map[string]any{
+			"source_match": map[string]any{"netbox_id": netboxID},
+			"run_id":       runID,
+		})
+		require.NoError(t, err)
+		return &diodepb.Entity{Entity: &diodepb.Entity_Device{Device: &diodepb.Device{
+			Name: strPtr("edge-01"), Metadata: md,
+		}}}
+	}
+
+	hashes := make(chan []string, 1)
+	mockOps.On("DefaultBranch", mock.Anything).Return((*netboxdiodeplugin.Branch)(nil), nil)
+	mockOps.On("BulkCreateIngestionLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).
+		Run(func(args mock.Arguments) { hashes <- args.Get(3).([]string) }).
+		Return(func(_ context.Context, logs []*reconcilerpb.IngestionLog, _ [][]byte, _ []string) []*reconops.CreateIngestionLogResult {
+			results := make([]*reconops.CreateIngestionLogResult, len(logs))
+			for i, l := range logs {
+				results[i] = &reconops.CreateIngestionLogResult{ID: int32(i + 1), IngestionLog: l}
+			}
+			return results
+		}, nil)
+	mockMetrics.On("RecordHandleMessage", mock.Anything, mock.Anything).Return().Maybe()
+	mockMetrics.On("RecordIngestionLogCreate", mock.Anything, mock.Anything).Return().Maybe()
+
+	processor, err := reconciler.NewIngestionProcessor(
+		ctx, logger, cfg, redisClient, redisStreamClient,
+		reconciler.DefaultRedisStreamID, reconciler.DefaultRedisConsumerGroup,
+		mockOps, mockMetrics)
+	require.NoError(t, err)
+	go func() {
+		assert.NoError(t, processor.Start(ctx))
+	}()
+	defer func() { require.NoError(t, processor.Stop()) }()
+
+	reqBytes, err := proto.Marshal(&diodepb.IngestRequest{
+		Id:       "test-request-id",
+		Entities: []*diodepb.Entity{device(914, "run-1"), device(1164, "run-1"), device(914, "run-2")},
+	})
+	require.NoError(t, err)
+	require.NoError(t, redisStreamClient.XAdd(ctx, &redis.XAddArgs{
+		Stream: reconciler.DefaultRedisStreamID,
+		Values: map[string]any{
+			"request":      string(testCompressBrotli(t, reqBytes)),
+			"encoding":     "br",
+			"ingestion_ts": "1720425600",
+		},
+	}).Err())
+
+	select {
+	case got := <-hashes:
+		require.Len(t, got, 3)
+		assert.NotEqual(t, got[0], got[1], "a new netbox_id must get its own dedup key")
+		assert.Equal(t, got[0], got[2], "a new run_id alone must keep the dedup key")
+	case <-time.After(2 * time.Second):
+		t.Fatal("timeout waiting for BulkCreateIngestionLogs")
 	}
 }
