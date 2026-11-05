@@ -8,6 +8,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/known/structpb"
 
 	diodepb "github.com/netboxlabs/diode/diode-server/gen/diode/v1/diodepb"
 )
@@ -22,10 +23,18 @@ var marshalBufPool = sync.Pool{
 
 const metadataFieldName = "metadata"
 
+// sourceMatchKey is the metadata entry that tells the NetBox plugin which
+// existing object a payload addresses (source_match.netbox_id). It decides
+// the object a deviation is planned against, so it is part of the entity's
+// identity and stays in the hash. Every other metadata entry (run IDs,
+// timestamps, collector details) is ignored.
+const sourceMatchKey = "source_match"
+
 // EntityFingerprinter generates deterministic content hashes for entities.
 //
 // Hashes are computed over the entity's protobuf binary encoding (with
-// Deterministic=true) after metadata fields are cleared. Binary protobuf is
+// Deterministic=true) after metadata fields are reduced to their
+// source_match entry. Binary protobuf is
 // substantially cheaper to produce than canonical JSON (RFC 8785), which the
 // prior protojson + JCS path required.
 //
@@ -65,10 +74,10 @@ type savedMetadata struct {
 }
 
 // GenerateEntityHash returns a SHA256 hex digest of the entity's content,
-// excluding metadata fields.
+// excluding metadata fields except their source_match entry.
 //
 // Implementation note: this mutates the caller's entity in-place
-// (clearing metadata fields), marshals, then restores the saved values.
+// (reducing metadata fields), marshals, then restores the saved values.
 // This avoids deep-cloning the entity on every hash, which would otherwise
 // dominate the function's cost. Callers must ensure no other goroutine reads
 // the same entity concurrently — this function is not safe to call in
@@ -103,7 +112,7 @@ func (f *EntityFingerprinter) GenerateEntityHash(entity *diodepb.Entity) (string
 		savedMetadataPool.Put(savedPtr)
 	}()
 
-	saved = saveAndClearMetadata(wrapper.ProtoReflect(), saved)
+	saved = saveAndReduceMetadata(wrapper.ProtoReflect(), saved)
 
 	bufPtr := marshalBufPool.Get().(*[]byte)
 	buf := (*bufPtr)[:0]
@@ -121,17 +130,23 @@ func (f *EntityFingerprinter) GenerateEntityHash(entity *diodepb.Entity) (string
 	return hex.EncodeToString(hash[:]), nil
 }
 
-// saveAndClearMetadata walks m (and its nested messages/lists/maps) and
-// records every set "metadata" field, clearing each as it goes. Returns the
-// updated slice so callers can pre-allocate via sync.Pool.
-func saveAndClearMetadata(m protoreflect.Message, saved []savedMetadata) []savedMetadata {
+// saveAndReduceMetadata walks m (and its nested messages/lists/maps) and
+// records every set "metadata" field, reducing each to its source_match
+// entry (or clearing it) as it goes. Returns the updated slice so callers
+// can pre-allocate via sync.Pool.
+func saveAndReduceMetadata(m protoreflect.Message, saved []savedMetadata) []savedMetadata {
 	if !m.IsValid() {
 		return saved
 	}
 
 	if mfd := m.Descriptor().Fields().ByName(metadataFieldName); mfd != nil && m.Has(mfd) {
-		saved = append(saved, savedMetadata{msg: m, fd: mfd, value: m.Get(mfd)})
-		m.Clear(mfd)
+		value := m.Get(mfd)
+		saved = append(saved, savedMetadata{msg: m, fd: mfd, value: value})
+		if kept := sourceMatchOnly(value); kept != nil {
+			m.Set(mfd, protoreflect.ValueOfMessage(kept.ProtoReflect()))
+		} else {
+			m.Clear(mfd)
+		}
 	}
 
 	m.Range(func(fd protoreflect.FieldDescriptor, v protoreflect.Value) bool {
@@ -140,21 +155,36 @@ func saveAndClearMetadata(m protoreflect.Message, saved []savedMetadata) []saved
 			if fd.Kind() == protoreflect.MessageKind {
 				list := v.List()
 				for i := 0; i < list.Len(); i++ {
-					saved = saveAndClearMetadata(list.Get(i).Message(), saved)
+					saved = saveAndReduceMetadata(list.Get(i).Message(), saved)
 				}
 			}
 		case fd.IsMap():
 			if fd.MapValue().Kind() == protoreflect.MessageKind {
 				v.Map().Range(func(_ protoreflect.MapKey, mv protoreflect.Value) bool {
-					saved = saveAndClearMetadata(mv.Message(), saved)
+					saved = saveAndReduceMetadata(mv.Message(), saved)
 					return true
 				})
 			}
 		case fd.Kind() == protoreflect.MessageKind:
-			saved = saveAndClearMetadata(v.Message(), saved)
+			saved = saveAndReduceMetadata(v.Message(), saved)
 		}
 		return true
 	})
 
 	return saved
+}
+
+// sourceMatchOnly returns a Struct holding only the source_match entry of a
+// metadata value, or nil when the value is not a Struct or has no
+// source_match. The entry's Value is shared, not copied; it is only read.
+func sourceMatchOnly(v protoreflect.Value) *structpb.Struct {
+	md, ok := v.Message().Interface().(*structpb.Struct)
+	if !ok {
+		return nil
+	}
+	sm, ok := md.GetFields()[sourceMatchKey]
+	if !ok {
+		return nil
+	}
+	return &structpb.Struct{Fields: map[string]*structpb.Value{sourceMatchKey: sm}}
 }
