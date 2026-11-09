@@ -93,7 +93,6 @@ type IngestionLog struct {
 	ID                 int32              `json:"id"`
 	ExternalID         string             `json:"external_id"`
 	ObjectType         pgtype.Text        `json:"object_type"`
-	State              pgtype.Int4        `json:"state"`
 	RequestID          pgtype.Text        `json:"request_id"`
 	IngestionTs        pgtype.Int8        `json:"ingestion_ts"`
 	SourceTs           pgtype.Int8        `json:"source_ts"`
@@ -102,20 +101,27 @@ type IngestionLog struct {
 	SdkName            pgtype.Text        `json:"sdk_name"`
 	SdkVersion         pgtype.Text        `json:"sdk_version"`
 	Entity             []byte             `json:"entity"`
-	Error              json.RawMessage    `json:"error"`
 	SourceMetadata     []byte             `json:"source_metadata"`
 	CreatedAt          pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
 	EntityHash         pgtype.Text        `json:"entity_hash"`
-	LastSeen           pgtype.Timestamptz `json:"last_seen"`
-	DuplicateCount     int32              `json:"duplicate_count"`
-	RequeuedFromState  pgtype.Int4        `json:"requeued_from_state"`
 }
 
 type IngestionLogStateObjectTypeCount struct {
 	State      int32  `json:"state"`
 	ObjectType string `json:"object_type"`
 	N          int64  `json:"n"`
+}
+
+type IngestionLogsStat struct {
+	IngestionLogID    int32              `json:"ingestion_log_id"`
+	State             pgtype.Int4        `json:"state"`
+	Error             json.RawMessage    `json:"error"`
+	RequeuedFromState pgtype.Int4        `json:"requeued_from_state"`
+	DuplicateCount    int32              `json:"duplicate_count"`
+	LastSeen          pgtype.Timestamptz `json:"last_seen"`
+	UpdatedAt         pgtype.Timestamptz `json:"updated_at"`
+	ObjectType        pgtype.Text        `json:"object_type"`
+	IngestionTs       pgtype.Int8        `json:"ingestion_ts"`
 }
 
 type VDeviation struct {
@@ -137,4 +143,27 @@ type VDeviation struct {
 	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
 	ChangeSet          *ChangeSet         `json:"change_set"`
 	Changes            []byte             `json:"changes"`
+}
+
+type VIngestionLog struct {
+	ID                 int32              `json:"id"`
+	ExternalID         string             `json:"external_id"`
+	ObjectType         pgtype.Text        `json:"object_type"`
+	State              pgtype.Int4        `json:"state"`
+	RequestID          pgtype.Text        `json:"request_id"`
+	IngestionTs        pgtype.Int8        `json:"ingestion_ts"`
+	SourceTs           pgtype.Int8        `json:"source_ts"`
+	ProducerAppName    pgtype.Text        `json:"producer_app_name"`
+	ProducerAppVersion pgtype.Text        `json:"producer_app_version"`
+	SdkName            pgtype.Text        `json:"sdk_name"`
+	SdkVersion         pgtype.Text        `json:"sdk_version"`
+	Entity             []byte             `json:"entity"`
+	Error              json.RawMessage    `json:"error"`
+	SourceMetadata     []byte             `json:"source_metadata"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
+	EntityHash         pgtype.Text        `json:"entity_hash"`
+	LastSeen           pgtype.Timestamptz `json:"last_seen"`
+	DuplicateCount     int32              `json:"duplicate_count"`
+	RequeuedFromState  pgtype.Int4        `json:"requeued_from_state"`
 }
