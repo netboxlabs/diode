@@ -104,11 +104,31 @@ func (r *Repository) CreateIngestionLog(ctx context.Context, ingestionLog *recon
 		EntityHash:         pgtype.Text{String: entityHash, Valid: true},
 	}
 
-	createdIngestionLog, err := r.queries.CreateIngestionLog(ctx, params)
+	id, err := r.queries.CreateIngestionLog(ctx, params)
 	if err != nil {
 		return nil, err
 	}
-	return &createdIngestionLog.ID, nil
+	return &id, nil
+}
+
+// inTx runs fn on the repository's transaction, or in a new one when the
+// repository is not transaction-scoped.
+func (r *Repository) inTx(ctx context.Context, fn func(*postgres.Queries) error) error {
+	if _, ok := r.db.(pgx.Tx); ok {
+		return fn(r.queries)
+	}
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to start transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback(ctx) }()
+	if err := fn(r.queries.WithTx(tx)); err != nil {
+		return err
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+	return nil
 }
 
 // RetrieveIngestionLogByExternalID looks up an ingestion log using its external identifier (uuid)
@@ -599,6 +619,7 @@ func (r *Repository) BulkCreateIngestionLogs(ctx context.Context, logs []*reconc
 	}
 
 	params := make([]postgres.BulkCreateIngestionLogsParams, 0, len(logs))
+	statsParams := make([]postgres.BulkCreateIngestionLogsStatsParams, 0, len(logs))
 	idMap := make(map[string]int32, len(logs))
 	for i, log := range logs {
 		entityJSON, err := marshaler.Marshal(log.Entity)
@@ -611,13 +632,14 @@ func (r *Repository) BulkCreateIngestionLogs(ctx context.Context, logs []*reconc
 			sm = sourceMetadata[i]
 		}
 
+		objectType := pgtype.Text{String: log.ObjectType, Valid: true}
+		ingestionTs := pgtype.Int8{Int64: log.IngestionTs, Valid: true}
 		params = append(params, postgres.BulkCreateIngestionLogsParams{
 			ID:                 ids[i],
 			ExternalID:         log.Id,
-			ObjectType:         pgtype.Text{String: log.ObjectType, Valid: true},
-			State:              pgtype.Int4{Int32: int32(log.State), Valid: true},
+			ObjectType:         objectType,
 			RequestID:          pgtype.Text{String: log.RequestId, Valid: true},
-			IngestionTs:        pgtype.Int8{Int64: log.IngestionTs, Valid: true},
+			IngestionTs:        ingestionTs,
 			SourceTs:           pgtype.Int8{Int64: log.SourceTs, Valid: true},
 			ProducerAppName:    pgtype.Text{String: log.ProducerAppName, Valid: true},
 			ProducerAppVersion: pgtype.Text{String: log.ProducerAppVersion, Valid: true},
@@ -627,10 +649,23 @@ func (r *Repository) BulkCreateIngestionLogs(ctx context.Context, logs []*reconc
 			SourceMetadata:     sm,
 			EntityHash:         pgtype.Text{String: entityHashes[i], Valid: true},
 		})
+		statsParams = append(statsParams, postgres.BulkCreateIngestionLogsStatsParams{
+			IngestionLogID: ids[i],
+			State:          pgtype.Int4{Int32: int32(log.State), Valid: true},
+			ObjectType:     objectType,
+			IngestionTs:    ingestionTs,
+		})
 		idMap[log.Id] = ids[i]
 	}
 
-	if _, err := r.queries.BulkCreateIngestionLogs(ctx, params); err != nil {
+	err = r.inTx(ctx, func(q *postgres.Queries) error {
+		if _, err := q.BulkCreateIngestionLogs(ctx, params); err != nil {
+			return err
+		}
+		_, err := q.BulkCreateIngestionLogsStats(ctx, statsParams)
+		return err
+	})
+	if err != nil {
 		return nil, err
 	}
 	return idMap, nil
@@ -895,7 +930,7 @@ func (r *Repository) ClaimQueuedIngestionLogs(ctx context.Context, batchSize int
 
 	result := make([]ops.QueuedIngestionLog, 0, len(dbLogs))
 	for _, dbLog := range dbLogs {
-		log, err := dbLog.ToProto()
+		log, err := dbLog.View().ToProto()
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert to proto: %w", err)
 		}
@@ -920,7 +955,7 @@ func (r *Repository) ClaimQueuedForAutoApply(ctx context.Context, batchSize int3
 
 	result := make([]ops.QueuedIngestionLog, 0, len(dbLogs))
 	for _, dbLog := range dbLogs {
-		log, err := dbLog.ToProto()
+		log, err := dbLog.View().ToProto()
 		if err != nil {
 			return nil, fmt.Errorf("failed to convert ingestion log %d to proto: %w", dbLog.ID, err)
 		}
