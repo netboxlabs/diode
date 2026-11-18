@@ -33,7 +33,6 @@ type BulkCreateIngestionLogsParams struct {
 	ID                 int32       `json:"id"`
 	ExternalID         string      `json:"external_id"`
 	ObjectType         pgtype.Text `json:"object_type"`
-	State              pgtype.Int4 `json:"state"`
 	RequestID          pgtype.Text `json:"request_id"`
 	IngestionTs        pgtype.Int8 `json:"ingestion_ts"`
 	SourceTs           pgtype.Int8 `json:"source_ts"`
@@ -46,26 +45,33 @@ type BulkCreateIngestionLogsParams struct {
 	EntityHash         pgtype.Text `json:"entity_hash"`
 }
 
+type BulkCreateIngestionLogsStatsParams struct {
+	IngestionLogID int32       `json:"ingestion_log_id"`
+	State          pgtype.Int4 `json:"state"`
+	ObjectType     pgtype.Text `json:"object_type"`
+	IngestionTs    pgtype.Int8 `json:"ingestion_ts"`
+}
+
 const bulkMarkDuplicates = `-- name: BulkMarkDuplicates :many
-UPDATE ingestion_logs il
-SET duplicate_count = il.duplicate_count + bulk.increment,
+UPDATE ingestion_logs_stats s
+SET duplicate_count = s.duplicate_count + bulk.increment,
     last_seen = CURRENT_TIMESTAMP,
-    state = CASE WHEN locked.prev_state IN (3, 4, 5) THEN 1 ELSE il.state END,
-    error = CASE WHEN locked.prev_state IN (3, 4, 5) THEN NULL ELSE il.error END,
-    requeued_from_state = CASE WHEN locked.prev_state IN (3, 4, 5) THEN locked.prev_state ELSE il.requeued_from_state END
+    state = CASE WHEN locked.prev_state IN (3, 4, 5) THEN 1 ELSE s.state END,
+    error = CASE WHEN locked.prev_state IN (3, 4, 5) THEN NULL ELSE s.error END,
+    requeued_from_state = CASE WHEN locked.prev_state IN (3, 4, 5) THEN locked.prev_state ELSE s.requeued_from_state END
 FROM (
-    SELECT id, state AS prev_state
-    FROM ingestion_logs
-    WHERE id = ANY($1::int4[])
-    ORDER BY id
+    SELECT ingestion_log_id, state AS prev_state
+    FROM ingestion_logs_stats
+    WHERE ingestion_log_id = ANY($1::int4[])
+    ORDER BY ingestion_log_id
     FOR UPDATE
 ) locked
 JOIN (
     SELECT unnest($1::int4[]) AS id,
            unnest($2::int4[]) AS increment
-) bulk ON bulk.id = locked.id
-WHERE il.id = locked.id
-RETURNING il.id, (locked.prev_state IN (3, 4, 5))::bool AS requeued
+) bulk ON bulk.id = locked.ingestion_log_id
+WHERE s.ingestion_log_id = locked.ingestion_log_id
+RETURNING s.ingestion_log_id AS id, (locked.prev_state IN (3, 4, 5))::bool AS requeued
 `
 
 type BulkMarkDuplicatesParams struct {
@@ -116,7 +122,7 @@ func (q *Queries) BulkMarkDuplicates(ctx context.Context, arg BulkMarkDuplicates
 }
 
 const bulkUpdateIngestionLogStates = `-- name: BulkUpdateIngestionLogStates :exec
-UPDATE ingestion_logs il
+UPDATE ingestion_logs_stats s
 SET state = bulk.new_state,
     error = NULL,
     requeued_from_state = NULL
@@ -124,7 +130,7 @@ FROM (
     SELECT unnest($1::int4[]) AS id,
            unnest($2::int4[]) AS new_state
 ) bulk
-WHERE il.id = bulk.id
+WHERE s.ingestion_log_id = bulk.id
 `
 
 type BulkUpdateIngestionLogStatesParams struct {
@@ -138,31 +144,62 @@ func (q *Queries) BulkUpdateIngestionLogStates(ctx context.Context, arg BulkUpda
 }
 
 const claimQueuedForAutoApply = `-- name: ClaimQueuedForAutoApply :many
-UPDATE ingestion_logs
-SET state = 8
-WHERE id IN (
-    SELECT id FROM ingestion_logs
-    WHERE state = 1
-    ORDER BY id
-    LIMIT $1
-    FOR UPDATE SKIP LOCKED
+WITH claimed AS (
+    UPDATE ingestion_logs_stats
+    SET state = 8
+    WHERE ingestion_log_id IN (
+        SELECT ingestion_log_id FROM ingestion_logs_stats
+        WHERE state = 1
+        ORDER BY ingestion_log_id
+        LIMIT $1
+        FOR UPDATE SKIP LOCKED
+    )
+    RETURNING ingestion_log_id, state, error, requeued_from_state, duplicate_count, last_seen, updated_at, object_type, ingestion_ts
 )
-RETURNING id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count, requeued_from_state
+SELECT il.id, il.external_id, il.object_type, c.state, il.request_id, il.ingestion_ts, il.source_ts,
+       il.producer_app_name, il.producer_app_version, il.sdk_name, il.sdk_version, il.entity, c.error,
+       il.source_metadata, il.created_at, c.updated_at, il.entity_hash, c.last_seen, c.duplicate_count,
+       c.requeued_from_state
+FROM claimed c
+JOIN ingestion_logs il ON il.id = c.ingestion_log_id
 `
+
+type ClaimQueuedForAutoApplyRow struct {
+	ID                 int32              `json:"id"`
+	ExternalID         string             `json:"external_id"`
+	ObjectType         pgtype.Text        `json:"object_type"`
+	State              pgtype.Int4        `json:"state"`
+	RequestID          pgtype.Text        `json:"request_id"`
+	IngestionTs        pgtype.Int8        `json:"ingestion_ts"`
+	SourceTs           pgtype.Int8        `json:"source_ts"`
+	ProducerAppName    pgtype.Text        `json:"producer_app_name"`
+	ProducerAppVersion pgtype.Text        `json:"producer_app_version"`
+	SdkName            pgtype.Text        `json:"sdk_name"`
+	SdkVersion         pgtype.Text        `json:"sdk_version"`
+	Entity             []byte             `json:"entity"`
+	Error              []byte             `json:"error"`
+	SourceMetadata     []byte             `json:"source_metadata"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
+	EntityHash         pgtype.Text        `json:"entity_hash"`
+	LastSeen           pgtype.Timestamptz `json:"last_seen"`
+	DuplicateCount     int32              `json:"duplicate_count"`
+	RequeuedFromState  pgtype.Int4        `json:"requeued_from_state"`
+}
 
 // Claim a batch of QUEUED ingestion logs for the AutoApplyProcessor (combined
 // plan+apply via /bulk-plan-apply). Transitions QUEUED (1) -> APPLYING (8).
 // A row stays in APPLYING for the duration of the NetBox round-trip and is
 // reset back to QUEUED on reconciler startup via ResetApplyingIngestionLogs.
-func (q *Queries) ClaimQueuedForAutoApply(ctx context.Context, batchSize int32) ([]IngestionLog, error) {
+func (q *Queries) ClaimQueuedForAutoApply(ctx context.Context, batchSize int32) ([]ClaimQueuedForAutoApplyRow, error) {
 	rows, err := q.db.Query(ctx, claimQueuedForAutoApply, batchSize)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []IngestionLog
+	var items []ClaimQueuedForAutoApplyRow
 	for rows.Next() {
-		var i IngestionLog
+		var i ClaimQueuedForAutoApplyRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.ExternalID,
@@ -196,27 +233,61 @@ func (q *Queries) ClaimQueuedForAutoApply(ctx context.Context, batchSize int32) 
 }
 
 const claimQueuedIngestionLogs = `-- name: ClaimQueuedIngestionLogs :many
-UPDATE ingestion_logs
-SET state = 2
-WHERE id IN (
-    SELECT id FROM ingestion_logs
-    WHERE state = 1
-    ORDER BY id
-    LIMIT $1
-    FOR UPDATE SKIP LOCKED
+WITH claimed AS (
+    UPDATE ingestion_logs_stats
+    SET state = 2
+    WHERE ingestion_log_id IN (
+        SELECT ingestion_log_id FROM ingestion_logs_stats
+        WHERE state = 1
+        ORDER BY ingestion_log_id
+        LIMIT $1
+        FOR UPDATE SKIP LOCKED
+    )
+    RETURNING ingestion_log_id, state, error, requeued_from_state, duplicate_count, last_seen, updated_at, object_type, ingestion_ts
 )
-RETURNING id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count, requeued_from_state
+SELECT il.id, il.external_id, il.object_type, c.state, il.request_id, il.ingestion_ts, il.source_ts,
+       il.producer_app_name, il.producer_app_version, il.sdk_name, il.sdk_version, il.entity, c.error,
+       il.source_metadata, il.created_at, c.updated_at, il.entity_hash, c.last_seen, c.duplicate_count,
+       c.requeued_from_state
+FROM claimed c
+JOIN ingestion_logs il ON il.id = c.ingestion_log_id
 `
 
-func (q *Queries) ClaimQueuedIngestionLogs(ctx context.Context, batchSize int32) ([]IngestionLog, error) {
+type ClaimQueuedIngestionLogsRow struct {
+	ID                 int32              `json:"id"`
+	ExternalID         string             `json:"external_id"`
+	ObjectType         pgtype.Text        `json:"object_type"`
+	State              pgtype.Int4        `json:"state"`
+	RequestID          pgtype.Text        `json:"request_id"`
+	IngestionTs        pgtype.Int8        `json:"ingestion_ts"`
+	SourceTs           pgtype.Int8        `json:"source_ts"`
+	ProducerAppName    pgtype.Text        `json:"producer_app_name"`
+	ProducerAppVersion pgtype.Text        `json:"producer_app_version"`
+	SdkName            pgtype.Text        `json:"sdk_name"`
+	SdkVersion         pgtype.Text        `json:"sdk_version"`
+	Entity             []byte             `json:"entity"`
+	Error              []byte             `json:"error"`
+	SourceMetadata     []byte             `json:"source_metadata"`
+	CreatedAt          pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt          pgtype.Timestamptz `json:"updated_at"`
+	EntityHash         pgtype.Text        `json:"entity_hash"`
+	LastSeen           pgtype.Timestamptz `json:"last_seen"`
+	DuplicateCount     int32              `json:"duplicate_count"`
+	RequeuedFromState  pgtype.Int4        `json:"requeued_from_state"`
+}
+
+// The claimed rows come back in the v_ingestion_logs shape. A statement
+// cannot read its own CTE's update through the view, so the changed columns
+// come from RETURNING and the rest from ingestion_logs.
+func (q *Queries) ClaimQueuedIngestionLogs(ctx context.Context, batchSize int32) ([]ClaimQueuedIngestionLogsRow, error) {
 	rows, err := q.db.Query(ctx, claimQueuedIngestionLogs, batchSize)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []IngestionLog
+	var items []ClaimQueuedIngestionLogsRow
 	for rows.Next() {
-		var i IngestionLog
+		var i ClaimQueuedIngestionLogsRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.ExternalID,
@@ -250,22 +321,28 @@ func (q *Queries) ClaimQueuedIngestionLogs(ctx context.Context, batchSize int32)
 }
 
 const cloneIngestionLogForDrift = `-- name: CloneIngestionLogForDrift :one
-INSERT INTO ingestion_logs (external_id, object_type, state, request_id, ingestion_ts, source_ts,
-                            producer_app_name, producer_app_version, sdk_name, sdk_version,
-                            entity, source_metadata, entity_hash)
-SELECT $1, object_type, $2::int4, request_id, $3::bigint, source_ts,
-       producer_app_name, producer_app_version, sdk_name, sdk_version,
-       entity, source_metadata, entity_hash
-FROM ingestion_logs AS prior
-WHERE prior.id = $4
-RETURNING ingestion_logs.id
+WITH il AS (
+    INSERT INTO ingestion_logs (external_id, object_type, request_id, ingestion_ts, source_ts,
+                                producer_app_name, producer_app_version, sdk_name, sdk_version,
+                                entity, source_metadata, entity_hash)
+    SELECT $1, object_type, request_id, $2::bigint, source_ts,
+           producer_app_name, producer_app_version, sdk_name, sdk_version,
+           entity, source_metadata, entity_hash
+    FROM ingestion_logs AS prior
+    WHERE prior.id = $3
+    RETURNING id, object_type, ingestion_ts
+), stats AS (
+    INSERT INTO ingestion_logs_stats (ingestion_log_id, state, object_type, ingestion_ts)
+    SELECT id, $4::int4, object_type, ingestion_ts FROM il
+)
+SELECT id FROM il
 `
 
 type CloneIngestionLogForDriftParams struct {
 	NewExternalID string `json:"new_external_id"`
-	NewState      int32  `json:"new_state"`
 	IngestionTs   int64  `json:"ingestion_ts"`
 	PriorID       int32  `json:"prior_id"`
+	NewState      int32  `json:"new_state"`
 }
 
 // Clone a prior ingestion log into a new row representing a freshly detected
@@ -276,9 +353,9 @@ type CloneIngestionLogForDriftParams struct {
 func (q *Queries) CloneIngestionLogForDrift(ctx context.Context, arg CloneIngestionLogForDriftParams) (int32, error) {
 	row := q.db.QueryRow(ctx, cloneIngestionLogForDrift,
 		arg.NewExternalID,
-		arg.NewState,
 		arg.IngestionTs,
 		arg.PriorID,
+		arg.NewState,
 	)
 	var id int32
 	err := row.Scan(&id)
@@ -287,7 +364,7 @@ func (q *Queries) CloneIngestionLogForDrift(ctx context.Context, arg CloneIngest
 
 const countIngestionLogsPerState = `-- name: CountIngestionLogsPerState :many
 SELECT state, COUNT(*) AS count
-FROM ingestion_logs
+FROM ingestion_logs_stats
 GROUP BY state
 `
 
@@ -317,16 +394,24 @@ func (q *Queries) CountIngestionLogsPerState(ctx context.Context) ([]CountIngest
 }
 
 const createIngestionLog = `-- name: CreateIngestionLog :one
-INSERT INTO ingestion_logs (external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name,
-                            producer_app_version, sdk_name, sdk_version, entity, source_metadata, entity_hash)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-RETURNING id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count, requeued_from_state
+WITH il AS (
+    INSERT INTO ingestion_logs (external_id, object_type, request_id, ingestion_ts, source_ts, producer_app_name,
+                                producer_app_version, sdk_name, sdk_version, entity, source_metadata, entity_hash)
+    VALUES ($1, $2, $3, $4,
+            $5, $6, $7,
+            $8, $9, $10, $11,
+            $12)
+    RETURNING id, object_type, ingestion_ts
+), stats AS (
+    INSERT INTO ingestion_logs_stats (ingestion_log_id, state, object_type, ingestion_ts)
+    SELECT id, $13::int4, object_type, ingestion_ts FROM il
+)
+SELECT id FROM il
 `
 
 type CreateIngestionLogParams struct {
 	ExternalID         string      `json:"external_id"`
 	ObjectType         pgtype.Text `json:"object_type"`
-	State              pgtype.Int4 `json:"state"`
 	RequestID          pgtype.Text `json:"request_id"`
 	IngestionTs        pgtype.Int8 `json:"ingestion_ts"`
 	SourceTs           pgtype.Int8 `json:"source_ts"`
@@ -337,13 +422,18 @@ type CreateIngestionLogParams struct {
 	Entity             []byte      `json:"entity"`
 	SourceMetadata     []byte      `json:"source_metadata"`
 	EntityHash         pgtype.Text `json:"entity_hash"`
+	State              pgtype.Int4 `json:"state"`
 }
 
-func (q *Queries) CreateIngestionLog(ctx context.Context, arg CreateIngestionLogParams) (IngestionLog, error) {
+// Inserts the log and its stats row in one statement. ingestion_logs is
+// insert-only: the columns that change after insert live in
+// ingestion_logs_stats. Readers use v_ingestion_logs, which joins the two
+// into the pre-split row shape; state and bookkeeping writes touch only
+// ingestion_logs_stats.
+func (q *Queries) CreateIngestionLog(ctx context.Context, arg CreateIngestionLogParams) (int32, error) {
 	row := q.db.QueryRow(ctx, createIngestionLog,
 		arg.ExternalID,
 		arg.ObjectType,
-		arg.State,
 		arg.RequestID,
 		arg.IngestionTs,
 		arg.SourceTs,
@@ -354,31 +444,11 @@ func (q *Queries) CreateIngestionLog(ctx context.Context, arg CreateIngestionLog
 		arg.Entity,
 		arg.SourceMetadata,
 		arg.EntityHash,
+		arg.State,
 	)
-	var i IngestionLog
-	err := row.Scan(
-		&i.ID,
-		&i.ExternalID,
-		&i.ObjectType,
-		&i.State,
-		&i.RequestID,
-		&i.IngestionTs,
-		&i.SourceTs,
-		&i.ProducerAppName,
-		&i.ProducerAppVersion,
-		&i.SdkName,
-		&i.SdkVersion,
-		&i.Entity,
-		&i.Error,
-		&i.SourceMetadata,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.EntityHash,
-		&i.LastSeen,
-		&i.DuplicateCount,
-		&i.RequeuedFromState,
-	)
-	return i, err
+	var id int32
+	err := row.Scan(&id)
+	return id, err
 }
 
 const findIngestionLogIDsByExternalIDs = `-- name: FindIngestionLogIDsByExternalIDs :many
@@ -412,7 +482,7 @@ func (q *Queries) FindIngestionLogIDsByExternalIDs(ctx context.Context, external
 
 const findPriorIngestionLogByEntityHash = `-- name: FindPriorIngestionLogByEntityHash :one
 SELECT il.id, il.external_id, il.object_type, il.state, il.request_id, il.ingestion_ts, il.source_ts, il.producer_app_name, il.producer_app_version, il.sdk_name, il.sdk_version, il.entity, il.error, il.source_metadata, il.created_at, il.updated_at, il.entity_hash, il.last_seen, il.duplicate_count, il.requeued_from_state
-FROM ingestion_logs il
+FROM v_ingestion_logs il
 LEFT JOIN LATERAL (
     SELECT branch_id
     FROM change_sets cs
@@ -431,9 +501,9 @@ type FindPriorIngestionLogByEntityHashParams struct {
 	BranchID   pgtype.Text `json:"branch_id"`
 }
 
-func (q *Queries) FindPriorIngestionLogByEntityHash(ctx context.Context, arg FindPriorIngestionLogByEntityHashParams) (IngestionLog, error) {
+func (q *Queries) FindPriorIngestionLogByEntityHash(ctx context.Context, arg FindPriorIngestionLogByEntityHashParams) (VIngestionLog, error) {
 	row := q.db.QueryRow(ctx, findPriorIngestionLogByEntityHash, arg.EntityHash, arg.BranchID)
-	var i IngestionLog
+	var i VIngestionLog
 	err := row.Scan(
 		&i.ID,
 		&i.ExternalID,
@@ -464,7 +534,7 @@ SELECT il.id, il.external_id, il.object_type, il.state, il.request_id, il.ingest
 FROM unnest($1::text[]) AS h(entity_hash)
 CROSS JOIN LATERAL (
     SELECT il2.id, il2.external_id, il2.object_type, il2.state, il2.request_id, il2.ingestion_ts, il2.source_ts, il2.producer_app_name, il2.producer_app_version, il2.sdk_name, il2.sdk_version, il2.entity, il2.error, il2.source_metadata, il2.created_at, il2.updated_at, il2.entity_hash, il2.last_seen, il2.duplicate_count, il2.requeued_from_state
-    FROM ingestion_logs il2
+    FROM v_ingestion_logs il2
     WHERE il2.entity_hash = h.entity_hash
       AND (
           SELECT cs.branch_id
@@ -483,15 +553,15 @@ type FindPriorIngestionLogsByEntityHashesParams struct {
 	BranchID     pgtype.Text `json:"branch_id"`
 }
 
-func (q *Queries) FindPriorIngestionLogsByEntityHashes(ctx context.Context, arg FindPriorIngestionLogsByEntityHashesParams) ([]IngestionLog, error) {
+func (q *Queries) FindPriorIngestionLogsByEntityHashes(ctx context.Context, arg FindPriorIngestionLogsByEntityHashesParams) ([]VIngestionLog, error) {
 	rows, err := q.db.Query(ctx, findPriorIngestionLogsByEntityHashes, arg.EntityHashes, arg.BranchID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []IngestionLog
+	var items []VIngestionLog
 	for rows.Next() {
-		var i IngestionLog
+		var i VIngestionLog
 		if err := rows.Scan(
 			&i.ID,
 			&i.ExternalID,
@@ -525,7 +595,7 @@ func (q *Queries) FindPriorIngestionLogsByEntityHashes(ctx context.Context, arg 
 }
 
 const resetApplyingIngestionLogs = `-- name: ResetApplyingIngestionLogs :exec
-UPDATE ingestion_logs
+UPDATE ingestion_logs_stats
 SET state = 1
 WHERE state = 8
 `
@@ -539,13 +609,13 @@ func (q *Queries) ResetApplyingIngestionLogs(ctx context.Context) error {
 
 const retrieveIngestionLogByExternalID = `-- name: RetrieveIngestionLogByExternalID :one
 SELECT id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count, requeued_from_state
-FROM ingestion_logs
+FROM v_ingestion_logs
 WHERE external_id = $1
 `
 
-func (q *Queries) RetrieveIngestionLogByExternalID(ctx context.Context, externalID string) (IngestionLog, error) {
+func (q *Queries) RetrieveIngestionLogByExternalID(ctx context.Context, externalID string) (VIngestionLog, error) {
 	row := q.db.QueryRow(ctx, retrieveIngestionLogByExternalID, externalID)
-	var i IngestionLog
+	var i VIngestionLog
 	err := row.Scan(
 		&i.ID,
 		&i.ExternalID,
@@ -573,7 +643,7 @@ func (q *Queries) RetrieveIngestionLogByExternalID(ctx context.Context, external
 
 const retrieveIngestionLogs = `-- name: RetrieveIngestionLogs :many
 SELECT id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count, requeued_from_state
-FROM ingestion_logs
+FROM v_ingestion_logs
 WHERE (state = $1 OR $1 IS NULL)
   AND (object_type = $2 OR $2 IS NULL)
   AND (ingestion_ts >= $3 OR $3 IS NULL)
@@ -591,7 +661,7 @@ type RetrieveIngestionLogsParams struct {
 	Limit            int32       `json:"limit"`
 }
 
-func (q *Queries) RetrieveIngestionLogs(ctx context.Context, arg RetrieveIngestionLogsParams) ([]IngestionLog, error) {
+func (q *Queries) RetrieveIngestionLogs(ctx context.Context, arg RetrieveIngestionLogsParams) ([]VIngestionLog, error) {
 	rows, err := q.db.Query(ctx, retrieveIngestionLogs,
 		arg.State,
 		arg.ObjectType,
@@ -604,9 +674,9 @@ func (q *Queries) RetrieveIngestionLogs(ctx context.Context, arg RetrieveIngesti
 		return nil, err
 	}
 	defer rows.Close()
-	var items []IngestionLog
+	var items []VIngestionLog
 	for rows.Next() {
-		var i IngestionLog
+		var i VIngestionLog
 		if err := rows.Scan(
 			&i.ID,
 			&i.ExternalID,
@@ -708,21 +778,20 @@ func (q *Queries) RetrieveIngestionLogsWithChangeSets(ctx context.Context, arg R
 }
 
 const updateIngestionLogStateWithError = `-- name: UpdateIngestionLogStateWithError :exec
-UPDATE ingestion_logs
-SET state = $2,
-    error = $3,
+UPDATE ingestion_logs_stats
+SET state = $1,
+    error = $2,
     requeued_from_state = NULL
-WHERE id = $1
-RETURNING id, external_id, object_type, state, request_id, ingestion_ts, source_ts, producer_app_name, producer_app_version, sdk_name, sdk_version, entity, error, source_metadata, created_at, updated_at, entity_hash, last_seen, duplicate_count, requeued_from_state
+WHERE ingestion_log_id = $3
 `
 
 type UpdateIngestionLogStateWithErrorParams struct {
-	ID    int32           `json:"id"`
 	State pgtype.Int4     `json:"state"`
 	Error json.RawMessage `json:"error"`
+	ID    int32           `json:"id"`
 }
 
 func (q *Queries) UpdateIngestionLogStateWithError(ctx context.Context, arg UpdateIngestionLogStateWithErrorParams) error {
-	_, err := q.db.Exec(ctx, updateIngestionLogStateWithError, arg.ID, arg.State, arg.Error)
+	_, err := q.db.Exec(ctx, updateIngestionLogStateWithError, arg.State, arg.Error, arg.ID)
 	return err
 }
