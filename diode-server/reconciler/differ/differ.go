@@ -21,6 +21,17 @@ type IngestEntity struct {
 	State      int           `json:"state"`
 }
 
+// schemaID returns the schema id of a branch the plugin reported, or nil for
+// main. The change set stores only the schema id: it is the key for branch
+// filters and dedup, and it is the value the plugin accepts as the branch on
+// a later plan or apply. Clients resolve the display name from NetBox.
+func schemaID(branch *netboxdiodeplugin.Branch) *string {
+	if branch == nil || branch.ID == "" {
+		return nil
+	}
+	return new(branch.ID)
+}
+
 // ConvertBulkPlanResult converts a single BulkPlanResult to a changeset.ChangeSet.
 // Returns nil changeset if the result contains errors.
 func ConvertBulkPlanResult(result netboxdiodeplugin.BulkPlanResult, objectType string) (*changeset.ChangeSet, error) {
@@ -51,10 +62,7 @@ func ConvertBulkPlanResult(result netboxdiodeplugin.BulkPlanResult, objectType s
 
 	deviationName := genDeviationName(changes, objectType)
 	cs := &changeset.ChangeSet{ID: result.ChangeSet.ID, Changes: changes, DeviationName: deviationName}
-	if result.ChangeSet.Branch != nil {
-		branchID := fmt.Sprintf("%s (%s)", result.ChangeSet.Branch.Name, result.ChangeSet.Branch.ID)
-		cs.BranchID = &branchID
-	}
+	cs.BranchID = schemaID(result.ChangeSet.Branch)
 	return cs, nil
 }
 
@@ -102,10 +110,7 @@ func ConvertBulkPlanApplyResult(result netboxdiodeplugin.BulkPlanApplyResult, ob
 
 	deviationName := genDeviationName(changes, objectType)
 	cs := &changeset.ChangeSet{ID: result.ChangeSet.ID, Changes: changes, DeviationName: deviationName}
-	if result.ChangeSet.Branch != nil {
-		branchID := fmt.Sprintf("%s (%s)", result.ChangeSet.Branch.Name, result.ChangeSet.Branch.ID)
-		cs.BranchID = &branchID
-	}
+	cs.BranchID = schemaID(result.ChangeSet.Branch)
 	return cs, nil, applyErr
 }
 
