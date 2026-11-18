@@ -733,3 +733,53 @@ func TestOpsCreateIngestionLogDedupKeyFollowsSourceMatch(t *testing.T) {
 	require.NotEqual(t, oldDevice, newDevice, "a new netbox_id must not dedup into the prior ingestion log")
 	require.Equal(t, oldDevice, nextRun, "a new run_id alone must dedup into the prior ingestion log")
 }
+
+// With a default branch configured, dedup looks up prior ingestion logs by the
+// branch schema id, the value change sets store. A "<name> (<id>)" key would
+// never match a stored row, so every observation would open a new deviation.
+func TestOpsDedupKeyIsBranchSchemaID(t *testing.T) {
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelWarn}))
+	branch := &netboxdiodeplugin.Branch{ID: "svwzcqhu", Name: "branch-3"}
+	entity := &diodepb.Entity{Entity: &diodepb.Entity_Site{Site: &diodepb.Site{Name: "test-site-1"}}}
+	prior := &pb.IngestionLog{Id: "prior", State: pb.State_OPEN, Entity: entity}
+
+	startedOps := func(t *testing.T) (*reconciler.Ops, *mocks.Repository) {
+		mockRepository := mocks.NewRepository(t)
+		mockNetBoxClient := pluginmocks.NewNetBoxAPI(t)
+		mockNetBoxClient.EXPECT().GetDefaultBranch(mock.Anything).Return(branch, nil)
+		opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil)
+
+		ctx, cancel := context.WithCancel(context.Background())
+		t.Cleanup(cancel)
+		opsInstance.Start(ctx)
+		require.Equal(t, branch, waitForBranch(t, opsInstance, func(b *netboxdiodeplugin.Branch) bool { return b != nil }))
+
+		expectDedupPassthrough(mockRepository)
+		mockRepository.EXPECT().BulkMarkDuplicates(mock.Anything, map[int32]int32{10: 1}).Return(map[int32]bool{10: false}, nil)
+		return opsInstance, mockRepository
+	}
+
+	t.Run("single", func(t *testing.T) {
+		opsInstance, mockRepository := startedOps(t)
+		mockRepository.EXPECT().FindPriorIngestionLogByEntityHash(mock.Anything, mock.AnythingOfType("string"), strPtr("svwzcqhu")).
+			Return(int32Ptr(10), prior, nil)
+
+		result, err := opsInstance.CreateIngestionLog(context.Background(), &pb.IngestionLog{Id: "new", Entity: entity}, nil)
+		require.NoError(t, err)
+		require.True(t, result.WasDuplicate)
+		require.Equal(t, "svwzcqhu", result.BranchID)
+	})
+
+	t.Run("bulk", func(t *testing.T) {
+		opsInstance, mockRepository := startedOps(t)
+		mockRepository.EXPECT().FindPriorIngestionLogsByEntityHashes(mock.Anything, []string{"hash-1"}, strPtr("svwzcqhu")).
+			Return(map[string]*reconops.PriorIngestionLog{"hash-1": {ID: 10, IngestionLog: prior}}, nil)
+
+		results, err := opsInstance.BulkCreateIngestionLogs(context.Background(),
+			[]*pb.IngestionLog{{Id: "new", Entity: entity}}, [][]byte{nil}, []string{"hash-1"})
+		require.NoError(t, err)
+		require.Len(t, results, 1)
+		require.True(t, results[0].WasDuplicate)
+		require.Equal(t, "svwzcqhu", results[0].BranchID)
+	})
+}

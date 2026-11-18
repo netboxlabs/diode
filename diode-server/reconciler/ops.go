@@ -212,16 +212,17 @@ func (o *Ops) CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb
 		return nil, fmt.Errorf("failed to generate entity hash: %w", err)
 	}
 
-	// Fetch default branch from NetBox plugin (cached for 5 minutes) to ensure we search for prior ingestion logs in the correct branch context
+	// Search for prior ingestion logs in the context of the default branch
+	// (cached by the background refresher). Change sets store the bare schema
+	// id, so the dedup key is the schema id too.
 	var defaultBranchID *string
 	var branchIDForResult string
 	if branch, err := o.DefaultBranch(ctx); err != nil {
 		o.logger.Warn("failed to fetch default branch from NetBox plugin", "error", err)
 		// Continue with nil branch (main branch) if we can't fetch default branch
-	} else if branch != nil {
-		branchID := fmt.Sprintf("%s (%s)", branch.Name, branch.ID)
-		defaultBranchID = &branchID
-		branchIDForResult = branch.ID // Store the schema_id for GenerateChangeSet
+	} else if branch != nil && branch.ID != "" {
+		branchIDForResult = branch.ID
+		defaultBranchID = &branchIDForResult
 		o.logger.Debug("using default branch for ingestion log deduplication", "branch", branch.Name, "branchID", branch.ID)
 	}
 
@@ -279,10 +280,9 @@ func (o *Ops) BulkCreateIngestionLogs(ctx context.Context, ingestionLogs []*reco
 	var branchIDForResult string
 	if branch, err := o.DefaultBranch(ctx); err != nil {
 		o.logger.Warn("failed to fetch default branch from NetBox plugin", "error", err)
-	} else if branch != nil {
-		branchID := fmt.Sprintf("%s (%s)", branch.Name, branch.ID)
-		defaultBranchID = &branchID
+	} else if branch != nil && branch.ID != "" {
 		branchIDForResult = branch.ID
+		defaultBranchID = &branchIDForResult
 		o.logger.Debug("using default branch for bulk ingestion log deduplication", "branch", branch.Name, "branchID", branch.ID)
 	}
 
