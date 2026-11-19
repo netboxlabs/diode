@@ -1,5 +1,13 @@
 -- +goose Up
 -- +goose StatementBegin
+-- The UPDATE below scans every change_set and can rewrite millions of rows
+-- on large tenants, which can exceed the session's default
+-- statement_timeout. Lift it for this migration's transaction only
+-- (SET LOCAL reverts on commit or rollback).
+SET LOCAL statement_timeout = '30min';
+-- +goose StatementEnd
+
+-- +goose StatementBegin
 -- Successful plans stored change_sets.branch_id as "<name> (<schema_id>)",
 -- while failed-plan placeholders stored the bare schema id. Branch filters
 -- and dedup compare the column by equality, so one branch had two keys.
