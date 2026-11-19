@@ -586,11 +586,14 @@ func (o *Ops) handleGenerateChangeSetFailure(ctx context.Context, item ops.Queue
 		return ops.BulkGenerateChangeSetResult{IngestionLogID: item.ID, Err: err}
 	}
 
-	item.IngestionLog.State = reconcilerpb.State_FAILED
 	changeSetErr := handleChangeSetError(err)
 	if err2 := o.repository.UpdateIngestionLogStateWithError(ctx, item.ID, reconcilerpb.State_FAILED, changeSetErr); err2 != nil {
-		err = errors.Join(err, err2)
+		// Without the FAILED state, a placeholder would become the latest
+		// change set of a log that still looks open: no changes, no error.
+		o.logger.Error("failed to record plan failure", "ingestionLogID", item.ID, "error", err2)
+		return ops.BulkGenerateChangeSetResult{IngestionLogID: item.ID, Err: errors.Join(err, err2)}
 	}
+	item.IngestionLog.State = reconcilerpb.State_FAILED
 
 	cs := differ.FailedDiffChangeSet(ingestEntity, branchID)
 	id, err1 := o.repository.CreateChangeSet(ctx, *cs, item.ID)
@@ -830,7 +833,9 @@ func (o *Ops) persistPlanApplyFailurePlaceholder(ctx context.Context, item ops.Q
 
 	changeSetErr := handleChangeSetError(planErr)
 	if err2 := o.repository.UpdateIngestionLogStateWithError(ctx, item.ID, reconcilerpb.State_FAILED, changeSetErr); err2 != nil {
-		planErr = errors.Join(planErr, err2)
+		// See handleGenerateChangeSetFailure: no placeholder without FAILED.
+		o.logger.Error("failed to record plan failure", "ingestionLogID", item.ID, "error", err2)
+		return ops.BulkPlanApplyResult{IngestionLogID: item.ID, PlanErr: errors.Join(planErr, err2)}
 	}
 
 	cs := differ.FailedDiffChangeSet(ingestEntity, branchID)

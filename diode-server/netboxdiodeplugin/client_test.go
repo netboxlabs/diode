@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
+	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
 )
 
 func TestTransportSecurity(t *testing.T) {
@@ -544,4 +545,70 @@ func newMockOAuth2Server(authTokenURL string, requiredParams map[string]string, 
 	})
 
 	return httptest.NewServer(handler)
+}
+
+// netbox-branching rejects a request for a branch that is not ready with a
+// plain-text body. The error must still marshal, so that the reconciler can
+// store it on the ingestion log.
+func TestBulkPlanErrorBodyIsStored(t *testing.T) {
+	tests := []struct {
+		name        string
+		body        string
+		wantDetails string
+	}{
+		{name: "plain text", body: "Selected branch is not ready.", wantDetails: `"Selected branch is not ready."`},
+		{name: "json", body: `{"errors":["boom"]}`, wantDetails: `{"errors":["boom"]}`},
+	}
+	endpoints := []struct {
+		name string
+		path string
+		call func(context.Context, *netboxdiodeplugin.Client) error
+	}{
+		{name: "bulk-plan", path: "/api/diode/bulk-plan/", call: func(ctx context.Context, c *netboxdiodeplugin.Client) error {
+			_, err := c.BulkPlan(ctx, netboxdiodeplugin.BulkPlanRequest{BranchID: "svwzcqhu"})
+			return err
+		}},
+		{name: "bulk-plan-apply", path: "/api/diode/bulk-plan-apply/", call: func(ctx context.Context, c *netboxdiodeplugin.Client) error {
+			_, err := c.BulkPlanApply(ctx, netboxdiodeplugin.BulkPlanApplyRequest{BranchID: "svwzcqhu"})
+			return err
+		}},
+	}
+	for _, ep := range endpoints {
+		for _, tt := range tests {
+			t.Run(ep.name+"/"+tt.name, func(t *testing.T) {
+				cleanUpEnvVars()
+
+				authTokenURL := "/diode/auth/token"
+				oauth := newMockOAuth2Server(authTokenURL, requireCredentials("id", "secret"), "token")
+				defer oauth.Close()
+
+				mux := http.NewServeMux()
+				mux.HandleFunc(ep.path, func(w http.ResponseWriter, _ *http.Request) {
+					w.WriteHeader(http.StatusBadRequest)
+					_, _ = w.Write([]byte(tt.body))
+				})
+				ts := httptest.NewServer(mux)
+				defer ts.Close()
+
+				client, err := netboxdiodeplugin.NewClient(netboxdiodeplugin.ClientOptions{
+					Logger:            slog.New(slog.DiscardHandler),
+					BaseURL:           ts.URL + "/api/diode",
+					ClientID:          "id",
+					ClientSecret:      "secret",
+					TokenURL:          oauth.URL + authTokenURL,
+					RateLimitRPS:      1,
+					RateLimitBurstRPS: 1,
+				})
+				require.NoError(t, err)
+
+				callErr := ep.call(context.Background(), client)
+				var csErr *changeset.Error
+				require.ErrorAs(t, callErr, &csErr)
+				require.JSONEq(t, tt.wantDetails, string(csErr.Details))
+
+				_, err = json.Marshal(callErr)
+				require.NoError(t, err)
+			})
+		}
+	}
 }
