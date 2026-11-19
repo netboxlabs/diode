@@ -20,6 +20,7 @@ import (
 	"github.com/netboxlabs/diode/diode-server/netboxdiodeplugin"
 	pluginmocks "github.com/netboxlabs/diode/diode-server/netboxdiodeplugin/mocks"
 	"github.com/netboxlabs/diode/diode-server/reconciler"
+	"github.com/netboxlabs/diode/diode-server/reconciler/changeset"
 	"github.com/netboxlabs/diode/diode-server/reconciler/mocks"
 	reconops "github.com/netboxlabs/diode/diode-server/reconciler/ops"
 )
@@ -782,4 +783,83 @@ func TestOpsDedupKeyIsBranchSchemaID(t *testing.T) {
 		require.True(t, results[0].WasDuplicate)
 		require.Equal(t, "svwzcqhu", results[0].BranchID)
 	})
+}
+
+// A failure placeholder change set is written only with the FAILED state. If
+// the state write fails, a placeholder would become the latest change set of a
+// log that still looks open, with no changes and no error.
+func TestOpsPlanFailurePlaceholderNeedsFailedState(t *testing.T) {
+	planErr := errors.New("selected branch is not ready")
+	newCSID := int32(7)
+
+	paths := []struct {
+		name string
+		run  func(*reconciler.Ops, []reconops.QueuedIngestionLog) (*int32, error)
+		mock func(*pluginmocks.NetBoxAPI)
+	}{
+		{
+			name: "plan",
+			mock: func(nb *pluginmocks.NetBoxAPI) {
+				nb.EXPECT().BulkPlan(mock.Anything, mock.Anything).Return(nil, planErr)
+			},
+			run: func(o *reconciler.Ops, items []reconops.QueuedIngestionLog) (*int32, error) {
+				r := o.BulkPlan(context.Background(), items, "svwzcqhu")[0]
+				return r.ChangeSetID, r.Err
+			},
+		},
+		{
+			name: "plan-apply",
+			mock: func(nb *pluginmocks.NetBoxAPI) {
+				nb.EXPECT().BulkPlanApply(mock.Anything, mock.Anything).Return(nil, planErr)
+			},
+			run: func(o *reconciler.Ops, items []reconops.QueuedIngestionLog) (*int32, error) {
+				r := o.BulkPlanApply(context.Background(), items, "svwzcqhu")[0]
+				return r.ChangeSetID, r.PlanErr
+			},
+		},
+	}
+	for _, p := range paths {
+		t.Run(p.name+"/state recorded", func(t *testing.T) {
+			repo := mocks.NewRepository(t)
+			nb := pluginmocks.NewNetBoxAPI(t)
+			p.mock(nb)
+			repo.EXPECT().UpdateIngestionLogStateWithError(mock.Anything, int32(1), pb.State_FAILED, mock.Anything).Return(nil)
+			repo.EXPECT().CreateChangeSet(mock.Anything, mock.MatchedBy(func(cs changeset.ChangeSet) bool {
+				return cs.BranchID != nil && *cs.BranchID == "svwzcqhu" && len(cs.Changes) == 0
+			}), int32(1)).Return(&newCSID, nil)
+
+			csID, err := p.run(newPlanFailureOps(repo, nb), planFailureItems())
+			require.ErrorIs(t, err, planErr)
+			require.Equal(t, &newCSID, csID)
+		})
+		t.Run(p.name+"/state not recorded", func(t *testing.T) {
+			repo := mocks.NewRepository(t)
+			nb := pluginmocks.NewNetBoxAPI(t)
+			p.mock(nb)
+			stateErr := errors.New("failed to marshal error")
+			repo.EXPECT().UpdateIngestionLogStateWithError(mock.Anything, int32(1), pb.State_FAILED, mock.Anything).Return(stateErr)
+			// No CreateChangeSet expectation: the mock fails the test if it is called.
+
+			csID, err := p.run(newPlanFailureOps(repo, nb), planFailureItems())
+			require.ErrorIs(t, err, planErr)
+			require.ErrorIs(t, err, stateErr)
+			require.Nil(t, csID)
+		})
+	}
+}
+
+func newPlanFailureOps(repo *mocks.Repository, nb *pluginmocks.NetBoxAPI) *reconciler.Ops {
+	return reconciler.NewOps(repo, nb, slog.New(slog.DiscardHandler), nil)
+}
+
+func planFailureItems() []reconops.QueuedIngestionLog {
+	return []reconops.QueuedIngestionLog{{
+		ID: 1,
+		IngestionLog: &pb.IngestionLog{
+			Id:         "log-1",
+			ObjectType: netbox.SiteObjectType,
+			State:      pb.State_OPEN,
+			Entity:     &diodepb.Entity{Entity: &diodepb.Entity_Site{Site: &diodepb.Site{Name: "site-1"}}},
+		},
+	}}
 }

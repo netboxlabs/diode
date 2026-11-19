@@ -78,11 +78,24 @@ func (e *Error) Error() string {
 	return fmt.Sprintf("%s - %s - %s", e.Message, e.Code, string(e.Details))
 }
 
-// NewError creates a new Error
+// NewError creates a new Error. Details that are not valid JSON, such as a
+// plain-text or HTML error page, are kept as a JSON string, so that the error
+// can always be stored.
 func NewError(message string, code errors.ErrorCode, details []byte) error {
 	return &Error{
 		Message: message,
 		Code:    code,
-		Details: details,
+		Details: jsonDetails(details),
 	}
+}
+
+func jsonDetails(details []byte) json.RawMessage {
+	if len(details) == 0 || json.Valid(details) {
+		return details
+	}
+	quoted, err := json.Marshal(string(details))
+	if err != nil {
+		return nil
+	}
+	return quoted
 }
