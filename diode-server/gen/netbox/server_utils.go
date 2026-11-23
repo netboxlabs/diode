@@ -1,6 +1,6 @@
 // Generated code. DO NOT EDIT.
 // Source: NetBox v4.7.0
-// Timestamp: 2026-09-02 20:52:39Z
+// Timestamp: 2026-11-23 19:38:00Z
 package netbox
 
 import (
@@ -219,6 +219,8 @@ const (
 	CoolingSourceObjectTypeName             = "Cooling Source"
 	ModuleBayTypeObjectType                 = "dcim.modulebaytype"
 	ModuleBayTypeObjectTypeName             = "Module Bay Type"
+	ConfigContextObjectType                 = "extras.configcontext"
+	ConfigContextObjectTypeName             = "Config Context"
 	DeviceConfigObjectType                  = "dcim.deviceconfig"
 	DeviceConfigObjectTypeName              = "Device Config"
 )
@@ -329,6 +331,7 @@ var entityTypeMap = map[reflect.Type]string{
 	reflect.TypeOf((*pb.Entity_CoolingOutflow)(nil)):            CoolingOutflowObjectType,
 	reflect.TypeOf((*pb.Entity_CoolingSource)(nil)):             CoolingSourceObjectType,
 	reflect.TypeOf((*pb.Entity_ModuleBayType)(nil)):             ModuleBayTypeObjectType,
+	reflect.TypeOf((*pb.Entity_ConfigContext)(nil)):             ConfigContextObjectType,
 }
 
 func GetObjectType(entity *pb.Entity) (string, error) {
@@ -549,6 +552,8 @@ func GetObjectTypeName(objectType string) (string, error) {
 		return CoolingSourceObjectTypeName, nil
 	case ModuleBayTypeObjectType:
 		return ModuleBayTypeObjectTypeName, nil
+	case ConfigContextObjectType:
+		return ConfigContextObjectTypeName, nil
 	case DeviceConfigObjectType:
 		return DeviceConfigObjectTypeName, nil
 	default:
@@ -576,6 +581,8 @@ func GetPrimaryValue(entity *pb.Entity) (string, error) {
 		return fmt.Sprintf("%v", e.ClusterGroup.Name), nil
 	case *pb.Entity_ClusterType:
 		return fmt.Sprintf("%v", e.ClusterType.Name), nil
+	case *pb.Entity_ConfigContext:
+		return fmt.Sprintf("%v", e.ConfigContext.Name), nil
 	case *pb.Entity_ConsolePort:
 		return fmt.Sprintf("%v", e.ConsolePort.Name), nil
 	case *pb.Entity_ConsoleServerPort:

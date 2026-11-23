@@ -227,6 +227,8 @@ func CreateEntityFromInterface(fieldValue any) *diodepb.Entity {
 		return &diodepb.Entity{Entity: &diodepb.Entity_CoolingSource{CoolingSource: v}}
 	case *diodepb.ModuleBayType:
 		return &diodepb.Entity{Entity: &diodepb.Entity_ModuleBayType{ModuleBayType: v}}
+	case *diodepb.ConfigContext:
+		return &diodepb.Entity{Entity: &diodepb.Entity_ConfigContext{ConfigContext: v}}
 	default:
 		return nil
 	}
@@ -452,6 +454,8 @@ func GetEntityTypeName(fieldValue any) string {
 		return "CoolingSource"
 	case *diodepb.ModuleBayType:
 		return "ModuleBayType"
+	case *diodepb.ConfigContext:
+		return "ConfigContext"
 	default:
 		return "unknown"
 	}
@@ -676,6 +680,8 @@ func IsKnownEntityType(fieldValue any) bool {
 		return true
 	case *diodepb.ModuleBayType:
 		return true
+	case *diodepb.ConfigContext:
+		return true
 	default:
 		return false
 	}
@@ -791,6 +797,7 @@ func GetAllEntityTypes() []string {
 		"CoolingOutflow",
 		"CoolingSource",
 		"ModuleBayType",
+		"ConfigContext",
 	}
 }
 
@@ -841,6 +848,9 @@ func GetNodeTypeForField(fieldName string) string {
 		"ChoiceSet":               "CustomFieldChoiceSet",
 		"Circuit":                 "Circuit",
 		"Cluster":                 "Cluster",
+		"ClusterGroups":           "ClusterGroup",
+		"ClusterTypes":            "ClusterType",
+		"Clusters":                "Cluster",
 		"Config":                  "DeviceConfig",
 		"Contact":                 "Contact",
 		"CoolingIntake":           "CoolingIntake",
@@ -850,6 +860,7 @@ func GetNodeTypeForField(fieldName string) string {
 		"DefaultPlatform":         "Platform",
 		"Device":                  "Device",
 		"DeviceType":              "DeviceType",
+		"DeviceTypes":             "DeviceType",
 		"ExportTargets":           "RouteTarget",
 		"Group":                   "CircuitGroup",
 		"Groups":                  "ContactGroup",
@@ -866,6 +877,7 @@ func GetNodeTypeForField(fieldName string) string {
 		"L2vpn":                   "L2VPN",
 		"Lag":                     "Interface",
 		"Location":                "Location",
+		"Locations":               "Location",
 		"Manufacturer":            "Manufacturer",
 		"Master":                  "Device",
 		"Module":                  "Module",
@@ -878,6 +890,7 @@ func GetNodeTypeForField(fieldName string) string {
 		"Owner":                   "Owner",
 		"Parent":                  "ContactGroup",
 		"Platform":                "Platform",
+		"Platforms":               "Platform",
 		"Policy":                  "VLANTranslationPolicy",
 		"PowerPanel":              "PowerPanel",
 		"PowerPort":               "PowerPort",
@@ -894,13 +907,18 @@ func GetNodeTypeForField(fieldName string) string {
 		"RackType":                "RackType",
 		"RearPort":                "RearPort",
 		"Region":                  "Region",
+		"Regions":                 "Region",
 		"Rir":                     "RIR",
 		"Role":                    "Role",
+		"Roles":                   "DeviceRole",
 		"Site":                    "Site",
+		"SiteGroups":              "SiteGroup",
 		"Sites":                   "Site",
 		"TaggedVlans":             "VLAN",
 		"Tags":                    "Tag",
 		"Tenant":                  "Tenant",
+		"TenantGroups":            "TenantGroup",
+		"Tenants":                 "Tenant",
 		"Tunnel":                  "Tunnel",
 		"Type":                    "CircuitType",
 		"UntaggedVlan":            "VLAN",
@@ -924,6 +942,9 @@ func GetNodeTypeForField(fieldName string) string {
 		"choice_set":              "CustomFieldChoiceSet",
 		"circuit":                 "Circuit",
 		"cluster":                 "Cluster",
+		"cluster_groups":          "ClusterGroup",
+		"cluster_types":           "ClusterType",
+		"clusters":                "Cluster",
 		"config":                  "DeviceConfig",
 		"contact":                 "Contact",
 		"cooling_intake":          "CoolingIntake",
@@ -933,6 +954,7 @@ func GetNodeTypeForField(fieldName string) string {
 		"default_platform":        "Platform",
 		"device":                  "Device",
 		"device_type":             "DeviceType",
+		"device_types":            "DeviceType",
 		"export_targets":          "RouteTarget",
 		"group":                   "CircuitGroup",
 		"groups":                  "ContactGroup",
@@ -949,6 +971,7 @@ func GetNodeTypeForField(fieldName string) string {
 		"l2vpn":                   "L2VPN",
 		"lag":                     "Interface",
 		"location":                "Location",
+		"locations":               "Location",
 		"manufacturer":            "Manufacturer",
 		"master":                  "Device",
 		"module":                  "Module",
@@ -961,6 +984,7 @@ func GetNodeTypeForField(fieldName string) string {
 		"owner":                   "Owner",
 		"parent":                  "ContactGroup",
 		"platform":                "Platform",
+		"platforms":               "Platform",
 		"policy":                  "VLANTranslationPolicy",
 		"power_panel":             "PowerPanel",
 		"power_port":              "PowerPort",
@@ -977,13 +1001,18 @@ func GetNodeTypeForField(fieldName string) string {
 		"rack_type":               "RackType",
 		"rear_port":               "RearPort",
 		"region":                  "Region",
+		"regions":                 "Region",
 		"rir":                     "RIR",
 		"role":                    "Role",
+		"roles":                   "DeviceRole",
 		"site":                    "Site",
+		"site_groups":             "SiteGroup",
 		"sites":                   "Site",
 		"tagged_vlans":            "VLAN",
 		"tags":                    "Tag",
 		"tenant":                  "Tenant",
+		"tenant_groups":           "TenantGroup",
+		"tenants":                 "Tenant",
 		"tunnel":                  "Tunnel",
 		"type":                    "CircuitType",
 		"untagged_vlan":           "VLAN",
