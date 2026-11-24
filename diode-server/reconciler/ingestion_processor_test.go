@@ -39,6 +39,16 @@ func testCompressBrotli(t *testing.T, data []byte) []byte {
 	return buf.Bytes()
 }
 
+// createConsumerGroup creates the ingestion consumer group at the start of
+// the stream before the processor starts. The processor creates it at "$"
+// (new entries only), so an entry added before its goroutine gets there
+// would never be delivered.
+func createConsumerGroup(ctx context.Context, t *testing.T, client *redis.Client) {
+	t.Helper()
+	require.NoError(t, client.XGroupCreateMkStream(ctx,
+		reconciler.DefaultRedisStreamID, reconciler.DefaultRedisConsumerGroup, "0").Err())
+}
+
 func TestNewIngestionProcessor(t *testing.T) {
 	ctx := context.Background()
 	s := miniredis.RunT(t)
@@ -280,12 +290,11 @@ func TestIngestionProcessorStart(t *testing.T) {
 	compressedReq := testCompressBrotli(t, reqBytes)
 
 	// Start processor in a separate goroutine
+	createConsumerGroup(ctx, t, redisStreamClient)
 	go func() {
 		err := processor.Start(ctx)
 		assert.NoError(t, err)
 	}()
-	// Wait server
-	time.Sleep(50 * time.Millisecond)
 
 	mockRepository.EXPECT().WithDedupLocks(mock.Anything, mock.Anything, mock.Anything).
 		RunAndReturn(func(_ context.Context, _ []string, fn func(reconops.DedupRepository) error) error {
@@ -446,11 +455,11 @@ func TestIngestionProcessor_DuplicateHandling(t *testing.T) {
 				mockOps, mockMetrics)
 			require.NoError(t, err)
 
+			createConsumerGroup(ctx, t, redisStreamClient)
 			go func() {
 				err := processor.Start(ctx)
 				assert.NoError(t, err)
 			}()
-			time.Sleep(50 * time.Millisecond)
 
 			ingestReq := &diodepb.IngestRequest{
 				Id:       "test-request-id",
@@ -549,6 +558,7 @@ func TestIngestionProcessor_DedupKeysFollowSourceMatch(t *testing.T) {
 		reconciler.DefaultRedisStreamID, reconciler.DefaultRedisConsumerGroup,
 		mockOps, mockMetrics)
 	require.NoError(t, err)
+	createConsumerGroup(ctx, t, redisStreamClient)
 	go func() {
 		assert.NoError(t, processor.Start(ctx))
 	}()
