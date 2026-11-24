@@ -111,7 +111,6 @@ func (r iteratorForBulkCreateIngestionLogs) Values() ([]interface{}, error) {
 		r.rows[0].ID,
 		r.rows[0].ExternalID,
 		r.rows[0].ObjectType,
-		r.rows[0].State,
 		r.rows[0].RequestID,
 		r.rows[0].IngestionTs,
 		r.rows[0].SourceTs,
@@ -130,5 +129,41 @@ func (r iteratorForBulkCreateIngestionLogs) Err() error {
 }
 
 func (q *Queries) BulkCreateIngestionLogs(ctx context.Context, arg []BulkCreateIngestionLogsParams) (int64, error) {
-	return q.db.CopyFrom(ctx, []string{"ingestion_logs"}, []string{"id", "external_id", "object_type", "state", "request_id", "ingestion_ts", "source_ts", "producer_app_name", "producer_app_version", "sdk_name", "sdk_version", "entity", "source_metadata", "entity_hash"}, &iteratorForBulkCreateIngestionLogs{rows: arg})
+	return q.db.CopyFrom(ctx, []string{"ingestion_logs"}, []string{"id", "external_id", "object_type", "request_id", "ingestion_ts", "source_ts", "producer_app_name", "producer_app_version", "sdk_name", "sdk_version", "entity", "source_metadata", "entity_hash"}, &iteratorForBulkCreateIngestionLogs{rows: arg})
+}
+
+// iteratorForBulkCreateIngestionLogsStats implements pgx.CopyFromSource.
+type iteratorForBulkCreateIngestionLogsStats struct {
+	rows                 []BulkCreateIngestionLogsStatsParams
+	skippedFirstNextCall bool
+}
+
+func (r *iteratorForBulkCreateIngestionLogsStats) Next() bool {
+	if len(r.rows) == 0 {
+		return false
+	}
+	if !r.skippedFirstNextCall {
+		r.skippedFirstNextCall = true
+		return true
+	}
+	r.rows = r.rows[1:]
+	return len(r.rows) > 0
+}
+
+func (r iteratorForBulkCreateIngestionLogsStats) Values() ([]interface{}, error) {
+	return []interface{}{
+		r.rows[0].IngestionLogID,
+		r.rows[0].State,
+		r.rows[0].ObjectType,
+		r.rows[0].IngestionTs,
+	}, nil
+}
+
+func (r iteratorForBulkCreateIngestionLogsStats) Err() error {
+	return nil
+}
+
+// Stats rows for BulkCreateIngestionLogs, copied in the same transaction.
+func (q *Queries) BulkCreateIngestionLogsStats(ctx context.Context, arg []BulkCreateIngestionLogsStatsParams) (int64, error) {
+	return q.db.CopyFrom(ctx, []string{"ingestion_logs_stats"}, []string{"ingestion_log_id", "state", "object_type", "ingestion_ts"}, &iteratorForBulkCreateIngestionLogsStats{rows: arg})
 }
