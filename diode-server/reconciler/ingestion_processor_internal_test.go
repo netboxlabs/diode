@@ -132,7 +132,7 @@ func TestHandleStreamMessage(t *testing.T) {
 					RunAndReturn(func(_ context.Context, _ []string, fn func(ops.DedupRepository) error) error {
 						return fn(mockRepository)
 					})
-				mockRepository.On("FindPriorIngestionLogsByEntityHashes", mock.Anything, mock.Anything, mock.Anything).Return(map[string]*ops.PriorIngestionLog{}, nil)
+				mockRepository.On("FindPriorIngestionLogsByEntityHashes", mock.Anything, mock.Anything).Return(map[string]*ops.PriorIngestionLog{}, nil)
 				mockRepository.On("BulkCreateIngestionLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
 					func(_ context.Context, logs []*reconcilerpb.IngestionLog, _ [][]byte, _ []string) map[string]int32 {
 						result := make(map[string]int32, len(logs))
@@ -284,7 +284,7 @@ func TestHandleStreamMessageLegacyUncompressed(t *testing.T) {
 		RunAndReturn(func(_ context.Context, _ []string, fn func(ops.DedupRepository) error) error {
 			return fn(mockRepository)
 		})
-	mockRepository.On("FindPriorIngestionLogsByEntityHashes", mock.Anything, mock.Anything, mock.Anything).Return(map[string]*ops.PriorIngestionLog{}, nil)
+	mockRepository.On("FindPriorIngestionLogsByEntityHashes", mock.Anything, mock.Anything).Return(map[string]*ops.PriorIngestionLog{}, nil)
 	mockRepository.On("BulkCreateIngestionLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
 		func(_ context.Context, logs []*reconcilerpb.IngestionLog, _ [][]byte, _ []string) map[string]int32 {
 			result := make(map[string]int32, len(logs))
@@ -379,7 +379,7 @@ func TestHandleStreamMessageDeletesEntryWhenIngestionLogsFail(t *testing.T) {
 		RunAndReturn(func(_ context.Context, _ []string, fn func(ops.DedupRepository) error) error {
 			return fn(mockRepository)
 		})
-	mockRepository.On("FindPriorIngestionLogsByEntityHashes", mock.Anything, mock.Anything, mock.Anything).Return(map[string]*ops.PriorIngestionLog{}, nil)
+	mockRepository.On("FindPriorIngestionLogsByEntityHashes", mock.Anything, mock.Anything).Return(map[string]*ops.PriorIngestionLog{}, nil)
 	mockRepository.On("BulkCreateIngestionLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).
 		Return(nil, errors.New("connection refused"))
 	mockRedisStreamClient.On("XAck", mock.Anything, "test-stream", "test-group", msg.ID).Return(redis.NewIntCmd(ctx))
@@ -431,7 +431,7 @@ func TestHandleStreamMessageLogsWhenDeleteFails(t *testing.T) {
 		RunAndReturn(func(_ context.Context, _ []string, fn func(ops.DedupRepository) error) error {
 			return fn(mockRepository)
 		})
-	mockRepository.On("FindPriorIngestionLogsByEntityHashes", mock.Anything, mock.Anything, mock.Anything).Return(map[string]*ops.PriorIngestionLog{}, nil)
+	mockRepository.On("FindPriorIngestionLogsByEntityHashes", mock.Anything, mock.Anything).Return(map[string]*ops.PriorIngestionLog{}, nil)
 	mockRepository.On("BulkCreateIngestionLogs", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(
 		func(_ context.Context, logs []*reconcilerpb.IngestionLog, _ [][]byte, _ []string) map[string]int32 {
 			result := make(map[string]int32, len(logs))

@@ -45,34 +45,23 @@ ORDER BY v_deviations.id DESC
 LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: FindPriorIngestionLogByEntityHash :one
+-- One observed state (entity hash) is one deviation, whichever branch it was
+-- last diffed on: a Rediff moves the deviation, and a NO_CHANGES row has no
+-- change set at all, so neither may split dedup.
 SELECT il.*
 FROM ingestion_logs il
-LEFT JOIN LATERAL (
-    SELECT branch_id
-    FROM change_sets cs
-    WHERE cs.ingestion_log_id = il.id
-    ORDER BY cs.id DESC
-    LIMIT 1
-) lcs ON true
 WHERE il.entity_hash = sqlc.arg('entity_hash')
-  AND lcs.branch_id IS NOT DISTINCT FROM sqlc.narg('branch_id')::text
 ORDER BY il.created_at DESC, il.id DESC
 LIMIT 1;
 
 -- name: FindPriorIngestionLogsByEntityHashes :many
+-- Batch form of FindPriorIngestionLogByEntityHash: the newest row per hash.
 SELECT il.*
 FROM unnest(@entity_hashes::text[]) AS h(entity_hash)
 CROSS JOIN LATERAL (
     SELECT il2.*
     FROM ingestion_logs il2
     WHERE il2.entity_hash = h.entity_hash
-      AND (
-          SELECT cs.branch_id
-          FROM change_sets cs
-          WHERE cs.ingestion_log_id = il2.id
-          ORDER BY cs.id DESC
-          LIMIT 1
-      ) IS NOT DISTINCT FROM sqlc.narg('branch_id')::text
     ORDER BY il2.created_at DESC, il2.id DESC
     LIMIT 1
 ) il;

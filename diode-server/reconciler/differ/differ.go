@@ -23,7 +23,7 @@ type IngestEntity struct {
 
 // schemaID returns the schema id of a branch the plugin reported, or nil for
 // main. The change set stores only the schema id: it is the key for branch
-// filters and dedup, and it is the value the plugin accepts as the branch on
+// filters, and it is the value the plugin accepts as the branch on
 // a later plan or apply. Clients resolve the display name from NetBox.
 func schemaID(branch *netboxdiodeplugin.Branch) *string {
 	if branch == nil || branch.ID == "" {

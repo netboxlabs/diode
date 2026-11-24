@@ -13,8 +13,8 @@ import (
 // per-entity-hash advisory locks so concurrent same-entity batches serialize
 // instead of racing the find-prior -> insert window.
 type DedupRepository interface {
-	FindPriorIngestionLogByEntityHash(ctx context.Context, entityHash string, currentBranch *string) (*int32, *reconcilerpb.IngestionLog, error)
-	FindPriorIngestionLogsByEntityHashes(ctx context.Context, entityHashes []string, currentBranch *string) (map[string]*PriorIngestionLog, error)
+	FindPriorIngestionLogByEntityHash(ctx context.Context, entityHash string) (*int32, *reconcilerpb.IngestionLog, error)
+	FindPriorIngestionLogsByEntityHashes(ctx context.Context, entityHashes []string) (map[string]*PriorIngestionLog, error)
 	CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb.IngestionLog, sourceMetadata []byte, entityHash string) (*int32, error)
 	BulkCreateIngestionLogs(ctx context.Context, logs []*reconcilerpb.IngestionLog, sourceMetadata [][]byte, entityHashes []string) (map[string]int32, error)
 	// BulkMarkDuplicates increments duplicate bookkeeping by the per-ID amount

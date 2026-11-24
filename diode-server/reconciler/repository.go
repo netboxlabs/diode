@@ -19,11 +19,11 @@ type Repository interface {
 	RetrieveDeviations(ctx context.Context, filter *reconcilerpb.RetrieveDeviationsRequest, limit int32, offset int32) ([]*reconcilerpb.Deviation, error)
 	RetrieveDeviationByID(ctx context.Context, externalID string) (*reconcilerpb.Deviation, error)
 
-	FindPriorIngestionLogByEntityHash(ctx context.Context, entityHash string, currentBranch *string) (*int32, *reconcilerpb.IngestionLog, error)
+	FindPriorIngestionLogByEntityHash(ctx context.Context, entityHash string) (*int32, *reconcilerpb.IngestionLog, error)
 	TruncateChangeSets(ctx context.Context, ingestionLogID int32, limit int32) error
 
 	// Bulk operations
-	FindPriorIngestionLogsByEntityHashes(ctx context.Context, entityHashes []string, currentBranch *string) (map[string]*ops.PriorIngestionLog, error)
+	FindPriorIngestionLogsByEntityHashes(ctx context.Context, entityHashes []string) (map[string]*ops.PriorIngestionLog, error)
 	BulkCreateIngestionLogs(ctx context.Context, logs []*reconcilerpb.IngestionLog, sourceMetadata [][]byte, entityHashes []string) (map[string]int32, error)
 	// BulkMarkDuplicates increments duplicate bookkeeping for the given prior
 	// ingestion logs by the per-ID amount and requeues drift-eligible ones

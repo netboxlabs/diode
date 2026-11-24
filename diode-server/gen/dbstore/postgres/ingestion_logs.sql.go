@@ -413,26 +413,16 @@ func (q *Queries) FindIngestionLogIDsByExternalIDs(ctx context.Context, external
 const findPriorIngestionLogByEntityHash = `-- name: FindPriorIngestionLogByEntityHash :one
 SELECT il.id, il.external_id, il.object_type, il.state, il.request_id, il.ingestion_ts, il.source_ts, il.producer_app_name, il.producer_app_version, il.sdk_name, il.sdk_version, il.entity, il.error, il.source_metadata, il.created_at, il.updated_at, il.entity_hash, il.last_seen, il.duplicate_count, il.requeued_from_state
 FROM ingestion_logs il
-LEFT JOIN LATERAL (
-    SELECT branch_id
-    FROM change_sets cs
-    WHERE cs.ingestion_log_id = il.id
-    ORDER BY cs.id DESC
-    LIMIT 1
-) lcs ON true
 WHERE il.entity_hash = $1
-  AND lcs.branch_id IS NOT DISTINCT FROM $2::text
 ORDER BY il.created_at DESC, il.id DESC
 LIMIT 1
 `
 
-type FindPriorIngestionLogByEntityHashParams struct {
-	EntityHash pgtype.Text `json:"entity_hash"`
-	BranchID   pgtype.Text `json:"branch_id"`
-}
-
-func (q *Queries) FindPriorIngestionLogByEntityHash(ctx context.Context, arg FindPriorIngestionLogByEntityHashParams) (IngestionLog, error) {
-	row := q.db.QueryRow(ctx, findPriorIngestionLogByEntityHash, arg.EntityHash, arg.BranchID)
+// One observed state (entity hash) is one deviation, whichever branch it was
+// last diffed on: a Rediff moves the deviation, and a NO_CHANGES row has no
+// change set at all, so neither may split dedup.
+func (q *Queries) FindPriorIngestionLogByEntityHash(ctx context.Context, entityHash pgtype.Text) (IngestionLog, error) {
+	row := q.db.QueryRow(ctx, findPriorIngestionLogByEntityHash, entityHash)
 	var i IngestionLog
 	err := row.Scan(
 		&i.ID,
@@ -466,25 +456,14 @@ CROSS JOIN LATERAL (
     SELECT il2.id, il2.external_id, il2.object_type, il2.state, il2.request_id, il2.ingestion_ts, il2.source_ts, il2.producer_app_name, il2.producer_app_version, il2.sdk_name, il2.sdk_version, il2.entity, il2.error, il2.source_metadata, il2.created_at, il2.updated_at, il2.entity_hash, il2.last_seen, il2.duplicate_count, il2.requeued_from_state
     FROM ingestion_logs il2
     WHERE il2.entity_hash = h.entity_hash
-      AND (
-          SELECT cs.branch_id
-          FROM change_sets cs
-          WHERE cs.ingestion_log_id = il2.id
-          ORDER BY cs.id DESC
-          LIMIT 1
-      ) IS NOT DISTINCT FROM $2::text
     ORDER BY il2.created_at DESC, il2.id DESC
     LIMIT 1
 ) il
 `
 
-type FindPriorIngestionLogsByEntityHashesParams struct {
-	EntityHashes []string    `json:"entity_hashes"`
-	BranchID     pgtype.Text `json:"branch_id"`
-}
-
-func (q *Queries) FindPriorIngestionLogsByEntityHashes(ctx context.Context, arg FindPriorIngestionLogsByEntityHashesParams) ([]IngestionLog, error) {
-	rows, err := q.db.Query(ctx, findPriorIngestionLogsByEntityHashes, arg.EntityHashes, arg.BranchID)
+// Batch form of FindPriorIngestionLogByEntityHash: the newest row per hash.
+func (q *Queries) FindPriorIngestionLogsByEntityHashes(ctx context.Context, entityHashes []string) ([]IngestionLog, error) {
+	rows, err := q.db.Query(ctx, findPriorIngestionLogsByEntityHashes, entityHashes)
 	if err != nil {
 		return nil, err
 	}
