@@ -498,16 +498,9 @@ func deviationToProto(dbDeviation postgres.VDeviation) (*reconcilerpb.Deviation,
 	return deviation, nil
 }
 
-// FindPriorIngestionLogByEntityHash finds a prior deviation with the same entity hash, considering branch context.
-func (r *Repository) FindPriorIngestionLogByEntityHash(ctx context.Context, entityHash string, currentBranch *string) (*int32, *reconcilerpb.IngestionLog, error) {
-	params := postgres.FindPriorIngestionLogByEntityHashParams{
-		EntityHash: pgtype.Text{String: entityHash, Valid: true},
-	}
-	if currentBranch != nil {
-		params.BranchID = pgtype.Text{String: *currentBranch, Valid: true}
-	}
-
-	dbLog, err := r.queries.FindPriorIngestionLogByEntityHash(ctx, params)
+// FindPriorIngestionLogByEntityHash finds the newest prior deviation with the same entity hash.
+func (r *Repository) FindPriorIngestionLogByEntityHash(ctx context.Context, entityHash string) (*int32, *reconcilerpb.IngestionLog, error) {
+	dbLog, err := r.queries.FindPriorIngestionLogByEntityHash(ctx, pgtype.Text{String: entityHash, Valid: true})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -558,16 +551,9 @@ func (r *Repository) TruncateChangeSets(ctx context.Context, ingestionLogID int3
 	})
 }
 
-// FindPriorIngestionLogsByEntityHashes finds prior ingestion logs matching the given entity hashes, scoped by branch.
-func (r *Repository) FindPriorIngestionLogsByEntityHashes(ctx context.Context, entityHashes []string, currentBranch *string) (map[string]*ops.PriorIngestionLog, error) {
-	params := postgres.FindPriorIngestionLogsByEntityHashesParams{
-		EntityHashes: entityHashes,
-	}
-	if currentBranch != nil {
-		params.BranchID = pgtype.Text{String: *currentBranch, Valid: true}
-	}
-
-	dbLogs, err := r.queries.FindPriorIngestionLogsByEntityHashes(ctx, params)
+// FindPriorIngestionLogsByEntityHashes finds the newest prior ingestion log for each of the given entity hashes.
+func (r *Repository) FindPriorIngestionLogsByEntityHashes(ctx context.Context, entityHashes []string) (map[string]*ops.PriorIngestionLog, error) {
+	dbLogs, err := r.queries.FindPriorIngestionLogsByEntityHashes(ctx, entityHashes)
 	if err != nil {
 		return nil, err
 	}

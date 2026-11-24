@@ -563,9 +563,9 @@ func (_c *Repository_CreateIngestionLog_Call) RunAndReturn(run func(context.Cont
 	return _c
 }
 
-// FindPriorIngestionLogByEntityHash provides a mock function with given fields: ctx, entityHash, currentBranch
-func (_m *Repository) FindPriorIngestionLogByEntityHash(ctx context.Context, entityHash string, currentBranch *string) (*int32, *reconcilerpb.IngestionLog, error) {
-	ret := _m.Called(ctx, entityHash, currentBranch)
+// FindPriorIngestionLogByEntityHash provides a mock function with given fields: ctx, entityHash
+func (_m *Repository) FindPriorIngestionLogByEntityHash(ctx context.Context, entityHash string) (*int32, *reconcilerpb.IngestionLog, error) {
+	ret := _m.Called(ctx, entityHash)
 
 	if len(ret) == 0 {
 		panic("no return value specified for FindPriorIngestionLogByEntityHash")
@@ -574,27 +574,27 @@ func (_m *Repository) FindPriorIngestionLogByEntityHash(ctx context.Context, ent
 	var r0 *int32
 	var r1 *reconcilerpb.IngestionLog
 	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *string) (*int32, *reconcilerpb.IngestionLog, error)); ok {
-		return rf(ctx, entityHash, currentBranch)
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*int32, *reconcilerpb.IngestionLog, error)); ok {
+		return rf(ctx, entityHash)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, *string) *int32); ok {
-		r0 = rf(ctx, entityHash, currentBranch)
+	if rf, ok := ret.Get(0).(func(context.Context, string) *int32); ok {
+		r0 = rf(ctx, entityHash)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*int32)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, *string) *reconcilerpb.IngestionLog); ok {
-		r1 = rf(ctx, entityHash, currentBranch)
+	if rf, ok := ret.Get(1).(func(context.Context, string) *reconcilerpb.IngestionLog); ok {
+		r1 = rf(ctx, entityHash)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*reconcilerpb.IngestionLog)
 		}
 	}
 
-	if rf, ok := ret.Get(2).(func(context.Context, string, *string) error); ok {
-		r2 = rf(ctx, entityHash, currentBranch)
+	if rf, ok := ret.Get(2).(func(context.Context, string) error); ok {
+		r2 = rf(ctx, entityHash)
 	} else {
 		r2 = ret.Error(2)
 	}
@@ -610,14 +610,13 @@ type Repository_FindPriorIngestionLogByEntityHash_Call struct {
 // FindPriorIngestionLogByEntityHash is a helper method to define mock.On call
 //   - ctx context.Context
 //   - entityHash string
-//   - currentBranch *string
-func (_e *Repository_Expecter) FindPriorIngestionLogByEntityHash(ctx interface{}, entityHash interface{}, currentBranch interface{}) *Repository_FindPriorIngestionLogByEntityHash_Call {
-	return &Repository_FindPriorIngestionLogByEntityHash_Call{Call: _e.mock.On("FindPriorIngestionLogByEntityHash", ctx, entityHash, currentBranch)}
+func (_e *Repository_Expecter) FindPriorIngestionLogByEntityHash(ctx interface{}, entityHash interface{}) *Repository_FindPriorIngestionLogByEntityHash_Call {
+	return &Repository_FindPriorIngestionLogByEntityHash_Call{Call: _e.mock.On("FindPriorIngestionLogByEntityHash", ctx, entityHash)}
 }
 
-func (_c *Repository_FindPriorIngestionLogByEntityHash_Call) Run(run func(ctx context.Context, entityHash string, currentBranch *string)) *Repository_FindPriorIngestionLogByEntityHash_Call {
+func (_c *Repository_FindPriorIngestionLogByEntityHash_Call) Run(run func(ctx context.Context, entityHash string)) *Repository_FindPriorIngestionLogByEntityHash_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(*string))
+		run(args[0].(context.Context), args[1].(string))
 	})
 	return _c
 }
@@ -627,14 +626,14 @@ func (_c *Repository_FindPriorIngestionLogByEntityHash_Call) Return(_a0 *int32, 
 	return _c
 }
 
-func (_c *Repository_FindPriorIngestionLogByEntityHash_Call) RunAndReturn(run func(context.Context, string, *string) (*int32, *reconcilerpb.IngestionLog, error)) *Repository_FindPriorIngestionLogByEntityHash_Call {
+func (_c *Repository_FindPriorIngestionLogByEntityHash_Call) RunAndReturn(run func(context.Context, string) (*int32, *reconcilerpb.IngestionLog, error)) *Repository_FindPriorIngestionLogByEntityHash_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
-// FindPriorIngestionLogsByEntityHashes provides a mock function with given fields: ctx, entityHashes, currentBranch
-func (_m *Repository) FindPriorIngestionLogsByEntityHashes(ctx context.Context, entityHashes []string, currentBranch *string) (map[string]*ops.PriorIngestionLog, error) {
-	ret := _m.Called(ctx, entityHashes, currentBranch)
+// FindPriorIngestionLogsByEntityHashes provides a mock function with given fields: ctx, entityHashes
+func (_m *Repository) FindPriorIngestionLogsByEntityHashes(ctx context.Context, entityHashes []string) (map[string]*ops.PriorIngestionLog, error) {
+	ret := _m.Called(ctx, entityHashes)
 
 	if len(ret) == 0 {
 		panic("no return value specified for FindPriorIngestionLogsByEntityHashes")
@@ -642,19 +641,19 @@ func (_m *Repository) FindPriorIngestionLogsByEntityHashes(ctx context.Context, 
 
 	var r0 map[string]*ops.PriorIngestionLog
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, []string, *string) (map[string]*ops.PriorIngestionLog, error)); ok {
-		return rf(ctx, entityHashes, currentBranch)
+	if rf, ok := ret.Get(0).(func(context.Context, []string) (map[string]*ops.PriorIngestionLog, error)); ok {
+		return rf(ctx, entityHashes)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, []string, *string) map[string]*ops.PriorIngestionLog); ok {
-		r0 = rf(ctx, entityHashes, currentBranch)
+	if rf, ok := ret.Get(0).(func(context.Context, []string) map[string]*ops.PriorIngestionLog); ok {
+		r0 = rf(ctx, entityHashes)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(map[string]*ops.PriorIngestionLog)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, []string, *string) error); ok {
-		r1 = rf(ctx, entityHashes, currentBranch)
+	if rf, ok := ret.Get(1).(func(context.Context, []string) error); ok {
+		r1 = rf(ctx, entityHashes)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -670,14 +669,13 @@ type Repository_FindPriorIngestionLogsByEntityHashes_Call struct {
 // FindPriorIngestionLogsByEntityHashes is a helper method to define mock.On call
 //   - ctx context.Context
 //   - entityHashes []string
-//   - currentBranch *string
-func (_e *Repository_Expecter) FindPriorIngestionLogsByEntityHashes(ctx interface{}, entityHashes interface{}, currentBranch interface{}) *Repository_FindPriorIngestionLogsByEntityHashes_Call {
-	return &Repository_FindPriorIngestionLogsByEntityHashes_Call{Call: _e.mock.On("FindPriorIngestionLogsByEntityHashes", ctx, entityHashes, currentBranch)}
+func (_e *Repository_Expecter) FindPriorIngestionLogsByEntityHashes(ctx interface{}, entityHashes interface{}) *Repository_FindPriorIngestionLogsByEntityHashes_Call {
+	return &Repository_FindPriorIngestionLogsByEntityHashes_Call{Call: _e.mock.On("FindPriorIngestionLogsByEntityHashes", ctx, entityHashes)}
 }
 
-func (_c *Repository_FindPriorIngestionLogsByEntityHashes_Call) Run(run func(ctx context.Context, entityHashes []string, currentBranch *string)) *Repository_FindPriorIngestionLogsByEntityHashes_Call {
+func (_c *Repository_FindPriorIngestionLogsByEntityHashes_Call) Run(run func(ctx context.Context, entityHashes []string)) *Repository_FindPriorIngestionLogsByEntityHashes_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].([]string), args[2].(*string))
+		run(args[0].(context.Context), args[1].([]string))
 	})
 	return _c
 }
@@ -687,7 +685,7 @@ func (_c *Repository_FindPriorIngestionLogsByEntityHashes_Call) Return(_a0 map[s
 	return _c
 }
 
-func (_c *Repository_FindPriorIngestionLogsByEntityHashes_Call) RunAndReturn(run func(context.Context, []string, *string) (map[string]*ops.PriorIngestionLog, error)) *Repository_FindPriorIngestionLogsByEntityHashes_Call {
+func (_c *Repository_FindPriorIngestionLogsByEntityHashes_Call) RunAndReturn(run func(context.Context, []string) (map[string]*ops.PriorIngestionLog, error)) *Repository_FindPriorIngestionLogsByEntityHashes_Call {
 	_c.Call.Return(run)
 	return _c
 }

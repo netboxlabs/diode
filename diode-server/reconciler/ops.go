@@ -204,6 +204,20 @@ func (o *Ops) RefreshDefaultBranch(ctx context.Context) (*netboxdiodeplugin.Bran
 	return o.DefaultBranch(ctx)
 }
 
+// defaultBranchID returns the cached default branch schema id, or "" for main
+// (also when the lookup fails).
+func (o *Ops) defaultBranchID(ctx context.Context) string {
+	branch, err := o.DefaultBranch(ctx)
+	if err != nil {
+		o.logger.Warn("failed to fetch default branch from NetBox plugin", "error", err)
+		return ""
+	}
+	if branch == nil {
+		return ""
+	}
+	return branch.ID
+}
+
 // CreateIngestionLog creates a record for a newly received ingestion log
 func (o *Ops) CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb.IngestionLog, sourceMetadata []byte) (*ops.CreateIngestionLogResult, error) {
 	fingerprinter := entityhash.NewEntityFingerprinter()
@@ -212,23 +226,13 @@ func (o *Ops) CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb
 		return nil, fmt.Errorf("failed to generate entity hash: %w", err)
 	}
 
-	// Search for prior ingestion logs in the context of the default branch
-	// (cached by the background refresher). Change sets store the bare schema
-	// id, so the dedup key is the schema id too.
-	var defaultBranchID *string
-	var branchIDForResult string
-	if branch, err := o.DefaultBranch(ctx); err != nil {
-		o.logger.Warn("failed to fetch default branch from NetBox plugin", "error", err)
-		// Continue with nil branch (main branch) if we can't fetch default branch
-	} else if branch != nil && branch.ID != "" {
-		branchIDForResult = branch.ID
-		defaultBranchID = &branchIDForResult
-		o.logger.Debug("using default branch for ingestion log deduplication", "branch", branch.Name, "branchID", branch.ID)
-	}
+	// Dedup is by entity hash only; the default branch (cached by the
+	// background refresher) is only reported on the result.
+	branchIDForResult := o.defaultBranchID(ctx)
 
 	var result *ops.CreateIngestionLogResult
 	err = o.repository.WithDedupLocks(ctx, []string{entityHash}, func(repo ops.DedupRepository) error {
-		existingID, existingLog, err := repo.FindPriorIngestionLogByEntityHash(ctx, entityHash, defaultBranchID)
+		existingID, existingLog, err := repo.FindPriorIngestionLogByEntityHash(ctx, entityHash)
 		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			return fmt.Errorf("failed to search for prior deviation: %w", err)
 		}
@@ -275,16 +279,7 @@ func (o *Ops) CreateIngestionLog(ctx context.Context, ingestionLog *reconcilerpb
 
 // BulkCreateIngestionLogs creates multiple ingestion logs in bulk, deduplicating against existing records.
 func (o *Ops) BulkCreateIngestionLogs(ctx context.Context, ingestionLogs []*reconcilerpb.IngestionLog, sourceMetadata [][]byte, entityHashes []string) ([]*ops.CreateIngestionLogResult, error) {
-	// Fetch default branch (cached)
-	var defaultBranchID *string
-	var branchIDForResult string
-	if branch, err := o.DefaultBranch(ctx); err != nil {
-		o.logger.Warn("failed to fetch default branch from NetBox plugin", "error", err)
-	} else if branch != nil && branch.ID != "" {
-		branchIDForResult = branch.ID
-		defaultBranchID = &branchIDForResult
-		o.logger.Debug("using default branch for bulk ingestion log deduplication", "branch", branch.Name, "branchID", branch.ID)
-	}
+	branchIDForResult := o.defaultBranchID(ctx)
 
 	// Collect unique hashes for the batch find
 	uniqueHashes := make(map[string]struct{}, len(entityHashes))
@@ -304,7 +299,7 @@ func (o *Ops) BulkCreateIngestionLogs(ctx context.Context, ingestionLogs []*reco
 	// inserting its own.
 	err := o.repository.WithDedupLocks(ctx, hashSlice, func(repo ops.DedupRepository) error {
 		// Batch find priors
-		priors, err := repo.FindPriorIngestionLogsByEntityHashes(ctx, hashSlice, defaultBranchID)
+		priors, err := repo.FindPriorIngestionLogsByEntityHashes(ctx, hashSlice)
 		if err != nil {
 			return fmt.Errorf("failed to batch find prior ingestion logs: %w", err)
 		}

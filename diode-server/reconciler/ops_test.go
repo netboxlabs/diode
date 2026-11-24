@@ -166,7 +166,7 @@ func TestOpsCreateIngestionLog(t *testing.T) {
 
 			expectDedupPassthrough(mockRepository)
 
-			mockRepository.EXPECT().FindPriorIngestionLogByEntityHash(mock.Anything, mock.AnythingOfType("string"), (*string)(nil)).
+			mockRepository.EXPECT().FindPriorIngestionLogByEntityHash(mock.Anything, mock.AnythingOfType("string")).
 				Return(tt.mockFindPriorIngestionLogID, tt.mockFindPriorIngestionLog, tt.mockFindPriorIngestionLogError)
 
 			// Mock CreateIngestionLog
@@ -259,7 +259,7 @@ func TestOpsBulkCreateIngestionLogsDuplicateRequeue(t *testing.T) {
 			}
 		}
 		return true
-	}), (*string)(nil)).
+	})).
 		Return(map[string]*reconops.PriorIngestionLog{"hash-applied": priorApplied, "hash-open": priorOpen}, nil)
 	mockRepository.EXPECT().BulkMarkDuplicates(mock.Anything, map[int32]int32{10: 1, 11: 1}).
 		Return(map[int32]bool{10: true, 11: false}, nil)
@@ -316,7 +316,7 @@ func TestOpsBulkCreateIngestionLogsInBatchDuplicates(t *testing.T) {
 	expectDedupPassthrough(mockRepository)
 	mockRepository.EXPECT().FindPriorIngestionLogsByEntityHashes(mock.Anything, mock.MatchedBy(func(hashes []string) bool {
 		return len(hashes) == 2
-	}), (*string)(nil)).
+	})).
 		Return(map[string]*reconops.PriorIngestionLog{"hash-prior": prior}, nil)
 	// Only the first occurrence of hash-new is inserted.
 	mockRepository.EXPECT().BulkCreateIngestionLogs(mock.Anything, []*pb.IngestionLog{logs[0]}, mock.Anything, []string{"hash-new"}).
@@ -366,7 +366,7 @@ func TestOpsBulkCreateIngestionLogsMarkDuplicatesError(t *testing.T) {
 	opsInstance := reconciler.NewOps(mockRepository, mockNetBoxClient, logger, nil)
 
 	expectDedupPassthrough(mockRepository)
-	mockRepository.EXPECT().FindPriorIngestionLogsByEntityHashes(mock.Anything, []string{"hash-dup"}, (*string)(nil)).
+	mockRepository.EXPECT().FindPriorIngestionLogsByEntityHashes(mock.Anything, []string{"hash-dup"}).
 		Return(map[string]*reconops.PriorIngestionLog{"hash-dup": prior}, nil)
 	mockRepository.EXPECT().BulkMarkDuplicates(mock.Anything, map[int32]int32{10: 1}).
 		Return(nil, fmt.Errorf("database error"))
@@ -712,8 +712,8 @@ func TestOpsCreateIngestionLogDedupKeyFollowsSourceMatch(t *testing.T) {
 		expectDedupPassthrough(mockRepository)
 
 		var key string
-		mockRepository.EXPECT().FindPriorIngestionLogByEntityHash(mock.Anything, mock.AnythingOfType("string"), (*string)(nil)).
-			Run(func(_ context.Context, entityHash string, _ *string) { key = entityHash }).
+		mockRepository.EXPECT().FindPriorIngestionLogByEntityHash(mock.Anything, mock.AnythingOfType("string")).
+			Run(func(_ context.Context, entityHash string) { key = entityHash }).
 			Return(nil, nil, sql.ErrNoRows)
 		mockRepository.EXPECT().CreateIngestionLog(mock.Anything, log, mock.Anything, mock.AnythingOfType("string")).
 			RunAndReturn(func(_ context.Context, _ *pb.IngestionLog, _ []byte, entityHash string) (*int32, error) {
@@ -735,10 +735,11 @@ func TestOpsCreateIngestionLogDedupKeyFollowsSourceMatch(t *testing.T) {
 	require.Equal(t, oldDevice, nextRun, "a new run_id alone must dedup into the prior ingestion log")
 }
 
-// With a default branch configured, dedup looks up prior ingestion logs by the
-// branch schema id, the value change sets store. A "<name> (<id>)" key would
-// never match a stored row, so every observation would open a new deviation.
-func TestOpsDedupKeyIsBranchSchemaID(t *testing.T) {
+// With a default branch configured, dedup still looks up prior ingestion logs
+// by entity hash only: a deviation Rediffed off the default branch, or a
+// NO_CHANGES row with no change set, must not open a second deviation. The
+// default branch schema id is only reported on the result.
+func TestOpsDedupIgnoresDefaultBranch(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelWarn}))
 	branch := &netboxdiodeplugin.Branch{ID: "svwzcqhu", Name: "branch-3"}
 	entity := &diodepb.Entity{Entity: &diodepb.Entity_Site{Site: &diodepb.Site{Name: "test-site-1"}}}
@@ -762,7 +763,7 @@ func TestOpsDedupKeyIsBranchSchemaID(t *testing.T) {
 
 	t.Run("single", func(t *testing.T) {
 		opsInstance, mockRepository := startedOps(t)
-		mockRepository.EXPECT().FindPriorIngestionLogByEntityHash(mock.Anything, mock.AnythingOfType("string"), strPtr("svwzcqhu")).
+		mockRepository.EXPECT().FindPriorIngestionLogByEntityHash(mock.Anything, mock.AnythingOfType("string")).
 			Return(int32Ptr(10), prior, nil)
 
 		result, err := opsInstance.CreateIngestionLog(context.Background(), &pb.IngestionLog{Id: "new", Entity: entity}, nil)
@@ -773,7 +774,7 @@ func TestOpsDedupKeyIsBranchSchemaID(t *testing.T) {
 
 	t.Run("bulk", func(t *testing.T) {
 		opsInstance, mockRepository := startedOps(t)
-		mockRepository.EXPECT().FindPriorIngestionLogsByEntityHashes(mock.Anything, []string{"hash-1"}, strPtr("svwzcqhu")).
+		mockRepository.EXPECT().FindPriorIngestionLogsByEntityHashes(mock.Anything, []string{"hash-1"}).
 			Return(map[string]*reconops.PriorIngestionLog{"hash-1": {ID: 10, IngestionLog: prior}}, nil)
 
 		results, err := opsInstance.BulkCreateIngestionLogs(context.Background(),
