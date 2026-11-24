@@ -57,55 +57,85 @@ func startMigratedPostgres(t *testing.T) *pgxpool.Pool {
 }
 
 // A DELETE whose rows span several (state, object_type) counter cells must
-// not deadlock with a state transition that locks counter cells in
-// (state, object_type) order, the order the insert and update triggers use.
+// not deadlock with an INSERT that spans the same cells. Both triggers have
+// to lock counter cells in (state, object_type) order.
+//
+// Three transactions make a wrong order show:
+//  1. holder inserts a dcim.site row and keeps its transaction open, so it
+//     holds the middle cell (3, 'dcim.site').
+//  2. writer inserts one row of every object type in one statement. Its
+//     insert trigger locks the cells before (3, 'dcim.site') in its own
+//     order, then waits for holder.
+//  3. deleter deletes the seed rows. Its delete trigger waits on a cell that
+//     writer holds.
+//
+// When holder commits, writer and deleter finish only if neither holds a
+// cell the other still needs. The test catches an unordered delete trigger
+// and a reversed insert trigger. It does not catch every reordering: an
+// insert trigger that takes (3, 'dcim.device') first and the rest in another
+// order still passes.
 func TestStateCountsDeleteTriggerLocksCellsInOrder(t *testing.T) {
 	ctx := context.Background()
 	pool := startMigratedPostgres(t)
 
+	// In (state, object_type) order the cells are dcim.device, dcim.interface,
+	// dcim.site, ipam.ipaddress, ipam.prefix, ipam.vlan.
 	objectTypes := []string{"ipam.vlan", "dcim.site", "ipam.prefix", "dcim.interface", "ipam.ipaddress", "dcim.device"}
 	for _, objectType := range objectTypes {
 		_, err := pool.Exec(ctx, `INSERT INTO ingestion_logs (external_id, object_type, state) VALUES ($1, $1, 3)`, objectType)
 		require.NoError(t, err)
 	}
 
-	// The state transition holds the first cell in (state, object_type)
-	// order and is about to take the rest.
-	transition, err := pool.Begin(ctx)
+	waitForBlocked := func(n int, msg string) {
+		require.Eventually(t, func() bool {
+			var waiting int
+			err := pool.QueryRow(ctx,
+				`SELECT COUNT(*) FROM pg_stat_activity WHERE wait_event_type = 'Lock' AND datname = current_database()`).Scan(&waiting)
+			return err == nil && waiting >= n
+		}, 10*time.Second, 20*time.Millisecond, msg)
+	}
+
+	holder, err := pool.Begin(ctx)
 	require.NoError(t, err)
-	defer func() { _ = transition.Rollback(ctx) }()
-	_, err = transition.Exec(ctx, `SELECT 1 FROM ingestion_log_state_object_type_counts WHERE state = 3 AND object_type = 'dcim.device' FOR UPDATE`)
+	defer func() { _ = holder.Rollback(ctx) }()
+	_, err = holder.Exec(ctx, `INSERT INTO ingestion_logs (external_id, object_type, state) VALUES ('held', 'dcim.site', 3)`)
 	require.NoError(t, err)
+
+	writerDone := make(chan error, 1)
+	go func() {
+		_, err := pool.Exec(ctx, `INSERT INTO ingestion_logs (external_id, object_type, state)
+			SELECT 'next-' || ot, ot, 3 FROM unnest($1::text[]) ot`, objectTypes)
+		writerDone <- err
+	}()
+	waitForBlocked(1, "the writer never blocked on the held counter cell")
 
 	type result struct {
 		deleted int64
 		err     error
 	}
-	done := make(chan result, 1)
+	deleterDone := make(chan result, 1)
 	go func() {
-		tag, err := pool.Exec(ctx, `DELETE FROM ingestion_logs`)
-		done <- result{tag.RowsAffected(), err}
+		tag, err := pool.Exec(ctx, `DELETE FROM ingestion_logs WHERE external_id = object_type`)
+		deleterDone <- result{tag.RowsAffected(), err}
 	}()
-	require.Eventually(t, func() bool {
-		var waiting int
-		err := pool.QueryRow(ctx,
-			`SELECT COUNT(*) FROM pg_stat_activity WHERE wait_event_type = 'Lock' AND datname = current_database()`).Scan(&waiting)
-		return err == nil && waiting > 0
-	}, 10*time.Second, 20*time.Millisecond, "the delete never blocked on the held counter cell")
+	waitForBlocked(2, "the deleter never blocked on a counter cell")
 
-	_, err = transition.Exec(ctx, `SELECT 1 FROM ingestion_log_state_object_type_counts WHERE state = 3 ORDER BY state, object_type FOR UPDATE`)
-	require.NoError(t, err)
-	require.NoError(t, transition.Commit(ctx))
+	require.NoError(t, holder.Commit(ctx))
 
-	select {
-	case r := <-done:
-		require.NoError(t, r.err)
-		require.Equal(t, int64(len(objectTypes)), r.deleted)
-	case <-time.After(10 * time.Second):
-		t.Fatal("the delete did not finish")
+	for range 2 {
+		select {
+		case err := <-writerDone:
+			require.NoError(t, err, "writer")
+		case r := <-deleterDone:
+			require.NoError(t, r.err, "deleter")
+			require.Equal(t, int64(len(objectTypes)), r.deleted)
+		case <-time.After(10 * time.Second):
+			t.Fatal("the writer or the deleter did not finish")
+		}
 	}
 
+	// The seed rows are gone. The held row and the writer's rows remain.
 	var total int64
 	require.NoError(t, pool.QueryRow(ctx, `SELECT COALESCE(SUM(n), 0) FROM ingestion_log_state_object_type_counts`).Scan(&total))
-	require.Equal(t, int64(0), total)
+	require.Equal(t, int64(len(objectTypes)+1), total)
 }
