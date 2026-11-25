@@ -2,7 +2,7 @@ syntax = "proto3";
 
 // Generated Code. DO NOT EDIT.
 // Source: NetBox v4.7.0
-// Timestamp: 2026-09-02 20:52:37Z
+// Timestamp: 2026-11-23 19:37:58Z
 
 package diode.v1;
 
@@ -133,6 +133,7 @@ message Entity {
     CoolingOutflow cooling_outflow = 105;
     CoolingSource cooling_source = 106;
     ModuleBayType module_bay_type = 107;
+    ConfigContext config_context = 108;
   }
 }
 
@@ -715,6 +716,7 @@ message ContactAssignment {
     CoolingOutflow object_cooling_outflow = 109;
     CoolingSource object_cooling_source = 110;
     ModuleBayType object_module_bay_type = 111;
+    ConfigContext object_config_context = 112;
   }
   Contact contact = 89;
   optional ContactRole role = 90;
@@ -861,6 +863,7 @@ message CustomFieldObjectReference {
     CoolingOutflow cooling_outflow = 103;
     CoolingSource cooling_source = 104;
     ModuleBayType module_bay_type = 105;
+    ConfigContext config_context = 106;
   }
 }
 
@@ -1170,6 +1173,7 @@ message FHRPGroupAssignment {
     CoolingOutflow interface_cooling_outflow = 106;
     CoolingSource interface_cooling_source = 107;
     ModuleBayType interface_module_bay_type = 108;
+    ConfigContext interface_config_context = 109;
   }
   int64 priority = 90;
   google.protobuf.Struct metadata = 96 [(netbox_supported) = false];
@@ -1366,6 +1370,7 @@ message GenericObject {
     CoolingOutflow object_cooling_outflow = 103;
     CoolingSource object_cooling_source = 104;
     ModuleBayType object_module_bay_type = 105;
+    ConfigContext object_config_context = 106;
   }
 }
 
@@ -2320,6 +2325,7 @@ message L2VPNTermination {
     CoolingOutflow assigned_object_cooling_outflow = 107;
     CoolingSource assigned_object_cooling_source = 108;
     ModuleBayType assigned_object_module_bay_type = 109;
+    ConfigContext assigned_object_config_context = 110;
   }
   repeated Tag tags = 5;
   map<string, CustomFieldValue> custom_fields = 6;
@@ -3519,6 +3525,7 @@ message TunnelTermination {
     CoolingOutflow termination_cooling_outflow = 109;
     CoolingSource termination_cooling_source = 110;
     ModuleBayType termination_module_bay_type = 111;
+    ConfigContext termination_config_context = 112;
   }
   optional IPAddress outside_ip = 91;
   repeated Tag tags = 92;
@@ -3949,6 +3956,7 @@ message CustomField {
       "dcim.sitegroup",
       "dcim.virtualchassis",
       "dcim.virtualdevicecontext",
+      "extras.configcontext",
       "extras.customfield",
       "extras.customfieldchoiceset",
       "extras.customlink",
@@ -4267,6 +4275,7 @@ message JournalEntry {
     CoolingOutflow assigned_object_cooling_outflow = 109;
     CoolingSource assigned_object_cooling_source = 110;
     ModuleBayType assigned_object_module_bay_type = 111;
+    ConfigContext assigned_object_config_context = 112;
   }
   optional string kind = 93 [(validate.rules).string = {
     in: [
@@ -4373,6 +4382,7 @@ message CustomLink {
       "dcim.sitegroup",
       "dcim.virtualchassis",
       "dcim.virtualdevicecontext",
+      "extras.configcontext",
       "extras.journalentry",
       "ipam.aggregate",
       "ipam.asn",
@@ -4640,4 +4650,27 @@ message ModuleBayType {
   repeated Tag tags = 8;
   map<string, CustomFieldValue> custom_fields = 9;
   google.protobuf.Struct metadata = 10 [(netbox_supported) = false];
+}
+
+message ConfigContext {
+  string name = 1;
+  optional int64 weight = 2;
+  optional string description = 3;
+  optional bool is_active = 4;
+  repeated Region regions = 5;
+  repeated SiteGroup site_groups = 6;
+  repeated Site sites = 7;
+  repeated Location locations = 8;
+  repeated DeviceType device_types = 9;
+  repeated DeviceRole roles = 10;
+  repeated Platform platforms = 11;
+  repeated ClusterType cluster_types = 12;
+  repeated ClusterGroup cluster_groups = 13;
+  repeated Cluster clusters = 14;
+  repeated TenantGroup tenant_groups = 15;
+  repeated Tenant tenants = 16;
+  optional Owner owner = 17;
+  repeated Tag tags = 18;
+  string data = 19;
+  google.protobuf.Struct metadata = 20 [(netbox_supported) = false];
 }

@@ -31,6 +31,7 @@
     - [ClusterGroup.CustomFieldsEntry](#diode-v1-ClusterGroup-CustomFieldsEntry)
     - [ClusterType](#diode-v1-ClusterType)
     - [ClusterType.CustomFieldsEntry](#diode-v1-ClusterType-CustomFieldsEntry)
+    - [ConfigContext](#diode-v1-ConfigContext)
     - [ConsolePort](#diode-v1-ConsolePort)
     - [ConsolePort.CustomFieldsEntry](#diode-v1-ConsolePort-CustomFieldsEntry)
     - [ConsoleServerPort](#diode-v1-ConsoleServerPort)
@@ -805,6 +806,40 @@
 
 
 
+<a name="diode-v1-ConfigContext"></a>
+
+### ConfigContext
+
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| name | [string](#string) |  |  |
+| weight | [int64](#int64) | optional |  |
+| description | [string](#string) | optional |  |
+| is_active | [bool](#bool) | optional |  |
+| regions | [Region](#diode-v1-Region) | repeated |  |
+| site_groups | [SiteGroup](#diode-v1-SiteGroup) | repeated |  |
+| sites | [Site](#diode-v1-Site) | repeated |  |
+| locations | [Location](#diode-v1-Location) | repeated |  |
+| device_types | [DeviceType](#diode-v1-DeviceType) | repeated |  |
+| roles | [DeviceRole](#diode-v1-DeviceRole) | repeated |  |
+| platforms | [Platform](#diode-v1-Platform) | repeated |  |
+| cluster_types | [ClusterType](#diode-v1-ClusterType) | repeated |  |
+| cluster_groups | [ClusterGroup](#diode-v1-ClusterGroup) | repeated |  |
+| clusters | [Cluster](#diode-v1-Cluster) | repeated |  |
+| tenant_groups | [TenantGroup](#diode-v1-TenantGroup) | repeated |  |
+| tenants | [Tenant](#diode-v1-Tenant) | repeated |  |
+| owner | [Owner](#diode-v1-Owner) | optional |  |
+| tags | [Tag](#diode-v1-Tag) | repeated |  |
+| data | [string](#string) |  |  |
+| metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
+
+
+
+
+
+
 <a name="diode-v1-ConsolePort"></a>
 
 ### ConsolePort
@@ -1046,6 +1081,7 @@
 | object_cooling_outflow | [CoolingOutflow](#diode-v1-CoolingOutflow) |  |  |
 | object_cooling_source | [CoolingSource](#diode-v1-CoolingSource) |  |  |
 | object_module_bay_type | [ModuleBayType](#diode-v1-ModuleBayType) |  |  |
+| object_config_context | [ConfigContext](#diode-v1-ConfigContext) |  |  |
 | contact | [Contact](#diode-v1-Contact) |  |  |
 | role | [ContactRole](#diode-v1-ContactRole) | optional |  |
 | priority | [string](#string) | optional |  |
@@ -1501,6 +1537,7 @@
 | cooling_outflow | [CoolingOutflow](#diode-v1-CoolingOutflow) |  |  |
 | cooling_source | [CoolingSource](#diode-v1-CoolingSource) |  |  |
 | module_bay_type | [ModuleBayType](#diode-v1-ModuleBayType) |  |  |
+| config_context | [ConfigContext](#diode-v1-ConfigContext) |  |  |
 
 
 
@@ -1884,6 +1921,7 @@
 | cooling_outflow | [CoolingOutflow](#diode-v1-CoolingOutflow) |  |  |
 | cooling_source | [CoolingSource](#diode-v1-CoolingSource) |  |  |
 | module_bay_type | [ModuleBayType](#diode-v1-ModuleBayType) |  |  |
+| config_context | [ConfigContext](#diode-v1-ConfigContext) |  |  |
 
 
 
@@ -2045,6 +2083,7 @@
 | interface_cooling_outflow | [CoolingOutflow](#diode-v1-CoolingOutflow) |  |  |
 | interface_cooling_source | [CoolingSource](#diode-v1-CoolingSource) |  |  |
 | interface_module_bay_type | [ModuleBayType](#diode-v1-ModuleBayType) |  |  |
+| interface_config_context | [ConfigContext](#diode-v1-ConfigContext) |  |  |
 | priority | [int64](#int64) |  |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
 
@@ -2211,6 +2250,7 @@
 | object_cooling_outflow | [CoolingOutflow](#diode-v1-CoolingOutflow) |  |  |
 | object_cooling_source | [CoolingSource](#diode-v1-CoolingSource) |  |  |
 | object_module_bay_type | [ModuleBayType](#diode-v1-ModuleBayType) |  |  |
+| object_config_context | [ConfigContext](#diode-v1-ConfigContext) |  |  |
 
 
 
@@ -2823,6 +2863,7 @@
 | assigned_object_cooling_outflow | [CoolingOutflow](#diode-v1-CoolingOutflow) |  |  |
 | assigned_object_cooling_source | [CoolingSource](#diode-v1-CoolingSource) |  |  |
 | assigned_object_module_bay_type | [ModuleBayType](#diode-v1-ModuleBayType) |  |  |
+| assigned_object_config_context | [ConfigContext](#diode-v1-ConfigContext) |  |  |
 | kind | [string](#string) | optional |  |
 | comments | [string](#string) |  |  |
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
@@ -3009,6 +3050,7 @@
 | assigned_object_cooling_outflow | [CoolingOutflow](#diode-v1-CoolingOutflow) |  |  |
 | assigned_object_cooling_source | [CoolingSource](#diode-v1-CoolingSource) |  |  |
 | assigned_object_module_bay_type | [ModuleBayType](#diode-v1-ModuleBayType) |  |  |
+| assigned_object_config_context | [ConfigContext](#diode-v1-ConfigContext) |  |  |
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [L2VPNTermination.CustomFieldsEntry](#diode-v1-L2VPNTermination-CustomFieldsEntry) | repeated |  |
 | metadata | [google.protobuf.Struct](#google-protobuf-Struct) |  |  |
@@ -4661,6 +4703,7 @@
 | termination_cooling_outflow | [CoolingOutflow](#diode-v1-CoolingOutflow) |  |  |
 | termination_cooling_source | [CoolingSource](#diode-v1-CoolingSource) |  |  |
 | termination_module_bay_type | [ModuleBayType](#diode-v1-ModuleBayType) |  |  |
+| termination_config_context | [ConfigContext](#diode-v1-ConfigContext) |  |  |
 | outside_ip | [IPAddress](#diode-v1-IPAddress) | optional |  |
 | tags | [Tag](#diode-v1-Tag) | repeated |  |
 | custom_fields | [TunnelTermination.CustomFieldsEntry](#diode-v1-TunnelTermination-CustomFieldsEntry) | repeated |  |

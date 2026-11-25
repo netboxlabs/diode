@@ -19,6 +19,7 @@ func TestCreateEntityFromInterface(t *testing.T) {
 		{"device pointer", &diodepb.Device{}, false, "Device"},
 		{"site pointer", &diodepb.Site{}, false, "Site"},
 		{"interface pointer", &diodepb.Interface{}, false, "Interface"},
+		{"config context pointer", &diodepb.ConfigContext{}, false, "ConfigContext"},
 		{"unknown type", "string", true, ""},
 	}
 
@@ -46,6 +47,7 @@ func TestGetEntityTypeName(t *testing.T) {
 		{"site", &diodepb.Site{}, "Site"},
 		{"interface", &diodepb.Interface{}, "Interface"},
 		{"manufacturer", &diodepb.Manufacturer{}, "Manufacturer"},
+		{"config context", &diodepb.ConfigContext{}, "ConfigContext"},
 		{"unknown", "string", "unknown"},
 	}
 
@@ -66,6 +68,7 @@ func TestIsKnownEntityType(t *testing.T) {
 		{"nil", nil, false},
 		{"device", &diodepb.Device{}, true},
 		{"site", &diodepb.Site{}, true},
+		{"config context", &diodepb.ConfigContext{}, true},
 		{"string", "string", false},
 		{"int", 42, false},
 	}
@@ -84,6 +87,7 @@ func TestGetAllEntityTypes(t *testing.T) {
 	assert.Contains(t, types, "Device")
 	assert.Contains(t, types, "Site")
 	assert.Contains(t, types, "Interface")
+	assert.Contains(t, types, "ConfigContext")
 }
 
 func TestGetEdgeTypesForField(t *testing.T) {
@@ -164,6 +168,10 @@ func TestGetNodeTypeForField(t *testing.T) {
 		{"Site", "Site"},
 		{"device_type", "DeviceType"},
 		{"DeviceType", "DeviceType"},
+		{"roles", "DeviceRole"},
+		{"Roles", "DeviceRole"},
+		{"cluster_groups", "ClusterGroup"},
+		{"TenantGroups", "TenantGroup"},
 		{"UnknownField", "UnknownField"}, // Returns as-is if not found
 	}
 

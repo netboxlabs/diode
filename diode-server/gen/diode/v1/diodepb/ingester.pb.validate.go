@@ -4447,6 +4447,47 @@ func (m *Entity) validate(all bool) error {
 			}
 		}
 
+	case *Entity_ConfigContext:
+		if v == nil {
+			err := EntityValidationError{
+				field:  "Entity",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetConfigContext()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "ConfigContext",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, EntityValidationError{
+						field:  "ConfigContext",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetConfigContext()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return EntityValidationError{
+					field:  "ConfigContext",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	default:
 		_ = v // ensures v is used
 	}
@@ -15614,6 +15655,47 @@ func (m *ContactAssignment) validate(all bool) error {
 			}
 		}
 
+	case *ContactAssignment_ObjectConfigContext:
+		if v == nil {
+			err := ContactAssignmentValidationError{
+				field:  "Object",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetObjectConfigContext()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ContactAssignmentValidationError{
+						field:  "ObjectConfigContext",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ContactAssignmentValidationError{
+						field:  "ObjectConfigContext",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetObjectConfigContext()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ContactAssignmentValidationError{
+					field:  "ObjectConfigContext",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	default:
 		_ = v // ensures v is used
 	}
@@ -20614,6 +20696,47 @@ func (m *CustomFieldObjectReference) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return CustomFieldObjectReferenceValidationError{
 					field:  "ModuleBayType",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *CustomFieldObjectReference_ConfigContext:
+		if v == nil {
+			err := CustomFieldObjectReferenceValidationError{
+				field:  "Object",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetConfigContext()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "ConfigContext",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, CustomFieldObjectReferenceValidationError{
+						field:  "ConfigContext",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetConfigContext()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return CustomFieldObjectReferenceValidationError{
+					field:  "ConfigContext",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -27613,6 +27736,47 @@ func (m *FHRPGroupAssignment) validate(all bool) error {
 			}
 		}
 
+	case *FHRPGroupAssignment_InterfaceConfigContext:
+		if v == nil {
+			err := FHRPGroupAssignmentValidationError{
+				field:  "Interface",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetInterfaceConfigContext()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, FHRPGroupAssignmentValidationError{
+						field:  "InterfaceConfigContext",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, FHRPGroupAssignmentValidationError{
+						field:  "InterfaceConfigContext",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetInterfaceConfigContext()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return FHRPGroupAssignmentValidationError{
+					field:  "InterfaceConfigContext",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	default:
 		_ = v // ensures v is used
 	}
@@ -32454,6 +32618,47 @@ func (m *GenericObject) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return GenericObjectValidationError{
 					field:  "ObjectModuleBayType",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *GenericObject_ObjectConfigContext:
+		if v == nil {
+			err := GenericObjectValidationError{
+				field:  "Object",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetObjectConfigContext()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, GenericObjectValidationError{
+						field:  "ObjectConfigContext",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, GenericObjectValidationError{
+						field:  "ObjectConfigContext",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetObjectConfigContext()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return GenericObjectValidationError{
+					field:  "ObjectConfigContext",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -42312,6 +42517,47 @@ func (m *L2VPNTermination) validate(all bool) error {
 			if err := v.Validate(); err != nil {
 				return L2VPNTerminationValidationError{
 					field:  "AssignedObjectModuleBayType",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	case *L2VPNTermination_AssignedObjectConfigContext:
+		if v == nil {
+			err := L2VPNTerminationValidationError{
+				field:  "AssignedObject",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetAssignedObjectConfigContext()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, L2VPNTerminationValidationError{
+						field:  "AssignedObjectConfigContext",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, L2VPNTerminationValidationError{
+						field:  "AssignedObjectConfigContext",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetAssignedObjectConfigContext()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return L2VPNTerminationValidationError{
+					field:  "AssignedObjectConfigContext",
 					reason: "embedded message failed validation",
 					cause:  err,
 				}
@@ -58447,6 +58693,47 @@ func (m *TunnelTermination) validate(all bool) error {
 			}
 		}
 
+	case *TunnelTermination_TerminationConfigContext:
+		if v == nil {
+			err := TunnelTerminationValidationError{
+				field:  "Termination",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetTerminationConfigContext()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, TunnelTerminationValidationError{
+						field:  "TerminationConfigContext",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, TunnelTerminationValidationError{
+						field:  "TerminationConfigContext",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetTerminationConfigContext()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return TunnelTerminationValidationError{
+					field:  "TerminationConfigContext",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	default:
 		_ = v // ensures v is used
 	}
@@ -64856,7 +65143,7 @@ func (m *CustomField) validate(all bool) error {
 		if _, ok := _CustomField_RelatedObjectType_InLookup[m.GetRelatedObjectType()]; !ok {
 			err := CustomFieldValidationError{
 				field:  "RelatedObjectType",
-				reason: "value must be in list [circuits.circuit circuits.circuitgroup circuits.circuitgroupassignment circuits.circuittermination circuits.circuittype circuits.provider circuits.provideraccount circuits.providernetwork circuits.virtualcircuit circuits.virtualcircuittermination circuits.virtualcircuittype core.managedfile dcim.cable dcim.cablebundle dcim.cablepath dcim.consoleport dcim.consoleserverport dcim.coolingfeed dcim.coolingintake dcim.coolingoutflow dcim.coolingsource dcim.device dcim.devicebay dcim.devicerole dcim.devicetype dcim.frontport dcim.interface dcim.inventoryitem dcim.inventoryitemrole dcim.location dcim.macaddress dcim.manufacturer dcim.module dcim.modulebay dcim.modulebaytype dcim.moduletype dcim.moduletypeprofile dcim.platform dcim.powerfeed dcim.poweroutlet dcim.powerpanel dcim.powerport dcim.rack dcim.rackgroup dcim.rackreservation dcim.rackrole dcim.racktype dcim.rearport dcim.region dcim.site dcim.sitegroup dcim.virtualchassis dcim.virtualdevicecontext extras.customfield extras.customfieldchoiceset extras.customlink extras.journalentry extras.tag ipam.aggregate ipam.asn ipam.asnrange ipam.fhrpgroup ipam.fhrpgroupassignment ipam.ipaddress ipam.iprange ipam.prefix ipam.rir ipam.role ipam.routetarget ipam.service ipam.vlan ipam.vlangroup ipam.vlantranslationpolicy ipam.vlantranslationrule ipam.vrf tenancy.contact tenancy.contactassignment tenancy.contactgroup tenancy.contactrole tenancy.tenant tenancy.tenantgroup users.owner users.ownergroup users.user virtualization.cluster virtualization.clustergroup virtualization.clustertype virtualization.virtualdisk virtualization.virtualmachine virtualization.virtualmachinetype virtualization.vminterface vpn.ikepolicy vpn.ikeproposal vpn.ipsecpolicy vpn.ipsecprofile vpn.ipsecproposal vpn.l2vpn vpn.l2vpntermination vpn.tunnel vpn.tunnelgroup vpn.tunneltermination wireless.wirelesslan wireless.wirelesslangroup wireless.wirelesslink]",
+				reason: "value must be in list [circuits.circuit circuits.circuitgroup circuits.circuitgroupassignment circuits.circuittermination circuits.circuittype circuits.provider circuits.provideraccount circuits.providernetwork circuits.virtualcircuit circuits.virtualcircuittermination circuits.virtualcircuittype core.managedfile dcim.cable dcim.cablebundle dcim.cablepath dcim.consoleport dcim.consoleserverport dcim.coolingfeed dcim.coolingintake dcim.coolingoutflow dcim.coolingsource dcim.device dcim.devicebay dcim.devicerole dcim.devicetype dcim.frontport dcim.interface dcim.inventoryitem dcim.inventoryitemrole dcim.location dcim.macaddress dcim.manufacturer dcim.module dcim.modulebay dcim.modulebaytype dcim.moduletype dcim.moduletypeprofile dcim.platform dcim.powerfeed dcim.poweroutlet dcim.powerpanel dcim.powerport dcim.rack dcim.rackgroup dcim.rackreservation dcim.rackrole dcim.racktype dcim.rearport dcim.region dcim.site dcim.sitegroup dcim.virtualchassis dcim.virtualdevicecontext extras.configcontext extras.customfield extras.customfieldchoiceset extras.customlink extras.journalentry extras.tag ipam.aggregate ipam.asn ipam.asnrange ipam.fhrpgroup ipam.fhrpgroupassignment ipam.ipaddress ipam.iprange ipam.prefix ipam.rir ipam.role ipam.routetarget ipam.service ipam.vlan ipam.vlangroup ipam.vlantranslationpolicy ipam.vlantranslationrule ipam.vrf tenancy.contact tenancy.contactassignment tenancy.contactgroup tenancy.contactrole tenancy.tenant tenancy.tenantgroup users.owner users.ownergroup users.user virtualization.cluster virtualization.clustergroup virtualization.clustertype virtualization.virtualdisk virtualization.virtualmachine virtualization.virtualmachinetype virtualization.vminterface vpn.ikepolicy vpn.ikeproposal vpn.ipsecpolicy vpn.ipsecprofile vpn.ipsecproposal vpn.l2vpn vpn.l2vpntermination vpn.tunnel vpn.tunnelgroup vpn.tunneltermination wireless.wirelesslan wireless.wirelesslangroup wireless.wirelesslink]",
 			}
 			if !all {
 				return err
@@ -65188,6 +65475,7 @@ var _CustomField_RelatedObjectType_InLookup = map[string]struct{}{
 	"dcim.sitegroup":                     {},
 	"dcim.virtualchassis":                {},
 	"dcim.virtualdevicecontext":          {},
+	"extras.configcontext":               {},
 	"extras.customfield":                 {},
 	"extras.customfieldchoiceset":        {},
 	"extras.customlink":                  {},
@@ -69994,6 +70282,47 @@ func (m *JournalEntry) validate(all bool) error {
 			}
 		}
 
+	case *JournalEntry_AssignedObjectConfigContext:
+		if v == nil {
+			err := JournalEntryValidationError{
+				field:  "AssignedObject",
+				reason: "oneof value cannot be a typed-nil",
+			}
+			if !all {
+				return err
+			}
+			errors = append(errors, err)
+		}
+
+		if all {
+			switch v := interface{}(m.GetAssignedObjectConfigContext()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, JournalEntryValidationError{
+						field:  "AssignedObjectConfigContext",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, JournalEntryValidationError{
+						field:  "AssignedObjectConfigContext",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetAssignedObjectConfigContext()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return JournalEntryValidationError{
+					field:  "AssignedObjectConfigContext",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
 	default:
 		_ = v // ensures v is used
 	}
@@ -70422,7 +70751,7 @@ func (m *CustomLink) validate(all bool) error {
 		if _, ok := _CustomLink_ObjectTypes_InLookup[item]; !ok {
 			err := CustomLinkValidationError{
 				field:  fmt.Sprintf("ObjectTypes[%v]", idx),
-				reason: "value must be in list [circuits.circuit circuits.circuitgroup circuits.circuittermination circuits.circuittype circuits.provider circuits.provideraccount circuits.providernetwork circuits.virtualcircuit circuits.virtualcircuittermination circuits.virtualcircuittype dcim.cable dcim.cablebundle dcim.consoleport dcim.consoleserverport dcim.coolingfeed dcim.coolingintake dcim.coolingoutflow dcim.coolingsource dcim.device dcim.devicebay dcim.devicerole dcim.devicetype dcim.frontport dcim.interface dcim.inventoryitem dcim.inventoryitemrole dcim.location dcim.macaddress dcim.manufacturer dcim.module dcim.modulebay dcim.modulebaytype dcim.moduletype dcim.moduletypeprofile dcim.platform dcim.powerfeed dcim.poweroutlet dcim.powerpanel dcim.powerport dcim.rack dcim.rackgroup dcim.rackreservation dcim.rackrole dcim.racktype dcim.rearport dcim.region dcim.site dcim.sitegroup dcim.virtualchassis dcim.virtualdevicecontext extras.journalentry ipam.aggregate ipam.asn ipam.asnrange ipam.fhrpgroup ipam.ipaddress ipam.iprange ipam.prefix ipam.rir ipam.role ipam.routetarget ipam.service ipam.vlan ipam.vlangroup ipam.vlantranslationpolicy ipam.vlantranslationrule ipam.vrf tenancy.contact tenancy.contactgroup tenancy.contactrole tenancy.tenant tenancy.tenantgroup users.owner users.ownergroup virtualization.cluster virtualization.clustergroup virtualization.clustertype virtualization.virtualdisk virtualization.virtualmachine virtualization.virtualmachinetype virtualization.vminterface vpn.ikepolicy vpn.ikeproposal vpn.ipsecpolicy vpn.ipsecprofile vpn.ipsecproposal vpn.l2vpn vpn.l2vpntermination vpn.tunnel vpn.tunnelgroup vpn.tunneltermination wireless.wirelesslan wireless.wirelesslangroup wireless.wirelesslink]",
+				reason: "value must be in list [circuits.circuit circuits.circuitgroup circuits.circuittermination circuits.circuittype circuits.provider circuits.provideraccount circuits.providernetwork circuits.virtualcircuit circuits.virtualcircuittermination circuits.virtualcircuittype dcim.cable dcim.cablebundle dcim.consoleport dcim.consoleserverport dcim.coolingfeed dcim.coolingintake dcim.coolingoutflow dcim.coolingsource dcim.device dcim.devicebay dcim.devicerole dcim.devicetype dcim.frontport dcim.interface dcim.inventoryitem dcim.inventoryitemrole dcim.location dcim.macaddress dcim.manufacturer dcim.module dcim.modulebay dcim.modulebaytype dcim.moduletype dcim.moduletypeprofile dcim.platform dcim.powerfeed dcim.poweroutlet dcim.powerpanel dcim.powerport dcim.rack dcim.rackgroup dcim.rackreservation dcim.rackrole dcim.racktype dcim.rearport dcim.region dcim.site dcim.sitegroup dcim.virtualchassis dcim.virtualdevicecontext extras.configcontext extras.journalentry ipam.aggregate ipam.asn ipam.asnrange ipam.fhrpgroup ipam.ipaddress ipam.iprange ipam.prefix ipam.rir ipam.role ipam.routetarget ipam.service ipam.vlan ipam.vlangroup ipam.vlantranslationpolicy ipam.vlantranslationrule ipam.vrf tenancy.contact tenancy.contactgroup tenancy.contactrole tenancy.tenant tenancy.tenantgroup users.owner users.ownergroup virtualization.cluster virtualization.clustergroup virtualization.clustertype virtualization.virtualdisk virtualization.virtualmachine virtualization.virtualmachinetype virtualization.vminterface vpn.ikepolicy vpn.ikeproposal vpn.ipsecpolicy vpn.ipsecprofile vpn.ipsecproposal vpn.l2vpn vpn.l2vpntermination vpn.tunnel vpn.tunnelgroup vpn.tunneltermination wireless.wirelesslan wireless.wirelesslangroup wireless.wirelesslink]",
 			}
 			if !all {
 				return err
@@ -70671,6 +71000,7 @@ var _CustomLink_ObjectTypes_InLookup = map[string]struct{}{
 	"dcim.sitegroup":                     {},
 	"dcim.virtualchassis":                {},
 	"dcim.virtualdevicecontext":          {},
+	"extras.configcontext":               {},
 	"extras.journalentry":                {},
 	"ipam.aggregate":                     {},
 	"ipam.asn":                           {},
@@ -74128,3 +74458,623 @@ var _ interface {
 	Cause() error
 	ErrorName() string
 } = ModuleBayTypeValidationError{}
+
+// Validate checks the field values on ConfigContext with the rules defined in
+// the proto definition for this message. If any rules are violated, the first
+// error encountered is returned, or nil if there are no violations.
+func (m *ConfigContext) Validate() error {
+	return m.validate(false)
+}
+
+// ValidateAll checks the field values on ConfigContext with the rules defined
+// in the proto definition for this message. If any rules are violated, the
+// result is a list of violation errors wrapped in ConfigContextMultiError, or
+// nil if none found.
+func (m *ConfigContext) ValidateAll() error {
+	return m.validate(true)
+}
+
+func (m *ConfigContext) validate(all bool) error {
+	if m == nil {
+		return nil
+	}
+
+	var errors []error
+
+	// no validation rules for Name
+
+	for idx, item := range m.GetRegions() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ConfigContextValidationError{
+						field:  fmt.Sprintf("Regions[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ConfigContextValidationError{
+						field:  fmt.Sprintf("Regions[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ConfigContextValidationError{
+					field:  fmt.Sprintf("Regions[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	for idx, item := range m.GetSiteGroups() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ConfigContextValidationError{
+						field:  fmt.Sprintf("SiteGroups[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ConfigContextValidationError{
+						field:  fmt.Sprintf("SiteGroups[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ConfigContextValidationError{
+					field:  fmt.Sprintf("SiteGroups[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	for idx, item := range m.GetSites() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ConfigContextValidationError{
+						field:  fmt.Sprintf("Sites[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ConfigContextValidationError{
+						field:  fmt.Sprintf("Sites[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ConfigContextValidationError{
+					field:  fmt.Sprintf("Sites[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	for idx, item := range m.GetLocations() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ConfigContextValidationError{
+						field:  fmt.Sprintf("Locations[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ConfigContextValidationError{
+						field:  fmt.Sprintf("Locations[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ConfigContextValidationError{
+					field:  fmt.Sprintf("Locations[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	for idx, item := range m.GetDeviceTypes() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ConfigContextValidationError{
+						field:  fmt.Sprintf("DeviceTypes[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ConfigContextValidationError{
+						field:  fmt.Sprintf("DeviceTypes[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ConfigContextValidationError{
+					field:  fmt.Sprintf("DeviceTypes[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	for idx, item := range m.GetRoles() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ConfigContextValidationError{
+						field:  fmt.Sprintf("Roles[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ConfigContextValidationError{
+						field:  fmt.Sprintf("Roles[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ConfigContextValidationError{
+					field:  fmt.Sprintf("Roles[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	for idx, item := range m.GetPlatforms() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ConfigContextValidationError{
+						field:  fmt.Sprintf("Platforms[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ConfigContextValidationError{
+						field:  fmt.Sprintf("Platforms[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ConfigContextValidationError{
+					field:  fmt.Sprintf("Platforms[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	for idx, item := range m.GetClusterTypes() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ConfigContextValidationError{
+						field:  fmt.Sprintf("ClusterTypes[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ConfigContextValidationError{
+						field:  fmt.Sprintf("ClusterTypes[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ConfigContextValidationError{
+					field:  fmt.Sprintf("ClusterTypes[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	for idx, item := range m.GetClusterGroups() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ConfigContextValidationError{
+						field:  fmt.Sprintf("ClusterGroups[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ConfigContextValidationError{
+						field:  fmt.Sprintf("ClusterGroups[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ConfigContextValidationError{
+					field:  fmt.Sprintf("ClusterGroups[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	for idx, item := range m.GetClusters() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ConfigContextValidationError{
+						field:  fmt.Sprintf("Clusters[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ConfigContextValidationError{
+						field:  fmt.Sprintf("Clusters[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ConfigContextValidationError{
+					field:  fmt.Sprintf("Clusters[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	for idx, item := range m.GetTenantGroups() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ConfigContextValidationError{
+						field:  fmt.Sprintf("TenantGroups[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ConfigContextValidationError{
+						field:  fmt.Sprintf("TenantGroups[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ConfigContextValidationError{
+					field:  fmt.Sprintf("TenantGroups[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	for idx, item := range m.GetTenants() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ConfigContextValidationError{
+						field:  fmt.Sprintf("Tenants[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ConfigContextValidationError{
+						field:  fmt.Sprintf("Tenants[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ConfigContextValidationError{
+					field:  fmt.Sprintf("Tenants[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	for idx, item := range m.GetTags() {
+		_, _ = idx, item
+
+		if all {
+			switch v := interface{}(item).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ConfigContextValidationError{
+						field:  fmt.Sprintf("Tags[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ConfigContextValidationError{
+						field:  fmt.Sprintf("Tags[%v]", idx),
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(item).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ConfigContextValidationError{
+					field:  fmt.Sprintf("Tags[%v]", idx),
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	// no validation rules for Data
+
+	if all {
+		switch v := interface{}(m.GetMetadata()).(type) {
+		case interface{ ValidateAll() error }:
+			if err := v.ValidateAll(); err != nil {
+				errors = append(errors, ConfigContextValidationError{
+					field:  "Metadata",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		case interface{ Validate() error }:
+			if err := v.Validate(); err != nil {
+				errors = append(errors, ConfigContextValidationError{
+					field:  "Metadata",
+					reason: "embedded message failed validation",
+					cause:  err,
+				})
+			}
+		}
+	} else if v, ok := interface{}(m.GetMetadata()).(interface{ Validate() error }); ok {
+		if err := v.Validate(); err != nil {
+			return ConfigContextValidationError{
+				field:  "Metadata",
+				reason: "embedded message failed validation",
+				cause:  err,
+			}
+		}
+	}
+
+	if m.Weight != nil {
+		// no validation rules for Weight
+	}
+
+	if m.Description != nil {
+		// no validation rules for Description
+	}
+
+	if m.IsActive != nil {
+		// no validation rules for IsActive
+	}
+
+	if m.Owner != nil {
+
+		if all {
+			switch v := interface{}(m.GetOwner()).(type) {
+			case interface{ ValidateAll() error }:
+				if err := v.ValidateAll(); err != nil {
+					errors = append(errors, ConfigContextValidationError{
+						field:  "Owner",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			case interface{ Validate() error }:
+				if err := v.Validate(); err != nil {
+					errors = append(errors, ConfigContextValidationError{
+						field:  "Owner",
+						reason: "embedded message failed validation",
+						cause:  err,
+					})
+				}
+			}
+		} else if v, ok := interface{}(m.GetOwner()).(interface{ Validate() error }); ok {
+			if err := v.Validate(); err != nil {
+				return ConfigContextValidationError{
+					field:  "Owner",
+					reason: "embedded message failed validation",
+					cause:  err,
+				}
+			}
+		}
+
+	}
+
+	if len(errors) > 0 {
+		return ConfigContextMultiError(errors)
+	}
+
+	return nil
+}
+
+// ConfigContextMultiError is an error wrapping multiple validation errors
+// returned by ConfigContext.ValidateAll() if the designated constraints
+// aren't met.
+type ConfigContextMultiError []error
+
+// Error returns a concatenation of all the error messages it wraps.
+func (m ConfigContextMultiError) Error() string {
+	var msgs []string
+	for _, err := range m {
+		msgs = append(msgs, err.Error())
+	}
+	return strings.Join(msgs, "; ")
+}
+
+// AllErrors returns a list of validation violation errors.
+func (m ConfigContextMultiError) AllErrors() []error { return m }
+
+// ConfigContextValidationError is the validation error returned by
+// ConfigContext.Validate if the designated constraints aren't met.
+type ConfigContextValidationError struct {
+	field  string
+	reason string
+	cause  error
+	key    bool
+}
+
+// Field function returns field value.
+func (e ConfigContextValidationError) Field() string { return e.field }
+
+// Reason function returns reason value.
+func (e ConfigContextValidationError) Reason() string { return e.reason }
+
+// Cause function returns cause value.
+func (e ConfigContextValidationError) Cause() error { return e.cause }
+
+// Key function returns key value.
+func (e ConfigContextValidationError) Key() bool { return e.key }
+
+// ErrorName returns error name.
+func (e ConfigContextValidationError) ErrorName() string { return "ConfigContextValidationError" }
+
+// Error satisfies the builtin error interface
+func (e ConfigContextValidationError) Error() string {
+	cause := ""
+	if e.cause != nil {
+		cause = fmt.Sprintf(" | caused by: %v", e.cause)
+	}
+
+	key := ""
+	if e.key {
+		key = "key for "
+	}
+
+	return fmt.Sprintf(
+		"invalid %sConfigContext.%s: %s%s",
+		key,
+		e.field,
+		e.reason,
+		cause)
+}
+
+var _ error = ConfigContextValidationError{}
+
+var _ interface {
+	Field() string
+	Reason() string
+	Key() bool
+	Cause() error
+	ErrorName() string
+} = ConfigContextValidationError{}
